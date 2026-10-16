@@ -1,7 +1,7 @@
 ---
 type: Convention
 title: Dev stack env files and local secret generation
-description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the deliberately blank REGISTRY_HOST).
+description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the key the generator must never fill).
 resource: infrastructure-as-code/docker/stacks/README.md
 tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
 sources:
@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T02:04:22.270Z
+    at: 2026-10-16T16:45:16.789Z
 ---
 
 # Dev stack env files and local secret generation
@@ -110,8 +110,8 @@ No stack is profile-gated as a whole. `auth` and `mcm` each have services that s
 
 The profile assignments live in the component compose files, not in these stack files. This matters to
 the env layer because a profile is **not** isolation from interpolation: Compose resolves every service
-in an included file at parse time whatever profiles are selected, which is why `mcm.env`'s
-`REGISTRY_HOST` cannot be a fail-fast reference in a profile-gated service (see the gotchas).
+in an included file at parse time whatever profiles are selected, which is why the feature-073 backup
+destinations are a separate compose file rather than a profile (see the gotchas).
 
 ## The two-file contract
 
@@ -183,7 +183,9 @@ it projects the realm client secrets out of `stacks/auth.env` into the BFF's git
 secrets agree **by construction** rather than by hand. It verifies the projected credentials against
 the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). It
 also names, unconditionally, the one file it deliberately never writes — the agent gateway's own
-`.env.local`, which carries the operator's Anthropic credential. See
+`.env.local`, which carries the operator's Anthropic credential — and warns, naming the keys, when the
+`BACKUP_TEST_*` credentials are absent from `mcm.env`, because an absent fixture makes the
+backup-destination integration suites skip and a skip reads as a pass. See
 [Keycloak](./keycloak.md) for the realm side and
 [Local dev](../../docs/runbooks/local-dev.md) — "A projected credential can be STALE, not merely
 absent (item #395)" — for the detect → resolve procedure.
@@ -229,8 +231,7 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 ```
 
 The message is deliberately actionable: it names the variable, the per-stack env file, and the command
-that mints it. This is also why the blank `REGISTRY_HOST` in two templates is a feature rather than an
-omission (see the gotchas).
+that mints it.
 
 That rule is **not universal**, and the exception is load-bearing rather than an oversight:
 `AGENT_GATEWAY_CLIENT_SECRET` in the agent gateway's compose file is an optional
@@ -248,6 +249,12 @@ than interpolation reads it through its own `env_file:` — the BFF reads
 `frontend/mcm-app/.env.docker`, web-api-mcp reads `mcp-servers/web-api-mcp/.env.local` — which is a
 different mechanism from the per-stack `.env` this page is about.
 
+The one place a `${VAR:-default}` default *is* allowed inside the fail-fast tree is a fixed **public
+half** of a test fixture: `backups/compose.yaml` writes the S3 access key and the WebDAV username as
+`"${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest}"` / `"${BACKUP_TEST_WEBDAV_USER:-mcmbackuptest}"` while
+their password partners stay `${…:?set in stacks/mcm.env}`. A default on a non-credential identifier
+re-leaks nothing, and the gate's secret-name pattern does not match those keys.
+
 ## Gotchas
 
 - **`node scripts/gen-dev-secrets.mjs` is idempotent but it is NOT a plain skip.** An existing
@@ -260,32 +267,57 @@ different mechanism from the per-stack `.env` this page is about.
   defect (item #552): the run reported "up to date", the suites that needed the absent keys skipped to
   green, and nothing named why. The run prints the seeded/filled key **names** and then says that
   containers started before it do not hold the new values.
-- **A blank *fixture* key is deliberately not touched.** `REGISTRY_HOST` is left empty in the `mcm` and
-  `observability` templates on purpose: `scripts/check-topology-scrub.mjs` forbids a real host in a
-  committed file, so it is set per machine. The generator has no value to give it and does not treat it
-  as a gap — a file whose only "missing" key is a blank fixture still reports up to date. Left blank,
-  the compose image refs fail loudly naming the variable instead of silently resolving to an invalid
-  reference. Note the two consumers differ: `observability.env` feeds the `observability` stack's own
-  MinIO image refs, whereas `mcm.env`'s value is consumed by the **separate**
-  `infrastructure-as-code/docker/backups/compose.yaml`, brought up explicitly — it is deliberately not
-  an include of `mcm.compose.yaml`, because Compose interpolates every service in an included file at
-  parse time regardless of the selected profiles, so a profile-gated `${REGISTRY_HOST:?}` there once
-  broke `up` for the whole stack.
+
+  ```mermaid
+  flowchart TD
+    Start["stack .env exists and --force was not passed"] --> Loop["walk the template key lines"]
+    Loop --> Present{"key already in the file?"}
+    Present -->|no| Add["mint or copy the value, append the line"]
+    Present -->|"yes, non-empty"| Keep["leave the line byte-for-byte"]
+    Present -->|"yes, empty, generate placeholder"| Fill["mint in place, name the key"]
+    Present -->|"yes, empty, not a placeholder"| Blank["leave it blank — not a gap the generator can fill"]
+    Add --> Report["report seeded and filled key NAMES only, never values"]
+    Fill --> Report
+    Keep --> Report
+    Blank --> Report
+  ```
+
+  The per-key decision the back-fill path makes. Only the two minting branches write anything.
+
+- **A key the template leaves blank is not a gap, but nothing in the live templates is blank any
+  more.** The generator never fills a template key that is not a `<generate:KIND>` placeholder, so a
+  deliberately empty entry stays empty and a file whose only "missing" key is that blank entry still
+  reports up to date. `scripts/__tests__/gen-dev-secrets.guard.test.mjs` pins this with a **synthetic**
+  template containing `REGISTRY_HOST=` — which is the honest state of the rule: no live dev-stack
+  template carries a topology value. `REGISTRY_HOST` left `mcm.env.example` and
+  `observability.env.example` when feature 080 replaced the from-source object-store image with
+  upstream `rustfs/rustfs`, so the observability stack's object store and the feature-073 backup S3
+  destination are now pulled by digest from a public registry and interpolate no host at all. In
+  production the same name is a Komodo Variable declared per stack, and the committed
+  `*.env.prod.example` templates carry it as `<registry-host:port>`.
 - **The two LangFuse `LANGFUSE_INIT_PROJECT_*` fixture keys are copied verbatim even under `--force`.**
   They are deterministic fixtures, not randomized credentials: the agent gateway and a verify test
   authenticate against those exact values, so randomizing them would break both. The same holds for the
   fixed public halves of the backup-destination fixtures in `mcm.env` (the S3 access key and WebDAV
   username are fixed so the integration suite can name them without reading the file).
-- **Password-on-first-init credentials survive a rotation until the volume is recreated.** Postgres,
-  OpenSearch and MinIO bake their password into the data volume on first init and ignore later env
-  changes. Rotating the `.env` therefore is not enough: the service must be recreated with a fresh
-  volume (`docker volume rm <name>` then re-create), or the container keeps the volume's original
-  password and auth fails. Redis values, Unleash tokens and app secrets have no such persistence and
-  rotate on a plain restart. The trap is sharpest for the Keycloak database password, which is
-  deliberately a **single** `auth.env` key that both the Postgres service (`POSTGRES_PASSWORD`) and
-  keycloak-service (`KC_DB_PASSWORD`) interpolate: on an existing dev volume the newly minted value is
-  simply wrong, and the documented recovery is to set the key back to the volume's original value or
-  wipe the volume and let `up-auth` re-import the realm.
+- **Password-on-first-init credentials survive a rotation until the volume is recreated.** Postgres and
+  OpenSearch bake their password into the data volume on first init and ignore later env changes.
+  Rotating the `.env` therefore is not enough: the service must be recreated with a fresh volume
+  (`docker volume rm <name>` then re-create), or the container keeps the volume's original password and
+  auth fails. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a
+  plain restart. The trap is sharpest for the Keycloak database password, which is deliberately a
+  **single** `auth.env` key that both the Postgres service (`POSTGRES_PASSWORD`) and keycloak-service
+  (`KC_DB_PASSWORD`) interpolate: on an existing dev volume the newly minted value is simply wrong, and
+  the documented recovery is to set the key back to the volume's original value or wipe the volume and
+  let `up-auth` re-import the realm.
+- **RustFS is in the *other* group — its keys are not baked into the drive.** Rotating
+  `LANGFUSE_RUSTFS_SECRET_KEY` (or the backup `BACKUP_TEST_S3_SECRET_KEY`) is an `.env` change plus
+  recreating the RustFS service **and its init container**, which passes the same key pair to `curl` to
+  create the bucket; no volume is touched. This is a measured property, not an assumption — starting
+  RustFS on a migrated drive with a different key pair was readable by the new pair and not the old.
+  The Langfuse side makes the key reach four consumers in one service file (`langfuse-web`'s and
+  `langfuse-worker`'s two S3 upload keys, the RustFS server, and the bucket-init one-shot), so all of
+  them must be recreated together or the uploaders and the store disagree.
 - **A container started before a re-run does not hold a newly minted value.** The generator mints into
   the file, not into the running process. The services that consume a newly seeded value must be
   recreated, and then `node scripts/gen-dev-env.mjs` re-run to project the value into the BFF env
@@ -310,17 +342,20 @@ Two static gates back the boundary up, both run selftest-then-scan in the `namin
 `guardrails.yml`:
 
 - `scripts/check-no-inline-secrets.mjs` asserts the structural property that **no tracked compose file
-  holds a literal credential**. Every secret-shaped key, password-bearing connection URL, and
-  command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?message}` reference. An
-  inline `${VAR:-default}` **fails** too, because a default re-leaks plaintext — that is the whole point
-  of the `:?` form. Non-credential keys that merely match the name pattern (`*_FILE`, `*_USER`,
-  `*ACCESS_KEY_ID`, `*_CLIENT_ID`, `*_AUDIENCE`) are explicitly allowlisted, and so is
-  `AGENT_GATEWAY_CLIENT_SECRET` by name, because it is the one secret deliberately injected as an
-  optional `${…:-}`. It runs locally via `node scripts/check-no-inline-secrets.mjs` (or `--selftest`,
-  or the `check-no-inline-secrets` Nx target).
+  holds a literal credential**. It parses every `infrastructure-as-code/docker/**/compose*.yaml`, every
+  `stacks/*.compose.yaml` aggregator and the retired root `compose.yaml`, and requires every
+  secret-shaped key, password-bearing connection URL, and command/healthcheck/entrypoint auth literal
+  to be a pure `${VAR}` / `${VAR:?message}` reference. An inline `${VAR:-default}` **fails** too,
+  because a default re-leaks plaintext — that is the whole point of the `:?` form. Non-credential keys
+  that merely match the name pattern (`*_FILE`, `*_USER`, `*ACCESS_KEY_ID`, `*_CLIENT_ID`,
+  `*_AUDIENCE`) are explicitly allowlisted, and so is `AGENT_GATEWAY_CLIENT_SECRET` by name, because it
+  is the one secret deliberately injected as an optional `${…:-}`. It runs locally via
+  `node scripts/check-no-inline-secrets.mjs` (or `--selftest`, or the `check-no-inline-secrets` Nx
+  target), and its own `--selftest` plants a `${VAR:-default}` to prove that form is caught.
 - `scripts/check-topology-scrub.mjs` is the tree-wide gate that keeps a real tailnet host out of any
-  committed file — which is what makes the blank `REGISTRY_HOST` necessary rather than sloppy. It is
-  pattern-based rather than literal, because hard-coding the real host would itself re-leak it. See
+  committed file — which is why a registry host cannot appear in a committed template and why the
+  production templates carry the `<registry-host:port>` placeholder instead. It is pattern-based rather
+  than literal, because hard-coding the real host would itself re-leak it. See
   [CI/CD pipeline](./ci-cd-pipeline.md) for the workflow that runs both, and
   [Secrets management](../invariants/secrets-management.md) for the posture they enforce.
 
@@ -330,15 +365,18 @@ Two static gates back the boundary up, both run selftest-then-scan in the `namin
 `mcm.env` missing the backup-destination keys gets all of them seeded, no existing value is rotated,
 the seeded keys are *named* in the output, an empty placeholder key is minted in place without being
 duplicated, a blank fixture key is not treated as missing, and no value is ever printed. The tests copy
-the generator into a throwaway mini-repo, so they are offline and keyless and never touch a developer's
-real `stacks/*.env`. `scripts/__tests__/gen-dev-env.guard.test.mjs` covers the projection side, and
-`scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails when live documentation cites a
-`.env*.example` that is not actually tracked — a dangling template pointer reads to a fresh clone as a
-broken repository. That guard resolves citations with `git ls-files` rather than `existsSync`, precisely
-because `.gitignore`'s `*.env.*` rule makes an untracked template look present on the author's machine;
-it scans `docs/**` (minus `docs/proposals/**`) and `**/README.md` (minus `specs/` and `openwiki/`), and
-carries a small `DELIBERATELY_ABSENT` list for prose *about* a missing template — an entry there is
-itself a claim, so the test fails if the cited file starts resolving.
+the generator into a throwaway mini-repo and drive it against a **synthetic** template, so they are
+offline and keyless and never touch a developer's real `stacks/*.env`.
+`scripts/__tests__/gen-dev-env.guard.test.mjs` covers the projection side, including the item #552
+counterpart there: an `mcm.env` missing the `BACKUP_TEST_*` keys is named with the back-fill fix rather
+than silently projecting nothing. `scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails
+when live documentation cites a `.env*.example` that is not actually tracked — a dangling template
+pointer reads to a fresh clone as a broken repository. That guard resolves citations with
+`git ls-files` rather than `existsSync`, precisely because `.gitignore`'s `*.env.*` rule makes an
+untracked template look present on the author's machine; it scans `docs/**` (minus `docs/proposals/**`)
+and `**/README.md` (minus `specs/` and `openwiki/`), and carries a small `DELIBERATELY_ABSENT` list for
+prose *about* a missing template — an entry there is itself a claim, so the test fails if the cited
+file starts resolving.
 
 Do not reproduce a value from any `.env` file anywhere — not in a doc, not in a command line, not in a
 commit message. Compare key names, never values.

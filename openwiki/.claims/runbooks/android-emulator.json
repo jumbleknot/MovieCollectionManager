@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:60f91d0d267509295b5fec487c3760343ea5b57e6622c4b9e88ad1f73aace6c4",
+  "pageVersion": "sha256:afd9bec8c556148a21ca6f7a9d9fe14ea5d47197bd0543d4a16438471fdb7dc6",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
       "statement": "Mobile E2E is split by flow type: flows that drive the assistant dock to POST /bff-api/agent/run must run in CI in the app-e2e job of .forgejo/workflows/app-ci.yml, because the local Windows path runs them against the Metro dev server, which OOM-crashes after a handful of agent /run calls and then presents as a black screen or status 0 networking error; non-agent flows (login, CRUD, sort, browse) run on the local emulator.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1189-L1287",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1175-L1273",
           "version": "repo-lines-v1:sha256:4e7887ee64aba559343ff30dec620e9b69e3d9a0c84919fe0a67506c7f2929e0:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0Y2ZhYmVjZWRkMjhhZTAxNWNiNzEyNTRkNWExYmZmMTdjNjdiMTQzZGI3ZThmMWY2YWQ0ZDQ3NTBlNjQzYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
         },
         {
@@ -25,7 +25,7 @@
       "statement": "The app-e2e mobile half is Metro-less: it builds a standalone release APK (APK_VARIANT=release, APK_ABI=x86_64) with the JS bundle embedded and EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082 plus EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099 inlined, so the app talks to the containerized dev BFF and gateway rather than to Metro.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1200-L1227",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1186-L1213",
           "version": "repo-lines-v1:sha256:18f5c251c3f8fd46f906c0638c5ed6e0368893a82220a33083587b35b1156ca8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMjE1ZjQwNWUxNWEyNjFkOTgwMDc5YzE5NmE2NTRmYzFlYzg4Mzc5YjEwNjMwYzczOGM0OWFmMjRkY2U2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MDdiMjQ5YzkxZGVmNzY0OTUxYzRmNDRiOTAzNzFlMjBjNjcyMTE0YzRlNWIzNmU3YjIwYTgxNTRiZmQ2MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
         },
         {
@@ -39,7 +39,7 @@
       "statement": "The release APK build is self-guarded two ways: the CI step asserts that the string localhost:8082 appears inside assets/index.android.bundle (a string that is not a source literal, so its presence proves the EXPO_PUBLIC_* env was re-inlined in this build), and the build disables the Gradle daemon because a reused daemon keeps the environment it started with and would bake a stale backend URL.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1205-L1227",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1191-L1213",
           "version": "repo-lines-v1:sha256:3e96b5f320f53bcc5e6f1ae11ff0f88e6a3b9f423e1bbbbb89de8419a7077ce3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlZDdhOTJlYWNkNmFhMTdhODZlOTI4ZjI1MzI4NWJmMGRkNzZiYzNhOGZhYTQyYTNhM2IzYTQ2NGYyMWZjNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
         },
         {
@@ -53,7 +53,7 @@
       "statement": "The CI emulator runs an API-34 google_apis_playstore x86_64 image rather than an AOSP one, because the Play Store image ships Chrome, whose Custom Tabs service hands Keycloak's mcm-app:// custom-scheme redirect to the OS; the AOSP WebView shell drops that redirect so native-auth-callback never mounts and login never completes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1259-L1277",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1245-L1263",
           "version": "repo-lines-v1:sha256:ed4d87120819be2a93c0d7d9c792f8a1f68f56499766430aa713e4a5d5ab0b27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZTNmOTEzMzIwOWE1Y2FhNmRiNmZhMzBlNDA2ZmU2YzExY2FhODg3ZTc5OTIwMmM2OTBjODYyZGM4NWU5MDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNWM5MTU1MjZiMmMwMjlkNGQyZjE3ZjhmNGFmODMwODk1MzE2NzFiMzBlMDc3YmRhM2QzM2ViNDYzYjA1NzYifQ"
         }
       ]
@@ -77,7 +77,7 @@
       "statement": "The mobile half of app-e2e is gated by a `mobile` path filter that must remain a strict subset of the job's `app` filter, plus a `mobile-e2e` PR label override; on a pull_request that matches neither, the job still runs the web E2E and integration tiers but skips the ~35-minute emulator half.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1200-L1200",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1186-L1186",
           "version": "repo-lines-v1:sha256:fb215f405e15a261d980079c196a654fc1ec88379b10630c738c49af24dce663:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyMTVmNDA1ZTE1YTI2MWQ5ODAwNzljMTk2YTY1NGZjMWVjODgzNzliMTA2MzBjNzM4YzQ5YWYyNGRjZTY2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyMTVmNDA1ZTE1YTI2MWQ5ODAwNzljMTk2YTY1NGZjMWVjODgzNzliMTA2MzBjNzM4YzQ5YWYyNGRjZTY2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODgwN2IyNDljOTFkZWY3NjQ5NTFjNGY0NGI5MDM3MWUyMGM2NzIxMTRjNGU1YjM2ZTdiMjBhODE1NGJmZDYzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI5MjE3N2RjN2VhZmFhMDA5NjAzYWEyMzI2YTJhOTg1YmEyYjc2NTljOTk5MTQ2MjY0ODY4YzgyNzRhYTFjNyJ9"
         },
         {
@@ -189,7 +189,7 @@
       "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's disk-free step is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It has two halves — `docker image prune -af` and (added 2026-10-03) `docker builder prune -f --reserved-space 50GB` — because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on both lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI this host-runner job's setup step installs, so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1189-L1205",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1175-L1191",
           "version": "repo-lines-v1:sha256:30c0f27cac21bc5ec732fa79749f27ae131ad7f0f59bc7ebe9a9cb5f4cae68c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDgwNjQ1MjE2MzAxNTI2MjY2NDYxNjBiMjcxZjA0ZWRkZDMzNjJjNGFlNDA2ZWI2Njc0NjAzYTQ5NGM2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODg3NWI2NjFmNGM5OGJiMjk1YmFkY2JkZWFmNTRiNzllODlmMDhkZDlkOTY2NGQ0MTZhYTMzYmJlMzJhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNDhmYjJkNGIyNjZmMmU4NWU5Y2RkYmQ2MDk2MjhmM2RhY2I1OTIyNDA5OGYwM2ViODIyZDYzOGY4NTlkZTAifQ"
         },
         {
@@ -285,7 +285,7 @@
       "statement": "The CI emulator's AVD is deliberately oversized for Chrome — 4 GB guest RAM, a 576 MB heap and 3 cores — because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat: CustomTabActivity 'WIN DEATH … app died'), which surfaced as a flaky login rather than as a crash.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1259-L1278",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1245-L1264",
           "version": "repo-lines-v1:sha256:08f5a4fdd421fea3cfe6cf60c0cb0c2df45e403bd40a4c959191af320a64fed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTQwNDA3MDM5ZjlhZjY3NzM3YWYwNGY3YWQ5OTU2YjgwMzJmNDdmZTMzYzljODg0Zjc0NjY0MTEyOWU2ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDMwN2M2MzgxZWJjZWRlY2FlN2Y0ODI5OGJmM2M3MGE2YzdmMWU5NzVhNDQ4MDdiM2U5NjkxYjUwM2NjNGUifQ"
         }
       ]
@@ -295,7 +295,7 @@
       "statement": "The reactivecircus/android-emulator-runner `script:` block is executed line-by-line in separate shells, so multi-line constructs such as a for loop with backslash continuations fail there; that is why the whole per-file Maestro flow loop lives in scripts/ci-mobile-agent-flows.sh and the workflow step is a single bash invocation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1279-L1287",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1265-L1273",
           "version": "repo-lines-v1:sha256:da06e821284269f7dcfdafcda24c975dd3d37d1592e29ddee33e461512b2deb7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZiZTAwNDQ4MTAyNmZmNzExNGNiZDA1ZWE0NTU4NDRkMmQ2M2Q2NGZhZGYwZGNhMDI4NjM2ZTBjMTk3ZmNhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjZmFiZWNlZGQyOGFlMDE1Y2I3MTI1NGQ1YTFiZmYxN2M2N2IxNDNkYjdlOGYxZjZhZDRkNDc1MGU2NDNhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmViZDJlNTIyMDBiZTNhYTZkOGExZTNiZDJjZTliYWJiOGVmMTY5ZjhmNGU3ODlhOTY3ZTE1ZTg2YWZmNGM3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdiZWFlMzAzNDc4NGIyOTA1MjZhNmRiMWVhMGIwNjRhZjcyM2Y3MGI3N2E1NTFiMWJmNTRhYmU0OGUwOTM1MSJ9"
         },
         {
@@ -309,7 +309,7 @@
       "statement": "The Maestro CLI version is pinned in the app-e2e install step (MAESTRO_VERSION=2.10.0) because the vendor installer falls back to releases/latest when that variable is unset, which would let the mobile tier silently track whatever Maestro released that day; the pin is maintained by Renovate and asserted by a guard test.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1231-L1249",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1217-L1235",
           "version": "repo-lines-v1:sha256:8ee50a4e7a6917bedb5742b900f8d9a3f2a1d55df81b4f1828f4aed29bb4a2cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYWY3YWIzMTg4NDIwOGM5YjZmODQ3MjRmOGUwMDViNzgyNmUwNzhkYzM3MDRhYjlhYTdhYzY1OTI0NzcwZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzM2YxZmNlMmFjZGU4ZDhiNDk4MjdlNGU3MjZhZDFkYjI4NDhkNzU4YTE1YTA2N2I1ZWJjZDQ1M2Q1MjQ0OGMifQ"
         }
       ]
@@ -326,11 +326,15 @@
     },
     {
       "id": "claim_cd8ef0813b4a4c2e8f3e8ed4bb911f94",
-      "statement": "A failed mobile flow's device evidence is captured inside the emulator script rather than by the workflow: scripts/ci-mobile-agent-flows.sh writes mobile-diagnostics/<flow>-attempt<n>/ per failed attempt (filtered and full logcat plus the newest ~/.maestro/tests directory) because android-emulator-runner terminates the emulator before the job's collect-logs step runs and the uploaded maestro-debug artifact is unreachable through this forge's API; the failure-time collect step folds that directory into container-logs/ as _mobile-diagnostics.",
+      "statement": "A failed mobile flow's device evidence is captured inside the emulator script rather than by the workflow: scripts/ci-mobile-agent-flows.sh runs each flow under a retry loop of up to three attempts and, on every failed attempt, its capture_mobile_diagnostics function writes mobile-diagnostics/<flow>-attempt<n>/ containing logcat-react.log (ReactNativeJS + ReactNative + AndroidRuntime), the unfiltered logcat-full.log, and a copy of the newest ~/.maestro/tests/*/ directory as maestro/. It must be captured there because the android-emulator-runner action terminates the emulator before the job's collect-logs step runs (so logcat is unobtainable afterwards) and because the uploaded maestro-debug artifact is unreachable through this forge's API. The failure-time `Collect container logs + health on failure` step folds that directory into container-logs/ as `_mobile-diagnostics` — underscore-prefixed so the failure digest ranks it above ordinary container logs — before it copies container-logs/ to $HOME/mcm-ci-last-failure, so the device evidence also reaches the durable on-host bundle that survives the always() teardown.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1316-L1349",
-          "version": "repo-lines-v1:sha256:995009bfb9cd6db0cc45151ec62fe7f24b6fd727d7dc1065d3ccb9f54b870f35:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YmM1MjFlODFlMWRjNzNiZjIxYTE2OGZlM2M2OWQzYjc3Yzk4NmYyNDNmNjRmZmIxN2IwMjUyOWU3MGI1ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMGE3YjJiNGUwYWEwZWZmMGVkMzliOGM5MGJmMDJiNTM0OWUxOTBlZjUwM2RiZTNmMjFjZTc3MDdhNDU1NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMTExYzlkN2IyMjY2NTIyNTdlYzIwZGIyY2VkMTUzOWVkMDVkMjMyNGE5MTU0ZDk0MWQ5NTExM2UxOWFiNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMTNmYWEzZjIwNWM5NmM2YmI2NzI3YWQ4M2Y0MjFiYWUzMjdiZDAzZWJjYzhkODlkMjMwYjM0NGY4ZDg3NGUifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1302-L1350",
+          "version": "repo-lines-v1:sha256:22acc9efc8a191e5a13bf03213308efd5be038e34bf9e53f1c3f4a9a152b2a8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YmM1MjFlODFlMWRjNzNiZjIxYTE2OGZlM2M2OWQzYjc3Yzk4NmYyNDNmNjRmZmIxN2IwMjUyOWU3MGI1ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMTExYzlkN2IyMjY2NTIyNTdlYzIwZGIyY2VkMTUzOWVkMDVkMjMyNGE5MTU0ZDk0MWQ5NTExM2UxOWFiNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1OWZlZGFmMjRjNTg2MzBhMDg0Y2NmYzM3MDE0NWU4OWIzYjZhMzcyMzhlMmI1YWQ5MWZlMTg0ZmQzZGUxNmEifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L578-L593",
+          "version": "repo-lines-v1:sha256:dd5d5e994ebbf73c7abdb3551906bf98ad488f57a7f431c8c8464748335231fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjJlN2IwMDJmMDE0NjdhNGVjNTRlNjUwYmQ4NzExNmZmN2IyMDBlNjY2ZTJiMmYxNjBlYjkzYjY2ZWQ1ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxY2I1NzQwN2M2MzdjZGY2Mjg1OWY2NDc0ZGRhMzhiZWNmY2E0OTZiYmUxOTFiMWZkMThhYTJhMjkyOWVjMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4YjliNDMxMjczNjQyNDdmYzQyNDZhMTcwZjU4YWFhZjYxMTNlZTkxMTM1ODlhMjBjOTAwOTBlYjljNzhhNzkifQ"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh#L103-L158",
@@ -373,10 +377,30 @@
           "version": "repo-lines-v1:sha256:0f618085d7bab8db95103cc26ba3973284274512943205a9517644011920c09a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MzI3MzZmMTFkODk3OTYxMjEyNzRlODM2YmU5NmQ4ZWExMDQ3NzA1OTA1ZTJmNTBlOGMyZDI2YTNhNDI0MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Mzk4ZTBmZGY0MjA4OTJlN2I4MmI2MjU3N2EwYjI1NmQ0NDYzNzk0ZWQ4MTZhYWNlODE1MWQ1Y2Y5YzE2NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YjQyMTlmYjFmMGVhZmJlOGJjZjM1MTkwMDljNDUyMGI5MWFjODQ0ZTY5OTg2NWU4NzQzZTE4ZThhYjUwZmMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b65e26caff9846fe90abdccb324b0f33",
+      "statement": "capture_mobile_diagnostics carries two invariants that must survive editing. Its `local` assignments are deliberately separate statements: bash expands every assignment word of a single `local` call before any of those locals exist, so a combined `local a=\"$1\" b=\"${a}\"` interpolates the OUTER variable — measured on run 2049, that filed the admin flow's capture under the previous flow's directory (mobile-diagnostics/assistant-config-disable-attempt1). And every capture command is best-effort (|| true, and a plain `return 0` when the destination cannot be created), because a diagnostic must never change the run's result; a deterministic failure still fails all attempts and exits non-zero via the `::error::flow <flow> failed after 3 attempts` line.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L124-L158",
+          "version": "repo-lines-v1:sha256:4824dc4080763bf19b2e3c0c5b48f719e6048e7c3f719b87a3de70638e168138:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MTU0YzI2ZTVjYzcwN2RjOTMyMDVlZDdhNTliYmQyZjVjYzM0NTg5YmE5Mzg3MzYxOWJiZTNmMGNiNmYwZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ODJjMGU1ZmRiMzY1ZmQ4MTMzMTJkNTdjNDJiYThjNDVjYTNkMWI3ZTQ5ZTg3OGE1Y2Y4OGQ1NWM3ZmMxMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMGNjZWFhNzg4YmIwNGE1ODExNTMwNDc5NmVkODhlNGU2ZWEyYTRmZGVjZjE3ODRkZjNmNzRiYWM4ZDc4ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb3f967e88244dfb861acb4b44825a26",
+      "statement": "scripts/ci-mobile-agent-flows.sh also leaves a logcat trail on the runner itself via an EXIT trap, because the job log is not readable back through this forge's API: it writes a filtered logcat (ReactNativeJS output, the OAuth mcm-app:// redirect handoff, and network/auth/login keywords) to $HOME/ci-mobile-logcat.txt and the whole unfiltered buffer to $HOME/ci-mobile-logcat-full.txt, and it re-returns the original exit code so the trap never masks or alters the run's failure.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-mobile-agent-flows.sh#L29-L51",
+          "version": "repo-lines-v1:sha256:9f1faa108961e3f5d17e6e05023f23594c693a7b215ef96472de5b74b175315a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNjhmMjFhYTA5YTAwNzJmZDUyMTFjMjgyYTQxZDk3MDkwOGUzODU2NTIxY2Y0OTU0OTgxMmFkODUxNzRjMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5YTc1NTdiMWQ5OWM5NzE3ZjZhYTNhZDYwMjRjZDk1MGZhYmI0NDljNTU4NzNkY2UwMTQ4YjdlZDczZjM5NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZjAxZmUzZjNkOWFkMTYzMDlhM2UyNDkzZjEwYTAzMWQ4N2E5ZjBhYjkxNjM3OTA1Nzk1MjZjMzdlODAzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmM2UzYWY5ZWZmMTM2M2NiMmZhM2M4ZTY5ZThkZTdkZWY5NDMwNmZiOTg2YzRlMDE4M2ZiNTM1MmEyZDgzNTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-13T00:05:43.068Z"
+    "at": "2026-10-16T16:45:16.789Z"
   }
 }

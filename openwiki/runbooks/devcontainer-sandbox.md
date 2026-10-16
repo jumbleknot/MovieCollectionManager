@@ -4,9 +4,6 @@ title: Dev container on Docker Sandbox microVM (primary environment)
 description: The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM (sbx v0.47.0). Covers the ~30 s idle-stop, the false "docker daemon failed to start" that the launcher works around by trusting SSH, the host-side per-FQDN egress allowlist with the v0.47.0 refusal body and approval queue, the socat engine seam and VM-side bind-mount source resolution, the three creation-time-resizable volumes, the template-recreate traps, the registry-resolved digest re-pin, the cold-recreate gaps, worktree isolation across concurrent sessions, and the 127.0.0.1 port space shared with VS Code and Docker Desktop.
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-12T00:08:34.364Z
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
@@ -25,6 +22,9 @@ sources:
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
 generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T16:45:16.789Z
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -69,6 +69,25 @@ Channels, per-user stores and the gates that enforce the no-clear-text rule: [Se
 - **The VM idle-stops ~30 seconds after the last session disconnects — this is normal, not a fault.** Coming back to a "missing" environment usually means it idle-stopped; start it and nothing is lost. Long unattended jobs die unless a session is held open (`ssh mcm.sbx 'sleep 5400'` in another window; launch work with `setsid nohup … &`). The dev container carries `--restart=always` and returns by itself; the agent stack does not (see the agent-stack gotcha below).
 
 - **🔴 `sbx run` reports "docker daemon failed to start inside the sandbox" while dockerd is perfectly healthy — measured five times on both v0.39.0 and v0.43.0.** dockerd restores every `unless-stopped` container on startup (20 of them in this VM), which took 54–101 s; sbx's hardcoded readiness budget is shorter — under ~54 s, with no flag, no `DOCKER_SANDBOXES_*` variable, no settings file and no daemon option to raise it. The CLI exits, which trips the 30 s idle-stop and kills a VM whose dockerd had been serving the socket the whole time. The message names the wrong component. **`scripts/open-sandbox.ps1` is immune**: it treats the exit code as a claim and SSH answering as evidence, waiting up to 120 s. If you started by hand and hit the error, there is a ~30 s grace window while the sandbox is live: `sbx exec mcm sh -c 'docker ps'` issued within that window attaches to the running VM and defers the auto-stop. **v0.43.0 did not raise the deadline** — upgrading is not the fix; the launcher is. Full mechanism and proof command: §7f.
+
+  **Prove it before believing the message — read dockerd's own log, not the CLI's summary.** The daemon's log at `…\sandboxd\daemon.log` carries the error record, and that record's `msg` contains dockerd's output: in all five recorded occurrences dockerd reached `Daemon has completed initialization` and `API listen on /var/run/docker.sock` *after* sbx had already declared the failure — on the 14:51 occurrence **1.7 s** after it began serving the socket. `completed_init=True` means the deadline is the fault, not the daemon. §7f has the snippet that reads it.
+
+  **Patching `sbx.exe` is not a fix either**: it breaks Docker Inc's Authenticode signature on the component that enforces this environment's isolation and egress, and every MSI upgrade reverts it. **Fewer restored containers still means a faster start** (~24 s with 11, ~123 s with 20) and `unless-stopped` keeps a manually stopped container down across daemon restarts — so trimming is now a **speed** choice, not a correctness one; bring the stacks back with the documented `nx up-*` targets.
+
+  ```mermaid
+  flowchart TD
+    A["sbx run --name mcm -d"] --> B["dockerd replays the unless-stopped containers, 54-101 s"]
+    B --> C{"sbx readiness deadline, under 54 s, elapses first?"}
+    C -->|no| D["sandbox is up and the command returns"]
+    C -->|yes| E["CLI exits non-zero: docker daemon failed to start"]
+    E --> F{"does a session attach inside the ~30 s grace window?"}
+    F -->|yes| G["auto-stop deferred, the VM stays up"]
+    F -->|no| H["idle-stop kills a VM whose dockerd was healthy"]
+  ```
+
+  *Why the failure message names the wrong component: the deadline, not dockerd, decides the exit code — and the exit code is what starts the countdown that kills the VM.*
+
+- **A `sbx run` that succeeds does not return.** Without `-d` it attaches the interactive `shell` agent and blocks forever with no TTY, so `sbx run --name mcm | tail` never prints — that is a held session, not a hang, and it is the cheapest way to pin the sandbox up while working through `sbx exec`. Use `sbx run --name mcm -d` when you want the command to come back.
 
 - **`sandboxd` does not auto-start at boot.** After a workstation reboot, `sbx run --name mcm -d` starts it on demand. Reaching for `ssh mcm.sbx` first can surface a daemon error that reads like a broken environment rather than a cold host — start with `sbx run`. (`ssh mcm.sbx` does trigger a start by itself, but it does not *wait* for readiness, which is what makes VS Code race the boot.)
 
@@ -128,11 +147,13 @@ Channels, per-user stores and the gates that enforce the no-clear-text rule: [Se
   | `vdb` | 20 GiB | `/` (VM root) | `/workspaces/<name>` — the working tree | `DOCKER_SANDBOXES_ROOT_SIZE` |
   | — | 50 GiB | cloned workspace | only in `--clone` mode; unused here | `DOCKER_SANDBOXES_CLONED_WORKSPACE_SIZE` |
 
-  Current values: **Docker 150 GB, root 40 GB** (Docker raised from 100 GB on 2026-10-08, when it stood at 91 % full). Set at **User scope** in PowerShell before creating a new sandbox — `$env:` is session-only and will not survive a new shell:
+  Current values: **Docker 150 GB, root 40 GB** (Docker raised from 100 GB on 2026-10-08, when it stood at 91 % full). Set them at **User scope** in PowerShell — but a User-scope variable reaches neither the current shell nor a daemon that is already running, so give the value to both before creating:
 
   ```powershell
   [Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_DOCKER_SIZE','150GB','User')
   [Environment]::SetEnvironmentVariable('DOCKER_SANDBOXES_ROOT_SIZE','40GB','User')
+  $env:DOCKER_SANDBOXES_DOCKER_SIZE = '150GB'; $env:DOCKER_SANDBOXES_ROOT_SIZE = '40GB'
+  sbx daemon stop; sbx ls        # sbx ls restarts the daemon, from THIS environment
   ```
 
   ⚠️ **v0.42.0 drops the default Docker volume from 50 GB to 10 GB.** Any future recreate that forgets to set the variable silently gets a far smaller disk. Set it at User scope so it survives upgrades.
@@ -154,9 +175,11 @@ Channels, per-user stores and the gates that enforce the no-clear-text rule: [Se
 
 - **`ssh mcm.sbx` does not work from Git Bash — and the error blames DNS.** `sbx setup ssh` writes an `Include` with a Windows-style absolute path; MSYS OpenSSH resolves it relative to `~/.ssh/`, matches nothing, and continues silently to DNS: `Could not resolve hostname mcm.sbx: Name or service not known`. Use `C:\Windows\System32\OpenSSH\ssh.exe` (which VS Code also uses) or `sbx exec mcm` from Git Bash. Diagnose with `ssh -v … 2>&1 | grep -i include` before touching the sandbox.
 
+- **Git Bash mangles a `/workspaces/...` argument passed to `sbx.exe`.** It becomes `C:/Program Files/Git/workspaces/...` and the command exits **127** — which reads as "not found" rather than as a path rewrite. Wrap it (`sbx exec mcm sh -c 'bash /workspaces/mcm/…'`) or set `MSYS_NO_PATHCONV=1`.
+
 - **Template recreate destroys host-filesystem isolation unless the workspace is specified explicitly (critical, measured 2026-08-16).** `sbx run` mounts the **current directory** as the sandbox workspace read-write over virtiofs unless told otherwise. Creating a sandbox while sitting in the repo mounts the repo into the VM — a file written inside immediately appeared in the Windows working copy. Always pass a dedicated scratch directory: `sbx run -t … --name <new> -d shell C:\path\to\scratch\dir`.
 
-- **A template does NOT carry the egress policy.** A sandbox created from a template gets the default (allow-all) profile. Apply the policy before anything pulls: run `node scripts/gen-egress-policy.mjs --format sbx-policy` and apply each emitted rule with `sbx policy allow network <domain> --sandbox <new>`. A policy refusal is **instant** (< 1 s); a network fault times out. Speed is the diagnostic clue — with one caveat below.
+- **A template does NOT carry the egress policy.** Policy rules are scoped **per sandbox** (`--sandbox <new>`), so a sandbox created from a template gets the **default** profile — not this environment's deny-all plus allowlist — and the forge is not reachable. Apply the policy before anything pulls: run `node scripts/gen-egress-policy.mjs --format sbx-policy` and apply each emitted rule with `sbx policy allow network <domain> --sandbox <new>`. A policy refusal is **instant** (< 1 s); a network fault times out. Speed is the diagnostic clue — with one caveat below.
 
 - **A template does NOT contain Docker images.** `sbx template save` snapshots the VM root filesystem, not the Docker data disk. A sandbox recreated from a template comes up in seconds with zero images — the real time is the cold rebuild and re-pull that follows.
 
@@ -210,6 +233,8 @@ Channels, per-user stores and the gates that enforce the no-clear-text rule: [Se
   ⚠️ **A symlink from `~/.claude.json` into the volume does NOT work.** Claude Code replaces the file rather than editing it in place (hence the rolling `backups/`), so a write-then-rename replaces the symlink itself with a regular overlay file — silently restoring the bug. The `CLAUDE_CONFIG_DIR` env var cannot decay this way.
 
 - **🔴 Credentials must not be listed in `containerEnv` — it is not "environment for the container", it is an `ENV` instruction in the generated `Dockerfile-with-features`.** Measured 2026-09-19: with the four credentials listed, the derived image carried all of them in `Config.Env` and literal values in **3 history layers** — a **permanent** leak that survives every recreate and that `docker image inspect` / `docker history` hands to anyone who can read the image. It also made `devcontainer up` echo all four in clear text on the `docker run` line at every rebuild, which is how it was found. (The pushed base image was verified clean: zero credentials in `Config.Env`, zero history layers — the leak was confined to the locally built derived image and never published.) `remoteEnv` is not the fix: this sandbox is routinely entered by `ssh mcm.sbx` + `docker exec`, which `remoteEnv` does not reach. The four are now passed by **`docker run --env-file`** (`runArgs`), written by an `initializeCommand` that runs on the VM *before* create — `--env-file` fails outright on a missing file, does no quote processing (`Q1='quoted'` arrives as `Q1=['quoted']`), and `~/.mcm-sandbox-env`'s shell form must never be handed to docker directly. `docker inspect <container>` still shows them: if `docker exec` must see a variable, the container's own config has to carry it — what changes is that the exposure dies with the container instead of living in an image. An image built while they were still in `containerEnv` keeps them forever; remove it and treat the credentials as exposed.
+
+  ⚠️ **Audit the generated file by name, not by count.** The four were the set measured on 2026-09-19; `MCM_FIREWORKS_API_KEY` was added to the same generator on 2026-09-27 for the OpenWiki provider trial, under the identical `MCM_`-prefix-and-map-at-point-of-use rule. An unprovisioned name is reported and skipped, never fatal.
 
   ⚠️ **`devcontainer up` does NOT recreate the container when only `runArgs` / `containerEnv` change.** Measured 2026-09-19: after moving the credentials to `--env-file`, a plain `devcontainer up` reattached to the existing container in ~13 log lines and the environment kept running the **old image with the credentials still baked in** — reporting success while nothing changed. Force it (`--remove-existing-container`) and verify against the container's `Created`/`Image`, never against the command's exit code.
 

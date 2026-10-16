@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6586215b82319384ed569dde87c77b965cbf893da6e8b7cdfc29788e2a5ad4ae",
+  "pageVersion": "sha256:effc0f9ce9b6b531aaed0948eaa333dfe6ac9acaaf821d62da5078efb1ba296f",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -110,11 +110,15 @@
     },
     {
       "id": "claim_ea57244cc0c24e9986b8e3114b133d3b",
-      "statement": "A pull request opened via an AGit push (HEAD:refs/for/main) has no backing branch, so Forgejo treats the run as untrusted and executes it without Actions secrets, silently emptying every ${{ secrets.* }} rather than failing the job outright; ci-status.mjs detects and prints a DETACHED HEAD warning for this case because the resulting failure (e.g. a rejected remote-cache request) otherwise looks like an unrelated credential or infrastructure fault.",
+      "statement": "A pull request opened via an AGit push (HEAD:refs/for/main) has no backing branch — its head.ref is refs/pull/<n>/head — so Forgejo treats the run as untrusted and executes it without Actions secrets, silently emptying every ${{ secrets.* }} rather than failing the job outright; the resulting failure does not mention secrets (the empty NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN makes nx report a misconfigured remote cache endpoint), and the tell is measuring the secret's length inside the job — 0, sha256 e3b0c44298fc — versus 64 on a branch-backed PR. scripts/ci-status.mjs detects the non-branch head shape and prints a DETACHED HEAD warning for it, because the condition is invisible in the web UI; the warning is suppressed once the PR is closed or merged, since a deleted head branch reverts head.ref to the same ref and warning there would call a correctly-run green PR untrustworthy.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L935-L959",
-          "version": "repo-lines-v1:sha256:590696c7049e250734122d05d310edb6703e894edc6b6ff72a458c1caee5abc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YmNmZTFlZDRjMWRiNTY0OTljZWE1NGQxYzBhNzVmNTcwNjc2MTMzNTdlNDEwOTRiYjMwN2FlYTUxYjQyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFiNTc2MzhhNmUyY2M2YmU4NGRlNTQ1NzQxZGExMTU5ODU0YWNjMDBmM2U5YjAyOGZjNzZhNDM4OWM5NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YTZlZGNiOTgyNGRiNWVhMGI3Zjg4YzI2OWQwMGYxMDEwY2U4NDcwNTA2OTQ4MDk0MDI4NjNjNTQ4YzVhMDgifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
         }
       ]
     },
@@ -135,7 +139,7 @@
           "version": "repo-lines-v1:sha256:827e84abe8db9cae715cb5e3b5a7ac20bb0da87de382337a29ba05d0be3fa8f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmN2IxMjJiMjBiOTQyNzJmYjY1NWYwOTYwNDQ3N2ZkOWVmMDIzNjYxODE5MDc5ZTcwMDdkMTQ3NzdkODRkNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YWUzNzQ0NWRkNjE2Nzc5MzgzYWNhZmVhZjNhZTQ3YTEzOGQwMWQ3NmUxNGYzYzRkN2IzZWE4YjFiYTc0MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyODY1ZjBjYmE5NTQyNDhkYzA5ZjIzYzc3ZWI1YTZlMjU1NWM2ZjEwMjc3MWMyMGIxYmNlNDE1Zjc3YTdhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L75-L107",
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L76-L108",
           "version": "repo-lines-v1:sha256:04a0bf2afdcbc98c8fef52c2d3b5ba6324bd25890a42a9ba905958055eab2ad0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWY0YzVkOGU4MmVhY2I1NzU5NTA5YWY2NmYxN2Q0MTExNzU4NzczMjYyYmM4Y2Q1YzYzNjY1YWVjNjMzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyNzZjYzA5ODE5ZTNkYTA4M2VlMzMwZGJkM2QzYjQyYjUxNGIxYTY2MmUzMTUyOGYxODFiYTg1OTQ0NTJlZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMDNlZDRlZTA4ZjEwMGY4NDIzMjMwM2U2YmZkYzE2MDA1N2FhZTlkOThhMzg4NjRhNDkxMDQ3ZTE0MDFiMDEifQ"
         }
       ]
@@ -153,7 +157,7 @@
           "version": "repo-lines-v1:sha256:49b8b7647ff2f8deebca28ce90d714035fadc766914a87e8cba72ce733316daf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDI0ZDllZDhkZmQzZWU2Njk2NTdjZjY5YTk1NWNiMzkyMjI0ZmVhZGI4ODdlNjIwOWEyMzBhYzU5ZTk1YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMjkyOGJkODk5MGY0YmQ3YTUwMDQ1NmQ4Y2RjYjAxYmZmOWFlNTk3YTNkMzhmNjMzNTAxMjRjMzQwMTZmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MmVmZWEwY2EzODI1MmMwNzFmYzU0YjczYTI0OTgxOTdhMDk1YjUwNzAxYjA5MTZmZWVmZDBlNWNiNmVhNTgifQ"
         },
         {
-          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L109-L129",
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L110-L130",
           "version": "repo-lines-v1:sha256:cd02f5d2127a932f63afef4d9323617a7314dcab10742c443b361d051aa7dc64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MzNmM2JkZWEyYzc5MjU4NGIxYjI0NmFkY2MwOTJmMWFhNjUxZGVlMDdmYjQ4MzRlOWYyZWYzNTMxMGMyZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ODQwNDA3YTNiOGU2ZGNiOTc3NzYzMzQ5NWFmN2RmZWZhMWE0NDQ0YTUyNGIxZWI5ZThiMmMwNDkyODcyMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYmFmZjk3ZjMzOGIzMmYwMjhjMTY3YzJhNWZlYTZhZGJkMjQ0MTZiYzUxZDQ5YjY1NTY5MjI2NjU3MDhlOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MjZhNjE0YzQ4Nzc4YjUwNzViOWM2NDQyMzAyOGI5YTUzYjE2ZGY0ZTU1ZGJlYzA0ODMyN2EyZDc0NzkyM2YifQ"
         },
         {
@@ -161,10 +165,194 @@
           "version": "repo-lines-v1:sha256:b9a8b50c88004f3c6ad34b83900542ac307e67f826f43d21d0b6c067c0ac7650:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZDdlODkzNDYwMDQyNjY2Y2U5ZTM5Yjk2NWNmODM3OWFmZmY1ZWU0NWY3MDRhN2M1NTQxZmY3Mzc5NTM5OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MmMxZDBhZTI2ZjZiNzIzMTBmZDczNDMyM2U1OGEzMDEwODhlYmFjZjkyOGU2MTZkMGRmOThjN2FiMGE4NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkMjJiMDdmYmUyNDBjYmE5NzhkZDdhYmIzZGZmMmUxYzNlNGI1ZTdjYjhiY2M1Mzg0MmEzMWNhMDM5MzJhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYzRlMDM3ZDc5YTYwMTkxOWUwM2E2ZjlmYWIwZjJkNWE1NDg4ODcwZTE1YTYyNTg0NDFiYjg0OGIwNDRhOWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3df439e26e1149bf81b06593aef16223",
+      "statement": "There is no re-run endpoint in this forge build — measured 2026-08-31, actions/runs/{id}/rerun, actions/tasks/{id}/rerun and actions/runs/{id}/rerun-failed-jobs all answer 404 — so re-triggering a failed run means producing a new head sha (git commit --amend --no-edit plus a force-push re-fires the whole pull_request run), which must be budgeted as the full suite (~35 minutes of capacity-1 time) rather than the one job that failed.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_80a06f9e403f44b896379f45cd7b727a",
+      "statement": "The required-check globs are read live from GET /repos/{owner}/{repo}/branch_protections for the target's BASE branch rather than hand-maintained, because a hardcoded array drifted and over-reported mergeable (measured 2026-07-26: VERDICT mergeable and exit 0 for PR #103 while POST /pulls/103/merge answered 405 'Not all required status checks successful'). A fetch failure degrades rather than aborts but the header says so, and parseRequiredGlobs returns null — never an empty array — when no status-check rule covers the branch, because an empty required set would mark every context optional and render everything mergeable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_489beb7ecb134c88b01e5594613c28eb",
+      "statement": "Query shape is a correctness rule for ci-status.mjs, not a performance tweak: ?head_sha=<full-sha> is a true server-side filter returning ~15 KB in 0.48 s, while ?limit=N alone, ?status=, ?event= and ?branch= are silently ignored and fall back to a ~12.4 MB / 94 s payload (~800x), and head_sha is exact-match so an abbreviated sha returns zero runs and reads as 'no CI ran'. A missing route and an empty result are different facts that both render as 'nothing there': /actions/runs/{id}/jobs answers with a non-JSON body so a naive pipe to jq dies on a parse error, /actions/workflows/<file>/runs is a real 404, and a padded 40-character sha returns [] plus an empty status object, indistinguishable from a commit with no checks.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_12d6b9d4b9e849ce9295d0dc15e6a55f",
+      "statement": "ci-status.mjs distinguishes exit 0 (mergeable) / 1 (a required context genuinely failed) / 2 (bad arguments, missing token or scope) / 3 (watch timed out still waiting — runner starvation, not failure), and since item #403 watch waits for ADVISORY contexts by default because 'has this commit settled' is the question it is asked; --required-only narrows the wait back to the merge question, and an advisory context still running at the timeout does not change the exit code — exit 0 meaning mergeable is load-bearing for a `ci-status ... && merge` wrapper, so the unfinished advisory row is named instead of being silently dropped.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a5e3ff4e48d40bea99cc0cb388ad732",
+      "statement": "--run N resolves the run's own commit and fetches its bundle (item #226, fixed 2026-09-01); before the fix the flag was parsed and read by no code path, so resolveSha fell through to git rev-parse HEAD and the tool answered confidently about the working copy ('No failed jobs on this commit'), a false negative rather than an error. The empty-result message now names the commit it examined so a wrong target is visible in the answer itself, and watch --branch main still reports on whatever main resolves to locally, which can be several merges stale.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_7927d08afe6f411b8a365fd58945cdcd",
+      "statement": "A schedule-triggered run posts no <workflow> / <job> commit status at all, so `failure --run <id>` read contexts, found none, and answered 'No failed jobs on <sha> — checked every event's contexts' with exit 0 for a run whose own API status is failure (item #485, fixed 2026-09-19). The fix carries the run's own status through from the --run lookup, so the command now reports that the run FAILED but posted no commit status and exits 1; status carries the terminal verdict on this forge while conclusion is undefined on every run measured, and ?trigger_event=schedule is silently ignored so scheduled runs must be filtered client-side (or by ?workflow_id=<file> server-side).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2353663274e4104884e9ec864081016",
+      "statement": "A pending context is the absence of a commit status rendered as a state, not a promise that a job will run: it can still resolve to skipped (path-gated) or superseded, and actions/tasks does not disambiguate because a run queued but not yet dispatched has no task row at all. Absence in the capped, repo-wide 50-row actions/tasks window is not evidence a job was never scheduled, and a genuinely path-gated job does eventually post success with description 'Has been skipped', so a permanent waiting state means not-yet-evaluated — measured 2026-09-18 on PRs #479 and #482, whose statuses resolved on their own about seven minutes after a check declared them dead. The reliable check is the commit's own status history, which carries timestamps and is not a capped window.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2376d277f194fd08df1abfbcd439bf9",
+      "statement": "cd-dispatch / trigger-cd is not a CI result: it is published by scripts/cd-dispatch-gate.mjs and is the only place a declined deploy is visible (before item #230 a run that declined to dispatch and a run that deployed looked identical from outside, and a merged commit went undeployed for a day — measured 2026-08-22 on PR #217). A superseded tip or 'nothing deployable changed since the last deploy' is published as success (a correct non-deploy), while a guardrails failure, an unfinished guardrails run or no guardrails at all is published as failure and also reds the job, so this status must be read before concluding a deploy was lost.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:de6e4669455abd9d1a0b9ae2ad2198d6cf9b5c9410a4626718c375292553b012"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/cd-dispatch-gate.mjs",
+          "version": "repo-file-v1:sha256:68daaffdbaaa87a3a6b063277b1d964ebe188a1f0dd5d785ba0c8a923dd3311d"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed6a92aa866d44269574b2f451d98635",
+      "statement": "The forge scans the ENTIRE commit message for a CI-skip marker ([skip ci], [ci skip], [no ci], [skip actions], [actions skip]) and skips every workflow when it finds one, on push, pull_request and pull_request_sync alike — so a marker quoted in a body paragraph, bullet or code fence silently disables CI for that commit (measured 2026-08-31 on PR #322, where a commit body describing cd-deploy's promotion marker produced zero runs). The tell that separates it from a dead runner is that /actions/tasks still shows recent tasks for other branches, and the fix is to reword the message and force-push, never to disable the feature.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1d384f525054b2895d82b81762fcb4c",
+      "statement": "The two forge credentials have disjoint scopes and each fails in a way that reads as a different problem: MCM_FORGE_TOKEN is the read-only token (read:repository + read:issue + read:package) and answers 403 'token does not have at least one of required scope(s): [write:repository]' on POST /pulls, while the git credential fill credential is write-capable yet repository-scoped only — it returns 403 on issues/{n}/comments and 401 on the package registry, and an EMPTY package list rather than an error, which reads as 'no bundle was published' for a bundle that exists. So PR creation and workflow_dispatch use the write credential and packages must be read with MCM_FORGE_TOKEN; in a dev container the credential-helper proxy forwards the write credential over an IPC socket, and where it returns nothing the fallback is to push the branch and open the PR in the web UI, never AGit.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_75a4a4f1ebd9429c8ccff429855c6b03",
+      "statement": "A session merging through the API must pass delete_branch_after_merge: true on every merge: default_delete_branch_after_merge: true (enabled 2026-08-29) is the default for the web UI merge button only, so an API merge that omits the flag leaves the head branch behind (measured the same evening — PRs #287 and #293 passed it and their branches were gone, PR #291 omitted it and had to be cleaned up by hand). This matters beyond housekeeping because a surviving renovate/* branch makes Renovate reuse the stale commit instead of regenerating, and renovate/lock-file-maintenance is hard-exempt from Renovate's own pruning; an open PR's head and automation-owned branches such as openwiki-maintenance must not be deleted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b60cb761c394d57b69e56f2588fe113",
+      "statement": "GET /pulls/{n} reports head.sha as the branch's CURRENT TIP, not the commit that was merged, so merged: true can co-exist with a head.sha that main does not contain — measured 2026-08-01 on PR #119, where head.sha was created 47 minutes after the merge, and again 2026-09-19 on PR #498, where head.sha and the merge commit's own parents disagreed and one of two commits silently did not ship. A PR's head.sha is therefore a claim about the branch and never about the merge; only git merge-base --is-ancestor plus the merge commit's parents (and a content check) are evidence.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_b25fcb1b61294145a9beff878ae5a5dd",
+      "statement": "An absence reported under a --job filter is a claim about the filter until it has been checked without one: measured 2026-08-30 on PR #289, `failure --pr 289 --job \"infra-image-scan / infra-image-scan\"` — the context form this tool prints in its own status table — reported 'no digest was published for them' while the digest was on the PR the whole time naming all five blocking findings, because the digest marker carries the BARE job name. Both halves are fixed (--job accepts either form, and a filter that excludes every digest now names what is available), but the durable protection is to drop the filter and look again before concluding a digest is absent.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_278f53dcb5a04d7bba0d8fd2483dbbd6",
+      "statement": "A workflow_dispatch run posts no commit status, so ci-status status --sha keeps reporting 'waiting' regardless of the outcome — the per-job state has to be read from GET /actions/tasks instead, where Forgejo puts the outcome in `status` (running / success / failure / skipped) rather than in a GitHub-style status-plus-conclusion pair, and where `conclusion` is null even for successful tasks. The bundle id is not the run_number from that listing either: the bundle is named from GITHUB_RUN_ID (a repository-wide counter) while run_number is per-workflow, so constructing <run_number>--<job> returns 404 and reads as 'no bundle published' for a bundle that exists; list the package versions and take the newest for the job.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-10T02:25:55.688Z"
+    "at": "2026-10-16T16:45:16.789Z"
   }
 }
