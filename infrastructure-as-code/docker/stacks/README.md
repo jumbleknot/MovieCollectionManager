@@ -18,7 +18,7 @@ No stack is profile-gated as a whole. `auth` and `mcm` each have services that s
 | Stack | Starts with no profile | Needs a profile |
 |---|---|---|
 | `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
-| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`), and the Metro-dev gateway `movie-assistant-gateway-metro`, a separate service (`agents-metro`) |
 | `audit` | nothing | every service (`audit`) |
 | `observability` | nothing | every service (`observability`) |
 
