@@ -1,42 +1,103 @@
 {
-  "coveredCommit": "34ee4bc7f6ebfdfe40e523289f671ba065728ce0",
-  "coveredAt": "2026-10-16T10:32:35.636Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [],
-  "proposal": null,
+  "coveredCommit": "b8da85d5ee69829564a5b81938b76b4a00a21cd2",
+  "coveredAt": "2026-10-16T14:06:38.895Z",
+  "lastOutcome": "completed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "server-setup.md",
+        "ci-diagnostics.md",
+        "devcontainer-sandbox-lifecycle.md",
+        "infra-image-scanning.md",
+        "local-dev.md",
+        "prod-control-tower.md",
+        "prod-reboot-resilience.md",
+        "renovate.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/renovate.md"
+    },
+    {
+      "area": "projects",
+      "pages": [
+        "infrastructure-stacks.md"
+      ],
+      "kind": "refresh",
+      "drift": true,
+      "subjects": {},
+      "areaExists": true,
+      "reason": "drift: infrastructure-as-code/komodo/stacks.toml changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/infrastructure-stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 767,
+    "headCommit": "c0c35b0353ba94d8cd33c41d344c98135cdb2e7a",
+    "markerBefore": "34ee4bc7f6ebfdfe40e523289f671ba065728ce0",
+    "slices": [
+      {
+        "area": "invariants",
+        "pages": [
+          "published-port-reservation.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "repository.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-16T14:06:39.269Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
-    "stoppedAtBudget": false
+    "pagesWritten": 5,
+    "elapsedSeconds": 2192,
+    "stoppedAtBudget": true
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 86,
+    "calls": 323,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 488744,
-    "cached": 4668828,
+    "uncached": 2367992,
+    "cached": 25114464,
     "cacheWrite": 0,
-    "output": 111083,
-    "reasoning": 83663,
-    "ms": 992974,
-    "estCostUsd": 0.3079,
+    "output": 619677,
+    "reasoning": 526245,
+    "ms": 5572952,
+    "estCostUsd": 1.6047,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/stacks.md"
+        "invariants/published-port-reservation.md",
+        "projects/repository.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 0.3079,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 1.6047,
       "rateLimited": null
     }
   ],
