@@ -1,38 +1,12 @@
 ---
 type: Convention
 title: Published-port reservation convention
-description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it and the failure it prevents.
+description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [ports, ci, production, collision, homelab]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T10:46:04.907Z
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-ff035ef3df6eca36fc791d1d
-    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
-  - id: openwiki-source-2b08f7b6b68dedecf129d61c
-    resource: repo://specs/029-prod-ci-port-isolation/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+    at: 2026-10-16T13:30:11.885Z
 ---
 
 # Published-port reservation convention
@@ -61,9 +35,9 @@ Two rootless daemons publishing into one host port space — the reason a reserv
 
 Those three ports are the **only** published ports in production: every other service in the seven
 `compose.prod.yaml` files is internal-only, reached by Docker DNS on a shared network
-(`backend-network`, `edge-network`, `mcm-bff-network`, `agent-audit-network`). The new numbers
-translate the old ones so a service keeps its recognizable low digits — `8099 → 19099`,
-`3030 → 19030`, `3002 → 19002`.
+(`backend-network`, `edge-network`, `mcm-bff-network`, `agent-audit-network`; the intra-stack
+Keycloak↔Postgres `keycloak-network` is compose-managed). The new numbers translate the old ones so a
+service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`, `3002 → 19002`.
 
 ## What the gate checks
 
@@ -76,9 +50,11 @@ translate the old ones so a service keeps its recognizable low digits — `8099 
   `infrastructure-as-code/docker/dev-ollama.compose.yaml` publishes `0.0.0.0:11434` and is discovered
   by neither glob.
 - **Only fixed host ports count.** A bare container port (random host port), a `${VAR}` host field and
-  an unparseable entry are all skipped, and the `host_ip` is ignored — the comparison is over host
-  **port numbers**, because a prod `0.0.0.0` bind collides with a CI bind on that port whatever
-  interface the CI bind names. Numeric ranges (`8000-8001:9000-9001`) are expanded.
+  an unparseable entry are all skipped, and the comparison is over host **port numbers** rather than
+  interfaces: in the three-field `IP:HOST:CONTAINER` form the IP is ignored, because a prod `0.0.0.0`
+  bind collides with a CI bind on that port whatever interface the CI bind names; a two-field entry
+  whose first field is an IP is read as `IP:CONTAINER` with a random host port, so it is skipped too.
+  Numeric ranges (`8000-8001:9000-9001`) are expanded.
 - **Exit codes** `0` clean / selftest passed · `1` collision / selftest broken · `2` bad args or an
   unparseable compose file. `--selftest` plants an overlap on `19099` and asserts the parser cases, so
   a gate that quietly stopped detecting cannot report green.
@@ -113,9 +89,10 @@ sync.
 `TS_ADMIN_IP` is the same shape, and it has now run the same course to completion. It was only ever
 the bind *prefix* for the two observability operator UIs; feature 028 made those binds `0.0.0.0`, so
 no compose bind had read it since, and `komodo/stacks.toml` stopped passing it to `prod-observability`
-on 2026-10-13 (item #727). **No stack or compose file reads `TS_ADMIN_IP` any more**, so the Komodo
-Variable can be retired. Because nothing references the name, leaving it seeded cannot fail a deploy —
-the only cost is dead config.
+on 2026-10-13 (item #727). **No stack or compose file reads `TS_ADMIN_IP` any more**, and the
+operator checklist records the Komodo Variable itself as removed (item #727). Because nothing
+references the name, a still-seeded leftover could not have failed a deploy — the only cost would
+have been dead config.
 
 ## Gotchas
 
@@ -139,8 +116,20 @@ the only cost is dead config.
   `KC_ADMIN_BIND_IP` is the worked example (compose bind dropped in feature 028, stack config stopped
   passing it 2026-10-12, item #727), and `TS_ADMIN_IP` has since followed it out the same way: the
   stack stopped passing it on 2026-10-13 and no stack or compose file reads it now, so the Komodo
-  Variable can be retired. Retire the stack `environment` line and the Komodo Variable together; read
-  the effective value from `.env.prod`, not from a historical comment.
+  Variable has been retired. Retire the stack `environment` line and the Komodo Variable together;
+  read the effective value from `.env.prod`, not from a historical comment.
+- **A tree-wide grep for those retired names finds the gates that guarded them, not live config.**
+  `scripts/check-komodo-sync.mjs` still carries `KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]` as its
+  *clean-sample* fixture and assigns `KC_ADMIN_BIND_IP` a fake Tailscale address in its
+  planted-literal fixture, and `scripts/check-prod-ci-port-collision.mjs` still parses
+  `${TS_ADMIN_IP}:3030:3000` as one of its parser cases. Those are deliberately planted selftest
+  inputs, not a stack or compose that reads the names. The remaining hits are historical records — the
+  operator checklist, the homelab proposal docs, and a `#PROD` comment in the observability compose
+  explaining why the binds no longer use them. So a grep hit is not evidence that a bind prefix is
+  back: check whether the hit is a fixture or a comment before concluding the variable is live. The
+  same trap applies in reverse — a *live* reference is what matters, and the way to find one is to
+  read the stack `environment` blocks and the compose `ports:`/`environment:` keys, not to count grep
+  hits.
 - **CI now tears down its stacks on every run** specifically so a leftover CI stack can't hold a port
   indefinitely and starve a prod redeploy the way the original incident did. The `app-ci` `app-e2e`
   job's "Tear down CI stacks (always)" step runs under `if: ${{ always() }}` — success, failure and
@@ -164,7 +153,7 @@ the only cost is dead config.
   CI/dev out.
 
 Full incident narrative, the exact three reserved ports, the service/file/port bind table, and the
-"Retired variables" record: [prod-reboot-resilience.md](../../docs/runbooks/prod-reboot-resilience.md).
+"Retired variables" record: [prod-reboot-resilience.md §2a](../../docs/runbooks/prod-reboot-resilience.md#2a-tailnet-ip-port-bind-race--bind-0000-us1).
 Related pages: [Infrastructure stacks](../projects/infrastructure-stacks.md),
 [Keycloak](../projects/keycloak.md),
 [prod control tower](../runbooks/prod-control-tower.md),

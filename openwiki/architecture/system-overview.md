@@ -3,30 +3,10 @@ type: Architecture
 title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
-tags: [architecture, overview, rbac, dac, agents]
+tags: [architecture, overview, rbac, dac, agents, docker-compose]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T03:23:45.685Z
-sources:
-  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
-    resource: repo://backend/mc-service/src/api/router.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-c1c739d605caccb56fa33851
-    resource: repo://specs/073-scheduled-backups/spec.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
+  - by: openwiki/0.7.1
+    at: 2026-10-16T13:30:11.885Z
 ---
 
 # System overview (MCM)
@@ -143,13 +123,33 @@ common source of confusion when reasoning about "why can't this user do X":
   pinned by `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable` in
   `backend/mc-service/tests/integration/health_test.rs`. Note also that a *failed* discovery still
   marks the auth instance ready, so tests must gate on discovery actually succeeding.
-- **The backup destinations are not in the `mcm` stack.** Feature 073's destination containers
-  (the S3-compatible and WebDAV servers the integration tier tests against) live in their own compose
-  file, brought up explicitly. This is not a style preference: Compose interpolates every service of
-  an included file at *parse* time regardless of which profiles are selected, so a `${REGISTRY_HOST:?}`
-  inside a profile-gated service aborted `up` for the entire `mcm` stack — including CI's `app-e2e`
-  bring-up, which sets no registry host and wants none of those services. **A profile is not isolation
-  from interpolation.**
+- **The backup destinations are not in the `mcm` stack, and a profile would not have isolated them
+  from it.** Feature 073's destination containers (the S3-compatible and WebDAV servers the
+  integration tier tests against) live in their own compose file,
+  `infrastructure-as-code/docker/backups/compose.yaml`, brought up explicitly. This is a correction
+  rather than a style preference: the `mcm` stack is one Compose project whose `include:` pulls in
+  each component file, and Compose interpolates every service of an included file at *parse* time
+  regardless of which profiles are selected — so a required `${VAR:?}` inside a profile-gated
+  service aborted `up` for the **whole** stack. The failing reference was the S3 destination's
+  image, which then needed `REGISTRY_HOST`; the error named that image, and it took CI's `app-e2e`
+  bring-up down with it even though that job wants none of those services. **A profile is not
+  isolation from interpolation.** Feature 080 retired that from-source image in favour of upstream
+  RustFS pinned by digest, so the offending variable is gone and CI's bring-up step passes no
+  registry input of any kind — but the file split stays, because the next required variable would
+  reintroduce exactly the same failure.
+- **The destinations are a second Compose invocation with its own lifecycle, and their reachability
+  is deliberate.** The file is standalone: it attaches to the `mcm` stack's `mcm-bff-network` as an
+  `external` network, so `up` fails if the `mcm` stack is not already up (correct — the BFF is what
+  writes there), and because it is a separate file in the same project, the stack's own `down` does
+  not reach it — teardown needs a second `docker compose ... -f .../backups/compose.yaml down`. Both
+  servers bind to `127.0.0.1` only. They are also **real servers rather than fixtures** (the S3
+  driver's oracle is RustFS, WebDAV is Apache `mod_dav`), which is the point: the drivers run in the
+  integration tier so the dialect under test is a real server's, and the suites set
+  `MCM_REQUIRE_LIVE_STACK=1` so a credential- or connectivity-driven skip fails instead of reading as
+  a pass. Note the guard interaction: the BFF's backup-destination guard denies loopback by default
+  (the inverse of the Ollama guard), so these hosts are reachable in dev only because
+  `scripts/gen-dev-env.mjs` seeds them into `BACKUP_ALLOWED_DESTINATION_HOSTS`. That is the guard
+  working, not a misconfiguration to route around.
 - **The backup scheduler is silent when nothing is due, and does not run under Metro.** In dev,
   `pnpm start` runs the app through Metro and `server.js` never executes, so **no tick fires** — call
   the tick route directly. The scheduler is also disabled outright when `BACKUP_TICK_SECRET` is unset

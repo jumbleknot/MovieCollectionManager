@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cdba9c3b719a45a555a3dea0923627e04637ecf07823c699f6898ccc539cde5a",
+  "pageVersion": "sha256:f074a2d028d0e5e1a0d96d1e879f5f7cbdb6c430117de9d26cafe963ece91db8",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -241,8 +241,8 @@
       "statement": "`sbx run` can report `docker daemon failed to start inside the sandbox` while dockerd is healthy: restoring this VM's 20 `restart: unless-stopped` containers takes 54–101 s and overruns sbx's compiled-in dockerd-readiness budget, so sbx aborts, the CLI exits, and the ~30 s idle-stop kills a working VM. There is no knob (no flag, `DOCKER_SANDBOXES_*`/`SBX_*` variable, settings file, or daemon option; v0.43.0 did not raise it). `scripts/open-sandbox.ps1` works around it by treating the exit code as a claim and SSH answering as evidence, waiting up to a 120 s deadline; a bare `sbx run` still shows the false failure.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L114-L224",
-          "version": "repo-lines-v1:sha256:f4006fdb3353e1a539d5b7404ff18dac5604d7a4250c30ae99c396dbf9b83501:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZjgwZjAwOTE4YzI0YWU2M2JjYTJjNzJhZmE0ZGMwNTg4ZjUzY2U2ZDQ0MGI3NjNkYzFkNzhiMDIyNzZkMDRkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGM3ZDQ1YjQ4OTBkODIzMjUwMTUyZmEyZjkwZDJmNzkwMTcxY2IxOWIyNWJiZTQ0NTkyOGJjY2Y2MWFhOTI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMDFmMmVjMTc1OTNjMTA1NGViNDYzNjdkODQ1M2VmMjRhMTczY2U5NmI3MTE3ZDkxZjlhNjhkNDRmZWY4YjAxIn0"
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         },
         {
           "resource": "repo://scripts/open-sandbox.ps1#L126-L164",
@@ -291,7 +291,7 @@
           "version": "repo-lines-v1:sha256:657251edf9b7a1ba2b50aede4fd41dcf7b6072f71687c7f518cf44050be56c94:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MjUxZWRmOWI3YTFiYTJiNTBhZWRlNGZkNDFkY2Y3YjYwNzJmNzE2ODdjN2Y1MThjZjQ0MDUwYmU1NmM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MjUxZWRmOWI3YTFiYTJiNTBhZWRlNGZkNDFkY2Y3YjYwNzJmNzE2ODdjN2Y1MThjZjQ0MDUwYmU1NmM5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmEwNmM3NmJiNDJjYmVlNjczMzYyNTcyYTZiMDQ5YTkwYWQ4OTk5OTVmMGM1MzZmNDhjNDc1ZDAzN2QyZTNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3YmFkMDRjNjQ1NzdjNmQ1MTk5ZmE0NDVkNGRhOTZjMmNkZmY2Yzc2ZGUxMmRjM2ZjZWE4NDljMjRiNzIzMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer.md#L314-L413",
+          "resource": "repo://docs/runbooks/devcontainer.md#L322-L421",
           "version": "repo-lines-v1:sha256:49bcb843afc124e5a83b72797387ca35f20e17a6d7877a617cf90a44e5de4595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYzI2MDVmMmIzNjQxMTkxNTdiMmJlMTEwZjk2ZmY3NWNlZjM0YzU0ODJjOTkzNzZlOGI2OThjYWFiNTVhNTY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzQ3ZmEyZTkyZDgxNjJkZjIzNmE1NjYzNDJkMjg0ZjllMGIzMGFlOWMwYjJiNzFjYzliY2E2YTU0YTYwYzdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ2YTI1NTU1NWI1Y2ZhZjc4ODI3MGQ0YmFmMzFhMzI4ZjdkYmU5N2YzYzY4NTBmMmVmNTZmZGE2NDM3MjI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNjMwZTRiMmUyMTRiNTA3OWE1YzRhOTc1ZWUzMGI3NzI3OTllNWI4NzEwYzc1MDY5ZTRlNGMwYTViODgwOTNmIn0"
         }
       ]
@@ -369,10 +369,90 @@
           "version": "repo-lines-v1:sha256:81ed72c6cd048bd4be35b6c58fe80fc848a1b7a1e06f4a907395f65c7584849f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NWVmYTBmMDQxYTc3MmMxMThiZWM0NDllNWUzNzExMTc5NTMwMGNkZmZhNTA3OTU1YzE4YTNlMjk4ZDU1YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZDIzZTA3MzVhMDBiMzYyNjcxYzcxM2MzYjgwMDUwOGYzNGM5YzdmOGNmMDAzMzI0YTg3OTQ3ZDdmMDM0ZDQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_171fc1d259f64bf7bc991c0f6eb3a158",
+      "statement": "The dev environment has two separate devcontainer configs — `.devcontainer/devcontainer.json` for the Docker Desktop / DinD path and `.devcontainer/sandbox/devcontainer.json` for the sandbox microVM path — and they are duplicates rather than an extension: the sandbox variant carries its own `containerEnv`, `runArgs` and `onCreateCommand`, so a change made only to the Docker Desktop file is committed and inert on the path in daily use (FR-032 will collapse them).",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L1-L15",
+          "version": "repo-lines-v1:sha256:0d5575c738cca0baa01c6328d68662c2c12bb2631904aa4294fe829df5245c75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjBkNDc2OWIwMWUzYzZjNDA5YTUwOTUyNDJlNjEzMTNmMmY2ZTc5NDk5Yzk1OWM1YjRmOThiODU2YjFlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxMzlkZWM5MGFhY2ZkNzI2Y2I4NWNmNmU5MDFmMDVmMmY5Y2ZlYWQ4YjhjZTU5OGQxNmQ4YTI1ZTRlN2I4YWYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
+          "version": "repo-file-v1:sha256:736bb8970614aa87599386e3dc6768b2c7d842dc2242f5e05d008552c431e2fe"
+        }
+      ]
+    },
+    {
+      "id": "claim_debfc008e35f4c79a5b02fb2732bfbcc",
+      "statement": "Verification of the sandbox environment is a harness rather than a judgement: `.devcontainer/verify/run-harness.sh` enumerates twelve verify scripts by name across three vantage points (in-container, VM-side, host-side), counts any script that produces no explicit pass as a failure, and refuses to report the host-side engine-seam result without `MCM_HOST_CHECK`. It is not read-only — the final check, `verify-reproducible-recreate.sh`, removes the dev container and its derived image by design, so a failure there means the container is already gone rather than that a future recreate would fail.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh#L8-L73",
+          "version": "repo-lines-v1:sha256:230434423c4ef4afecd88ce4de719501394934008543f072baea1e408adb407c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZDI0YmI0ZDAzYmI3YjJjNTYyM2E3NjZiOTY3ZDMwNzBjOTRiYjk1ZjJjNzBlZDc0MjgxMzNkNWJjOTE4ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNzRiZmFiMWQzYzQ2MjE3ZDIwMjk2M2M0YzRiN2UwNjFkODg3ZWM5MzY3OWVhMGVlM2VlZTUwOTYzMjgzNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYWYwMGJhNzQ4ZGUzYTIxMjg4ZGE3NWMzMjlkYTdhNGY5ZmMzM2Q4OWFlZjUxZDQ1YzlmMDNmMzhhMTI1ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZWI0OGZmOGU3YmVlMjBhMTkwNjY0YmJhNTNmNmZhZmRkOTU5ZjIzYzNiNzBhNmQxNTU4NzQzNTRmNzg1ZDAifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
+        }
+      ]
+    },
+    {
+      "id": "claim_046af8489c3b4040a71ef4c98cb2a5ac",
+      "statement": "`.devcontainer/assert-egress-governed.sh` runs from `postStartCommand` and verifies rather than re-implements egress enforcement: it fails if a non-allowlisted host is reachable or if an allowlisted one is not, because a severed network must not read as a security pass. It inherits the restart blindness of any postStart hook — it does not re-run after a Docker-level restart, and it is a creation/attach-time assertion rather than a continuous monitor. The continuous guarantee is the host-side sandbox policy, which survives restarts because it lives outside the VM; `.devcontainer/verify/verify-firewall-allowlist.sh` re-asserts it on demand.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/assert-egress-governed.sh#L34-L92",
+          "version": "repo-lines-v1:sha256:ebb4b2bd80dce70d536eb8311fb74764e91bf5cdaf9249caf8cbd06a4de1f229:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNjRmOWE5ZTVmZDU1OTVhMjJiYTk0ZmY2YmUwNGZhZjFhYjlkNjBlODhjZjg5YThjNWFhN2E0MzNkYzA2MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjg2OGMyYzQ0ZjA1MzYxOWNlZjFjYzM4M2UxZDUzMDc0M2I1NzRjYTE5MmFjZTkxNjhhOWNjZjQ2YTg2ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiODIyYjFhMDU0Y2RmMjdjYjY1OWI0YzYwNjZiMDI3M2U2YzFlNThiNDUwMjFhYzRlZTAyMmExMDk4NjZjMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L412-L440",
+          "version": "repo-lines-v1:sha256:485ca3d4b528f25f3d283b1d7937c90a0c93d56b588050bd75584bc8dcf7fd90:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM4N2ZlYzI0NWVlZWU1NzhiOGRjYWM1MzNjZjc4YTkzZmM1ZDUxNmUxZmQ5ZDFkZmU5MmMyYjhmNGEyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MDIzYWNhZTg4MDI2MTI3OTViMDc0NGU2MGQxMTYyMzZlMjI3ZWZmNDQ4MGNmZTNjZTY4YTRkMWNhOTUyNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmNDk2NjBhYTVlNWYzMmI1ZWVmMDA5NmUzZGU4Yjc3MmExMzAwMWU4MmVkYjYyOWMzNzY5Mzc4YTNhZjJmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65b47781f6f54e048412ab26d3191f9b",
+      "statement": "Local service bring-up is identical on both dev-environment paths: `pnpm nx up-auth infrastructure-as-code` (Keycloak + Postgres) first, optionally `pnpm nx up-mcm infrastructure-as-code`, then `cd frontend/mcm-app && pnpm start`; stack profiles and endpoints are documented in `docs/runbooks/local-dev.md`.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L121-L134",
+          "version": "repo-lines-v1:sha256:2ffd97bf2fbbe1800d2b5e1cbbf6b0aad0524fddf732caabc91651b798464268:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNzZjMjJiZjFlZTA2NjYyYzEzYmJlNjc3NDYyYmYxN2UxNGRiZDAxZmMzOWY5MGE2Njg1ZGUzODNlYjI3ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYjM2YmZjY2U1ZjJkNGI1NDZmYWE5YjY1YTNhM2JmNDJlMjIzZGRmYjM1ZmViZjExMWNjYzUzMjYyMGQ2MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0ODY2ZTc1MmM2MGM5MjEzZjY5NGUzYTU2N2ZkMjI2NTdhYjdlYjYzODVmZjg5NGZjZTZlM2U1Y2FhNzkzNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmM2Q5ZGVhZTdjZmUxN2I5ZjY1NDU1ZjAwMDEwMDMxMGRlY2NiZWNmMzhkNmJkZTE2MzdlNDEzNjZhNzYwMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2560a039c8124f849ddcf6ca8ae13963",
+      "statement": "Disk is a creation-time concern on the sandbox: two dev-container images (~14 GB toolchain plus ~13.5 GB derived) will not fit at once, so re-pinning means removing the previous pair; sizes come from the creation-time environment variables `DOCKER_SANDBOXES_DOCKER_SIZE` / `DOCKER_SANDBOXES_ROOT_SIZE` (there is no `--disk` flag on v0.47.0), so a resize means recreate. A full disk does not announce itself — it presents as apt signature errors or `exporting layers` failures — and `df` is the authority while `docker system df` over-reports reclaimable space.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L228-L262",
+          "version": "repo-lines-v1:sha256:9fbde15d464e415d6678d9875822f06d42542c5c62ee6a5d46bdad9830011c9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MDZhMzAzMmRhNWI2ZWY3NzNiYjc0NTkzNzU2YWYyMjJmMWRiYWQzZmJlODdjYThhMmQxNzY5MjNmOTBiYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MmFhODJhMDI2MzgzYzI4NjVhOTUwNzNmYTExZWQ3OWZjYjllNWJmOTcwZjkxYmRiNmViODUxYjcwMzExNDkifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L78-L110",
+          "version": "repo-lines-v1:sha256:1753798ec53c285cc60446e0ca83e21fae66343e22034f13f4885641035d62f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NmFkZDU4NGE4ZTM4MTNiMzMxM2ZkNDBlNmZlYTIyYzc2ZTZjOWI1ZmFkNDI3M2ExNzNkYTZiZmJiMGQwYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ODMwNjk0ZGJlNzQ0MjgxYTllMGFhZDYzNjE0OTBmN2E3Njg4Y2ViNzY4YmQ1ZWJjZjM2ZTA3YzUyNGQwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c4aba1e35f254ca083a6032c0c5f41fd",
+      "statement": "`CLAUDE.md` is an index, not a document — the governance gate fails on prose beyond the index and its managed regions — and its 'Gates that run before you act' list is longer than the four pre-work gates the repository page details; the remaining classes (instrument-before-belief checks, the agent E2E gate/model-decision tier split, Renovate's silent channels, and the whole-CI-board-red install hypothesis) are owned by the concept pages that document them.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L26-L41",
+          "version": "repo-lines-v1:sha256:8926524de63a1266e7592d9f1256ec367b67e9fa0583f343808e3e51f19d4990:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTgwZjljMTI2OTAzYmNjMzMxYWE5NTQ1NmU0OTQ0NGE3ZDRkMDExZThhMmE4M2Y1ZGM4NzAyMzkxODEyZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Zjc4NzE0ODkzYWE3Nzk0MmNlYTFjNGEyZTAyMzFkYmI3ZmEyYTQxYTcwYzgxNDYwYTNjNjc1NjJkYTNhYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMmQ5NTUwMzZmNjExYTI4MjFmMjY2YWY4NmZlNGViMDFlODEyNGM3OTExNTg4ZDQ5MDE4YWE3ZWY3MDY2NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYzg0NmRiNWQ4ZTFlOTljZWI2MWIzMjAxNzc5OWY5NzQyNjNlMmQ4NzBhYjc1NjIwNGYxODE1MWNkMGEzNTgifQ"
+        },
+        {
+          "resource": "repo://CLAUDE.md#L1-L16",
+          "version": "repo-lines-v1:sha256:991e26cf8a5f033de19b4171da4def9d1d50cdaace204ce4bbf1d9dd0e8f3726:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NmI2NTUxMmY0ZDFhNWYxNTI1ODZhYTAzMjUxYjE1ZWU5ZGQxNzMxN2ZmOTg0NWM5OWZlN2IyYmZlZTNiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGQ5OGJkMTMxYTYxYjc1Y2RkNzE3NjA0NmY1NjA1YTdiYzM1MjA1YmI0YmVjYTRjYjVlMzQ3YjA4YjhlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlM2FhZDU2MmYwZGU0ZWE3MjcyZjk5OGU4YmY4ZjZlYTE2NGI5YjhjZTVmZDY1Y2YwYzM0MzEzY2E0NmQ1OTQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-16T13:30:11.885Z"
   }
 }

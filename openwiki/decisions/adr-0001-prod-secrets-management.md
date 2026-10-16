@@ -6,7 +6,7 @@ resource: docs/decisions/ADR-0001-prod-secrets-management.md
 tags: [adr, secrets, komodo, vault, decision-record, security]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T10:46:04.907Z
+    at: 2026-10-16T13:30:11.885Z
 sources:
   - id: openwiki-source-bff475d8fa855e3592cfedc2
     resource: repo://.specify/memory/constitution.md
@@ -73,10 +73,29 @@ The coupling that makes this safe to change: Komodo writes a stack's `environmen
 stack's `env_file_path`, so a variable absent from the block is absent at `docker compose config`
 time and the compose's `${VAR:?}` reference aborts the deploy. Adding a required `${VAR:?}` to a prod
 compose is therefore a change to that stack's declared inputs in `stacks.toml` — a break that is
-invisible in CI (the compose files are valid and the dev stack supplies the value from its own
-generated env file) and only surfaces on a real Komodo deploy. The guard test
-`scripts/__tests__/komodo-stack-env.guard.test.mjs` makes that coupling mechanical; the full gate set
-is on the [Secrets management posture](../invariants/secrets-management.md) page.
+invisible in CI (the compose files are valid, the image exists, and the dev stack works because its
+own generated `stacks/<stack>.env` supplies the value) and only surfaces on a real Komodo deploy.
+
+Two live instances of that coupling, in opposite directions, are recorded in the guard test's own
+header. Feature 069 repointed the observability object store at the repository's own build, which made
+`prod-observability` the *fourth* consumer of `REGISTRY_HOST` — but `stacks.toml` declared that
+variable for the other three stacks only, and the deploy died on
+`required variable REGISTRY_HOST is missing a value`. Feature 080 then replaced that image with
+upstream RustFS, which **removed** `REGISTRY_HOST` from the block and **added**
+`LANGFUSE_RUSTFS_SECRET_KEY` — the same coupling in the other direction, and the guard went red on the
+new variable until the block declared it.
+
+`scripts/__tests__/komodo-stack-env.guard.test.mjs` makes that coupling mechanical instead of
+remembered. It parses every `[[stack]]` block, collects the variables each stack declares — from its
+`environment` block *and* from any committed `additional_env_files`, so a digest supplied by
+`.env.deploy` counts as supplied — collects the `${VAR:?}` names each of the stack's `file_paths`
+compose files requires, and asserts the gap list is empty. It is deliberately scoped to the fail-fast
+form only (an optional `${VAR}` or `${VAR:-default}` is by definition allowed to be absent, and gating
+those would flag every tunable in the tree), it strips comment lines before scanning, and it skips a
+`file_paths` entry that does not exist on disk. A second test proves the guard is not vacuously green:
+it deletes the live variable from a copy of the TOML and asserts the parser no longer reports it as
+supplied while the compose still requires it. The full gate set is on the
+[Secrets management posture](../invariants/secrets-management.md) page.
 
 `prod-vault` is the exception that proves the rule: it declares no secret at all. It runs a real,
 non-dev Vault on raft storage, **uninitialized and sealed**, with no root token anywhere in env, and a
@@ -129,6 +148,15 @@ source supplies it. In production today those two env vars are unset, so the rea
   fine-grained secret-access audit are named, explicit non-goals until the ADR's §7 revisit trigger
   fires (dynamic short-lived DB credentials wanted, mandated rotation/audit, or a move to multiple
   hosts/operators) — do not treat their absence as a gap to silently fix.
+- **The `komodo-stack-env` guard checks one direction only.** It proves every required variable is
+  *supplied*; it says nothing about a declared input no compose reads any more, or a Komodo Variable no
+  longer referenced by any `environment` block. Both happen, and neither is self-cleaning: the
+  `environment` block is a hand-maintained declared-input list, so `KC_ADMIN_BIND_IP` and `TS_ADMIN_IP`
+  each outlived the compose bind that read them, and feature 080 deliberately leaves `REGISTRY_HOST`
+  and `LANGFUSE_MINIO_ROOT_PASSWORD` seeded in Komodo until the object-store rollback window closes,
+  because reverting that change restores the lines that reference them. Removing a consumer is not the
+  same edit as removing the input — see
+  [Infrastructure stacks](../projects/infrastructure-stacks.md) for the retired-variable record.
 
 Because B-opt-1 was selected, feature 026's US3 migration plan was never executed and no migration
 artifact exists; it would become the first deliverable of a follow-up Vault-adoption feature if the
