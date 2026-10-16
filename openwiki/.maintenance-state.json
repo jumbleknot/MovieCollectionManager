@@ -6,12 +6,6 @@
     {
       "area": "runbooks",
       "pages": [
-        "server-setup.md",
-        "devcontainer-sandbox-lifecycle.md",
-        "infra-image-scanning.md",
-        "local-dev.md",
-        "prod-control-tower.md",
-        "prod-reboot-resilience.md",
         "renovate.md"
       ],
       "kind": "refresh",
@@ -23,7 +17,7 @@
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 767,
-    "headCommit": "d18127872267c8b3dfe85e5ad426f9b3dab480e1",
+    "headCommit": "f0580a75f14f6a8e8082c45df72bafd2278f50f8",
     "markerBefore": "34ee4bc7f6ebfdfe40e523289f671ba065728ce0",
     "slices": [
       {
@@ -57,83 +51,61 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/renovate.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "server-setup.md",
+          "devcontainer-sandbox-lifecycle.md",
+          "infra-image-scanning.md",
+          "local-dev.md",
+          "prod-control-tower.md",
+          "prod-reboot-resilience.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/renovate.md"
       }
     ],
-    "updatedAt": "2026-10-16T17:36:40.138Z"
+    "updatedAt": "2026-10-16T21:30:35.886Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 5,
-    "elapsedSeconds": 3092,
+    "pagesWritten": 13,
+    "elapsedSeconds": 3090,
     "stoppedAtBudget": false
   },
   "escalations": {
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/devcontainer-sandbox-lifecycle.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/infra-image-scanning.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/local-dev.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/prod-control-tower.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/prod-reboot-resilience.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
-    },
     "runbooks/renovate.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-10-16T17:36:39.676Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 490,
+    "calls": 737,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2805952,
-    "cached": 41446788,
+    "uncached": 3840655,
+    "cached": 58149192,
     "cacheWrite": 0,
-    "output": 1010695,
-    "reasoning": 877819,
-    "ms": 8402668,
-    "estCostUsd": 2.3033,
+    "output": 1095062,
+    "reasoning": 880267,
+    "ms": 9084694,
+    "estCostUsd": 2.8152,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
         "runbooks/server-setup.md",
-        "runbooks/ci-diagnostics.md",
         "runbooks/devcontainer-sandbox-lifecycle.md",
         "runbooks/infra-image-scanning.md",
         "runbooks/local-dev.md",
@@ -141,9 +113,9 @@
         "runbooks/prod-reboot-resilience.md",
         "runbooks/renovate.md"
       ],
-      "effort": null,
+      "effort": "low",
       "deadlineStop": true,
-      "estCostUsd": 2.3033,
+      "estCostUsd": 2.8152,
       "rateLimited": null
     }
   ],
