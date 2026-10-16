@@ -1,13 +1,13 @@
 {
-  "coveredCommit": "95cf317c4cb8f0f6e1507af4a21de1e9f21f050b",
-  "coveredAt": "2026-10-15T23:43:39.022Z",
+  "coveredCommit": "33eaa673416f550cd6a2407967cae0b14a138ad3",
+  "coveredAt": "2026-10-16T02:16:09.906Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 759,
-    "headCommit": "7624b59ef3f697c54f29cc4e4cd2777fa0974aaa",
-    "markerBefore": "a02066b45db4a8dfb4d13020cb1c6734470719a4",
+    "number": 761,
+    "headCommit": "760f8d055ca06ce18008fe26f11d8faba88ec99f",
+    "markerBefore": "95cf317c4cb8f0f6e1507af4a21de1e9f21f050b",
     "slices": [
       {
         "area": "projects",
@@ -21,27 +21,27 @@
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-15T23:43:39.442Z"
+    "updatedAt": "2026-10-16T02:16:10.330Z"
   },
   "lastRunBudget": {
     "pagesWritten": 3,
-    "elapsedSeconds": 440,
+    "elapsedSeconds": 712,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 88,
+    "calls": 86,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 363198,
-    "cached": 4098640,
+    "uncached": 488744,
+    "cached": 4668828,
     "cacheWrite": 0,
-    "output": 83368,
-    "reasoning": 53466,
-    "ms": 626423,
-    "estCostUsd": 0.2336,
+    "output": 111083,
+    "reasoning": 83663,
+    "ms": 992974,
+    "estCostUsd": 0.3079,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -55,7 +55,7 @@
       ],
       "effort": "low",
       "deadlineStop": false,
-      "estCostUsd": 0.2336,
+      "estCostUsd": 0.3079,
       "rateLimited": null
     }
   ],
