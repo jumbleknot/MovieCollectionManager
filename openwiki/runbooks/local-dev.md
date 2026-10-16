@@ -55,10 +55,10 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T23:36:23.499Z
+    at: 2026-10-16T02:04:22.270Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -95,7 +95,7 @@ and the profile assignments live in the component compose files rather than in t
 | Stack | Starts with no profile | Needs a profile |
 |---|---|---|
 | `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
-| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`), and the separate Metro-dev gateway `movie-assistant-gateway-metro` (`agents-metro` only) |
 | `audit` | nothing | every service (`audit`) |
 | `observability` | nothing | every service (`observability`) |
 

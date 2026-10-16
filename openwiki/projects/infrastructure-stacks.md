@@ -84,7 +84,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T23:36:23.499Z
+    at: 2026-10-16T02:04:22.270Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1d7c74db40b2c4611547930194a7cbf1f43ef5edcae9f02ef2c1a90be514fded",
+  "pageVersion": "sha256:a1d38e1f057a684c5199785660ffc1ab9d59775d725d8c3bb1744cbd23b9b593",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -240,7 +240,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:434d181510191188011bcde0589117ba5e43305fd8a70860ad9298d3f05e013b"
+          "version": "repo-file-v1:sha256:f52dc4c92482d5941d206f2eed10cc41b9fdaacef6f2db21ef0339b1322ab5c3"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L14-L21",
@@ -455,6 +455,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T23:36:23.499Z"
+    "at": "2026-10-16T02:04:22.270Z"
   }
 }
