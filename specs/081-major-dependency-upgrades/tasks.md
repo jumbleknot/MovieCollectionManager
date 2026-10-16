@@ -47,20 +47,20 @@ diagnosing an nx failure from a path that no longer exists.
 
 **Prerequisite**: feature 080 merged (FR-002).
 
-- [ ] T004 [US1] M1 runner probe: on a throwaway branch add `.forgejo/workflows/probe-081.yml` with one job
+- [x] T004 [US1] M1 runner probe: on a throwaway branch add `.forgejo/workflows/probe-081.yml` with one job
   on `ubuntu-latest` and one on `kvm`, each running `actions/checkout@v7`, `actions/setup-node@v7`,
   `actions/upload-artifact@v7` (SHA-pinned). Delete the branch afterwards; never merge it. **Done when**:
   research.md records, per label, whether each action ran — quoted from the job LOG (e.g.
   `GHESNotSupportedError`), not from the tick.
-- [ ] T005 [US1] Guard RED — in `scripts/__tests__/renovate-workflow.guard.test.mjs`, assert (a) `java-jdk`
+- [x] T005 [US1] Guard RED — in `scripts/__tests__/renovate-workflow.guard.test.mjs`, assert (a) `java-jdk`
   resolves to a held rule (no major) until US4, and (b) for every action T004 found unsupported, that
   action's resolved `allowedVersions` excludes the unsupported major.
   **Verify RED**: `node --test scripts/__tests__/renovate-workflow.guard.test.mjs`
   **Expected RED**: the new assertions fail — no such rule exists in `renovate.json`.
-- [ ] T006 [US1] Implement the holds in `renovate.json` (packageRules ordered after the `ci actions` group so
+- [x] T006 [US1] Implement the holds in `renovate.json` (packageRules ordered after the `ci actions` group so
   the hold wins), each description quoting T004's measured error and the release condition.
   **Verify GREEN**: same command as T005 | **Expected GREEN**: 0 failures, prior tests still pass.
-- [ ] T007 [US1] PR 1a: bump `actions/checkout` v4→v7, `actions/setup-node` v4→v7, and `actions/upload-artifact`
+- [x] T007 [US1] PR 1a: bump `actions/checkout` v4→v7, `actions/setup-node` v4→v7, and `actions/upload-artifact`
   (to v7 only if T004 showed support) at every site in `.forgejo/workflows/*.yml` (22 / 12 / 7 sites), SHA +
   `# vN` comment convention. **Done when**: `pnpm nx preflight infrastructure-as-code` passes.
 - [ ] T008 [US1] Verify PR 1a: all required contexts green; `cd-deploy` `workflow_dispatch` with

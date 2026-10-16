@@ -321,3 +321,78 @@ via `nx migrate`, so a red names either the plugins or nx — never both.
 | M7 | US7 | Is the app's direct `@ai-sdk/openai` still needed after copilotkit ≥1.77? Does openai 7's undici peer interact with the override? | Remove it in the worktree, build the prod BFF image, load the agent route; `pnpm why undici`. |
 | M8 | US8 | MongoDB 9 upgrade path from 8.0 (FCV steps), Rust driver 3.9.1 + Node driver 7.7 server-9 support, 9.0 digest scan. | MongoDB compatibility tables + the infra-image scan in CI (ADR-0002 §3: CI is the authoritative scanner). |
 | M9 | US9 | Do bson/mongodb still require base64 0.22? Does axum-keycloak-auth still require reqwest 0.12? | `curl` the crates.io dependency endpoints as in R9. |
+
+---
+
+## Re-baseline deltas
+
+Each story re-reads the dashboard at its start (T003) and records here what moved since R1.
+
+### US1 (PR 1a) — 2026-10-16
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-16T07:02:49Z`, read only);
+REPO = `origin/main` = `9388d96e` (after feature 080 merged as PR #730).
+
+| What | R1 (2026-10-10) | Today (2026-10-16) | Consequence |
+|---|---|---|---|
+| `renovate/major-ci-actions` dashboard section | Awaiting Schedule | **Rate-Limited** | none — still not opened; US1 lands the bumps by hand |
+| The 8 CI-action majors | as R1 | **All 8 still pending**, same targets except `astral-sh/setup-uv` → **v10.3.0** (was v10.2.0) | PR 1b takes the latest v10 at its start |
+| `java-jdk 17 → 25` | detected on the two `setup-java` sites | still detected, still inside the major-ci-actions branch | **held at 17 in PR 1a** (`allowedVersions: "<18"`) until US4 |
+| Use counts (REPO) | checkout ×22, setup-node ×12, pnpm/action-setup ×8, upload-artifact ×7 | checkout ×**21**, setup-node ×**11**, pnpm/action-setup ×**7**, upload-artifact ×7, setup-uv ×5, setup-java ×2, setup-android ×2, paths-filter ×2 | feature 080 (`63297e91`) deleted `minio-image.yml`, which carried one each of checkout, setup-node and pnpm/action-setup. tasks.md T007's "22 / 12 / 7" is superseded by 21 / 11 / 7 |
+| Other drift | — | copilotkit Pending Approval now targets **1.79.0** (R7 said 1.77.0 / latest 1.78.0); nx minor is 22.7.12 | owned by US7 / out of scope; re-read at those stories' start |
+
+Every major US1 owns as of today: `actions/checkout` v4→v7, `actions/setup-node` v4→v7, `actions/upload-artifact`
+v3→v7 (PR 1a); `actions/setup-java` v4→v6, `android-actions/setup-android` v3→v4, `astral-sh/setup-uv` v5→v10.3.0,
+`dorny/paths-filter` v3→v4, `pnpm/action-setup` v4→v6 (PR 1b); plus the `java-jdk` 17→25 proposal (held → US4).
+
+### M1 — the runner probe (T004), 2026-10-16
+
+**Setup.** A throwaway branch `081-probe-ci-actions` (one commit, `d6c27606`, from `origin/main`) carried
+`.forgejo/workflows/probe-081.yml`: two jobs, `runs-on: ubuntu-latest` (`docker://node:22-bookworm`) and
+`runs-on: kvm` (the `kvm:host` host-mode label — the same label `app-e2e`, `dast`, `cd-deploy/build-deploy` and
+`devcontainer-image` use). Each job ran, SHA-pinned: `actions/checkout@3d3c42e5…` (v7 = v7.0.1),
+`actions/setup-node@949feb24…` (v7 = v7.1.0, `node-version: 24.19.0`), `actions/upload-artifact@ff15f030…`
+(v3, the control) and `actions/upload-artifact@cf430e03…` (v7 = v7.0.2). All three v7 actions declare
+`runs.using: node24`. Every probe step was `continue-on-error` with an id, followed by a verify step, and a
+recorder posted each outcome as a commit status (`probe-081/<label>/<action>`). It ran once, as the forge's
+run id 5411 (`/actions/tasks` run_number 5410); both jobs `success`. The branch was then deleted from the
+remote (`git push origin --delete 081-probe-ci-actions`); it was never merged.
+
+**What could and could not be read.** The forge serves **no job log**: `/api/v1/…/actions/runs/N/logs` 404s
+(ci-diagnostics.md), and the web route `/jumbleknot/mcm/actions/runs/5404/jobs/0/logs` also 404s with either
+token (measured today; web routes do not accept API-token auth). There is no artifact API either
+(`/actions/artifacts` and `/actions/runs/N/artifacts` → 404). So the evidence is the **step outcome** of each
+`uses:` step plus an in-job verify, read from the commit statuses the probe posted — not the tick, and not a log.
+An in-job attempt to re-run the fetched v7 dist and capture its error text found no copy of the action on
+either label (`REPRODUCTION: dist-not-found` — the runner keeps fetched actions outside the paths searched), so
+the error **text** was read off-runner (below).
+
+| Label | checkout@v7 | setup-node@v7 | upload-artifact@v3 (control) | upload-artifact@v7 |
+|---|---|---|---|---|
+| `ubuntu-latest` | **ran** — `uses/verify=success/success head=d6c2760` | **ran** — `uses/verify=success/success node=v24.19.0` | `uses=success` | **failed** — `uses=failure artifact-id=` (no artifact id output) |
+| `kvm` | **ran** — `uses/verify=success/success head=d6c2760` | **ran** — `uses/verify=success/success node=v24.19.0` | `uses=success` | **failed** — `uses=failure artifact-id=` |
+
+(Quoted verbatim from the commit-status descriptions on `d6c27606`.)
+
+**The error text.** The same v7.0.2 dist (`cf430e03…/dist/upload/index.js`) run in the dev container with
+`GITHUB_SERVER_URL` set to this forge's URL and the probe's inputs exits 1 with:
+
+```
+::error::@actions/artifact v2.0.0+, upload-artifact@v4+ and download-artifact@v4+ are not currently supported on GHES.
+```
+
+preceded by `Artifact upload failed with error: GHESNotSupportedError: …`. Control: with
+`GITHUB_SERVER_URL=https://github.com` the same code passes that check and fails later on
+`Unable to get the ACTIONS_RUNTIME_TOKEN env variable` — so the server-URL check (`isGhes()` before any upload)
+is what refuses this forge. This is a reproduction off the runner; the runner-side evidence is the `failure`
+outcome next to a `success` control.
+
+**Conclusions.**
+
+1. forgejo-runner executes `using: node24` actions on both labels — `checkout@v7` and `setup-node@v7` move in
+   PR 1a (21 and 11 sites).
+2. `upload-artifact` v4+ is **still unsupported** — the fourth measurement (specs 023/042/048). It stays at v3
+   (7 sites, unchanged) and is held by `allowedVersions: "<4"` in `renovate.json`, ordered after the
+   `ci actions` group, its description quoting `GHESNotSupportedError` and the release condition (re-run this
+   two-label probe; a release note alone is not enough). Asserted by `renovate-workflow.guard.test.mjs`.
+3. `java-jdk` is held at 17 (`allowedVersions: "<18"`) until US4 (spec US1 AC4), asserted by the same guard.
