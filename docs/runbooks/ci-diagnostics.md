@@ -948,7 +948,7 @@ NX   Misconfigured remote cache endpoint: Requests should respond with text/plai
 ```
 
 which reads as a cache or credential fault. On **2026-08-01** that cost two sessions most of a day
-(PR #126): the cache server, the token, the MinIO bucket, and the nx wrapper were each investigated
+(PR #126): the cache server, the token, the object-store bucket, and the nx wrapper were each investigated
 and found healthy, because they *were* healthy. Jobs that never touch the nx cache pass, so the
 failure looks selective and content-specific. The tell is measuring the secret's **length inside the
 job** — `0`, sha256 `e3b0c44298fc` (the empty string) — versus `64` on a branch-backed PR. The same

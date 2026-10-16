@@ -16,7 +16,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 
-const S3_ENDPOINT = process.env['BACKUP_TEST_S3_INTERNAL_ENDPOINT'] ?? 'http://mcm-bff-backup-minio:9000';
+const S3_ENDPOINT = process.env['BACKUP_TEST_S3_INTERNAL_ENDPOINT'] ?? 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env['BACKUP_TEST_S3_BUCKET'] ?? 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env['BACKUP_TEST_S3_ACCESS_KEY'] ?? 'mcmbackuptest';
 const S3_SECRET = process.env['BACKUP_TEST_S3_SECRET_KEY'] ?? '';
@@ -59,11 +59,12 @@ test.describe('Backup destinations (feature 073)', () => {
   // and a missing target becomes a hard failure instead of a quiet green.
   //
   // CI DOES RUN THIS FILE NOW — corrected 2026-09-21, run 3873. An earlier revision of this
-  // comment said app-e2e could not bring the targets up, because the S3 one is the repository's
-  // own `${REGISTRY_HOST}/jumbleknot/minio` and the job had neither the variable nor registry
-  // credentials. Both were since wired up: app-ci's `app-e2e-bring-up-backup-destinations` step
-  // pulls it anonymously and the suite runs for real, with E2E_REQUIRE_BACKUP_TARGETS=1 so an
-  // absent target fails rather than skips.
+  // comment said app-e2e could not bring the targets up, because the S3 one was then a
+  // from-source image in the repository's own registry and the job had neither the variable nor
+  // registry credentials. That was wired up, and since feature 080 the S3 target is the upstream
+  // `rustfs/rustfs` image, pulled by digest with no registry input at all: app-ci's
+  // `app-e2e-bring-up-backup-destinations` step brings it up and the suite runs for real, with
+  // E2E_REQUIRE_BACKUP_TARGETS=1 so an absent target fails rather than skips.
   //
   // The correction matters more than the fact. Acting on the stale note, this session reported
   // "a green app-e2e is not evidence that backups work" — which had stopped being true, and

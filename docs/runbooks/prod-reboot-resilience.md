@@ -178,7 +178,7 @@ The mechanism and its proof are in §2c. **Fix:** every prod compose service is 
 | Forgejo (forge + db) | `/home/prod/forgejo/compose.yaml` |
 | Komodo (core/periphery/ferretdb/postgres) | `/home/prod/komodo/ferretdb.compose.yaml` |
 | cloudflared (public tunnel) | `/home/prod/cloudflared/compose.yaml` |
-| beszel, dozzle, minio, uptime-kuma | `/home/prod/<name>/compose.yaml` |
+| beszel, dozzle, rustfs, uptime-kuma | `/home/prod/<name>/compose.yaml` — `rustfs` is the Nx-cache object store (feature 080); until its M8 cutover the host still runs it from `/home/prod/minio/` |
 
 > **Interim runtime hardening** (already applied, survives until each container is next *recreated*): `docker update --restart always $(docker ps -q)`. The committed compose `always` values + host-compose edits are what make it durable across recreates/rebuilds.
 

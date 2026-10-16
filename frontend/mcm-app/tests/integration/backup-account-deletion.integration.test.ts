@@ -9,7 +9,7 @@
  * THE ONE THING THAT IS NOT DELETED IS THE USER'S DATA AT THEIR OWN DESTINATION. Those
  * artifacts sit in storage the user owns and pays for. Deleting them would not be cleaning up
  * after ourselves — it would be destroying the data we were trusted to copy, at the exact
- * moment the user has least reason to expect it. Asserted explicitly, against real MinIO,
+ * moment the user has least reason to expect it. Asserted explicitly, against real RustFS,
  * because "we forgot to delete them" and "we deliberately leave them" look identical in a
  * passing suite otherwise.
  */
@@ -79,7 +79,7 @@ describeBackupTargets('backup teardown on account deletion', () => {
     await closeMongo();
   });
 
-  /** A destination pointed at the real MinIO, so "the artifacts survive" can be checked. */
+  /** A destination pointed at the real RustFS, so "the artifacts survive" can be checked. */
   async function realDestination(): Promise<string> {
     return (
       await destinationStore.createDestination(user.userId, {

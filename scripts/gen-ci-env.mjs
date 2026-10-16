@@ -65,7 +65,7 @@ const BACKUP_CREDENTIAL_ENC_KEY =
 // The backup URL guard denies private space BY DEFAULT (the inverse of the Ollama guard), so the
 // test destinations are unreachable until named here. These are the compose service names the BFF
 // container resolves them by — NOT the loopback ports the host-side suites use.
-const BACKUP_ALLOWED_DESTINATION_HOSTS = 'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
+const BACKUP_ALLOWED_DESTINATION_HOSTS = 'localhost,127.0.0.1,mcm-bff-backup-rustfs,mcm-bff-backup-webdav';
 // Feature 073 (T058): the tick route is guarded by this secret and returns 404 — not 401 — to
 // anything that does not carry it, so an ABSENT secret does not look like a misconfiguration.
 // It looks like the route does not exist, and the scheduled-run E2E fails with a 404 that says

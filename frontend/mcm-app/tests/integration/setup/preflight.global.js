@@ -144,7 +144,7 @@ module.exports = async function preflight() {
     const s3Url = process.env.BACKUP_TEST_S3_ENDPOINT || 'http://localhost:9100';
     const davUrl = process.env.BACKUP_TEST_WEBDAV_ENDPOINT || 'http://localhost:9102';
     checks.push(
-      ['Backup S3 (MinIO)', `${s3Url}/minio/health/live`, httpProbe(`${s3Url}/minio/health/live`, { expectStatus: 200 })],
+      ['Backup S3 (RustFS)', `${s3Url}/health/ready`, httpProbe(`${s3Url}/health/ready`, { expectStatus: 200 })],
       ['Backup WebDAV', davUrl, httpProbe(davUrl, { expectStatus: 401 })],
     );
   }

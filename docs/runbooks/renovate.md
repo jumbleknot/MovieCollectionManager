@@ -738,7 +738,7 @@ Hub cause, which is not a cooldown at all:
 > page 11, gets the 403, and `_getDockerHubTags` returns `null`: the *whole* timestamped result for
 > that image is discarded and the registry tag list, which has no timestamps, is used instead. Under
 > `timestamp-required` that is pending for ever, for node, python, postgres, redis, mongodb, opa,
-> clickhouse, langfuse and minio alike — the permanent "Pending Status Checks" on `docker base images`
+> clickhouse and langfuse alike — the permanent "Pending Status Checks" on `docker base images`
 > and `docker digest pins`, which read exactly like a 3-day cooldown that never elapsed.
 >
 > **Fixed 2026-09-05: `RENOVATE_DOCKER_MAX_PAGES: '10'` on the Run Renovate step** (`dockerMaxPages`
@@ -834,6 +834,7 @@ bumps riding with it stay blocked for as long as the migration takes (measured o
 "Extraction is not grouping" has a sharper sibling: a `packageRule` matching packages that **nothing
 extracts**. The rule resolves, the guard that checks the rule passes, and no update is ever proposed.
 
+<!-- history:begin -->
 Measured 2026-09-25. `renovate.json`'s minio rule says, in its own description:
 
 > "What still needs tracking is the **SOURCE release**, read from the build args in
@@ -851,6 +852,7 @@ And the guard was green throughout, because it asserts the **rule** against a *s
 const sourceDep = (depName) => ({ manager: 'custom.regex', datasource: 'github-releases', depName });
 const versioning = resolvedVersioning(sourceDep('minio/minio'));   // resolves fine — proves nothing
 ```
+<!-- history:end -->
 
 **Read the DASHBOARD, not the config.** The per-file dependency counts under *Detected Dependencies*
 are Renovate telling you what it actually extracted; a rule is only a claim about what it would do if
@@ -858,10 +860,17 @@ it ever saw the dep. `infra-image-scan.test.mjs`'s
 `(412) every compose file carrying an image ref is VISIBLE to Renovate` is the shape a guard needs —
 it asserts visibility, not configuration.
 
-One trap when adding the missing manager: this Dockerfile **verifies each tag resolves to a pinned
-commit and fails the build otherwise**, and a regex manager cannot compute a commit sha. So a naive
-manager trades silence for "a proposal that can never build", which is a new silent failure. Decide
-and record which it is.
+One trap when adding a missing manager for a from-source build: such a Dockerfile typically
+**verifies each tag resolves to a pinned commit and fails the build otherwise**, and a regex manager
+cannot compute a commit sha. So a naive manager trades silence for "a proposal that can never build",
+which is a new silent failure. Decide and record which it is.
+
+**How item #560 ended (feature 080).** The from-source build was retired rather than given a
+manager: its upstream had stopped releasing, so a working channel would only have made a frozen
+dependency graph's staleness visible. The replacement, `rustfs/rustfs`, is a digest-pinned Docker Hub
+pull in three compose files, and `renovate-workflow.guard.test.mjs` asserts the property this section
+is about — every file that pins it is **extracted** (matches a docker-compose `managerFilePatterns`
+entry and is not ignored), mutation-tested by narrowing the pattern — not merely that a rule names it.
 
 ### `cmd1 && cmd2` under `bash -e` — the second command's silence is invisible
 

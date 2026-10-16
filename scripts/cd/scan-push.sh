@@ -32,9 +32,9 @@ for pair in $map; do
   # was the wrong one roughly half the time it fired.
   #
   # A bigger flag does not fix that; splitting the two meanings across two commands does. This is
-  # the same pipeline minio-image.yml has run since feature 069, so it INHERITS #495's bounded
-  # retry, the severity map and the reviewed allowlist rather than growing a second signature list
-  # in bash — which the item names as the outcome to avoid.
+  # the same pipeline feature 069's object-store image workflow ran (deleted by feature 080), so it
+  # INHERITS #495's bounded retry, the severity map and the reviewed allowlist rather than growing a
+  # second signature list in bash — which the item names as the outcome to avoid.
   #
   # POLICY IS UNCHANGED: normalizeTrivy() marks blocking = Critical AND a fix exists upstream,
   # which is exactly what `--severity CRITICAL --ignore-unfixed` meant. agent-gateway's

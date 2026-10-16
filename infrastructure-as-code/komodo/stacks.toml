@@ -152,14 +152,13 @@ run_directory = "infrastructure-as-code/docker/observability"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"
 environment = """
-REGISTRY_HOST=[[REGISTRY_HOST]]
 LANGFUSE_SALT=[[LANGFUSE_SALT]]
 LANGFUSE_ENCRYPTION_KEY=[[LANGFUSE_ENCRYPTION_KEY]]
 LANGFUSE_NEXTAUTH_SECRET=[[LANGFUSE_NEXTAUTH_SECRET]]
 LANGFUSE_PG_PASSWORD=[[LANGFUSE_PG_PASSWORD]]
 LANGFUSE_CLICKHOUSE_PASSWORD=[[LANGFUSE_CLICKHOUSE_PASSWORD]]
 LANGFUSE_REDIS_PASSWORD=[[LANGFUSE_REDIS_PASSWORD]]
-LANGFUSE_MINIO_ROOT_PASSWORD=[[LANGFUSE_MINIO_ROOT_PASSWORD]]
+LANGFUSE_RUSTFS_SECRET_KEY=[[LANGFUSE_RUSTFS_SECRET_KEY]]
 LANGFUSE_INIT_PROJECT_PUBLIC_KEY=[[LANGFUSE_INIT_PROJECT_PUBLIC_KEY]]
 LANGFUSE_INIT_PROJECT_SECRET_KEY=[[LANGFUSE_INIT_PROJECT_SECRET_KEY]]
 LANGFUSE_INIT_USER_PASSWORD=[[LANGFUSE_INIT_USER_PASSWORD]]
@@ -170,6 +169,10 @@ TAILNET_HOST=[[TAILNET_HOST]]
 """
 # ↑ TAILNET_HOST is an EXISTING prod-auth Variable, reused for LangFuse's NEXTAUTH_URL on the tailnet
 #   (:19030) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
+#   Feature 080: LANGFUSE_RUSTFS_SECRET_KEY (the RustFS store's secret) must exist as a Komodo Variable
+#   BEFORE the deploy that needs it. REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left this block with
+#   the from-source object-store image; the Komodo VARIABLES are kept until the rollback window closes,
+#   because reverting this change restores these lines and needs them (research R11).
 
 [[stack]]
 name = "prod-vault"                              # US3 — dormant, prod-shaped Vault (uninitialized + sealed)

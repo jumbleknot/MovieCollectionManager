@@ -71,7 +71,7 @@ function compileEntry(e, i) {
     throw new GateError(`allowlist entry #${i + 1} id is not a valid regex: ${err.message}`);
   }
   // `key` is a stable per-run identity for unmatched-entry detection, NOT the advisory id: this file
-  // reuses CVE-2025-68121 across hashicorp/vault and minio/mc, and GHSA-7rqj-j65f-68wh across both
+  // reused CVE-2025-68121 across hashicorp/vault and a since-retired object-store image, and GHSA-7rqj-j65f-68wh across both
   // langfuse images. Keying on the id alone would let one entry's match cover another's staleness.
   return { key: `${i}:${e.image}:${e.id}`, scanner: SCANNER, image: e.image, id: e.id, imageRe, idRe, justification: e.justification, addedBy: e.addedBy, expiry: e.expiry };
 }
@@ -137,7 +137,8 @@ export function evaluate(report, allowlist, now = today()) {
   const scannersWithFindings = findings.length ? new Set([SCANNER]) : new Set();
 
   // WHICH ENTRIES THIS RUN IS ENTITLED TO JUDGE (item #423). Two jobs consult this one allowlist —
-  // the sweep, which scans every pulled third-party image, and `minio-image`, which scans exactly one
+  // the sweep, which scans every pulled third-party image, and a single-image run (feature 069's
+  // object-store builder until feature 080; cd-deploy's scan-push.sh today), which scans exactly one
   // via --image — and both label their findings with the same literal SCANNER. So the scanner guard
   // above cannot separate them, and each used to report the other's live entries as suppressing
   // nothing: 16 false lines on a single-image run, every one of them arguing to delete an entry that
@@ -354,8 +355,8 @@ function selftest() {
 
   // ── (g8/g9) scope: the item #423 guard ──────────────────────────────────────────────────────────
   //
-  // Two jobs consult this one allowlist — the sweep (every pulled image) and the `minio-image`
-  // builder (one image, via --image) — and every entry carries the same literal scanner `trivy`. So
+  // Two jobs consult this one allowlist — the sweep (every pulled image) and a single-image run
+  // (one image, via --image: cd-deploy's scan-push.sh; feature 069's object-store builder until 080) — and every entry carries the same literal scanner `trivy`. So
   // the (g5) scanner guard cannot tell the two runs apart, and before this each flagged the other's
   // LIVE entries as suppressing nothing. Reproduced on `main`: a single-image run against the real
   // allowlist produced 16 such lines, every one of them for an image the builder never scans.

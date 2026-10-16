@@ -77,6 +77,14 @@ Switching is a one-tag change in three compose files.
 `1.0.1-glibc` → `sha256:87763ed4dcb2bed3fc52cbf6cb7d865411e085b0b952dc78e50dffa9ece0ed9e`). The
 implementer re-resolves the **index** digest with `docker buildx imagetools inspect` before pinning.
 
+**[re-measured 2026-10-10, T004]** The pin is **`rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c`**.
+- `docker buildx imagetools inspect` returns the same index digest.
+- 1.0.1 (2026-10-03) is still the newest 1.x release and is past the 3-day cooldown. Only
+  `1.0.1-preview.*` tags are near it, and they are pre-releases.
+- Re-scanned with `--image-src remote` under the gate criterion (Trivy 0.74.0, ghcr DB mirrors):
+  **0 fixable Critical** (alpine 3.24.1).
+- `id -u` → `10001`, and `/usr/bin/curl` is present.
+
 - `Config.User` is the **name** `rustfs`; `id` → `uid=10001(rustfs) gid=10001(rustfs)`.
 - `Entrypoint ["/entrypoint.sh"]`, `Cmd ["rustfs"]`, `Volumes {"/data":{}}`, exposes 9000 and 9001.
 - Env defaults: `RUSTFS_VOLUMES=/data`, `RUSTFS_OBS_LOG_DIRECTORY=/logs`,
@@ -172,7 +180,11 @@ ships `curl`).
 `/health/ready` 200, `/minio/health/live` 200, `/minio/health/ready` 200, `/rustfs/health` 403.
 
 RustFS's own path is chosen, not the MinIO-compatible one, so nothing keeps a `minio` string alive and
-the probe does not depend on a compatibility shim that RustFS may later drop. **[to verify]** (T011)
+the probe does not depend on a compatibility shim that RustFS may later drop. **[measured 2026-10-11,
+T011]**: on a migrated drive of 5,001 objects / 300 MB, `/health/ready` answered `503` while the
+server initialised, and turned `200` in the same 50 ms poll as an authenticated `HEAD /langfuse` and
+a `ListObjectsV2`, never before them. It is a readiness signal, so the decision stands. The original
+open question read: (T011)
 that `/health/ready` returns non-200 while the drive is still initialising — i.e. that it is a
 readiness signal and not a liveness one; if it is not, the healthcheck adds an authenticated
 `HEAD /<bucket>` probe.
@@ -202,7 +214,8 @@ visible to Renovate, for one HTTP request. MinIO's `mc` — rejected: it is the 
 (`service_completed_successfully`); production keeps the "touch `/tmp/ready`, `exec sleep infinity`,
 healthcheck on the marker" shape, because Komodo's stack-health counts an exited container as
 unhealthy (current `compose.prod.yaml` comment). `exec sleep infinity` needs `sleep` from busybox —
-present on Alpine **[to verify in T011]**.
+present on Alpine. **[measured 2026-10-11, T011]**: `/bin/sleep` is coreutils' in the pinned image;
+`sleep infinity` runs.
 
 ## R9 — Logs
 
@@ -220,7 +233,8 @@ logs go to a file inside the container — invisible to `docker logs`, to CI's `
 Nothing uses MinIO's console today (prod `langfuse-minio` publishes no ports; the backup destination
 publishes `127.0.0.1:9101` for it). RustFS's console defaults to `CORS_ALLOWED_ORIGINS=*`. **[to
 verify]** the exact disable variable for 1.0.1 (`RUSTFS_CONSOLE_ENABLE=false` per upstream docs) and
-that `:9001` is then closed (T011). The Nx-cache host compose currently publishes `9001` on
+that `:9001` is then closed (T011). **[measured 2026-10-11, T011]**: unset → console ON (`:9001`
+listening); `RUSTFS_CONSOLE_ENABLE=false` → `:9001` closed (curl exit 7), only `:9000` listens. The Nx-cache host compose currently publishes `9001` on
 `0.0.0.0` — removed (R14).
 
 ## R11 — Naming and credentials
@@ -357,6 +371,14 @@ at `60d03774` (2026-10-10). Every one is assigned to a task in `tasks.md` or to 
 exemption list in `contracts/no-minio-guard.md`. Plus one **not in git**: the host-managed Nx-cache
 compose (R14).
 
+**[re-measured 2026-10-10, T005]** The count is still **72 files** on `origin/main` after #642, #704, #712 and #716 merged. Each one is mapped:
+- **57 by exact path** in `tasks.md` or the guard contract.
+- **7 integration suites** named in T014 by short name.
+- **8 ADR and proposal files** under the guard's `docs/decisions/**` and `docs/proposals/**` path
+  exemptions.
+
+No file is unmapped, so no new task is needed.
+
 ## Residual risks accepted
 
 - **Writes between cutover and a rollback are lost** (one-way format). Bounded by verifying
@@ -364,3 +386,36 @@ compose (R14).
 - **RustFS is a younger project than MinIO was.** Mitigated by digest pinning, Renovate's 3-day
   cooldown, the weekly sweep, and by RustFS being the S3 dialect of record only for test fixtures and
   Langfuse blobs.
+
+## R19 — BusyBox grep misses markers inside binary `xl.meta` (found 2026-10-11, T009)
+
+**[measured 2026-10-11, here]** In its default locale, BusyBox `grep` does **not** match a pattern
+that follows non-UTF-8 bytes on the same line. That holds in both `alpine:3.24` and the pinned RustFS
+image, and `LANG`/`LC_ALL` are unset in both. An `xl.meta` is msgpack, so every marker inside one sits
+after such bytes.
+
+The measurement used the deployed MinIO image, started with a static KMS key. It wrote one real
+SSE-S3 object (`mc stat` → `Encryption: SSE-S3`) and one plain object:
+
+| Search (T003's exact `find … -exec grep -lis` form) | SSE count |
+|---|---|
+| default locale (`alpine:3.24`, as T003 ran it) | **0** |
+| `LC_ALL=C` | **1** |
+| `XL2 ` control | 6 of 6 either way |
+
+The control cannot see this fault. `XL2 ` is the file's first four bytes, before any high byte. The
+same defect hid the bucket metadata markers (`<VersioningConfiguration>`, `<LifecycleConfiguration>`)
+until the inventory set `LC_ALL=C`.
+
+**Consequences.**
+
+- **T003's SSE and tiered zeros are not evidence.** The format, the set shape, the sizes and the
+  ownership it read stand, because they do not depend on grep. The SSE and tiered zeros were measured
+  with the instrument that misses them, so T003's GO is **provisional**.
+- The tool's `inventory` sets `LC_ALL=C` and runs a **self-test**: the same `count()` runs over a
+  planted `xl.meta` whose markers follow high bytes, and must find each one, or `classifyDrive`
+  refuses.
+- The rehearsal's SSE fixture is a **real** SSE-S3 object written by the deployed MinIO, not a
+  planted string. Removing `LC_ALL=C` turns it RED (T009 mutation d).
+- The operator's advance `inventory` (M0.4 / T037) is therefore the first valid SSE and tiered
+  measurement of production. It must pass before the window, as the procedure already requires.

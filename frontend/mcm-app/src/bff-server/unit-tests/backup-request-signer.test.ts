@@ -17,7 +17,7 @@
 // final signature. Vendored rather than fetched so the suite has no network dependency.
 //
 // WHAT THESE VECTORS DO NOT COVER: PUT and DELETE, and a non-empty payload hash — AWS's suite is
-// GET/POST only. Those are proved against a REAL MinIO in T014, which is the second, independent
+// GET/POST only. Those are proved against a REAL S3 server (RustFS since feature 080) in T014, which is the second, independent
 // oracle. Neither alone would be enough.
 
 import { createHash } from 'node:crypto';
@@ -156,7 +156,7 @@ describe('AWS published SigV4 vectors', () => {
 
 describe('the operations the AWS suite does not cover', () => {
   // The suite is GET/POST with an empty body. S3 needs PUT with a real payload hash and DELETE,
-  // so those shapes are asserted here for structure and pinned against a real MinIO in T014.
+  // so those shapes are asserted here for structure and pinned against a real S3 server in T014.
   const s3Creds: SigningCredentials = {
     accessKeyId: 'AKIDEXAMPLE',
     secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',

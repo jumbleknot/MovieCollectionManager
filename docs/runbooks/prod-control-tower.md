@@ -32,7 +32,10 @@ here now bind `0.0.0.0` (rootless-before-tailscaled boot race) and the post-rebo
 docker volume create observability-langfuse-postgres-data
 docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs
-docker volume create observability-langfuse-minio-data
+# observability-langfuse-rustfs-data: on a FRESH host with no prior Langfuse data, create it empty
+# (`docker volume create observability-langfuse-rustfs-data`). On a host that ALREADY holds the old
+# store's data, NEVER create it by hand — the migration tool's `copy --apply` creates it (and refuses
+# an existing target). See "cut prod Langfuse storage over to RustFS" below.
 docker volume create observability-otel-lgtm-data
 docker volume create observability-unleash-postgres-data
 docker volume create agent-audit-opensearch-v3-data
@@ -49,7 +52,8 @@ An unseeded `[[VAR]]` interpolates empty → the support compose's `${VAR:?}` ab
 fail-fast). **15 new Variables** (13 observability + 2 audit); Vault dormant needs none.
 
 - **audit (2):** `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (strong — OpenSearch rejects weak), `OPENSEARCH_AUDIT_WRITER_PASSWORD`.
-- **observability (13):** `LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY` (64-hex), `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_MINIO_ROOT_PASSWORD`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`.
+- **observability (13):** `LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY` (64-hex), `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_RUSTFS_SECRET_KEY` (feature 080 — the RustFS store's secret; access key is the literal `langfuse`), `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`.
+- **kept for rollback until the feature-080 window closes (M7):** `LANGFUSE_MINIO_ROOT_PASSWORD`. No longer referenced by `stacks.toml`, but reverting the feature-080 merge restores the line that needs it — and a revert cannot recreate a Komodo Variable.
 - **reused (NOT new):** `TAILNET_HOST` (already seeded for prod-auth) — LangFuse's tailnet `NEXTAUTH_URL`. The R10 operator-UI binds are `0.0.0.0` since feature 028, so they need no IP Variable.
 
 The `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `_SECRET_KEY` are the **same** values the gateway consumes (the
@@ -61,7 +65,8 @@ deterministic bootstrap keeps its pinned keys valid). `UNLEASH_CLIENT_TOKEN` is 
    `agent-audit-init` completed with **write=201 / search=403** in its logs (SC-001, SC-006). Then wire
    consumers (already in the composes) and drive one assistant action → an `mcm-agent-audit*` doc lands.
 2. **prod-observability (P2)** — capacity-check the host first, then merge → sync. Every service healthy
-   (minio-init/unleash-seed `completed_successfully`). Wired checks: SC-002 (LangFuse trace), SC-003 (OTel
+   (`langfuse-rustfs-init` and `unleash-seed` stay running and report **healthy** — they idle after
+   provisioning, because Komodo counts an exited container as unhealthy). Wired checks: SC-002 (LangFuse trace), SC-003 (OTel
    span), SC-004 (`test_opa_authz.py` deny enforced), SC-005 (flip `mcm.agent.kill-switch`, no redeploy).
 3. **prod-vault (P3)** — merge → sync. `vault-service` healthy while **uninitialized + sealed**;
    `docker restart vault-service` → still uninit/sealed, `vault-store-data` persisted; `git grep` → no token.
@@ -73,117 +78,102 @@ Operator UIs (R10): only `langfuse-web` (`:19030`) + Grafana (`:19002`) — reac
 so they can't collide with the CI runner's LangFuse/Grafana on the shared host (the old `:3030`/`:3002`
 overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `check-prod-ci-port-collision.mjs`).
 
-## One-time: migrate the MinIO data volume to uid 1000 (feature 070, item #421)
+## One-time: cut prod Langfuse storage over to RustFS (feature 080, item #560)
 
-**Do this in the deploy window, with the service STOPPED — not ahead of time.**
-Contract: `specs/070-minio-non-root/contracts/runtime-identity.md`.
+**The authoritative step list is the contract**, `specs/080-minio-to-rustfs/contracts/migration-procedure.md`
+(M0–M8). This section is the operator's orientation: the order, why it is that order, and the commands
+for the night. Feature 080 replaced the object store everywhere with upstream `rustfs/rustfs`
+(digest-pinned, runs as its own uid 10001, no compose `user:`). Production's data is moved **in
+place**: the old drive is **copied** to a new volume that RustFS reads, and the original is never
+written, so rollback is a revert onto it.
 
-Two things that are easy to get backwards, both measured:
+### Merging the PR IS the deploy — so the copy must exist BEFORE the merge
 
-- **An early chown does NOT stay valid.** Root bypasses DAC checks, so the running root image keeps
-  working on a `1000:1000` volume — but every object it writes afterwards is created **root-owned
-  again**. Measured: `find /data ! -user 1000` went from `0` straight back to `2` after a single new
-  object. So the chown must be the last thing before the non-root image starts, with nothing root-owned
-  running in between. It is cheap and fast; it is not durable while root is writing.
-- **Merging the non-root image does not deploy it.** Both compose files pin by **digest**, so the new
-  image `minio-image` publishes on the push to `main` is consumed by nothing until those pins are
-  updated in a separate commit. **The real gate is the digest-pin update**, which must not precede this
-  chown.
+Komodo deploys `prod-observability` from `main` on every push. The new compose mounts the EXTERNAL
+volume `observability-langfuse-rustfs-data`, which nothing but the migration tool creates. So:
 
-The image ran as **root** until feature 070, so the data volume is root-owned. A non-root uid cannot
-write to it; the failure is `unable to rename (/data/.minio.sys/tmp -> …) file access denied` on
-startup.
+1. **Before merge** (M0–M3): Komodo Variable `LANGFUSE_RUSTFS_SECRET_KEY` exists; the advance
+   `inventory` said `migratable`; writers stopped; `manifest` taken; old store stopped; `inventory`
+   again; `copy --apply` created the new volume.
+2. **Merge** (M4): `app-ci` on `main` → `trigger-cd` → `cd-deploy` (`deploy=true`) → Komodo redeploys.
+3. **After** (M5): `verify` → `parity.json` `pass`; a pre-migration trace with media and a new trace
+   both load; every `prod-observability` container healthy; Grafana current.
 
-Production (the volume is **compose-prefixed** — see the traps below):
+**If the merge lands first, the deploy fails instead of starting on an empty store.** Measured
+2026-10-11 in the dev container against the shipped `compose.prod.yaml` (Docker Compose 5.6.0, with
+every OTHER external volume present so the RustFS one was the only gap), with and without pulling:
+compose aborts with `external volume "observability-langfuse-rustfs-data" not found`, creates **zero**
+containers, and does **not** create the volume. A scratch project then showed that a failed `up` of
+this kind leaves the previously deployed containers **running and unchanged** — so an early merge
+leaves Langfuse on the old store, still serving. Recover by doing M1–M3 and redeploying. (Komodo was
+not exercised; this assumes its deploy is `docker compose up` on the new file, as the
+`prod-observability` stack definition says.)
 
-```sh
-# 1. Confirm the volume. `observability-langfuse-minio-data`, NOT `minio_minio-data`
-#    (a different/older project on the same host) and NOT the unprefixed name.
-docker volume ls | grep -i minio
+### The tool runs ON the host, from a checkout, through a wrapper
 
-# 2. Stop the service — BY CONTAINER NAME, not via compose. This host's stacks are
-#    Komodo-managed: it clones the repo and runs compose from its own stack directory
-#    with env injected from Komodo Variables, so a hand-run `docker compose` here fails
-#    with "no configuration file provided" from $HOME, and with unset ${LANGFUSE_*}
-#    interpolation errors from the stack directory. `container_name: langfuse-minio`
-#    makes this equivalent and avoids both.
-#
-#    Stopping is required, not tidiness: a running root image keeps creating root-owned
-#    objects, which silently undoes step 3.
-docker stop langfuse-minio
-
-# 3. Migrate.
-docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 chown -R 1000:1000 /data
-
-# 4. Verify — MUST print 0.
-docker run --rm -v observability-langfuse-minio-data:/data alpine:3.24 \
-  sh -c 'find /data ! -user 1000 | wc -l'
-
-# 5. Bring the stack up ON THE NEW DIGEST, via Komodo (redeploy prod-observability).
-#    Nothing root-owned may run between 3 and 5.
-```
-
-**There is no point doing steps 2-4 before the new image is pinned.** If step 5 is
-`docker start langfuse-minio` on the *old* image, the root process immediately resumes creating
-root-owned objects and the migration is undone. The sequence is only durable when step 5 deploys the
-non-root image, which requires: PR merged -> `minio-image` publishes a new digest -> both compose files
-re-pinned -> Komodo redeploys.
-
-**Keep the window short.** Prod services carry `restart: always`. An explicit `docker stop` holds until
-you start it — *unless the Docker daemon restarts in between*, which would bring MinIO back up as root
-and re-pollute the volume.
-
-Dev, separately — check the real prefixed name on that host first, and stop the container the same way:
+The host has no `node`. `scripts/object-store-migration.sh` runs the tool in a digest-pinned node
+container with the host's rootless socket mounted, and the Docker CLI copied out of a digest-pinned
+image — nothing is installed. Credentials go in by **name** from your shell, never on a command line:
 
 ```sh
-docker volume ls | grep -i minio
-docker stop langfuse-minio
-docker run --rm -v <the-prefixed-dev-volume>:/data alpine:3.24 chown -R 1000:1000 /data
+cd <a checkout of this repository at the PR's commit>
+export MIGRATION_DIR=$HOME/080-cutover          # evidence (inventory/manifest/copy/parity .json) lands here
+
+# M0.4 — advance go/no-go (read-only; the store may be running — the record says sourceInUse)
+scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory-advance.json
+
+# M1 — quiesce writers (by container name: this host's stacks are Komodo-managed, so a hand-run
+#      `docker compose` fails with "no configuration file provided")
+docker stop langfuse-web langfuse-worker
+
+# M2 — manifest from the RUNNING old store, with ITS credentials
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=minio      # value of LANGFUSE_MINIO_ROOT_PASSWORD
+scripts/object-store-migration.sh manifest --endpoint http://langfuse-minio:9000 --network backend-network --out manifest.json
+
+# M3 — stop the old store, inventory the STOPPED drive, copy
+docker stop langfuse-minio-init langfuse-minio
+scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory.json
+scripts/object-store-migration.sh copy --from observability-langfuse-minio-data \
+     --to observability-langfuse-rustfs-data --out copy.json --apply
+
+# M4 — merge the PR; watch app-ci → trigger-cd → cd-deploy deploy=true complete
+
+# M5 — verify against the NEW store, with ITS credentials
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=langfuse   # value of LANGFUSE_RUSTFS_SECRET_KEY
+scripts/object-store-migration.sh verify --endpoint http://langfuse-rustfs:9000 --network backend-network \
+     --manifest manifest.json --out parity.json
 ```
 
-**The verification is the `find` count, and it must be `0`.** Do not use `stat /data`.
+Each step refuses rather than guesses: `copy` without `--apply`, an existing target, a source still
+mounted by a running container, an `inventory` whose search instrument fails its self-test, a
+volume that does not exist (it is never created by looking at it). `copy.json` must show
+`targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0` and equal source digests.
 
-### Three traps, all of them hit for real
+**Rollback (M6)** — only if M5 or later checking fails: `git revert` the merge via a PR as usual
+(it restores the old compose and the `stacks.toml` lines); Komodo redeploys the old store on the
+untouched `observability-langfuse-minio-data` with `LANGFUSE_MINIO_ROOT_PASSWORD`. Writes accepted by
+RustFS since M4 are lost (one-way format; accepted). Leave the new volume for diagnosis.
 
-1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and a fresh volume is
-   `0:0`. Feature 069's first attempt at measuring production used the unprefixed
-   `langfuse-minio-data`; Docker created it and reported `0:0`, which read as a successful measurement
-   of the real thing. Ownership alone cannot tell a volume Docker just made from the production one —
-   **ownership plus contents can**. The real name is `observability-langfuse-minio-data`.
-2. **Nothing root-owned may run against the volume after the chown.** Observed while verifying feature
-   070: a root container started after the migration recreated `/data/.minio.sys/tmp` and
-   `tmp/.trash` as `0:0`, and the next non-root start failed identically to an unmigrated volume. The
-   top-level directory still reported `1000:1000` throughout, so a `stat /data` would have called it
-   migrated. Hence the `find … ! -user 1000` count rather than a top-level check.
-3. **There is also a `minio_minio-data` volume on the prod host** from another/older project. Confirm
-   which stack owns it before touching anything named `minio*`.
+**Cleanup (M7)**, after the 14-day rollback window: delete `observability-langfuse-minio-data`, the
+Komodo Variable `LANGFUSE_MINIO_ROOT_PASSWORD` and the `jumbleknot/minio` registry package (rollback
+pulls it until then), then the cleanup PR removes the migration tool.
 
-### A volume that does not exist yet needs none of this
+### Traps this procedure is built around, all of them hit for real
 
-The migration above is for a volume carrying **root-era data**. A volume created empty — by the
-`docker volume create` prerequisite at the top of this runbook, or by `compose up` on a host that has
-never run the stack — needs no chown and no operator step at all.
-
-That is true because the **image** carries `/data` owned by `1000:1000` (contract clause I5), and
-Docker seeds a fresh empty named volume from the image directory it is mounted over, ownership
-included. It was **not** true of the image published as `sha256:629bcee8…`, which has no `/data`: a
-from-empty bring-up on that image creates a `0:0` volume and MinIO fails with the *same*
-`unable to rename … file access denied` as an unmigrated volume — so the error points at a migration
-that was never owed. Fixed 2026-09-13; needs the new digest pinned in both compose files to take
-effect.
-
-**If you see that error on a volume you just created**, do not chown it and do not conclude the
-migration was missed — check the image first:
-
-```sh
-docker run --rm --entrypoint sh <the pinned image> -c 'stat -c "%u:%g" /data'   # must be 1000:1000
-```
-
-### After the deploy
-
-`langfuse-minio` healthy, `langfuse-web` and `langfuse-worker` up, and a trace visible in the LangFuse
-UI that was written *after* the deploy — a stack that starts proves the permissions, a new trace proves
-the write path.
+1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and reports an empty
+   drive (feature 070: Docker created the unprefixed `langfuse-minio-data` and it read as a
+   measurement of production). The tool checks the volume exists before mounting it, and the real
+   name is `observability-langfuse-minio-data`. There is also an unrelated `minio_minio-data` volume
+   on the host — the Nx-cache store's (M8), not Langfuse's.
+2. **A top-level `stat` is not ownership.** A drive can report the right owner at `/data` while
+   entries below it do not (feature 070 trap 2). The tool counts every entry not owned by the
+   image's uid, and requires 0.
+3. **A search that finds nothing proves nothing until it is shown to find something.** BusyBox
+   `grep` in its default locale misses every marker inside a binary `xl.meta`; the first production
+   go/no-go (T003) reported "0 SSE" through exactly that blind spot (feature 080 research R19). The
+   tool's `inventory` runs with `LC_ALL=C` and self-tests its search on a planted marker first.
+4. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep
+   the window short and re-check the old store is still stopped before `copy`.
 
 ## One-time: cut prod over to Langfuse 4 + ClickHouse 25 on RECREATED volumes (feature 072, item #433)
 
@@ -203,7 +193,7 @@ fire-and-forget (turns are unaffected; the traces for the window are simply lost
 
 ### Three things that will catch you out
 
-1. **`docker compose` cannot be hand-run on this host** — same reason as the MinIO migration above. Komodo
+1. **`docker compose` cannot be hand-run on this host** — same reason as the object-store cutover above. Komodo
    runs compose from its own stack directory with Variables injected. Use **container names**.
 2. **`docker compose down -v` would not remove these volumes anyway.** They are `external: true`, and
    compose never removes an external volume. They must be removed *and re-created* by hand — Komodo's
@@ -214,6 +204,7 @@ fire-and-forget (turns are unaffected; the traces for the window are simply lost
    `docker volume rm` fails with `volume is in use` until the container is **removed**. Hit for real on
    the 2026-09-13 cutover; step 1b exists because of it.
 
+<!-- history:begin -->
 ### The MinIO volume is deliberately NOT recreated
 
 `observability-langfuse-minio-data` keeps its data. It holds event/media **blobs, not schema**, so it is
@@ -221,6 +212,7 @@ irrelevant to whether Langfuse 4's migrations run, and it was already `chown`ed 
 above. A freshly-created MinIO volume failed to initialise in dev *even when correctly `chown`ed*
 (`Unable to initialize backend: file access denied`), so recreating it risks not getting the stack back for
 no benefit. The orphaned blobs are harmless.
+<!-- history:end -->
 
 `langfuse-redis` has **no volume** — its queue state clears on restart by itself.
 
@@ -468,7 +460,7 @@ entrypoints). Diagnose from `docker logs <svc>` on the prod host, not from the c
 |---|---|---|
 | OpenSearch: `error setting rlimit type 8: operation not permitted` | prod daemon's memlock rlimit is finite; `ulimits.memlock: -1` (for `bootstrap.memory_lock`) can't be set | **drop** `bootstrap.memory_lock=true` + the `memlock` ulimit (memory-lock is a nicety for a 1 GB audit sink) |
 | `agent-audit-init` Exited(1): `mkdir: … Permission denied` | image runs as uid 1000; bind mount makes `/opt/audit` root-owned | run the one-shot init as **`user: "0:0"`** |
-| Komodo marks a stack **unhealthy** although services work; `mcm-stacks` PENDING "stack has unhealthy state" | Komodo counts **any exited container** as unhealthy — one-shot inits (`agent-audit-init`, `langfuse-minio-init`, `unleash-seed`) exit 0 | init provisions **then idles** (`… && exec sleep infinity`) with a trivial passing healthcheck; for `langfuse-minio-init`, gate the healthcheck on a `/tmp/ready` marker and flip `langfuse-worker`'s dep `service_completed_successfully` → `service_healthy` |
+| Komodo marks a stack **unhealthy** although services work; `mcm-stacks` PENDING "stack has unhealthy state" | Komodo counts **any exited container** as unhealthy — one-shot inits (`agent-audit-init`, `langfuse-rustfs-init`, `unleash-seed`) exit 0 | init provisions **then idles** (`… && exec sleep infinity`) with a trivial passing healthcheck; for `langfuse-rustfs-init`, gate the healthcheck on a `/tmp/ready` marker and flip `langfuse-worker`'s dep `service_completed_successfully` → `service_healthy` |
 | Vault: `open /vault/data/vault.db: permission denied` | image runs Vault as non-root `vault` (uid 100); `/vault/data` is **not** in the image → volume lands root-owned | mount raft at **`/vault/file`** (a vault-owned image dir) — empty volume inherits `vault:vault` |
 | Vault: `Failed to lock memory: cannot allocate memory` | finite memlock rlimit again; mlockall fails even with `IPC_LOCK` | **`disable_mlock = true`** in `vault.hcl` (also the recommended setting for raft/BoltDB mmap) |
 | Vault: `bind: address already in use` on :8200 (crash loop) | the vault entrypoint appends `-config=/vault/config`; passing `-config=/vault/config/vault.hcl` too loads the listener **twice** | `command: ["server"]` **only** — let the entrypoint auto-load the dir. Keep `cap_add: IPC_LOCK` (entrypoint needs it, else it double-starts) |

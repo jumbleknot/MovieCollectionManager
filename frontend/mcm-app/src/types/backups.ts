@@ -37,10 +37,11 @@ interface BackupDestinationCommon {
 export interface S3BackupDestination extends BackupDestinationCommon {
   type: 's3';
   bucket: string;
-  // MinIO ignores the region, but SigV4's string-to-sign requires one, so it is not optional.
+  // Self-hosted stores accept any region (the RustFS test oracle answers `auto`), but SigV4's
+  // string-to-sign requires one, so it is not optional.
   region: string;
   // Path-style addressing (`host/bucket/key`) rather than virtual-host style. Defaults TRUE:
-  // MinIO and most self-hosted stores need it, and a bucket name with a dot breaks virtual-host
+  // most self-hosted stores (the RustFS test oracle among them) need it, and a bucket name with a dot breaks virtual-host
   // style under TLS anyway.
   pathStyle: boolean;
   // Not a secret — the S3 access key id is the public half of the pair. Stored in the clear.

@@ -9,8 +9,7 @@ Keyless, config-as-code vulnerability scanning of the **third-party server image
 | SAST/SCA (033) | at-rest source + **our** deps | Semgrep + cargo/pnpm/pip-audit over first-party code + our dependency graphs |
 | DAST (031) | running app HTTP | OWASP ZAP against the live BFF / mc-service / gateway |
 | `cd-deploy` Trivy (023) | **our built app images** | the 6 `jumbleknot/*` images cd-deploy builds + pushes |
-| `minio-image` Trivy (069) | **our built infra image** | `jumbleknot/minio`, built from source; gates its own publish |
-| **Infra-image scan (035)** | **pulled third-party images** | Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, Caddy, Mailpit — everything in `infrastructure-as-code/**` **except** images scanned by their own builder and `${..}`-interpolated refs. **MinIO left this set in feature 069**: upstream deleted it, so we build and scan it ourselves |
+| **Infra-image scan (035)** | **pulled third-party images** | Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, **RustFS**, Caddy, Mailpit — everything in `infrastructure-as-code/**` **except** images scanned by their own builder and `${..}`-interpolated refs. **RustFS joined this set in feature 080**: it replaced feature 069's from-source object-store image (which its own workflow built and scanned) with an upstream Docker Hub pull, so it is scanned here like every other server image |
 
 The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). Renovate keeps base images *current*; this scan detects a **published CVE against an already-pinned image**, which currency alone misses.
 
@@ -23,8 +22,9 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 ### Which scanner owns an image — by coverage, not by namespace
 
 **An image is scanned by whoever builds it; everything else is scanned here.** `cd-deploy`'s Trivy
-step covers its six; `minio-image`'s covers `jumbleknot/minio` and gates its publish; this scan covers
-everything else referenced under `infrastructure-as-code/**`. The invariant is that every image is
+step covers its six; this scan covers everything else referenced under `infrastructure-as-code/**`.
+(From feature 069 until feature 080 a third builder — the object-store image workflow — scanned its
+own image and gated its publish.) The invariant is that every image is
 examined by **exactly one** of them — not zero, not two.
 
 **Why a builder scans its own image rather than sending it here.** This scan is *keyless* by design —
@@ -54,11 +54,11 @@ fix was to **delete** the prefix line rather than add to it.
 
 **This generalises.** Any future image built outside cd-deploy is covered by the same question — does
 its builder scan it? If yes it belongs in `BUILT_IMAGE_NAMES`; if no it must be enumerated here. The
-fix was to the rule, not to the MinIO case.
+fix was to the rule, not to feature 069's case.
 
 Guarded by `scripts/__tests__/infra-image-scan.test.mjs`, which asserts the completeness case against
-a **fixture** rather than the live tree. A live-tree assertion would stop testing anything the day
-MinIO is the only such image and someone removes it.
+a **fixture** rather than the live tree. A live-tree assertion would have stopped testing anything the
+day the only such image was removed — which feature 080 then did.
 
 ### A Trivy DB-download blip is bounded-retried — item #495
 
@@ -147,8 +147,8 @@ registry — so a blip hit it too, and **worse**: `--exit-code 1` is also what T
 deploy".
 
 **The fix was to delete the flag, not to grow one.** A bigger exit code cannot separate two meanings
-that share one integer; two commands can. The deploy path now runs what `minio-image.yml` has run
-since feature 069, once per image and before the push:
+that share one integer; two commands can. The deploy path now runs what feature 069's object-store
+image workflow ran (that workflow was deleted by feature 080), once per image and before the push:
 
 ```bash
 node scripts/infra-image-scan.mjs --image "$local_tag"   # --format json, NO --exit-code
@@ -388,10 +388,18 @@ notational — CI ran the same images afterwards that it ran before:
 | `grafana/otel-lgtm` | `0.32.0` |
 | `openpolicyagent/opa` | `1.20.1` and `1.20.1-debug` |
 | `unleashorg/unleash-server` | `8.1.0` |
-| ~~`minio/minio`~~ | *no longer pulled — see below* |
-| ~~`minio/mc`~~ | *no longer pulled — see below* |
+| *(two date-tagged object-store images)* | *no longer pulled — see the history below* |
 
-### MinIO is no longer pulled at all — feature 069 (item #420)
+### The from-source object store (features 069/070, item #577) — retired by feature 080
+
+Feature 080 (item #560) replaced it with upstream `rustfs/rustfs`, digest-pinned and scanned by this
+sweep. The build, its workflow, its promoter, its Renovate rule and its four allowlist entries were
+deleted in that change; nothing below describes a mechanism that still runs. It is kept because the
+lessons — publishing is not promoting, resolve the manifest LIST, count refs from the tree, the
+`imagetools` scheme trap — are about the shape, not the image.
+
+<!-- history:begin -->
+#### No longer pulled at all — feature 069 (item #420)
 
 **Superseding the two sections that stood here.** They explained why `minio/minio` and `minio/mc` were
 pinned to 2025 dates (MinIO stopped publishing community releases after 2025-09) and why both still
@@ -421,7 +429,7 @@ consequences for this document:
 
 Full reasoning, measured rather than asserted: `specs/069-minio-from-source/research.md`.
 
-### Publishing is not promoting — how the built image reaches the stacks (item #577)
+#### Publishing is not promoting — how the built image reaches the stacks (item #577)
 
 `minio-image.yml` publishes; **promotion is a separate, deliberately triggered act.** Until
 2026-09-26 it was a *manual* act with no owner, no trigger and no signal, and it degraded exactly as
@@ -503,13 +511,14 @@ ref change is what makes proposing it automatically safe, and
 `scripts/__tests__/minio-promote.guard.test.mjs` fails if `infrastructure-as-code/docker/**` ever
 leaves app-ci's `app` paths filter (the item #535 hazard, arriving through a new door).
 
-### The minio update types are calendar arithmetic, not semantics
+#### The minio update types are calendar arithmetic, not semantics
 
 The regex versioning maps year→major, month→minor, day→patch. A January release will report **major**
 because the year advanced, not because anything broke. Order these correctly; do not read the label
 as a risk signal the way you would for `opa` or `unleash`. (`loose` was preferred and cannot parse
 these tags at all — measured against renovate@44's own dist, its `_parse` returns null for anything
 beginning `RELEASE.`, which is invisible rather than unordered.)
+<!-- history:end -->
 
 ## The gate
 
@@ -537,12 +546,12 @@ decides whether a suppression can ever end:
 - `hashicorp/vault:1\.18` still matches `hashicorp/vault:1.18@sha256:…` — appending a digest does
   **not** break a key — but stops matching `1.21`. When PR #289 bumped vault, five Criticals
   surfaced: a dischargeable key doing its job, loudly.
-- `minio/minio` (bare repository name) matched **every tag of that image that will ever exist**. It
-  could not stop matching, so it suppressed the advisory it was written for *and every future one in
+- A bare repository name (one object-store image's entry was keyed that way) matched **every tag of
+  that image that will ever exist**. It could not stop matching, so it suppressed the advisory it was written for *and every future one in
   the same image*, silently and permanently.
 
 The second shape is not an accepted risk with a review date, it is a permanent hole. Feature 063
-re-keyed the three such entries (`grafana/otel-lgtm`, `minio/minio`, `minio/mc`) to their pinned
+re-keyed the three such entries (`grafana/otel-lgtm` and the two object-store images) to their pinned
 versions, and `infra-image-scan.test.mjs` now asserts both directions for them: each key still
 matches the reference in the compose files today, **and** stops matching a later version.
 
@@ -625,7 +634,7 @@ and the bar for "unavailable" is a pull that fails, not a missing binary.
 The genuine cases remain, and they are narrower than they look:
 
 - the image is **not pullable** — a private registry the keyless scanner has no credential for
-  (`jumbleknot/minio`, scanned by its own builder instead), or a tag upstream has deleted;
+  (our own built images, scanned by cd-deploy instead), or a tag upstream has deleted;
 - **disk headroom** will not take a multi-GB pull. This is the constraint ADR-0002 and feature 071
   actually recorded, alongside the PATH observation — the host was at 92% with 7.9 GB free. Check
   before assuming it still binds;

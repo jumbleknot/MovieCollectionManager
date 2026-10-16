@@ -174,7 +174,14 @@ const BACKUP_TICK_SECRET =
 // (the inverse of the Ollama guard), so the feature's own test containers are unreachable until
 // they are named here. Both bind to loopback only — see the `backups` Compose profile.
 const BACKUP_ALLOWED_DESTINATION_HOSTS =
-  'localhost,127.0.0.1,mcm-bff-backup-minio,mcm-bff-backup-webdav';
+  'localhost,127.0.0.1,mcm-bff-backup-rustfs,mcm-bff-backup-webdav';
+// Feature 080 renamed the S3 test destination. These were the SEEDED defaults before it; an existing
+// .env.local holding exactly these values is upgraded (see syncEnvFile's `retiredDefaults`).
+const RETIRED_S3_HOST = 'mcm-bff-backup-minio'; // the pre-080 container name
+const RETIRED_BACKUP_DEFAULTS = {
+  BACKUP_TEST_S3_INTERNAL_ENDPOINT: [`http://${RETIRED_S3_HOST}:9000`],
+  BACKUP_ALLOWED_DESTINATION_HOSTS: [`localhost,127.0.0.1,${RETIRED_S3_HOST},mcm-bff-backup-webdav`],
+};
 
 // --- Verify the projection against the RUNNING realm (item #395) ---------------------------------
 //
@@ -456,6 +463,15 @@ function syncEnvFile(path, sync, opts = {}) {
       .filter(Boolean),
   );
   for (const [k, v] of Object.entries(defaults)) if (!present.has(k)) patched.push(`${k}=${v}`);
+  // `retiredDefaults` (feature 080): a seeded key whose value is EXACTLY a previous generated default
+  // is upgraded to the current one. Seed-once must protect what a developer CHOSE, not preserve what
+  // this generator wrote before a rename — otherwise every existing box keeps a host that no longer
+  // exists. Anything not byte-equal to a retired default is left exactly as it is.
+  const retired = opts.retiredDefaults ?? {};
+  for (let i = 0; i < patched.length; i++) {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(patched[i].trim());
+    if (m && m[1] in defaults && (retired[m[1]] ?? []).includes(m[2])) patched[i] = `${m[1]}=${defaults[m[1]]}`;
+  }
   writeFileSync(path, patched.join('\n'), 'utf8');
   return 'synced';
 }
@@ -474,6 +490,7 @@ const localResult = syncEnvFile(
   },
   {
     create: true,
+    retiredDefaults: RETIRED_BACKUP_DEFAULTS,
     // 073 — SEEDED, not synced. Rewriting BACKUP_CREDENTIAL_ENC_KEY on a re-run would orphan every
     // destination secret already sealed under the old one, and the failure would surface much later
     // as an authentication error on a credential the user entered correctly. The ceilings and the
@@ -502,7 +519,7 @@ const localResult = syncEnvFile(
       // "unreachable" against a server that is up, which reads as a driver bug.
       BACKUP_TEST_S3_ENDPOINT: 'http://localhost:9100',
       BACKUP_TEST_WEBDAV_ENDPOINT: 'http://localhost:9102',
-      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-minio:9000',
+      BACKUP_TEST_S3_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-rustfs:9000',
       BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT: 'http://mcm-bff-backup-webdav:6065',
       BACKUP_TEST_S3_BUCKET: 'mcm-backups-test',
       MC_SERVICE_URL: 'http://localhost:3001',

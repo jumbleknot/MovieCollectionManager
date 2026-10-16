@@ -11,8 +11,8 @@
 // on the sibling path in item #495, runs 3619/3622/3625/3628 (PR #494, 2026-09-19): the same commit
 // passed and failed nine minutes apart on a `[vulndb] Failed to download artifact`.
 //
-// THE FIX IS STRUCTURAL, NOT A BIGGER FLAG. The step now runs the same two commands minio-image.yml
-// has run since feature 069:
+// THE FIX IS STRUCTURAL, NOT A BIGGER FLAG. The step now runs the same two commands feature 069's
+// object-store image workflow ran (that workflow was deleted by feature 080; the pipeline stays):
 //
 //   node scripts/infra-image-scan.mjs --image "$local_tag"   → findings as JSON; non-zero = ERROR
 //   node scripts/check-infra-image-findings.mjs              → non-zero = un-allowlisted BLOCKING finding

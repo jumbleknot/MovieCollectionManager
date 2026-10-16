@@ -1,7 +1,7 @@
 /**
  * S3 driver integration tests (feature 073, T014 — FR-001, FR-004, FR-011).
  *
- * AGAINST A REAL MinIO, with NO MOCKING of any kind (constitution §Test Type Integrity — the
+ * AGAINST A REAL RustFS, with NO MOCKING of any kind (constitution §Test Type Integrity — the
  * golden-tier cassette exception is LLM-only and does not apply here). This is the SECOND
  * external oracle for the hand-written SigV4 signer: the first is AWS's published vectors in
  * unit-tests/backup-request-signer.test.ts, which prove the algorithm, and this one proves that
@@ -14,7 +14,7 @@
  *
  * Run with MCM_REQUIRE_BACKUP_TARGETS=1 MCM_REQUIRE_LIVE_STACK=1 so a target that is down is a
  * hard failure. WATCH THE SKIP COUNT: a skipped test reads as a pass, and a suite that passes
- * with MinIO down is not an integration suite.
+ * with RustFS down is not an integration suite.
  */
 import { randomUUID } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
@@ -216,7 +216,7 @@ describeBackupTargets('the guard is not bypassable through the driver', () => {
 
   it('connects to the PINNED address, not to whatever the name resolves to later', async () => {
     // The hostname is vetted once and the socket is pinned to that answer. Here the vetted
-    // address is the loopback MinIO; a driver that re-resolved at connect time would be
+    // address is the loopback RustFS; a driver that re-resolved at connect time would be
     // observably different only under a changing record, so what is asserted is that the pinned
     // transport reaches the intended server at all — the pinning itself is structural.
     const driver = await driverFor(destination());

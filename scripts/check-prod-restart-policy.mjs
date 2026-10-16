@@ -97,7 +97,7 @@ function selftest() {
     if (got !== wantCount) fails.push(`${label}: got ${got} violation(s), want ${wantCount}`);
   };
   // clean: always svc + a one-shot on "no"
-  check({ services: { web: { restart: 'always' }, 'langfuse-minio-init': { restart: 'no' } } }, 0, 'clean');
+  check({ services: { web: { restart: 'always' }, 'langfuse-rustfs-init': { restart: 'no' } } }, 0, 'clean');
   // planted: unless-stopped is caught
   check({ services: { web: { restart: 'unless-stopped' } } }, 1, 'planted unless-stopped');
   // planted: missing policy is caught
@@ -105,7 +105,7 @@ function selftest() {
   // planted: long-running service on "no" is caught (not a one-shot name)
   check({ services: { 'mc-service': { restart: 'no' } } }, 1, 'planted long-running no');
   // allowed: genuine one-shot on "no" / quoted
-  check({ services: { 'mc-service-store-mongo-rs-init': { restart: 'no' }, 'minio-createbucket': { restart: '"no"' } } }, 0, 'one-shot exempt');
+  check({ services: { 'mc-service-store-mongo-rs-init': { restart: 'no' }, 'object-store-createbucket': { restart: '"no"' } } }, 0, 'one-shot exempt');
 
   if (fails.length) {
     console.error('✗ prod restart-policy gate --selftest FAILED:\n  ' + fails.join('\n  '));

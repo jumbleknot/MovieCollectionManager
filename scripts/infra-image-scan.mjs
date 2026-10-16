@@ -34,18 +34,15 @@ const SEVERITY_MAP_PATH = resolve(REPO_ROOT, 'security/infra-images/severity-map
 // IMAGES THIS PROJECT BUILDS, EACH SCANNED BY ITS OWN BUILDER — never scanned here.
 //
 // The rule is "scanned by whoever builds it", not "named like ours" and not "built by cd-deploy".
-// Six are cd-deploy's (FR-009). `minio` was added by feature 069 (item #420) and is built and scanned
-// by .forgejo/workflows/minio-image.yml, which gates its own publish on a fixable Critical.
+// Today all six are cd-deploy's (FR-009). Feature 069 once added a seventh — a from-source object
+// store built and scanned by its own workflow, because this sweep is KEYLESS by design and could not
+// pull from the private registry. Feature 080 deleted that build and pulls RustFS upstream, so it is
+// scanned HERE now like every other third-party server image, and its name left this list in the
+// same change — leaving it would exclude an image nothing scans.
 //
-// Why not scan `minio` here, which was this feature's first design: infra-image-scan is KEYLESS by
-// design — its header states it references no `${{ secrets }}` — and that image lives in a private
-// registry, so Trivy here cannot pull it (measured: run 3121, "unable to find the specified image").
-// Covering it here would have meant handing credentials to the keyless scanner AND scanning only
-// after publication. Its builder already holds the image locally and gates the push instead.
-//
-// The invariant is unchanged and is what matters: every image is scanned by EXACTLY ONE scanner.
-// See specs/069-minio-from-source/contracts/scanner-scope.md.
-const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp', 'minio'];
+// The invariant is unchanged and is what matters: every image is scanned by EXACTLY ONE scanner
+// (feature 069's scanner-scope contract).
+export const BUILT_IMAGE_NAMES = ['mcm-bff', 'mc-service', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
 
 class ScanError extends Error {}
 
@@ -138,14 +135,14 @@ export function enumerateImages(files, env = process.env) {
       // read `if (ref.includes('jumbleknot/')) continue;` with the comment "our built images
       // (cd-deploy owns them)". The comment named the right property; the prefix test implemented a
       // different one, and the two coincided only while every jumbleknot/* image happened to be a
-      // cd-deploy image. Feature 069 broke that coincidence: `jumbleknot/minio` is built by us and
-      // NOT by cd-deploy, so the prefix rule excluded it here while nothing covered it there — an
+      // cd-deploy image. Feature 069 broke that coincidence with a from-source image built by a
+      // DIFFERENT workflow: the prefix rule excluded it here while nothing covered it there — an
       // image published and examined by neither gate, reporting a truthful and meaningless zero.
       //
-      // The bareName extraction below already handles both shapes: `jumbleknot/mc-service:latest`
-      // yields `mc-service` (excluded, cd-deploy's) and `jumbleknot/minio:REL@sha256:…` yields
-      // `minio` (enumerated, ours). So the correct fix was to DELETE the prefix line, not add to it.
-      // See specs/069-minio-from-source/contracts/scanner-scope.md for the invariant and its guards.
+      // The bareName extraction below handles both shapes: `jumbleknot/mc-service:latest` yields
+      // `mc-service` (excluded, cd-deploy's) and `jumbleknot/<other>:1.2@sha256:…` yields `<other>`
+      // (enumerated). So the correct fix was to DELETE the prefix line, not add to it — see feature
+      // 069's scanner-scope contract for the invariant and its guards.
       const bareName = ref.split('/').pop().split(':')[0];
       if (BUILT_IMAGE_NAMES.includes(bareName)) continue; // cd-deploy scans it; we must not
       const floatingTag = isFloatingTag(ref);

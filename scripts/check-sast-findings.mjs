@@ -144,8 +144,8 @@ export function evaluate(report, allowlist, now = today()) {
  * the durable fix was to enumerate the whole surface. A comment is not an enumeration that runs.
  *
  * IT COUNTS SUPPRESSED FINDINGS, NOT JUST FAILURES, and that is the entire point. An un-allowlisted
- * blocking finding already fails the gate loudly — nobody needs help noticing it. The minio Dockerfile
- * case was an ACCEPTED risk with an allowlist entry, so the gate was green and the asymmetry was
+ * blocking finding already fails the gate loudly — nobody needs help noticing it. The object-store
+ * Dockerfile case (feature 069, since deleted) was an ACCEPTED risk with an allowlist entry, so the gate was green and the asymmetry was
  * invisible precisely because everything looked fine.
  *
  * TWO EXCLUSIONS, both because the check would otherwise be meaningless rather than merely noisy:
@@ -500,7 +500,7 @@ function selftest() {
   // file a pull request cannot see is a gate-integrity defect, and it fails.
   //
   // IT MUST COUNT SUPPRESSED FINDINGS TOO. That is the whole point: an un-allowlisted one already
-  // fails the gate loudly. The minio Dockerfile case was ACCEPTED and allowlisted, so the gate went
+  // fails the gate loudly. The object-store Dockerfile case was ACCEPTED and allowlisted, so the gate went
   // green and the asymmetry stayed invisible — which is exactly when nobody looks.
   const asym = (over = {}) => F({ kind: 'sast', scanner: 'semgrep', location: 'infrastructure-as-code/docker/x/Dockerfile:1', ...over });
 
