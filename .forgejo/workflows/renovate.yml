@@ -88,7 +88,7 @@ jobs:
     # the rootless daemon fails at setup (the first draft did exactly that).
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # Node 24.14.1, NOT the container's bundled v22.23.2. renovate@44.14.12 raised `engines.node`
       # to ^24.11.0 INSIDE the pinned major, so from 2026-08-09 every run logged
       # `npm warn EBADENGINE` and then `ERROR: Unsupported node environment detected`, and exited 1
@@ -100,7 +100,7 @@ jobs:
       # on PATH, so installing Node after it would leave corepack bound to the container's Node 22
       # even once Node 24 exists. `renovate-workflow.guard.test.mjs` asserts both the pin and this
       # ordering; `check-toolchain-consistency.mjs` validates the version against `engines.node`.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.19.0
       # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child

@@ -64,6 +64,25 @@ one change, and without losing stored user data.
 - Q: Does the platform SDK stage get its own spec, as item #254 said? → A: No — it is a user story here.
 - Q: Spec number? → A: 081 (080 is a parallel object-storage migration).
 
+### Session 2026-10-10 (operator — the four open questions; recorded 2026-10-16 in US1 PR 1a)
+
+The operator answered OQ-1..OQ-4 on 2026-10-10 by taking every default. Feature 080 (FR-002's
+prerequisite) merged on 2026-10-16 (PR #730).
+
+- Q (OQ-1): If SDK 58 becomes stable before US4 starts, take 57 or go straight to 58? → A: **Stay on SDK
+  57**, even if 58 goes stable first.
+- Q (OQ-2): Accept "held, with its own backlog item and re-check rule" as the end state for the
+  upstream-blocked majors (US5 toolchain, US9 approval-gated libraries)? → A: **Yes** — an acceptable end
+  state when the blocker still stands at the story's start.
+- Q (OQ-3): In the shared observability relational-database move, preserve which state? → A: **Preserve
+  the feature-flag (Unleash) state; discard the Langfuse traces** per ADR-0002 §4.
+- Q (OQ-4): If the dormant secrets-store image's scan is still worse, is a re-recorded hold acceptable?
+  → A: **Yes.**
+
+The two constitution amendments (US4: the platform SDK/native runtime version; US8a: the document-database
+image name) are **not** approved by these answers — they remain pending human approval in their own
+stories (FR-015) and are not needed for US1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The "user" of every story is the **maintainer** of this repository (and the coding assistant acting for
@@ -386,7 +405,7 @@ These restate item #254's acceptance criteria as measurable outcomes, plus what 
 - The platform's current stable SDK is 57 (research R4); its next release is a release candidate.
 - The document database's production data must be preserved; there is no acceptable wipe.
 - The observability traces may be discarded per ADR-0002 §4; the feature-flag store's state may not
-  (to be confirmed — OQ-3).
+  (confirmed by the operator — OQ-3, see Clarifications).
 
 ## Dependencies
 
@@ -401,13 +420,4 @@ These restate item #254's acceptance criteria as measurable outcomes, plus what 
 
 ## Open Questions (for the operator)
 
-- **OQ-1**: If SDK 58 becomes stable before US4 starts, take 57 as specified or go straight to 58 (which
-  brings the press-event narrowing of PR #217 into scope and forces the test-runner major with it)?
-- **OQ-2**: The two approval-gated backend libraries (US9) and the toolchain majors still pinned by the
-  platform or the lint toolchain (US5) are blocked upstream today — accept "held with its own backlog
-  item and re-check rule" as their end state if the blockers still stand when their story runs, as item
-  #254's acceptance criterion permits?
-- **OQ-3**: In the shared observability relational-database move, is the feature-flag store's state to be
-  preserved (assumed yes) and the trace store's discarded (ADR-0002 §4), or both preserved?
-- **OQ-4**: The secrets-store image is dormant: if its scan is still worse, is a re-recorded hold acceptable
-  as the end state for that part of US8?
+None — all answered 2026-10-10 (see Clarifications).

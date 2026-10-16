@@ -3216,3 +3216,112 @@ test('the dev container half of the generator pin is extracted, and the manifest
     assert.doesNotMatch('tools/openwiki-generator/package.json', re, `ignorePaths '${glob}' hides the generator manifest from Renovate`);
   }
 });
+
+// ── Feature 081 US1 (T005) — the CI-actions holds ─────────────────────────────────────────────────
+//
+// US1 moves the CI building blocks to their current majors, but two things in the same Renovate
+// branch must NOT move with them, and both used to be held by nothing but a sentence in a spec:
+//
+//   java-jdk   `actions/setup-java`'s `java-version: '17'` is extracted by the github-actions manager as
+//              its own dependency (`java-jdk`, datasource `java-version`) and rides the `ci actions`
+//              group, so the major-ci-actions branch proposed 17 -> 25 alongside the action bumps. The
+//              JDK is an ANDROID TOOLCHAIN decision — it must match what the Expo SDK's Gradle/AGP
+//              template supports — so it is held at 17 until US4 re-decides it against SDK 57.
+//
+//   runner-unsupported action majors   Any action whose new major the M1 runner probe (T004,
+//              research.md "Re-baseline deltas") measured NOT running on this forge is held below that
+//              major, so the bot stops proposing a bump that cannot land. The table below is the
+//              probe's measured result, not an assumption; each entry carries the error the probe read
+//              and the rule's description must quote it.
+//
+// Resolved through the same last-rule-wins model as every other assertion in this file, so a later
+// rule that silently re-widens the ceiling fails here.
+
+const ciActionDep = (depName, updateType, datasource = 'github-tags') => ({
+  manager: 'github-actions',
+  datasource,
+  depName,
+  packageFile: '.forgejo/workflows/app-ci.yml',
+  updateType,
+});
+
+const JAVA_JDK_HELD_CEILING = '<18';
+
+test('(081) java-jdk on setup-java is held at 17 on every track until US4 decides it', () => {
+  for (const updateType of ['patch', 'minor', 'major']) {
+    assert.equal(
+      resolvedAllowedVersions(ciActionDep('java-jdk', updateType, 'java-version')),
+      JAVA_JDK_HELD_CEILING,
+      `java-jdk ${updateType} is not held — the major-ci-actions branch would carry JDK 17 -> 25 into US1,\n` +
+        '  an Android toolchain decision that belongs to US4 (spec 081 US1 AC4).',
+    );
+  }
+});
+
+// The probe's measured result (T004). `unsupportedFrom` is the first major the runner could not run;
+// `measured` is the error text the probe read, which the hold's description must quote.
+//
+// Measured 2026-10-16, probe commit d6c27606 (run id 5411, on a throwaway branch deleted after the run):
+// on BOTH runner labels (`ubuntu-latest` and `kvm`) checkout@v7 and setup-node@v7 ran and verified
+// (node v24.19.0), upload-artifact@v3 (the control) succeeded, and upload-artifact@v7's step outcome
+// was `failure`. The forge serves no job log, so the error TEXT was read by running the same v7 dist
+// against this forge's server URL: `GHESNotSupportedError` — the fourth measurement (specs 023/042/048).
+const RUNNER_UNSUPPORTED_ACTIONS = [
+  { depName: 'actions/upload-artifact', unsupportedFrom: 4, measured: 'GHESNotSupportedError' },
+];
+
+for (const { depName, unsupportedFrom, measured } of RUNNER_UNSUPPORTED_ACTIONS) {
+  test(`(081) ${depName} is held below v${unsupportedFrom}, the major the runner probe measured unsupported`, () => {
+    for (const updateType of ['patch', 'minor', 'major']) {
+      assert.equal(
+        resolvedAllowedVersions(ciActionDep(depName, updateType)),
+        `<${unsupportedFrom}`,
+        `${depName} ${updateType} is not held below v${unsupportedFrom} — the bot will keep proposing a major\n` +
+          `  this forge's runner cannot execute (measured: ${measured}).`,
+      );
+    }
+    const holding = packageRules.filter(
+      (rule) => rule.allowedVersions !== undefined && ruleMatches(rule, ciActionDep(depName, 'major')),
+    );
+    const description = [].concat(holding.at(-1)?.description ?? []).join('\n');
+    assert.ok(description.includes(measured), `the ${depName} hold's description does not quote the measured error '${measured}'`);
+    assert.match(description, /LIFT/, `the ${depName} hold's description does not state its release condition (LIFT …)`);
+  });
+}
+
+test('(081) the CI-action holds are ordered AFTER the `ci actions` group rule, so the hold wins', () => {
+  const groupIndex = packageRules.findIndex((rule) => rule.groupName === 'ci actions');
+  assert.ok(groupIndex >= 0, 'no `ci actions` group rule');
+  const deps = [
+    ciActionDep('java-jdk', 'major', 'java-version'),
+    ...RUNNER_UNSUPPORTED_ACTIONS.map(({ depName }) => ciActionDep(depName, 'major')),
+  ];
+  for (const dep of deps) {
+    const holdIndex = packageRules.findLastIndex((rule) => rule.allowedVersions !== undefined && ruleMatches(rule, dep));
+    assert.ok(holdIndex > groupIndex, `${dep.depName}'s hold (rule ${holdIndex}) is not after the ci actions group (rule ${groupIndex})`);
+    assert.equal(resolvedGroupName(dep), 'ci actions', `${dep.depName} left the ci actions group — the hold must not strand it`);
+  }
+});
+
+test('(081) the CI-action holds do NOT leak onto the actions US1 moves — the control', () => {
+  const held = new Set(RUNNER_UNSUPPORTED_ACTIONS.map(({ depName }) => depName));
+  for (const depName of [
+    'actions/checkout',
+    'actions/setup-node',
+    'actions/setup-java',
+    'android-actions/setup-android',
+    'astral-sh/setup-uv',
+    'dorny/paths-filter',
+    'pnpm/action-setup',
+    'actions/upload-artifact',
+  ]) {
+    if (held.has(depName)) continue;
+    assert.equal(
+      resolvedAllowedVersions(ciActionDep(depName, 'major')),
+      null,
+      `${depName} picked up a CI-action hold — a ceiling has widened past the action it was measured on.`,
+    );
+  }
+  // java-jdk's datasource is `java-version`; a hold written by datasource alone must not catch node.
+  assert.equal(resolvedAllowedVersions(ciActionDep('node', 'major', 'node-version')), null, 'the java-jdk hold leaked onto node');
+});

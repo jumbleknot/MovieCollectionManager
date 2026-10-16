@@ -623,6 +623,45 @@
       "automerge": false
     },
     {
+      "description": [
+        "java-jdk IS HELD AT 17 \u2014 feature 081 US1 (T006), an ANDROID TOOLCHAIN decision, not a CI-action one.",
+        "The github-actions manager extracts `actions/setup-java`'s `java-version: '17'` as its own dependency",
+        "(`java-jdk`, datasource `java-version`), and it rides the `ci actions` group above: the 2026-10-10 and",
+        "2026-10-16 dashboards (item #29) both carried `java-jdk 17 -> 25` inside the major-ci-actions branch,",
+        "on app-ci.yml's and cd-deploy.yml's setup-java sites. The JDK must match what the Expo SDK's",
+        "Gradle/AGP template supports, so it moves with the SDK, not with the action (spec 081 US1 AC4).",
+        "MUST STAY AFTER the `ci actions` group rule: last matching rule wins. `allowedVersions` rather than",
+        "`enabled: false`, the vault pattern \u2014 the dep stays visible and grouped, only the version move is",
+        "blocked. LIFT (or re-set the ceiling) in spec 081 US4, decided against SDK 57's Android template.",
+        "renovate-workflow.guard.test.mjs asserts the resolved ceiling on every track and the ordering."
+      ],
+      "matchManagers": ["github-actions"],
+      "matchDatasources": ["java-version"],
+      "matchPackageNames": ["java-jdk"],
+      "allowedVersions": "<18"
+    },
+    {
+      "description": [
+        "actions/upload-artifact IS HELD BELOW v4 \u2014 this forge's runner cannot execute v4+. Feature 081 US1 (T004/T006).",
+        "MEASURED 2026-10-16, probe commit d6c27606 (run id 5411; throwaway branch 081-probe-ci-actions, deleted),",
+        "on BOTH runner labels the workflows use, `ubuntu-latest` and `kvm`: upload-artifact@v7 (cf430e03,",
+        "v7.0.2) step outcome `failure`; upload-artifact@v3 (the control, same job, same payload) `success`;",
+        "checkout@v7 and setup-node@v7 ran and verified in the same jobs, so this is not a node24 runtime",
+        "problem. The forge serves no job log, so the error TEXT was read by running the same v7 dist against",
+        "this forge's server URL: `GHESNotSupportedError: @actions/artifact v2.0.0+, upload-artifact@v4+ and",
+        "download-artifact@v4+ are not currently supported on GHES.` \u2014 v4+ refuses any non-github.com",
+        "server before it uploads anything. The FOURTH measurement of the same fact (specs 023, 042, 048).",
+        "MUST STAY AFTER the `ci actions` group rule: last matching rule wins. `allowedVersions` rather than",
+        "`enabled: false`: a digest refresh within v3 is still wanted and the action stays in its group.",
+        "LIFT when the runner/forge serves the v4+ artifact protocol (a Forgejo release note claiming it is",
+        "not enough \u2014 re-run the two-label probe from spec 081 research T004 and read the step outcome).",
+        "renovate-workflow.guard.test.mjs asserts the resolved ceiling, the quoted error and the ordering."
+      ],
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["actions/upload-artifact"],
+      "allowedVersions": "<4"
+    },
+    {
       "description": "Group Rust (Cargo) updates.",
       "matchManagers": ["cargo"],
       "groupName": "cargo deps",
@@ -718,9 +757,7 @@
       "automerge": false
     },
     {
-      "description": [
-        "Item #704 \u2014 see the rule above. Joins the dev container's `custom.regex` openwiki pin to the manifest's."
-      ],
+      "description": ["Item #704 \u2014 see the rule above. Joins the dev container's `custom.regex` openwiki pin to the manifest's."],
       "matchManagers": ["npm", "custom.regex"],
       "matchPackageNames": ["openwiki"],
       "groupName": "openwiki generator",

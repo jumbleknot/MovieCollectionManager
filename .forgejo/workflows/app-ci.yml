@@ -122,7 +122,7 @@ jobs:
       app: ${{ steps.filter.outputs.app }}
       mobile: ${{ steps.filter.outputs.mobile }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filter
         with:
@@ -226,13 +226,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
         run: bash scripts/ci-log-step.sh affected-ensure-origin-main-available git fetch --no-tags --depth=200 origin main || true
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node 24.14.1, NOT 20. pnpm 11 (package.json `packageManager`) declares engines
       # node >= 22.13, so Node 20 fails `pnpm install` outright — this is what broke `affected` and
       # `mc-service-checks` on the pnpm 11 bump. 24.14.1 also matches what the app actually runs on
@@ -297,7 +297,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install native build deps (openssl for native-tls)
         run: |
           bash scripts/ci-log-step.sh mc-service-checks-install-native-build-deps apt-get update
@@ -311,7 +311,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
       - name: Install dependencies
@@ -457,7 +457,7 @@ jobs:
       # acceptance criterion).
       KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
       # This job runs ON THE ci HOST (`runs-on: kvm`, a `kvm:host` runner label — see the job header),
@@ -522,7 +522,7 @@ jobs:
           CI_LOG_STEP
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
@@ -1432,7 +1432,7 @@ jobs:
       # DAST_ALLOW_ACTIVE unlocks --mode full ONLY in this disposable-stack job (D8 guard, FR-017).
       DAST_ALLOW_ACTIVE: '1'
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Docker CLI (job talks to the runner's daemon socket)
         run: |
@@ -1467,7 +1467,7 @@ jobs:
           CI_LOG_STEP
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
       # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
@@ -1683,7 +1683,7 @@ jobs:
       # dispatch. Moving it here is also what retires the job's ci-log-step exemption: the exemption's
       # stated reason was that instrumenting would mean moving the checkout ahead of the dispatch.
       - name: Checkout (the gate script, and history back to the last deploy)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 

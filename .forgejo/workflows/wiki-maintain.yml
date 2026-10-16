@@ -94,7 +94,7 @@ jobs:
           echo "job deadline: ${MINUTES} min (${{ github.event_name }})"
 
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # Full history: the run record's marker is a commit, and the maximum deferral is the age of
           # the oldest commit past it. A shallow clone cannot answer either question.
