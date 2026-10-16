@@ -1,31 +1,12 @@
 {
-  "coveredCommit": "33eaa673416f550cd6a2407967cae0b14a138ad3",
-  "coveredAt": "2026-10-16T02:16:09.906Z",
-  "lastOutcome": "completed",
+  "coveredCommit": "34ee4bc7f6ebfdfe40e523289f671ba065728ce0",
+  "coveredAt": "2026-10-16T10:32:35.636Z",
+  "lastOutcome": "nothing-to-do",
   "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 761,
-    "headCommit": "760f8d055ca06ce18008fe26f11d8faba88ec99f",
-    "markerBefore": "95cf317c4cb8f0f6e1507af4a21de1e9f21f050b",
-    "slices": [
-      {
-        "area": "projects",
-        "pages": [
-          "stacks.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: infrastructure-as-code/docker/stacks/README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-16T02:16:10.330Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 712,
+    "pagesWritten": 0,
+    "elapsedSeconds": 0,
     "stoppedAtBudget": false
   },
   "escalations": {},
