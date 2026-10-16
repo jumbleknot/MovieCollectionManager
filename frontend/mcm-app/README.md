@@ -163,3 +163,5 @@ Two consequences worth knowing before you add the second background job:
 
 Operating detail for the scheduler itself is in
 [docs/runbooks/backups.md](../../docs/runbooks/backups.md).
+
+<!-- spec 081 US1 PR 1b (T010): this comment exists so a CI-actions PR touches the app/mobile paths-filter area and proves the gated jobs RUN. Safe to delete. -->
