@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8ce633db73aecd235d51366b0fc89b079b2884436c07501b42578fb7fbc6c0e9",
+  "pageVersion": "sha256:93b49b2c59fe151935e9a790f54dc0ebc8e2080894144dae09f50dbecb91e0b3",
   "claims": [
     {
       "id": "claim_25d0e869d5a34c9bb6f72147c0aeefe5",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:434d181510191188011bcde0589117ba5e43305fd8a70860ad9298d3f05e013b"
+          "version": "repo-file-v1:sha256:f52dc4c92482d5941d206f2eed10cc41b9fdaacef6f2db21ef0339b1322ab5c3"
         },
         {
           "resource": "repo://scripts/gen-dev-secrets.mjs#L1-L25",
@@ -400,11 +400,11 @@
     },
     {
       "id": "claim_395b7397dcd346df86cdb7139b10527b",
-      "statement": "No stack is profile-gated as a whole: `auth` starts `keycloak-service`, `keycloak-store-postgres` and `keycloak-mailpit` with no profile (Vault needs `vault`), `mcm` starts its test infra with no profile (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`) while mc-service, the BFF and the agent layer need profiles, and `audit` and `observability` start nothing without their own profile. The profile assignments live in the component compose files, not in the stack aggregators — which matters to the env layer because a profile is not isolation from interpolation, so a fail-fast reference in a profile-gated service still resolves (and can still abort) at parse time.",
+      "statement": "No stack is profile-gated as a whole: `auth` starts `keycloak-service`, `keycloak-store-postgres` and `keycloak-mailpit` with no profile (Vault needs `vault`), `mcm` starts its test infra with no profile (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`) while mc-service, the BFF and the agent layer need profiles — the agent layer's Metro-dev gateway `movie-assistant-gateway-metro` being a separate service under its own `agents-metro` profile — and `audit` and `observability` start nothing without their own profile. The profile assignments live in the component compose files, not in the stack aggregators — which matters to the env layer because a profile is not isolation from interpolation, so a fail-fast reference in a profile-gated service still resolves (and can still abort) at parse time.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L14-L25",
-          "version": "repo-lines-v1:sha256:66156d0490e84e67e6d3c58a3d0355afd6e08936b82ca25496efef90b60f0ba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
+          "version": "repo-lines-v1:sha256:5c7dd50d96a085b20e2464a9c75b3bbae30a1f2774496e063c6d6cb669144965:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/audit.compose.yaml#L3-L8",
@@ -445,10 +445,32 @@
           "version": "repo-lines-v1:sha256:ba18bf954c87a0e1484916d8e5dcf74fa93758953670ddda313242ccbc27d506:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlYjJjMTIxZTRmOGZjMzY0NmUyNjAwMmUwMmVkNzI0ZTFlMmI1ZDg2ZWQ0MTBkYjZlOGU5ZjhmZGQ3MTA2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRiNWViZmRjMjQyZWMxOTNhNzU3ZDU3NTcwZTU2NjMyNWFiYjZlODU5NTc5YmQwZDdlYTcyMDBmMWJhNmRhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk1MGRiNThiNGU2ZmI3MWE4ODFlMWI2Mjc0YzQ2YjRhNGJkZWQ5MzIxMTA5YzkwODE0ZjVkMTI0YjgwODJiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBhN2JjNmFiOTk2MmU4Yjc0NTc3ZDYwMTU3MjRjY2MzODdlM2EyNDEyMDczMmU2ZTk1ZGJjOGE2NmRlMzc2ZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a9afd1676ade4c82a19ccec585b890f7",
+      "statement": "`scripts/gen-dev-env.mjs` names unconditionally, in its success output, the one env file it deliberately never writes — `agents/movie-assistant/.env.local`, which carries the operator's own Anthropic credential and which the generator must not become a fourth home for — so an absent file is distinguishable from an unconsidered one; `.gitignore` accordingly un-ignores that file's template by exact name (`!agents/movie-assistant/.env.local.example`), because with no generator producing the real file the template is the only route a fresh clone has to its keys.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L21-L27",
+          "version": "repo-lines-v1:sha256:59caa049aedfde53afebe24d2ac8048627c7920daec244554c9ce108d317c6b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRkMjNlN2I0MWE4ZjM3MDBmYmJiNjU4MzYwM2I1MDY3MWU5YWI3NWEwM2JiOWMzNjVkZDMwZDUzODkxYjczNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM2MDA4ZDRmNjVmODY4NzljNTk4ZGMxZTc2NjBiZjA0NjBmNmQ3ODhiZTdkMjExMjdkNGE1Y2E1MjEwOGJhYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNkZmRlNzIwMTAwZTdiZDQzMTYwNzgxZjMyZWZiOWYxYjMwMTZjNmIzMzAzYmJmZDdjMjM1ODk4NzEyZTI0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjVhZjljOTVhMDc0MTA0NzY3NjE0ODdlOTllNzBiMmVhN2UxMWMzNDY4YjA4OGI4YTMyMmYwMDg1YTg2ZDU0NiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/doc-env-example-citations.guard.test.mjs#L154-L162",
+          "version": "repo-lines-v1:sha256:42421bd4ac9dca95676b35e5ec0ceaa2d1392487bd4a18780d619b789f945873:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjdkNGFkMTk1MWU4ZDc2YWIwZDg4MDYyZTM1NWI5OWM5YTM4NjEyZTE4NWE3ZTk4OTQ3Mzc0MzZlMTlmMTFiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L597-L608",
+          "version": "repo-lines-v1:sha256:0de64aa838df1e58ee3b3e4e90dedf1ea235f7e3dc05442497d12de4878819f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3Yzg3YmFlM2VmZTk0OWQ1YzAzOTYyYTBiZmMxOTQ4ZDY3MTBiYzhmZjRkZmVlZjIzZDRlZDVmYjQ2NWQ0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYWE2MTVkMDkwNGZlOTQ2NTlkNjk1MTMzNWY3MTFkNTBlODQ1MmNiMDRlOGExZjI5ZDZiYWQ4MWY1ZTllZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ODkxMGNiMzZlNmUxYzUwMWVjNmNiZTJiYzMwMGEzNGJiNjM5MjNjOTE0NDg4ZDc1NmJmN2VmN2ZmZmQ5ZGEifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L636-L640",
+          "version": "repo-lines-v1:sha256:dadc1fd997636254280eb7da8a5c2786e6e78c6ea52bf6c57224bc38e5eef595:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxMDU0NTE3ZWYwMzk4NzM0NWI5YmNhNWUzNTcxOTAzMDc4ODk0MWI4ZTViNGQyYjkwYzc2YjVkMDQwM2RiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM3ZTgwNDJiMjVjNWVkOGM2ZjRjMjVkMWU4MTE2YzIyMGFmMTY3M2UyODAzODhjZDBiN2MyODVjNjEyZGFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZhMGMxOWQ5ZjNjODI3NDc0YmQ5N2M4ZWZmODE2M2RmMTZkYTJkYTRiZTU3ZWZmZTEwMjMzZDJiNmExN2UyZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T23:36:23.499Z"
+    "at": "2026-10-16T02:04:22.270Z"
   }
 }

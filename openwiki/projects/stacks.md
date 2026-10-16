@@ -61,10 +61,10 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T23:36:23.499Z
+    at: 2026-10-16T02:04:22.270Z
 ---
 
 # Dev stack env files and local secret generation
@@ -104,7 +104,7 @@ No stack is profile-gated as a whole. `auth` and `mcm` each have services that s
 | Stack | Starts with no profile | Needs a profile |
 |---|---|---|
 | `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
-| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`), and the Metro-dev gateway `movie-assistant-gateway-metro` — a separate service (`agents-metro`) |
 | `audit` | nothing | every service (`audit`) |
 | `observability` | nothing | every service (`observability`) |
 
@@ -118,7 +118,7 @@ in an included file at parse time whatever profiles are selected, which is why `
 | File | Tracked? | Purpose |
 |---|---|---|
 | `<stack>.env.example` | committed | Placeholder template. `NAME=<generate:KIND>` for a minted value; `NAME=literal` for a deterministic fixture. |
-| `<stack>.env` | gitignored | Generated real values, read by Compose. **Never commit.** |
+| `<stack>.env` | gitignored | Generated real values. Compose reads it via the stack's `include` `env_file:` and the Nx target `--env-file`. **Never commit.** |
 
 `<stack>` ∈ `auth`, `mcm`, `audit`, `observability` — the four named stacks, matching the four
 `.env.example` templates in `infrastructure-as-code/docker/stacks/`. Each template carries the complete
@@ -149,7 +149,8 @@ per stack, several consumers, one minting command.
 ```mermaid
 flowchart TD
   Tmpl["stack .env.example (tracked)"] --> Gen["node scripts/gen-dev-secrets.mjs"]
-  Gen --> Env["stacks stack .env (gitignored)"]
+  Gen -->|"absent"| Env["stacks stack .env (gitignored)"]
+  Gen -->|"present: back-fill new keys, keep existing values"| Env
   Env --> Inc["aggregator include env_file pin"]
   Env --> Nx["Nx up-* target --env-file"]
   Inc --> Compose["docker compose up or config"]
@@ -157,7 +158,7 @@ flowchart TD
   Compose -->|"VAR set"| Up["stack starts"]
   Compose -->|"VAR blank or missing"| Abort["abort naming the variable and its env file"]
   Env --> Proj["node scripts/gen-dev-env.mjs"]
-  Proj --> Bff["BFF .env.docker / .env.local / .env.e2e.local"]
+  Proj --> Bff["BFF and service env files"]
 ```
 
 How a value travels from the committed template into a running container, and where the chain aborts.
@@ -180,7 +181,9 @@ it projects the realm client secrets out of `stacks/auth.env` into the BFF's git
 (`frontend/mcm-app/.env.docker`, `.env.local`, `.env.e2e.local`, the web-api-mcp TMDB file, and
 `backend/mc-service/.env.local`) so the imported dev realm's client secrets and the BFF's client
 secrets agree **by construction** rather than by hand. It verifies the projected credentials against
-the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). See
+the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). It
+also names, unconditionally, the one file it deliberately never writes — the agent gateway's own
+`.env.local`, which carries the operator's Anthropic credential. See
 [Keycloak](./keycloak.md) for the realm side and
 [Local dev](../../docs/runbooks/local-dev.md) — "A projected credential can be STALE, not merely
 absent (item #395)" — for the detect → resolve procedure.
@@ -295,10 +298,13 @@ different mechanism from the per-stack `.env` this page is about.
 
 `<stack>.env` is gitignored; `<stack>.env.example` is tracked. `.gitignore` ignores `*.env` and
 `*.env.*` wholesale and then carves the templates back in with an **explicit, scoped** un-ignore:
-`!infrastructure-as-code/docker/stacks/*.env.example`. The scope is the point — a bare `!*.env.example`
-would also un-ignore other deliberately-ignored templates such as `frontend/mcm-app/.env.example`
-(feature 019). A parallel carve-out tracks `infrastructure-as-code/docker/**/*.env.prod.example`, while
-real `.env.prod` values stay ignored.
+`!infrastructure-as-code/docker/stacks/*.env.example`. The scope is the point — a bare
+`!*.env.example` would also un-ignore other deliberately-ignored templates such as
+`frontend/mcm-app/.env.example` (feature 019). A parallel carve-out tracks
+`infrastructure-as-code/docker/**/*.env.prod.example`, while real `.env.prod` values stay ignored, and
+the agent gateway's `agents/movie-assistant/.env.local.example` is un-ignored **by exact name** —
+because nothing generates the `.env.local` beside it, that template is the only route a fresh clone has
+to the file's keys.
 
 Two static gates back the boundary up, both run selftest-then-scan in the `naming` job of
 `guardrails.yml`:

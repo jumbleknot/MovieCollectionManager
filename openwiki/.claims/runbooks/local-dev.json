@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d4036cc6737d4606dcf33c7171355c6ce3b7fa0c1ab7f8a11e4aee81dd4f6048",
+  "pageVersion": "sha256:9046327389753ddf0a8a373da96d893347016d6c710a8fbe3ea564af321c1660",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -476,8 +476,12 @@
     },
     {
       "id": "claim_0c975262733e4b4ca4e6ed1bde6fa098",
-      "statement": "No Compose stack is profile-gated as a whole: `auth` starts `keycloak-service`, `keycloak-store-postgres` and `keycloak-mailpit` with no profile (Vault needs `vault`), `mcm` starts its test infra — `mc-service-store-mongo` plus its rs-init, `mcm-bff-cache-redis` and `mcm-bff-store-mongo` — with no profile while mc-service needs `app`, the BFF needs `bff-secure`/`bff-nonsecure` and the agent layer needs `agents` (the gateway also `agents-metro`), and `audit` and `observability` start nothing at all without their profile. Those `profiles:` assignments live in the per-service component compose files, not in the stack aggregators, so a stack's default bring-up is its unprofiled services only.",
+      "statement": "No Compose stack is profile-gated as a whole: `auth` starts `keycloak-service`, `keycloak-store-postgres` and `keycloak-mailpit` with no profile (Vault needs `vault`), `mcm` starts its test infra — `mc-service-store-mongo` plus its rs-init, `mcm-bff-cache-redis` and `mcm-bff-store-mongo` — with no profile while mc-service needs `app`, the BFF needs `bff-secure`/`bff-nonsecure`, the agent layer needs `agents`, and the Metro-dev gateway `movie-assistant-gateway-metro` is a separate service needing `agents-metro` only (its YAML anchor does not inherit the `agents` profile), and `audit` and `observability` start nothing at all without their profile. Those `profiles:` assignments live in the per-service component compose files, not in the stack aggregators, so a stack's default bring-up is its unprofiled services only.",
       "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L56-L68",
+          "version": "repo-lines-v1:sha256:80d3b3fb6788980a3387787b007fa5210fad334afce046384a4f77c2d3895fc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMTNmYzhiZGUzZTA3ZmVjMWI2N2RjYThhYjJjM2VlZjZhZTlmMjBhZDhlMGZiN2QwOTM4MzVkZDk2MzVmN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MTg2YWM0NGUzYzUxNGUyYmQ3Mzc1MDc0YzllMjllMTNmYTJiODdkZTYyZDgzNWFiNjAxOThlOWU5NTkwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3OTg1MmE1NzAxMTQ4Njc1ZDdhZjkzNGU5NWRjMDMxOGUwNGM5MDY1ODI5ZDJjNzc2NTcyOGU2NzcyMDEzODEifQ"
+        },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L26-L26",
           "version": "repo-lines-v1:sha256:9f554b8a1ba72e38b0e3656bb987107cdfa5bbcf56a2594b1815fc598b4e7f60:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY1NTRiOGExYmE3MmUzOGIwZTM2NTZiYjk4NzEwN2NkZmE1YmJjZjU2YTI1OTRiMTgxNWZjNTk4YjRlN2Y2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY1NTRiOGExYmE3MmUzOGIwZTM2NTZiYjk4NzEwN2NkZmE1YmJjZjU2YTI1OTRiMTgxNWZjNTk4YjRlN2Y2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2JlZGJjMjJjMzdhY2Y4NDc5ZDBhYjY4MDNmZmIzOWZjZTc1YmRlYzZmNjNmZWFmZTg2NWFlMTIxMGRmYTIzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU5MjkwYmNmYmJlNDlmNDhhODBiZTBmYjQwZTY1YmQ3NzUwM2Q5Mjg5OWYxMGU3YzlhMGIyZTJhYzIwMjM0YSJ9"
@@ -488,7 +492,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L14-L25",
-          "version": "repo-lines-v1:sha256:66156d0490e84e67e6d3c58a3d0355afd6e08936b82ca25496efef90b60f0ba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
+          "version": "repo-lines-v1:sha256:5c7dd50d96a085b20e2464a9c75b3bbae30a1f2774496e063c6d6cb669144965:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L27-L32",
@@ -517,6 +521,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T23:36:23.499Z"
+    "at": "2026-10-16T02:04:22.270Z"
   }
 }
