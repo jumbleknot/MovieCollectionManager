@@ -123,7 +123,7 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
           filters: |
@@ -231,7 +231,7 @@ jobs:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
         run: bash scripts/ci-log-step.sh affected-ensure-origin-main-available git fetch --no-tags --depth=200 origin main || true
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node 24.14.1, NOT 20. pnpm 11 (package.json `packageManager`) declares engines
       # node >= 22.13, so Node 20 fails `pnpm install` outright — this is what broke `affected` and
@@ -241,7 +241,7 @@ jobs:
       # step — setup-node's `cache: pnpm` needs pnpm on PATH already.
         with: { node-version: 24.19.0, cache: pnpm }
       - name: Set up uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
@@ -310,7 +310,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
@@ -521,15 +521,16 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with: { distribution: temurin, java-version: '17' }
-      # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default is
-      # `tools platform-tools` (action.yml at this pinned SHA), and `tools` — the LEGACY SDK Tools
+      # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default WAS
+      # `tools platform-tools` (v3's action.yml), and `tools` — the LEGACY SDK Tools
       # package, superseded by cmdline-tools years ago — has been REMOVED from Google's SDK index.
+      # (v4.0.2 changed the default to `platform-tools`; the explicit value stays — see below.)
       # The action installs packages one at a time and `tools` is first, so the step dies before it
       # ever reaches `platform-tools`:
       #
@@ -548,13 +549,13 @@ jobs:
       # cannot reach us. `platform-tools` is NOT optional here: the emulator half of this job drives
       # `adb` directly (`adb reverse` 8082/8099), so dropping it would break the job for a second,
       # unrelated reason. Keep this value in step with cd-deploy's `prod-apk`.
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
         with:
           packages: 'platform-tools'
       # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
       # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
       - name: Set up uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
@@ -1466,13 +1467,13 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 24.19.0, cache: pnpm }
       # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
       - name: Set up uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock

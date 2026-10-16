@@ -396,3 +396,86 @@ outcome next to a `success` control.
    `ci actions` group, its description quoting `GHESNotSupportedError` and the release condition (re-run this
    two-label probe; a release note alone is not enough). Asserted by `renovate-workflow.guard.test.mjs`.
 3. `java-jdk` is held at 17 (`allowedVersions: "<18"`) until US4 (spec US1 AC4), asserted by the same guard.
+
+### US1 (PR 1b) — 2026-10-16
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-16T15:21:38Z`, read only);
+REPO = `origin/main` = `3b505f9a` (PR 1a, #769, merged); UPSTREAM = `git ls-remote --tags` against each
+action's github.com repo plus its releases API and `action.yml` at the target SHA, read the same day.
+
+| What | PR 1a delta (earlier 2026-10-16) | Today, PR 1b start | Consequence |
+|---|---|---|---|
+| `renovate/major-ci-actions` dashboard section | Rate-Limited | still **Rate-Limited**, same 8 deps listed | none — landed by hand |
+| PR 1b targets on DASH | setup-java v6, setup-android v4, setup-uv v10.3.0, paths-filter v4, pnpm/action-setup v6 | **unchanged** | — |
+| Newest upstream release (UPSTREAM) | — | setup-java **v6.1.0** (= `v6` tag), setup-android **v4.0.4** (= `v4`), setup-uv **v10.3.0** (no `v10` tag exists), paths-filter **v4.0.3** (= `v4`), pnpm/action-setup **v6.1.0** (the `v6` tag still points at v6.0.10) | pin those five commits |
+| DASH per-file listing | — | still lists `.forgejo/workflows/minio-image.yml` with one pnpm/action-setup (8 sites) | stale DASH body: feature 080 deleted that file. REPO count is the truth: **7** |
+| Use counts (REPO, before) | as PR 1a: setup-uv ×5, setup-java ×2, setup-android ×2, paths-filter ×2, pnpm/action-setup ×7 | **unchanged** | 18 sites in 5 files (app-ci ×10, cd-deploy ×5, infra-image-scan ×2, renovate ×1) |
+
+**Pins** (each SHA verified as the tag's commit object by a depth-1 fetch of the tag and `rev-parse
+<tag>^{commit}`, not read off a listing):
+
+| Action | From | To | Comment | Sites before → after (old pins left) |
+|---|---|---|---|---|
+| `actions/setup-java` | `cf277c60…` v4 | `b843ebf9b913146b38da2eaa7aeddf76074ae1ad` | `# v6` (= v6.1.0) | 2 → 2 (0) |
+| `android-actions/setup-android` | `9fc6c4e9…` v3 | `be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd` | `# v4` (= v4.0.4) | 2 → 2 (0) |
+| `astral-sh/setup-uv` | `d4b2f3b6…` v5 | `1c37ad07a6a961277cf70c0d37d6f313000f5884` | `# v10.3.0` | 5 → 5 (0) |
+| `dorny/paths-filter` | `0e4a8c6e…` v3 | `ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d` | `# v4` (= v4.0.3) | 2 → 2 (0) |
+| `pnpm/action-setup` | `b906affc…` v4 | `ea17c68df8912ef543352723c149a84f56e3d413` | `# v6.1.0` | 7 → 7 (0) |
+
+**Why two comments name a full version, not `# vN`.** The comment is Renovate's `currentValue`. setup-uv
+stopped publishing major/minor tags at v8.0.0 ("No more major and minor tags"), so `# v10` would name a tag
+that does not exist. pnpm/action-setup's floating `v6` tag still points at v6.0.10, while v6.1.0 is the
+release that adds pnpm 12 support (US2's target); a v6.1.0 SHA under `# v6` would read to Renovate as a
+digest drift from the `v6` tag and be "updated" back to v6.0.10.
+
+**Breaking changes read, and what each needed here:**
+
+- **`actions/setup-java` v4 → v6.** v5.0.0's only breaking change is the node24 runtime (PR 1a's probe: the
+  runner executes `using: node24` on both labels). v6.0.0: ESM migration ("not a user-facing breaking change"),
+  legacy `adopt*` distributions removed, three env-var-name inputs renamed with deprecated aliases
+  (`server-username`/`server-password`/`gpg-passphrase` → `*-env-var`), and package-signature verification
+  on by default for Temurin — "When omitted, failures produce warnings" (action.yml `verify-signature`), so
+  it cannot fail the step unless set `true`. This repo passes only `distribution: temurin, java-version: '17'`
+  — none of the renamed or removed inputs. **No input change; `java-version: '17'` untouched** (held until US4).
+- **`android-actions/setup-android` v3 → v4.** node24 runtime; default `cmdline-tools-version` moves
+  `12266719` (16.0) → `15859902` (22.0, v4.0.4); default `packages` changes from `tools platform-tools` to
+  `platform-tools` (v4.0.2, "Fix for removed tools package" — the same withdrawal run 3409 hit). This repo
+  pins `packages: 'platform-tools'` explicitly at both sites, which stays (the two sites' comments were
+  corrected: the `tools` default was v3's). **Not measured locally**: whether cmdline-tools 22.0's
+  `sdkmanager` runs under JDK 17 — dl.google.com is unreachable from the dev container. It is exercised by
+  app-e2e (mobile filter true on this PR, `kvm` label) and by the `cd-deploy` `build_apk` dispatch
+  (`ubuntu-latest`); if it fails, the fix is `cmdline-tools-version: '12266719'`, not a JDK move.
+- **`astral-sh/setup-uv` v5 → v10.3.0.** v6: `pyproject-file`/`uv-file` removed (→ `working-directory`),
+  venv activation opt-in, default `cache-dependency-glob` widened. v7: node24, `server-url` removed. v8:
+  custom `manifest-file` format changed, no floating tags. v9: `prune-cache` default `false`. v10:
+  `enable-cache: auto` disables the cache on `pull_request_target`/`workflow_run`/`release`; v10.1.0 verifies
+  downloads with checksums and `download-from-astral-mirror` defaults `true`. Every site passes only
+  `version: '0.12.10' # uv-version` and `github-token`, both still inputs at v10.3.0 (0.12.10 is inside the
+  embedded checksum set, which runs through 0.13.0); no site uses a removed input. `enable-cache: auto`
+  is the same test in v5 and v10 (`RUNNER_ENVIRONMENT === 'github-hosted'`, read in `src/utils/inputs.ts` at
+  both SHAs); v10 only adds exclusions for events this repo does not use with it (tag push,
+  `pull_request_target`, `workflow_run`, `release`), so caching behaves as before. **No input change.** The `# uv-version` customManager and its guard are untouched (the uv version does not move).
+- **`dorny/paths-filter` v3 → v4.** v4.0.0's only change is node24. Diffing `src/main.ts` v3 pin → v4.0.3:
+  the pull-request branch is restructured into a `switch` that adds `merge_group`, with identical
+  behaviour for `pull_request` (token present → changed files from the API; else `git diff` against
+  `base.sha`); `action.yml` adds a `some-with-excludes` quantifier (default still `some`); v4.0.2 adds a
+  `safe.directory` workaround for container jobs. **Output semantics are unchanged** (`'true'`/`'false'` per
+  filter). infra-image-scan's `if: github.event_name == 'pull_request'` guard on the step is still needed (the
+  non-PR fall-back to `repository.default_branch` is unchanged). Proven on the PR, not argued — T010.
+- **`pnpm/action-setup` v4 → v6.1.0.** v5.0.0: node24. v6.0.0: pnpm 11 support; v6.0.7+ bootstraps a pinned
+  pnpm with `npm ci` (npm co-located with the action's node) and then `pnpm self-update`s to the target. The
+  target is read from `devEngines.packageManager`, else `packageManager` — here `pnpm@11.25.0` — and an
+  explicit `version:` input that disagrees with `packageManager` is a hard error ("Multiple versions of pnpm
+  specified"). No site here passes `version:` (check-toolchain-consistency keeps it that way), so every site
+  resolves `packageManager`. Corepack is not involved: the action never calls it, and the corepack users
+  (guardrails' `corepack enable`, the Playwright `docker run … corepack enable`) are separate steps the bump
+  does not touch. **No input change.** (Side note, not fixed here: the comments in cd-deploy's prod-apk disk
+  step and `prod-apk-disk-step.guard.test.mjs` say the action "resolves pnpm through corepack"; it resolves
+  it through npm. The guard's conclusion — never delete `/usr/local/lib/node_modules` — still holds, because
+  npm lives there.)
+
+**Runtime probe: none run.** All five targets declare `using: node24`, the runtime PR 1a's two-label probe
+already showed executing; none needs a runner capability the PR's own CI does not exercise (affected on
+`ubuntu-latest`, app-e2e/dast on `kvm`, prod-apk via the `build_apk` dispatch). Not exercised before merge:
+`renovate.yml`'s setup-uv (schedule/dispatch only) and `cd-deploy` `build-deploy`'s pnpm/action-setup +
+setup-uv (runs on the post-merge `main` push) — same action, same inputs as the app-ci sites that do run.

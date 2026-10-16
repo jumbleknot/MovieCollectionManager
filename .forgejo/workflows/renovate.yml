@@ -139,7 +139,7 @@ jobs:
       # first two. The failure mode generalises: any Renovate channel whose lockfile needs a binary
       # this runner lacks goes silently missing, so a new manager means a new toolchain here.
       - name: Set up uv (for pep621 / uv.lock maintenance)
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
