@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
-description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
+description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the two agent-test tiers that decide what blocks a merge, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate (with its per-suite skip-escalation flags) that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
-tags: [e2e, testing, playwright, ci, flakiness, runbook, integration]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-27T16:58:28.669Z
+tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -27,6 +24,9 @@ sources:
   - id: openwiki-source-4a5107e668fbfa127e4c2d48
     resource: repo://scripts/e2e-contention-tally.sh
 generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -49,9 +49,9 @@ The `X-BFF-Source` header is asserted in `global-setup.ts` to fail-fast on a Met
 the dev-container mode is expected. Full container-mode commands, the complete flakiness-diagnosis
 protocol, and the integration-tier CI enforcement detail: `docs/runbooks/e2e-testing.md`.
 
-## Integration tier CI gate (feature 041, extended by 048/059)
+## Integration tier CI gate (feature 041, extended by 048/059/073)
 
-`app-ci`'s `app-e2e` job runs `test:integration` for **five** projects — agent (`movie-assistant`),
+`app-ci`'s `app-e2e` job runs `test:integration` for **six** projects — agent (`movie-assistant`),
 the three MCP servers (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`, added by feature 048/059),
 `mc-service`, and `mcm-app` — before the web/APK/emulator legs, so a failure costs a few minutes
 instead of burning 25+ min of emulator time. Every step sets `MCM_REQUIRE_LIVE_STACK=1`, which
@@ -71,6 +71,16 @@ What this changes for you:
   jest `globalSetup` preflight (`frontend/mcm-app/tests/integration/setup/preflight.global.js`),
   which probes BFF/Keycloak/Redis/Mongo and throws. Add to those deliberately — never to turn a
   red run green.
+- **The feature-073 backup destinations are their own escalation.** The BFF integration step sets
+  `MCM_REQUIRE_BACKUP_TARGETS=1` alongside `MCM_REQUIRE_LIVE_STACK=1` (the destinations are brought
+  up by a dedicated `app-e2e-bring-up-backup-destinations` step from
+  `infrastructure-as-code/docker/backups/compose.yaml`), and the web E2E gate forwards
+  `E2E_REQUIRE_BACKUP_TARGETS=1` into the Playwright container. `backups.spec.ts` skips when
+  `BACKUP_TEST_S3_SECRET_KEY` is unset — right for a developer without the containers, wrong in CI
+  where they *are* up — so each flag converts that skip into a failure. The S3 and WebDAV
+  credentials are minted per run and exported via `$GITHUB_ENV`; `BACKUP_TICK_SECRET` is read back
+  from the generated `.env.docker` rather than minted again, because a second random value would
+  404 against the BFF holding the first.
 - **Agent/MCP images rebuild every run** (`scripts/agent-stack.mjs` builds by default; `--no-build`
   is refused under CI), so `agents/**` and `mcp-servers/**` changes are genuinely under test.
 
@@ -94,9 +104,35 @@ rediscovered:
 - **Route coverage gate:** `tests/integration/route-coverage.integration.test.ts` +
   `route-coverage-map.ts` fail if any `+api.ts` route lacks a test or a justified exclusion —
   login is the only map-level exclusion.
-- **Preflight guard:** `setup/preflight.global.js` probes BFF, Keycloak, Redis, and BFF Mongo and
-  throws when `MCM_REQUIRE_LIVE_STACK=1` and any is unreachable. Locally the flag is unset and the
-  guard is a no-op.
+- **Preflight guard:** `setup/preflight.global.js` (wired as jest `globalSetup`) probes BFF,
+  Keycloak, Redis, and BFF Mongo and throws when `MCM_REQUIRE_LIVE_STACK=1` and any is unreachable.
+  Locally the flag is unset and the guard is a no-op. Under `MCM_REQUIRE_BACKUP_TARGETS=1` it
+  additionally probes the two real backup destinations in their own compose file — Backup S3
+  (RustFS) at `${BACKUP_TEST_S3_ENDPOINT}/health/ready` expecting `200`, and Backup WebDAV at
+  `${BACKUP_TEST_WEBDAV_ENDPOINT}` expecting `401`. The WebDAV container is distroless and cannot
+  self-probe, so this preflight is the **only** place its liveness is asserted; an unauthenticated
+  `401` is the proof, because it means the server parsed its config, is listening, and has auth
+  configured — which a bare TCP connect would not establish. The probes are dependency-free
+  (`node:http` / `node:net`, 4 s timeout) and the flag is separate from
+  `MCM_REQUIRE_LIVE_STACK` so the other thirty suites do not start requiring two containers they
+  never touch.
+
+```mermaid
+flowchart TD
+  A["jest globalSetup runs preflight"] --> B{"MCM_REQUIRE_LIVE_STACK == 1?"}
+  B -- no --> C["no-op: a bare checkout stays skip-clean and green"]
+  B -- yes --> D["load .env.e2e.local, then .env.local"]
+  D --> E["probe BFF, Keycloak, Redis, BFF Mongo — 4 s timeout"]
+  E --> F{"MCM_REQUIRE_BACKUP_TARGETS == 1?"}
+  F -- yes --> G["also probe Backup S3 /health/ready 200 and WebDAV 401"]
+  F -- no --> H["leave the backup containers alone"]
+  G --> I{"any probe unreachable?"}
+  H --> I
+  I -- yes --> J["throw — the suite FAILS, naming each unreachable dependency"]
+  I -- no --> K["suite runs for real against the live stack"]
+```
+
+The jest preflight's decision path: the escalation flags decide whether a missing dependency is a skip or a failure.
 
 ## Running the agent specs
 
@@ -111,20 +147,36 @@ node scripts/agent-e2e.mjs assistant-add  # one spec by basename
 
 `agent-e2e.mjs` sets `E2E_AGENT_PRODUCTION=1` and `E2E_BFF_TARGET=dev-container`, recreates the dev
 BFF with the agent-e2e rate-limit override first, and runs each spec file in isolation (a fresh
-`nx e2e` invocation = fresh login/session) — deliberately, because the full parallel suite shares
-one test user across workers, which exhausts the per-user rate limit and crosses the access-token
-lifetime. Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run to convert a missing stack into a
-hard failure instead of a skip.
+`nx e2e` invocation = fresh login/session). Its header justifies that with "the full parallel suite
+shares one test user across workers, which exhausts the per-user rate limit and crosses the
+access-token lifetime" — the shared-identity half of that premise is stale: since feature 054 US4
+each worker mints its own Keycloak identity (see the teardown gotcha below), and `dev-realm`'s token
+lifespan now matches `ci-realm` at 5400 s. Isolation is still how these specs are run, so treat the
+per-file invocation as the contract and the recorded rationale as history. Set
+`E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run to convert a missing stack into a hard failure
+instead of a skip.
 
-## Two tiers: what blocks a merge (feature 061)
+## Two tiers: what blocks a merge (feature 056)
 
-Agent tests carry `@gate` or `@model-decision`:
+Agent tests carry `@gate` or `@model-decision`. The rule — and what the gate stops proving — is in
+[Testing tiers](../invariants/testing-tiers.md). Operationally:
 
-- **`@gate`** — 155 tests, blocking, what a PR pays for.
-- **`@model-decision`** — 22 tests, non-blocking, run only on `main` and dispatch.
-- Unset `E2E_TIER` → all 177 run (local default).
+- **`@gate`** — blocking; this is what a PR pays for.
+- **`@model-decision`** — non-blocking; it runs in the **same job** as a second selection on every
+  push to `main` and on `workflow_dispatch`, never on `pull_request`, and its step carries
+  `continue-on-error: true` so model drift cannot fail the job.
+- The selection is `E2E_TIER=gate` / `E2E_TIER=model`, applied by `grepInvert`/`grep` **inside**
+  `frontend/mcm-app/playwright.config.ts`. Unset `E2E_TIER` runs everything (local default).
 - An **unclassified** agent test fails the gate rather than defaulting into a tier
-  (`scripts/__tests__/agent-test-classification.test.mjs`).
+  (`scripts/__tests__/agent-test-classification.test.mjs`). That guard pins the *partition* — union
+  complete, intersection empty, both sides non-empty — not the counts, so the numbers move as specs
+  are added or retired. At the split (2026-08-12) they were 155 `@gate` / 22 `@model-decision` of
+  177, and the workflow comment records the identical-code run pair (#1684 `failed=0 flaky=0
+  passed=177`, #1685 `failed=1 flaky=7 passed=166`) that forced the split.
+
+The price is stated rather than hidden: a green gate no longer proves the assistant makes the right
+decision, only that the machinery around the decision works. Nothing leaves the gate without a tier
+that runs it — a tier nobody runs is quarantine wearing a schedule.
 
 ## Cycle time
 
@@ -166,10 +218,14 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   `browserType.launch: Executable doesn't exist`. Run agent specs through the Playwright image instead
   (full recipe in `docs/runbooks/devcontainer.md`). `agent-stack.mjs` itself works fine inside the
   container and is still the correct bring-up path.
-- **`agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported from `stacks/auth.env` before
-  it runs** — without it the script fails with `service-account admin token failed (401)`, a message
-  that names neither the variable nor the source file. Export it manually or source the file before
-  calling the script.
+- **`agent-stack.mjs` needs a reachable `KEYCLOAK_SERVICE_CLIENT_SECRET` — from the env *or* from
+  the generated env file.** It fetches the gateway's confidential client secret live from Keycloak
+  admin through `kc_admin.admin_token()`; `kc_admin.cfg()` reads the process env first and then
+  `frontend/mcm-app/.env.local` (then `.env.e2e.local`), so after `node scripts/gen-dev-env.mjs`
+  nothing needs exporting. A `service-account admin token failed (401)` means that file is absent or
+  stale against the realm — re-run `gen-dev-env.mjs` rather than exporting by hand, and unset any
+  exported copy, which wins over the file. Setting `AGENT_GATEWAY_CLIENT_SECRET` skips the lookup
+  entirely (the escape hatch for a container where the admin URL is unreachable).
 - **Rebuild the BFF image when CLIENT code changes.** The Expo web bundle is baked into the BFF
   image, so any change under `frontend/mcm-app/src/` is invisible to a containerized E2E run until
   `pnpm nx run mcm-app:build` + a container recreate. This is the same stale-image rule the
@@ -227,24 +283,44 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   `no Playwright summary found` is the only signal. Run the gate above before opening a single
   container log. Current pin: **v1.63.0-noble**.
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
-  CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
-  test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
-  still at test 24/174 fifteen minutes after being "stopped". Always confirm and kill:
-  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.63.0-noble`.
+  CLI process, so cancelling the command leaves Playwright still running — consuming the same stack
+  (and the same canonical test user for worker 0) as any subsequent run. Measured 2026-08-09: an
+  abandoned full-suite run was still at test 24/174 fifteen minutes after being "stopped". Always
+  confirm and kill: `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.63.0-noble`.
 - **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
   "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
   test that knows only one symptom misses the same defect on a different provider.
-- **Six workers share ONE user — teardown deletes only what the test declared with `ownCollection()`.** `playwright.config.ts`
-  sets `fullyParallel: false` and up to six workers. That serialises tests *within a file* and runs
-  different *files in parallel* — all as the same `E2E_TEST_USER`. `cleanupNonFixtureCollections`
-  deleted every non-fixture collection the user owned from 21 spec files' `afterEach`; the median
-  collection lifetime was 1.3 s while agent flows need them for a minute or more. The rule now:
-  teardown deletes only what the test declared with `ownCollection()` (see
-  `tests/e2e/web/setup/e2e-cleanup.ts`). **When you add a spec that creates a collection, declare
-  it** — the guard (`scripts/__tests__/e2e-collection-ownership.guard.test.mjs`) fails the build if
-  you POST `/bff-api/collections` without calling `ownCollection`. Other shared user state to
-  account for: per-user agent config, the default collection (FR-009 redirect), and the `MUTATION`
-  fixture emptied by `movies.spec.ts`.
+- **`docker run` forwards ONLY what `-e` names — an omission is a silent skip behind a green required
+  gate.** Every gate the web E2E suite applies is driven by an env var, and a variable set in the
+  job's `env:` block but not named in the `docker run -e` list is invisible inside the Playwright
+  container. Two were live for the lifetime of the job (feature 051, item #158): `E2E_AGENT_PRODUCTION`
+  (every `agent-*.spec.ts` skipped) and `KEYCLOAK_SERVICE_CLIENT_SECRET` (`admin-settings-access` +
+  `admin-registration` skipped). `scripts/__tests__/app-e2e-env.guard.test.mjs` now asserts the list,
+  and the workflow enumerates the deliberately-omitted remainder against every `process.env` read
+  under `tests/e2e/` — do not add to either speculatively, because each one changes what the gate
+  actually tests. Secrets use the bare pass-through form `-e NAME`, never `-e NAME=$NAME`, which
+  would expand the value into argv and into `ps` output.
+- **Teardown deletes only what the test declared with `ownCollection()` — and per-worker identities
+  now make cross-worker deletion structurally impossible.** `playwright.config.ts` sets
+  `fullyParallel: false` and up to 10 workers (half the cores). That serialises tests *within a
+  file* and runs different *files in parallel*. `cleanupNonFixtureCollections` used to delete every
+  non-fixture collection the user owned from 21 spec files' `afterEach`; the median collection
+  lifetime was 1.3 s while agent flows need them for a minute or more. The rule now: teardown
+  deletes only what the test declared with `ownCollection()` (see
+  `tests/e2e/web/setup/e2e-cleanup.ts`), matched exactly or on an `"<owned> "` prefix — never as a
+  loose substring, which could reach another worker's similarly-named collection. **When you add a
+  spec that creates a collection, declare it** — the guard
+  (`scripts/__tests__/e2e-collection-ownership.guard.test.mjs`) fails the build if you POST
+  `/bff-api/collections` without calling `ownCollection`. Since feature 054 US4 each worker mints
+  its own Keycloak identity (`setup/global-setup.ts` → `setup/auth-files.ts` writes one
+  `user-<parallelIndex>.json` per worker, plus a `worker-identities.json` manifest so global
+  teardown can delete exactly the throwaway users it minted — worker 0 reuses the canonical
+  `E2E_TEST_USER` and is never deleted) and mc-service scopes collections by
+  `owner_id = token.subject`, so the name-scoping is now belt-and-braces rather than the only
+  barrier. Per-worker sessions also give each worker its own refresh bucket, which is what removed
+  the 32-of-66 rejected-refresh contention. Other shared user state to account for: per-user agent
+  config, the default collection (FR-009 redirect), and the `MUTATION` fixture emptied by
+  `movies.spec.ts`.
 - **"Green" told you nothing until the result gate existed.** Playwright exits 0 with tests
   skipped, the forge API exposes no job logs, and the digest publishes only on failure — so on a
   green run the counts were unreadable. Feature 040 validated green with 33 specs skipped. `app-ci`
@@ -254,9 +330,12 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   project (`bff-prod-lifecycle` + `admin-registration`, 3 tests) never runs while the main project
   has any failure — they reported "3 did not run" for months without anyone noticing.
 - **A local run is only evidence if you check the instrument.** Three measured failure modes: (1)
-  `dev-realm` has `accessTokenLifespan: 300` — feature 052 scoped its 5400 s fix to `ci-realm` —
-  so any local run past ~5 min re-enters refresh contention; read BFF contention counters alongside
-  the result before attributing failures to the application. (2) A container can be "Up" and dead
+  a stale realm can still hand out 300 s access tokens — feature 052 raised `accessTokenLifespan` to
+  5400 s for `ci-realm` only, and feature 054 (item #168) extended the same 5400 s to `dev-realm`
+  (only `prod-realm.json` keeps 300 s). A Keycloak that has not re-imported the realm keeps serving
+  the old lifespan, and a local run past ~5 min then re-enters refresh contention; read BFF
+  contention counters alongside the result before attributing failures to the application. (2) A
+  container can be "Up" and dead
   — `movie-assistant-gateway` once showed `Up 37 hours` while not answering `/health`; zero
   gateway requests for a turn means check liveness first:
   `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
@@ -268,8 +347,8 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   15–19 min (web E2E only), green runs take 30–35 min (web + APK + emulator). Fixing the suite
   roughly doubles the job's wall clock. Do not read job duration as a performance signal without
   checking the outcome.
-- **Agent tests are split into two tiers by `E2E_TIER` — unclassified tests fail the gate.** `@gate` tests (155, blocking — what a PR pays for) and `@model-decision` tests (22, non-blocking, run only on `main` and dispatch) are separate slices. `E2E_TIER=gate pnpm exec playwright test` / `E2E_TIER=model pnpm exec playwright test`; without the flag all 177 run (local default). An agent test with no classification fails the gate rather than defaulting into a tier — enforced by `scripts/__tests__/agent-test-classification.test.mjs`.
-- **`--grep-invert` is accepted by Playwright 1.60 but does nothing.** `--grep CORS` lists 1 test; `--grep-invert CORS` lists all 177. The tier split must be applied via `E2E_TIER` → `grep`/`grepInvert` in `playwright.config.ts`, not as a CLI flag. A CLI-based split would appear to run only the selected tier while silently running the whole suite.
+- **Agent tests are split into two tiers by `E2E_TIER` — unclassified tests fail the gate.** `@gate` tests (blocking — what a PR pays for) and `@model-decision` tests (non-blocking, same job, `main` + dispatch only, `continue-on-error: true`) are separate slices. `E2E_TIER=gate pnpm exec playwright test` / `E2E_TIER=model pnpm exec playwright test`; without the flag everything runs (local default). At the split (2026-08-12) the tiers were 155 / 22 of 177, but the guard asserts the PARTITION, not those counts. An agent test with no classification fails the gate rather than defaulting into a tier — enforced by `scripts/__tests__/agent-test-classification.test.mjs`.
+- **`--grep-invert` is accepted by Playwright 1.60 but does nothing.** `--grep CORS` lists 1 test; `--grep-invert CORS` lists the whole suite (all 177 at the time of measurement). The tier split must be applied via `E2E_TIER` → `grep`/`grepInvert` in `playwright.config.ts`, not as a CLI flag. A CLI-based split would appear to run only the selected tier while silently running the whole suite.
 - **`node --test <file> --test-name-pattern "x"` silently runs everything.** Node stops parsing its own flags at the script path; anything after the path becomes the script's `argv` and is ignored. `--test-name-pattern` never applied. Nothing warns; the filter simply does not exist. The safe form is flags-before-path: `node --test --test-name-pattern "x" tests/foo.test.js`. Always verify a filter by checking that the reported test COUNT actually dropped — a filter that changes nothing was not applied.
 - **An argument a tool does not recognise and does not REJECT leaves the default action running — FIXED, items #497/#500.** Measured 2026-09-19: `node scripts/agent-stack.mjs --help` began building `movie-mcp:latest` within a second during a session whose entire purpose was tearing things down. It was caught only because the call happened to carry a timeout. The same class was live in three other scripts: `renovate-health.mjs --dryrun` posted a public comment to item #311; `check-lockfile-refresh.mjs --dryrun` posted a public comment; `prune-bff-runtime-modules.mjs --dry_run` deleted files for real. All four now route argv through one shared rejecting parser, `scripts/lib/argv-contract.mjs`:
 
@@ -287,7 +366,17 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 - **A container reporting `running` at 100% CPU on one core is wedged, not slow.** 100% CPU means a spin; a blocked await sits near 0%. `movie-assistant-gateway` has been caught in a livelock (`drain_audit_tasks` refilling its own loop) where `docker inspect` said `running`, logs were 40 minutes stale, and `/health` timed out — five specs "reproduced" against a dead stack, not a defect. The gateway now carries a healthcheck so `docker ps` says `unhealthy` instead of `Up`. It is NOT auto-restarted (a wedged gateway must stay visible). Stack dump in one command: `docker kill -s USR1 movie-assistant-gateway && docker logs --tail 100 movie-assistant-gateway`. Zero gateway requests for a turn means check liveness first: `docker exec mcm-bff-service-nonsecure wget -qO- http://movie-assistant-gateway:8000/health`.
 - **A datastore volume that survives between runs fails the NEXT run, not the current one.** The `kvm` runner is persistent; `app-ci.yml`'s "Reset stateful CI data" step removes data volumes so each run starts clean — but `mcm-bff-cache-redis-data` was missing from that step. PR #362's `app-e2e` ran Redis 8.10.1 and wrote an RDB v15 dump into it; the next `app-e2e` on Redis 8.6.2 (the `main` merge of PR #361, run 2735) died at bring-up with `# Can't handle RDB format version 15 … dependency failed to start: container mcm-bff-cache-redis is unhealthy`. Nothing in either failing commit touched Redis — the failing run was poisoned by the previous run's container. **Two diagnostic rules:** (1) "unhealthy at bring-up" with the container `Restarting (1)` is the signature — read the datastore's own log (the bundle's `mcm-bff-cache-redis.log`) before blaming the change; (2) a redis version moving in EITHER direction between consecutive runs trips this — an older-version PR after a newer-version PR is the common case on a Renovate day. Fixed 2026-09-05 by adding the volume to both reset steps; `scripts/__tests__/app-ci-stateful-reset.guard.test.mjs` now asserts every volume the setup step creates is also removed by the reset step.
 - **A leak is bounded for Playwright but UNBOUNDED for the mobile tier** — the ownership guard does not catch specs that create collections via non-POST routes (e.g. backup restore). `backups.spec.ts` demonstrates the safe pattern: a spec cleans up what it caused to exist, by whatever route, by name in `afterEach`. On PR #527 the restore E2E left collections named `… (backup 2026-09-20 18:04)` and `Mutated e2e-…` in the shared account; `agent-disambiguation` then found several plausible matches and asked a disambiguation question instead of rendering a card — failing three Maestro attempts (~35 min each) in a suite and tier that looked completely unrelated to the diff. `e2e-collection-ownership.guard.test.mjs` matches `request.post('/bff-api/collections'` and passes a spec that creates via restore, import, or seed. Do not reason from "the next run will sweep it" unless nothing runs between here and the next run — in the CI job the model tier and the whole mobile tier do.
-- **`dev-realm` `accessTokenLifespan: 300` — any local run past ~5 min re-enters refresh contention.** `dev-realm` now matches `ci-realm` at 5400 s. The `globalTeardown` fails the run if `refresh_rate_limited > 0`, with a message naming the token lifespan. In the dev container that guard does NOT fire — the Playwright image has no Docker CLI to read the BFF container. Run the tally manually after a containerized local run: `bash scripts/e2e-contention-tally.sh` (tally only) or `bash scripts/e2e-contention-tally.sh --gate` (exit 1 on any contention). A running Keycloak keeps the old lifespan until the realm is re-imported.
+- **Local refresh contention is now a *stale realm* problem, not a lifespan problem.** `dev-realm`
+  matches `ci-realm` at `accessTokenLifespan: 5400` (feature 054, item #168); only
+  `prod-realm.json` keeps `300`. A running Keycloak keeps the OLD value until the realm is
+  re-imported, so an un-reimported realm still expires tokens five minutes in and a local run past
+  ~5 min re-enters refresh contention. The `globalTeardown` fails the run if
+  `refresh_rate_limited > 0`, with a message naming the token lifespan and the file to check. In the
+  dev container that guard does NOT fire — the Playwright image has no Docker CLI to read the BFF
+  container, and it deliberately reports "could not measure" rather than "zero". Run the tally
+  manually after a containerized local run: `bash scripts/e2e-contention-tally.sh` (tally only, never
+  fails) or `bash scripts/e2e-contention-tally.sh --gate` (exit 1 on any contention; this is the form
+  `app-ci` invokes).
 - **TMDB drift disambiguation lesson — assert by position, never by hardcoded name.** Assert by `disambig-option-1` slot index (testID), not by title string. `agent-disambiguation.yaml` previously matched the button by label text, which caused failures when "Avatar: The Way of Water" left the offered set entirely on 2026-07-20. Do NOT make every hardcoded title dynamic: `assistant-disambiguate.{spec.ts,yaml}` hardcodes the same film on purpose (load-bearing for substring regression — the user types the full title so drift is irrelevant, and the bug-1 regression needs a pair where one title is a substring of the other). That hardcoding must stay.
 - **BFF integration test harness key facts: `testEnvironment: node`, `maxWorkers: 1` (serial — parallel `flushdb` would corrupt data), ROPC client `mcm-bff-test` requires `ensureRopcAudienceMapper()` in `beforeAll` or ROPC tokens are rejected as invalid audience; `route-coverage-map.ts` fails if any `+api.ts` route lacks a test or justified exclusion.**
 

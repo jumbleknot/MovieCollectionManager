@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T16:45:16.789Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Dev stack env files and local secret generation
@@ -369,7 +369,9 @@ the generator into a throwaway mini-repo and drive it against a **synthetic** te
 offline and keyless and never touch a developer's real `stacks/*.env`.
 `scripts/__tests__/gen-dev-env.guard.test.mjs` covers the projection side, including the item #552
 counterpart there: an `mcm.env` missing the `BACKUP_TEST_*` keys is named with the back-fill fix rather
-than silently projecting nothing. `scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails
+than silently projecting nothing. Both suites are executed in CI by the `naming` job's shell-expanded
+`node --test scripts/__tests__/*.test.mjs` step, so a guard for this layer cannot rot unrun.
+`scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails
 when live documentation cites a `.env*.example` that is not actually tracked — a dangling template
 pointer reads to a fresh clone as a broken repository. That guard resolves citations with
 `git ls-files` rather than `existsSync`, precisely because `.gitignore`'s `*.env.*` rule makes an

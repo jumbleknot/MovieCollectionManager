@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod reboot resilience
-description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, and periphery storage location — that made recovery hands-off.
+description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, keyfile idempotency, network attachment and periphery storage location — that made recovery hands-off.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 sources:
@@ -30,9 +30,10 @@ sources:
   - id: openwiki-source-750b2cbfd1a5b0c826bf579b
     resource: repo://scripts/preflight.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T20:39:10.335Z
 ---
-
-
 
 # Prod reboot resilience
 
@@ -160,10 +161,10 @@ starts. So the drain marked containers stopped, and the policy then refused to b
 Proven on Docker 29.6.0: a `docker stop` plus a user-daemon restart leaves an `unless-stopped` container
 `Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Every service in every
 prod compose now declares `restart: always` (27 services across the seven `compose.prod.yaml` files), and
-every host-managed compose — Forgejo, Komodo itself, cloudflared and the monitoring stack — was set to
-`always` as host state. The one-shot init containers idle on `sleep infinity` after an idempotent init so
-they too stay eligible. Do not reintroduce `unless-stopped` on a prod or host-managed service expecting a
-reboot to bring it back.
+every host-managed compose — Forgejo, Komodo itself, cloudflared, and the host side services (the
+monitoring stack plus the RustFS Nx-cache object store) — was set to `always` as host state. The one-shot
+init containers idle on `sleep infinity` after an idempotent init so they too stay eligible. Do not
+reintroduce `unless-stopped` on a prod or host-managed service expecting a reboot to bring it back.
 
 The immediate fix on the host was an interim `docker update --restart always` over the running
 containers, which only survives until each container is next *recreated*. What makes the policy durable
@@ -308,9 +309,10 @@ intended path.
   and syncing, and the point is that nothing is started by hand after boot; any failing row is a defect to
   fix before closing the round. The checklist is in the source runbook's validation section.
 - **The restart-policy gate only sees in-repo prod composes.** Host-managed composes live outside the
-  repository (Forgejo, Komodo, cloudflared, the monitoring stack), so no gate can fail on their restart
-  policy — their `always` is host state an operator must maintain by hand, and a rebuild that forgets it
-  reintroduces the round-2 failure for those stacks only.
+  repository (Forgejo, Komodo, cloudflared, and the host side services — the monitoring stack plus the
+  RustFS Nx-cache object store), so no gate can fail on their restart policy — their `always` is host
+  state an operator must maintain by hand, and a rebuild that forgets it reintroduces the round-2 failure
+  for those stacks only.
 
 ## Enforcement — the two required gates
 
@@ -334,11 +336,16 @@ failure:
   regression) and a missing `restart:` is forbidden because it defaults to `no`. `no` / `on-failure` are
   allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket`
   pattern, since `always` would restart-loop them
-  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)).
+  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)). Its scan globs only
+  `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
+  host-managed composes above.
 
 Both run selftest-then-scan in the `naming` job of
 [`guardrails.yml`](../../.forgejo/workflows/guardrails.yml) on every PR and every push to `main`, and
-locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs).
+locally through [`scripts/preflight.mjs`](../../scripts/preflight.mjs). That job is the same place the
+resource-naming gate runs over the same discovered compose files — which is what keeps the network names
+a stack re-attaches to inside the approved set
+([`check-resource-naming.mjs`](../../scripts/check-resource-naming.mjs)).
 
 Related pages: [Published-port reservation](../invariants/published-port-reservation.md),
 [prod control tower](./prod-control-tower.md), [prod data-tier auth](./prod-data-tier-auth.md),

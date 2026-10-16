@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:effc0f9ce9b6b531aaed0948eaa333dfe6ac9acaaf821d62da5078efb1ba296f",
+  "pageVersion": "sha256:8f02e130a19ae4f5b3229dcaa5afca6cb983a943f8eab7d1a0cf157a912979c3",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -28,11 +28,15 @@
     },
     {
       "id": "claim_e2318f3b41694aebb52b293af3e1161f",
-      "statement": "app-ci's app-e2e job is gated behind a dorny paths-filter `changes` job scoped to paths that affect app runtime behaviour, so a PR touching only scripts/docs/openwiki renders app-e2e `skipped -> satisfied` and the board goes green without the E2E suite ever executing, making the suite's true failure rate invisible from an all-green streak.",
+      "statement": "app-ci's app-e2e job is gated behind a dorny paths-filter `changes` job scoped to paths that affect app runtime behaviour (a `app:` filter of frontend/**, agents/**, mcp-servers/**, backend/**, packages/**, infrastructure-as-code/docker/**, app-ci.yml itself, the zap scripts, the pnpm lockfile/workspace manifests, and a short list of NAMED scripts rather than `scripts/**`), so a PR touching only docs/, openwiki/, or a script the filter does not name renders app-e2e `skipped -> satisfied` and the board goes green without the E2E suite ever executing, making the suite's true failure rate invisible from an all-green streak.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L100-L175",
-          "version": "repo-lines-v1:sha256:618420a5844746266a6601b1038a34583446dc343c5c877aee61372e9d51bce3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMzRhNjFlODY4ZTM2OGQ3NmExZTE2NjA0OGUzMDM5Y2EyNTQzMzgwMDMyYjJhNTJmOTQxYTQ4OTBjNmFmODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOGNjOTZkMjdiNmFiYzU3NzI1NmJkNGExZTUxMmViNmUzODQxMTk5YTA5ZDBjN2ZmNWQ3ZjBlZmNmNDQ0NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYWUyZDkzOTQxYmM3ZGJiNDFhZjgzYzkwZjhkZGI5NGE0MDUxNDg2NzBlMzA4MjQ3MDAzZDcyYzFhOTYzNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZWJhNzAyYjVmMDUwOWRmMTlmOWY0ZmFiN2NmMDg5Nzg4MzkxMmJmYjYzZmVkZmM3YThlOGQ5MTBmYWRhYjMifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L111-L198",
+          "version": "repo-lines-v1:sha256:bea1f8e378d6cf85de12cc08e04818ab86493bb1e1edb78dd4bd421063bacf8a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZjRiNDVkYTVkMTk2NmVhNDdlOTJjN2Q5MDA4MzA1OWZhMzc0NDJlYzdlYzBkMTZkYWViOThlOGFjMDUyYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTU0OWNlNTFiMTEwZGFlYjEzMzkwZDdmZDYxYThkZDQ5YTdiM2RhZTdmODkyZDUxYWU5ZDQ4MzQ1NDdjZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OWQwY2MzMTcyY2ZkYzk4NTIyNzkwZmM4MmQ2NTU4NTIzNTUxNzFhNDg5ZGM3OWFkYTIyMmQ2YWRlZDM0YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZmViYTJmZTk4M2M2MzEwMmQ3OGJmMjRiZTE1MmYwMmZhMGFjOGQ0YmZmMjVjNTY2ZTM4ZjVjNWFiZWQxNjIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs#L64-L110",
+          "version": "repo-lines-v1:sha256:a66fc303586175a8e195c343127d3aa125c70cdcfaa71c940bdc2ea68d002852:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNmVlYTZiMzQ2ZmQ4MWYzNjc1ZTQwMjcwNTVmYjVjOTkxZGEzNWMyYjUwNzE3NGFkYzk3ZWQ4OGMxMTIxMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzOGIyODI3NjlmMzc3ODA0YTM5NGM2MmViODM4NmYzOTk4YTI2ZGJmNmJhOTc0ODFjY2E5MzVmMGJlODgxNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlZGZiMWFhYjEyMTBiMDVhYmZkZGFjYThjNWU4YWUwY2U4ZGZjNmFlZjRlMjAyZmMzYzk5Mzg5MTE2NDNlYzMifQ"
         }
       ]
     },
@@ -266,7 +270,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:de6e4669455abd9d1a0b9ae2ad2198d6cf9b5c9410a4626718c375292553b012"
+          "version": "repo-file-v1:sha256:d2129d6145acb0e86400fb839281f8587802ded297c6575b57c71385fc14853f"
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
@@ -353,6 +357,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T16:45:16.789Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

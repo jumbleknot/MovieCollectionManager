@@ -81,7 +81,7 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T13:30:11.885Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -274,7 +274,14 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 ## Side artifacts and the static gates over every compose file
 
 Not every file under `infrastructure-as-code/` is a stack. Four artifacts exist to serve the stacks
-without being one, and every compose file in the tree is subject to a set of static gates.
+without being one, and every compose file the gates discover is subject to a set of static gates.
+Three of those gates (naming, inline-secret, port-collision) discover files by basename glob —
+`infrastructure-as-code/docker/**/compose*.yaml` plus
+`infrastructure-as-code/docker/stacks/*.compose.yaml`, with the retired root `compose.yaml` added by
+name — so a compose file whose basename does not *begin* with `compose` falls outside all three:
+`infrastructure-as-code/docker/dev-ollama.compose.yaml` is neither name-checked, secret-checked nor
+port-checked (the CVE enumerator uses its own wider `infrastructure-as-code/**/*.{yaml,yml}` glob and
+does see it). Name the file `compose.<something>.yaml` if it needs that coverage.
 
 **ClickHouse system-log TTL config** — `infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml`
 is bind-mounted read-only into `langfuse-clickhouse` in *both* the dev and the prod observability
@@ -309,11 +316,14 @@ first.
 name, external network name and `container_name`, requires `container_name == service key`, permits
 only the BFF to carry the `mcm-` qualifier, and forbids re-introducing a retired service key as a
 network alias so a missed reference fails loudly instead of silently resolving.
-`scripts/check-no-inline-secrets.mjs` asserts the structural property that no tracked compose file
+`scripts/check-no-inline-secrets.mjs` asserts the structural property that no *discovered* compose file
 holds a literal credential: every secret-shaped key, password-bearing URL, and
 command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?msg}` reference, and an
-inline `${VAR:-default}` *fails* because it re-leaks plaintext. `.gitignore` backs the template
-contract: it ignores `*.env` / `*.env.*` and carves out
+inline `${VAR:-default}` *fails* because it re-leaks plaintext. The secret gate runs in the `naming`
+job as `--selftest` then scan, so a detector that quietly stopped flagging cannot report green; the
+naming gate has no selftest and is run straight as `--section=all`, and `scripts/preflight.mjs`
+reproduces both locally (the secret gate as selftest-then-scan, the naming gate plain). `.gitignore`
+backs the template contract: it ignores `*.env` / `*.env.*` and carves out
 `!infrastructure-as-code/docker/stacks/*.env.example`, scoped to that directory so other deliberately
 ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the
 images pulled in `infrastructure-as-code/**` that no other workflow builds and scans each with Trivy.
@@ -405,9 +415,11 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   consolidation that got the core stacks to this ResourceSync-managed state.
 - **Every prod admin/UI port lives in the reserved range `19000–19099`, and moving one requires updating
   its own self-referencing URL variable too.** `scripts/check-prod-ci-port-collision.mjs` compares the
-  fixed host ports of every `compose.prod.yaml` against every other tracked compose file and fails on an
-  overlap, because the prod and CI daemons share one host's port space and a collision crash-loops the
-  losing side. The gate scans only the compose `ports:` key, not secondary URL references — see
+  fixed host ports of every `compose.prod.yaml` (classified by basename) against every other compose file
+  it discovers and fails on an overlap, because the prod and CI daemons share one host's port space and a
+  collision crash-loops the losing side. It compares port *numbers*, ignoring `host_ip`, since a prod
+  `0.0.0.0` bind collides with a CI bind on that port whatever interface CI names. The gate scans only
+  the compose `ports:` key, not secondary URL references — see
   [Published-port reservation](../invariants/published-port-reservation.md) for the collision this
   convention exists to prevent and the secondary-reference trap.
 - **Every long-running prod service must declare `restart: always`.** `restart: unless-stopped` does

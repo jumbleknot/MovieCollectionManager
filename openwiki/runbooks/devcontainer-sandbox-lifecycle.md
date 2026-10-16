@@ -4,9 +4,6 @@ title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, ha
 description: The lifecycle half of the Docker Sandbox dev-container runbook — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the three gaps a cold recreate must fill, the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary.
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-14T01:34:17.413Z
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
@@ -29,6 +26,9 @@ sources:
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:34:17.413Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -85,6 +85,12 @@ egress policy nor the Docker images.
 - **`sbx template save` stops the sandbox** and holds a lock that blocks other `sbx` commands for its
   full duration (~17 min, ~16.8 GB). Do not run it when you need the environment, and do not conclude
   it failed because `sbx template ls` shows nothing — check whether the sandbox went to `stopped`.
+- **The full recreate has a fixed order**, and it is the order above plus the §8b steps: back up
+  (§8b) → `sbx rm <name> --force` → `sbx create --name <name> -m 16g --skills=off shell <scratch-dir>`
+  → apply the egress policy (§7b) **before** anything pulls → the three §8b gaps → a fresh clone into
+  `/workspaces/<name>` → restore the `.env` files → `sbx stop` → `devcontainer up`. `--skills=off` is
+  deliberate: the current `sbx` default is `readonly`, which mounts the host skills store into a new
+  sandbox unless you opt out.
 
 ## Disk and volumes (§8, §7e)
 
@@ -121,7 +127,8 @@ flowchart TD
   *revealed* the failure rather than causing it — the same lesson as a skipped test reading as a pass.
 - **Never `docker image prune -a`.** It evicts the Playwright image the web-E2E recipe needs, which
   must then be re-pulled. `docker builder prune` is the safe lever; `docker image prune` is
-  dangling-only.
+  dangling-only. The distinction inside `builder prune` matters too: `-f` alone drops only **unused**
+  cache, while `-af` drops all of it.
 - **`/var/lib/docker` is not visible from inside the dev container** (`No such file or directory`),
   and `df /` there reports the Docker volume because the container's overlay upper dir lives on it.
   Establish the topology from the **VM shell**, and **verify a resize from the host**, never with `df`
@@ -182,7 +189,12 @@ provisioning path supplies. All three were hit on 2026-08-27; each stops the rec
 
 Also expect a CLI `devcontainer up` to install **no personal layer** (the harness's `personal-layer`
 check fails with `RTK not found`, and the RTK hook needs its own handling) — see `§8` in the source
-runbook.
+runbook. The sandbox engine has its **own** volumes, so the personal layer does not come across from
+the Docker Desktop environment: the `mcm-claude` volume is empty on a fresh sandbox and nothing
+populates it automatically, so it must be installed once per container creation
+(`--dotfiles-repository <url>`, and `ensure-rtk-hook.sh` afterwards if the dotfiles script does not
+wire the hook). RTK being present is not the same as RTK being active — the hook entry is what
+routes commands through it.
 
 ### What a recreate destroys, and what to save first
 
@@ -215,7 +227,7 @@ it** — a later version did not raise the deadline. A bare `sbx run` / `sbx exe
 failure; only the launcher is immune. Full mechanism, the proof command and the §7f grace window:
 source §7f.
 
-## Verification harness (§10)
+## Verification harness, and the instruments beside it (§10)
 
 ```bash
 bash .devcontainer/verify/run-harness.sh
@@ -229,6 +241,34 @@ claimed about is not proof), so the harness refuses to invent that result and re
 silently shrinks and a skipped check reads as a pass — a check that did not report is counted as a
 failure, never as "not applicable".
 
+```mermaid
+flowchart TD
+  A["run-harness.sh, run from the sandbox VM"] --> B["in-container checks, invoked via docker exec"]
+  A --> C["VM-side checks: portable-runner, engine-seam --vm-check, sandbox-egress"]
+  C --> D["re-resolve the dev container name — portable-runner may have replaced it"]
+  D --> E["reproducible-recreate LAST — destructive: it removes and rebuilds the container"]
+  A --> F["host-side engine-seam proof, supplied as MCM_HOST_CHECK, never produced from inside"]
+```
+
+*Three vantage points in one run, and the two ordering constraints that make the aggregate honest: the destructive check comes last, and the host-side result must be handed in.*
+
+**Ordering is load-bearing twice over.** Beyond the destructive check running last, the harness
+**re-resolves the dev container's name immediately before it**: `verify-portable-runner.sh` itself
+runs `devcontainer up` and can *replace* the container, so a name captured at the top of the run can
+be stale by the time the destructive check starts.
+
+Two counting rules follow from the same principle — a check that did not report must not be
+indistinguishable from one that passed. The tally is by **script**, not by invocation:
+`verify-engine-seam.sh` is one script run in three modes, and its single slot is green only if **all
+three** pass, because a two-of-three engine seam is not a seam. And once any mode of a script fails,
+that script **stays** failed for the rest of the run.
+
+**The two runners swap roles on this path.** `verify-portable-runner.sh` exists for SC-006, "the same
+committed config runs unmodified under a second conformant runner", and every one of its assertions is
+**CLI-side** — it never drives the VS Code extension. On Docker Desktop the extension was the daily
+driver and the CLI was the alternate; in the sandbox the **CLI builds daily** and the extension becomes
+the unasserted alternate, so this check now covers the primary build path rather than the spare one.
+
 > 🔴 **Running the harness DESTROYS and rebuilds the dev container.** The last check,
 > [`verify-reproducible-recreate.sh`](../../.devcontainer/verify/verify-reproducible-recreate.sh),
 > removes the container **and its derived image** by design. A `reproducible-recreate` FAIL therefore
@@ -238,6 +278,13 @@ failure, never as "not applicable".
 > present-or-pullable **before** it destroys anything, failing with the dev container still standing
 > otherwise — that ordering was added after a 2026-09-19 teardown-then-failed-rebuild left the
 > environment with no container at all, and every later check reported `No such container`.
+>
+> It also takes the **config path as a parameter** and picks its engine proof from it: a config under
+> `.devcontainer/sandbox/` gets `verify-engine-seam.sh`, anything else gets
+> `verify-engine-isolation.sh`. The two configs' premises are *inverted* (one mounts the engine socket
+> on purpose, the other asserts none is mounted), so running the wrong proof reports a topology
+> mismatch as a failure. A `--full` variant additionally removes the source volume for a true
+> from-scratch recreate and stops after the build, since an empty source volume cannot be verified.
 
 > ⚠️ **`verify-engine-seam.sh --host-check` PASSES VACUOUSLY when Docker Desktop is stopped.** Its
 > assertions are all of the form *"the Windows engine does not list X"*, and it does not distinguish
@@ -252,12 +299,36 @@ failure, never as "not applicable".
 whole environment rests on, probed from a **real sibling container**, because inferring it from the
 policy's stated scope proves nothing. It is RED by design on the Docker Desktop path, which is what
 makes the GREEN here mean something
-([`verify-firewall-allowlist.sh`](../../.devcontainer/verify/verify-firewall-allowlist.sh)).
+([`verify-firewall-allowlist.sh`](../../.devcontainer/verify/verify-firewall-allowlist.sh)). Two
+further details matter on this path:
+
+- **Its in-VM drift assertion does not apply here, by design (D-18).** The check reads the
+  `allowed-domains` ipset, which exists only on the Docker Desktop path; the sandbox container runs
+  `--network=host` and enforces egress in the host policy instead, so the script branches on
+  `MCM_DEVCONTAINER_PLATFORM=sandbox` and reports the ipset check as not applicable rather than
+  failing a working container. **The authoritative list-vs-policy drift check on this path is
+  host-side**: `verify-sandbox-egress.sh --audit-check`, which the harness does not fold in and
+  cannot fake.
+- **A refusal now has two possible bodies** (the pre-v0.47.0 `Blocked by network policy` and the
+  v0.47.0 approval-queue form), so a marker-only check can read a working refusal as a breach. Both
+  the sibling probe and the default-deny probe accept either.
 
 The host-side proof is only worth reading when it was run properly: Docker Desktop **up**, the
-in-container half run first with the probe retained so it exists on the other side of the boundary,
-and the sandbox container's name supplied so the real dev container's absence is asserted too. The
-exact commands are in source §10.
+in-container half run first with the probe retained (`KEEP_PROBE=1`) so it exists on the other side of
+the boundary, and `MCM_SANDBOX_CONTAINER` set so the real dev container's absence is asserted too —
+without that variable the script says so and asserts nothing about it. Do **not** set
+`MCM_EXPECT_NO_STACKS=1` here: the retained Docker Desktop path legitimately leaves exited stack
+containers on the Windows engine. The exact commands are in source §10.
+
+**The reboot-survival instrument is separate from the harness and is used by the upgrade ritual.**
+[`verify-reboot-survival.sh`](../../.devcontainer/verify/verify-reboot-survival.sh) has three modes —
+`--capture` records an inventory *before* an event, `--verify` diffs the live environment against it,
+`--show` prints it. Two design points carry it: a **missing manifest is a FAILURE, not a skip** (a
+survival claim with no recorded before is unfalsifiable), and the manifest is written to the VM *and*
+copied off it, because a sandbox that comes back empty must still be able to prove it was not always
+empty. It compares existence *and* running state separately, because after a stop/start cycle every
+container still existed while the four agent containers were `exited` — an existence-only check would
+report PASS on an environment where nothing is serving.
 
 ## The `sbx` version, and the ritual before upgrading it (§10b)
 
@@ -282,11 +353,15 @@ it held:** there is no `--disk` flag (sizes remain §8's creation-time environme
 idle-stop and the dockerd-readiness budget are hardcoded with no knob; `sbx start` does not exist; and
 templates exclude the Docker image store while `sbx run` still defaults the workspace to the current
 directory. Later releases have also **tightened** egress (DNS resolution refused without a permitting
-rule, policy evaluation failing **closed**, raw TCP to a denied hostname no longer let through by an
-allow rule for its resolved IP) — none of which widened it, but all of which can change what a probe
-sees. An upgrade has also been observed to leave the relocated data-root junction, the size variables
-and both `.img` volumes intact, and to preserve a sandbox's local egress policy through a UUID
-migration — treat that as evidence, not a guarantee, and re-verify.
+rule, PTR lookups only for already-authorized IPs, policy evaluation failing **closed**, raw TCP to a
+denied hostname no longer let through by an allow rule for its resolved IP) — none of which widened it,
+but all of which can change what a probe sees. Two further changes already landed and are worth
+re-checking because scripts depend on them: **`sbx rm` prompts** and a non-interactive prompt answers
+*No*, so `--force` is required in any script or agent shell; and **`sbx create`/`sbx run` now take
+`--skills=off|readonly|readwrite`, defaulting to `readonly`**, which mounts the host skills store into
+new sandboxes unless you opt out. An upgrade has also been observed to leave the relocated data-root
+junction, the size variables and both `.img` volumes intact, and to preserve a sandbox's local egress
+policy through a UUID migration — treat that as evidence, not a guarantee, and re-verify.
 
 ## Where to go next
 

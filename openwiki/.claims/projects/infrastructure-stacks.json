@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:265f0e3db95865846d69fde481df079281b1cb0a718db2f2384baca14c395064",
+  "pageVersion": "sha256:87d746e8e1042628e832ac9c20131d170c581afd9828eeb729d50437bdcbfbd3",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -120,7 +120,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:e7d02aaaf8d9ec1b70e04831fa5e61be38f38e4873337bea8a8c111ad38e42f0"
+          "version": "repo-file-v1:sha256:db92c4aefc8aac2c25146191c635e09c7b6be550ec2b8f6838b256c90be3adde"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -148,7 +148,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
@@ -326,23 +326,27 @@
     },
     {
       "id": "claim_1219c14f8be844c2ae3efc6426a3f9c7",
-      "statement": "Every compose file under infrastructure-as-code/ is constrained by static gates in the guardrails CI 'naming' job: scripts/check-resource-naming.mjs enforces the <context>-<role>-<engine> grammar on declared volume/network/container names, requires container_name == service key, permits only the BFF the mcm- qualifier and forbids re-introducing a retired service key as a network alias, while scripts/check-no-inline-secrets.mjs requires every secret-shaped key, password-bearing URL and command/healthcheck/entrypoint auth literal to be a pure ${VAR} or ${VAR:?} reference and fails an inline ${VAR:-default}; the infra-scan target separately enumerates and Trivy-scans the third-party images pulled in infrastructure-as-code/**.",
+      "statement": "The guardrails CI 'naming' job runs the compose static gates over the files it discovers by basename — scripts/check-resource-naming.mjs (enforcing the <context>-<role>-<engine> grammar on declared volume/network/container names, container_name == service key, the BFF-only mcm- qualifier, and no retired service key re-introduced as a network alias) and scripts/check-no-inline-secrets.mjs (requiring every secret-shaped key, password-bearing URL and command/healthcheck/entrypoint auth literal to be a pure ${VAR} or ${VAR:?} reference, and failing an inline ${VAR:-default}) — where discovery is the globs infrastructure-as-code/docker/**/compose*.yaml plus infrastructure-as-code/docker/stacks/*.compose.yaml plus the retired root compose.yaml by name, so a file whose basename does not begin with 'compose' (e.g. infrastructure-as-code/docker/dev-ollama.compose.yaml) escapes all three basename-discovering gates; the infra-scan target separately enumerates and Trivy-scans the third-party images pulled in infrastructure-as-code/**.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L93-L128",
+          "version": "repo-lines-v1:sha256:7dc23b85f87a621cdaea02096a80d5a51dd353657fb170986c1bb29bd9c6d08b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZGRhZmFiMmZkZDljNTY3OGU3OTYyZjg3MmJkY2VhYzQ5NmZhMjU4ZWE1ZGRlMjczYTZlNWE5OTE4MDVjZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YTg5OTAyYjVkMDZiYTUwMWU4NjU3MTk2Mzc0ZWM4YzY4MzlmMGEwNWI2OGU1OGY4NGI0OWMyMmQzYWEyN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjMTA2YWY0NDlkMTkyNGJlYjE3NDViMDdlMTgwYzY2MTIwOWI5NmUzN2MwNjFiNDBiNjQyNzRjNWJhMzlkYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMGRkMGI3NWQ0YmFlMGFjMjA1MDBjNDYwNmU4ODU3MTc4ZDZlMTYxN2FkMzAwNGFmZDYxZTlhYTA5OWQ2ODgifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "resource": "repo://infrastructure-as-code/project.json#L148-L166",
+          "version": "repo-lines-v1:sha256:43580d6ddb98fa7b4322c62c00e7689e1c9f1fb5c50cf793cf3affc3192e8bfd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNzkwYWJkZWYwYmM0M2RhNDJjMDJkY2IxOWY3NWFmOGJhOWQ0OWY3ZjE2ZjcwMWY5Zjc2NWQwMDM0ZGVhYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2OTlkMWY0MWIzNjI0ODljYTZlZDIwMzNjYThmMzExZjg2YjY2OWU2OTk0ZDEzMzcwNjNiNjYwMjJkMGRiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0OWRmZDQ3NDc3ZTYwZWQ0ODgzYTM5ZTA5NmY4NjNmMDc5ZWViZTQ4ZDExMzEyNTMwMzNiZWRiNDcwZDI4OTAifQ"
         },
         {
-          "resource": "repo://scripts/check-no-inline-secrets.mjs",
-          "version": "repo-file-v1:sha256:8fb3601b7232f1580808bd3e83f4c28bf4064283edf2b4714fe6e1af60edf79b"
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L143-L152",
+          "version": "repo-lines-v1:sha256:335555e376379932355c72e16af07695468396c5ec1125a07a4ce8291539b934:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYThjMmMwZTNiMGRlMWJjNGE1Mzc4MjA1ZGUwMTQwYTZlYjgwM2ViNjVkNGJiNzZmMTJmNDBhZmQyYWYyNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0NDhiZTlmNjQ0MzZkOGVmYTFjZWFlM2I4NzQ4NTcwZGQwMzc5OWMxMzg0ZjU3YzI1NGNhNDk0MzFkNmI5MjgifQ"
         },
         {
-          "resource": "repo://scripts/check-resource-naming.mjs",
-          "version": "repo-file-v1:sha256:569a55f5257fe7f93f2be43aaec1289fc6be10c5559e850e9f28e501bc986120"
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L103-L127",
+          "version": "repo-lines-v1:sha256:d5579144cea5909a3045ee7f508940f115f6a5299bf62c75ee521c56d44325e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OWFiYjM2YTQyNTY3OTA0ZDFlYjc5N2ZiYWYwNTNmNWM4MzM3OWRjMzExMjU0YjU2OTljMTQzYmNiYzFjZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzYWIwMzFhMDliNDYwNmU3OTI5ZTdmMzg1N2JmODEwZDg5MzUwYWM2YmI4NTQ0ZjQ2OTM5MDNhMGY5Y2U5Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L83-L87",
+          "version": "repo-lines-v1:sha256:f3e908cc164cd9edcaf50aa4db76cbf3949b11c48b05316ca84fc379ac2e52e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFhOGMyYzBlM2IwZGUxYmM0YTUzNzgyMDVkZTAxNDBhNmViODAzZWI2NWQ0YmI3NmYxMmY0MGFmZDJhZjI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNjZTY2NDhjYWQwNTc3NjdhY2Y2NmY5ZWU4MDYxYjUxOTQ2NmI1Yjk1OTY4YzRkZWYyYzYxZDRhMDg5ZjZmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc1ODNiYzU2MWI5Y2VlYWNhMDljNWJiNGEzOTEwZjQ4ZTEyMWEzNjk2MjM3ZmJlMGYwZDQ1Yjc5NzA1YzE5YiJ9"
         }
       ]
     },
@@ -513,10 +517,28 @@
           "version": "repo-lines-v1:sha256:1fe2e187520d68f2e9665ea42990a91724c193e8c5bac5f4c258d965508b2de0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NzM1NDMyMTAwMWU5MmQ3ZWZhMzQ1ZmI2NWM4YzMzZTEzMzc1MmMwMzZkY2RjZTE5Y2ZmZTU2YzU1YTQyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZWE2YTJhMmY5Yjc1ZTUzZWM2ZjI4OGU4Mjg3NmFjMWEzOWYzMTg1ZTliNTg1YjAyN2M4NmEzMjRhNjhlMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5ZTVhODQ1ZDVlN2Q0MTYxZjZmY2E0ODM5YmZmMWIxNmMwOGUxZGQyMjBmMTc0M2I5Y2RiNmY1ZGQ2NTYxYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NjE3NjRmYzI0ZWFhMTNkNjAwOWE2YzhlN2UwMjFmYTBlNWFmYWI3ZDUzMzAwYjVmMTNkZjJiNmY5ODBlMjUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7379c00c816341a497e1df714a9b60ed",
+      "statement": "The compose static gates are self-verified and locally reproducible: the secret gate runs in the naming job as --selftest then scan (so a detector that silently stopped flagging cannot report green), the naming gate has no selftest and is invoked plain as --section=all, and scripts/preflight.mjs reproduces both locally with the same argument shapes.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L103-L108",
+          "version": "repo-lines-v1:sha256:6730c74778bb1bc3cbf199d5b2c106eb8ded17b89c6c71bf7166232baa7e1eb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNkODkzNTk3NWZiMjA4YjEwY2ZmN2FmZGZhZTI3OTAxNTJhNGJkMjFjZjc1Nzg3MmQ2ZDc4ZmNkNGJkNmJiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODY4MzcwYzJmY2I4YWVlMmZlZGQxZjMwNWJkMDc3ODc0ODFmNmE3NDk5NmMyZTgyMDk0NjRkYWE5NjY5MGE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjI5OGYzMWQxYzk2ZDQ2YzRjOTZjMmU2ZTc5MzU5ODFhMGEyYzFjNjRiYTQ4ODUzZjQ3NDllYzM4MmY3YThhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUzNWViYzExYmJkY2ZhNTIyMDYyMjlkOGVmYTYzN2QwYmQ5YzkwMDJlZWNiYzNlZjVmMmRmNzlkYWEzNTYzNCJ9"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L31-L49",
+          "version": "repo-lines-v1:sha256:d3a0c214eb47693833f30c39c2b8ab6536b786fb4656f2c14189a96dca1424a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmExZTIxYjY1NTU3N2U2MTAxMzhjYThkMWFlOTQwMTIwN2Q0N2JjNmUxYWViM2RjZTc4MTBkMTdjNzdiMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYmU2YWY4YmY2YjI5YmRkZTY1ZDczOGFlZjVhNGY1ZTZhOTc3ZjM2NjA2MDE5YWM0OTEzN2E3ZmIxMDI0YjEifQ"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L66-L73",
+          "version": "repo-lines-v1:sha256:5881b07e0df73461661bb5262d90e505b320a24f12066c49a8ea50fdaa53ca0c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI1Y2ZlMmFhNmNkOTc4OTgxMmRlMzM4ODUyNTU3ZDNjMmEzNTdlOTRlZGUxNWRiYjNlMTJlOGM0MDAxYTI0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE4MGE4M2VhZjk3YjMzODgxNmJmOWE2ZDllMDgzYzhmMDIzNmQ2ZTBhZTRlYzY4YzZhZWQ3OTEzN2U1MDBmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE0NWVmM2VkMWI1ODdiZTY0MzcxMDI3YTlhOWU3YTE5NGY0MDljZjZiZTg0YjE0NDJmOTIwODQxZDU4Y2RmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1MmJkYzI3MDZlOTZhODg3MjY5ZWNhY2JkYTAwNTcwM2NmZDhlMTk5Yjg1ODE3ZWI5NzY4YjFiMTA5YzM0MyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T13:30:11.885Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

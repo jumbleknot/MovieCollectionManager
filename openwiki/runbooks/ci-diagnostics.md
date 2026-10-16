@@ -34,7 +34,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T16:45:16.789Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # CI self-serve diagnostics
@@ -138,7 +138,8 @@ skipped branch then splits three ways on the `needs:` graph.
   N` or `--sha $(git rev-parse <ref>)`.** An abbreviated sha is refused outright; a short sha
   returns zero runs and reads as "no CI ran".
 - **`app-e2e` is SKIPPED on most pull requests — the board hides its true failure rate.** `app-e2e`
-  is path-gated on `changes.outputs.app`. A PR touching only `scripts/`, `docs/` or `openwiki/`
+  is path-gated on `changes.outputs.app`. A PR touching only `docs/` or `openwiki/`, or only a
+  `scripts/` file the `app` filter does not name (it lists specific scripts, not `scripts/**`),
   renders it `skipped → satisfied` and the board goes green **without the E2E suite ever running**.
   Measured 2026-09-02: of eleven recent `app-ci` runs that looked like a clean green streak, only
   three had actually executed `app-e2e`; the rest were path-gated skips. Two readings of the same

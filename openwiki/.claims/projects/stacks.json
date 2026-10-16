@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:aa24db564dde56004b2f8552160c40bb62eff769cc630243b14818ce58460831",
+  "pageVersion": "sha256:7d3d64b1f1d060a5bcc0da939c92242c8eebab73c4d7b8fc521b375a3423391a",
   "claims": [
     {
       "id": "claim_25d0e869d5a34c9bb6f72147c0aeefe5",
@@ -222,7 +222,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L91-L108",
-          "version": "repo-lines-v1:sha256:960775fb1508748e0c33e414d27a2c4096fc401038bc71d402db494e06abb544:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOWYxZTJiYTEwMTFiNTlhOGUyMDZkMzFmYTJhMTgwYWVkNTQyMDZmMjczZDkzZThkNzYwMjQxNGExZjUyMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ODM3MGMyZmNiOGFlZTJmZWRkMWYzMDViZDA3Nzg3NDgxZjZhNzQ5OTZjMmU4MjA5NDY0ZGFhOTY2OTBhODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMzVlYmMxMWJiZGNmYTUyMjA2MjI5ZDhlZmE2MzdkMGJkOWM5MDAyZWVjYmMzZWY1ZjJkZjc5ZGFhMzU2MzQifQ"
+          "version": "repo-lines-v1:sha256:ee8af53daa6d80073cef145ea821b2a48bfa9d54f734bb3982952c69d1b7bc7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOWYxZTJiYTEwMTFiNTlhOGUyMDZkMzFmYTJhMTgwYWVkNTQyMDZmMjczZDkzZThkNzYwMjQxNGExZjUyMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ODM3MGMyZmNiOGFlZTJmZWRkMWYzMDViZDA3Nzg3NDgxZjZhNzQ5OTZjMmU4MjA5NDY0ZGFhOTY2OTBhODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMzVlYmMxMWJiZGNmYTUyMjA2MjI5ZDhlZmE2MzdkMGJkOWM5MDAyZWVjYmMzZWY1ZjJkZjc5ZGFhMzU2MzQifQ"
         },
         {
           "resource": "repo://scripts/check-no-inline-secrets.mjs#L119-L181",
@@ -523,10 +523,28 @@
           "version": "repo-lines-v1:sha256:25abd9c956f4992588045de390705ecd20e50afbbd5eff51caef9d8a87128206:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NGNhMmQzYjBkMTBiMzJhM2QxODk1ZWJmNTkwMjNkZjRhNjUzMmMxMjI1ZWQ4NTNmNjMwYjM3OGVlMDdkYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNDRkZmQ3MTNmZTEwYTM4NTVjZmZjMGI3NjQ5ZjQ0NDFjODNmNzA2YjAxMDc1ZjlhZTg1YzYxZjdjZjMyNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNDA5YTJhOTg2MDc3N2RjMTMwZTFmZDE3OGNjZjI2OGUzZWI1YTUxM2QyYWRjODc0NjAyMmE3YzU1OGYxOWEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1566b9caedf54354a27c518fdd34834b",
+      "statement": "The guard suites for the dev-stack env layer are enrolled in CI rather than left to rot: `scripts/__tests__/gen-dev-secrets.guard.test.mjs` and `scripts/__tests__/gen-dev-env.guard.test.mjs` are picked up by the `naming` job's shell-expanded `node --test scripts/__tests__/*.test.mjs` step in `guardrails.yml`, so a broken back-fill or projection contract fails the build on every push to `main` and every PR.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L170-L176",
+          "version": "repo-lines-v1:sha256:ca133cf65df8a111686fd253aba3b59d2a4861fa8273d6e2501a5f9354ba49fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDQ0MWFmODA1NDg1NGJlZGUwYzgxOTRmNWZiNDYxNTRjMWVjZTRlZDZmOWRlODRkYTRlNDY4MzMzOTRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU4NmU2NjdkNmQxOWI1ZDQwNjA4MmY5Mjk4MzJhYTcyMWMwNWZkM2Y5NmNmNDAxZjlhYmYxNDMxYTQ5OGZiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L539-L559",
+          "version": "repo-lines-v1:sha256:eecc16a6b05a4e2c5e8176cfd76d7fea5ff5feb69fd9fe6ab4f08db932e82b0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NTA3MGYyNDQ0MGFkN2Y4OThhZmIxZjZiMDVlNTY4MjNlMGRkM2NkNjA3MDc3NzkwYmU4MGUyYmZhODU4ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NmY2YTkwMjI5NGY3ZTcxOTI1ZTk3MjNhNGE5ZWY2NjQ0MTE3YjBlODIxNTM1ZDkzYzljNzcwOTg0NWZmZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGZlMzFhZDEzNWQ0ZGM0NzllYjhiZDczNzI0NDNjNjY4OWQ3Mjk4Njc4MjhiOTdhODVhMDlmNzg5MjZlNjYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L1-L14",
+          "version": "repo-lines-v1:sha256:d444d1e650c3a406d555162cf21ae6a70197403a6585c22f4912222097aaa9ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDkyOGU5Yjc5NWVkMzU4NzE1ZTMyNWFkZDgwMDRmZjE3NDg4MzBkMzQxZmRiYWU0NmZjNGUxZTZlMmJhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYjYxZTE3ZTAxMjU1NWM5ODQ1NjM4ZGM5MDMzNTVhNGMzMmI4MWQ1OGZmNTMzZWY2ZGQyMDEyNTlhN2M2NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNjY5OWRkYTYxZjFhMzQzNTNkNzVmMjAwMzY3MjQ0YmI2NGZmMGIyZDllOWE3YjJlOGY0MDQ1YjY1MjFiMzUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T16:45:16.789Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:448681a8d0c9cd48ab1df074acc982f098ddbe571c246a83d17fb4bf709359d0",
+  "claims": [
+    {
+      "id": "claim_9226997034364eb9b148a34270defeae",
+      "statement": "On this host a graceful-shutdown drain unit stops every container to `Exited (0)` on shutdown, so boot never begins from \"containers were running\"; consequently `restart: unless-stopped` cannot recover them (it declines to restart a container that was already stopped when the daemon starts), and `restart: always` is required on every long-running prod service, enforced by `scripts/check-prod-restart-policy.mjs`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L106-L110",
+          "version": "repo-lines-v1:sha256:a463ce007676f3021ea3366912699baa8815f9e988f27e49168c6d4ebdc2f9f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdhMmNlNmJiNTVlZDBjY2ViZWU5N2Y3MDlkNzYzOTQ4MTBlODhmNTZjY2ZmZjE3OGFkMWIzNDMxMjJjY2FhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZmZTE5YTU1ZDY5ZDAxZDI0ODc5YTM1Y2NmYmM5NjA4NTE1ODEzY2E1YjBlMjVlNjkxOTY5MDI1ZTIxNGQ3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM5MGFjMmQ5OThhODE4MjQ1N2Q4MjVmY2ViZWY5ODJmYTJkN2U1ODMxMmIzN2U2NGRjNWMxMjEyZjVlMmI5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIwYzBkYjJkM2MzY2U5NjQ0MTY5Nzc0N2ZjYzg0NzU1ZGNhYTk2NjY4NTY0ODRkYzU5NTRmNGQ3ZDI3YjM3MSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L1-L23",
+          "version": "repo-lines-v1:sha256:52c8d65b37bf0195a81acf73e8fbded52ffc6adfdb16c349593e1f36d51c4552:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYmIxOTI1MTFjZjc4MTUwNzgxMmVjZDNmMTExNDY5MjdmNDA5NjZmYjlmMTg2MTk0ZDcwYWI4YjgzOTkzYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjkzY2NlYTA1MGJhMDlkMDg1ZjM3YjE2OWQ3NDQwZjNlYWFkOGRiNGNjNDZmNDQ0NGQ2NDIzM2U0OGE1YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ec483475c424d7e8851851fc8cba34e",
+      "statement": "A published port scoped to the tailnet IP silently fails to bind when the rootless daemon starts before the tailnet interface: the container reports `Up` with an empty Ports column and nothing listening, and only a `0.0.0.0` bind or a full rootless-daemon restart after the interface exists recovers it — a plain container restart does not.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53",
+          "version": "repo-lines-v1:sha256:0e6c3cfc51950e9abe258258e6cf0961e4b42e8b888badc7710511a0e8d6a80e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE0ZjVjYWQ3ZWY5NDczMjg1M2M5ODgxM2ZmZWU1NzlmOTUwMDk4OWFkM2FiY2M1MmYxYWRmZDIzNzg5YTVjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L9-L14",
+          "version": "repo-lines-v1:sha256:4aeafb227da2885197e08ab3db1ab703561a14cdbbe8b77e05eec786e6a65c05:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIzNTNkNzk3NzZlZmU1NDAwYjI4N2QxMjg5NzA2YzhlZjhhYWVkMGY2ZDg2MzA1OGU2M2RlM2M2ZGExNWVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjMjY5NzIyODdlZGVmYzA1NGU4NjY3ZmFiYzQzY2NjNTI3NzU5MDRlZjBmZTdhMGY2ZmVjZWZkYTMyM2VmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTg5NDlkYjI5YWNhNjcxMGIyYzRlYmUxZmE3M2E3MjU2NjRhMmUwMTE2MGQyNGMwODM1MjgzZTc1NmE4NmIyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZjZDIyNWQ4YmFmMWJjZjhmMTVkMjY0OTkwMjAxMGYwYTBhNzMyMDg3MjZhMWU3YjIxODZiYjNkYWU4MWUwOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_01d74274dce740c283310625c31ff968",
+      "statement": "The three production admin/UI publishes (Keycloak admin `19099`, LangFuse web `19030`, Grafana/otel-lgtm `19002`) all bind `0.0.0.0` on ports in the prod-reserved range `19000–19099`, which is disjoint from every CI/dev-published port because prod and the CI runner are two rootless daemons publishing into the same host port space; the invariant is owned by the published-port reservation page.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L46-L53",
+          "version": "repo-lines-v1:sha256:1ef62a7f882189f1e1c90b06caa08c379b11f28be45b2579e3d56f5cd8d70b9b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDMyZDMyMzAyN2QyY2ExZWYyNDY4ZDMwMGQ4MDE4NjJiMzZkMDA5ZTg5NzFhNTE0MWEyOGI2OWI4YTUwZjE1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNmNDVjMmVjZDE5Y2IzYjkxOTNlYzYzZDBmMDA5ZjVjYTE2MjExMDE5YmQ0ZjkwNWRjOTVkYjBkYTExNDMzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L252-L258",
+          "version": "repo-lines-v1:sha256:80959ad37f0a6ccd0435c5b6cd675b750278f54ca48f8485cb1dfab91c0c1f23:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkwZjE4ZTQ2ZmM4MDNiNTAxOWMxM2EyNzI1MzQ4ZmI2MWU3YmU2ZGM4YTIwMjk2ODNmM2QxYzA2OGY3YzFiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVlY2Y5N2MwNTg5ZGJjY2EwMTMyNDViZWI2ODM4M2FkZjQ4ZjM5YjY4NjM1YjllZTQzOTE4YmZmZDIzMjliOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNlZTEyN2YwOGYxODY4ZWYzMmM4YzZhMWNlOGJmZDExMTc4NTJhMTE1ZTQ2YjkxMzFmOWYwMTQ1Y2FjYzQ2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWRiZGJlMzg2ODlkMDA2MThiNGE3MjFjYTRhMWM4N2IzNmI4MTZmNjgwNzczMDM0YjAyN2QxMDY3MWQ1MzdiZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L43-L45",
+          "version": "repo-lines-v1:sha256:c68a2fae33cbfd893376db71a721401757ee5e1ab2a997b9de8c6b1362ba7436:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0ZGJiM2QyNmY2ZGM3NTAxNjkyMzgwNWFlMDE5MDQ0NzllYzEzOTUwZGI3MWMyZGUxOTFjMDY3MDJiM2I2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UxYjAyYzc2MjU1ODY3ZDJhNDg4MDljOWFmODlkNTRlYjVmZjkwNTA2NjM3OGQxMzg1YjNlNjcwZmI4MzRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRjYmJjMjdjZTlmNTkzMzNjYWVhODBiYTljYTg4MDM0NDhkZjYzOTY3YzMzZDdhZmI0NjhmMWFjNjgxMzc2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVkZTQ1OWMzMjJmOWFlOGIyNTRlMDk3YzlhZDM1YjgyYTBmYjA2OGE1OTIxZjE2ZGZhNWRmYmFlMTYxMzkwMyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L1-L13",
+          "version": "repo-lines-v1:sha256:cf4e2494d260764f7bf33dbb1fad6feaff4697c505c7d465f6ec767fd2f5eec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMGRiMGNhZGIwODhhYTY5YTEyZjJjZDZiZjFjYjc5ZjdkNGI3ZWUyNjI0ZTUzOGExOTA5YjViYjM0OWVlYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNmFkNTU4NTUxYTk3MTlmMDljZjE4YmJjOWQ4ZGQzYWRhOGYwNWUxODE1MWE5YzlhMjgxNDgyNTA0ZmJkYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a765991cadf406395dfa969072f00ca",
+      "statement": "The collision gate only reads a compose file's `ports:` key, so moving a published port is not finished when the bind changes: the same number usually reappears as a self-referencing URL that must move in lockstep — today Keycloak's `KC_HOSTNAME_ADMIN` and LangFuse's `NEXTAUTH_URL` — and a bookmark on the previous admin port is stale.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L70-L74",
+          "version": "repo-lines-v1:sha256:8ff8a01b6b0f3f34ecfd2ab6a02b8dc44ca9434bad309004fc7e434ce3fbeb25:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhhYzBiODJiZjA1OTFkMTY3MzRiZjIwNDA5ODU4YTkwNzI4NmFmYzkwZmFlMTU1M2RjMWU3Yzg4NGI1NGNmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxZDliMWU5NzllZDFlZGI2ZmUzYTE1MjU1MTIxOTM4MWY1YjQyNTg3Njc0OTQ1ZmYwZGNjYzRkZGIzYjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY3YTFmYTFkZTY5YTYxYzZiNzUxMjdiN2VlZGMzNDYyMjNhNTFhNzY2NzY3YTgyOWE4MWIzZTRiZTVhMDM2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NDEzZTBkNTIyNDI2NDM5NDZkNjgyOTZmM2NlZDljODRhZDUwMTI1Y2Q0Mzg0ZmM5NDI1MmU1OGQzYzUyMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L37-L43",
+          "version": "repo-lines-v1:sha256:819ccacd67b547fd6cc5efd13e02aecbf33632caa089cfd6dfc732daa3b02c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxMmRiYzlmNWI4NGUxNmQ3YzE4YTZhZTdjNWMwNWVmMjk1NGUxNWI4NDE2YTg0NDgzY2UzZGVjOTJiY2IzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhM2FkNWNkZjQ3YjQ0ODY3OWJmY2NkNzRhNGU1Y2Q1NjllNTUzYjEzMDE3OTk0YWIzNjA0NTFmNWY5YzJkYyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L34-L64",
+          "version": "repo-lines-v1:sha256:6959b2e6479b675c37abe8ea9589c65ce1e4786a57f1737061de89aad244de71:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmYzE5YzY0MDgyMmEyZjJhMjJhZGNjYWE3OGMxY2ZlY2Y5MTI5NTMyYWEzYWZjZjEyY2ZlOTM1NzNiZTJiMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZjlhMDhkYTczMzc4ODBjNmZiNmY4ZWIyNWFmMWJlMGYwMjI5Y2U1OGY3ODQ3NTgzZmYxOTY5M2VhOTliODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f2dc6dd392949038ae0a07c53b04e47",
+      "statement": "The Mongo replica-set keyfile entrypoint writes the keyfile at mode `0400`; on a plain container restart the prior run's read-only file persists and non-root `mongod` cannot reopen it, so the container crash-loops. The entrypoint now removes the file before rewriting it on every start, making the operation idempotent, and its regression test must run as a non-root uid or it masks the bug.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L13-L29",
+          "version": "repo-lines-v1:sha256:410f1f23a4d0a0a3f62b4753d3ed7be6f2bc9a8c069d4d0e30ff1256f986ddc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNzNlOGMwZjg3ZTRhZWU1NzVhNjBjY2U3OGIyYTBhNjgwYWYxYmE5ODVmYWFjNmY1ZTllNzBlYTJmYTQ4MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNmNkOTNiN2MzZWQwNTY3ZTY4YzQzNmNmZjAwOTFlNThjODNkMGY0OTNiZDE2MzkwMDUyZDg0ZmUzMjAxZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzYTFjNWFlMDQ4ODk3ZDlkMDZlNTIzYjQ5NzJhMTI5YzY0MzI1Yjc3NTU1YWQ4MmIyOWZlN2RhZmUwOTllYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMTI0YjMwMTEzZGQyYWJiZTY4NGQ5MjJjMDk3YWE0OThjZTVhOGE1ZjIyNTVhOTQxZmYyYzFlMDVkNGUxOTYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh#L36-L46",
+          "version": "repo-lines-v1:sha256:814b97e66dd48e086c9fc67184f32d987642a1e66f561e999e1c3c0bd0b7bb18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZDExZmIzYzQ2MmI3NDIzNWQ0NmE3NTM2YTg3NzU0NDU4M2NmMzM2N2UxNjdkOTdhN2M5MzM0ODQ2ZGNlZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2NGM1ODdlMWM2N2NjZWFhMTRjMjA3OTdkMGM4OGE5OGZkYjczYTJmOWI2ZTYyZTFjNDc5NGZkZjEzNjA4MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MmQzNzFmZDc0OGIwNWIwMTg1NTlmOWI0ZmMyZmQ4YmFhZTYyM2FlMTcxYWNlYjY5YWQ0NDJkY2YzZmMyMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_94cffb0bc2b2466aaebd3204876350f4",
+      "statement": "After a reboot `keycloak-service` can come back missing a shared external network attachment, breaking its consumers' DNS resolution of it; the durable remediation is a Komodo `prod-auth` redeploy (which recreates the container with its full declared network set) rather than a manual `docker network connect`, which the next reboot can lose.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L112-L118",
+          "version": "repo-lines-v1:sha256:97b80d13180752f75198e43d3a99a021060d28fb58883897ac6cf376bbba857e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhhZGQ0NzEzNDYzMzdkZDQ2NGIyYjA0YzRhMmRiNmU3MTk4ZmY0MWUyNTcxZWZiY2U5YzBmZjI2YmMzY2YyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYwZjc4NTA0YzIyNzlmM2ZjZmMyMDI1MTA2NWM0ZTc5OGNkOGVmZTY1NjFmODI0ZDQyNGNhMTBiZTc4Zjc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNjVlMzZlMjhjNThhZDIwMTg3MGNjMDIzMzgzMmNmMDY0NGRiMDQzOThjMmUxNjE0MDYyZWNjMzc5YTBkNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L97-L100",
+          "version": "repo-lines-v1:sha256:1527a42e785d85947766159da6635c84b6ed5843b23bbc0ab7352ce919842d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkwNTc5NDYxM2Q5MTc4MjM3MmJlZTRjZTBjY2I5Nzc0MzIxOTVmMjY0ZjE1MmJlNzFkYjI1ZTBmMDRhNjQ4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjY2E4NGM1MjY5NmMwYWI2YmZhYmU2YzJkZDIwNTBiOWIxNGFmNWE3MjJhZmI3YTdkNTNjYWViMjMwMWU4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRmMDQwNjE4YzU4ZjQ2MzhjODI5MTkzMTBlN2M4YWIxMjg3MjBlMmNjODhmNzRjMDdjMjUyMDBiMjYzOWRlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTQ4YmM4MDQ2OTc0MzdiNjg5Y2FlNDhiMjY2OGRjYjlhOTE4MmE3ZjY1NWU0MGExYThmODQ4NGEyYThhNTNlZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bfc0018b18d2434fac0e2a0a259cc7bc",
+      "statement": "The intra-stack Keycloak↔Postgres `keycloak-network` is compose-managed rather than external, so compose creates it and attaches both services atomically on every `up`; this closed the worse failure where a rolled-back port bind left Keycloak detached from all networks and unable to resolve its own Postgres.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L112-L118",
+          "version": "repo-lines-v1:sha256:97b80d13180752f75198e43d3a99a021060d28fb58883897ac6cf376bbba857e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhhZGQ0NzEzNDYzMzdkZDQ2NGIyYjA0YzRhMmRiNmU3MTk4ZmY0MWUyNTcxZWZiY2U5YzBmZjI2YmMzY2YyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYwZjc4NTA0YzIyNzlmM2ZjZmMyMDI1MTA2NWM0ZTc5OGNkOGVmZTY1NjFmODI0ZDQyNGNhMTBiZTc4Zjc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNjVlMzZlMjhjNThhZDIwMTg3MGNjMDIzMzgzMmNmMDY0NGRiMDQzOThjMmUxNjE0MDYyZWNjMzc5YTBkNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L111-L120",
+          "version": "repo-lines-v1:sha256:42575ff7f8bbc230ffb9510923e84b8236315e4e2840d3c9281dd748d26d2b9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNDZjMDg2YTJmMzgxY2NmZWU2ODk0ZDcxZjIzMjQ5NjlkNGJlMzRkODc5YWY1YTNjYTkxZjk0M2ZjZjczZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmOTY1MjAzMTgxOGNkMTViOWI0NjFjYWEzZDU1NDM2NTYwODcwMzQyZjM5Y2ZkNzMxN2YwYjg3ZTAxYWUwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZTYyYzQ5MDMwMjhkNGQ0NzQ3MzNjNjNkZWFhOWQ3YTcxODQyZDRkZTUzYjYxMWUwNjJiOTIxZjBlMzA4MWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa351628fc0e4e209e9d27be3b3e7383",
+      "statement": "Komodo periphery's `root_directory` default of `/etc/komodo` sits on a per-daemon tmpfs under rootless Docker (RootlessKit `--copy-up=/etc`), so the cloned repo checkout that every stack's relative bind-mounts resolve against is wiped on every reboot; Docker then auto-creates each missing bind-mount source file as a directory, and the Mongo and Vault containers fail with `not a directory … mount a directory onto a file` (exit 127).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L154-L168",
+          "version": "repo-lines-v1:sha256:10057f2bc65bff64d8d2d36b37309f0f9a5a246885e25d2a925f077504147c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjk4YzI1MDE0YjNkMDc3NmQzZDc0MWI2MTU3ZmJjMGQ1ODRhMWVjNGQyNjI2MWMyNTUwZWEwOWM4YWQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWE3OWUxMjRmNzliYzNmYTNhYzIzODI0NTZiMWUwYjIxMjc1Y2EzYzkxYjJmNmViZjdhZmRlYjlhOWU3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L43-L44",
+          "version": "repo-lines-v1:sha256:d0e8898c0de25dba988845769e5edfa6703b2424007361afbfbb7614f131e6c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzNDk0MGI1YzRiMzFiMzY4YTQzOWZlM2ZjMjkzNmNlY2Y5NjYxMWJjZWU0MzMwMDJkMmI2OTM5Zjk2YWFhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3YTI2N2I4NTIwOGQ0MjhlZmJhYjcwOGIwZjU1OGViZjgwZGQ0OWVkNzkzYmExM2Q5MzVlNmY5NTYwMTNkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWMzOGZkZGYxMGZmOWZkYmM4ODkwM2E2NWUyYWFlOTI4ZmJlMTk5ZDgwMTYxN2QyODY2OTc2MWRjOTVjNDY4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI2MzkyODRmYjhhMjAzZjBiMGUyNmQxNmQ5ODg4ZTE0YWZhMDdhMzU0NjliYWIxYjNjY2E1NmZhYzBmZTE0YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a98ef8160899414089062e992c9e4cbf",
+      "statement": "The periphery root fix is host state: `PERIPHERY_ROOT_DIRECTORY` must point at a path on persistent disk and periphery must be recreated, and the server-setup runbook Phase 9 now bootstraps that value so a host rebuild cannot reintroduce `/etc/komodo`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L846-L852",
+          "version": "repo-lines-v1:sha256:e97a152aa2dee73d2e4909e4687ba19a29338ecb19a68bd98b176e6a4c0314c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkNWI4NmFjYjg4OWU1Mjg0NzBlZjkyNzNlMjI5NzI4ODkxOWQzMTZmYmY4MjIyNTQyYmNkYjMyZTAxNDVjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1Mjk3NmNhODBmYzg2YzJhY2E5NjVjNDFkNTAwYTk4YTQwMGIyY2EwOTNlOGE5OTRkNWI5MWEwNzRlODM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTViOWY3NzhkMzQwMTM4YWExNzYyYmNlMmQ5OGU3ZmMxNmQyYTE2YjIyZDFiZDkwNTViZTY2MTRmZDYyODVmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZmE0OWRlY2VhZDQwZGVhNzNhZDRhNDA5MTBhMGY0NDE5ZDc2MmE0ZTY5YWQ2M2NhMzJmNjQxYmU4NGU4MyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L158-L168",
+          "version": "repo-lines-v1:sha256:f526634e4f2893497523a9984e3f39ba40dc6595f420c6c8f88275639f46bc3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxNzkwZWQ4NTFhNmE3NjBmNzlmYWY4YjgzMDBhMTExOTg3NGI3MjBmMzIwYTkyZGIzODljOWI3ZmEwMGZlNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMzM1ZjY1NTA2MzdjZDkyNmYzZjQwNDRjZjk3MzFmY2VkNjY5MzM5YzZlMDFkOWY0Zjc0OWU2MTgyY2Y0YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_63b519559438470f8c11dfc79c0f70f2",
+      "statement": "The graceful-shutdown drain unit was reworked to stop containers in parallel: run sequentially as `docker stop -t 30 $(docker ps -q)` it exceeded `TimeoutStopSec=120` with roughly 40 containers and was SIGKILL'd mid-drain, stopping a non-deterministic subset.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L185-L191",
+          "version": "repo-lines-v1:sha256:58db9343dafe8fcae8a0166caa7bca24c05bf0c4228146511b5ac159660f0337:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM5OGExYzIzZjg5Mjc4MWU0OTM3MjkyMmMyZGM0OTFhYWE3ODAwZDhiNDZkMTZlNzM0ZGMwOWQ4OTcyMWJkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTYyZDRkODIzZTU4MDk2NjBhNGE1NTc3NzkzZDJiYjQ4YjY2OWNmYTEzYzk3MjY4NDJhMGI4OTU1NWRkOWI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA0ZTdhM2Q1NmMwZDQ2YzJkNzRkOTZhMjg5M2I4ZDlkZTllMWU1ZTk1N2MxNzFlN2NlZmJmYTVmZjU2MjViYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbe19d1e79c34a68b552b7eef3577361",
+      "statement": "The two former bind-prefix variables are retired: `KC_ADMIN_BIND_IP` (dropped from the keycloak compose bind in feature 028, and stopped being passed to `prod-auth` on 2026-10-12) and `TS_ADMIN_IP` (stopped being passed to `prod-observability` on 2026-10-13) are read by no stack or compose file, so the stack `environment` line and the Komodo Variable should be retired together — a still-seeded leftover cannot fail a deploy, it is only dead config.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L96-L98",
+          "version": "repo-lines-v1:sha256:2883c24f9b05328907dcfbd0d13dd6fcf6c95150bd9f640ab1ff3b8cef3f505e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3N2IzNzcyYjk2NmI3ZTYzMTQ2ZDU5YWIzMjYyYTkxYzQ5NzU2ZWJjNzMwN2FlNDY0NTRmY2YwMjBiYjE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwMTBlNDE2ZGY2MzY2ZGYzYmY2ZTk2NzkyYWE4OGExNGY5MWUxN2JiMzZmZmM4OWFkZWY4YmYzNjRiMzlmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWU2ZjRlNWM2MmMxYzEzZTkzMjFmZjBhM2YxZDIzOTU2ZjI4MzNiOWZlYzA3YzI1MmVkMjUxODc0NDQ3NzdlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMzNzUyOTRkYzdkMjNjOTk4ZDdhZDUxMDBjZDU3MzkwN2ExZTQxNWJhZjgzMmQ4ODc3NWRlNDUzYzMyZmQ1OCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L16-L19",
+          "version": "repo-lines-v1:sha256:6a0385aad430e240a295f3b3b460d2bde3551c819af86dae8ec02692947e8826:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ0ZjMxNzExZDU2MTg0NzE3OTY3MzI1NzViMjMzNmI5OThkZTI1YjE2YzUzMjNjNzY4MzI0MTA1ZWI4NDZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYTk2ZjM0MzE2ZTQxZmEyNjJmZWI4Y2FhMzRlYzkxYmY0NDM4ODNkZDgwNjhlNTIwYTA5ZDRjNmU3Y2NmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM3OGRjY2UxN2FjYzczMzI0MTBiOThjOWFjYzEzNGY0NDBjOWM0ZjlkMjc2NmEyMzgwMTQyYTE3MGJkNTdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc5MzJhMDNiNDZmMTAxN2EwZGViZDQ2YmIyNDBkMzdkMDMyZDJlMTBmYTExMWFiZWQzYTE5NDNiYzY2MzcwNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c83cf3ce9d814b839ea262b41d76bd80",
+      "statement": "Tailscale's default segmentation offload (TSO/GSO/GRO) on its own tun device collapsed outbound tailnet throughput for every peer while leaving small-packet latency, loss and every conventional counter clean; disabling the offloads took one identical fetch from ~117 KB/s to 84.5 MB/s. The fix must be bound to device creation (a systemd unit keyed to `sys-subsystem-net-devices-tailscale0.device`) because both a reboot and a `tailscaled` restart reset the flags.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L33-L78",
+          "version": "repo-lines-v1:sha256:ccb1e487bd13b08188c6bb39d06e45e83ed55ebecb6630ac24760273ed025dd3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlYWQyYjg2MjcwMjA4ODBmNDg2MmFkMTI1MWYxYTRmNzBkMmVmYWQ5MDNjZTI0YTY0MWJhZjRjMGU4NTg4MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ODVjZGFiOGY2MzY5Njc2Zjc3ZDE3YjFjZWI4NGZlYmI5YWI5ZTA4ZmFmOWEwNjg0M2UwZTgyYzY2Nzg4NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzOWY4MmU1ZmFmZjQ2MzcxYjU2YzZjNzQ2OTQ0ZjljZWJmNDI1NzU3ODczMmFlODMyNTYxMzI4ZTAzYmVmY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4NGMzODZkZDhlNWJjYTczMDcwYTc2ZTI0OGQ3MTg3NjY2OTIwZTMyNGYyZDBiNDg2ZmU0ZDY4MGQxYjE4MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74f0837fc5894aacba001ee4b1c807c5",
+      "statement": "Two measurement traps manufactured false conclusions in the tailnet throughput diagnosis: PowerShell `Invoke-WebRequest` is roughly 40× slower than `curl.exe` on the same fetch, and a shell session into the host over the tailnet is Tailscale SSH, which terminates inside `tailscaled` without traversing the tun and so can never serve as a throughput probe.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L73-L76",
+          "version": "repo-lines-v1:sha256:7cf065d62a2c16f84d65f7727626216c8bfcfe4f9e9e25aef92b58e318eb254c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjMzdlMzNhM2MzOWUyZGJmOGQxMTJiYjYxMjFjZGNjZTg5ZjVmMzA0NmQ4MjYwODJlMTI3MDk2YzAxNzFjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNjZTM3NzM3N2NiNWZlNGFkMDE4NDQxMjZkNzA5ZjA5ZGJjYjljNWNlOTIyN2YwOTFiYTM0NjNkYzYwMzIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYTlmODcyNWYxMjg0M2MxYThjOGI2OGNiYzhmM2JiNjk5NjJmZWY2YWMzMWYwMDBkNzQ4YjIwZjU0NDM2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUyZTc5YmNiZTBjNjE2OTAyZjNjZDMwYWQ1ZDBhNGI2NGRjMTU1Y2E0ODBjYmE5YWJlODJhZTk1NTdiNDAzMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e983947865e4119937fc4e544cf8542",
+      "statement": "When a reboot lands dirty, nothing self-heals until Komodo can act again, and the manual recovery order is: start Komodo periphery (Core otherwise has no agent and can redeploy nothing, including itself), start Forgejo (Komodo clones the repo from it on every sync), then run Komodo's Execute Sync (which re-clones into the persistent periphery root and recreates every stack with its declared networks).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L193-L195",
+          "version": "repo-lines-v1:sha256:bc4d900ed89e0ad5d49c18ab241535bd9a9249071b6d52d357943200b234a76a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5NTMzMDUyNjU2MjM3ZDFiMGI2YTAwYTE3NzIzOTNmNGMwZDQ5OGM4MDhhODE2NjM2NzY5NmZmYTJlZjJhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZkYzYxM2ZlMWIxZDllOWE2MjgyNmJkNWM2YzhkNThjZGJlYjJmNTNiZGMwNWEwMDQ1Yzk1MTUzYjE5Yzk1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVlYWUyN2NiMzA4NWIwNTgxOTMxOWVhOWIwNmE4YTI2ZTE3MGZlZjFmMWU5MmQwODg0M2NlYzQ5NGMyYjAzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y2NDI3ZGEwOWY4NGJjMjEzNDNiYWM4NTJiMTZkZDE1ZTNkMGJlM2I5NTU5NWE0NzNjY2Y4NTNmNGQ4YWYyNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_df2855db01854b05b754cfa746e1807c",
+      "statement": "`scripts/check-prod-ci-port-collision.mjs` splits compose files by basename (prod = `*.prod.yaml`, CI/dev = everything else its globs discover) and compares fixed host port *numbers* while ignoring the bind interface, because a prod `0.0.0.0` bind collides with a CI bind on the same number whatever interface the CI side names; it skips entries with no deterministic fixed host port and expands numeric ranges. Discovery is by glob plus basename classification, so a compose file whose name does not start with `compose` and does not live under `stacks/` falls outside the scan entirely.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L102-L127",
+          "version": "repo-lines-v1:sha256:6bd7a6688e51eff82c967e028de1f1b303a6b964fa63ccf45ea88989c6a5f13c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M0ZTlhOTBmYWJkOGUxZjllODc0NWE2MGNhNjQzZmYxOTQ3Yjg3NGM1MWNkZGI5OTQ4YTBmOGQxMmY1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyM2Q4ZjExYWEzZmQ1MWVhNjZjMGFhODY1NjNiOWI3ODI5MmU0NDBiMTkxOGVjMmZiMDI2NjdkZDUyNDQ0NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L34-L64",
+          "version": "repo-lines-v1:sha256:6959b2e6479b675c37abe8ea9589c65ce1e4786a57f1737061de89aad244de71:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmYzE5YzY0MDgyMmEyZjJhMjJhZGNjYWE3OGMxY2ZlY2Y5MTI5NTMyYWEzYWZjZjEyY2ZlOTM1NzNiZTJiMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZjlhMDhkYTczMzc4ODBjNmZiNmY4ZWIyNWFmMWJlMGYwMjI5Y2U1OGY3ODQ3NTgzZmYxOTY5M2VhOTliODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e5bee37ab004422bfb0587bcb415fea",
+      "statement": "`scripts/check-prod-restart-policy.mjs` makes `restart: always` a required property of every prod service: `unless-stopped` is forbidden (the round-2 regression) and a missing `restart:` is forbidden because it defaults to `no`, while `no`/`on-failure` are allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket` pattern. Its scan globs only `infrastructure-as-code/docker/**/compose.prod.yaml`, so it cannot police host-managed composes living outside the repository.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L11-L23",
+          "version": "repo-lines-v1:sha256:3d49df632dc3b9a38761aaf9ddbc06591bbb985dfa645530f775e0e4c7a8d2e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTgxM2FlNmIwN2NlZGM4ODk3MzQwNGZjMTg1MWJjZmJkMWZhZGFkZjFmY2JiZDkzM2Y5YWQ4OWU2NWU4MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYmIxOTI1MTFjZjc4MTUwNzgxMmVjZDNmMTExNDY5MjdmNDA5NjZmYjlmMTg2MTk0ZDcwYWI4YjgzOTkzYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2OTUwZTlhYWRmMzZhMTZjYjY4OGE2NTEyZTM3NTg5NGUzZGJjMjZmYzBjZjQ5YmZmODNmOTE5NTk1OWI1NWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjkzY2NlYTA1MGJhMDlkMDg1ZjM3YjE2OWQ3NDQwZjNlYWFkOGRiNGNjNDZmNDQ0NGQ2NDIzM2U0OGE1YzMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L56",
+          "version": "repo-lines-v1:sha256:0b0d517271a5ba81886166ab56157817a8af12aa64ca1c7f6f682d04b0ecb962:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZWM0NGM2ZTI2NzMyODMxMzhmNmZhZjI4MDBhNTFlNzc4ZmI2NTc2NzIwZDliYjc0NjE4NzlkM2EyZDM3M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MzFkNDQ3NTc4NTQ0NTEyNmRlY2QwNWNhM2RkMjRjMmYxMGFjZTkxMjZkMmRkMzA5ZmQ3Mjk0OTAzMDQ3NjQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L58-L71",
+          "version": "repo-lines-v1:sha256:a5a49813114aa1005a40c00ffa58e41644d131ae38b7a530d95314350bef3268:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYTYxMmQ4NDljYzBmZWJjNzkzZDk0NGI0MmU5YjY4ZjJhZmRlMmQ2MzMzMTYxMzY1M2E4MTk2ODRjNTYzZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiOWFmNWJmZGQ3N2EwMzFkMzZmZmEzZjA2OWM0ODJiNjcxOTE3MjU3NzlmNDJjMWQ0OThjMzZiYTliZjdhNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc06b4a40d8f4ea3bb3be21f96b011c9",
+      "statement": "Both reboot-resilience gates run selftest-then-scan in the `naming` job of `.forgejo/workflows/guardrails.yml` on every PR and every push to `main`, and locally through `scripts/preflight.mjs`; each gate's `--selftest` plants a violation so a gate that stopped detecting cannot report green.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L121-L128",
+          "version": "repo-lines-v1:sha256:d1d28cfe44cf26d0603201fb5bec8db417672af572db62b084b815975a55bc16:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQzMjFmYmZkYzI2MzlkYzc3OTUzYmJkMmRiNzcwZGJhZjZmNzYxZWNhZGFjYTE1OTFhNzZiM2FhZjUxYzQ3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhhODk5MDJiNWQwNmJhNTAxZTg2NTcxOTYzNzRlYzhjNjgzOWYwYTA1YjY4ZTU4Zjg0YjQ5YzIyZDNhYTI3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAwNjgwZDNmNzY2YjRkOTI5OTQ3MmU4Yjc4NDJlNmIxYTIyMDc4MDMwY2QyMTk4ZmY5NmE3NzA2YTY1OGNmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGYwZGQwYjc1ZDRiYWUwYWMyMDUwMGM0NjA2ZTg4NTcxNzhkNmUxNjE3YWQzMDA0YWZkNjFlOWFhMDk5ZDY4OCJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L157-L196",
+          "version": "repo-lines-v1:sha256:bed4abd332b461ad0bfa074ce109b072dcc18b84b2c26e074fd6366d5db2a852:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNmVkZTMyZTY3MzQ0N2EzMWE2MDZlNTgxOTA1N2U5NmQwMzExYjgwODg1YTEwY2U5YTRiNjQ4OTAyNTE2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNTgwZmU4ODY4Yzc0Mjk2MDg5NmYzZmFkYTlmMTc2Y2M3NTUyZmVjNTRmMWJjMmEwOTVhYTgzOTIwN2NkOWYifQ"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L31-L44",
+          "version": "repo-lines-v1:sha256:caf1f04345333c672adb67dbaab4c29cfa477e1ada3cf60c3a0a325143852574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmExZTIxYjY1NTU3N2U2MTAxMzhjYThkMWFlOTQwMTIwN2Q0N2JjNmUxYWViM2RjZTc4MTBkMTdjNzdiMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYzE3MjU0Mzk2NzU3NmNlNjgzODcxZGRiNTU5NGI2MjM1NzkyODc4NzM1NDJiNzgwNzgyYWNkMTk5YjhjYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ada407592c3476b9302af6783b1dcba",
+      "statement": "A validation reboot is part of the change rather than a follow-up: after merging and syncing, the operator reboots once and every row of the checklist must pass on the first boot with no manual `docker start` or `docker network connect`, and any failing row is a defect to fix before closing the round.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L126-L148",
+          "version": "repo-lines-v1:sha256:74398f3a7d27f6e35ac793d98d5c8ca2ea1236c2cae1c05d9995172bf4da0869:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2N2FlMzlhNGVhY2E2YmJkN2ViNWY2MGYyY2JmZDQyMWJhODlmYTZmYTJlYmExNjUxMTY5YWQ5ZThhMDE0NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZWFjOGEzNzlhN2JjNmVkNzlmZjViYjUxNDNhZDYzOTNkY2YyNDY0MWI3OWZkYTU5YTEwZWVhNjgxZThlNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNGZlYjM5Y2M1ZGE5NjEzNTMzMGE5M2M1NGIzZjIxODllNWM2M2M4YjAyNDAxYjkyZTdiNzFjMjkwYWY0NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMjg2MjZhZDFhNWRkZDAyYmU0YjdiNmY0YjhlNGY0N2I0MTRkODZiMGYwN2RkZDdkNDZhMzUzZTIxNWNlOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_12684ae78cc544b5854fd7688dde7b37",
+      "statement": "The restart-policy durability comes from the committed compose value plus the host-compose edits, not from the interim `docker update --restart always` applied over running containers — that update is lost the moment each container is next recreated by a Komodo redeploy, a compose `up`, or a host rebuild.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L108-L108",
+          "version": "repo-lines-v1:sha256:896fb65ddd1367366db9da4d9faa7f16fd3309b8581e2a296d955e258602165e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTliMDFkMTE4ZDA5NzA1NzRiMzk5Njk5MmNlMzA1ODIwMTY5YmYzYjc4ZTFjYzkzZjRmMmJjM2NjN2VlNjBiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L170-L183",
+          "version": "repo-lines-v1:sha256:572db950f04a17bb1b042b549f88701d7bf1b1cffa1af1684d822991149cc30b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MTM5MDVmYTJmM2QxYjVhNzNiMTlhMmRmODYzNGU0NmJhMTg3OTZkYjdjZGM1M2RlNTUzOTBjZjFlZTk1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjNkZWI4YmE5N2FmMzU3OGQxYmY0NDliOTRkNjAwNmEwNTZkNDM3MWMyZDQzZjQ5YzJlYmE2YThmNDA1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_361318d50da04f13a45d9b210a7f252c",
+      "statement": "One-shot init containers in the prod composes idle on `sleep infinity` after an idempotent init so they remain eligible for `restart: always`, which is why the `no`/`on-failure` exemption in the restart-policy gate is narrow rather than general.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L216-L241",
+          "version": "repo-lines-v1:sha256:f88a36b2a10014960fdc1b7e5ae6d4a5d66ad2bd0dc46c6322e71882002ea0a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZTY0Y2RkMTM1YTg4NzRlOTJhMTYyYmVmMTRhY2E0Zjg1MTkxMTgyN2I4OGIxZGUxMzA0N2VmNzNkMWQwM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NWMxNDdjYmVmMTE5YjA5MTBlNDYwMWYwZjE5MTI2NDE0NmYzNDVhMGFmNjRmNDQ2NmQ5MjY0YzA3MTIwOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L74-L100",
+          "version": "repo-lines-v1:sha256:9937bf802a5fc91eb3a350b8a42a26102e9bbb769773737598288eb5dbdd8bba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWY2MmJkZTE4MzYwNmNmOGUzOTM2YmY1MmEyYjhkYWMzZWI5OWEzYTIwZTdhYjBmOTAyN2VjYjgxMmFkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YzIzODdkZWUxMDYyMTE0YmI2MzcxZDY0YjZhZjNiZDIxOGNlYzllZDIyZTU0NmEyOGNhZTliMjVlNmEzMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NGMxMzU4ZGFhMDE1YjMwMjg4NjQ2NjliOGZiNzJjZjNlNGI5NzYxYzI4YTA5OWUwYWY2MTlhMDFkMWY4ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZmE0ZWFhY2RiZDAxNzhmOGY1NGYzYTNiY2I4NzI4ZTVjNzA0ZWFhNDg3ZDlhZDIyNWYwN2YyZTcyMmIzNmYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L35",
+          "version": "repo-lines-v1:sha256:8ebcf83574c45b097da0f2b2ffea06a582eb6f9750120703e7404b948a004019:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlYzQ0YzZlMjY3MzI4MzEzOGY2ZmFmMjgwMGE1MWU3NzhmYjY1NzY3MjBkOWJiNzQ2MTg3OWQzYTJkMzczYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM2OGRjMTQxMzhhZDY4ZDJiMzA2ZjYxNzkzYjNhZDE5MmVlMjI0OWNhNGFjODhjY2M1OTk4MmNkODRkODM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTIxM2U0MGFiNDIxNzczYzZiMzI5MDE5NDIwNzVmZjU3MzRkYWJlZTgzNmVmNDkxNzMyZDgzYmFkNDE2MWNlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFlZTMwMmFlMjcyMWYxMThmYTlmN2RiYzQ3YmZmY2NiMTRmODY3MWY2N2FmMjNlNTljNGY5ZGEzZjhjMjNlYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_48c4e4833ab94346b5dff8befe7527a9",
+      "statement": "Prod compose services are enumerated by the gates from the seven `infrastructure-as-code/docker/*/compose.prod.yaml` files, and the restart-policy gate counts every service in them (27 at the time of writing) as requiring `always` unless it matches the one-shot exemption.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L58-L60",
+          "version": "repo-lines-v1:sha256:06a44ed46db2ff7e7676da57236976ac6147fe32416841ff54e5f2f6017c8aaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVhNjEyZDg0OWNjMGZlYmM3OTNkOTQ0YjQyZTliNjhmMmFmZGUyZDYzMzMxNjEzNjUzYTgxOTY4NGM1NjNmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2MzZkMzViODlhNDE2OTNlMWIzNzAwZDg2NDk3ZmNmZjE5ZWQ4YmNjMWUzMWExZTk2MjQ3MGQ5NzRjN2FhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI3OWI2ODA1MjBlZDUyNmRjYzRjOGFhMzczNTI3NTkwZTI4MTk1ZTQwZmJlNjEwN2UxZTViNDk1YTQ1NzczNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ1NWJkZGEyNTU4MmU4YzZhOTk2MTFiZjk1YzZjMDIxMmI0NDM3NDQ4OGZmNmJjODY2NzA4OTU3YzdiNGY0NiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L73-L91",
+          "version": "repo-lines-v1:sha256:4a694f75e887ae72b960568a388605d3802d75ca8f8454e3868e8f02ea82e8d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNmY4ZGI0NzQzYTI2NTE3ZWFjZDAxZGE4ZDNjMWQ4Yzg4MzU4M2Q4ODBkZDliODVhNWY2YmZmZWU0NjMyNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2YTFhYzkwYzQ4ODJlYjk3NDE3NDNhYjNkMWMwZDA4ZDE4ZmQzZjQzODBiNTZkNDJjOWRhY2RiMTVjZDdjNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTRiNzU1MjZmY2NkZjQ3MDBjMGE1ZDJmMDg4Y2Y4NTIwYmYzMGEyZGNlNDAzNjgyMGRkY2E0ZTgyYzRhMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f303930924545ad9927fcd9874c1ab0",
+      "statement": "The resource-naming gate runs over the same discovered compose files in the same `naming` job, which is what keeps the network names a stack re-attaches to inside the approved set.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L103-L104",
+          "version": "repo-lines-v1:sha256:9b58f2f22afd243bf37e026519543043d3ac9b7bb9391bbdce6ee7683da735c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNkODkzNTk3NWZiMjA4YjEwY2ZmN2FmZGZhZTI3OTAxNTJhNGJkMjFjZjc1Nzg3MmQ2ZDc4ZmNkNGJkNmJiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJmYmY2Zjk3OGE2YTkxYjI5YTJhZDMwMDMyMDExYTY3ZGM4OTY5OWUzZWQwZmNmMGNjOTI2YzdmZTZlNmQ2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjI5OGYzMWQxYzk2ZDQ2YzRjOTZjMmU2ZTc5MzU5ODFhMGEyYzFjNjRiYTQ4ODUzZjQ3NDllYzM4MmY3YThhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGY2ZDk5M2VhZmRlZGViMzA2YThhYzhiYTYzYWE5MjcyNTU1NjkzYjIxYmFhNTNlYmE0YzIwZTU1N2MxZmFiNSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L124-L143",
+          "version": "repo-lines-v1:sha256:e521cd4c0554631ea22ac396e8f3d33d57976d8413eedf0ec1413102644cd234:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMTE5YmM2YzZiNjM4ZjhhMzQyYmNjYTczYjIyMGZlZWYyZjJhZTZmNDdkMDAxMjE3ZTBmOGM2ZDQ4MWNkYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlY2M4OTkyMThlYWIwOGQ0NmVkODJmZmM4YjFjNzRhYjIzNGQ4ZmJmNGMxOGVkZWE5MTFjYmQ5ZTAyZjgzMDYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L50-L64",
+          "version": "repo-lines-v1:sha256:9c7dbfe69517548fab025f96510b2679a9a23685d94fe802f2144660968a85fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2IxOTEwYzUzNDEzMjgwMTkzODIwYTk3MWFmYTRkZDQxMTNhNTE5NTYzMDY3ZDk5NzI4OWM4ZjUzMTgxMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMjg2ZTAxMTRjNzhhMzFkOGY1YzEwYmMwNmVjOWRkOTQwZjdhNDljZTc2YWFkMDE3YWFhY2JkNDA4ZDU1YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZGQxNjc1ODAxNjgxODNmMDNiMzhmNjgyYTg0MGI5NDIxM2QxNmYxODIwYmZiYTRlYjI5ZDY3ZmM2MTdjY2EifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-16T20:39:10.335Z"
+  }
+}
