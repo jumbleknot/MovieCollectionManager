@@ -15,6 +15,8 @@ sources:
     resource: repo://compose.yaml
   - id: openwiki-source-f84ce669ebf8d13e89ba2f75
     resource: repo://docs/runbooks/local-dev.md
+  - id: openwiki-source-7a0ce0b0b1a10dd515633969
+    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
     resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-16f23fb13b0e88082b534458
@@ -23,6 +25,10 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-0ff61f596da1302e58282fa2
+    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
+  - id: openwiki-source-7ad99116ef3a9756b7c06307
+    resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
   - id: openwiki-source-90e20f6cb63d8bd67d0fd623
@@ -31,6 +37,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-d951526f31e9f2cb4d68995b
+    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-44335116b1e1ad90d0eaa667
@@ -47,10 +55,10 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T01:57:21.062Z
+    at: 2026-10-15T23:36:23.499Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -67,14 +75,32 @@ pre-created `external: true` networks for cross-stack traffic. Lifecycle goes th
 [Published-port reservation](../invariants/published-port-reservation.md).
 
 Every credential in every stack is externalized — no clear-text secret lives in a tracked Compose
-file: most are fail-fast `${VAR:?…}` interpolation references, while a service that takes its whole
-environment from a file loads it via `env_file:` instead (the BFF reads
-`frontend/mcm-app/.env.docker`). Two one-time generator scripts mint the
+file — but **not every secret is a fail-fast `${VAR:?…}` reference**. Most are; the exceptions are
+the BFF (`bff/compose.yaml`), which loads `frontend/mcm-app/.env.docker` with `env_file:`;
+web-api-mcp (`web-api-mcp/compose.yaml`), which loads `mcp-servers/web-api-mcp/.env.local` the same
+way; and the agent gateway, which keeps `AGENT_GATEWAY_CLIENT_SECRET` as an optional `${…:-}` so it
+can come up without token exchange — a name `scripts/check-no-inline-secrets.mjs` allowlists by
+name. Two one-time generator scripts mint the
 per-machine stack credentials and project the dev realm's client secrets into the local env files
 before any stack is first brought up. The full stack/profile tables, the env-var reference and the
 realm-reseed recovery procedure live in `docs/runbooks/local-dev.md`; this page is the distilled
 summary. Provision the host toolchain first ([dev environment setup](./dev-environment-setup.md)),
 or use the pre-provisioned [containerized dev environment](./devcontainer.md).
+
+## Profiles gate services, not stacks
+
+No stack is profile-gated as a whole. `auth` and `mcm` each start services with no profile at all,
+and the profile assignments live in the component compose files rather than in the stack files:
+
+| Stack | Starts with no profile | Needs a profile |
+|---|---|---|
+| `auth` | `keycloak-service`, `keycloak-store-postgres`, `keycloak-mailpit` | Vault (`vault`) |
+| `mcm` | the test infra: `mc-service-store-mongo` + its rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo` | mc-service (`app`), the BFF (`bff-secure` / `bff-nonsecure`), the agent layer (`agents`; the gateway also `agents-metro`) |
+| `audit` | nothing | every service (`audit`) |
+| `observability` | nothing | every service (`observability`) |
+
+So `pnpm nx up-auth infrastructure-as-code` really does start Keycloak with no profile, while the
+`mcm` stack's default bring-up is its stores only — `app`, `bff-*` and `agents` are opt-in.
 
 ## One-time bootstrap (per machine)
 
@@ -111,7 +137,10 @@ directory so other deliberately ignored templates stay ignored. A CI gate
 (`scripts/check-no-inline-secrets.mjs`, run in the `naming` job of the guardrails workflow, once with
 `--selftest` and once as the real scan) fails the build if a literal credential is re-inlined into a
 tracked Compose file; the selftest proves the detector flags a planted literal, and a
-`${VAR:-default}` inline default fails just like a raw literal. Run it locally with
+`${VAR:-default}` inline default fails just like a raw literal. Non-credentials that match the
+detector's secret-shaped key pattern are allowlisted by name rather than by value — `*_FILE` (a path
+to a Docker secret, not the secret), `*_USER`, `*ACCESS_KEY_ID` (the public half of an S3 pair),
+`*_CLIENT_ID`, `*_AUDIENCE` and `AGENT_GATEWAY_CLIENT_SECRET`. Run it locally with
 `node scripts/check-no-inline-secrets.mjs` (`--selftest` optional).
 
 ## What each generator writes, and how it fails
