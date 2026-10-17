@@ -1,8 +1,20 @@
 {
   "coveredCommit": "4aae23df5924dd9e662d41b5d1e8e93ab00bd06d",
   "coveredAt": "2026-10-17T14:11:20.497Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "repository.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: README.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 775,
@@ -26,24 +38,24 @@
     "updatedAt": "2026-10-17T14:11:20.892Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2811,
+    "pagesWritten": 2,
+    "elapsedSeconds": 1584,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 326,
+    "calls": 144,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2507155,
-    "cached": 31867144,
+    "uncached": 1409445,
+    "cached": 13122054,
     "cacheWrite": 0,
-    "output": 527975,
-    "reasoning": 432680,
-    "ms": 4377043,
-    "estCostUsd": 1.5769,
+    "output": 261293,
+    "reasoning": 223369,
+    "ms": 2097498,
+    "estCostUsd": 0.8151,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -53,13 +65,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/bff.md",
-        "projects/expo-app.md",
-        "projects/stacks.md"
+        "projects/repository.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 1.5769,
+      "estCostUsd": 0.8151,
       "rateLimited": null
     }
   ],
