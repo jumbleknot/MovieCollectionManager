@@ -1,14 +1,28 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router and Tamagui. Ships as one codebase with its BFF (see BFF page) but this page covers the client-side app shape, design system, settings surface, and client-facing test/build gotchas.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router and Tamagui v2. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, and the client-facing build and test traps.
 resource: frontend/mcm-app/README.md
-tags: [expo, react-native, tamagui, frontend]
+tags: [expo, react-native, tamagui, frontend, metro, csp]
 sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-23ebb6a3dfd75d37b2feaef1
+    resource: repo://frontend/mcm-app/metro-env-blocklist.js
+  - id: openwiki-source-50f6865ba7ac6d348318b9e3
+    resource: repo://frontend/mcm-app/metro-env-blocklist.test.js
+  - id: openwiki-source-b50092c46ef6bf8b0f9ce07f
+    resource: repo://frontend/mcm-app/metro-shims/segment-analytics-node.js
+  - id: openwiki-source-b0bf8870ff837f354a6292bb
+    resource: repo://frontend/mcm-app/metro.config.js
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
+  - id: openwiki-source-a4c39fcf1686803a0f1b3a45
+    resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -37,12 +51,22 @@ sources:
     resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
+  - id: openwiki-source-b5b17657abfab732746dd707
+    resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
+  - id: openwiki-source-bbf78f164062a1cfdec73a0a
+    resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-f7e16ba323424b9790bca8b9
     resource: repo://packages/design-system/package.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-26T05:36:02.343Z" }
+  - id: openwiki-source-a3e2c14b6305b3709de7fcd4
+    resource: repo://scripts/check-no-server-imports.mjs
+  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
+    resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-92e409c28d1307a334df12c0
+    resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-26T05:36:02.343Z
+  - by: openwiki/0.7.1
+    at: 2026-10-17T13:24:33.842Z
 ---
 
 # Expo/React Native universal app
@@ -57,7 +81,9 @@ and renders a screen component, never the other way round.
 
 The [design system](./design-system.md) is Tamagui-based (`@mcm/design-system`), dark-first by default (theme choice is
 persisted client-side only — no backend involvement), with a compliance test suite enforcing
-design-token usage rules and tracked "sanctioned deviations." All client-side network calls go
+design-token usage rules and tracked "sanctioned deviations" (rules R1–R7; the rule table and the
+sanctioned-deviation contract are summarized on the [design system page](./design-system.md) rather
+than duplicated here). All client-side network calls go
 through `src/utils/api-client.ts` (an Axios instance with a 401 silent-refresh-and-retry
 interceptor), which never attaches an `Authorization` header — it relies on the browser/RN cookie
 jar and `withCredentials: true` to carry the BFF's session cookies (see
@@ -179,8 +205,106 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   dev bundler before the plugin was adopted. The plugin is explicitly excluded under
   `NODE_ENV=test` so the Jest unit suite still renders Tamagui components at runtime, unchanged.
   If you see stale guidance elsewhere claiming Tamagui is pinned to v1 with no compiler plugin
-  installed, that no longer reflects this codebase — check `package.json` and
-  `babel.config.js` before trusting it.
+  installed, that no longer reflects this codebase — `frontend/mcm-app/README.md`'s own
+  design-system section still documents the old runtime-only v1 arrangement, so treat the
+  manifests (`package.json`, `babel.config.js`) as the authority and check them before trusting
+  it.
+- **Project-root dotenv files Expo cannot parse are kept out of Metro's file map — drop the
+  blocklist and `pnpm web` 500s on every request.** In development, `@expo/metro-config`'s
+  transform-worker rewrites the virtual module `expo/virtual/env.js` into
+  `require.context(<projectRoot>, false, /^\.\/\.env/)` so that editing a `.env` file hot-reloads
+  the client bundle. That context takes *every* project-root file whose name starts with `.env` and
+  whose extension Metro crawls (Expo sets `watcher.additionalExts` to include `env`, `local` and
+  `development`), while the very same worker dotenv-parses only six names — `.env`, `.env.local`,
+  `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`. The
+  two regexes disagree, so everything else falls through to the ordinary Babel JS transform:
+  `.env.e2e.local` ends in `.local`, IS a member of that context, and dies as a `SyntaxError: …
+  Missing semicolon` — which is what made `pnpm web` (and therefore Playwright's default Metro
+  `webServer` target) return HTTP 500 for every request (item #242, measured 2026-09-07).
+  `frontend/mcm-app/metro-env-blocklist.js` computes a `resolver.blockList` entry matching every
+  root-level `.env*` outside that six-name set, and `metro.config.js` appends it to the resolver
+  config. Two things about it are deliberate. It blocks rather than dropping `'local'` from
+  `watcher.additionalExts`, because that would also stop Metro crawling `.env.local`, which Expo
+  legitimately reads — these files are read at runtime with `readFileSync` by the Playwright /
+  Maestro / Jest harnesses and nothing in the bundle imports them, so Metro has no business seeing
+  them. And do not "just reformat" the offending file instead: no dotenv-valid formatting satisfies
+  a JavaScript parser (quoting the space-containing values only moved the error onto a `#` comment
+  line), and the format is shared with three consumers that quote differently — bash `source`,
+  `docker run --env-file`, and the Python `_load_env_file` helpers. The regex must also stay in step
+  with Expo's own parseable set if a future SDK widens it.
+- **`@segment/analytics-node` is redirected to a no-op shim in `metro.config.js`.** CopilotKit's
+  React Native entry statically imports its telemetry client, which imports the server-side
+  `@segment/analytics-node`; that transitively pulls `jose`, whose Node build `require`s `crypto`,
+  and `node:crypto` does not exist on React Native/Hermes — the Android/iOS bundle fails outright
+  with `Unable to resolve module crypto from jose/.../node/cjs/runtime/verify.js`. `metro.config.js`
+  overrides the resolver for that one specifier to `metro-shims/segment-analytics-node.js`,
+  removing the whole telemetry subtree (`jose` + `node:crypto` + node `http`) from the mobile
+  bundle while every other package resolves exactly as before; web and the BFF are unaffected
+  because Node has `crypto`. The shim is deliberately **not** an empty module: the telemetry client
+  constructs `new Analytics(...)` unconditionally in React Native (its
+  `COPILOTKIT_TELEMETRY_DISABLED` gate reads `process.env`, which is empty at runtime on native),
+  so an empty module would throw "undefined is not a constructor". The shim keeps the API surface
+  and sends nothing.
+- **`src/bff-server/**` means server-only without exception, and a keyless gate enforces it.**
+  `scripts/check-no-server-imports.mjs` scans `frontend/mcm-app/src` for any non-exempt file that
+  imports into `src/bff-server/`, and runs in the `naming` guardrails job as `--selftest` plus the
+  real scan. Two details of the detector are load-bearing: it resolves both the `@/` alias and a
+  relative walk (a gate that only knew the alias would be bypassed by `../../bff-server/x`, the
+  shape a mechanical refactor produces), and it matches over the whole file rather than line by
+  line — the violation it was written for, `run-history.tsx`'s, is spread over five lines, and the
+  first, line-based version reported the real tree clean of the one import it existed to catch.
+  Deliberately not flagged: `src/bff-server/**` importing its own siblings, `src/app/**/*+api.ts`
+  (API routes *are* the sanctioned server-side consumer), `import type` (erased at compile time and
+  ships nothing — a gate that fires there teaches people to suppress it), and test files. The one
+  escape hatch is an `@client-safe: <reason>` marker **in the module itself**, not an allowlist
+  inside the gate: an allowlist rots silently and is invisible to anyone reading the module, while
+  a marker sits in front of every reviewer of the file it excuses, and adding one is an edit to the
+  thing being excused. A bare marker with no reason is not honoured. **No module carries a marker
+  today** — item #566 relocated the only candidate (`api-client.ts`) to the Utils-Layer, and an
+  audit confirmed every remaining module under `src/bff-server/` is genuinely server-only — and the
+  mechanism is kept rather than deleted because its tests document the rule. A marker must be
+  paired with an entry in `SERVER_ONLY_EXEMPT` in `scripts/check-web-bundle-budget.mjs`, or one of
+  the two gates has an unexplained hole. That second gate is the other half of the story and
+  asserts three things: the web entry chunk stays inside a committed byte budget, the deferred
+  assistant packages are absent from the *entry* chunk, and server-only code is absent from
+  *every* client chunk (not just the entry one — a gate reading only the entry chunk would report
+  clean while `src/bff-server/**` shipped inside a deferred chunk).
+- **The same process serves the web surface, and its security headers come from a plain-CommonJS
+  module `server.js` requires at boot.** `frontend/mcm-app/web-security-headers.js` is deliberately
+  not TypeScript: `server.js` lives outside the Metro bundle and cannot import the app's compiled
+  TS. It builds a strict, *enforcing* (never report-only) `Content-Security-Policy` for the
+  browser-rendered surface whose `script-src` allow-lists Expo Router's single inline hydration
+  bootstrap script **by sha256 hash**, so the policy needs neither `'unsafe-inline'` nor
+  `'unsafe-eval'`, plus three always-on static baseline headers stamped on every response. The
+  browser-facing Keycloak origin that `connect-src` needs (expo-auth-session fetches OIDC
+  discovery) is read from env at boot and reduced to a bare `http(s)` origin, falling back to a
+  localhost default on anything malformed — a scheme-less or non-web-scheme value does not throw in
+  the WHATWG `URL` parser, it yields the opaque origin `null`, which would emit a broken directive.
+  The web CSP is **path-scoped out of `/bff-api`** so the API surface keeps exactly one CSP, its own
+  strict handler policy, rather than depending on adapter same-name header merge order. One residual
+  is deliberate and documented: a third-party library runs a `new Function("")` eval-availability
+  probe inside a try/catch, the strict `script-src` blocks it, the library degrades gracefully with
+  the app fully functional, and the browser logs one benign `eval` CSP violation — `'unsafe-eval'`
+  is *not* added to silence it, because permitting real eval app-wide would defeat the hardening.
+  The header values, the current directive set and the per-surface contract belong to the cited
+  sources (`frontend/mcm-app/web-security-headers.js`, the contract under
+  `../../specs/032-security-header-hardening/contracts/security-headers-contract.md`, and the
+  [DAST runbook](../runbooks/dast-scanning.md) for the ZAP gate), not to this page.
+  `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
+  SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
+  three; it opts out of the shared authenticated `storageState` because all three are public.
+- **A release APK reaches the dev BFF only because a config plugin allowlists cleartext for it.**
+  Android `targetSdk` ≥ 28 blocks `http://` traffic by default and Expo only relaxes that in the
+  DEBUG manifest, so the standalone RELEASE APK the mobile E2E suite installs could not reach the
+  dev BFF over `adb reverse` — the login POST failed with `ERR_NETWORK` and never left the device
+  (Chrome loads the same `http://` URL fine, because Chrome carries its own cleartext policy; the
+  app's own network stack does not). `frontend/mcm-app/plugins/with-dev-cleartext.js`, listed in
+  `app.json` and run at `expo prebuild` time (because `android/` is gitignored and regenerated),
+  writes a network security config permitting cleartext for `localhost`, `127.0.0.1` and the
+  emulator host alias `10.0.2.2` **only**, then points `android:networkSecurityConfig` at it. Every
+  other host stays cleartext-blocked, so the production HTTPS build is unaffected — prod talks to
+  its real HTTPS host, which is not in this allowlist. See the [Android emulator
+  runbook](../runbooks/android-emulator.md) for the APK build path this sits in.
 - **Web E2E must run against a prebuilt BFF container, and a stale image lies to you.** Metro's dev
   web bundler OOMs building the app plus Tamagui locally, so web E2E always runs against the
   containerized BFF, not the dev server. That container serves a prebuilt bundle — if you change

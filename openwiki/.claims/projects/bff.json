@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fd1e96553cb01f4ccd562f9c1f37d0f4f58439e2db433f0db3d1ded7c97c1278",
+  "pageVersion": "sha256:3ab8bfdf2d49690eacc6dff82b7711a37bb0ba68b609ff23b0cf8cc3f9ac8d10",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -147,10 +147,254 @@
           "version": "repo-lines-v1:sha256:6c6260f95c20e240bc6634f017d0ecac0a903b21016337643b43ea3cf9dcabbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5N2E4NjI0Yzk0MWMzYmEyZWIwYzNjNzQ0ZDFiNzM3YTYzYjc3YWQ0MDFhYTNiMmYzOTQ0Y2M0ZThjYmU4MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MDhmNzYyYTkxOGIwNzZmY2ZlMGM5Y2JlMDQ0Y2ZjNmIzMDMxNDM4ZWJjNjE0ZGQ2YjE1MmJiOWIxMTZlYzYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_bf0c9edbb5d34eb7863c5bd6f2266f3e",
+      "statement": "Account deletion (feature 076) is three routes over one pipeline: POST /bff-api/account/delete-challenge parks a 5-minute, user-keyed pending request and returns only the authorization URL (or, on native, a state plus the parameters the device must send); GET /bff-api/account/delete is the Keycloak callback, which returns a redirect for every outcome; POST on the same path is the native completion, running the same verification and pipeline but answering JSON. There is no DELETE method and no admin variant, and the user id always comes from the validated session rather than the query.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts#L1-L19",
+          "version": "repo-lines-v1:sha256:37b47300b925b90ee46fc8ac177dae311e5f7f49ee282488e9ca0be8b2362495:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0N2Q4ZWM5Y2U1NWU5NjY4MWM4ZDQ4OWNjMzIwNzJlNDFlOTFkMTk5NDRkZjI0MjcxYmY0ZGUzZWE0YTBiMTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L1-L18",
+          "version": "repo-lines-v1:sha256:4b17d6c9514694ab413f4cc43922d8b65e607fbd92bb363c0f869931d2acc547:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Yjg2ZmMxZWI5YmZmZTUzN2Y0ODM2OWJjZjY2OTQ2OGM4YTRjYTE4ODU1NzNiOGQxNzA1OGUwMDgzZmFkMjUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L47-L64",
+          "version": "repo-lines-v1:sha256:3476b7f02ec4eb1edb1b3f63b25a43bea99f92bcf53b49e57053be1d23173fde:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMWIzOTE3YWQ0YTI3YTc0YzFmMjFhMGUyYjUyOTNiMjEzYzk3ZTdmYTI3YmQ0Yzg3Mzg3NTVhMzBlNjkzMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0OGUyZWZjZGExYjliMWZjZDAxNjZlZTI1Yzc3YTYzM2ViMjkwY2Y5NzRhOWRiNTc1YWYyYzVmM2ZhYTM1ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_899106a9aa1f4befadb6adeb7dae23ff",
+      "statement": "The normative deletion order is published as data: DELETION_STEPS is tearDownUserBackups, deleteCollections, removeAgentConfig, clearTransientState, terminateSessions, logoutIdpSessions, deleteIdentity, so a reordering shows up as a diff on a named list rather than a quiet edit inside a function body, and account-deletion-order.test.ts asserts against it.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L41-L57",
+          "version": "repo-lines-v1:sha256:860089ab09742bfc52352ff217c1769beeb0f103e57e6fb599fc6ef44237a38f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwODNiNGZiM2E0MTkwZjFkZmM4OTcwYmYyMjgxMThhMmM0OTVhZDBhODVhOWJmZjAyZTg4NzEzMzUzOWRkYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4YjZmYWEwYTQ1YTY2MWYyNjQxZGY3YjUxNDg0M2M3MmRkNDUwYTljM2YwZDczZGE5MmFjZmVmODFjZmNjNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZWI4YjdkMGFkMTBlZjM5NzE4NzUzNjFiYmZmYmY4MTgwMzEzZWU3OWJmY2UwYzhkNTlmMGIyOTZkZmM2ZWYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts#L19-L100",
+          "version": "repo-lines-v1:sha256:6447e7cfc12917dadedc2a667b8a0a787fae6fe0b6690036f99883bc2ba71478:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YzgwYTRlNjNjYTgyZDJkMGY3MDMzYjQyMzY3NmVhYzlhMzJlNTViMjRlNGE3MmY2ZTMwYjNmYzEzNmE3ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlNGQ5Y2FjNjE2MDVkOWQ5NGRiOGY2NjJjZWU2MjRlNGU2ODRhZTczNDkzMTE4MDk5NzUzNmY4MjQwYTk5MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MTk3MmZiYzVmNGM3ZTQzODNjMTUyNjNkZTdlODk0MTAyZDJmNDRiNDM1NzAzMzhiZGFmYTI0OGY5MTM2YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4caf52041ca84b39a6988face7de22fa",
+      "statement": "Three constraints carry the deletion order: tearDownUserBackups runs first and already revokes the offline token at the identity provider before deleting any local record, throwing having deleted nothing if the revocation fails; the agent-config document is removed only after the teardown because the standing permission is stored inside it as offlineRefreshEnc; and deleteIdentity runs last because it is the only irreversible step, after which nothing that needed the user to exist can be retried.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L1-L26",
+          "version": "repo-lines-v1:sha256:028089e83edbd19fa233c0768cbc0173b5bf0a8dee8ddfc4e8ef77649e4e0761:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MzUyMjU5YWEzZjBkMjI1MTg3ZmM0Njg4YjU5N2FjMGZmNDlhMTJmZWE1OGE2MDJkOTVjMDk0MjJkZmFmN2EifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L86-L87",
+          "version": "repo-lines-v1:sha256:097a09133363ccc12880bb3653109532433840a2f183c533362b2e20d48705a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmYzZjQwMTk2MzRmY2ZiODY0MjdmMTMxZjUyN2Q2YTNjZjU2MmJjMDM5MDc4ODYyZDEzY2UwNTZiYTBhZTYzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEzZjE0NmI5ZGFkMjQyN2RjMWZiOWZlMGExNjhiMjRiYTlkNGZiMmE0MjBkM2YxNTdkOWVlMmQyNmJhNzJlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFmYjE3NTZlZGQxYTA4NGNhYWE1N2UwYjlhMTI4MGMyN2ZmZmVkZWIzMzAxODM4ZDc0ZTQ0NWM3Yjk3MjZkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJjMDZjODMwODc1N2QwN2FmYzUzZjgyNTUxZTMzZWI2NzI0NDhiZTg3MDZjY2ZkODk3NzU0ODdhMmNmYjJiMCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L341-L368",
+          "version": "repo-lines-v1:sha256:4b70cc83283e41a6359777ad8fbe0ef36745c44b083fdfa683aa7c036f84871c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNmQ3NGRkYjRiNjVjYzY1YTgwZjk4ZTc4ZGUwYjhjZDlmMDY1ZGJkNTU2YzlmNzE3ZjlmODBjNzQyODdhZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZTg1YjNkNDc3NzkwYmNiMGVmMDJhZjc4NDY1ZWVjMDViZGJhMjg1N2MwMWU0ODViZTI2MzBiMTI4NDQ2M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_571820f31b23489d90531dbe7957acc5",
+      "statement": "runAccountDeletion throws on the first failing step having attempted nothing after it, so the caller reports the account as not deleted rather than a partial success and a retry starts again from the teardown; each step runs through a wrapper recording the failed step by its enumerated name so no downstream message reaches the audit stream; the step-up refresh token is revoked in a finally on the failure path too, so a failed deletion does not leave a second live token set for a still-existing account; and the callback runs to completion even if the client goes away, because nothing wires an inbound abort signal into a cancellation path.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts#L9-L19",
+          "version": "repo-lines-v1:sha256:7a6f72c49cec807b0e2ae33b69174bf8a4f80b6d05d4627709cdd61da5a95237:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyM2NiNGMxM2Q2Nzc1OWQ1NGY3NjcxZDQ0MDM0OTcyZDA5MDNhMzlkMDhhZmFlNzNiYjk4MWViOWFiMGRjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNTQ0OWRjOWRhMTg2MDFhYzU1ZGJjZTdkODgzYWY3NjI5MTg1YTM3MWJmOTEwZDQxNzEzMmQ1OTU0MmRjNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0N2Q4ZWM5Y2U1NWU5NjY4MWM4ZDQ4OWNjMzIwNzJlNDFlOTFkMTk5NDRkZjI0MjcxYmY0ZGUzZWE0YTBiMTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L159-L206",
+          "version": "repo-lines-v1:sha256:16f24db1057e793d80301d94f75e6c63ef262f9b1514d30984c5ffa061da20dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlODk0MzM2NmNkYzljNTcxZDUyNzc3YjI3MzUyNTk2ODczZGU3NGNlNDJlOWQ1MTI2ODUwYzY3ZmE4MGU3YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3533532974944d4b936157e3f8608b1",
+      "statement": "account-deletion.ts must never construct a destination driver and must never import backup-destination-driver, backup-retention, or the driver/store/restore modules, so no code path in account deletion is capable of touching the user's stored artifacts (which are their property at storage they own and pay for). account-deletion-no-driver.test.ts enforces this as a static import assertion rather than a behavioural test, because reading the imports shows the capability is absent entirely while a behavioural test could only show one path did not touch storage on one run.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L21-L25",
+          "version": "repo-lines-v1:sha256:cedc817ac74e17001e5a618c367bf311a287c34d56a9a891cbdf56835aa5adbc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBjMWI3YjM1ZWNjZDZkODliNTlmNjVlZDhhY2NkODQ4MzU1ODE0ZmE5Yzg3ZTNiYmE1NjQyZTA1YjQ5YzMyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI4N2E3MTE0MGJjN2ViZmM1MjAwNGM0NTE2OWE5OTk5YjhhYWYyOWU2MzIwZDBhNzUxNGI4ZDI2Yjg5ODc4ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQyYjBjZmNiMzkzMWM3ZDAzNGYwM2M1ZTM5NTBkZTJmODc5MjYwYWEyMGIyNzI1ZTc5ZGFiM2NmNGUwZTkyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVhYTliM2Q3MmQ3ZDAyZTExZjQ4ZjcxNjkyZWRlOTg2ZWIyY2VkZjM1ZjA0YjJkYTIzYTFmMzliZDI4YTY0NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts#L1-L51",
+          "version": "repo-lines-v1:sha256:39a89aab4dbc616cd3437a0290875b6782b84f92f378eb2eb6d048964947bb63:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0c549eae990487b935c7be8739de7c4",
+      "statement": "The collection-deletion step acts with the step-up access token rather than the session's — the step-up token was minted seconds ago and cannot be near expiry, whereas the session's may be after a login form and TOTP prompt — and it treats a 404 from mc-service as success, because a retry after a partial failure re-issues deletes for collections the first attempt already removed and treating that as an error would make the retry fail where it had otherwise worked. Ownership is enforced by mc-service's DAC layer, so the loop cannot reach another user's collection.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-deletion.ts#L89-L125",
+          "version": "repo-lines-v1:sha256:91e3a093cc4278963eff3fb2289fd396b4be0dee9d9f65af61fc2297511168e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZjIzNDgxN2Q5NjU3MDM4NmRkNWY2MWQ3ZDc5NzU5YzBhYTUzNTMxZGRlZTUzZGU3YTY2NWMxYjBkMzBlNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNGUzYjVmMWMyY2RkZDE5MDBkNTJhYTQ4ZTRhYTc3YmYyZjFjZjRiNzQ1YjRjODI0M2FlZmMyYzIxYjUwMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89e3b934c9e34c9484413c47e79f0235",
+      "statement": "The deletion callback is gated on step-up re-authentication that sends the user back to the identity provider rather than collecting a password in-app, because the constitution forbids the application handling credentials and the app client has directAccessGrantsEnabled false so the password grant is unavailable; the authorize request sends prompt=login and max_age=0 together (measured with a control leg: authorize without max_age returns a code with no prompt because the SSO session is reused, authorize with max_age=0 serves the login form again) and asks for scope=openid only, deliberately not offline_access.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:955a6e9263f6b42527710e9164e849e5edc28a675d9f1e8d36bc2f2764dbd83e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmY2I4MTIxMDdhZjg3MGNhZDE5NTllNTUyYjdhODliMWE5NDc3YWVmN2VkNmI5ZTU3MjQxNmU2MDllZjYyOTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L63-L94",
+          "version": "repo-lines-v1:sha256:9c4e558a3f70a09d167eccb6451b3803782a606d843a7c4f8ae9bf8ed7646e23:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYzcwNzhhMWRiYWI1NjQwMThmMDBjNWRmNzEyOTEyNjNmMjVhZmE4OGMyOWY3YWY4ZDI3YTYxN2Q2NWYyYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YjBiYjUyN2E3MGNjY2UzYzU3NGNhMGE2Y2NjOTQwMzI2Y2FkMWFlMjk1N2VlMjRhODRhZjIxYWI2NGIxMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljNTE4Y2YzYTdmZGVmZTc1OWRiYzNlNDk2NDUzMDkxYmU1MzBjYTJlZmVjNTNlZDljOGEyY2VmNTE2ODdjNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e800d53c1351415982f300776344cf87",
+      "statement": "Keycloak does not emit amr for this client, so auth_time carries the whole step-up requirement: verification refuses a token with no auth_time (a separate presence check that comes first, so a missing claim never reads as satisfied) and then applies two freshness tests — the proof must be within STEP_UP_MAX_AGE_SECONDS (300, the same constant as the parked record's TTL so the two cannot drift) and strictly greater than the session's own auth_time floor, which is the session's auth_time rather than a wall clock so both values come from Keycloak.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L56-L75",
+          "version": "repo-lines-v1:sha256:c57e6f14d2f6a530e043b7d3b524ba89d446216fcb64cfb9ef4c2833b8e9d1f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzM2U5OGIzMGE1ZDEzMjgzNmMzM2UyYTcyMTk4Y2RhZjFmZmFiOGQ2YjRhYzljYzkxNTkyYzUzZDczZDEyNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMzBjYWM0MWYwMDZjY2IwMDk0MjI1NjRkMWIyOWIzOGE5ZWRkYWUxZDNkNzYzZGZjNzFlMmUzZDkwOWQ3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNmE2MDQ0OGVlMTM0Y2ZkNGEwNTZhYTJiOTM3N2U3NDM3MTk2MGNlYTllM2RjNTE3YTQ3Y2VhODMzN2M2NjAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L20-L23",
+          "version": "repo-lines-v1:sha256:f812e7f988539b1e726a62667968a21dbf9c74f5316316224b5bc813ab9eba42:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI4MjAxZjI3YjkyYmExMjliMDE1N2QxNGYxNGI0NDgyN2EzN2NlNWZhNGQxZTEyNzcwOGViNjc3OTE3ZjkzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGM4OTE3Yzk5MTA0MjBjZjlkYTk4NGZhOWNjNTczY2Y3YmM0N2QyMWQzNDhjM2UwY2IyZWYyOGQ0MmJiNWZiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIwMDE4OWMwNjA1MzRlY2VlYjc3Mjc1ZDcyYzcwNjI4YWUzYTVlYTBiZTJlOThkOGUwNGY4ZjM1NmM5OWRmNyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L216-L221",
+          "version": "repo-lines-v1:sha256:9f97c5068569f6ba1ceadcbd5e5cbfba8525e1d49e5c83b74fd92370ff6ce8b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWRhNThjOWJhY2YxOThiOTI0YjY4NzgwYjAyODQ5MDdiY2ZkMWMzNjcxYzVhYWVlYzMwMGM0OTI3MTlkN2ExMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFjMDkwZTQ2OWE0ZjY4MmQ3ZTU2ZDlhYzJhYWI2YTM5NTdjMmVmNzhkNjZmNWU1NDcwYTk3ODlkOWIzMzc3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTAxYjBjMGE2YWE5MzQ1MjBhMzM4YjUwYzk3NGIwOWM2ZTJhMGIwODMxYTExNDQ3ZmRkNGUwZWJhMDFkZTAxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDUxMDE1MTdlZWIxMGE5MjQyMDQ2Y2VkMDk1ZWNmNzhlNTE5ZmU1ZDY1YTZhODk4YzI2Y2ZlZjdiNmQwNTI1NyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L30-L37",
+          "version": "repo-lines-v1:sha256:ff14ff6e00e0e4d0508deccd67ed825aa28befee7bb2a87a8b745327f0136722:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzMTg1ZDY2ZTIyYWE5MTdiMGQ1NzdhNzEwM2Y4NTVlNzdhYzM2Zjg4MGIzNDNiMTY1NmU2OWRhMjIzYjNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzg0MzcxMWRlZmM4MGE1OGRmYjhkYWY0MTRlMmNlMjQwZWUzYmY4NWU1OWE5MGQ1NTcyMDQyNjM3ZTllNjJlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTM1MDI0NjczYWRiOWQ2NmMxNmVlOTIwOTdhYjU3MTE3ZjQyODc1MzE1MTc3ZGY3Yjk0ZmUxYzJkNGYwNzkzMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6dbb41815865436f8cf90ac7e994fbe4",
+      "statement": "The PKCE verifier is parked server-side on web — state, verifier and redirect URI in Redis keyed by the authenticated user, with only the authorization URL returned to the browser — because a verifier the browser holds is one an attacker holding the authorization code can also use; on native the device runs the flow and expo-auth-session mints the verifier, while the BFF still mints and parks the state as the CSRF binding and single-use marker. A pending record not marked native never reads client-supplied verifier or redirect-URI values, so a web caller cannot opt itself onto the weaker binding.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L205-L210",
+          "version": "repo-lines-v1:sha256:d4ddfe54cd9b77ac17b2b819e2841020b530a2f26e7891b0065d7d2ab494c629:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2NlMmZhOTU4NmYwZjBmMGZjOGE3MTY3YWU4ZmNjMmVhYzBlOWFiMDVkZmQxYjhjYThkZTE2ZjBkMTNkOWJjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JjODAwYmE4ZjBmMDU1MTcwYTU3NjgwOGY4M2I0Yjk4NWVjMDEzYmU1ZjJiNmZiOTMzYWU2OGRiOGYxOGQxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTk4MWMzNzFhYjNjYTNhOTNlNDM4OTE0M2Q1M2EyMWYwYTg1OTRhNjg1ZjU1YmQxMzg5OWFjMDJiNDI0ZmIwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGU4NTM4M2FiZjkwYzNjM2I5N2RlZmVlMWI4ODM3YjgwNjMyZWM2YjZhZTBjM2FhNmEwZGMyMGFlOWJmZmFiZSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L50-L62",
+          "version": "repo-lines-v1:sha256:875cb821ddd17779949070e468d7d55a57a9ab6411da731391cb5dcd2196086a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2I3Y2U4NzAwMmNlYzU3MTQyMDE0N2U3OTU5YzZmNThiMjcxZTRmYzQzMWFiYmU3ZjYwMjgxOGFmYjA3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjQ2MmI2ZjEwNmIzMTNiMjBlZTdkYjI3OWI3ODdhYmY1MmMxZDJkZDJhNjI1MGQ3NWFiMjdhZjc1MWJiYjYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L96-L115",
+          "version": "repo-lines-v1:sha256:c01334b18c9c4d7afb24762351261cb4e128cacde78484a4d534d9df8955551d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwZTg2NTRjZTZjNTI3YmZkODhiNTk4YjM2MjU3OTFkMDI3NTMxODY4Njk5OTkyNjRmYWE1ZTEyYTBjZmRjODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39573dcb7b6b43748d65ae1b0f9d5af0",
+      "statement": "redirectUri must be identical on both OAuth legs — the authorize request and the code exchange — or Keycloak rejects the exchange with invalid_grant, so it is derived from the origin the request actually arrived on at challenge time and stored with the pending record rather than recomputed on the callback; deriving it from the request is safe against a forged Host because Keycloak only honours redirect URIs registered on the client.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L12-L17",
+          "version": "repo-lines-v1:sha256:75b1d6a936c4dc3a89f0c299b48d9abfd7b720aa6e03de6e03a4b6c39767a7eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1Mzg5ODg0ZGYwODQzNWNiYjU5NzRlNmQwNTg3OGJkZjNiOGJiMjJjNWYwYjY5MDU4YmZjODY3ODhhYzMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY2ZTg5NTlmMGJjZTcwMjRhYjA0NGIxNmI5OTRjNzg2MGY4NTdhNzgzNmRkNzcwZjI4MTEzZTY1YTM3ZDg4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ5ZjFhODM1MGU4ZjU3YzI1NDNhNTE2NDRmNTUxNDZmNWJmZGMyZmFjZTA2ZjUwN2ZiNDlkMzA1ZmJmNGU3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUxZjIyZmNiZDU1ZTk5MTNlN2M4MDJkYTFhNTI5ZmUzYzVmOTk4NTE5OWRhNTRjZGQ2YjdmM2U5NjdmZjZjMyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L11-L19",
+          "version": "repo-lines-v1:sha256:97b7cdfc6a285bc7cacf1bfaf651a907bbc1ff8eadc3a3ac507c5577059a554c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA0NjU5OWY4ZTViNjU5NWQxYjhjODEyNjFiYzk2NjQzMmVlMzZiN2UzMjViZDQ2OTdiNjg3M2ZhMDZmMTczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAwMTUzOTBlNGM0NmFkMDY1MjVmNjk1MmI0NTEyNTBjMzRkNDYwMDFhNzQ2Yzg1YzM3YWQ5NjkyODk3NjVkOCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L56-L62",
+          "version": "repo-lines-v1:sha256:4bd76abeef1f34e6f5bd5253d97c1f6612ab6d106dcfe7b799b16d1a2a2a55b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzJiOThlNjI2MDNlNjdhMTQ4MmE1MjliYTI5NGFjNjNmOWFjZTNmMjY1MWFiNzkzNmRiYTY4ZTE4Nzg5NWMxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUyNDYyYjZmMTA2YjMxM2IyMGVlN2RiMjc5Yjc4N2FiZjUyYzFkMmRkMmE2MjUwZDc1YWIyN2FmNzUxYmJiNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_085ffbea4ea04c9b9fccfaa093976219",
+      "statement": "The parked step-up record is consumed before validation whatever the outcome, so a proof that fails its checks is not retryable against the same request and an attacker reaching the callback gets no repeated attempts at the state value; refusals are enumerated as no_pending, state_mismatch, subject_mismatch, missing_auth_time and stale_auth rather than free text, so a refusal can be counted and no message from Keycloak leaks into the audit stream.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L119-L132",
+          "version": "repo-lines-v1:sha256:32448b01b8b309e9bffce49855e4a5c138ae4d2f38bf2566c53209d11c6a1b26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZjBlNzg3ZGNjNzBkYzhlNThkMTAzZGY4ZGJiYTU3YWE4OTFmNTQ0ZmYwZDE0YTI0ODRmMDMyNTc4MTJjYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwZTg2NTRjZTZjNTI3YmZkODhiNTk4YjM2MjU3OTFkMDI3NTMxODY4Njk5OTkyNjRmYWE1ZTEyYTBjZmRjODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNzkwODcyODUyMzE3OTNiNTBlYmYyZDczNWEyMjVkOTk1OThjYWJiYmJkNzkyNzE1ZjkwZDEzZjhjNDI5YTYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L168-L203",
+          "version": "repo-lines-v1:sha256:7c073857b6d0485da043f72cec7a845a47de9544d73c36234f0a22727b98f720:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMGYzMTkyYWU5NTZlM2NlZTg3MGI2YzRhYmQ4NjRjYzIzZjMwZWM0OTQxYmY1OGNmOTQzODQwYjRiNjdjZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYWQyYmYzZmY2NTY5NDZhNjFkMWJlNTVlMWJmNmFlOWEzODVhMmMxOTI5ZjA0NDBjMjMxMGEyMjkwMGJhOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNTgwNDcxMzg2ZWZiZDkxMmU0NDY2MDA3Mzc0MGMwNzg3ZjBiYTM5YjA5MDUyZDIzMjZkOWE1NjIyYjgxYjgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L362-L375",
+          "version": "repo-lines-v1:sha256:2dd9548d967a8f24b6955dc4e62897d7cb77962022df1bf6f8c3e1ce4100dee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2E4ZWMwODBmZTAxNjYxYjk0YzkyN2ZiZTkwYTIxMDg4M2UyYmUwZDRlZTg1MTY1NzQyODE0NDMwNTk1NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MWEzNzc1YmJiZTEyNjc2YmRjYTI3OTFlZjM2ZjYwOWI5ZmQ0ZmMzNTBmYzQyMmQyMjE0N2VlMjdlYTNkYTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d035730874cf45f7a44ca0f57dade1eb",
+      "statement": "The deletion challenge is rate-limited per client IP at 5 requests per hour (skipped with a warning when no trusted client identity can be established), and a user who is the last remaining mc-admin is refused with a 409 before anything is parked.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L39-L54",
+          "version": "repo-lines-v1:sha256:a2a7af39ed2c6a70f27dc8c4b931a4da74bfa9c38cbab130797a4d251194f37e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOWFkYmMwYzNkNjQyYWUzMzRjYjllNWU1YmU1YTJmMTE3MTI5ZWQ2ODllNjA5YWMwYTAwNmY2ZDA4OGUzNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMWNlNjE0YmFiMmZiZGNmMmM2MjBhMDVjNDI4YmZjNGUxOGJlMDM1OGMwMjMyNWI4ZTQwMDg4NWZjZWUwNGUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L73-L82",
+          "version": "repo-lines-v1:sha256:57601c68131df09a86223f46603b5016bc87d0c11480638cdb5b2bc4495e0b60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYWU2YzFiZWE2NDBkMGJjMTIzOGNlZWJmYTMyZjlhMWY5NGVhMzQxZjQ0MjE2ZjYxM2FjMTQ5ODc4MDg4NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNWE3ZDA1ZWE0MTUwYTc0MGZhMTc4ZWNiOTk4YzdmYTg0MzRjNGUwNzc2NTE5Nzk4MTFjOTNkM2M5ZjkxNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYzMxN2FmMWU5MDgyMTBhZWEzM2M0YzlmMGI2ZDAxY2FiMGM3YWM4NzM4MTc1YTkyYjg2NzRlMDRhMjE2MjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d772cad9c5b4ef9a79d361919d593bd",
+      "statement": "Because the BFF's Mongo is a standalone mongod with no multi-document transaction, the backup teardown cannot wrap its deletes in one transaction: destinations, jobs and runs are removed as three independent deleteMany calls, ordered destinations → jobs → runs so a crash part-way through never leaves a job pointing at a destination that is gone.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L127-L142",
+          "version": "repo-lines-v1:sha256:e8813c11ee47fabdefc7ade14d1fe8df338570109ba85e0c3c9bd26896237f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNWIyNGRjYzYzZGNlMmQ1M2MwOTgyYjUzMGFmYWYwZjhhMGUyN2ZlODUyNGFiOTk2YjI0OGQ1NjUyZWY2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjA3Njg4ODhmMWQwODZkYTE2ZGY2MTJmMDI4N2FlMmY4NGQ3YmQwYWY1NmM5ZjdiM2M4NmEwZTA3ODUyYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MDU5Y2IwMjhlZDRmNmI2MTMwNjI2ZWM1ZDFlNWU0ZDNhMDVmZmI1OTQ0YjBmOWNmODdhNjMyYjlmMDhjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMjRhMGNiNTg1MTBlODkwMDkyNzMxZjE1NmVhZTE0NzI1NzYyNDg5MjQ1ZTQwYjgxMjAyMGVhNzU4ZTM1NmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L356-L368",
+          "version": "repo-lines-v1:sha256:e0e9e1c8f2bc44b84ddb6e4fbb625b287a47f537b56cd20858b9ba1eab0e5b6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZTQ4MGU2YWZiZjA4ZTVmZDUxODEzNDM0YzY3YWJiZGEzN2ZiMDYxMWViM2YwMWZiMDMxNGEzMzBmY2MzZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZGU1MjU3ZWJhNzdiYjYwZjM0Y2YwMGI1OGFmODY4OTFlZDgxYzgzMDU5YjlhNmQzOWQyYjdmOGQ4NWZkYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e77d34672fe04bb09004b6d0ebba8b7e",
+      "statement": "The web security-header layer is a pure plain-CommonJS module (web-security-headers.js) that server.js requires at container boot because the hand-written adapter cannot import the app's compiled TypeScript. It sets X-Frame-Options DENY, X-Content-Type-Options nosniff and Referrer-Policy no-referrer on static assets, SSR HTML and the API surface alike; path-scopes the web CSP out of /bff-api so the API keeps its own strict default-src 'none' CSP as the only CSP present; reads the browser-facing Keycloak origin from env rather than hard-coding it, falling back to the dev default on a malformed, scheme-less or non-web-scheme value (which the WHATWG URL parser would otherwise reduce to the opaque origin string null); and allow-lists Expo Router's one inline bootstrap script by sha256 hash instead of permitting 'unsafe-inline'.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L71",
+          "version": "repo-lines-v1:sha256:211b28dce08caa8ecada386eb243d5a132ca77211dba0a3116839982b5038d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L16-L118",
+          "version": "repo-lines-v1:sha256:b29575db6b46563ae70ae7d70ffc4a0cc71cec450b0f024f5ee370c08fd65bdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhM2IzOWJhNDI3M2E4YjkyMWRiNmUzY2QzN2NlZWZkM2M3Y2VlYmVjMzA0YzAyOTAyZDkwNTljZjI4OTVhZDFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NDlhNjA0MTRmNDA5OTcyZmIxMTM2NmYzZWY2OGM3Njc2OGZmNmNkZGQxYmQwZjI1ZjQwZGQ1MWU4ODEyOTE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3OTU2MDQzYmZiM2U1NzY4MDljYWEyMjJjOWQwOTAyNDVlMmRmYWZlMzQ3MmE0YWQwYTlkOWY1NjUwMjQzMzg0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f03f40ba291a4d548ec91c37937a9228",
+      "statement": "server.js disables X-Powered-By and stamps an X-BFF-Source marker on every response so the web E2E can positively prove the request path is this container rather than the Metro dev server, defeating a silent false-green.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L31-L55",
+          "version": "repo-lines-v1:sha256:3b1c7d73f089249c19cb95729307aef9f5d7788234e1041071d5e9bc55dbd428:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYmEwMzlkZTJmMjg5N2IwNTM0NGI0MGE3M2Q1ZjQ5Nzg0MTcyMzgzNWM1OTMzMjliMDBkODliODhlMmViNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYTczMGVlNTJjZTUwN2E0YTA5MjJlOGE0NzI5OGNhMGZkNmJiMDVmMDAzMzVlOGI2Mzg4NzA0ZGY2OGJlMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMjlmMGM1Y2EzZjZhYmQ2NjczMzdjOGQ0YzZlN2E4NjUzMTEwYTJiYWQ4Yjc1M2I3MzQyYjczYzJjMjQ5MjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee37bfcc7b674ae6ae7fa3c9c5e6c59b",
+      "statement": "The internal scheduling tick route answers 404 rather than 401 to a wrong secret so it never advertises its own existence, and compares in constant time with the lengths checked first so a length mismatch falls through to the same 404; on the server.js side the interval timer is unref'd, starts after app.listen so the first tick cannot race the port it calls, logs and swallows a failing tick, and is disabled with a single boot-time log line when BACKUP_TICK_SECRET is unset or BACKUP_TICK_INTERVAL_MS is invalid.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L86-L155",
+          "version": "repo-lines-v1:sha256:e0aacdfa4feaf2a0b3f345f41b4f910ad4bb15841fe798f18d3d809f0e5eaf05:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2FmMGZiZDg3MjQ4MjBlNTRlMmM3MTIxNTJlNzcyMGQyMTJlYTY3NzIwNzNhOTNlZGE5MDllNTgwMWRiYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOWI3ZDA2ODYzYTUwYzg3ZjQxMjRmMzQ1MGM0OTVmMWNjZDg0Nzc4MjNlNmYyMWY5MDk1NGFjNDRlMTA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts#L7-L65",
+          "version": "repo-lines-v1:sha256:0b73e5f072b68e895e1c301f51fbad0fd241c1127a9fd4b28c753a1ce8841f17:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzUwZDkzMTFlZTEwYTZkNzdhNWYwNTJkNDZiZTNiYmU4MjJmMTU4OTZmMzkyODNlZTgwZjlhZTdkYjA2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNjFjMjg4YTBmZTNmMGIyYmE1NjFkYTUzOWQ3ZWQwOGM0N2E3MjEzNWQ1NTE2MGI4MzMxM2RhN2ZjYTYzNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmFmMzA0ZjMxZDY4NTY0YWI0MGE1ZGYwMGRhNzM2YzhmNjhkNzFiYWViY2JhNjZiMDQxNTQyODM2ZWU4OTYifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-26T05:36:02.343Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-17T13:24:33.842Z"
   }
 }

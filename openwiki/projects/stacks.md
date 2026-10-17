@@ -23,10 +23,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-f873d74e3a5ee524df98c4b4
+    resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
     resource: repo://infrastructure-as-code/docker/bff/compose.yaml
+  - id: openwiki-source-16f23fb13b0e88082b534458
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
   - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
     resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
   - id: openwiki-source-d5b1faab58eeb909bb999298
@@ -37,6 +41,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/observability/compose.yaml
   - id: openwiki-source-18dcf2373667222e1bc520c1
     resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
+  - id: openwiki-source-ac1ebfc865a36e43b1b3c4f8
+    resource: repo://infrastructure-as-code/docker/stacks/audit.env.example
   - id: openwiki-source-79878dc2da65b6b5c71034f7
     resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-f71a8c09fa1dfc3547dbcf23
@@ -53,6 +59,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-d951526f31e9f2cb4d68995b
     resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-b04e37691ebfb88e99a080d8
@@ -71,11 +79,11 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+  - id: openwiki-source-ac2000cc53be6b0ffb997de7
+    resource: repo://scripts/up-mcm-agents.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
 ---
+
 
 # Dev stack env files and local secret generation
 
@@ -93,19 +101,27 @@ minted key are carried by that stack's `.env.example` template, which is the sin
 ## Not every secret is a fail-fast reference
 
 The stacks README opens by stating that **not every secret is a fail-fast `${VAR:?…}` reference** —
-most are, but three paths are deliberately different, and knowing them is what keeps a reader from
+most are, but three things are deliberately different, and knowing them is what keeps a reader from
 hunting for a `${VAR:?…}` that does not exist:
 
-- the BFF (`bff/compose.yaml`) loads `frontend/mcm-app/.env.docker` with `env_file:`;
+- the BFF (`bff/compose.yaml`) loads `frontend/mcm-app/.env.docker` with `env_file:` — on both its
+  `bff-secure` and `bff-nonsecure` services;
 - web-api-mcp (`web-api-mcp/compose.yaml`) loads `mcp-servers/web-api-mcp/.env.local` with `env_file:`;
 - the agent gateway keeps `AGENT_GATEWAY_CLIENT_SECRET` as an optional `${…:-}`, so it can come up
   without token exchange (tool calls then fail closed). `scripts/check-no-inline-secrets.mjs`
   allowlists it by name.
 
-None of the three is a per-stack `.env`; they are service-local files read by the service itself, and
-`frontend/mcm-app/.env.docker` is one of the files `gen-dev-env.mjs` projects into (see below). So the
-fail-fast contract described on this page governs the `${VAR:?…}` references, not every credential in
-the tree.
+The first two are service-local files read by the service itself rather than per-stack `.env`
+interpolation, and `frontend/mcm-app/.env.docker` is one of the files `gen-dev-env.mjs` projects into
+(see below). So the fail-fast contract described on this page governs the `${VAR:?…}` references, not
+every credential in the tree.
+
+The gateway's optional key is the one place the value is *not* read from a file at all. `auth.env` does
+mint `AGENT_GATEWAY_CLIENT_SECRET` — but for the dev realm import, which resolves the placeholder at
+`--import-realm`. The gateway container itself is started with the variable injected into the
+environment: `scripts/up-mcm-agents.mjs` (and the runbook's one-liner) fetches that client's secret
+from the running Keycloak and passes it through, which is why no committed file holds it and why the
+injected value matches the realm by construction.
 
 ## Profiles gate services, not stacks
 
@@ -132,11 +148,12 @@ destinations are a separate compose file rather than a profile (see the gotchas)
 
 `<stack>` ∈ `auth`, `mcm`, `audit`, `observability` — the four named stacks, matching the four
 `.env.example` templates in `infrastructure-as-code/docker/stacks/`. Each template carries the complete
-key set for its stack, in the order it is minted, with a comment above each key naming what consumes it;
-each one says in its own header that it is committed and that no real value may go in it. The
-load-bearing distinction inside a template is between a `<generate:KIND>` placeholder (freshly minted
-every generation) and a literal (copied verbatim, a fixture the tests and the agent layer authenticate
-against).
+key set for its stack, in the order the generator writes it, with a comment naming what consumes each key
+or group of keys — and in `observability`, section headers separating the randomized credentials from
+the deterministic fixtures. Each template says in its own header that it is committed and that no real
+value may go in it. The load-bearing distinction inside a template is between a `<generate:KIND>`
+placeholder (freshly minted every generation) and a literal (copied verbatim, a fixture the tests and the
+agent layer authenticate against).
 
 The generated file reaches Compose through **two** mechanisms, and both matter:
 
@@ -184,15 +201,16 @@ node scripts/gen-dev-secrets.mjs --force --stack=auth   # rotate one stack
 node scripts/gen-dev-env.mjs                            # project auth.env's realm secrets into the BFF env files
 ```
 
-`gen-dev-secrets.mjs` exits `0` on success, `1` on a missing/malformed template or unwritable output,
-`2` on bad arguments (an unknown `--stack` value or an unknown flag). A second
-`node scripts/gen-dev-env.mjs` run is a separate step in the same layer:
-it projects the realm client secrets out of `stacks/auth.env` into the BFF's gitignored env files
-(`frontend/mcm-app/.env.docker`, `.env.local`, `.env.e2e.local`, the web-api-mcp TMDB file, and
-`backend/mc-service/.env.local`) so the imported dev realm's client secrets and the BFF's client
-secrets agree **by construction** rather than by hand. It verifies the projected credentials against
-the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). That
-check talks to `KEYCLOAK_PUBLIC_URL` (default `http://localhost:8099`) and is skipped wholesale when
+`gen-dev-secrets.mjs` exits `0` on success, `1` on a missing/malformed template, an unknown generation
+kind, or an unwritable output, and `2` on bad arguments (an unknown `--stack` value or an unknown flag).
+`node scripts/gen-dev-env.mjs` is a separate step in the same layer: it projects the realm client
+secrets out of `stacks/auth.env` into the BFF's gitignored env files (`frontend/mcm-app/.env.docker`,
+`.env.local`, `.env.e2e.local`, and `backend/mc-service/.env.local`) so the imported dev realm's client
+secrets and the BFF's client secrets agree **by construction** rather than by hand. The same run also
+writes `mcp-servers/web-api-mcp/.env.local`, but that file's `TMDB_API_KEY` comes from the forwarded
+host environment rather than from a stack `.env`. It verifies the projected credentials against the
+*running* realm before writing anything (exit `2` = refusing to write, files left untouched). That check
+talks to `KEYCLOAK_PUBLIC_URL` (default `http://localhost:8099`) and is skipped wholesale when
 `MCM_SKIP_REALM_VERIFY` is set — the escape hatch the script prints inside its own refusal, for
 deliberately projecting credentials a running realm will reject.
 
@@ -219,24 +237,32 @@ adds a variable to a template. Reach for `--force` only when you actually mean t
 The kinds exist so the alphabet matches where the value is consumed — a value interpolated into a URL
 or a shell command cannot carry characters that break either:
 
-- `b62-32` / `b62-48` — URL- and shell-safe base62; used where the value is embedded in a connection
-  URL or a bearer token shape.
-- `hex-64` — 32 random bytes rendered as hex; Keycloak client secrets and `LANGFUSE_ENCRYPTION_KEY`.
-- `complex-16` — upper + lower + digit + special, drawn from a URL/shell-safe special set
-  (`-_.!=+`), so the value survives a `-u user:pass` curl argument, a YAML double-quoted scalar, and
-  `sh`; used for passwords that are *not* URL-embedded.
-- `unleash-admin` / `unleash-client` — the two Unleash token shapes (a `*:*.` / `default:development.`
-  prefix plus a base62 body).
+- `b62-32` / `b62-48` — URL- and shell-safe base62 of the named length, so the value can be embedded in
+  a connection URL or a token body with no escaping.
+- `hex-64` — 32 random bytes rendered as hex: a fixed-width, URL- and shell-safe string for consumers
+  that expect that shape.
+- `complex-16` — exactly 16 characters carrying at least one upper, one lower, one digit and one
+  special, positions shuffled, drawn from a URL/shell-safe special set (`-_.!=+`), so the value survives
+  a `-u user:pass` curl argument, a YAML double-quoted scalar, and `sh`. Because the alphabet is
+  URL-safe as well, the same kind covers both passwords that never enter a URL and the `MONGO_*`
+  passwords the prod compose files embed in a Mongo connection URL.
+- `unleash-admin` / `unleash-client` — the two Unleash token shapes: a fixed prefix
+  (`*:*.` / `default:development.`) plus a base62 body, so the token parses in the Unleash client that
+  consumes it.
 - `mongo-keyfile` — the MongoDB replica-set keyfile **content** as a single-line base64 value,
   materialized to a `0400` in-container file at start-up by `mc-service/mongo-entrypoint.sh` (env-only,
   no host file-secret).
 
 Randomness comes from `node:crypto` with rejection sampling rather than a modulo, so the characters are
-unbiased. An unknown kind is a hard error naming the key, not a silently empty value. Which key uses
-which kind is recorded in the template beside the key itself, not in the README — see
-`infrastructure-as-code/docker/stacks/<stack>.env.example`. The README's own kind list is still
-incomplete: it names `b62-32`, `b62-48`, `hex-64`, `complex-16`, `unleash-admin` and `unleash-client`
-but omits `mongo-keyfile`, which `mcm.env.example` uses for `MONGO_MC_KEYFILE`.
+unbiased. An unknown kind is a hard error naming the key, not a silently empty value — the generator
+reports it against the stack and the offending key and exits non-zero rather than writing a blank. Which
+key uses which kind is recorded in the template beside the key itself, not in the README — see
+`infrastructure-as-code/docker/stacks/<stack>.env.example`. Every kind above is still exercised by the
+live templates, so none of them is a vestige: `hex-64` and `b62-48` appear in `auth.env.example`,
+`complex-16` in `auth`, `mcm` and `audit`, `b62-32` in `mcm` and `observability`, `mongo-keyfile` only
+in `mcm.env.example`, and the two Unleash kinds only in `observability.env.example`. The README's own
+kind list is still incomplete: it names `b62-32`, `b62-48`, `hex-64`, `complex-16`, `unleash-admin` and
+`unleash-client` but omits `mongo-keyfile`, which `mcm.env.example` uses for `MONGO_MC_KEYFILE`.
 
 ## Fail-fast: a blank credential aborts, it does not degrade
 
@@ -254,14 +280,16 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 The message is deliberately actionable: it names the variable, the per-stack env file, and the command
 that mints it.
 
-That rule is **not universal**, and the exception is load-bearing rather than an oversight:
+That rule is **not universal**, and the exception is load-bearing rather than an oversight: as above,
 `AGENT_GATEWAY_CLIENT_SECRET` in the agent gateway's compose file is an optional
 `${AGENT_GATEWAY_CLIENT_SECRET:-}` reference, so the gateway comes up with token exchange skipped and
 tool calls fail closed instead of the container refusing to start, and
 `scripts/check-no-inline-secrets.mjs` allowlists that key by name so the gate does not flag the
-default-carrying form it otherwise rejects.
+default-carrying form it otherwise rejects. In production the *same* key is mandatory and fail-fast in
+`agents/compose.prod.yaml` — the dev default exists only so a local box without a realm-fetched secret
+still starts.
 
-Two shapes are deliberately outside that rule. The optional Control Tower consumer values — the
+Two further shapes are deliberately outside that rule. The optional Control Tower consumer values — the
 OpenSearch / LangFuse / Unleash settings the BFF and the agent gateway read in the prod compose files —
 are plain `${VAR}` rather than `${VAR:?…}`, so a missing observability value makes that integration a
 no-op instead of aborting the app. And a handful of non-credential names that merely look secret-shaped
@@ -270,11 +298,14 @@ than interpolation reads it through its own `env_file:` — the BFF reads
 `frontend/mcm-app/.env.docker`, web-api-mcp reads `mcp-servers/web-api-mcp/.env.local` — which is a
 different mechanism from the per-stack `.env` this page is about.
 
-The one place a `${VAR:-default}` default *is* allowed inside the fail-fast tree is a fixed **public
-half** of a test fixture: `backups/compose.yaml` writes the S3 access key and the WebDAV username as
-`"${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest}"` / `"${BACKUP_TEST_WEBDAV_USER:-mcmbackuptest}"` while
-their password partners stay `${…:?set in stacks/mcm.env}`. A default on a non-credential identifier
-re-leaks nothing, and the gate's secret-name pattern does not match those keys.
+The one place a `${VAR:-default}` default carrying a **non-empty literal** is allowed inside the
+fail-fast tree is a fixed **public half** of a test fixture: `backups/compose.yaml` writes the S3 access
+key and the WebDAV username as `"${BACKUP_TEST_S3_ACCESS_KEY:-mcmbackuptest}"` /
+`"${BACKUP_TEST_WEBDAV_USER:-mcmbackuptest}"` while their password partners stay
+`${…:?set in stacks/mcm.env}`. A default on a non-credential identifier re-leaks nothing, and the gate's
+secret-name pattern does not match those keys. Across the compose files that gate scans, the only other
+`:-` form on a secret-shaped name is the agent gateway's empty `${AGENT_GATEWAY_CLIENT_SECRET:-}`, which
+it tolerates solely through the name allowlist rather than through a general rule.
 
 ## Gotchas
 
@@ -314,8 +345,11 @@ re-leaks nothing, and the gate's secret-name pattern does not match those keys.
   `observability.env.example` when feature 080 replaced the from-source object-store image with
   upstream `rustfs/rustfs`, so the observability stack's object store and the feature-073 backup S3
   destination are now pulled by digest from a public registry and interpolate no host at all. In
-  production the same name is a Komodo Variable declared per stack, and the committed
-  `*.env.prod.example` templates carry it as `<registry-host:port>`.
+  production the same name is a masked Komodo Variable — still declared for `prod-mc-service`,
+  `prod-mcm-bff` and `prod-movie-assistant` in `infrastructure-as-code/komodo/stacks.toml`, dropped
+  from `prod-observability` by that same feature — and the committed prod templates that carry it
+  (`agents/.env.prod.example`, `bff/.env.prod.example`) write it as the `<registry-host:port>`
+  placeholder, the only form the topology scrub permits.
 - **The two LangFuse `LANGFUSE_INIT_PROJECT_*` fixture keys are copied verbatim even under `--force`.**
   They are deterministic fixtures, not randomized credentials: the agent gateway and a verify test
   authenticate against those exact values, so randomizing them would break both. The same holds for the
@@ -345,7 +379,9 @@ re-leaks nothing, and the gate's secret-name pattern does not match those keys.
   files.
 - **The generator prints key NAMES only, never values.** This is enforced, not conventional: the guard
   test asserts that no non-trivial value in the written file appears anywhere in the generator's
-  output.
+  combined output. The projection side is held to the same rule — the guard there asserts that a
+  projected stack value never appears in the run's output either, so the warning about absent
+  `BACKUP_TEST_*` keys names the keys and not the values it did manage to read.
 
 ## The boundary that keeps this out of git
 
@@ -374,8 +410,10 @@ Two static gates back the boundary up, both run selftest-then-scan in the `namin
   `node scripts/check-no-inline-secrets.mjs` (or `--selftest`, or the `check-no-inline-secrets` Nx
   target), and its own `--selftest` plants a `${VAR:-default}` to prove that form is caught.
 - `scripts/check-topology-scrub.mjs` is the tree-wide gate that keeps a real tailnet host out of any
-  committed file — which is why a registry host cannot appear in a committed template and why the
-  production templates carry the `<registry-host:port>` placeholder instead. It is pattern-based rather
+  committed file. It matches `*.ts.net` FQDNs across every tracked text file and allows only
+  sanitized placeholders — those whose labels contain the literal word `tailnet` or `example` — so the
+  real registry host, being a tailnet host, cannot appear in a committed template and the production
+  templates carry the `<registry-host:port>` placeholder instead. It is pattern-based rather
   than literal, because hard-coding the real host would itself re-leak it. See
   [CI/CD pipeline](./ci-cd-pipeline.md) for the workflow that runs both, and
   [Secrets management](../invariants/secrets-management.md) for the posture they enforce.
@@ -390,8 +428,13 @@ the generator into a throwaway mini-repo and drive it against a **synthetic** te
 offline and keyless and never touch a developer's real `stacks/*.env`.
 `scripts/__tests__/gen-dev-env.guard.test.mjs` covers the projection side, including the item #552
 counterpart there: an `mcm.env` missing the `BACKUP_TEST_*` keys is named with the back-fill fix rather
-than silently projecting nothing. Both suites are executed in CI by the `naming` job's shell-expanded
-`node --test scripts/__tests__/*.test.mjs` step, so a guard for this layer cannot rot unrun.
+than silently projecting nothing. That suite also carries a **coverage gate** rather than a list of
+files: it derives every `*/.env.local` path the runbooks in `docs/runbooks/` document and fails unless
+the generator either writes it or declares it a reasoned exception in the same file — so adding a
+fifth documented env file and forgetting the generator turns the suite red instead of surfacing weeks
+later as an unexplained tier-wide skip. Both suites are executed in CI by the `naming` job's
+shell-expanded `node --test scripts/__tests__/*.test.mjs` step, so a guard for this layer cannot rot
+unrun.
 `scripts/__tests__/doc-env-example-citations.guard.test.mjs` fails
 when live documentation cites a `.env*.example` that is not actually tracked — a dangling template
 pointer reads to a fresh clone as a broken repository. That guard resolves citations with
