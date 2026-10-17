@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bd4eca4a316d9c3610b14d0234491a28ea849e4055c1b79676f4ed55fc80914d",
+  "pageVersion": "sha256:26c2a1ea3d60846dfe226f7f8314d4f6bebe66a4926e0b31c81477203be9505a",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -94,7 +94,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         }
       ]
     },
@@ -104,7 +104,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://scripts/publish-sweep-verdict.mjs",
@@ -118,7 +118,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         }
       ]
     },
@@ -184,7 +184,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         }
       ]
     },
@@ -208,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://scripts/check-infra-image-findings.mjs",
@@ -218,11 +218,11 @@
     },
     {
       "id": "claim_4448ce31e9164897a4651ecef281eba3",
-      "statement": "The keyless constraint is why an image's own builder scans it rather than routing it to this sweep: infra-image-scan references no `${{ secrets }}` and our built images live in a private registry, so Trivy here cannot pull them (measured: `unable to find the specified image`). A builder already holds the image locally and is already authenticated, so it needs no new credential and gates the publish instead of auditing after it.",
+      "statement": "The keyless constraint is why an image's own builder scans it rather than routing it to this sweep: no credential reaches the scan (Trivy runs with no registry auth and is handed no secret), while our built images live in a private registry, so Trivy here cannot pull them (measured: `unable to find the specified image`). The workflow's only secret reference is `CI_DIGEST_TOKEN`, consumed by the feature-042 failure-digest step and never by the scan, so the keyless property holds even though the workflow does interpolate a secret. A builder already holds the image locally and is already authenticated, so it needs no new credential and gates the publish instead of auditing after it.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
@@ -240,7 +240,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         }
       ]
     },
@@ -250,7 +250,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
@@ -264,7 +264,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:62d8b85347e4fda60d1d24ce1181b41f0f3b66d10354613c082b5d2a58ae9d7b"
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
@@ -393,6 +393,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-17T03:12:52.160Z"
   }
 }

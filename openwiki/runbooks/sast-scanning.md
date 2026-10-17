@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T23:43:39.044Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -20,8 +20,6 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-9ccd48df872db70bfebbfa90
-    resource: repo://infrastructure-as-code/docker/minio/Dockerfile
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
@@ -54,9 +52,11 @@ sources:
     resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
   - id: openwiki-source-9372ce7270e3121a73a61934
     resource: repo://security/sast/semgrep.yaml
+  - id: openwiki-source-4256f85b16adb450a2d592c1
+    resource: repo://specs/080-minio-to-rustfs/plan.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 # SAST & SCA static scanning
@@ -213,8 +213,7 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   while the **host-side sandbox policy is scoped per sandbox** and does not pick up a new destination
   until an operator re-applies it (`sbx policy allow network semgrep.dev --sandbox mcm` on the
   Windows host — see
-<!-- openwiki: broken internal link [./devcontainer-sandbox.md#4-egress-allowlist] heading anchor "4-egress-allowlist" does not exist in "./devcontainer-sandbox.md". Fix the href or restore the target, then delete this comment. -->
-  [devcontainer-sandbox.md](./devcontainer-sandbox.md#4-egress-allowlist)). The
+  [the egress allowlist section of the devcontainer-sandbox runbook](../../docs/runbooks/devcontainer-sandbox.md#4-egress-allowlist)). The
   committed entry does not tell you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
@@ -381,25 +380,26 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   are now included; everything else non-code stays out deliberately.
 - **The same gap opened a second time through Dockerfiles — and the gate now refuses to let it happen
   a third time.** A `Dockerfile` has **no extension**, so it matched neither the code-extension nor
-  the workflow filter. Observed, not reasoned: PR #422 added
-  `infrastructure-as-code/docker/minio/Dockerfile`, its `guardrails / sast` was a real 3m30s run that
-  **passed**, and the post-merge full scan on `main` then failed on
-  `dockerfile.security.missing-user-entrypoint` — staying red until a follow-up landed an
-  accepted-risk entry (that finding and its entry are both gone now: the image sets `USER 1000:1000`
-  before its `ENTRYPOINT` since feature 070, and no `dockerfile.*` entry remains in the allowlist, so
-  a regression re-blocks). A genuinely unwanted finding would have merged just as silently. Dockerfiles
+  the workflow filter. Observed, not reasoned: PR #422 added the from-source object-store image's
+  Dockerfile (feature 069), its `guardrails / sast` was a real 3m30s run that **passed**, and the
+  post-merge full scan on `main` then failed on `dockerfile.security.missing-user-entrypoint` — staying
+  red until a follow-up landed an accepted-risk entry. That finding, its entry and the Dockerfile
+  itself are all gone now: the image set `USER 1000:1000` before its `ENTRYPOINT` (feature 070), and
+  feature 080 then deleted the whole from-source build — workflow, Dockerfile and promotion script — in
+  favour of an upstream-pulled object-store image. No `dockerfile.*` entry remains in the allowlist, so
+  a regression re-blocks. A genuinely unwanted finding would have merged just as silently. Dockerfiles
   are now in the filter (item #426), and the whole surface was **enumerated once** rather than waiting
   for a third instance: on a full-scope report, a blocking SAST finding whose file `isScanTarget()`
   rejects now fails the gate with its own section and its own exit path,
   `GATE-SCOPE ASYMMETRY`. Three properties make that guard real rather than decorative: it counts
-  **suppressed** findings too (an un-allowlisted one already fails loudly — the minio case was
-  *allowlisted*, so the gate was green and the asymmetry invisible); it excludes SCA (audits ignore
-  `--scope` entirely, so a lockfile finding cannot be scope-asymmetric) and changed-scope reports
-  (every file there was by definition a target); and a report with no usable `generatedAtScope` is a
-  **hard error**, because a missing field must not be able to switch off the guard the way a missing
-  file class switched off the thing it guards. The one exemption is keyed on the explicit
-  `reportAbsent` marker the gate synthesises when no report exists at all, never on a missing field.
-  The remedy it names is to widen the changed-scope
+  **suppressed** findings too (an un-allowlisted one already fails loudly — the object-store Dockerfile
+  case was *allowlisted*, so the gate was green and the asymmetry invisible); it excludes SCA (audits
+  ignore `--scope` entirely, so a lockfile finding cannot be scope-asymmetric) and changed-scope
+  reports (every file there was by definition a target); and a report with no usable
+  `generatedAtScope` is a **hard error**, because a missing field must not be able to switch off the
+  guard the way a missing file class switched off the thing it guards. The one exemption is keyed on
+  the explicit `reportAbsent` marker the gate synthesises when no report exists at all, never on a
+  missing field. The remedy it names is to widen the changed-scope
   filter — **an allowlist entry does not fix this**, it is what concealed the Dockerfile case for a
   merge cycle. The residual is a snapshot and is named: a pack update that raised a Medium rule on the
   two still-invisible classes (`renovate.json`, `pnpm-workspace.yaml`) to ERROR would reopen the gap

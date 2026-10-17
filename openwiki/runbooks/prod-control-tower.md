@@ -27,13 +27,19 @@ sources:
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
+    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-bf15c8e3067ce028059a1350
     resource: repo://scripts/check-resource-naming.mjs
-  - id: openwiki-source-b5c1c7c3c0b1e0f9a1c62a44
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-767dd8a5885ff03fcbe9c2c0
+  - id: openwiki-source-ccfb73bb2cb3f790e18d9144
+    resource: repo://scripts/object-store-migration.mjs
+  - id: openwiki-source-8d48276c31ac9a4e5887d2ca
+    resource: repo://scripts/object-store-migration.sh
+  - id: openwiki-source-2470b658ec43d754a7fc16c1
     resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
-  - id: openwiki-source-2a44e0b0a1c9d3e5f6081b72
+  - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:

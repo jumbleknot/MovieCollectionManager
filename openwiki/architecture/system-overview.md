@@ -7,6 +7,33 @@ tags: [architecture, overview, rbac, dac, agents, docker-compose]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-16T13:30:11.885Z
+sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
+    resource: repo://backend/mc-service/src/api/router.rs
+  - id: openwiki-source-f98f56169006fd5a5bdf85b9
+    resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-541e2287bdfb42c605c78f3f
+    resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
+    resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-c22d81a0331031d61ad2c7e3
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
+    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-164936b930a31e48cf0a65fc
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-864993a079e6e4df052ac4ea
+    resource: repo://scripts/gen-ci-env.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
+  - id: openwiki-source-c1c739d605caccb56fa33851
+    resource: repo://specs/073-scheduled-backups/spec.md
 ---
 
 # System overview (MCM)

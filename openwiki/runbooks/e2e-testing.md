@@ -7,14 +7,40 @@ tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, 
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-ca5db4c5c518f0f77253eddb
+    resource: repo://agents/movie-assistant/tests/integration/kc_admin.py
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-d3d6462458271e37e692275f
+    resource: repo://frontend/mcm-app/playwright.config.ts
   - id: openwiki-source-8f96001caf98cb41c4d64a48
     resource: repo://frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-394dcdb206cc3e89e1eea8e7
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/auth-files.ts
+  - id: openwiki-source-17bc9e79c547a2f76e554696
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/e2e-cleanup.ts
+  - id: openwiki-source-bfd1dcd66339cb51fd41729c
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
+  - id: openwiki-source-88044d6dde50d01c048687b8
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-teardown.ts
+  - id: openwiki-source-53aa23c014c1f05d94e82617
+    resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
   - id: openwiki-source-77b77a1d89a52ebe7205f42b
     resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
+  - id: openwiki-source-3574b605c1922bedacc8f2fa
+    resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
+  - id: openwiki-source-4af9b1718a0206bbe016cb00
+    resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
+  - id: openwiki-source-4953a197c77e1a3e7a0fd632
+    resource: repo://infrastructure-as-code/docker/keycloak/README.md
+  - id: openwiki-source-f2bf36fe8e26c0915d92ff38
+    resource: repo://scripts/__tests__/agent-test-classification.test.mjs
+  - id: openwiki-source-6ee1d85bc09cc0ff42f3b936
+    resource: repo://scripts/__tests__/app-e2e-env.guard.test.mjs
+  - id: openwiki-source-62cfc58b07f27cacdc35aabe
+    resource: repo://scripts/__tests__/e2e-collection-ownership.guard.test.mjs
   - id: openwiki-source-dd77016bffd7cb9b5f844735
     resource: repo://scripts/agent-e2e.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c

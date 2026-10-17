@@ -57,10 +57,16 @@ sources:
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
+  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
+    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
   - id: openwiki-source-a6996cae4bd83db81e823602
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
     resource: repo://scripts/agent-stack.mjs
+  - id: openwiki-source-0af8f352da052e268e893ea2
+    resource: repo://scripts/cd/promote-digest.sh
+  - id: openwiki-source-fe6babf23c099d13c73c6b6f
+    resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-7ed01c27b7f22a2815bd5d15
     resource: repo://scripts/check-komodo-sync.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
@@ -77,11 +83,14 @@ sources:
     resource: repo://scripts/gen-dev-secrets.mjs
   - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
     resource: repo://scripts/infra-image-scan.mjs
+  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
+    resource: repo://scripts/preflight.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-17T03:12:52.160Z
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -270,6 +279,13 @@ prod compose carries the bare `<SVC>_DIGEST` value per service and is passed as
 `additional_env_files` — last, so the digest interpolates from git while `REGISTRY_HOST` and the
 secrets interpolate from `.env.prod`. The compose assembles the pull reference as
 `${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}`.
+
+Only the three CI-built stacks receive it: `cd-deploy`'s promotion step copies the *same* generated
+`VAR=<bare sha256>` block into all three run directories it names
+(`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), so every Komodo Stack reads a local
+`.env.deploy` rather than a fragile `../` path. `.gitignore` keeps those files tracked with an
+`!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
+ignore rule, because the file holds only digests — no host, no secret.
 
 ## Side artifacts and the static gates over every compose file
 

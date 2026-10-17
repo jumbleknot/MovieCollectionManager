@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7d7c56ef5c1eb2237ebea9f2dbac1b9fa071c863d242956d8a1fad77ddff784a",
+  "pageVersion": "sha256:4f2fe6c3341a77d29febc55f82f93154c8feb075552a71ce8d9285f048167d37",
   "claims": [
     {
       "id": "claim_bcc478242c8643dabbfe30e448e6b1e6",
@@ -14,7 +14,7 @@
     },
     {
       "id": "claim_56e5d718ae014a25b614be6ca38921b6",
-      "statement": "The host toolchain for MovieCollectionManager requires Node.js (LTS, floor >=22.13 set by root package.json engines.node), pnpm via Corepack (the exact version pinned by root package.json packageManager, currently pnpm@11.25.0), Nx (workspace, via pnpm nx), Rust stable, Python 3.13 with uv, Docker Desktop 24+, OpenJDK 17, and Android SDK Platform 36 (the compileSdk the pinned React Native's Gradle version catalog sets) with Build Tools and an Emulator API 34 system image; these are all pre-provisioned in the devcontainer toolchain image, which bakes Node from a node:24-bookworm base, resolves pnpm from packageManager via Corepack, and installs the android-34 SDK platform/emulator packages for its ANDROID_API=34 build arg. Exact Node/pnpm patch pins otherwise drift independently across CI and Docker contexts in this repo and are reconciled by scripts/check-toolchain-consistency.mjs rather than being fixed values.",
+      "statement": "The host toolchain for MovieCollectionManager requires Node.js (LTS, floor >=22.13 set by root package.json engines.node), pnpm via Corepack (the exact version pinned by root package.json packageManager, currently pnpm@12.13.0), Nx (workspace, via pnpm nx), Rust stable, Python 3.13 with uv, Docker Desktop 24+, OpenJDK 17, and Android SDK Platform 36 (the compileSdk the pinned React Native's Gradle version catalog sets) with Build Tools and an Emulator API 34 system image; these are all pre-provisioned in the devcontainer toolchain image, which bakes Node from a node:24-bookworm base, resolves pnpm from packageManager via Corepack, and installs the android-34 SDK platform/emulator packages for its ANDROID_API=34 build arg. Exact Node/pnpm patch pins otherwise drift independently across CI and Docker contexts in this repo and are reconciled by scripts/check-toolchain-consistency.mjs rather than being fixed values.",
       "evidence": [
         {
           "resource": "repo://.devcontainer/toolchain.Dockerfile#L182-L212",
@@ -30,7 +30,7 @@
         },
         {
           "resource": "repo://package.json#L5-L9",
-          "version": "repo-lines-v1:sha256:c38acfd4dc370f427868d217c7522bb0cccc6704aa22f07f0f55dca54e7f3a52:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE5ODQwNjI0ZjFjOTQ2ZTc5OGRkMWQ4Mzg0ZDMxN2YwNzAzY2RiZDJmMzkxN2EwYThkNWUzZjQxOWFjMjczNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+          "version": "repo-lines-v1:sha256:93ab8df84b361baf232d1935f1601b151d6d1ca94845907bd05ff003a1ca4b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzg4MzkwOGZmZGRjNTZlMzg0OTI5ZWFkYzdjYmIzNTIwYWY1ZWZlYTFiMTViMzkyNjViOTJmYTQwNGY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
         },
         {
           "resource": "repo://scripts/check-toolchain-consistency.mjs#L1-L49",
@@ -97,10 +97,90 @@
           "version": "repo-lines-v1:sha256:380c2eca1a84df0547aba69320a8cc4adc0c0b466e7c58b6d708e3ca41368fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzYyNzU5OWVlMWYxMzU3NGY3ZGExODViMzZjODQ5ODliNDcxOTIzNTJhNDVjY2ZhYWNjNmUwNTUyZTYzZjk0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGQzMjE5N2JhMmY1OTk5ZDJlY2FmZjQ3OTE1MzdmNmVmZjI1Yzc2YmYzODkzZjRmZWZmOGQ5YzVhZjBkZDhlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjFjMTUyMTBmOTlmYjBkOTMxNzQwNzEwZjhkMWY4OGI2NjQzMzgxN2Q0YzA2M2Q2MGQ3Zjk4ZThhZjhjMWUwNiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a7014ab5ed5e4589b7e8e47526107299",
+      "statement": "The repository's Node requirement is the root package.json engines.node floor (>=22.13), and scripts/check-toolchain-consistency.mjs enforces it: it scans every workflow node-version: and every FROM node:<v> in the pinned files (.forgejo/workflows, .devcontainer/toolchain.Dockerfile, frontend/mcm-app/Dockerfile) and fails any pin below the floor, reporting an unparseable pin such as lts/* rather than passing it silently. The floor came from pnpm 11's own engines (>=22.13); pnpm 12 declares only >=18, and the floor was deliberately not lowered, so it must be raised whenever packageManager moves to a manager with a higher floor.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L6-L9",
+          "version": "repo-lines-v1:sha256:0c887da054a266b9a0bfcf8fc0516635e023ef68318fc8140ba2a80d9f5d6c19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY0NzY3MmEwN2NjNDlkYWJhZWFkN2IyZjNlNzJjZGY4MGU3NzVmNzMxMTNiNTYxYjA3ODc5Nzc3ZDUxMWRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk5NmJmNzUxM2FiMDhkYzBlYzlhMzY0ZWFjMTk1YWNkYmVjZjA2MmExMTEzYjExYzQ3NDAwZDQ4MmU3NmU1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L21-L28",
+          "version": "repo-lines-v1:sha256:54784b4102b7f742d9b0dbdb6db4513ebba236489165e20e71f3c19335eaf732:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNzVmOGI3MWE1MTUzNWNkMDA1OWQ0NTM0OGE1YmIwYzU2YWIwMTRlMmM4NWI1MGE3N2UzZjZkNmUyYmZiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA5ZDJmMzE3ZmU5MDdkYTgxNWUyZDk2MzliMjc4MzU3ZmRhM2U3MTVmNTQ3NmY2NzdjNmY1ODE5MGMwYTc4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ0YmJhMDQ3MjBhM2FkOTlmZjNjYTg3ODdjMTAzZTAyYTg5ZTM2YzliOTAyYjZhN2VmZDJmNGNlNTE1MjVmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JjYTQyYmNiNWZhN2MxNWZmNTliZjllNzE4N2Q2M2U1YzA3OGQ0NzVkNjE1MDY2NDFkNzhlMDA5Mjk5Y2Y3MyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L56-L63",
+          "version": "repo-lines-v1:sha256:ece24de4f2c98cca29aed76f810a4d4480ea721ddcab271f347b2e6a429f01ac:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ0MTlkMjhmZjQxZmMwMzk5MWEzYTUzZGQ5NTczNmRkOWVmZTU2NGFhODAzZmI2OThhYzU3OTAzYmEyMDdjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmNhNzQ2YTE4ODE0NjE1ODNjODYwMjIyYWM0MWY4NTk4ODcxMmQ1NWJiOTM1MDcwYjI5YjcxMDdlM2VkMzI0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMxOGQ3MjdjZjlkYTdlNGMwYzgyMWI3MDA4N2E1Mzc5NzhmOGQyZTkwYTU5ZWNmZTVlMTQyYzMyNWE2MmIzYSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L569-L609",
+          "version": "repo-lines-v1:sha256:dce13ea19409e5c22f4aed24594a5443a7ad6ce0b68bc2e41c15f3676828042d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMmMzNWE4NTliNjBmMGUzM2QyZTk0NGI4OWMzYWNlYTJjZjQ4MWE2NWFkNmVhNjlmZjA4NzIwMDllODJmNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTMzZTQ0OWVjZDU1ZGVjNTAzYjdlMDdhZTAxMzYzYjA4ODY1ZDk5MjczMWZlODNkMTIyZGRlZWZhNDhhNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NmQ4NTVhZThiNTlkYWFhNDlmYTQxMTBkNzBhNzZiMGQwZmM0NGM5OTlkZGZlYTkwZWM3YjNhMzViODFhM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMjI2ZjkzNzVlMjQ1MGMxMmI2YTM2ZTQ1ODczZmEzYjFjZWJiNzZiNDFlMWVjNTZmNTM1OTI2MmE5MzYwNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f7a79e3fd494f0ab00151d442c0c9dd",
+      "statement": "The pnpm version is single-sourced by the root package.json packageManager field and must be declared nowhere else: any other site naming a pnpm version (a workflow pnpm/action-setup version, a Dockerfile corepack prepare pnpm@X) must name the same one, and findNestedPackageManagerDrift fails any non-root package.json that declares the field at all — including one whose value agrees — because corepack and pnpm resolve packageManager from the nearest manifest above the cwd and Renovate maintains a duplicate as a separate dependency on its own track.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L5-L5",
+          "version": "repo-lines-v1:sha256:4513883908ffddc56e384929eadc7cbb3520af5efea1b15b39265b92fa404f7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzg4MzkwOGZmZGRjNTZlMzg0OTI5ZWFkYzdjYmIzNTIwYWY1ZWZlYTFiMTViMzkyNjViOTJmYTQwNGY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzg4MzkwOGZmZGRjNTZlMzg0OTI5ZWFkYzdjYmIzNTIwYWY1ZWZlYTFiMTViMzkyNjViOTJmYTQwNGY3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ3YjZhMThmMTBjNjAxZTRhYzY0MmFmOTMzY2FmMmFhYmYwMzIwYWM0MmYwMTJlZTU1MmM2OTFmYTQwYmIxZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L518-L567",
+          "version": "repo-lines-v1:sha256:3fd5c069eb552bd62bab16bcd7fffc805c8b24df6b93c1686eeaad7f1ba51a06:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NjVhYjc3NzVhYTgyMjE4ODMzODljYWY0NmJhMmY4N2FhZDM1NjUxMDY2YThhMWM5Mzg2NGIzN2VhOGZkYmMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L583-L602",
+          "version": "repo-lines-v1:sha256:e611889d07b7c0076f6fa3a8323610ac229b1a95e6787912810bd14ba2f2c379:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MjVmMmFjMmExMTg5MjE2ZWExMTgyM2JkNTA3ZjVhMzU2OTEzNmQxODhkM2FhYzE5MzIxNTJkZDgwZGFjNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMjg1ZThhNmYwNjgwYTIzOTg1ZWQ1M2IxMzI5MjNmMTIzMDFkOTljMzY5MzdkMDA1NzBiYTE0ZWZkYWFkY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjNDNhNDkzZmE1OWI2Nzg2ZDhjMDM2ZGY2YzEzZjE5OTJjMjE5YjlkMmU4OTlkYjliMjE0NzNiZTk4MjlmYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2cb8d139e1f4f0bb979bb4c637b5d1b",
+      "statement": "The OpenWiki generator's version is pinned in two places that must agree: the dev container's toolchain image installs it globally (`npm install -g openwiki@<v> mermaid jsdom`, since there is no repository checkout at image-build time), while the CI wiki-maintain job has no generator baked in and installs the same three exact pins from the committed lockfile in tools/openwiki-generator/ with `pnpm --dir tools/openwiki-generator install --frozen-lockfile`. tools/openwiki-generator is its own pnpm workspace root, outside the root workspace globs, with a three-day minimumReleaseAge cooldown enforced at both resolve and install time so a lockfile regeneration cannot pull in a freshly published transitive. scripts/__tests__/wiki-maintain.guard.test.mjs reads the container's real install command line against the locked manifest and fails if the versions or the mermaid/jsdom peer set differ, and renovate.json moves both halves in one grouped PR.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L69-L86",
+          "version": "repo-lines-v1:sha256:6013505215c5b4dff89ab4811a491999b8f1f2d228e503c82a1efbda6b6f9e4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZDg0Njg1YzY4ZmVmYjBhMGIxNzgzMmRjYmEwOGVkZGJlMjdjOTc1ZDVkMDVjMTg2NGViOTE3ZDkyMmU3YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYjI3ODk4YTlhMDdjYTUyODkyYWRjMjNiMmQ5ZjQ0Y2RhYmJmODg3NTRhMGM5Yzc4OWI2MmM0ODQxMWMwNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTkwMmEyMmM0YTEwYzNiNDU1MTcwYTcwZjQ4NjAxYzNjZjNmOTE2MGI1MmVmODlmMGE5MzI1Mjg5Y2Q2ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNDg0MDZkMjFmNjRlODM2MzVlZTA2NWY3OWZkZDY1MGFkNGJiNzRhODA2MDZlZDc5Y2JhMDg4ZGM1YTQ5ZDgifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L401-L415",
+          "version": "repo-lines-v1:sha256:282bc142fef55682ed17ce5d3fcde8d6d34c2a09928868224f98f57752773843:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMWRjZTQ5ODY1OGQwMTU1NzE3NjgxNGI3NTRhMDFkZWI0M2Q4YTY1OWQ0NWM5NGE5ZTMxOThjNTI5ZDkxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyYjRjZjBlNTMwMzQ2MzJiYmE3NzFlNjcxZmQ0OGE4NDQ0MDljMDk3YjEwZGRiNWVjYjc2ZjEwNDU5YmNjY2IifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L178-L255",
+          "version": "repo-lines-v1:sha256:5cb61e258bab39d8073040761fb21e3bbd7c5ebd2ac2a19e54541fa21956bf8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZDcwNzU4YzdhZTI4ZDg2MDc2MTViNWNlYmE1YzE5ZmFjOTczZmFiYTk1OWIzMTQwOTE4ZGE0MjFiMTU0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEifQ"
+        },
+        {
+          "resource": "repo://tools/openwiki-generator/package.json#L1-L11",
+          "version": "repo-lines-v1:sha256:1adb9a7b2ce9ad5d0adfa2126808ab0916071faf892e15d1255abb78ebc35df3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L1-L26",
+          "version": "repo-lines-v1:sha256:7bbc7cca772606d863821427d57426ebea3432153e9f742634c653d9c5fa7b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYWNmNWI0ZDM1MDhkNGFmNzQzNDE1OWFmYzViNzgwZmEwZjgyMjNhOGM4ZjM5OTFmNTQ0MGU1ZWQ4MjU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NTJjYjA4MmRkZDFjNTljZWZkMjFhNGY2NzM4NGE3YmU1NGE2ODE0YTExZTZiYzBlOWUxMzE5NDg4OGZjZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a3f9fd9c0b740e397338a7b2b822d1b",
+      "statement": "The pinned OpenWiki generator raises its own Node requirement above this repository's floor: OpenWiki requires Node >= 22.22, so a host that satisfies the repo's >=22.13 engines.node floor but sits below 22.22 cannot run the generator even though every other toolchain check passes.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L96-L117",
+          "version": "repo-lines-v1:sha256:3976e9b6da9315ea1f4dd9cbe691581ffd659761a47673f1d8ee974113f2564b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjg2NmVhNzkyNWU5NWQxOTM1OWVmMDJiODAxOTFmNmU4ZWMyYTM3NjhmMzBlY2MyNTQ3YzlkZTI5NjA1MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5YzJmMjIyMjZhY2RiZGY2MTNlMGE1OGQ3ZjM5MGMzOThmODg5Yzc0N2FmMWU1MjViODdiNWY1YTM3MTc2ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZDA2ZWJhYmQzNDAwOGQwZWY4ZTg4ZjRlNDYxMzk3ZmM3Mjc3OTc5NTU0ZjE0OTQxMDdlYjlmNzMyZmY0YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNTZmN2JiMTE5MmE5MGIzOGMwYTdjZTM4NWMzMDM1MTk2OTE1YjNlNjQxMjkxNTgyZjgwYWNkZDU1NDBmZTgifQ"
+        },
+        {
+          "resource": "repo://package.json#L6-L9",
+          "version": "repo-lines-v1:sha256:0c887da054a266b9a0bfcf8fc0516635e023ef68318fc8140ba2a80d9f5d6c19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY0NzY3MmEwN2NjNDlkYWJhZWFkN2IyZjNlNzJjZGY4MGU3NzVmNzMxMTNiNTYxYjA3ODc5Nzc3ZDUxMWRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk5NmJmNzUxM2FiMDhkYzBlYzlhMzY0ZWFjMTk1YWNkYmVjZjA2MmExMTEzYjExYzQ3NDAwZDQ4MmU3NmU1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-27T16:58:28.669Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-17T03:12:52.160Z"
   }
 }

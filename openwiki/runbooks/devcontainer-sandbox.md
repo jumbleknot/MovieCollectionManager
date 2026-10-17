@@ -5,6 +5,8 @@ description: The primary AI-assisted development environment since feature 060 â
 resource: docs/runbooks/devcontainer-sandbox.md
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
 sources:
+  - id: openwiki-source-61f1a679973e2c37988cd802
+    resource: repo://.devcontainer/gen-container-secrets-env.sh
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-7e1c4d46c53be9bf32311e06

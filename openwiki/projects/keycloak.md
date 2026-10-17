@@ -71,6 +71,8 @@ sources:
     resource: repo://scripts/__tests__/e2e-worker-session.test.mjs
   - id: openwiki-source-18c29c2650068d3600a02d5a
     resource: repo://scripts/__tests__/keycloak-realm-schema.test.mjs
+  - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
+    resource: repo://scripts/check-infra-image-findings.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
@@ -81,6 +83,8 @@ sources:
     resource: repo://scripts/export-ci-realm.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-921299f3e17b7f9cb4a1254c
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201

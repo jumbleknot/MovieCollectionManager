@@ -7,24 +7,22 @@ tags: [security, cve, trivy, ci, runbook]
 sources:
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-c950e0aee079c6db1d918078
-    resource: repo://.forgejo/workflows/minio-image.yml
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-9569e077273f937a713aad61
     resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
     resource: repo://scripts/__tests__/infra-image-scan.test.mjs
-  - id: openwiki-source-f97d4affa52e4fb2bbe43045
-    resource: repo://scripts/__tests__/minio-promote.guard.test.mjs
-  - id: openwiki-source-8bd5c4ede704298934afbfaa
-    resource: repo://scripts/__tests__/promote-minio-digest.test.mjs
-  - id: openwiki-source-6f6c73d41089615fd1769487
-    resource: repo://scripts/__tests__/publish-sweep-verdict.test.mjs
+  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
+    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
+  - id: openwiki-source-0af8f352da052e268e893ea2
+    resource: repo://scripts/cd/promote-digest.sh
   - id: openwiki-source-fe6babf23c099d13c73c6b6f
     resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
@@ -33,18 +31,16 @@ sources:
     resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
     resource: repo://scripts/lib/scanner-retry.mjs
-  - id: openwiki-source-c130384127d992848d2ee4d2
-    resource: repo://scripts/promote-minio-digest.mjs
   - id: openwiki-source-7d0fa5a3a30eb305011c4b8d
     resource: repo://scripts/publish-sweep-verdict.mjs
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 # Infra-image CVE scanning
@@ -190,11 +186,13 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
 - **Keyless and fail-closed**, matching the posture in
   [Secrets management](../invariants/secrets-management.md) and
   [SAST/SCA scanning](./sast-scanning.md) — a Trivy/pull/parse failure fails the job
-  rather than producing a clean-looking report. Keyless is also *why* an image's own builder scans it
-  rather than routing it here: our built images live in a private registry, so a scan that carries no
-  `${{ secrets }}` cannot pull them (measured: `unable to find the specified image`). A builder already
-  holds the image locally and is already authenticated, so it needs no new credential and gates the
-  publish instead of auditing after it.
+  rather than producing a clean-looking report. "Keyless" means no credential reaches the scan: Trivy
+  is invoked with no registry auth and no `${{ secrets }}` is handed to it. The workflow's only secret
+  reference is `CI_DIGEST_TOKEN`, consumed by the feature-042 failure-digest step, which never touches
+  the scan. Keyless is also *why* an image's own builder scans it rather than routing it here: our
+  built images live in a private registry, so a scan with no credential cannot pull them (measured:
+  `unable to find the specified image`). A builder already holds the image locally and is already
+  authenticated, so it needs no new credential and gates the publish instead of auditing after it.
 - **The allowlist is baseline, not permanent.** Suppression is gate-only; findings stay visible in the
   report, and a suppressed entry must be deleted once the underlying image is actually bumped — leaving
   a stale entry hides a regression rather than tracking a real accepted risk. Every entry needs

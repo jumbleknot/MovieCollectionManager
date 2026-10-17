@@ -29,6 +29,8 @@ sources:
     resource: repo://scripts/build-apk-short-path.ps1
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
     resource: repo://scripts/cd/publish-apk.mjs
+  - id: openwiki-source-478a776ff0b75f2af5dc3190
+    resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-b6eb0909d8d068c6d6d9dab4
     resource: repo://scripts/ci-mobile-agent-flows.sh
   - id: openwiki-source-38de5a41429287f01c1b5bfd

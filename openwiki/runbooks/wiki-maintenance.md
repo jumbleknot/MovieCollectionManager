@@ -63,10 +63,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T01:57:21.062Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 
@@ -202,11 +202,12 @@ Which model writes the bundle is not code: `scripts/wiki-provider.mjs` is the si
 | `fireworks` — the **CI** default (the workflow sets it, at page concurrency 4) | `accounts/fireworks/models/deepseek-v4p1-flash` | `FIREWORKS_API_KEY`, `MCM_FIREWORKS_API_KEY` |
 
 The chosen credential is mapped to the name the generator reads **only** in the generator's own
-environment, and every other provider's key is removed from it. Three operator knobs are validated
-before any paid call. The service tier and the reasoning effort are declared **per provider row**, so
-setting one on a provider that does not take it is an error rather than something quietly ignored; page
-concurrency is validated against one 1–8 bound for every provider alike. The per-turn output cap is the
-same idea in the other direction: a property of the row rather than a variable the operator sets.
+environment, and every other provider's key is removed from it. The three operator knobs are validated
+before any paid call, and each is declared **per provider row** rather than globally: setting the
+service tier or the reasoning effort on a provider that does not take it is an error rather than
+something quietly ignored, while page concurrency is validated against one 1–8 bound for every provider
+alike. The per-turn output cap is the same idea in the other direction: not an operator variable at
+all, but a property of the row, and one that may only ever *raise* the target's floor.
 
 - `MCM_WIKI_PAGE_CONCURRENCY` (1–8, default 1) — openwiki ≥ 0.6.0 writes that many pages in parallel.
   DeepSeek's wall-clock gap to Sonnet is **call count** rather than latency, so concurrency is the lever
