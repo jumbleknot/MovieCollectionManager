@@ -1,10 +1,9 @@
 ---
-type: "Reference"
-title: "Dev stack env files and local secret generation"
-openwiki_generated: true
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-17T13:24:33.842Z
+type: Convention
+title: Dev stack env files and local secret generation
+description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, the gen-dev-env.mjs projection with its realm verification, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the blank template key the generator must never fill).
+resource: infrastructure-as-code/docker/stacks/README.md
+tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml

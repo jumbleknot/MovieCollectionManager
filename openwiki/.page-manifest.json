@@ -120,13 +120,6 @@
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "0e71e192-86b3-41ee-afa4-0764d3ae623f"
     },
-    "/openwiki/projects/stacks.md": {
-      "pageVersion": "sha256:667810f9296795dc41c72b3845fc6101d54c88025627553ceca26b612014a7f8",
-      "completedBy": "openwiki/0.7.1",
-      "completedRunId": "03587360-d1b9-4e47-84ba-8bf4e3f84a94",
-      "gitHead": "4aae23df5924dd9e662d41b5d1e8e93ab00bd06d",
-      "sourceFingerprint": "sha256:5870f5d21fcf04f5daa7fa6110ef62dd1e545ccd84df5df5a087b60da651c7ae"
-    },
     "/openwiki/quickstart.md": {
       "gitHead": "e68a6bed737b750df53dcc0dd8a4d455fadf1f82",
       "sourceFingerprint": "sha256:47628626aa01ffdfae640ca4265c8da96074f1949d28980f30de0d8755b5975a",
