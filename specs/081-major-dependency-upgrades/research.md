@@ -479,3 +479,54 @@ already showed executing; none needs a runner capability the PR's own CI does no
 `ubuntu-latest`, app-e2e/dast on `kvm`, prod-apk via the `build_apk` dispatch). Not exercised before merge:
 `renovate.yml`'s setup-uv (schedule/dispatch only) and `cd-deploy` `build-deploy`'s pnpm/action-setup +
 setup-uv (runs on the post-merge `main` push) — same action, same inputs as the app-ci sites that do run.
+
+### US2 (PR 2) — 2026-10-17
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-16T15:21:38Z`, read only);
+REPO = `origin/main` = `6074300d` (PR 1b, #770, merged); NPM = `registry.npmjs.org/pnpm` packument
+(`time`, `dist-tags`, `engines`); UPSTREAM = the `pnpm/pnpm` GitHub releases API, every `v12.*` body read.
+
+| What | R1 / R10 (2026-10-10) | Today | Consequence |
+|---|---|---|---|
+| DASH `renovate/major-pnpm-pin` | Pending, 11.25.0 → 12.10.1 | **Rate-Limited**, "update dependency pnpm to v12"; Detected Dependencies list `11.25.0 → 11.28.5, 12.11.2` (package.json + both Dockerfile stages) | DASH lags NPM; NPM is the truth for the target |
+| DASH `renovate/pnpm-pin` (minor) | — | Rate-Limited, 11.25.0 → **11.28.5** | superseded by this PR; Renovate closes/rebases it on its next run |
+| Newest pnpm 12 (NPM) | 12.10.1 | `latest` = **12.14.0** (2026-10-15T13:39Z — inside the 3-day cooldown) | target = **12.13.0** (2026-10-13T08:26Z), the newest past `minimumReleaseAge: 3 days` at 2026-10-17T00:13Z |
+| pnpm 12 `engines.node` | `>=18` | `>=18.*` (12.13.0) | the repo floor `>=22.13` (set from pnpm 11) is **kept**, not lowered — `//engines` comment updated |
+| pnpm pins tied to `packageManager` | package.json + 2 Dockerfile corepack pins | **unchanged set** — every `pnpm/action-setup` (7) passes no `version:`, every guardrails/renovate/wiki-maintain/Playwright site is `corepack enable` (resolves `packageManager`), `.devcontainer/toolchain.Dockerfile` resolves at runtime, `tools/openwiki-generator` declares none (item #286) | 3 lines moved |
+
+**Breaking changes (UPSTREAM, v12.0.0 "Major Changes", and no `Major`/breaking section in v12.1.0–v12.13.0)
+mapped to this repo:**
+
+- `ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS` — **none raised.** Every key in both `pnpm-workspace.yaml`
+  files (`packages`, `allowBuilds`, `minimumReleaseAgeExclude`, `overrides`; nested: `allowBuilds`,
+  `minimumReleaseAge`) is recognised by 12.13.0. The upgrade RED for this key class was clean: `CI=true pnpm
+  install --frozen-lockfile` under 12.13.0 printed no warning at all. Nothing to migrate; nothing deleted.
+- Canonical cycle breaking in peer resolution — **not triggered here.** pnpm 12 considers the 11.25.0 lock
+  current: `pnpm install --no-prefer-frozen-lockfile` and `--lockfile-only --no-prefer-frozen-lockfile` both
+  answer `Already up to date` and write nothing. The re-key happens on the first install that re-resolves.
+  **Measured** on a scratch copy by forcing a resolve (root `yaml` `^2.9.0` → `^2.9.1`, `--lockfile-only`):
+  +66/−48/~49 lines — expo/expo-router peer-variant hashes re-keyed, `ajv-formats`/`metro-symbolicate` lose a
+  peer suffix, and the `@napi-rs/cli` peer variant under `@monodon/rust` moves `@emnapi/core`/`runtime`
+  1.11.2 → 1.10.0. That lands with the next lockfile-wholesale change (US3, or Renovate's lock maintenance),
+  not here.
+- **NEW, not in R10: the lockfile becomes TWO YAML documents.** With `packageManager` pinning pnpm 12, pnpm
+  prepends an env lockfile (`importers['.'].packageManagerDependencies: pnpm 12.13.0` + the 14 `@pnpm/exe.*`
+  native-binary packages, 158 lines) — written by the first install, frozen included. The dependency
+  document after it is byte-identical to `origin/main`'s lock. `check-toolchain-consistency.mjs` parsed the
+  file with single-document `parse()` and exited 2 (`Source contains multiple documents`) — fixed to read the
+  LAST document (Renovate's own choice, `parseYaml(raw).at(-1)` in renovate@44.165.1's pnpm extractor);
+  guarded by tests (p5b)/(p5c)/(p5d). nx 22.7.10's lockfile parser is unaffected (3303 external nodes, the
+  same set as on the single-document lock). No other script parses the lock.
+- pnpm 12 is a **native (Rust) binary** behind an npm wrapper. corepack 0.36.0 prints `Downloading the pnpm
+  12.13.0 binary for linux-x64...` on first use and runs; the Alpine BFF image gets `linux-x64-musl`.
+- `engineStrict`, `--frozen-lockfile false`, git-hosted dependencies — not used here (REPO grep).
+- Agent skills (v12.7.0): an install now reports `Agent skills awaiting approval: @copilotkit/runtime` (root)
+  and `openwiki` (nested). Nothing is linked until approved, so the default is deny. No decision recorded.
+
+**Nested `tools/openwiki-generator`**: `pnpm --dir tools/openwiki-generator install --frozen-lockfile` from the
+root runs 12.13.0, passes its supply-chain verification (471 entries), and leaves its lockfile byte-identical
+(no env document: that manifest pins no package manager). `minimumReleaseAge: 4320` **still enforces** under
+12: adding `@pnpm/exe@12.14.0` (published 2026-10-15) to a scratch copy fails `ERR_PNPM_NO_MATURE_MATCHING_VERSION`
+("15 versions do not meet the minimumReleaseAge constraint"); `12.13.0` resolves. `sast`'s nested-lockfile
+audit (item #721) is unchanged: `sast-scan.mjs --scope full --only pnpm-audit` gives the identical 30-finding
+list under 11.25.0 (control) and 12.13.0, including the `tools/openwiki-generator:` entries.

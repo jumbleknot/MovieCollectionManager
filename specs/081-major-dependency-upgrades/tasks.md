@@ -69,7 +69,7 @@ diagnosing an nx failure from a path that no longer exists.
 - [x] T009 [US1] PR 1b: bump `actions/setup-java` v4→v6 (keep `java-version: '17'`), `android-actions/setup-android`
   v3→v4, `astral-sh/setup-uv` v5→v10, `dorny/paths-filter` v3→v4, `pnpm/action-setup` v4→v6. **Done when**:
   preflight passes.
-- [ ] T010 [US1] Verify PR 1b, including a commit that touches a path-filtered area so each filtered job is
+- [x] T010 [US1] Verify PR 1b, including a commit that touches a path-filtered area so each filtered job is
   shown to RUN, not skip (paths-filter v4 output semantics); `cd-deploy` `build_apk` dispatch green.
   **Done when**: PR 1b merged; rollback = revert recorded in the body.
 
@@ -77,14 +77,14 @@ diagnosing an nx failure from a path that no longer exists.
 
 ## Phase 4: US2 — pnpm 12 (P1) — PR 2 — lockfile-wholesale
 
-- [ ] T011 [US2] T002 quiet-lock check. Record the BEFORE table: for each of the 14 `overrides` keys in
+- [x] T011 [US2] T002 quiet-lock check. Record the BEFORE table: for each of the 14 `overrides` keys in
   `pnpm-workspace.yaml`, the resolved version(s) in `pnpm-lock.yaml`. **Done when**: table in PR body.
-- [ ] T012 [US2] Guard check — `node --test scripts/__tests__/check-toolchain-consistency.test.mjs` passes
+- [x] T012 [US2] Guard check — `node --test scripts/__tests__/check-toolchain-consistency.test.mjs` passes
   before the change (control), then bump `packageManager` to `pnpm@12.x` in `package.json` and the corepack
   pins in `frontend/mcm-app/Dockerfile` together.
   **Verify RED (upgrade)**: `pnpm install` under 12 — record any `ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS`
   or ignored-key warning verbatim.
-- [ ] T013 [US2] Migrate any unrecognised `pnpm-workspace.yaml` key (never delete an override or a build
+- [x] T013 [US2] Migrate any unrecognised `pnpm-workspace.yaml` key (never delete an override or a build
   decision); regenerate the lock once.
   **Verify GREEN**: `pnpm install --frozen-lockfile` cold succeeds with no warnings about ignored keys;
   `node scripts/check-override-consistency.mjs` exits 0; `node scripts/check-toolchain-consistency.mjs`

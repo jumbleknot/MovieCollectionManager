@@ -340,6 +340,38 @@ test('(p5) two resolutions are BOTH returned — the caller must never silently 
   assert.deepEqual(collectLockfilePlaywrightVersions(root).sort(), ['1.60.0', '1.62.1']);
 });
 
+// MEASURED 2026-10-17 (feature 081 US2). pnpm 12 writes pnpm-lock.yaml as TWO YAML documents when
+// `packageManager` pins it: an "env lockfile" first (`importers['.'].packageManagerDependencies`
+// plus the `@pnpm/exe.*` native binaries) and the dependency lockfile second. A single-document
+// parse throws "Source contains multiple documents", and on the bump commit this gate exited 2 —
+// `could not run` — on a lockfile pnpm itself had just written. The dependency lockfile is the
+// LAST document (the same choice Renovate's own pnpm extractor makes: `parseYaml(raw).at(-1)`).
+const ENV_DOC =
+  "---\nlockfileVersion: '9.0'\n\nimporters:\n\n  .:\n    configDependencies: {}\n" +
+  '    packageManagerDependencies:\n      pnpm:\n        specifier: 12.13.0\n        version: 12.13.0\n\n' +
+  "packages:\n\n  '@pnpm/exe.linux-x64@12.13.0':\n    resolution: {integrity: sha512-deadbeef}\n\n";
+
+test('(p5b) a pnpm 12 two-document lockfile resolves from the dependency (last) document', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({ pkg: PKG, lockfile: ENV_DOC + '---\n' + lockText(['@playwright/test@1.62.1']) });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), ['1.62.1']);
+});
+
+test('(p5c) the env document is NOT read as a dependency resolution', async () => {
+  // Pins WHICH document is read, so a later "union every document" refactor cannot pass silently:
+  // the env document describes the package manager, never the workspace's dependencies.
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const env = ENV_DOC + "  '@playwright/test@9.9.9':\n    resolution: {integrity: sha512-deadbeef}\n\n";
+  const root = repo({ pkg: PKG, lockfile: env + '---\n' + lockText(['@playwright/test@1.62.1']) });
+  assert.deepEqual(collectLockfilePlaywrightVersions(root), ['1.62.1']);
+});
+
+test('(p5d) a YAML error in ANY document still throws — half a lockfile is never read as a pass', async () => {
+  const { collectLockfilePlaywrightVersions } = await gate();
+  const root = repo({ pkg: PKG, lockfile: ENV_DOC + "---\npackages:\n  '@playwright/test@1.62.1': [unclosed\n" });
+  assert.throws(() => collectLockfilePlaywrightVersions(root));
+});
+
 test('(p6) one image pin is found, with its version and 1-indexed line', async () => {
   const { collectPlaywrightImagePins } = await gate();
   const pins = collectPlaywrightImagePins(workflowPinning('1.62.1'), 'app-ci.yml');
