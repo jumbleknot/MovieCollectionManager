@@ -582,3 +582,126 @@ in `node_modules` links) — so it changes no resolved runtime tree. Everything 
 20.8.4/21.6.11 and their `ejs`/`jake`/`filelist`/`enquirer`/`minimatch@9.0.3` leave; `archiver` 7→8 (and its
 `zip-stream`/`compress-commons`/`crc32-stream`/`readdir-glob`/`is-stream`), `@renovatebot/pep440`,
 `chalk-template`, `tree-sitter-wasms`, `web-tree-sitter` arrive as `@nxlv/python@23.2.1` dependencies.
+
+### US3 (PR 3b, nx 22 → 23) — 2026-10-17
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-17T12:42:35Z`, read only);
+REPO = `origin/main` = `4aae23df` (PR 3a, #773, merged); NPM = the `nx` and `@nx/*` packuments (`time`,
+`dist-tags`, per-version `dependencies`/`peerDependencies`); UPSTREAM = the `nrwl/nx` GitHub releases 23.0.0,
+23.1.0, 23.2.0 and 23.3.0, every body read; TARBALL = `nx` 22.7.10 vs 23.3.0 and `@nx/nx-linux-x64-gnu` 22.7.10
+vs 23.3.0, diffed.
+
+| What | R1 / R11 / PR 3a delta | Today | Consequence |
+|---|---|---|---|
+| DASH `renovate/major-nx-monorepo` | 23.3.0 | **Awaiting Schedule**, `nx`/`@nx/expo`/`@nx/playwright` 22.7.10 → **23.3.0**; `renovate/nx-monorepo` (minor) 22.7.12 still Awaiting Schedule | this PR lands the major by hand; the 22.7.12 minor is superseded |
+| Newest nx 23 (NPM) | 23.3.0 | `latest` = **23.3.0** (2026-10-07T15:17Z, 10 days old); `next` = 24.0.0-beta.2 | target **23.3.0** — past the 3-day cooldown; every `@nx/*` 23.3.0 was published the same day (15:13–15:17Z) |
+| DASH, the two plugins | still in js-majors | **still listed** (`@monodon/rust ^2.3.0 → ^3.0.0`, `@nxlv/python ^21.0.3 → ^23.0.0`) although PR 3a merged at 12:33Z | DASH lag (body 12:42Z, extraction older); REPO is the truth |
+| **NEW drift, not in R1** | — | js-majors group now also carries **`tamagui`, `@tamagui/config`, `@tamagui/core`, `@tamagui/shorthands`, `@tamagui/stacks` ^2.3.0 → ^3.0.0** | not US3's; recorded for the story that owns the design system / US5 re-scope |
+| `@nx/devkit` copies | 22.7.10 only (after PR 3a) | **22.7.10** (only via `@monodon/rust@3.0.0`, a *dependency* `^22.0.0`) + **23.3.0** (every `@nx/*` 23.3.0, and `@nxlv/python`, whose *peer* `>=22.0.0` now binds 23.3.0) | M3 below |
+
+**M3 — `@monodon/rust` 3.0.0 (devkit ^22) under nx 23: it loads.** pnpm keeps a devkit-22.7.10 copy for it,
+because `@nx/devkit` is a *dependency* of `@monodon/rust`, not a peer. That copy's own peer is `nx: ">= 21 <= 23
+|| ^22.0.0-0"`, which admits 23.3.0 (`<=23` is `<24.0.0-0`), so pnpm links it to **nx 23.3.0**. There is no unmet
+peer, and no second nx: `node_modules/@monodon/rust` → `@nx+devkit@22.7.10_nx@23.3.0` → `nx@23.3.0`. The plugin
+was exercised through a real executor and its `createNodesV2` export:
+- `nx run mc-service:serve` (`@monodon/rust:run`) composed `cargo run -p mc-service`, compiled, and ran
+  `target/debug/mc-service`, which then exited as expected on `Missing required environment variable:
+  MC_DB_URL`. This is the same evidence PR 3a recorded under nx 22.
+- `nx show project mc-service --json` lists the plugin-inferred `nx-release-publish`
+  (`@monodon/rust:release-publish`), so the plugin's `createNodesV2` still loads. nx 23's "rename CreateNodes
+  V2 types" is a type rename. The runtime still reads the `createNodesV2` export, and the migration for it only
+  rewrites *imports* of `@nx/playwright/plugin` and `@nx/expo/plugin`.
+- `mc-service:test` was NOT used as the M3 instrument. It is `nx:run-commands`, as are `test:unit` and `lint`, so it
+  never touches `@monodon/rust`. (tasks.md T018 names it. PR 3a's delta showed why that is the wrong instrument.)
+
+**Migrations (`nx migrate 23.3.0` → `migrations.json`, 8 entries, `--run-migrations`)**:
+
+| # | Migration | Result |
+|---|---|---|
+| 1 | `nx:23-0-0-consolidate-release-tag-config` | no change (no `release` block in nx.json) |
+| 2 | `nx:23-0-0-add-migrate-runs-to-git-ignore` | `.gitignore` += `.nx/migrate-runs` (moved next to the other `.nx/*` lines) |
+| 3 | `@nx/playwright:update-23-0-0-migrate-create-nodes-v2-import` | no change (nothing imports `createNodesV2`) |
+| 4 | `@nx/expo:update-23-0-0-migrate-create-nodes-v2-import` | no change |
+| 5 | `@nx/expo:update-23-1-0-update-metro-config-for-expo-56` | no change; its AI "prompt phase" (`tools/ai-migrations/@nx/expo/23.3.0/ai-instructions-for-expo-56.md`) is a generic SDK-54/55→56 guide — this repo has been on SDK 56 since feature 005. **Not applied**; file deleted |
+| 6 | `@nx/expo:update-23-1-0-replace-standalone-metro-for-expo-56` | no change |
+| 7 | `@nx/expo:update-23-1-0-update-jest-winter-runtime-for-expo-56` | no change |
+| 8 | `nx:23-2-0-set-cache-on-executor-target-defaults` | no change. nx.json's `targetDefaults` has no executor keys, so cacheability still resolves per target name |
+
+`nx migrate` itself rewrote `nx.json`. It set `installation.version` to 23.3.0. It also re-serialised the file,
+which **removed a pre-existing duplicate `"build"` key** in `targetDefaults` (`{cache: true}` … later
+`{cache: false}`). `JSON.parse` keeps the last value, so the effective value was always `cache: false`. The
+rewrite keeps `false` at the first position, so nothing changes in behaviour. It also expanded `deploy.dependsOn`
+onto several lines. `migrations.json` and `tools/ai-migrations/` were deleted after the run: no
+`migrations.json` has ever been committed in this repo.
+
+**Breaking changes (UPSTREAM) mapped to this repo:**
+- **23.1.0 "linter: drop eslint v8 support"**: `@nx/eslint@23.3.0` peers `eslint ^9 || ^10`, and this repo is on
+  eslint 8.57.1. **Not exercised here.** No `@nx/eslint` plugin is registered in nx.json. Every lint target is
+  `nx:run-commands` invoking the project's own eslint, and both `.eslintrc.json` files extend only `expo`. pnpm
+  auto-installs `eslint@10.12.0` as the peer of `@nx/eslint` *inside its own snapshot*. The hoisted
+  `node_modules/.pnpm/node_modules/eslint` and both projects' `node_modules/eslint` remain **8.57.1**, and
+  `mcm-app:lint` gives the same `0 errors, 43 warnings` as before. The eslint 8→10 move stays US5's.
+- 23.0.0 drops the `'self'`/`'dependencies'` magic strings in `dependsOn`. No project.json uses them (REPO grep).
+- 23.0.0 removes `initTasksRunner`, legacy vitest-in-`@nx/vite`, the Angular/webpack/SVGR/Tailwind items, and jest
+  `setupFile`. None is used here.
+- 23.2.0 changes cacheability resolution from target-name keys to executor keys (migration 8). There are no
+  executor keys here, and every project's resolved `cache` is identical BEFORE/AFTER (below).
+- **The `@nx/playwright` 23 inferred `e2e` target now carries `parallelism: false`**, because the Playwright
+  config's web server is not an inferred serve task (`chainRequiresSerialization`), and
+  `e2e-ci--merge-reports` gains an explicit `continuous: false`. These are the **only** differences in
+  `nx show project --json` across all 8 projects. CI never runs `nx e2e`: app-e2e calls
+  `pnpm exec playwright test` in the Playwright image. So this changes only how a local
+  `nx run-many -t e2e` schedules.
+
+**Remote cache (CI depends on it).** CI sets only `NX_SELF_HOSTED_REMOTE_CACHE_SERVER` and
+`NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` (app-ci.yml `env:`), and nx.json has no cache literal. nx 23.3.0's
+`tasks-runner/cache.js` `getHttpCache()` still keys off `NX_SELF_HOSTED_REMOTE_CACHE_SERVER` and still constructs
+the native `HttpRemoteCache`. `getHttpCache()` and the remote-cache selection around it are byte-identical
+between 22.7.10 and 23.3.0. The diff of `cache.js` touches only batch-output logging and terminal-output
+bookkeeping. 23.1.0's release notes add a zip-slip fix and a TLS-disabled warning on the native side.
+The native binary's strings for both versions name the same `NX_SELF_HOSTED_REMOTE_CACHE_SERVER`,
+`NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` and `NX_REMOTE_CACHE_URL` variables and the same `/v1/cache/` path.
+**No config-format or env-var change.**
+
+**NEW, security-relevant: nx 23 downgrades undici into ten advisories.** `nx@23.3.0` depends on `undici: 7.29.0`
+**exactly**. nx 22 used `axios` and had no undici dependency. Until now the lock's only 7.x was **7.29.1**, through
+`@module-federation/dts-plugin`, which nx 23's plugin tree no longer pulls in. 7.29.0 is inside ten advisories that
+7.29.1 fixes (OSV): GHSA-rfgv-xxqx-mfg5 and GHSA-w293-vg96-wgc3 (High), GHSA-2jfj-6hjv-fm6j, GHSA-3wwx-pv8p-q78v,
+GHSA-3xpg-4rpp-hhhm, GHSA-pmjh-fq2x-6v4x and GHSA-rx4f-c7p8-82vq (Medium), and GHSA-2gqq-gqf2-x968,
+GHSA-8436-99hf-9mmv and GHSA-r53p-7pc4-xj5r (Low). `sast-scan --only pnpm-audit` reported all ten as
+`pnpm-audit/dev`, which does not block. Per spec ("an upgrade changes a security-override's resolution: reviewed as
+a security change") this PR adds a keyed floor, `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, which is the same shape as
+`undici@<6.27.0` and passes check-override-consistency. It resolves to **7.30.1** (2026-10-15T14:18Z, 0 OSV
+advisories). 7.30.1 is inside Renovate's 3-day proposal cooldown but passes pnpm 12's verify-time release-age
+policy, which is the policy that governs transitives (item #271). Forcing a 3-day `minimum-release-age` on the install is
+not an alternative. It is a verify-everything check, and it rejects ~20 entries that the 2026-10-16
+lock-maintenance already landed (`rollup@4.64.7`, `ai@6.0.307`, …).
+
+**Lockfile**: the env document (pnpm 12.13.0) is unchanged, and every change is in the dependency document. There are no
+package-metadata rewrites. 135 packages leave and 67 arrive. A reachability walk from every importer that does not
+enter `nx`/`@nx/*`/`@monodon/*`/`@nxlv/*` reaches **none** of them, either before or after, so all are
+(a) nx-family. In detail: the whole `@nx/*` 22.7.10 family plus `@nx/module-federation` (and with it `@module-federation/*`,
+`@rspack/*`, `webpack`, `@webassemblyjs/*`, `@svgr/*`, `svgo`, `rollup-plugin-typescript2`, `typescript@5.9.3`,
+`axios@1.18.1`, `undici@7.29.1`) leave. `@nx/*` 23.3.0 arrives, along with nx 23's own dependencies (`undici` → 7.30.1 via the floor, `ora`
+5.4.1, `open` 10.1.0, `smol-toml` 1.9.0, `which` 3.0.1, `@clack/*`, `jsonc-parser`) and `@nx/eslint`'s auto-installed
+peer `eslint@10.12.0` with its tree. The newest arrival is the `@nx/*` 23.3.0 set (2026-10-07); `undici@7.30.1` is
+the single exception, explained above. Snapshot-level changes (b) are re-keyings with no version change:
+- `@nx/expo@23.3.0` resolves a second `expo@56.0.23` peer variant (`e508…`). It differs from the app's
+  (`037f…`) **only** in `supports-color` 7.2.0 vs 8.1.1 under `debug`/`@babel/core`. The shared, cyclic
+  `expo-keep-awake@56.0.3(expo@56.0.23)(react@19.2.3)` snapshot now points its `expo` at the nx variant. This is
+  the walk-order-dependent cyclic peer re-key that US2 described. The app's importers are byte-identical, and
+  `expo-keep-awake`'s sources import only `expo-modules-core` and `react`, never `expo`. So the app's runtime
+  graph does not enter the second variant, even though a lock walk now reaches it, and with it
+  `react-native-screens@4.30.0` under that variant's `expo-router`. The app keeps 4.25.2.
+- In-place: `metro@0.84.5`/`metro-symbolicate@0.84.5` point at the `supports-color@7.2.0` variants of
+  `metro-config`/`metro-transform-worker`/`metro-source-map`; `ajv-formats@3.0.1` gains `ajv: 8.20.0`; 43
+  snapshots flip to `optional: true`. Each of those is now reached only through an optional peer of an `@nx/*` 23
+  plugin: the rollup plugins, `postcss-modules*`, the `express@4.22.3(supports-color@7.2.0)` variant, and
+  `http-proxy-middleware`. The app's `express@4.22.3(supports-color@8.1.1)` is unchanged. Two `@babel/plugin-syntax-*`
+  snapshots flip the other way.
+- Re-keyed only by their `nx`/devkit peer: `@monodon/rust@3.0.0`, `@nxlv/python@23.2.1`, `@nx/devkit@22.7.10`,
+  `@eslint-community/eslint-utils@4.10.1`.
+
+(c) Anything else: none. Override resolutions are unchanged except: `axios` loses 1.18.1 (nx 22 was its only
+user; 1.20.0 remains, inside `>=1.18.0 <2`), and `undici` 7.x moves 7.29.1 → 7.30.1 under the new floor. No
+existing floor moved.

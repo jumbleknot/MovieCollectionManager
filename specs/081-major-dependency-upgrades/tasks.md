@@ -104,11 +104,11 @@ diagnosing an nx failure from a path that no longer exists.
 - [ ] T016 [US3] Fix executor/option changes until GREEN.
   **Verify GREEN**: same command | **Expected GREEN**: 0 failures; `pnpm why @nx/devkit` shows the 20.x and
   21.x copies gone. **Done when**: PR 3a merged.
-- [ ] T017 [US3] PR 3b: T002 check; record `pnpm nx show projects --json` and each project's target list
+- [x] T017 [US3] PR 3b: T002 check; record `pnpm nx show projects --json` and each project's target list
   (BEFORE). Run `pnpm nx migrate 23.x` (latest 23 at that day), `pnpm install`, `pnpm nx migrate
   --run-migrations`; keep `nx.json` `installation.version` == `package.json` `nx`.
   **Verify RED (upgrade)**: `pnpm nx run-many -t lint test typecheck --skip-nx-cache` — record failures.
-- [ ] T018 [US3] Resolve until GREEN; M3: confirm `@monodon/rust` 3 (devkit ^22) executors load under nx 23
+- [x] T018 [US3] Resolve until GREEN; M3: confirm `@monodon/rust` 3 (devkit ^22) executors load under nx 23
   (`pnpm nx run mc-service:test`). If they do not, stop and record (spec US3 AC3).
   **Verify GREEN**: same command, 0 failures; `node scripts/check-toolchain-consistency.mjs` exits 0;
   AFTER project/target list identical to BEFORE.

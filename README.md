@@ -48,7 +48,7 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 | Identity | Keycloak 26.7 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
 | Secrets | Komodo Variables in production ([ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)); Vault is deployed but dormant and agent-layer-scoped |
 | Observability & audit | Langfuse 4 + ClickHouse 25 + RustFS (upstream, digest-pinned), Grafana `otel-lgtm`, OpenSearch 3 audit sink, OPA, Unleash |
-| Monorepo & build | pnpm 11 workspaces + Nx 22 (JS/TS, Rust, and Python orchestrated through one task runner) |
+| Monorepo & build | pnpm 12 workspaces + Nx 23 (JS/TS, Rust, and Python orchestrated through one task runner) |
 | Testing | Jest, Playwright (web E2E), Maestro (mobile E2E), cargo test, pytest |
 | CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (weekly image CVE sweep), secret-scanning gates |
 
