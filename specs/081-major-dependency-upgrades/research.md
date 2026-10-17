@@ -769,3 +769,27 @@ and asserts what the ceiling *admits* (17.0.x yes; 18.0.x, 21, 25 no). RED: 2 fa
 `'<18' blocks 17.0.12+7`); GREEN: 131/131. The `upload-artifact` hold (`<4`) is unaffected: action refs use the
 `github-actions` versioning, whose `parseRange` accepts only `N` / `N.M`, so `<4` is not valid there and the filter
 falls through to npm semver, which reads it as intended.
+
+**CI `affected` red on the first PR-4 run — a real RN 0.86 cost, made visible by load (run 5489).** One mcm-app
+test failed: `tests/app/(app)/_layout.test.tsx` › "resolves the assistant config from a descendant of the Stack AND
+of the dock gate", `Exceeded timeout of 5000 ms` (suite 13.9 s; 1577/1578 passed; the same run's
+`ui-action-tools.test.tsx` took 29.2 s, so the runner was heavily loaded). Measured locally, that one file,
+`--maxWorkers=1`, three runs each, against a throwaway `origin/main` worktree:
+
+| | cold transform cache (`--no-cache`) | warm cache |
+|---|---|---|
+| `main` (RN 0.85.3) | 563 / 566 / 582 ms | 66–178 ms |
+| SDK 57 (RN 0.86.3) | 1105 / 1107 / 1110 ms | 97–103 ms |
+
+Why: a fresh `--cacheDirectory` shows the branch transforms `ReactFabric-dev.js` (~2.2 MB), `MessageQueue`,
+`BatchedBridge` and `ReactNativePrivateInitializeCore` for this test and `main` does not. A `jest.mock` stack trace
+on `react-native/Libraries/Renderer/shims/ReactFabric` names the chain: nav bar `TouchableOpacity` (a lazy getter,
+reached only during render) → `Animated` → `AnimatedEvent` → `RendererProxy` (the jest preset's mock, which
+`requireActual`s) → `RendererImplementation.js:18`. RN 0.86 rewrote `RendererImplementation` to `import ReactFabric`
+at module scope, where 0.85 `require`d it lazily inside `getFabricRenderer()`; the preset's mock is unchanged.
+The CPU profile agrees: +216 ms `@babel/traverse`, +94 ms `@babel/parser` and so on. The extra time is transform
+work. Upstream, inherent to RN 0.86, and paid once per worker by the first render that touches `Animated`. Fixed on
+that test only with a named 15 s bound and the measurement in a comment. The timeout was not raised suite-wide.
+`affected` publishes evidence only on failure, so `main`'s green runs record no per-test timings to compare. The
+three `affected` bundles in retention (runs 3589, 4899 and this one) contain no earlier failure of this test, and
+the backlog has no item for flaky mcm-app unit timeouts.
