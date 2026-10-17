@@ -232,7 +232,7 @@
   //   8081  Metro dev server (also serves the Expo Router web target + dev BFF API routes)
   //   8082  containerized dev BFF (E2E_BFF_TARGET=dev-container)
   //   8099  Keycloak (browser OAuth redirect on web login)
-  // The legacy Expo 19000/19001/19006 ports are NOT used by this Expo SDK 56 project.
+  // The legacy Expo 19000/19001/19006 ports are NOT used by this Expo SDK 57 project.
   "forwardPorts": [8081, 8082, 8099],
   "portsAttributes": {
     "8081": { "label": "Metro / Expo Web / dev BFF", "onAutoForward": "notify" },

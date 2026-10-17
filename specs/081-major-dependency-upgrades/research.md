@@ -705,3 +705,67 @@ the single exception, explained above. Snapshot-level changes (b) are re-keyings
 (c) Anything else: none. Override resolutions are unchanged except: `axios` loses 1.18.1 (nx 22 was its only
 user; 1.20.0 remains, inside `>=1.18.0 <2`), and `undici` 7.x moves 7.29.1 → 7.30.1 under the new floor. No
 existing floor moved.
+
+### US4 (PR 4, Expo SDK 56 → 57) — 2026-10-17
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-17T13:56:24Z`, read only);
+REPO = `origin/main` = `97106c8e` (PR 3b, #774, merged); NPM = the `expo`, `jest-expo`, `babel-preset-expo`,
+`eslint-config-expo`, `@expo/cli`, `react-native`, `@react-native/metro-config` and `expo-template-bare-minimum`
+packuments, and the published `expo` 57.0.28 / 57.0.30 / 58.0.14 tarballs' `bundledNativeModules.json`;
+TARBALL = `expo-template-bare-minimum` 56.0.37 vs 57.0.32 and `@react-native/gradle-plugin` 0.85.3 vs 0.86.3, diffed;
+RENOVATE = the `renovate@44.166.0` tarball (`versioning/semver-partial`, `workers/repository/process/lookup/filter.js`,
+`manager/github-actions/known-actions/java-version-dynamic.js`), read.
+
+| What | R1 / R4 (2026-10-10) | Today | Consequence |
+|---|---|---|---|
+| `expo` dist-tags | `latest` 57.0.27, `next` 58.0.7 (RC RN) | **`latest` = 58.0.14** (SDK 58 is STABLE: 58.0.0 published 2026-09-29, on RN **0.88.0** / React **19.3.0**), `sdk-57` = 57.0.30, `next` = 58.0.11 | OQ-1 was answered by the operator BEFORE this stage: **stay on SDK 57**. SDK 58 is recorded, not taken |
+| Newest SDK-57 patch past the 3-day cooldown (at 2026-10-17T15:4xZ) | — | **57.0.28** (2026-10-12T14:28Z); 57.0.29 (10-14T16:32Z) and 57.0.30 (10-15T14:38Z) were inside it | installed as `expo@57.0.28`, then `expo install --fix` rewrote the specifier to **`~57.0.30`** (below) |
+| `bundledNativeModules.json` (57.0.30) | 57.0.27: RN 0.86.3, React 19.2.3 | RN **0.86.3**, React **19.2.3**, reanimated 4.5.1, worklets 0.10.1, gesture-handler ~2.32.0, screens ~4.26.0, safe-area ~5.7.0, svg 15.15.4, **async-storage 2.2.0**, jest-expo ~57.0.6, expo-router ~57.0.28, `@expo/dom-webview` ~57.0.1 | React is unchanged at 19.2 — the amendment names 19.2. 57.0.28 → 57.0.30 differs only in `~` patch floors of Expo's own modules |
+| Companions (NPM) | 57.0.5 / 57.0.14 / 57.0.2 | jest-expo **57.0.6** (jest **29** family; peer `@react-native/jest-preset ^0.86.3`), babel-preset-expo **57.0.16** (peer `@babel/runtime ^7.20.0`), eslint-config-expo **57.0.2** (peer `eslint >=8.10`) | item #254's correction holds: jest 30 / babel 8 stay blocked at SDK 57; SDK 58's jest-expo ~58.0.11 is where jest 30 arrives (R4 §3) |
+| `@expo/cli` (what `expo@57.0.30` resolves) | 57.0.28 | **57.0.31**: still `node-forge ^1.3.3`, still `@expo/metro ~56.0.2` | neither SAST entry is discharged (T030) |
+| DASH | — | no Expo/RN entries (Renovate is disabled for them by design); still lists nx 23, pnpm 12 and the two nx plugins (lag — all merged); copilotkit Pending Approval → **1.79.0**; `langfuse` → **v5** (Python, Pending Status Checks) is NEW; tamagui 3 still in js-majors; **`java-jdk 17 → 18`** in `renovate/major-ci-actions` | the java-jdk line exposed a defect in the US1 hold — below |
+
+**`expo install --fix` overrides the cooldown choice, and `--check` is the done-criterion.** The SDK-57 CLI reads
+Expo's versions endpoint, not the installed tarball, and recommends `expo ~57.0.30`; `expo install --check` then
+reports a mismatch for anything older. The lock therefore resolves **`expo@57.0.30`** (2026-10-15T14:38Z): inside
+Renovate's 3-day *proposal* cooldown until 2026-10-18T14:38Z, past pnpm 12's verify-time release-age policy (the one
+that governs installs, item #271; the frozen install passes). Choosing 57.0.28 would not have changed the
+transitive tree: every Expo module is a `~57.0.x` range and resolves its newest patch either way.
+
+**What `--fix` changed beyond the SDK line** (each kept, each checked):
+- `@types/jest` `^30.0.0` → **`29.5.14`** (mcm-app; mirrored into design-system). `^30` was chosen in feature 005
+  (`be2761b1`) because TS 6 stopped auto-loading `@types/jest@29` globals; the same commit added `"types": ["jest"]`
+  to both tsconfigs, which is what actually fixed it. With that in place `@types/jest@29.5.14` typechecks the app
+  (tests included) and design-system with **0 errors** under TS 6.0.3, and now matches the jest 29 runtime.
+- `app.json` `plugins` += `expo-font`, `expo-status-bar` — the SDK-57 CLI registers the config plugins of installed
+  packages that ship one. No options; they affect prebuild only (exercised by CI's APK build).
+- `react-native-svg` 15.15.5 → **15.15.4** (the SDK's bundled pin; 15.15.5 stays in the lock for design-system's
+  `>=15.0.0`). `react-native-screens` ~4.25.2 → ~4.26.2, which also retires the orphan `react-native-screens@4.30.0`
+  snapshot US3 recorded.
+- Tamagui: **untouched** (still `^2.3.0`); `--fix` does not manage it. Tamagui 2 → 3 is its own later stage.
+
+**`@react-native/metro-config` stays 0.85.3, an unmet *optional* peer.** It enters only as `react-native-worklets`'
+peer `'*'`, and pnpm prefers the version already locked. `@react-native/community-cli-plugin@0.86.3` peers it at
+`0.86.3`, **optional**. Neither consumer is on this app's path: `metro.config.js` builds on `expo/metro-config`, and
+community-cli-plugin serves the RN CLI (`react-native start`), which Expo does not use. Forcing a re-resolve
+(`pnpm update --depth Infinity @react-native/metro-config`) picks **0.88.0** (npm `latest`), which is worse, and
+pnpm refuses a version on an indirect dep (`ERR_PNPM_UPDATE_VERSION_ON_INDIRECT_DEP`), so it was reverted.
+
+**`@nx/expo` and SDK 57**: `@nx/expo@23.3.0` ships no SDK-57 migration; its `update-23-1-0-update-metro-config-for-expo-56`
+prompt (`ai-instructions-for-expo-56.md`) is SDK-56 specific — move to `@expo/metro`, source Metro from
+`expo/metro-config`, drop standalone `metro*` deps — and the app already does all three. Nothing to apply. **The
+second `expo` peer variant does not collapse**: two `expo@57.0.30` snapshots remain, differing only in
+`supports-color` 7.2.0 (`@nx/expo`'s side) vs 8.1.1 (the app's), the same shape as at SDK 56.
+
+**JDK (T027) — stays 17; and the US1 hold was inverted.** SDK 57's `expo-template-bare-minimum@57.0.32` `android/`
+tree is byte-identical to SDK 56's (`56.0.37`, Gradle 9.3.1), and `@react-native/gradle-plugin@0.86.3`, like 0.85.3,
+builds with `kotlin { jvmToolchain(17) }` on AGP 8.12.0. Nothing asks for a newer JDK. **But the dashboard proposed
+`java-jdk 17 → 18` *through* the hold.** RENOVATE: github-actions extracts `java-version` with `semver-partial`
+versioning; `filterVersions` tries a regex `allowedVersions`, then the dep's own versioning's `isValid`/`matches`, and
+only then npm semver. semver-partial's `parseRange('<18')` coerces to `{major: 18, minor: 0}`, so `isValid` is true
+and `matches(v, '<18')` is `major === 18 && minor === 0`: the US1 value **admitted exactly JDK 18.0.x and blocked 17**.
+Fixed with a regex ceiling `/^17\./` (evaluated before any versioning); the guard now also models semver-partial
+and asserts what the ceiling *admits* (17.0.x yes; 18.0.x, 21, 25 no). RED: 2 failures (the ceiling string, and
+`'<18' blocks 17.0.12+7`); GREEN: 131/131. The `upload-artifact` hold (`<4`) is unaffected: action refs use the
+`github-actions` versioning, whose `parseRange` accepts only `N` / `N.M`, so `<4` is not valid there and the filter
+falls through to npm semver, which reads it as intended.

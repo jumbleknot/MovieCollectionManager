@@ -437,7 +437,7 @@ Ports `8081` (Metro / Expo Web / dev BFF), `8082` (containerized dev BFF), and `
 OAuth) are forwarded (`forwardPorts`). A browser or a **physical device on the LAN** reaches a dev
 server running inside the container via the forwarded address. When LAN routing is inconvenient,
 the **Expo tunnel** is the documented fallback (slower; acceptable for occasional use). The legacy
-Expo `19000/19001/19006` ports are unused by this Expo SDK 56 project — do not forward them.
+Expo `19000/19001/19006` ports are unused by this Expo SDK 57 project — do not forward them.
 
 ### Teardown
 
