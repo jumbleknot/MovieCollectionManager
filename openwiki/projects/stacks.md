@@ -1,18 +1,24 @@
 ---
 type: Convention
 title: Dev stack env files and local secret generation
-description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the key the generator must never fill).
+description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, the gen-dev-env.mjs projection with its realm verification, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the blank template key the generator must never fill).
 resource: infrastructure-as-code/docker/stacks/README.md
 tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-f84ce669ebf8d13e89ba2f75
     resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - id: openwiki-source-31d511fea0cea1f9f299fe85
+    resource: repo://infrastructure-as-code/docker/agents/.env.prod.example
   - id: openwiki-source-34479801b303c2005c7d1de1
     resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
@@ -51,20 +57,24 @@ sources:
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-b04e37691ebfb88e99a080d8
     resource: repo://scripts/__tests__/doc-env-example-citations.guard.test.mjs
+  - id: openwiki-source-44335116b1e1ad90d0eaa667
+    resource: repo://scripts/__tests__/gen-dev-env.guard.test.mjs
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
     resource: repo://scripts/check-no-inline-secrets.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-864993a079e6e4df052ac4ea
+    resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 # Dev stack env files and local secret generation
@@ -181,8 +191,19 @@ it projects the realm client secrets out of `stacks/auth.env` into the BFF's git
 (`frontend/mcm-app/.env.docker`, `.env.local`, `.env.e2e.local`, the web-api-mcp TMDB file, and
 `backend/mc-service/.env.local`) so the imported dev realm's client secrets and the BFF's client
 secrets agree **by construction** rather than by hand. It verifies the projected credentials against
-the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). It
-also names, unconditionally, the one file it deliberately never writes — the agent gateway's own
+the *running* realm before writing anything (exit `2` = refusing to write, files left untouched). That
+check talks to `KEYCLOAK_PUBLIC_URL` (default `http://localhost:8099`) and is skipped wholesale when
+`MCM_SKIP_REALM_VERIFY` is set — the escape hatch the script prints inside its own refusal, for
+deliberately projecting credentials a running realm will reject.
+
+CI never runs this command. `app-e2e` and `dast` provision through `node scripts/gen-dev-secrets.mjs`
+followed by `node scripts/gen-ci-env.mjs`, which writes the same `frontend/mcm-app/.env.docker` (plus
+`mcp-servers/web-api-mcp/.env.local`) from Forgejo Actions secrets and aborts with exit `2` rather than
+writing a fallback literal. There the imported realm and the BFF env file are fed from the *same*
+secrets, so the equality holds without a projection step — which is why the local box needs
+`gen-dev-env.mjs` and the CI runner does not.
+
+It also names, unconditionally, the one file it deliberately never writes — the agent gateway's own
 `.env.local`, which carries the operator's Anthropic credential — and warns, naming the keys, when the
 `BACKUP_TEST_*` credentials are absent from `mcm.env`, because an absent fixture makes the
 backup-destination integration suites skip and a skip reads as a pass. See

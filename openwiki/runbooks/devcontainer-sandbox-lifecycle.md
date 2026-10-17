@@ -13,6 +13,8 @@ sources:
     resource: repo://.devcontainer/verify/verify-engine-seam.sh
   - id: openwiki-source-4811c78aebdb18972e0c3805
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
+  - id: openwiki-source-4c6183820ca489953cbd3d7f
+    resource: repo://.devcontainer/verify/verify-portable-runner.sh
   - id: openwiki-source-abefa09d4b781de4f540ae9a
     resource: repo://.devcontainer/verify/verify-reboot-survival.sh
   - id: openwiki-source-c8899d2e41f6938e97009071

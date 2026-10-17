@@ -7,6 +7,33 @@ tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, runboo
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-16T20:39:10.335Z
+sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
+    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
+    resource: repo://scripts/cd/publish-apk.mjs
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-6f10e821d1ec074deb438a3e
+    resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-8d48276c31ac9a4e5887d2ca
+    resource: repo://scripts/object-store-migration.sh
 ---
 
 # Homelab server setup (CI/CD + production host)

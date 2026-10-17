@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7d3d64b1f1d060a5bcc0da939c92242c8eebab73c4d7b8fc521b375a3423391a",
+  "pageVersion": "sha256:c1e7fbf6e9eab5e2f57f08ac9c9d3e96f24f28fabaf92d865e9b992e25e6fc45",
   "claims": [
     {
       "id": "claim_25d0e869d5a34c9bb6f72147c0aeefe5",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:f52dc4c92482d5941d206f2eed10cc41b9fdaacef6f2db21ef0339b1322ab5c3"
+          "version": "repo-file-v1:sha256:f8d3bec1fb1c417feb70cbd75d65db8e7143bf34b34bcb80d7bcdb143a95c591"
         },
         {
           "resource": "repo://scripts/gen-dev-secrets.mjs#L1-L25",
@@ -541,10 +541,46 @@
           "version": "repo-lines-v1:sha256:d444d1e650c3a406d555162cf21ae6a70197403a6585c22f4912222097aaa9ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDkyOGU5Yjc5NWVkMzU4NzE1ZTMyNWFkZDgwMDRmZjE3NDg4MzBkMzQxZmRiYWU0NmZjNGUxZTZlMmJhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYjYxZTE3ZTAxMjU1NWM5ODQ1NjM4ZGM5MDMzNTVhNGMzMmI4MWQ1OGZmNTMzZWY2ZGQyMDEyNTlhN2M2NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNjY5OWRkYTYxZjFhMzQzNTNkNzVmMjAwMzY3MjQ0YmI2NGZmMGIyZDllOWE3YjJlOGY0MDQ1YjY1MjFiMzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_0827c0da82084a34adecbc67e0595ad8",
+      "statement": "The realm verification inside `scripts/gen-dev-env.mjs` is an operational knob, not a fixed precondition: it targets `KEYCLOAK_PUBLIC_URL` (default `http://localhost:8099`) with a timeout overridable via `MCM_REALM_VERIFY_TIMEOUT_MS`, treats only 400/401/403 as stale (a 404 means the realm is not seeded and a 5xx means Keycloak is still starting), is skipped entirely when `MCM_SKIP_REALM_VERIFY` is set, and the refusal message names that variable so an operator can deliberately project credentials a running realm rejects.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L229-L242",
+          "version": "repo-lines-v1:sha256:3b8b7c4b6cde9ecd977c7875b5f30f53a9cda21ee7056e0b5a54ce6c7efbab66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlZTNlZDQ5YWIyYmJhZTQzNThlNmJmMTc3MzBhYmUwODYyYzhiNjRkYjg0NjY5ZjliMzU1ZDM1ZTYwZWUxYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmYzVjOTNkZjhmYTE3Mjg1M2IxMThiNzYxOWZhYjZhMzRlMjhhM2FkMTU1ODBiNzc2ZTRhMWU3NGU1MWY2YmYifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L333-L337",
+          "version": "repo-lines-v1:sha256:540629109d9116cf03bfb978b984e283afa8f9e4dc123f2de0ec1835e9d6bf95:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQyNjQzMTFiZDhmZmUwMWFhNjBiMjBkMzk2N2Y2OTBmYjdmNzZmZWVhM2FhYmQwNDMwYjQ0MTgyODcxNjA4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODE5Y2Y1ZWNlYjkyYjg5ODI2YzkxMWFiNjhhZDhmODZlYWZiZGFhMTg0NDM2YzZlYWZlZmM1MTNlOGU3ZmFmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5MjBhMjQxMjdlN2FiOTZmNjBhMTMwM2U5OTZjMTBhMTBlNTA0MWEwZmFhZThhMTUwNjU4YjkxNWZjYjg4MiJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L81-L84",
+          "version": "repo-lines-v1:sha256:1a37aee5283301ba9543b6cefbecff771d3481082d9a270b5f3c2db91d552d31:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFjYjkwZGMxN2U2ZTUxMmNjYWJhZGEzZmZiMzk3ZThjYWU4YTVhMzVlMWQ3ODgwNmU4M2E1MGFmODVkNmFjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTMyNGM3NzExMjE3Yjg5ZmUwZmQ0MjAxODU0ZDNjMmQ1NDg1NDRkZWU5ODA0ZjI4Mjg5ODdmMzgxNWRiYTM0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzE3N2E1NzZhYzNmZmFjY2JhMTNjYmNlOGY3NjVmMWY4YzY1YmI5ZjgyMmFkNzEzNjk5YWU3MDYyNTI4YTMxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWYxODU1MTI5MjE5ODdlZjNhZjY5MWUyZWVlZTA1YzBkZGM5M2M3N2UwMDg4NGMxNWU1ZGIxMzg1ZTVhMGRkNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7517ab64b6a346368306b0f2930530c1",
+      "statement": "CI provisions the dev-stack env layer by a different path than a developer machine: the `app-e2e` and `dast` jobs run `node scripts/gen-dev-secrets.mjs` and then `node scripts/gen-ci-env.mjs`, which writes `frontend/mcm-app/.env.docker` and `mcp-servers/web-api-mcp/.env.local` from Forgejo Actions secrets and aborts with exit 2 rather than writing a fallback literal; `gen-dev-env.mjs` is never invoked in CI, because there the imported realm and the BFF env file are fed from the same secrets, so their equality needs no projection step.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1514-L1524",
+          "version": "repo-lines-v1:sha256:70075f5825de10c0e7c30ef33e3e34825609db53e4ce0e6978cbc2baaf0115a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2UxN2I0NmUyNzhhMDVmMjdjN2ZiNTYzMzEyNjkzMjBmNGYyOTVmMDg3MDI5ZmZlYTY0NzhkZGJiNzhlYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OTU2NDdjYmE4YTJiMWVmMWZlYzIxOGMwNjc5NzYxNmRmZjA3YWJkZDY4NWQ5MmUyZGMyODkzOTc5M2ExMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMWE5MTMwYTdhNzdmMTZmZDAzOThmN2Y3MWQyZDYzYTUyYjBhZGFhZDU0ODIwNGI5MjkxNDA3MWE1YWE4ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwOTg2ODkyM2EzY2RkMTlmNDI5ZDc0M2RjMzg1MmRhNjFiMDZhYWUzMDU3YjhhMjliZWFjMDAzM2FiMTVkN2YifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L605-L619",
+          "version": "repo-lines-v1:sha256:8930902870339aee509f58c4a2fd1d045edb86ecfff95283d1966e7bf7d2b60c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2UxN2I0NmUyNzhhMDVmMjdjN2ZiNTYzMzEyNjkzMjBmNGYyOTVmMDg3MDI5ZmZlYTY0NzhkZGJiNzhlYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiOGZjZDYwNDQxMDJmMjUwNDQwZDZkNTEwZGRlNjU1MjJkOWUzODQ1Zjk4YzI4NDdjZTYwYWZhZmY0NGYyYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMWE5MTMwYTdhNzdmMTZmZDAzOThmN2Y3MWQyZDYzYTUyYjBhZGFhZDU0ODIwNGI5MjkxNDA3MWE1YWE4ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiY2U5YzliMWJlM2VjODAyZTQ2Y2NlZDYzNTY5NDg1MzcwMGM3MjhmYTJkMjBjNmRhOTMwNTNkZTQ3Zjg0Y2YifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-ci-env.mjs#L1-L48",
+          "version": "repo-lines-v1:sha256:6cb4455cbbf9909f6e7a8b5011b09e5fd84fe4617429eeaadde3e8f435ac2fe1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMzkyYmY1OTQzNDM4MDgwYjY3Y2VkYWQ1NmZjOGJiODM1MGMzNmJkNDI2M2NjYzY5ZTk5ODEzOTU1NTljNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmYjhlNDhhNmFmZjNiNDJkYmQwZDg0NDA5MDJjYjQ2ZDA5ZmJkMmM0ZGFiOWJmM2Y2OGI5YzQ4NGFkOGY0N2YifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-17T03:12:52.160Z"
   }
 }

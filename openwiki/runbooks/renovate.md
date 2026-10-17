@@ -13,8 +13,6 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-6e16973a4e3f6a5a2bd2e44c
     resource: repo://.forgejo/workflows/lockfile-refresh-check.yml
-  - id: openwiki-source-c950e0aee079c6db1d918078
-    resource: repo://.forgejo/workflows/minio-image.yml
   - id: openwiki-source-eca7c5325f14a686c18a7c8a
     resource: repo://.forgejo/workflows/renovate-health.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
@@ -25,8 +23,6 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
-  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
-    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
@@ -35,10 +31,10 @@ sources:
     resource: repo://scripts/check-lockfile-refresh.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T10:11:13.472Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 # Renovate dependency bot
@@ -95,10 +91,13 @@ branch exists.
   narrow it. **Do not "tidy the crons together"** — a guard test asserts the ordering and a gap of at
   least two hours, sized for queue depth rather than for the sweep's own ~3 minutes.
 - **Friday is a ladder on one runner, and that is what the gap is really sized for.** In UTC: 04:00
-  the CVE sweep, 05:00 `minio-image`, 06:00 `devcontainer-image` (each with a 60-minute timeout),
-  07:00 the Renovate window, 10:00 `lockfile-refresh-check`, 11:00 `renovate-health`. The capacity-1
-  runner may also already be inside a ~35-minute `app-e2e`, which is why the ordering rule budgets
-  hours rather than minutes.
+  the twice-weekly CVE sweep (`infra-image-scan.yml`, Friday plus Tuesday), 06:00
+  `devcontainer-image` (a heavy build with a 60-minute timeout), 07:00 the Renovate window, 10:00
+  `lockfile-refresh-check`, 11:00 `renovate-health`. A second image build used to sit at 05:00 —
+  `minio-image.yml`, for the from-source MinIO build — but feature 080 retired that build for the
+  upstream `rustfs/rustfs` object store and deleted the workflow, so 05:00 is now free. The
+  capacity-1 runner may also already be inside a ~35-minute `app-e2e`, which is why the ordering
+  rule budgets hours rather than minutes.
 - **The budget binds before the schedule.** `prHourlyLimit: 5` and `prConcurrentLimit: 6` in
   `renovate.json` (raised from `prHourlyLimit` 4 / `prConcurrentLimit` 5 on 2026-10-02, when the
   in-window budget grew to a fifth slot); the guard test requires `prConcurrentLimit` to stay above
@@ -432,7 +431,10 @@ None of these produce a red build or a searchable error. They produce absence, a
   customManager exists to feed it real data — the minio `MINIO_TAG`/`MC_TAG` case sat unbumped for a
   year with a green guard the whole time, because the guard asserted the rule's resolution, not whether
   Renovate had ever extracted the dependency. The fix is to read the Dependency Dashboard's *Detected
-  Dependencies* counts, not the config, and a guard needs to assert visibility, not configuration.
+  Dependencies* counts, not the config, and a guard needs to assert visibility, not configuration. That
+  case ended with feature 080, which retired the from-source build for the upstream `rustfs/rustfs`
+  object store — a digest-pinned Docker Hub pull in three compose files — and the guard now asserts that
+  every file pinning it is **extracted**, not merely that a rule names it.
 - **`cmd1 && cmd2` under `bash -e` hides the second command's failure-to-run (item #562).** A step body
   of two gate commands reports one outcome; if the first throws, `bash -e` never runs the second, and
   that looks identical to "both ran and found nothing." This hid an entire expiry-check tier for two

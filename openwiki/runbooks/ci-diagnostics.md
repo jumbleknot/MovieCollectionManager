@@ -21,6 +21,12 @@ sources:
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
   - id: openwiki-source-3adf769c2d4e02405ca6896b
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts
+  - id: openwiki-source-c138086948681bd36101354f
+    resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
+  - id: openwiki-source-fa3a87df52d837aa49b86894
+    resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
+  - id: openwiki-source-afea6a4b73f1abee8610bd58
+    resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
@@ -31,10 +37,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-17T03:12:52.160Z
 ---
 
 # CI self-serve diagnostics
@@ -151,7 +157,13 @@ skipped branch then splits three ways on the `needs:` graph.
   Successful in 28m40s` (ran), `failure :: Failing after 12m43s` (ran and failed). **An all-history
   failure percentage is NOT evidence about recent stability** — it spans months including
   known-broken periods and does not isolate the failure class in question. Use the right data, not
-  merely more of it.
+  merely more of it. **Membership in the script list follows one rule**, so a skip can be judged
+  rather than merely noticed: a script that DEPLOYS or CONFIGURES what the suite exercises belongs in
+  the filter; one that only REPORTS on the run (`ci-status`, `ci-failure-digest`, the e2e tallies,
+  `ci-log-step`) does not, because it cannot make the app wrong. Item #520 is the measured
+  counter-example that produced the rule — `scripts/agent-stack.mjs` changed how the gateway receives
+  its credentials, and `app-e2e`, the only job that would have proven the gateway still starts, was
+  skipped because nothing in the filter matched `scripts/**`.
 - **A ⏳ is not a future pass, and the filter — not the spinner — says whether a job will run.**
   `waiting` can still resolve to `skipped` (path-gated) or `superseded` (cancelled by a newer push);
   both are non-runs that a green board then presents as satisfied. Item 568 hit this twice in one
@@ -202,6 +214,18 @@ skipped branch then splits three ways on the `needs:` graph.
   tip …` and `nothing deployable changed since the last deploy` are `success` (correct non-deploys);
   a guardrails failure, an unfinished run, or no guardrails at all are `failure` and also red the
   job. **Read this status before concluding a deploy was lost.**
+  **The semantics are "the tip decides", not "tolerate cancelled".** The gate compares against the
+  *effective* tip — the newest commit on `main` that will actually run a workflow — and that
+  deliberately skips `[skip ci]` commits, because cd-deploy's own promotion commit is pushed with the
+  marker and would otherwise make the commit that legitimately owns the deploy look superseded. The
+  dispatch itself sends `{"ref":"main"}`, so cd-deploy builds whatever the tip is, not the sha whose
+  CI was just verified: dispatching from a superseded commit would deploy a tree nothing checked.
+  Order is also load-bearing — the tip question is answered *before* guardrails are read, since a
+  superseded commit's guardrails legitimately report `failure`, and reading them first is exactly the
+  wrong answer item #230 was filed for. `decide()` is a pure function so this can be tested without a
+  runner; `scripts/__tests__/cd-dispatch-gate.test.mjs` pins it against the incident's own payloads,
+  and `scripts/__tests__/app-ci-trigger-cd.guard.test.mjs` pins the workflow wiring (checkout with
+  `fetch-depth: 0` before the gate, dispatch conditional on the gate's `dispatch` output).
 - **The required-check list is fetched live from branch protection, never hand-maintained.** It
   previously drifted (a hardcoded array missed a check added by a later feature) and let the tool
   report "mergeable" for a PR the forge then rejected outright — measured 2026-07-26: `VERDICT
@@ -450,6 +474,7 @@ skipped branch then splits three ways on the `needs:` graph.
   up to a minute and floored at 300 s. `CI_STEP_TIMEOUT_SECONDS` survives as the backstop for
   uncalibrated steps (n < 10 or failure-path-only); a table miss never falls through to unbounded.
   See
+<!-- openwiki: broken internal link [../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-and-the-three-traps] heading anchor "recalibrating-and-the-three-traps" does not exist in "../../docs/runbooks/ci-evidence-pipeline.md". Fix the href or restore the target, then delete this comment. -->
   [the evidence-pipeline runbook's ceiling section](../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-and-the-three-traps)
   for the full arithmetic and guard details.
 - **Container-executor step logs are read in-job, before teardown — they do not need host

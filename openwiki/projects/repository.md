@@ -11,10 +11,14 @@ sources:
     resource: repo://.devcontainer/gen-container-secrets-env.sh
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-84525c5b1053cfa785b83c28
+    resource: repo://.devcontainer/verify/run-harness.sh
   - id: openwiki-source-4811c78aebdb18972e0c3805
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-81dfe425b1bf98f80dc07cd0
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-f83bd1373e0f000fa5d548c0

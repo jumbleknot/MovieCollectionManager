@@ -21,6 +21,8 @@ sources:
     resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-84525c5b1053cfa785b83c28
     resource: repo://.devcontainer/verify/run-harness.sh
+  - id: openwiki-source-7b223ba4df7203eeb5667fa8
+    resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-ff035ef3df6eca36fc791d1d

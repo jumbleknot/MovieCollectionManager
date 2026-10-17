@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e01f7ed9974e73ac615dfe42bc2423945e0bf327c68f296189999e673cc00a6f",
+  "pageVersion": "sha256:0a5befaa710dc2c9885fb1b5344d09c5e753b7e389f110b084611ad0fe6b4687",
   "claims": [
     {
       "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
@@ -18,11 +18,15 @@
     },
     {
       "id": "claim_cf57dbbadb954900995f9aa8e5c03ad4",
-      "statement": "Which model writes the bundle is configuration rather than code: `scripts/wiki-provider.mjs` is the single table resolved in one pure place from `MCM_WIKI_PROVIDER`, with `anthropic`/`claude-sonnet-5` as the local default (unset) and `fireworks`/`accounts/fireworks/models/deepseek-v4p1-flash` as the CI default at page concurrency 4; any malformed value throws (exit 2) and is never read as a default, while an empty value counts as unset. The service tier, the reasoning effort and the per-turn output cap are properties of the provider row, so setting one on a provider that does not take it is an error rather than something quietly ignored, while page concurrency is validated against one 1-8 bound for every provider alike.",
+      "statement": "Which model writes the bundle is configuration rather than code: `scripts/wiki-provider.mjs` is the single table resolved in one pure place from `MCM_WIKI_PROVIDER`, with `anthropic`/`claude-sonnet-5` as the local default (unset) and `fireworks`/`accounts/fireworks/models/deepseek-v4p1-flash` as the CI default at page concurrency 4; any malformed value throws (exit 2) and is never read as a default, while an empty value counts as unset. The service tier and the reasoning effort are declared per provider row, so setting one on a provider that does not take it is an error rather than something quietly ignored, while page concurrency is validated against one 1-8 bound for every provider alike. The per-turn output cap is the same idea in the other direction: not an operator variable but a property of the row, which may only ever raise the target's 16384 floor (65536 on the Fireworks row, no raise on Anthropic).",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/wiki-maintain.yml",
-          "version": "repo-file-v1:sha256:4af854a7a15b2717d09c9c33352dfebe2f388d47438d4b7b2c6faab1c9d0bde9"
+          "version": "repo-file-v1:sha256:74d94927545e72667c5d0b6ffb7b4385ee179bdcffead71570dadd6467908680"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
         },
         {
           "resource": "repo://scripts/wiki-provider.mjs",
@@ -86,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/wiki-maintain.yml",
-          "version": "repo-file-v1:sha256:4af854a7a15b2717d09c9c33352dfebe2f388d47438d4b7b2c6faab1c9d0bde9"
+          "version": "repo-file-v1:sha256:74d94927545e72667c5d0b6ffb7b4385ee179bdcffead71570dadd6467908680"
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
@@ -118,7 +122,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/wiki-maintain.yml",
-          "version": "repo-file-v1:sha256:4af854a7a15b2717d09c9c33352dfebe2f388d47438d4b7b2c6faab1c9d0bde9"
+          "version": "repo-file-v1:sha256:74d94927545e72667c5d0b6ffb7b4385ee179bdcffead71570dadd6467908680"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-provider.test.mjs",
@@ -962,7 +966,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/wiki-maintain.yml",
-          "version": "repo-file-v1:sha256:4af854a7a15b2717d09c9c33352dfebe2f388d47438d4b7b2c6faab1c9d0bde9"
+          "version": "repo-file-v1:sha256:74d94927545e72667c5d0b6ffb7b4385ee179bdcffead71570dadd6467908680"
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
@@ -1172,7 +1176,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/wiki-maintain.yml",
-          "version": "repo-file-v1:sha256:4af854a7a15b2717d09c9c33352dfebe2f388d47438d4b7b2c6faab1c9d0bde9"
+          "version": "repo-file-v1:sha256:74d94927545e72667c5d0b6ffb7b4385ee179bdcffead71570dadd6467908680"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -1205,6 +1209,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T01:57:21.062Z"
+    "at": "2026-10-17T03:12:52.160Z"
   }
 }

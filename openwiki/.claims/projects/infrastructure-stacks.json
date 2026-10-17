@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:87d746e8e1042628e832ac9c20131d170c581afd9828eeb729d50437bdcbfbd3",
+  "pageVersion": "sha256:e4c2005fbb5d25955a255f5d54bb0ed6cc908c9b17d11c298dd4e14ee9d58fca",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -120,7 +120,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:db92c4aefc8aac2c25146191c635e09c7b6be550ec2b8f6838b256c90be3adde"
+          "version": "repo-file-v1:sha256:b6d6b673591e1b0d44f37ee56ca13bee9d885af1c7cbec248293728cb47f5ede"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -240,7 +240,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md",
-          "version": "repo-file-v1:sha256:f52dc4c92482d5941d206f2eed10cc41b9fdaacef6f2db21ef0339b1322ab5c3"
+          "version": "repo-file-v1:sha256:f8d3bec1fb1c417feb70cbd75d65db8e7143bf34b34bcb80d7bcdb143a95c591"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/auth.compose.yaml#L14-L21",
@@ -535,10 +535,32 @@
           "version": "repo-lines-v1:sha256:5881b07e0df73461661bb5262d90e505b320a24f12066c49a8ea50fdaa53ca0c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI1Y2ZlMmFhNmNkOTc4OTgxMmRlMzM4ODUyNTU3ZDNjMmEzNTdlOTRlZGUxNWRiYjNlMTJlOGM0MDAxYTI0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE4MGE4M2VhZjk3YjMzODgxNmJmOWE2ZDllMDgzYzhmMDIzNmQ2ZTBhZTRlYzY4YzZhZWQ3OTEzN2U1MDBmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE0NWVmM2VkMWI1ODdiZTY0MzcxMDI3YTlhOWU3YTE5NGY0MDljZjZiZTg0YjE0NDJmOTIwODQxZDU4Y2RmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1MmJkYzI3MDZlOTZhODg3MjY5ZWNhY2JkYTAwNTcwM2NmZDhlMTk5Yjg1ODE3ZWI5NzY4YjFiMTA5YzM0MyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_dfdab1484bfa4050a3edb0909d2d8d98",
+      "statement": "The tracked digest-by-git promotion files are distributed and kept tracked by name: cd-deploy's ENV_DEPLOY_PATHS names exactly three run directories (infrastructure-as-code/docker/bff, mc-service, agents), the promotion step copies the same generated VAR=<bare sha256> block into each so every Komodo Stack reads a local .env.deploy instead of a relative path, and .gitignore keeps those files tracked via an !infrastructure-as-code/docker/**/.env.deploy carve-out beside the *.env / *.env.* ignore rule because the file carries digests only, no host or secret.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L63-L67",
+          "version": "repo-lines-v1:sha256:0616cf877fa824e03e23cb310b484a0cac28eb1eade313eda5bae57d0e6ac836:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmYWNhYTkyMjA1MmFjZWE0ZTc5NzljMGI2MzNlNzE0ZDk5ZGQ0YTE2ODg0ZTVlOWM1ZmIxZjYxZDkwNTY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFiY2NjYjBmZWYzOWI1N2NhMWEzYmQ0ZWJjM2M3YzFlMTMyYjgyN2QwYjA4ODEyM2RiYTUxYzM4YTllOTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FkNDZhZDBjMGYwZGQyZDg5ZDUyYWM3MzFhNTUwZTU0YmNkNWYxY2NmZWE2NGIyMTFiN2ViYmQ3YjQ4MTM3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE0MGM3YWFiNWFkNzc1OTE2NjAxZWU0OTUyMGFiMDA3YmY0NzMzY2I3NTNlZTlmNTE3Nzg4MWFiNzc4NGZmMiJ9"
+        },
+        {
+          "resource": "repo://.gitignore#L35-L39",
+          "version": "repo-lines-v1:sha256:0fd456005a758d56bd461a5823fe947e3c89148fd2033b450d82e92ce3f8f87d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM1YWFhMGVkYmJkOWI0NzgwNTk0OGM2MDJmYjdkYmU1ZTMxYzcxNjZmNDJiMTU4OTE4MzUwNzcwMGJhOTg2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJmYTA3MGQxN2E3NDUyNzJjM2Q2MzdkZDk0OWYxNzQ2Y2E1ZDRiOTNmYzA5OWNiN2FjOTc0MzMyNTU1NDk1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjk4MjIxNWRhZDU5Y2Y0MDkwMzIyMzgyYzI5MTU0OGRjYzJkYmZmMDA5NmU2ZTAwZjk3MjY3NjE1NTdlODYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI4Yjc1MTgzYmRiZTZiOGNhY2I4NDRiMmMyNWU2YWNkN2YwZTA1N2RkNTQ2MmNkZjU5NTRjOGJiZmExMWNjOSJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/promote-digest.sh#L8-L11",
+          "version": "repo-lines-v1:sha256:66b2f13e3b5b6fc07eeda42543e34e1cbea836e603481c31451d3ecb2cccbd23:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTkzNTE2OTJiNGY4ZDMwYTdlNmY3NWFjMjE0YjFkYTNiNjc2YjMyZDY4OTI1MjljYzA0YWYxYjcwZTJmYmE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExN2ZhMDA2YmE5MjA4NTAwYjI5MzBjZTY5Y2JkZTQzNmM2NDdhZmE5MTdjYjczOTZhOWJjOTExMWE0NmRkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQwYTI3OTljZTZlMmVmYjY2ZTcwMDYwYmIzYjIwMjBiZmMzNzc4NjFlYWZiYjAzMGRkNGU4MTU0OTVkNTI5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBlNjBkMWU4NmI2NzY1ZDQyM2IzZTAxNTZjOGRkMDdmMjBlNmFjYjc3YTBkMTYwOWQwNGJiMGYyOWJjYTExMCJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/scan-push.sh#L69-L91",
+          "version": "repo-lines-v1:sha256:06bb9fdc35aa0708a013f087c47405036ed33a6ad522fb4d3bb0033e2c20d2e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDc4MTM4OGQ0NzEzYmNjOWQ2NzgzY2VmZjkxN2QwY2M5ZDQ1NTc2ZDEzNzBhNDUyMWNhODQ2NTQ0ODVmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzVhODNiYmE4OWNjMmI3OThiNGYzNThhODFiMDM0YTEwZjBmYWQwNDk4ZTU3OWU1ZDIxY2JjYjZlMWI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2U0NDYxYTRmZWE0NGY3MzFjOGZmYjk5NDUzZjE0YWU0MDYzZjI1ZDJlMGE4M2U3ZDhkMmZjMGUzN2U3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGU2ZmFlNWUwY2Y1ODJjYmYzZmY1MjU5ZjU5ZjA3MmZkZTA5MzBlYjg4MjAxMmExZWZhY2NmYjdiN2VmNzAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-17T03:12:52.160Z"
   }
 }

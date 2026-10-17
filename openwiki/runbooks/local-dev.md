@@ -17,6 +17,8 @@ sources:
     resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
+    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
     resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-16f23fb13b0e88082b534458
@@ -31,10 +33,6 @@ sources:
     resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
-  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
-    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-d951526f31e9f2cb4d68995b
@@ -47,6 +45,8 @@ sources:
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
     resource: repo://scripts/check-no-inline-secrets.mjs
+  - id: openwiki-source-6f10e821d1ec074deb438a3e
+    resource: repo://scripts/check-topology-scrub.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612

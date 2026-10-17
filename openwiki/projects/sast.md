@@ -13,8 +13,6 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-9ccd48df872db70bfebbfa90
-    resource: repo://infrastructure-as-code/docker/minio/Dockerfile
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
@@ -53,6 +51,10 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-8462fd09d611de231506af9b
     resource: repo://security/sast/severity-map.yaml
+  - id: openwiki-source-4256f85b16adb450a2d592c1
+    resource: repo://specs/080-minio-to-rustfs/plan.md
+  - id: openwiki-source-648eaf5879418af1871aac66
+    resource: repo://specs/080-minio-to-rustfs/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
