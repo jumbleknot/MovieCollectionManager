@@ -459,6 +459,7 @@ FodyWeavers.xsd
 .nx/installation
 .nx/cache
 .nx/workspace-data
+.nx/migrate-runs
 
 # pnpm project-local content-addressed store. pnpm creates this at the project root when the
 # global store (~/.local/share/pnpm on C:) is on a different drive than the project (E:) — hard
