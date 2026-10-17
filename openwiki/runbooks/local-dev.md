@@ -58,7 +58,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T02:04:22.270Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -100,7 +100,8 @@ and the profile assignments live in the component compose files rather than in t
 | `observability` | nothing | every service (`observability`) |
 
 So `pnpm nx up-auth infrastructure-as-code` really does start Keycloak with no profile, while the
-`mcm` stack's default bring-up is its stores only — `app`, `bff-*` and `agents` are opt-in.
+`mcm` stack's *unprofiled* bring-up is its stores only — the `up-mcm` target adds `--profile app`
+for you, and `bff-*` and `agents` stay opt-in.
 
 ## One-time bootstrap (per machine)
 
@@ -114,8 +115,11 @@ So `pnpm nx up-auth infrastructure-as-code` really does start Keycloak with no p
    value. A `<generate:KIND>` key that exists but is **empty** (`KEY=`) is likewise minted in place — it
    holds no value, so filling it rotates nothing, whereas counting it as "present" was the silent skip of
    item #552 (the run says up to date, the suite that needs the value skips to green, and nothing names
-   why). A blank *fixture* key is left alone: the template may leave it blank on purpose (`REGISTRY_HOST`
-   is set per machine, and `check-topology-scrub.mjs` forbids a real host in a committed file). Each run
+   why). A blank *fixture* key is left alone — the generator has no value to give a key that is not a
+   `<generate:KIND>` placeholder. No live dev-stack template carries such a blank key any more: the
+   `REGISTRY_HOST=` that used to sit in `mcm.env.example` and `observability.env.example` left with
+   feature 080, when the object-store image became a public digest pull, so the rule survives only as a
+   synthetic template in the guard test. Each run
    names the keys it added or filled — **key names only, never values** — and warns that containers
    started before the run do not hold the new values, so they must be recreated and `gen-dev-env.mjs`
    re-run. Deterministic fixtures (`LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `..._SECRET_KEY`, the
@@ -205,10 +209,16 @@ carries no secret values on any path.
   binds and serves immediately. If discovery fails, `/health` still answers and **every protected
   request is rejected with 401**, so the symptom is a working-looking backend that refuses every
   login.
-- **A password-on-first-init credential (Postgres / OpenSearch / MinIO) is baked into its data volume
-  on first boot and ignores later env changes.** Rotating one for real requires regenerating the
-  `.env` (`--force`) *and* recreating the service against a fresh volume — otherwise the container
-  keeps the volume's original password and auth fails, with nothing pointing at the cause.
+- **A password-on-first-init credential (Postgres / OpenSearch) is baked into its data volume on
+  first boot and ignores later env changes.** Rotating one for real requires regenerating the `.env`
+  (`--force`) *and* recreating the service against a fresh volume — otherwise the container keeps the
+  volume's original password and auth fails, with nothing pointing at the cause. Redis / Unleash-token
+  / app-secret values have no such persistence and rotate on a plain restart, and **RustFS is in that
+  second group rather than the first** (feature 080): it does not bake its key pair into the drive, so
+  rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus
+  recreating the RustFS service **and its bucket-init one-shot** (which passes the same pair to `curl`)
+  — no volume is touched. That is a measured property, not an assumption: starting RustFS on a migrated
+  drive with a different pair was readable by the new pair and not the old.
 - **`docker compose down --volumes` only wipes transient volumes.** Every persistent data volume is
   declared `external: true` with an explicit name in its own service compose file (so the stack's
   `include:` merge does not prefix it with the project name) and therefore survives. Wiping real data
@@ -221,9 +231,13 @@ carries no secret values on any path.
   included file at *parse* time, regardless of which profiles are selected, so a `${REGISTRY_HOST:?}`
   inside a profile-gated service aborted `up` for the **whole** mcm stack. That is why the backup
   destinations live in a separate `infrastructure-as-code/docker/backups/compose.yaml` brought up
-  explicitly, and why `REGISTRY_HOST` is deliberately blank in the templates — left blank the
-  Compose reference fails loudly naming the variable instead of silently resolving to an invalid
-  image ref, and `check-topology-scrub.mjs` forbids a real host in a committed file.
+  explicitly, and it is why the stack file carries the incident in a comment rather than re-declaring
+  a profile. `REGISTRY_HOST` no longer appears in any dev-stack template — feature 080 replaced the
+  from-source object-store image with upstream `rustfs/rustfs` pulled by digest, so neither the
+  observability object store nor the backup S3 destination interpolates a host at all; in production
+  the same name is a per-stack Komodo variable, and `check-topology-scrub.mjs` forbids a real forge or
+  tailnet host in a committed file. The *rule* that a deliberately blank fixture key is not a gap the
+  generator can fill is still pinned, but only against a synthetic template.
 - **The two BFF processes share one Mongo, so their keys must agree.** `BACKUP_CREDENTIAL_ENC_KEY`
   and `BACKUP_TICK_SECRET` are reused from `.env.docker` first and `.env.local` second, because the
   containerized BFF and the Metro dev loop write to the same BFF Mongo — a destination or credential
@@ -329,7 +343,8 @@ reported with the back-fill command while printing no value. `scripts/__tests__/
 pins the item #552 completion rule from the other side: an existing `mcm.env` missing the four
 `BACKUP_TEST_*` keys gets all four seeded while prior values stay byte-for-byte, an empty
 `<generate:KIND>` key is filled **in place** (one occurrence, not a duplicate), a template-blank
-fixture (`REGISTRY_HOST`) is not treated as missing, and no fixture or minted value is ever printed.
+fixture key (its synthetic `REGISTRY_HOST=`, standing in for a per-machine value) is not treated as
+missing, and no fixture or minted value is ever printed.
 Both guards run the real script inside a throwaway mini-repo, so they are offline and keyless.
 
 See [testing tiers](../invariants/testing-tiers.md) for how these local suites relate to the gating

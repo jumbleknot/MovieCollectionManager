@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:41ed437d8936998579a2e7de71d7c3ab1e2993422013d6ce5ae50b81556b5ffa",
+  "pageVersion": "sha256:7af713fd0b307f6e01f007df37d1e60e4ebeea9bdefbf931b790e2a7122670d0",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -122,15 +122,19 @@
     },
     {
       "id": "claim_2724caf2623d4dd985dafb15d2818b93",
-      "statement": "Feature 073's backup destination containers (the S3-compatible and WebDAV targets the integration tier tests against) live in their own compose file rather than a profile inside the `mcm` stack, because Docker Compose interpolates every service in an included file at parse time regardless of which profiles are selected — a `${REGISTRY_HOST:?}` in a profile-gated service aborted `up` for the whole `mcm` stack, including CI's app-e2e bring-up which sets no registry host. A profile is therefore not isolation from interpolation.",
+      "statement": "Feature 073's backup destination containers live in their own compose file (`infrastructure-as-code/docker/backups/compose.yaml`) rather than a profile inside the `mcm` stack, because the `mcm` stack is one Compose project whose `include:` pulls in every component file and Compose interpolates every service of an included file at parse time regardless of which profiles are selected — so a required `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole stack, including CI's app-e2e bring-up which wants none of those services. Feature 080 removed the offending from-source object-store image (the S3 oracle is now upstream RustFS pinned by digest), so the variable is gone and CI's bring-up step passes no registry input, but the separate file remains because a profile is not isolation from interpolation.",
       "evidence": [
         {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L691-L699",
+          "version": "repo-lines-v1:sha256:fd7a0c9dee943bac2239db249fd587f8e2de59ca47b2e5a7210db7140c8aa586:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMxMmIxMGM1ODE3NGViNGU2NWY3MzYyNmI5YzA0OTc1YWJiMDIyZTlhMWNiYTQ2ZGEyNzc1ZDk5MWVlNGIwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MTZjMzk5MDI5ZDJiM2FlMWJmYTA0ZGVmODNlOTEyMjg0MWEzYTcyM2E1YzIyY2RmZGFjNzk1MTk4NzA1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE3NTc1ZDYzNjg1ZjZmOTBhNzUwOTQwNTA0YzUwOGIwODdlMmRhYjE4M2YxZDVmMmFlMTQyMWRjN2JjNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFlMjU0YjI1MDIwZDQ2M2Y5NjZhMjI5NTI3MGFmODE5M2U1YzgzMGQ1NzFhNWFmMWJiZDY4ODkzYmE3N2YwNiJ9"
+        },
+        {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L9-L16",
-          "version": "repo-lines-v1:sha256:5b6109dcd2ab75f94fb629115ebbf1074227f78ab395b735cd06f6bc3b12c5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1Nzg0ZjRhYTA2Yzk5NmNmYWZkMDUwNjFjMzliMzEwMzFiYWIwZjRhZTBlYzhkMGM1OWMzZjdjOWZiMjliMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjMmZkNDhiZDJhYjA1ZGViYzk5MzNkOTM0MWRmODc4ZDRiNjM0ZmI5NDJmZTIxNmVkMzQxYjZkZmZlMmI5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1Y2MzNzEzN2U2NDU3NmQ3NWNjZTA5ZDgzYTBlYTI5ZTBjZDNjOWZlMTllZjhiN2U1YTAzZWMzYmI0YjRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZkMmZlYzlhNDhiODMzYmZmNTdiZWVlNTdiNGIwYWEzODcxZTA2ZTgzMmQyZTdiOGJiZGUzY2YyOTM2YzcxMyJ9"
+          "version": "repo-lines-v1:sha256:a8884519cc678ba7a2ee6b88264492a64b561cd47cd585e3ae216631ca7207fc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1Nzg0ZjRhYTA2Yzk5NmNmYWZkMDUwNjFjMzliMzEwMzFiYWIwZjRhZTBlYzhkMGM1OWMzZjdjOWZiMjliMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjMmZkNDhiZDJhYjA1ZGViYzk5MzNkOTM0MWRmODc4ZDRiNjM0ZmI5NDJmZTIxNmVkMzQxYjZkZmZlMmI5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1Y2MzNzEzN2U2NDU3NmQ3NWNjZTA5ZDgzYTBlYTI5ZTBjZDNjOWZlMTllZjhiN2U1YTAzZWMzYmI0YjRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZkMmZlYzlhNDhiODMzYmZmNTdiZWVlNTdiNGIwYWEzODcxZTA2ZTgzMmQyZTdiOGJiZGUzY2YyOTM2YzcxMyJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L23",
-          "version": "repo-lines-v1:sha256:5a67a2963fda7eb865b166f98e76de1b9785de685ccabfa16e4422fb0a55bbaa:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjNDg1OGUyMmNjMmM5NjdiNDIxNTBmYTU1MDU2MmEyYzgzOWMyY2ViY2FhYjkxY2FiZGY2ZjRkYTAyMDAyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCJ9"
+          "version": "repo-lines-v1:sha256:b1769bcf27bff6489fc20c04f529b6c68a2ced8717a6613548bd44f680eba11e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZkNzYwZDNjYTZlMDk3NjZjNjlhMjYyZjY0ZGI3MmQ0ODJjNzUwMzc4NzZjODBjMjMyNzQyYjBiZWY0ZDg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNzFlYTBmNjczNWZjNjUzYWNhZmM2MmJjOGZjMTUxMmNkMzhmZGQ0MzdiYjNmYzhkYWU1NTgyM2VhYmY4MyJ9"
         }
       ]
     },
@@ -165,10 +169,68 @@
           "version": "repo-lines-v1:sha256:23b5fb806a7e1e2dc49352b4b595ac3a09fc4e2770dad532e3df93ebe8ab3cd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMTM2ZTNiMDJjMWRjMzdiOGMyMTJkNjQxYzAxNDlhNjQ4YjcwNDE4NGE1NGE0NzcyZmVkMTdjYjMxYmVhMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZDkzODY5MjU2NGM3NWUxOTcxMTcwMTAzZTA0YWQzN2ZkMDdiM2Q5N2Q4OGYwODAxZWZlZDQ3NTlkMjZmMWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9330e8cd5e3e48998818659c39fff009",
+      "statement": "The backup-destinations compose file is standalone: it attaches to the `mcm` stack's `mcm-bff-network` as an `external` network (so `up` fails when the `mcm` stack is not already running, which is the correct answer since the BFF is what writes there), and because it is a separate file in the same Compose project the stack's own `down` does not reach it — teardown requires a second `docker compose -f infrastructure-as-code/docker/backups/compose.yaml down`, or the persistent CI runner silently reuses the previous run's destinations.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1376-L1384",
+          "version": "repo-lines-v1:sha256:1a559e893f61f3704e3974dc518c681cd41bcff6b8b9d336e0cf0cda04ed597b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTUwOWU3MzdhZmY0OGI0NjliODExYzg0YjM0YTk5MzRhYWJkM2VkOGZjM2UwMmZiNDI5YjBlYzE0NjJkYmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIwZDdmMTc5NTAxMGY4OTUzMjQxYmY0OWYxMDE1NTE2YWZkZWVlN2Q3ZjljZmE3Njk1Yjk0NDQwZjI5NjUwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ0ODhjZTJjZGM5OTBkMmU0OGJmMWU1OGY2Nzg2MzI5Yjc4MDZjMmM0ZjYxZmU2NDU1NTMwNjI0OGEyNjg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNWVhMjU0NjBmM2NhNTZhMjQ4OGFhMTVhMTE3ZThhNGZiNTJlNGIyNzUwNDkzYjZiODQzZWZmOGZkZGI5MCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L245-L257",
+          "version": "repo-lines-v1:sha256:f5fa5961eb8f4332c6b4403823ef3bf8ddec1ba8488521a0cf8036b9d64a0276:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDFiNmJlZTIwZjExMjZmYTM1ZjRhZWIyMjZkMjljYTBjYTE3Y2EzMmIyZjgxYzBkZTgzZDJhYWUxMjE0MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c8b739140a3495fa0c465b9dc800f8c",
+      "statement": "Both backup destination servers bind only to `127.0.0.1`, and they are reachable by the BFF in dev/CI only because the environment generators seed their hostnames into `BACKUP_ALLOWED_DESTINATION_HOSTS` — the BFF's backup-destination URL guard denies loopback/private/link-local space by default (the inverse of the Ollama guard, which expects a LAN endpoint), so an allow-list entry is the guard working rather than a misconfiguration to route around.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L60-L130",
+          "version": "repo-lines-v1:sha256:c173e9dcdc06d2b7e685d679d26841566ab48d633243a3f548a2f5128f25c0d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZmNhN2I5NjA5ZDVmZDZmODlkZjUwYjQ5ZjVjYjUzZTRiNTE0ZDgyYWE1OWJkODI0ZWEyMDZmNzY1YmQxZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDBhZDZiYTA0ZDJmMjg4NmYzYjU5ZjM0ZjExMmJkMmVmZDg2M2NjNDk3ODA1ZDNjMDlkNzYxN2E4NGIzZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0MDI4YWFjZmQ0YTIwYTgwMDQ5N2ZmMWRhZTQwMDE2ZTY5YmY2MGMwNWE0MTljMTgzMTVjY2I0ZDRkYmUxYzkifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L18-L24",
+          "version": "repo-lines-v1:sha256:c0c550c1a003441717eea2af9cc215dd0e52a796480974caccd852ed4680679e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmYjJkZDRlNWNlYmE4NDg3MWVmZGE2Y2I5YTRkYjk2ZmQwYjcwNmFhNWYyYTU5MDU5NjU0NjU5NTg3MTA4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE0Yzc4MWJjZDMzMzRhYjZlNzY0NzE5NGYwYWJhODQ0OWFmNDlhMWU4ZTcyYjRjYTFjMDc3ZWY2MGM2MDEwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNmZGNjYTIxNjNhYjE4OGJiMjAyYTM1MmFmN2QyZTY4ZmU3YmIyZWE5OGVlZTc3NTIwNzg4ZDJjMzczNDE0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJmMjdmYTVjZGQ4YzBjZGI5NzEzMDdmYTk2YWYwMTVjOTJjMDVjZDU5MWUyMzVjYTM1YjBmMWIzNjQwMmJiNyJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-ci-env.mjs#L68-L68",
+          "version": "repo-lines-v1:sha256:1d2831f76ec286a3d547101b46adcc1e6ac218e69287c3eff2c70f8d129a7ef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQyODMxZjc2ZWMyODZhM2Q1NDcxMDFiNDZhZGNjMWU2YWMyMThlNjkyODdjM2VmZjJjNzBmOGQxMjlhN2VmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQyODMxZjc2ZWMyODZhM2Q1NDcxMDFiNDZhZGNjMWU2YWMyMThlNjkyODdjM2VmZjJjNzBmOGQxMjlhN2VmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I2NjE5NmNiMzgxNDYxNTVhYWZkZDI0ZjUzODdmZGRiZDk5MjMzODI3OWVjNWZkY2JmZTBkNzVhNDZhMzA2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM3NjE5MTM1NzIzOGRmMDZiY2FhNTFiMGU3ZjBmYTQwYWRkNzc4N2UwNmM5ZmUwZjRkYTE3OWNiYmVkZDlmZiJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L173-L184",
+          "version": "repo-lines-v1:sha256:47aa8c402dd3ea6eb5e0bed66667907fa855eb7cd4eab34daaa4f19be5c89646:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmIxOTU5YmZjZjA4NzAwNGJiNzVmNzY2YTU2MjgzMDM2YTZlMmQxZjI2ZjcwYjhlZjgzNjYxNmJkOWY2MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjOWZkMzFiNTU3ZmIzZjA0MzI1MmNjMzkwYzQwZTVjODM3N2E1NTJjZGEzMWRiNjg3YzMyMzFkM2NlN2I1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMTg3ZWRmYWMxOGNlNjY0ZWJiOTFjMWZiMzFiY2ViOGIzYjU1MTA1NDk1ZjhlOGQzZmJmNjg3YzlkZTM3OGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0505072f83746a2af0a0c2b66479c86",
+      "statement": "The feature-073 backup destinations are REAL servers rather than hand-written fixtures — an S3-compatible object store (upstream RustFS, pulled by digest) and Apache httpd serving WebDAV via `mod_dav` — because the S3 and WebDAV drivers are tested in the integration tier precisely so the dialect they are tested against is a real server's; the driver suites set `MCM_REQUIRE_LIVE_STACK=1` (with `MCM_REQUIRE_BACKUP_TARGETS=1`) so that a credential- or connectivity-driven skip fails instead of reading as a pass.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L150-L164",
+          "version": "repo-lines-v1:sha256:7488caf2cc57b3b17130f5f9c7fd8df49e496f43797fde693c299973c0721574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzIwYjcxMTI4NzZiZmMxMmY2MmI0OTg2Mzc3ZmU3ZTk4ODU2YmI2MWQ3YmQ4ODU2ZWU1YTg0YjdkNTdkNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDI3YWJkMDYzMmQxOThhZjBhMTM3MjlkNTZhZjY4NjI3NDhjYTgyNjEzMzRjZWZhY2E5NzJlOWJjZTJlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNzhkZDQ4Y2RmMzI5MTU3ZDIwNzAzNmYzMzlkY2FmMDdlODBlYWRmYjMzNzg2NTU1YjU2MmMxMjFlZGMzZjIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L1-L7",
+          "version": "repo-lines-v1:sha256:639db7e6a9b4449b74e02b95f0c1bf497e26c25c8b5d3d7b62cfbd94fa9ded7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ5OTNjMTUzZTUyYmIwZDBjZTM4ZTY1ZWYzNWEyY2I5ZjU5MTcyODRkMzI5ZGRmNWFhZWQ2YTA1MDg5NGU2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ2ZjY0YjJkY2JlNTBmYzc4NzZlM2NlMTAwN2QxZWYzZjljYmQzNTY4NjNlZWZkOGI1NTU4MGRhYmEwZWJkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTVkNjcxMzQxMjM1YjZhZDM5YWU0ZTZhZWUwYTE4YTM4MzAyYjhiZmE2YWVmZTg3YjUzYzdiNTJkZDE4MTllNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L102-L115",
+          "version": "repo-lines-v1:sha256:6ffdb6b8d5bb0b030ed9f96603d030103b383876f5ab6da52eb8447fce839732:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMDE5ODg1YjZlMGJlOGE3NzJkMzhjZWU1YWY0MWZkNzlkZjRlYWU5YmU5NDQwZGM1NzQ1N2NhNjRkOTYyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZjQzZTU1ZDg5ZWUzNDViZWNjZjEyMjJhZDg2Y2RjNmFlODUxN2M2Y2Y2YTQ0NDBjMDQwZjQ3ZGFmZWQ4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjMmNkZTgzN2QzNGFmMjBjMjY5ZjhiNzk5MmU1ZTI4Y2I2NWM4YzQ4MTFlN2E4NDQxOTllNzc3Zjg2ODczMzUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L34-L35",
+          "version": "repo-lines-v1:sha256:bea9274a052b54c71070aa82023f02bc26211cfa1d6359080d560fbd10aa7640:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdlODY4NTA0ZTJlY2FkOGY4MGMzNTYyNWY3ODE4MmQwNmIwMzQwNDc2YTFkZDA0OTgwZGVkMmNiMGM0YTc2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU0YjBhZTlmZDAyYzJjNmI4OTBjM2ViYWIyNzJkZGJjM2UzODhjZmZhMzRlMDM4MzAwOTA1OTUyNzhhNTJhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE0YWMwMjBlYjhiMGZkYWNjMmMzMmNjNzM1M2FiN2I5MmQwMWZjYWY0NmRmYzdkOTY5Y2MzZDAzMjlhN2FiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWRlNzhkYmU5NzBmMjczY2IxYzJkOTYxZTlhNTRlZmIxMjczYjhlNzIzYTNlN2JiZjVkZmMxYjg4YmM0ZmU2NiJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T03:23:45.685Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-16T13:30:11.885Z"
   }
 }

@@ -1,12 +1,9 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the mandatory pre-work gates (credential rule, SDD gate, worktree rule, PR-head rule), and the load-bearing gotchas that cost a session when missed.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
@@ -35,6 +32,9 @@ sources:
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T13:30:11.885Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -62,12 +62,16 @@ For the full description, architecture diagram, feature list, and tech stack tab
 ├── api-specs/                 # OpenAPI 3.0.3 contracts (API-first)
 ├── infrastructure-as-code/    # Docker Compose stacks, Keycloak, Vault, observability, Komodo
 ├── specs/                     # Spec Kit feature folders (spec/plan/tasks per feature)
-├── docs/                      # Architecture, PRDs, runbooks, decisions (human-owned)
-├── openwiki/                  # Generated OKF knowledge wiki (summaries + gotchas + links)
+├── docs/                      # Architecture, PRDs, runbooks, decisions, templates (human-owned)
+├── openwiki/                  # Generated OKF knowledge wiki for coding agents (summaries + gotchas + links)
 ├── scripts/                   # CI gates and dev utilities
 ├── security/                  # SAST, DAST, and image-scan configuration
 └── .forgejo/workflows/        # CI/CD pipelines
 ```
+
+The portable dev-environment asset is `.devcontainer/` — the two `devcontainer.json` variants, the
+`toolchain.Dockerfile` that builds the pre-provisioned image, the canonical egress allowlist and its
+generator, and the `verify/` harness described below.
 
 All tasks run through [Nx as the universal task runner](../invariants/nx-task-runner.md) — never
 npm/yarn, and never the underlying tools directly (`pnpm nx test mcm-app`, `pnpm nx lint
@@ -76,6 +80,17 @@ mc-service`, `pnpm nx run-many --targets=test,lint`).
 ---
 
 ## Dev environment — two options
+
+Whichever path is used, local service bring-up is the same: `pnpm nx up-auth infrastructure-as-code`
+first (Keycloak + Postgres), optionally `pnpm nx up-mcm infrastructure-as-code`, then
+`cd frontend/mcm-app && pnpm start`. Stack profiles and endpoints:
+[docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md).
+
+Each path has **its own config file**: `.devcontainer/devcontainer.json` for Docker Desktop and
+`.devcontainer/sandbox/devcontainer.json` for the sandbox. They are **duplicates, not an
+extension** — the sandbox variant carries its own `containerEnv`, `runArgs` and `onCreateCommand` —
+so a change made only to the Docker Desktop file is real, committed, and **inert** on the path in
+daily use. Edit both until FR-032 collapses them.
 
 ### Primary: Docker Sandbox microVM (feature 060)
 
@@ -112,6 +127,14 @@ means the same section in either file:
   ritual. It was split out of the main runbook on 2026-10-10 (item #682) so each source stays small
   enough for the wiki generator; the section numbers are unchanged.
 
+Verification is a script, not a judgement: `.devcontainer/verify/run-harness.sh` enumerates **twelve
+scripts by name** across three vantage points (in-container, VM-side, host-side), counts anything
+that produces no explicit pass as a failure, and refuses to report the host-side engine-seam check
+without `MCM_HOST_CHECK` — a claim asserted only from inside the thing being claimed about is not
+proof. It is **not read-only**: the last check, `verify-reproducible-recreate.sh`, removes the dev
+container *and its derived image* by design, so a FAIL there means the container is gone right now,
+not that some future recreate would fail. Details: lifecycle §10.
+
 `sbx` itself is pinned at **v0.47.0** (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from
 v0.43.0 on 2026-10-08 (`winget upgrade Docker.sbx`, after `sbx daemon stop`). It is load-bearing for
 isolation and egress enforcement, so upgrading it is a **security-relevant change**, not a routine
@@ -126,10 +149,10 @@ The v0.44–v0.47 release-note items that touch this environment are narrow and 
 `--force`; egress got **stricter** across v0.45.0–v0.47.0 (DNS is refused when no rule permits it,
 PTR lookups only for already-authorized IPs, policy-evaluation failures fail **closed**, and raw TCP
 to a denied hostname is no longer let through by an allow rule for its resolved IP); and `sbx create`
-still has **no `--disk` flag** on v0.47.0, so disk sizes remain creation-time environment variables.
-The verified 2026-10-08 upgrade ran the harness to **12/12 PASS** (including
-`reproducible-recreate`), G5 PASS, `--audit-check` PASS with all 50 canonical destinations live, and
-the volumes confirmed at 150 GB / 40 GB from the host.
+still has **no `--disk` flag** on v0.47.0, so disk sizes remain creation-time environment variables
+(lifecycle §8 — currently Docker 150 GB, root 40 GB). The verified 2026-10-08 upgrade ran the
+harness to **12/12 PASS** (including `reproducible-recreate`), G5 PASS, `--audit-check` PASS with all
+50 canonical destinations live, and the volumes confirmed at 150 GB / 40 GB from the host.
 
 ### Retained: Docker Desktop / Docker-in-Docker
 
@@ -160,7 +183,9 @@ retained Docker Desktop container) rather than failing silently or looking like 
 
 These gates apply before any implementation or assistant session. They are in `CLAUDE.md` (the
 index) in priority order because they have each cost a session or produced a hard-to-diagnose
-failure.
+failure. `CLAUDE.md` is an **index, not a document** — `check-openwiki-governance.mjs` fails on prose
+beyond the index and its three managed regions — and it pulls in `AGENTS.md`, which carries the
+OpenWiki block plus the hand-authored, regeneration-surviving wiki notes.
 
 ### 1 — Credential rule: never set `ANTHROPIC_API_KEY`
 
@@ -218,6 +243,22 @@ A PR's head MUST be a real branch (`git push origin HEAD:<branch>`, then POST vi
 is empty, and Nx reports `Misconfigured remote cache endpoint`. This cost two sessions a day on
 #126. See [docs/runbooks/ci-diagnostics.md](../../docs/runbooks/ci-diagnostics.md).
 
+### The rest of the gate list is owned elsewhere
+
+The four above are the ones detailed here because they gate *starting* work. `CLAUDE.md`'s "Gates
+that run before you act" list is longer, and each remaining class is owned by the page that
+documents it — this is a pointer, not a restatement:
+
+- **Instrument-before-belief checks** — a tool's "no" is about the tool, not your question, and a
+  skipped test reads as a pass: [E2E testing](../runbooks/e2e-testing.md).
+- **The E2E gate / model-decision tier split** — `@gate` blocks a merge, `@model-decision` does not,
+  and an unclassified agent test fails rather than defaulting into a tier:
+  [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
+- **Renovate's silent channels** — a channel with a missing toolchain dies quietly, and the nightly
+  cron is not the Friday window: [Renovate](../runbooks/renovate.md).
+- **A whole CI board going red at once** — suspect the install before the code:
+  [CI self-serve diagnostics](../runbooks/ci-diagnostics.md).
+
 ---
 
 ## Gotchas
@@ -266,7 +307,8 @@ constant below that — there is no flag, variable, settings file, or daemon opt
 `scripts/open-sandbox.ps1` is immune because it treats the **exit code as a claim and SSH
 answering as evidence**, waiting up to a 120 s deadline. A bare `sbx run` still shows the false
 failure; when starting by hand, use the runbook's ~30 s grace window (`sbx exec mcm sh -c 'docker ps'`)
-or just run the launcher.
+or just run the launcher. Full mechanism:
+[docs/runbooks/devcontainer-sandbox-lifecycle.md §7f](../../docs/runbooks/devcontainer-sandbox-lifecycle.md).
 
 ### A template carries neither Docker images NOR the egress policy
 
@@ -279,6 +321,15 @@ profile — the forge is unreachable and the first `docker pull` is refused (pol
 instant, ~1 s; network faults time out — use that difference as a diagnostic clue, but note that
 an instant failure is not always a policy refusal). The recreate
 sequence is: instantiate → apply egress policy (from `gen-egress-policy.mjs`) → provision.
+
+**Two dev-container images will not fit at once.** The toolchain image is ~14 GB and the derived
+container another ~13.5 GB, so pulling a new toolchain image while the old pair is still present
+exceeds the disk on its own — remove the previous pair as part of re-pinning. The three volumes are
+sized at **creation** time by environment variables (`DOCKER_SANDBOXES_DOCKER_SIZE`,
+`DOCKER_SANDBOXES_ROOT_SIZE`, and the unused `DOCKER_SANDBOXES_CLONED_WORKSPACE_SIZE`), not by a
+flag: `sbx create` still has no `--disk` on v0.47.0, and a resize therefore means recreate. When a
+disk fills it does not announce itself — it wears apt signature errors or `exporting layers`
+failures, and `df` is the authority while `docker system df` is not. Lifecycle §8 and §7e.
 
 ### The workspace foot-gun: `sbx run` mounts the current directory read-write
 
@@ -316,10 +367,27 @@ at TLS; always probe with a real request. From the dev container a refusal is `r
 `curl` writes `000`, which is curl's placeholder for a request that was never made — read the exit
 code, not the status code.
 
+Two reasons, both measured, and the second is the one people miss. The container shares the VM's
+network namespace **identically** (`net:[4026532855]` on both sides), so a default-DROP from inside
+would hit the sandbox's own policy proxy and every sibling container. And the in-VM layer **was not
+running anyway**: `postStartCommand` is a *devcontainer-lifecycle* hook that does not fire on a
+Docker-level restart, and the ~30 s idle-stop brings the container back through Docker with
+`--restart=always` — so the ruleset vanished on the first idle cycle and no check noticed. Egress
+was fully governed the whole time, by the host-side policy.
+
+`postStartCommand` now runs `.devcontainer/assert-egress-governed.sh`, which **verifies rather than
+re-implements** the layer: it fails if a non-allowlisted host is reachable **or** if an allowlisted
+one is not, because a severed network must not read as a security pass. Its header states the gap it
+shares with any postStart hook: **it is a creation/attach-time assertion, not a continuous monitor,
+and it does not re-run after a Docker-level restart.** The continuous guarantee is the host-side
+policy itself, which survives restarts because it is not in the VM;
+`.devcontainer/verify/verify-firewall-allowlist.sh` re-asserts it on demand.
+
 The VM shell's refusal body changed in `sbx` **v0.47.0**: HTTP 403 with `Approval required for
 <host>:<port>.` instead of `Blocked by network policy`. Because a check keyed to the old marker no
 longer matched, the first harness run after the upgrade reported `example.com is REACHABLE — deny-by-default is NOT enforcing`. That read as a breach and was an instrument fault; both verify
-scripts now accept both bodies. The new body also means **a refusal queues a pending approval**
+scripts (`.devcontainer/verify/verify-sandbox-egress.sh` and `verify-firewall-allowlist.sh`) now
+accept both bodies. The new body also means **a refusal queues a pending approval**
 (`sbx policy approval ls`). `sbx policy approval respond … allow` is a second way to widen egress
 that **bypasses** the canonical `.devcontainer/egress-allowlist.json` — never use it; add the
 destination to the canonical file and apply the generated rule instead, and use `dismiss` to clear
@@ -379,4 +447,6 @@ treat those credentials as exposed.
 - [Testing tiers and what gates a merge](../invariants/testing-tiers.md) — which tiers block a merge
 - [Proposal → spec → plan → tasks → implementation lifecycle](../process/spec-driven-development.md) — SDD mechanics
 - [Dev container on Docker Sandbox microVM](../runbooks/devcontainer-sandbox.md) — wiki summary of the primary environment's runbook
+- [Dev container on Docker Sandbox microVM — lifecycle](../runbooks/devcontainer-sandbox-lifecycle.md) — recreate, disk, verification harness, `sbx` upgrade
 - [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md) — wiki summary of the retained Docker Desktop runbook
+- [Local dev infrastructure & environment variables](../runbooks/local-dev.md) — the compose stacks and their profiles

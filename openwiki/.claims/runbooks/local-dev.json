@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9046327389753ddf0a8a373da96d893347016d6c710a8fbe3ea564af321c1660",
+  "pageVersion": "sha256:28c167902de25f601a864349f6e225d662a8b2bb4adb2889e60fc401b7d6e36e",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -15,8 +15,8 @@
           "version": "repo-lines-v1:sha256:2e44e683ac3f548a01ea3960debf5eaf9bbaba04fc0593ef797730a275c09110:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI4ZTZhMmMwOWI0MjA4ZGU4OWUxOWRkYmJkMzM4MjY4NzExMTlhMmFjZGU0ZTZiNDI5MzAxM2U3N2I1ZWM4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTk0NzRkYjVjM2JhMWRiMWQ5OTAyYWE0ZmY4ODcxZDUyMjc3ODQ0NGNhOTVhZDIyZmYwZjdjNzU2NGJkZWNjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYyNThjMTk0ZGE5ODA2MWFkYjk5YjA0Zjg5YzEyMzg2M2Y1ZTFjZjYyZTJiMWMxYmM5ODdhZDlkNTAyNDFjNSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L1-L46",
-          "version": "repo-lines-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMmNjM2VkMjhhODViYmIzYjdjM2MwZmM1ZGI3ZmZiYjcxY2NhNTY3ZTIwODZkNWJhYTE3YjNjYzk0MTgxNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L1-L47",
+          "version": "repo-lines-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMmNjM2VkMjhhODViYmIzYjdjM2MwZmM1ZGI3ZmZiYjcxY2NhNTY3ZTIwODZkNWJhYTE3YjNjYzk0MTgxNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json#L6-L113",
@@ -26,19 +26,19 @@
     },
     {
       "id": "claim_21d767ac15904df3880e6476ddfbeafa",
-      "statement": "`node scripts/gen-dev-secrets.mjs` mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env` per stack from the committed `<stack>.env.example` templates; it is idempotent (`--force` rotates, `--stack=<name>` scopes) and it COMPLETES an existing file rather than skipping it: keys the template has gained since are seeded INTO the existing `<stack>.env` (otherwise delivering one new variable would require `--force`, which rotates every other running value), and item #552 extends the same rule to a `<generate:KIND>` key that is present but EMPTY (`KEY=`) — minted in place, because it holds no value so filling it rotates nothing, whereas counting it as present made the run say up to date while the suite needing it skipped to green. A blank *fixture* key is left untouched (the template may leave `REGISTRY_HOST` blank on purpose). Deterministic fixtures (the LangFuse init keys, the `BACKUP_TEST_*` public halves) are copied verbatim even under `--force`. Each seeded run prints the key NAMES it added or filled — never values — and warns that containers started before the run do not hold the new values, so the consuming containers must be recreated and `gen-dev-env.mjs` re-run. Exit codes: `0` success · `1` missing/malformed template, unknown generation kind, or unwritable output · `2` bad args.",
+      "statement": "`node scripts/gen-dev-secrets.mjs` mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env` per stack from the committed `<stack>.env.example` templates; it is idempotent (`--force` rotates, `--stack=<name>` scopes) and it COMPLETES an existing file rather than skipping it: keys the template has gained since are seeded INTO the existing `<stack>.env` (otherwise delivering one new variable would require `--force`, which rotates every other running value), and item #552 extends the same rule to a `<generate:KIND>` key that is present but EMPTY (`KEY=`) — minted in place, because it holds no value so filling it rotates nothing, whereas counting it as present made the run say up to date while the suite needing it skipped to green. A blank key that is NOT a `<generate:KIND>` placeholder is left untouched — the generator has no value to give it — and since the `REGISTRY_HOST=` entries left `mcm.env.example` and `observability.env.example` with feature 080, that branch survives only against the guard test's synthetic template. Deterministic fixtures (the LangFuse init keys, the `BACKUP_TEST_*` public halves) are copied verbatim even under `--force`. Each seeded run prints the key NAMES it added or filled — never values — and warns that containers started before the run do not hold the new values, so the consuming containers must be recreated and `gen-dev-env.mjs` re-run. Exit codes: `0` success · `1` missing/malformed template, unknown generation kind, or unwritable output · `2` bad args.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L39-L49",
           "version": "repo-lines-v1:sha256:49b6f289314cf29ec2252bf566643d606ebad50e44526bc61a2ae3fb20d88447:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZjA3MTk2YmQxMTU3Yjc1MmNmZjUyNjYxMzUzMTdlMTU3ZTAxYjU3ZDc5ODE2MjljODZjNjAzN2M5NTY1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTZmN2QwN2VkMTk2NzNiZDFlMTQzYmQ3YWMzMjBhOGI4NDM0YTUxZTZmZTNhNTEzOTA0MzE5M2QzYTMyMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MDhiODQ4NWJhNDljZjJlYTcwYmNiNzg1YzgwNjg2NTMxNmU2NmVkZjAyZWVmYWFkZTQyOWI5MGU4Mjg1ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1OTZlOGYxZjIzOGU0ODg5YzE4OGEyMDNjZDE0MWFlN2NmYzgyYTU5MDk1NzE0YzY4Zjg1ODkzNzM2ZDBjNzIifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-secrets.mjs#L169-L219",
-          "version": "repo-lines-v1:sha256:ca86b9f41b57d2f4b33d4a88f302cd843adbb9a6aa40b2af238e5b18d1de2cce:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMzgzNDkwNDA3MzJhZGZjMDVkOTc0ZWYzNjQ5MmQ0NjE2ZTA2YWE5YWU1Y2ViNmNlZmYzNmFkYTY4NDU2ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMjkwOGExNDE2OTdkYjhiMzdkNWRjNjlkMTM1NGQ5MTU1MTgyY2VjNGUzNTA4ZjlhMWQyODIzNGZkM2M2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Nzg3ODcxYTA1MjM2MDZlMDQ1YjhjYTUzZDBjZDFmY2U0Mzg0ZTgzYWJiNGRmMGRiOWUxYWEyNzQ1MjY2ZDIifQ"
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L127-L144",
+          "version": "repo-lines-v1:sha256:650d5151aefcfe6a2f420c2fcbe2b9f4564a74a08259afdfceac50b38b8fdfed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNmZlOWM2MDA1NzRmYjQyZTE5YzlmMjEyM2ZiM2M5YzZlODZkOGVmOTBmMDI4ZDYxNDNkN2FkZDcyYjJmOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNTA2MDM1NmE0ZDUyNTdkMzg1NGIxNTljYWFhYTA0NmQxZmQ3ZDgyZjdmOWRhNDIyNzcxNTI3OTM3MmQxNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://scripts/gen-dev-secrets.mjs#L94-L167",
-          "version": "repo-lines-v1:sha256:4f66a5b9b8c4400c0b5ab505213c1c26e939cd5d9d2b089af1c7406604a63ee9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODUwYTk3YWY3OTY2NDgzNWRiODVkMjM5YjJmMzBhODY0MjA1NzExZjc1ZTllYThjOGZhMzU1NTVkNWYyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
+          "version": "repo-lines-v1:sha256:d875407487bb49178c7798f63157ca1d0944279c99356ae349f1306d3536d168:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODUwYTk3YWY3OTY2NDgzNWRiODVkMjM5YjJmMzBhODY0MjA1NzExZjc1ZTllYThjOGZhMzU1NTVkNWYyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
         }
       ]
     },
@@ -76,11 +76,11 @@
         },
         {
           "resource": "repo://scripts/check-no-inline-secrets.mjs#L1-L51",
-          "version": "repo-lines-v1:sha256:50236ebf7b2ae9ecd52e10d147f1f75c2d7e50fbf696a2d74bcd45e486718b6e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
+          "version": "repo-lines-v1:sha256:305a65dcadd4fbd211ced65e53c02b64044857ee4e51335290a0d93dba44017a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
         },
         {
           "resource": "repo://scripts/check-no-inline-secrets.mjs#L183-L210",
-          "version": "repo-lines-v1:sha256:9cc4bb082d89d462bbf5d2c8e5f9902b9893d01c70b74afab8ea2ee80c8e04a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNmVkZTMyZTY3MzQ0N2EzMWE2MDZlNTgxOTA1N2U5NmQwMzExYjgwODg1YTEwY2U5YTRiNjQ4OTAyNTE2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ODVlNWJlZjQ2MDJmMzg4MTZiYTQ1YjJhNTA3NWE3YTVjYmEzMzgwNTkxYzZkMDhlMGZlNWUzMGJmY2M4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNTgwZmU4ODY4Yzc0Mjk2MDg5NmYzZmFkYTlmMTc2Y2M3NTUyZmVjNTRmMWJjMmEwOTVhYTgzOTIwN2NkOWYifQ"
+          "version": "repo-lines-v1:sha256:ce6c965280859284050f15a1047092d76ce0e5d3d85a5fd6751031ce765fa23b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNmVkZTMyZTY3MzQ0N2EzMWE2MDZlNTgxOTA1N2U5NmQwMzExYjgwODg1YTEwY2U5YTRiNjQ4OTAyNTE2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ODVlNWJlZjQ2MDJmMzg4MTZiYTQ1YjJhNTA3NWE3YTVjYmEzMzgwNTkxYzZkMDhlMGZlNWUzMGJmY2M4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNTgwZmU4ODY4Yzc0Mjk2MDg5NmYzZmFkYTlmMTc2Y2M3NTUyZmVjNTRmMWJjMmEwOTVhYTgzOTIwN2NkOWYifQ"
         }
       ]
     },
@@ -119,7 +119,7 @@
           "version": "repo-lines-v1:sha256:9c61cecc1c9b71696d5c7432a8b687d5feaf97df1ae23ab5348c25851e873bc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYjNjODQxYzU2YWE5YjU0YmYyOGEyOWZiM2UwMGE2NzBjNTc0MTIyMTYxZTc1NmI2MjU5MzI2Nzc0MWNkMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZTY3YTQwNWY2NDgxYzFjODBhOWVmNjAzNDBmZTQ2NDc1MDEwNTI1YWExNGI3NThkOWY2MDA4ODIyZTE4ODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzOGFkZTNlMTgwZDgwYWE5M2ExNDA3MjY4YjVhNjdiZjA3MjU5MWE5MTczOWJiMmI1YTFjNjNhMGFkYTZkZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNzQyZTljNGVmYzY5Yjk4NGQ3YjFiOWQzZTA1Y2E1NDgwOWU4ZGYzMzQwOTcxMWFjOTM4NGUzNjg5NmZjZjIifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L551-L595",
+          "resource": "repo://scripts/gen-dev-env.mjs#L568-L612",
           "version": "repo-lines-v1:sha256:3981ef8eac70d48de5a52cde97f544dfc5bf1343c1f1f1321ebeb2e209a9a39f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2U0NGEzM2Q5M2JhZjZkMWZlODhjZjI3YTMxYTdmZTRkMDBhOTViOWMzZGU1NDAwOGYyYWVkZDc1MzNjNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDFjNDkzYjMzYTNkNDk3Y2EwMmJiMzY0ODg1N2VjZGRmYjZkYzZhYmU3NzY3MDVhMjRmMzkzMWI4MDM2ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YWQzMDk2ZjdhODM1MTE2YWJlMTNkYTBjOTBlYzc3MjI5ZWMxNTUzODBhZmYwODNmYTc5ODE0MTU1ZTM3YzMifQ"
         }
       ]
@@ -133,7 +133,7 @@
           "version": "repo-lines-v1:sha256:0c47f2e506ccbada4398800e72a8e3c723cd89ba8164281c9971ce49aea216e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdjZmEzYjczY2JhNzk1ZTI1N2ZhZDJhY2VjOTRkMzk4OGM3M2U1NzAwZTNkYzg2M2M2MTg5ODlkZDUwZDlhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JlYzIzMzI0YWRiZDdjZjRhMDAwMDdmZWUzZjlhZDFmNTA5YTdmZjFkNGE4NmI5ZDQzZDRiNGM1YWQyNjNkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2FkNGZjOTRlZWQ4YzMyM2JkYmM0ODQzYmJmYmFhMmRkY2ZhNDNiZjQ5NjNhOWY1MDg2OWFhOTZmMjkyNjZiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMwZjE4ODQ5Y2JkMjRkOTllYTgzYTQyMjIyOTljMDg1Y2QzNGUwZWQ2Mjc2MjFlOTVkMTY2NWIxMmJlMjA1YyJ9"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L557-L570",
+          "resource": "repo://scripts/gen-dev-env.mjs#L574-L587",
           "version": "repo-lines-v1:sha256:9194423c9d65fc264e8b2f3961efcfc82de4bd6f8a6e5bf11416ed17b4c77c4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzZGNlYjY2M2ZjODA2MzQ1ODA4Yjc0MDRiYTNiYWFlMWVmMTZlY2VkOWQ2Y2Y5NDM4YThhZTZkZDYwNDlmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYjdhOTE1NWJmMTI1NWJhMGY2OGEwNDllZGEzNjJjODVlNmUwM2JiMjUwN2Y5YTU5YzJiYWI3N2ZiNTU1MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MzA2ODVlOTQyNmJiMTRhYzgzYjI4ZmZmZDgzOTY5Zjg5MzNkYjA1ZDU0ZTk0NDBhOTE1YTZjMmZjZmJlNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZDUxZjJkNjVlY2Q3MTEwNmU1MGU2NzdhNTczYzllZjM2YzZjMTVjM2ZiZjY4MDc5MmE5NzZkMDc1YjNlZWMifQ"
         }
       ]
@@ -166,11 +166,15 @@
     },
     {
       "id": "claim_6e599ff3782e4a26a827681b27dd2c1d",
-      "statement": "A password-on-first-init credential (Postgres, OpenSearch, MinIO) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause.",
+      "statement": "A password-on-first-init credential (Postgres, OpenSearch) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart, and RustFS is in that second group rather than the first (feature 080): it does not bake its key pair into the drive, so rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus recreating the RustFS service and its bucket-init one-shot, with no volume touched.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/local-dev.md#L49-L49",
-          "version": "repo-lines-v1:sha256:316eb086d42a3889215f162784cf2faf4744fa12faf2cd7233946596c130e830:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE2ZWIwODZkNDJhMzg4OTIxNWYxNjI3ODRjZjJmYWY0NzQ0ZmExMmZhZjJjZDcyMzM5NDY1OTZjMTMwZTgzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE2ZWIwODZkNDJhMzg4OTIxNWYxNjI3ODRjZjJmYWY0NzQ0ZmExMmZhZjJjZDcyMzM5NDY1OTZjMTMwZTgzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg1MjJmMzAwMjVkZTgxOTRjMGZkNTYzYzcwOWM1ZjljNjE0YWNjNmQyYWJiNTk2Y2FlNDg2YTNmOGYzZTYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzczZmU2YTIzMzViOGRjYWFlZjk0M2VjMTQ0NGVmNmI5MGY0NTY0MTU3NDY0YmU0M2NlZDRjODk4YWQ0ZTliZiJ9"
+          "version": "repo-lines-v1:sha256:4da9540fc37d821536ef7f7c9b5ec6b0919a42a028d3c17391304bae2a2650d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRhOTU0MGZjMzdkODIxNTM2ZWY3ZjdjOWI1ZWM2YjA5MTlhNDJhMDI4ZDNjMTczOTEzMDRiYWUyYTI2NTBkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRhOTU0MGZjMzdkODIxNTM2ZWY3ZjdjOWI1ZWM2YjA5MTlhNDJhMDI4ZDNjMTczOTEzMDRiYWUyYTI2NTBkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg1MjJmMzAwMjVkZTgxOTRjMGZkNTYzYzcwOWM1ZjljNjE0YWNjNmQyYWJiNTk2Y2FlNDg2YTNmOGYzZTYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzczZmU2YTIzMzViOGRjYWFlZjk0M2VjMTQ0NGVmNmI5MGY0NTY0MTU3NDY0YmU0M2NlZDRjODk4YWQ0ZTliZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L26-L45",
+          "version": "repo-lines-v1:sha256:c299f4dbca47f86e18957b7fb11fdb88fb392f36f1863ca692a45bc914d36e2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNDZhODUzMjI4MGU0ZDEzZjA1ZTU4MGRkY2Q1MDhiMzJmNDdjMjY2NmMxMjM0ZWQ5NGFmMjcyNDk4NWYwMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0MjIwY2E5NGJhOWY1ZGE4ZTQ1NDAyOWMwZDczMjg2OTQyZDg0NWFkZDExZGY5NjhiZGY2ZmM3MzI0YWVkY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwYTdmZjc3MjRmMDZkYzFmM2I2ZGY4Y2NjZDdiYTUwZTA3MGU0NmRmNjgzMGJiNDkxZGU3Yzk3NGE2NzQyNWIifQ"
         }
       ]
     },
@@ -237,7 +241,7 @@
           "version": "repo-lines-v1:sha256:c6f6af68702c69e87ec75b203a901e9cf768543b35af90e059ec10fd6fcdd278:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZDRhZjJjZDU2ZWQzNDE0Mjc2MGFkNTJhNjRiNzI4NDBiZWM2NWMzZmNhNzY2NThjZjE5MjU1ODY3NjUxNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYzhiYzA0N2FiNTE0YjJlNzBhYzc0MGRmZmJkNjBmZjMwMzZjYTA5ZTI1NDMxNmYwYTFkYjBkYzUxNmE4Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYWMwNTlkZjk5YjA1OTk0NTM1Njc2YTgzZjRmNGM5NTljZDVmYzcxYjI1ZjcxN2U4MGY1MmM2MzY1NTA1ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MDI3YTIzMzc1YWNhN2I5NTU3ZDNhMzU4MmJlMDMyMGVkMTdlMjUwNDAzY2ViNjAwNmZjNzc4YTczNzU5MjUifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L405-L421",
+          "resource": "repo://scripts/gen-dev-env.mjs#L412-L428",
           "version": "repo-lines-v1:sha256:1674f01cdc12eb08f630a8649e12fde2b9ea0da81e926e27db809fed58f4fb58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NjZmOTUyMzQ4M2MyZmQ5OTQ1ODhiZmI3MWRmNDhlMDVkZTk2YjIxODM1OTkwNWM0MzNjOWUwOTMwNDFlNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMDY3YmI3NWQzZjc0ZDkyZmRkYzczNTQ1ZjNmYTg3MWNiODNkNGMzYTI3OTU0MzQxNWYyZDgwZjZhYzQ3MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1Y2IwZDE1ZTY2ZjNjZjIzMDE2ZGJlYjZmMzNlMTUyNGRkNTkxNTAwYjQxZTExMTZkY2FkYjZlYTMzNTc3YmMifQ"
         }
       ]
@@ -275,11 +279,11 @@
           "version": "repo-lines-v1:sha256:0e44c8eb7714f89f4015b27815578a50fdab92d194a84cc24ba13bc8987eedfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDZlMTg2NjY1MDIzY2VmY2ZmODZiY2RiOGI4ZWEwOThiYzQ5NTNiYjY3ODI2NjllZjVmOGM4ZTJkNmE4NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjdiZWMyMTU2ZWZlN2IxYTFjODZiN2RiZWE1ZGY0ZTY0MmVlNWExMzYyMjlkMzBlNWEzM2ZiMzBiZjhjYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0Mzk3YWU5ZDBiN2I4MWY5ZWU0NDk4NTIzYTIxNjNjZjJiZDBjZmU0OTgyMmY1YmJiZjQyOWIwNzUwY2Y1MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5M2U0ZjQ0ZTNjYzJhY2NkOGYwNjRjYzVjM2E2ZWJhNjliYjIyMTExOTEzMDc2ZWIyNmY5YzdjNWJiMjY3NjgifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L179-L330",
+          "resource": "repo://scripts/gen-dev-env.mjs#L186-L337",
           "version": "repo-lines-v1:sha256:a5d5077314295e89dcb70ff625738ee1242a4001811f877708a5d5fbb30eaefa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMmUyNmZmYTlkMDBkMmIwZmVlZjBjNmQ1ZmNiZjQ5NWQxMDY1ZWEwMzNlYzYwMGVkNjA0Y2ZhZjJlZDY5MDZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZTBiNTUxODYwNjc5NDkyZDNmYmY4MWUxM2U4NGZjMGRiOTgxYTdmMzdjNjhiYmY5ZmVkNWI2NWI4NGNiNzBkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMjkyMGEyNDEyN2U3YWI5NmY2MGExMzAzZTk5NmMxMGExMGU1MDQxYTBmYWFlOGExNTA2NThiOTE1ZmNiODgyIn0"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L610-L634",
+          "resource": "repo://scripts/gen-dev-env.mjs#L627-L651",
           "version": "repo-lines-v1:sha256:35e55c4c538551910328030c2bfeb1a3fbc51e68b31ebf6158493925e4f90fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMDBjNjQzNDUwZTQ1MzAzNTQ1ODkyYzE3MzRjMzljNDliODg5Y2U0NmQwMzU2YjIwYzI4ODBlMDI1NjlkOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMzUwYjMxODY4NjNiNzRjMjQwM2FlZTJjMzZlYmUxODY5ZTM1Y2NmMWE1NjFhMjg0YWQ4OWY1YmVlZjgyMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNjNjM2E4YjgxMjAxOTI2ZGEzNTQwODNiODUyNWYzMzUzMGE5YTcxYmE3ODU5NjMxNTJiZGUyZmVkYjQwM2IifQ"
         }
       ]
@@ -293,7 +297,7 @@
           "version": "repo-lines-v1:sha256:231cba23451b3747854923478588b355a259dcba886b593abf511d2c881e395f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0YzExMjcwZGE3MTk5NzQ5YWExZjI3ODRiMzFmYTMzODkwODY4NGU4NmU5MmMwZjkwZWU5YjA3MGI4MzM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEyN2JlYzIxNTZlZmU3YjFhMWM4NmI3ZGJlYTVkZjRlNjQyZWU1YTEzNjIyOWQzMGU1YTMzZmIzMGJmOGNhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWI4MDE2ZjdjNDY2NGQ0ZDhmNzBkNmFhN2IxYWMyMDRiYjFlMTA5MWQxNTIzMGY3ZTM1ZWI5ODdjMzc1MjE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzkzZTRmNDRlM2NjMmFjY2Q4ZjA2NGNjNWMzYTZlYmE2OWJiMjIxMTE5MTMwNzZlYjI2ZjljN2M1YmIyNjc2OCJ9"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L286-L292",
+          "resource": "repo://scripts/gen-dev-env.mjs#L293-L299",
           "version": "repo-lines-v1:sha256:8594aaa0243d197cc11986038a809ccf006fe1b6e6ea22109fa4e66a4ccc785f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGMwZTY0MDM0ZTQ0MTQxMDNkM2ZjYzdiOGVjODEwMTc1OGM1OWNmOTIxYWQxMTEyMWI0MGNlNTE3ZjMwZjc5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg0YWYwMzIwNWViZTUyYjg0MjdmNWJhZDM1ODg3YWQ1NjkwYzAyZGFlOGExZmM4MTBjODE4N2E1ZDkzYTEyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTUzMzlhMDJiMzRmMzgzNDk4YjdmMGUxZjVkMDAxZTc5ODBkNWI3MDZkZGRlOTZiZjdkZDE2NTkzYmQxMWZmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM1NTZkMGEyYjJhODI0MDZkNDUyZTNmMTNiMjNiMDg0ZmEwOTkyZWViYTZiYzIyNGQ0ZWI1NzAyODNjOWFkZSJ9"
         }
       ]
@@ -307,11 +311,11 @@
           "version": "repo-lines-v1:sha256:25e1372eb5a9b1daffbd630a28c12368409dd9e987abb236655143b64a6fb35c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NDRkYTBjZmVlOTNjZTFmNTg5ZjM1ZjgwMzMwMjIxYjA1MDFiNDE4MDdmZTAwOWUwYmFjODI3OTE2M2ZmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1Y2RkMWY2YzllZTY4M2M5M2JlOGUyM2NjYmEyNGQ3MWU4NGFmZTM2MzU3ZDlmZWUyMjcxOTcxOWY2YTBkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlMGQ1M2EzNTU3YWJhODEzOTA2MmE1YWY4ZTA3MGJkYmU1NGMyMWRmMWQwYTY1MWUxOWVhMTA3ZWIyOTQ0MWYifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L194-L202",
+          "resource": "repo://scripts/gen-dev-env.mjs#L201-L209",
           "version": "repo-lines-v1:sha256:b2dff04ebb3ae66de19c024cc43f84dd3d9ee6b267c683279bac11a34ae630ae:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzljYzM0ZWNmOGZjODI2NzQzMjFhNWNjNzNjMGEyOTg5MmUyMzcxYzZjZjJlZDE5MTViMzJhOTE4YmEyNzRjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ0YmI0ZjBmNTU0NzZiODdhMGYyM2IwZjA1Y2ZkNzAwMmZlNWNlYzI2ZGZjYzM5ODU0OTA5NDQyZDQ0ZTI1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Y4NjFlNGVhMzZiMmJjOGZjN2UzZDI3M2M0YjBmOTczNjkyY2YxNjY1ZGE4YjY4MjJhNjhmZWExYjFhNTczYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjRmOWRkMDk1NzE5MGMzMjI2NGFiMTQwMzY4MjMwZDA3ODI4NzFkMGFhNmRiMjk0Y2NhNTNiYjJkNTEwNGUwMiJ9"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L304-L325",
+          "resource": "repo://scripts/gen-dev-env.mjs#L311-L332",
           "version": "repo-lines-v1:sha256:5c13bd96026be02ff45dedcbec14c7677b96c091930e3d4ac54b0f1f2a64af7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMDNiNGQ0YmRiYTFiN2U2MjdjMzRmM2VkNzAzZjBlNWFiNThkNDY0NDQ0N2NiNmFjZDk4NzhiN2I5MWJhNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjOTU3M2ZmNmZhZGExOTdkMDdkMGI2ODQyZDljNzMwYTMyNDY2MmIzNTExNjY0YjFkYzlkNTgwNmFkOWFjN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNWRhZmVmZmMzOGE2NWE0ZDhmMzdlYjBmNmUzNjdmN2MwOGY3OTVlMTQyZjEwZmY1OTczYmRjOTAzZjFmNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3YjUwMGRhYzBlMmJlMzZhNTg0MDllZDVlM2E1M2Q3NDFiMWJlMjMxNGQwZjYyMmIyNmFmMTk1MWRjYjZlNWMifQ"
         }
       ]
@@ -325,11 +329,11 @@
           "version": "repo-lines-v1:sha256:9aa6a1613f44295beb0e16f0f7fb6e57528d09ca592a0b468c65103433b8a731:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAwNzgxZmNhYThhNjdmNjZkZTM5YzgwMmNjNzIzMDM4MTQ0M2U2MTVlMGVmNTNiZmEwZWQ0YTFjODM1MjAxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmFjNjMwNmUzNmIzNWJiNmMxMTk2ODk1NzFmZDQxNmNhMGViM2JlNmE2Yzk0NjYyZWUyNGFmMzRjOTY1ODhlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ3NDc1NjE1ODhkYmRmNzY4ZjkwM2M2NGY2MGI3NjkwMmJlMzk2YTdlY2ExZjI1NWFiODYwZGMxZTdmNzVjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVjOTMzMDgyODVlMTI2ODcwZmZiYzFkNTNkNDNmMWQ0ZWY5ZGZkYzJiMjhkMGQwMGQxMzc3MmY0NDAxOTVlMCJ9"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L232-L235",
+          "resource": "repo://scripts/gen-dev-env.mjs#L239-L242",
           "version": "repo-lines-v1:sha256:5e0d0b0efe56a576e11322efc7abb6733d0cbcb6e62ee5008bddf115cc971b62:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQwZTU4MzBmYzBmNmYxMzRiMzQ1NGExNjcyZTRlY2JhYjZmNjliMmI1NGU0YjliYzg4OTgwMWU3Mzg5YjU3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNjOTU1OGNlOGU2ZGFkYTQ1ZDRlYjhlYjMzMWJhNmE1MWJkMmRlZGRkN2Y5ZDRkMGNiNWE4NjU0ZTk3NGMwNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ZjNWM5M2RmOGZhMTcyODUzYjExOGI3NjE5ZmFiNmEzNGUyOGEzYWQxNTU4MGI3NzZlNGExZTc0ZTUxZjZiZiJ9"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L615-L622",
+          "resource": "repo://scripts/gen-dev-env.mjs#L632-L639",
           "version": "repo-lines-v1:sha256:51d80511a86c7638ebf4c98f870cb13a7c39198e4e228f62f27e8df502ed98c2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA4NmVkZDY1N2JlNjRmYjdkZjE1NTI1ZDVlMDBmNTI3YjM0NWE0ZmI2YzEyZWMyNGVkZWFmMTg1YzE1ODJhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGFjYWEwODFhODc0YWUzMWVlNjYxNDBiMmFhMzVkYTBlMTliZTk1ZTRjZTRhY2JlYjNhNDg1OWM0ZTc4MzlhMyJ9"
         }
       ]
@@ -339,11 +343,11 @@
       "statement": "`frontend/mcm-app/.env.e2e.local` is deliberately NOT auto-created, because its sync set is only the credential half and the web E2E also needs hand-maintained fixture keys, so a created file would be half-written; absence is instead reported as a loud warning that the web E2E will fail to log in, with the keys to add.",
       "evidence": [
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L528-L537",
+          "resource": "repo://scripts/gen-dev-env.mjs#L545-L554",
           "version": "repo-lines-v1:sha256:8a26011c97da6932e484c5400a15e6b3d78b44aaa0a161faacf6faedd363ebb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNDRjNjEyODYyMTFkMDYyNmQ5MDg2NjYwMjk3MDY2MTJkODhhNTNjYmUzNzlhNTEzZTY4ZTUwN2ViODk4MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYWE2MTVkMDkwNGZlOTQ2NTlkNjk1MTMzNWY3MTFkNTBlODQ1MmNiMDRlOGExZjI5ZDZiYWQ4MWY1ZTllZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNDU0MDlkZjFlNTA4MmRmZmMxNjE0ODNjZmU0YWRmYWJkZjczM2ExZDY0ZWFiYmNmMTZhMTExOWMxODc5ZmMifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L653-L667",
+          "resource": "repo://scripts/gen-dev-env.mjs#L670-L684",
           "version": "repo-lines-v1:sha256:c3035b5ecccb15986206b24a9ef17a971af1941b7c841e08c1881f970ccc80e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZWE0MzUyOWJkZWRhNDliYTVhMTY1ZjExNDM0NDE3MmQ2NTg3ODZmNjcxYWRmYmI0YWNiNTc5MDA1MmNkNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNDRkZmQ3MTNmZTEwYTM4NTVjZmZjMGI3NjQ5ZjQ0NDFjODNmNzA2YjAxMDc1ZjlhZTg1YzYxZjdjZjMyNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIifQ"
         }
       ]
@@ -353,11 +357,11 @@
       "statement": "`gen-dev-env.mjs` deliberately never writes `agents/movie-assistant/.env.local` because that file carries the operator's own Anthropic credential, and it names that omission in its output on the same run as the success line — an absent file must be distinguishable from an unconsidered one.",
       "evidence": [
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L597-L608",
+          "resource": "repo://scripts/gen-dev-env.mjs#L614-L625",
           "version": "repo-lines-v1:sha256:0de64aa838df1e58ee3b3e4e90dedf1ea235f7e3dc05442497d12de4878819f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3Yzg3YmFlM2VmZTk0OWQ1YzAzOTYyYTBiZmMxOTQ4ZDY3MTBiYzhmZjRkZmVlZjIzZDRlZDVmYjQ2NWQ0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYWE2MTVkMDkwNGZlOTQ2NTlkNjk1MTMzNWY3MTFkNTBlODQ1MmNiMDRlOGExZjI5ZDZiYWQ4MWY1ZTllZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ODkxMGNiMzZlNmUxYzUwMWVjNmNiZTJiYzMwMGEzNGJiNjM5MjNjOTE0NDg4ZDc1NmJmN2VmN2ZmZmQ5ZGEifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L636-L640",
+          "resource": "repo://scripts/gen-dev-env.mjs#L653-L657",
           "version": "repo-lines-v1:sha256:dadc1fd997636254280eb7da8a5c2786e6e78c6ea52bf6c57224bc38e5eef595:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxMDU0NTE3ZWYwMzk4NzM0NWI5YmNhNWUzNTcxOTAzMDc4ODk0MWI4ZTViNGQyYjkwYzc2YjVkMDQwM2RiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM3ZTgwNDJiMjVjNWVkOGM2ZjRjMjVkMWU4MTE2YzIyMGFmMTY3M2UyODAzODhjZDBiN2MyODVjNjEyZGFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM0MDlhMmE5ODYwNzc3ZGMxMzBlMWZkMTc4Y2NmMjY4ZTNlYjVhNTEzZDJhZGM4NzQ2MDIyYTdjNTU4ZjE5YSJ9"
         }
       ]
@@ -367,15 +371,15 @@
       "statement": "`gen-dev-env.mjs` writes five gitignored env files per run — `frontend/mcm-app/.env.docker` (fully regenerated), `frontend/mcm-app/.env.local`, `frontend/mcm-app/.env.e2e.local`, `mcp-servers/web-api-mcp/.env.local` and `backend/mc-service/.env.local` — and its `syncEnvFile` helper distinguishes two classes of line: `sync` keys (realm-derived credentials and projected backup test credentials) are rewritten on every run so they match the seeded realm, while `defaults` keys are seeded only when absent and never rewritten, so a developer's tuned `RUST_LOG` or redirected `MC_DB_URL` survives a re-run. A create-when-absent behavior (`opts.create`) is opted into per file, which is why the frontend `.env.local` and `backend/mc-service/.env.local` are created but `.env.e2e.local` (whose sync set is only the credential half) is left alone and reported loudly.",
       "evidence": [
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L422-L461",
-          "version": "repo-lines-v1:sha256:a07adf036b125fbbbe55dee4a9fbe805530843c860070d1a276d2425e96b0b57:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4N2ZiMTE4MmU2NjYwOTBlOThlYmZkNjYwNDAxMGFhNWY1MzY5NTNlZDhkMmI1YWY3YzQ0YjE4MDRlMjliMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZmIyZDE1NzZkZjAwZmIyYjc2ODY1YWUwYjEyZGUxZjg0YmFiNzdlMjEyNzIzNjcwZDNjZTA1ODE1YjcxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2OWJmYTliNDRmMTVkMDZjY2RiYTUwMDRkOGMxZDEyMjc1ZDNmNGE0OGEwZjhhZjRkYWUyMmMwYjJlNmJiOGMifQ"
+          "resource": "repo://scripts/gen-dev-env.mjs#L429-L477",
+          "version": "repo-lines-v1:sha256:a52cf013b640f8bad6a2d5676a78027c122919ee12beed319de46ebe656f2cd9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4N2ZiMTE4MmU2NjYwOTBlOThlYmZkNjYwNDAxMGFhNWY1MzY5NTNlZDhkMmI1YWY3YzQ0YjE4MDRlMjliMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZmIyZDE1NzZkZjAwZmIyYjc2ODY1YWUwYjEyZGUxZjg0YmFiNzdlMjEyNzIzNjcwZDNjZTA1ODE1YjcxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2OWJmYTliNDRmMTVkMDZjY2RiYTUwMDRkOGMxZDEyMjc1ZDNmNGE0OGEwZjhhZjRkYWUyMmMwYjJlNmJiOGMifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L463-L537",
-          "version": "repo-lines-v1:sha256:a6c6c3718d0f73d6b6e9097fba896ed8f5699b675a2b713a721766f7a0b41668:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYjA1OTI4OTUzOTk2ZTljYjk0Zjg3MTY3N2JmYzhmYmVlOTdjOGMzNDQyZDkzMTJlOTc0Y2JiYjkxNGRjMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YThlZGY4YjBmZTQ3YWU5MDBhNGNmZTViOTlkZDQ4OTcxYTgwMjVjOTNhMzU0MTkzMGQwMGE4MzQwYjUyZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNDU0MDlkZjFlNTA4MmRmZmMxNjE0ODNjZmU0YWRmYWJkZjczM2ExZDY0ZWFiYmNmMTZhMTExOWMxODc5ZmMifQ"
+          "resource": "repo://scripts/gen-dev-env.mjs#L479-L554",
+          "version": "repo-lines-v1:sha256:e394ad41a27f290dc996a5b07bdaeee1a4ec4c8fa421618d7d51af6557fff649:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYjA1OTI4OTUzOTk2ZTljYjk0Zjg3MTY3N2JmYzhmYmVlOTdjOGMzNDQyZDkzMTJlOTc0Y2JiYjkxNGRjMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YThlZGY4YjBmZTQ3YWU5MDBhNGNmZTViOTlkZDQ4OTcxYTgwMjVjOTNhMzU0MTkzMGQwMGE4MzQwYjUyZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNDU0MDlkZjFlNTA4MmRmZmMxNjE0ODNjZmU0YWRmYWJkZjczM2ExZDY0ZWFiYmNmMTZhMTExOWMxODc5ZmMifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L551-L595",
+          "resource": "repo://scripts/gen-dev-env.mjs#L568-L612",
           "version": "repo-lines-v1:sha256:3981ef8eac70d48de5a52cde97f544dfc5bf1343c1f1f1321ebeb2e209a9a39f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2U0NGEzM2Q5M2JhZjZkMWZlODhjZjI3YTMxYTdmZTRkMDBhOTViOWMzZGU1NDAwOGYyYWVkZDc1MzNjNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDFjNDkzYjMzYTNkNDk3Y2EwMmJiMzY0ODg1N2VjZGRmYjZkYzZhYmU3NzY3MDVhMjRmMzkzMWI4MDM2ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YWQzMDk2ZjdhODM1MTE2YWJlMTNkYTBjOTBlYzc3MjI5ZWMxNTUzODBhZmYwODNmYTc5ODE0MTU1ZTM3YzMifQ"
         }
       ]
@@ -385,8 +389,8 @@
       "statement": "`frontend/mcm-app/.env.local` is seeded with host-reachable service URLs (`MONGO_URL`, `BFF_BASE_URL`, `MC_SERVICE_URL`, `KEYCLOAK_URL`, `REDIS_URL`) because a `.env.local` silent on them makes the local integration suites fall back to `.env.docker`'s Docker-internal service names, which no process outside the compose network can resolve — measured 2026-09-20 as `getaddrinfo ENOTFOUND` failures in a suite whose setup comment already documented that the port came from `.env.local`. The backup test destinations are seeded with both spellings for the same reason: host-side suites reach them on loopback while the BFF container must be given the compose service names.",
       "evidence": [
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L482-L510",
-          "version": "repo-lines-v1:sha256:47bfa3e0b6c4edaa6c49ed4a46d36ccbf268a0d4f832db2836054604a371d782:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZjFjZDY3MTdkOTAxM2RkMTQ3NDg0ZTYxZTlkMDdmZDJkMjYzM2Y5MDU5NGY2NjUxY2JkNGE4MWY3M2UzMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Y2ZkOWQ3YjI4ZDYxZjA2MTkyZTgwYzU5NWM5MjcxYTE1OGNlMzc5MTk0N2U2NWY2ZWYxNTRlNzU2MTA5ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5MWYzZjNlOWMxODZiZjdjNWNhNmM2ZTJlZTQ3OTM1ODg4ZTMxYWJhMzU3NGU3MWEyY2QxNzdhYjYzYWU1MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyOTFlMGI4YjJhYmM3NzQ0N2Q3YmIxNDE5OTYyMGQ4NzhmNTQyZDY4ODRiZDNmNDNjNjg3MjMwYzM3OTVkZjYifQ"
+          "resource": "repo://scripts/gen-dev-env.mjs#L499-L527",
+          "version": "repo-lines-v1:sha256:b93e86464fdc1757f44e5e4e4f74e914b600bc00223caf7ad05c2d9f025d003c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZjFjZDY3MTdkOTAxM2RkMTQ3NDg0ZTYxZTlkMDdmZDJkMjYzM2Y5MDU5NGY2NjUxY2JkNGE4MWY3M2UzMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4Y2ZkOWQ3YjI4ZDYxZjA2MTkyZTgwYzU5NWM5MjcxYTE1OGNlMzc5MTk0N2U2NWY2ZWYxNTRlNzU2MTA5ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5MWYzZjNlOWMxODZiZjdjNWNhNmM2ZTJlZTQ3OTM1ODg4ZTMxYWJhMzU3NGU3MWEyY2QxNzdhYjYzYWU1MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyOTFlMGI4YjJhYmM3NzQ0N2Q3YmIxNDE5OTYyMGQ4NzhmNTQyZDY4ODRiZDNmNDNjNjg3MjMwYzM3OTVkZjYifQ"
         }
       ]
     },
@@ -405,7 +409,7 @@
       "statement": "`scripts/__tests__/gen-dev-env.guard.test.mjs` pins the generator's coverage by deriving the set of `.env.local` files documented in `docs/runbooks/` and failing if one is neither written by the generator nor an explicitly reasoned exception (`agents/movie-assistant/.env.local`), and it separately asserts that a deliberately skipped file is named in the generator's output — so a documented file that nothing writes is visible in the guard rather than weeks later in someone's `nx affected`.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L425-L492",
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L470-L537",
           "version": "repo-lines-v1:sha256:db07347fa0873a2d882dd64c04efc91850a5f85052b3d5c848b7653a18ecb12c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MzczYmExMmE2YzQzMGUzMTlkNTdiMDA3MDc2NjhlNjBlYTA2ZjcwNzE0OWYwZmYzNWY3NjAxMzIzYjA2NmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -415,7 +419,7 @@
       "statement": "Item #552: the `BACKUP_TEST_*` projection out of `stacks/mcm.env` is loud when it has nothing to project — the four key names that are absent or empty are printed (names only, never values) together with the command that back-fills them without rotating anything (`node scripts/gen-dev-secrets.mjs --stack=mcm`) and the instruction to recreate the `backups` profile containers and re-run the generator; previously the silent filter projected nothing, said nothing, and nine backup-destination integration suites skipped to green.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L494-L527",
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L539-L572",
           "version": "repo-lines-v1:sha256:ca0cb81f2f349273b6a6b4345f13099141b70c4210fd04e23c1deb216ea8d085:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NTA3MGYyNDQ0MGFkN2Y4OThhZmIxZjZiMDVlNTY4MjNlMGRkM2NkNjA3MDc3NzkwYmU4MGUyYmZhODU4ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJiMDNjMTBjOGIzZjFkZmIyNzU1YjhiNTA4NmJkNjA2ZDMzZjZlYTE2YmQ0Y2UyMTE2NmU1ZWEyYmZjYzgifQ"
         },
         {
@@ -423,7 +427,7 @@
           "version": "repo-lines-v1:sha256:286f957abe98a0df6117f4194a00316edc593a2f6939657051211c19ca16da49:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlODc3NzQxMTZkODNiNjlhY2MzODdiNTE3ZGM4YmFiMTQzNjNlNmE5YjdlOThhZGMwNmY0OTExNDI0Y2YyYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNTFlNTRhN2U5ZjY2MWFlNDBmMGRmNTQ2NDU0YTlmNGU0ODZkOWJkNjkwN2U1MGI2NjM2ZWM2ZDE2MjIyMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzNjZjQ0ZTkxNmRlNWQ3NmRkYzFlM2VlODlhNjUxZDk0ZjBmYWEwMGMyMjQ0MDNjMTYxYzRjOTcwYjBjZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MTM4NzI0NDdiY2Q0NjJiZTViOGJlODg3YTMwMjQ3NWRlNWE0ZWE0MGZhZjZkZWE4Yzk0MTlhZWUzNjM1YTUifQ"
         },
         {
-          "resource": "repo://scripts/gen-dev-env.mjs#L642-L651",
+          "resource": "repo://scripts/gen-dev-env.mjs#L659-L668",
           "version": "repo-lines-v1:sha256:25abd9c956f4992588045de390705ecd20e50afbbd5eff51caef9d8a87128206:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NGNhMmQzYjBkMTBiMzJhM2QxODk1ZWJmNTkwMjNkZjRhNjUzMmMxMjI1ZWQ4NTNmNjMwYjM3OGVlMDdkYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNDRkZmQ3MTNmZTEwYTM4NTVjZmZjMGI3NjQ5ZjQ0NDFjODNmNzA2YjAxMDc1ZjlhZTg1YzYxZjdjZjMyNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNDA5YTJhOTg2MDc3N2RjMTMwZTFmZDE3OGNjZjI2OGUzZWI1YTUxM2QyYWRjODc0NjAyMmE3YzU1OGYxOWEifQ"
         }
       ]
@@ -437,30 +441,30 @@
           "version": "repo-lines-v1:sha256:ce1bfd9de6e559599bd2669a786560cc922ebea027429bdfe0356553bb997508:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOTkxODliMWI4NjRmZjlhMWMyOGVlMTdkZWI5ZTc2MWVlMGFkOWZlM2E1NGRmNDZkNzk3N2JkYjc0YzQ2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiMDNiMmY0ODhlZjBlNWRmZWUxODQwY2U3ZDlkMzdjY2JlZmMzZDFmMDFmM2RmZTI5MTIzYjY5MDU5ZWQ5YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMGRiNzhlOTljMDU4NWY0OGMxODBmZDRhNmVmYjUyZWE5MzkzMDkwYjdmZGE2OTg5OGI5NjE5OGUwYWVkNzAifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L479-L492",
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L524-L537",
           "version": "repo-lines-v1:sha256:737b90cb2c1765f66434e8bb84ef32fa21af3663206f57aec9984381a44aa49d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NTUwYjc5ZjRhZTY0NzdjMzZhZDA4NjkwNDRiZGRjMDNlZjZhMzNhN2Q1ZmQ5N2Q4YzFlYjVjNDhiY2NjMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYjg0MjM5OTJjZjI4ZTEwYTIxMmFhZjk4MGYxY2JlNjVjMTA0MDQwMDFhMzc4NWVhYjJmNDJlM2FjMTNkNTUifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L514-L527",
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L559-L572",
           "version": "repo-lines-v1:sha256:755ae0052ae0a8c51e6b043bac84144965053c5a337b6e832cd9ebf3cf22e0d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NmY2YTkwMjI5NGY3ZTcxOTI1ZTk3MjNhNGE5ZWY2NjQ0MTE3YjBlODIxNTM1ZDkzYzljNzcwOTg0NWZmZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZDRmNjkzNWU5NzYxMTUwZTVlOTc4ZjYyNTNjNDdlNDI5MGQwZjdhYjgxYjM3ZGJlNDRlOGZlNDMxMDE1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkOGJiMDNjMTBjOGIzZjFkZmIyNzU1YjhiNTA4NmJkNjA2ZDMzZjZlYTE2YmQ0Y2UyMTE2NmU1ZWEyYmZjYzgifQ"
         }
       ]
     },
     {
       "id": "claim_573cbbbc190240a492258ea4473a0b33",
-      "statement": "A Compose profile is not isolation from interpolation: Compose interpolates every service in an included file at PARSE time regardless of which profiles are selected, so a `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole mcm stack — which is why feature 073's backup destinations live in a separate `infrastructure-as-code/docker/backups/compose.yaml` brought up explicitly, and why `REGISTRY_HOST` is deliberately left blank in the committed templates (a blank value fails loudly naming the variable rather than silently resolving to an invalid image ref, and `check-topology-scrub.mjs` forbids a real host in a committed file).",
+      "statement": "A Compose profile is not isolation from interpolation: Compose interpolates every service in an included file at PARSE time regardless of which profiles are selected, so a required `${VAR:?}` inside a profile-gated service aborted `up` for the whole mcm stack — which is why feature 073's backup destinations live in a separate `infrastructure-as-code/docker/backups/compose.yaml` brought up explicitly rather than behind a profile. `REGISTRY_HOST` no longer appears in any dev-stack template: feature 080 replaced the from-source object-store image with upstream `rustfs/rustfs` pulled by digest, so neither the observability object store nor the backup S3 destination interpolates a host at all; the stack file keeps the incident as a comment, and in production the same name is a per-stack Komodo variable that `check-topology-scrub.mjs` keeps out of committed files.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L22",
-          "version": "repo-lines-v1:sha256:77df1b1533c641ef4400dc6d285406dc904e53dba10e71d8078ef9edcc01a64c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAxNGEzYWYxYTVhNTU0M2ExYWE1NWUwMjhkNjJlNmRhYzYwNjMyYjA4YmRkMDgwYWQ1ZjM2OWQwZTVlODY3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNzFlYTBmNjczNWZjNjUzYWNhZmM2MmJjOGZjMTUxMmNkMzhmZGQ0MzdiYjNmYzhkYWU1NTgyM2VhYmY4MyJ9"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L9-L16",
+          "version": "repo-lines-v1:sha256:a8884519cc678ba7a2ee6b88264492a64b561cd47cd585e3ae216631ca7207fc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1Nzg0ZjRhYTA2Yzk5NmNmYWZkMDUwNjFjMzliMzEwMzFiYWIwZjRhZTBlYzhkMGM1OWMzZjdjOWZiMjliMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjMmZkNDhiZDJhYjA1ZGViYzk5MzNkOTM0MWRmODc4ZDRiNjM0ZmI5NDJmZTIxNmVkMzQxYjZkZmZlMmI5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1Y2MzNzEzN2U2NDU3NmQ3NWNjZTA5ZDgzYTBlYTI5ZTBjZDNjOWZlMTllZjhiN2U1YTAzZWMzYmI0YjRiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZkMmZlYzlhNDhiODMzYmZmNTdiZWVlNTdiNGIwYWEzODcxZTA2ZTgzMmQyZTdiOGJiZGUzY2YyOTM2YzcxMyJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L31-L38",
-          "version": "repo-lines-v1:sha256:30e3078009b4dd0ac4a4cd18110f1972743e4320ec592d2c9b34a65a4881ee9d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAxYzAyNzQ3NmNhMzk3Nzc0N2Y5MGM1ZWFmZWRkNWZmZThmYTU4YmQyODljNzJlYzdiZjQxNGNmNTYxYjU0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L23",
+          "version": "repo-lines-v1:sha256:b1769bcf27bff6489fc20c04f529b6c68a2ced8717a6613548bd44f680eba11e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZkNzYwZDNjYTZlMDk3NjZjNjlhMjYyZjY0ZGI3MmQ0ODJjNzUwMzc4NzZjODBjMjMyNzQyYjBiZWY0ZDg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNzFlYTBmNjczNWZjNjUzYWNhZmM2MmJjOGZjMTUxMmNkMzhmZGQ0MzdiYjNmYzhkYWU1NTgyM2VhYmY4MyJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example#L24-L31",
-          "version": "repo-lines-v1:sha256:42adaaf348b01d6cc14f536f32542929501a5d0dce21092286b77c827f89a00f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzY2E4OWNlYzIzOTU3MGM3OThhYTM2M2JmNzljNGZmMTU0MDdmMTRlZDdhOGZiOGFlYjcxYjVhZDY0MzdlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://scripts/check-topology-scrub.mjs#L67-L87",
+          "version": "repo-lines-v1:sha256:78d0ab6ffeafda45f1c5e41e475be9426ec44b61db9d63a381ff155879fd4cd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNmY4ZGI0NzQzYTI2NTE3ZWFjZDAxZGE4ZDNjMWQ4Yzg4MzU4M2Q4ODBkZDliODVhNWY2YmZmZWU0NjMyNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMGQxMzk5Mjg4YmY2ODVhZTgzOWJkNzhmYjhhNGMyYWVmZWRiM2U5MmVjMjRkNDQ1MjE3MGUyODFjODg1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NTRiNzU1MjZmY2NkZjQ3MDBjMGE1ZDJmMDg4Y2Y4NTIwYmYzMGEyZGNlNDAzNjgyMGRkY2E0ZTgyYzRhMWEifQ"
         }
       ]
     },
@@ -495,7 +499,7 @@
           "version": "repo-lines-v1:sha256:5c7dd50d96a085b20e2464a9c75b3bbae30a1f2774496e063c6d6cb669144965:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L27-L32",
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L28-L33",
           "version": "repo-lines-v1:sha256:c68dff6b0aee817abd8595e0269929dad45d93cb2b43b0fdeb5be74257c00579:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzEwMjdlNTdmOGEyZGE3MjQ0MjExMTBlYTQwNjBhY2VmMGQ0ZjFiZTBiY2I0NzA3M2M0ZTRjZGZhYmQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2OGJhOWEzOGQ2YWYzYzc0MDE1NzNiOTJjOWY1MDdkNDg3NDg3NGNkZmFjMGY3ZmRiNjIzZmM3ZTA5NzEwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM1ZjgwYjI2NDE2MzUwYzc2ZWI5MzFiMzIxYzA4NTAwYjEyNjcxMjI1OWZkZjVhNDUxMGJmNTY0ZWRiOTRkYyJ9"
         },
         {
@@ -514,13 +518,27 @@
         },
         {
           "resource": "repo://scripts/check-no-inline-secrets.mjs#L25-L51",
-          "version": "repo-lines-v1:sha256:d40aa0f60ee263a700e8f111cfb0553ad2719a578fbb9487fff7ae7d0346da77:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWM0OTc3YzNiZmUxN2FkMjM2M2QxM2MxZjlmY2FlOTQ5MDE0NWFlYWE4NWVhMTVkZWY0NmRkODE1YWU0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZGMzZTM2MmExN2FhMzQyNDE5M2ExYzY1OGIwODY1ODRhMGY4OTlmNDkzNmZjMDU5ZDcyNjlmNGU5MzBkOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
+          "version": "repo-lines-v1:sha256:a473f93615e4e5c6da4eb8c2f0b02c5248532125418c8df7ce23aa876ef7236c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWM0OTc3YzNiZmUxN2FkMjM2M2QxM2MxZjlmY2FlOTQ5MDE0NWFlYWE4NWVhMTVkZWY0NmRkODE1YWU0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGY0YTFhM2EyMzU5NzVjOTk5YzlmNWVhMWE1NGJhYWVlNmJmYzBkOTM5ODkyZGE5NjBiZjM2NWZmZWIxNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZGMzZTM2MmExN2FhMzQyNDE5M2ExYzY1OGIwODY1ODRhMGY4OTlmNDkzNmZjMDU5ZDcyNjlmNGU5MzBkOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YjUzNmViZmRlMGUwYTlmNTcyYjUzNTkyNGRlOWQyMGIxMDU0MDhlZDY3ZjZkNTJkNDVkNDRhNzdlNzVlZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3905552e04946deb3bcc80d51c00333",
+      "statement": "`up-mcm` is the Nx target that adds `--profile app` itself (`docker compose -p mcm -f …/stacks/mcm.compose.yaml --env-file …/stacks/mcm.env --profile app up -d`), whereas `up-auth` passes no profile flag and brings Keycloak up with the unprofiled trio; so the difference between the stacks' default bring-ups is a property of the target, not of the stack aggregator, and a bare `docker compose -p mcm … up` starts only the unprofiled test-infra stores.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L14-L25",
+          "version": "repo-lines-v1:sha256:5c7dd50d96a085b20e2464a9c75b3bbae30a1f2774496e063c6d6cb669144965:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L6-L25",
+          "version": "repo-lines-v1:sha256:21fbdcbedf27c5df8f814a62d65ba59f260891a9d3d5d5e3dea0eb8d8525a871:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2IyYTE4YzU1MDM2MmE0NjNhZWMyMzcxZGI0ZGViY2M5YWQ1Zjk0MGQzMWEwNDhmZWE2YzNlOTQ1NTBkMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyZmRiOWM3OWY1MmQ2ZDgxNzJjZjdlODdmZmE2ODU5MjJiMzZjZTJlNDNiZjVlMTVkZjI0ZDQxZTUxZTFlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0N2E5MDAwODFiYTc2Yjc2YTEyNzAzZDdmMzY2NTdlYzY0YTliZDQ0ODY4OGM3NDBiZTM1N2I3Y2I2ODJlNzMifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T02:04:22.270Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

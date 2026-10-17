@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3ffb0b8cd562c8e0c795b33acbe4724733aa53354ec684e7513bf7f2e542dcb7",
+  "pageVersion": "sha256:900973bf5c9eba16272a5eb639ac74c3f6ea1b165535e1247ecece2015162307",
   "claims": [
     {
       "id": "claim_d09a6a6493dd4c28a412786ec71bb102",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -18,15 +18,11 @@
     },
     {
       "id": "claim_74c5579d7b414173a72d59cb6eea6414",
-      "statement": "`sbx run` mounts the CURRENT DIRECTORY as the sandbox workspace read-write over virtiofs unless a scratch directory is passed explicitly, so creating a sandbox from the repository destroys the host-filesystem isolation the environment exists for; a Windows mount in the VM is still reachable from the VM shell even though the dev container is separately isolated from it.",
+      "statement": "`sbx run` mounts the CURRENT DIRECTORY as the sandbox workspace read-write over virtiofs unless a scratch directory is passed explicitly, so creating a sandbox from the repository destroys the host-filesystem isolation the environment exists for; the dev container is separately isolated from the VM's mounts, but anything run in the VM shell can still reach a Windows mount.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
-        },
-        {
-          "resource": "repo://scripts/open-sandbox.ps1",
-          "version": "repo-file-v1:sha256:11fda0edbe42ed352205b7e2d8023dfc302f3c132f7d28c9e7b5cef3418edf8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -36,7 +32,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         },
         {
           "resource": "repo://scripts/gen-egress-policy.mjs",
@@ -50,7 +46,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -60,7 +56,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -70,7 +66,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -80,7 +76,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -90,7 +86,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -100,7 +96,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         },
         {
           "resource": "repo://scripts/open-sandbox.ps1",
@@ -114,7 +110,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -124,7 +120,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -134,7 +130,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -172,7 +168,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -196,7 +192,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -206,7 +202,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -216,7 +212,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -230,7 +226,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
         }
       ]
     },
@@ -240,13 +236,93 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:5a6dfbdbc8e8b11471499ab959239a6cc883c291030d9aaef15df1cd3102ab8e"
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc23577ac52f4b72aaf6ffb766bd9890",
+      "statement": "The harness re-resolves the dev container's name immediately before the destructive check rather than reusing the name captured at the top of the run, because `verify-portable-runner.sh` itself runs `devcontainer up` and can replace the container mid-run.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh",
+          "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a4b8c139f934372875fa5fd1906c199",
+      "statement": "`run-harness.sh` tallies results by script rather than by invocation — `verify-engine-seam.sh` occupies one slot that is green only if all three of its modes pass, since a two-of-three engine seam is not a seam — and once any mode of a script fails, that script stays failed for the remainder of the run.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh",
+          "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
+        }
+      ]
+    },
+    {
+      "id": "claim_c711be5003444140bb90a8257a87a480",
+      "statement": "`verify-reproducible-recreate.sh` takes the devcontainer config path as a parameter and selects its engine proof from it — a config under `.devcontainer/sandbox/` gets `verify-engine-seam.sh`, anything else gets `verify-engine-isolation.sh` — because the two configs' premises are inverted and running the wrong proof reports a topology mismatch as a failure; its `--full` mode additionally removes the source volume and stops after the build, since an empty source volume cannot be verified.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-reproducible-recreate.sh",
+          "version": "repo-file-v1:sha256:daa45487bdbd545e441e5ffc54fb6f77f416031a59a48d39355b99111fb41b4d"
+        }
+      ]
+    },
+    {
+      "id": "claim_e928c316367c43edaedb339aa3d6cdfe",
+      "statement": "`verify-portable-runner.sh` asserts only CLI-side behaviour and never drives the VS Code extension; on the sandbox path the two runners swap roles, with the CLI as the runner that builds daily inside the microVM and the extension as the unasserted alternate, so the check now covers the primary build path.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-portable-runner.sh",
+          "version": "repo-file-v1:sha256:11e9770bfc32cebb3db89de46ea7099d3be6b10fbbba7d5e4ce07fddf5eb5ab1"
+        }
+      ]
+    },
+    {
+      "id": "claim_f017d31db43b4462974d180b21342d71",
+      "statement": "`verify-firewall-allowlist.sh` branches on `MCM_DEVCONTAINER_PLATFORM=sandbox` and reports its in-VM `allowed-domains` ipset drift assertion as not applicable on this path, because the sandbox container runs `--network=host` and enforcement lives in the host policy; the authoritative list-vs-policy drift check here is the host-side `verify-sandbox-egress.sh --audit-check`, which the harness does not fold in and cannot fake. Its sibling probe and default-deny probe also accept either refusal body (the pre-v0.47.0 form and the v0.47.0 approval-queue form), so a marker-only check cannot read a working refusal as a breach.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh",
+          "version": "repo-file-v1:sha256:e57ccd277f1e1a452f9b1d64787151bb7fdc813d5160bfc60c8c61c2d0aa7da9"
+        }
+      ]
+    },
+    {
+      "id": "claim_71632d78cf0b46518d3144e762254478",
+      "statement": "`verify-reboot-survival.sh` treats a missing manifest as a FAILURE rather than a skip (a survival claim with no recorded before-state is unfalsifiable), writes the manifest inside the VM and expects it copied off the VM as well so a sandbox that returns empty can still prove it was not always empty, and compares existence and running state separately because containers can all still exist while none is serving.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-reboot-survival.sh",
+          "version": "repo-file-v1:sha256:4c58f52d7fe65f67723e2e96cefebe26bd84b554972ca677a146f349d8ac08b2"
+        }
+      ]
+    },
+    {
+      "id": "claim_02b36ed2c9664b05ad5673a5f6a029b2",
+      "statement": "The full sandbox recreate has a fixed order: back up, `sbx rm <name> --force`, `sbx create --name <name> -m 16g --skills=off shell <scratch-dir>`, apply the egress policy before anything pulls, the three cold-recreate gaps, a fresh clone into `/workspaces/<name>`, restore the `.env` files, `sbx stop`, then `devcontainer up`. `--skills=off` is deliberate because the current `sbx` default is `readonly`, which mounts the host skills store into a new sandbox unless you opt out.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0f3035a8d014c1996db2b78549ccfed",
+      "statement": "The sandbox engine has its own volumes, so the personal layer does not carry over from the Docker Desktop environment: the `mcm-claude` volume is empty on a fresh sandbox and nothing populates it automatically, so it must be installed once per container creation via the dotfiles repository (plus `ensure-rtk-hook.sh` when the dotfiles script does not wire the hook). RTK being present is not the same as RTK being active — the PreToolUse hook entry is what routes commands through it.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json",
+          "version": "repo-file-v1:sha256:b907b13cc62ac74970c0ce85d33f52ddfa70f49346771351ef20a5aabf84095d"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-14T01:34:17.413Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

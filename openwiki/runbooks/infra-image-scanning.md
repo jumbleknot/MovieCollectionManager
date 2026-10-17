@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault and the rest of infrastructure-as-code — not MinIO, which is built from source and scanned by its own builder) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry that keeps a Trivy DB blip from redding a required context, and the publish-versus-promote split for the from-source MinIO image.
+description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
@@ -44,7 +44,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-12T00:08:34.364Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Infra-image CVE scanning
@@ -70,16 +70,15 @@ exist and inherit a red nobody had seen — GHSA-vcvr-r3jv-pc5j, on the unchange
 was published 2026-09-22 and first surfaced at 04:00 on 2026-10-02. Tuesday 04:00 is hour-of-week 52,
 far ahead of the window, so the ordering guard still compares against Friday 04:00.
 
-**MinIO (`minio/minio`, `minio/mc`) left this set in feature 069.** Upstream deleted both Docker Hub
-repositories on 2026-09-11 (having moved to source-only distribution in October 2025). This project
-now builds MinIO from source (`infrastructure-as-code/docker/minio/Dockerfile`), published by
-`.forgejo/workflows/minio-image.yml`, which scans it and gates its own publish — through this same
-pipeline (`scripts/infra-image-scan.mjs --image <ref>`), so it shares the severity map and the one
-allowlist the weekly expiry check reads. Why the *builder* scans it rather than sending it here: this
-scan is keyless by design (no `${{ secrets }}`) and our images live in a private registry, so Trivy
-here cannot pull them — feature 069 tried it and CI proved the point (run 3121: `unable to find the
-specified image`). A builder already holds the image locally and is already authenticated, so it
-needs no new credential and blocks the **publish** instead of auditing after the fact.
+**The object store is a pulled image again, and feature 080 is why.** From feature 069 until feature
+080 the S3 object store was built from source and scanned by its own builder; feature 080 replaced it
+with an upstream, digest-pinned `rustfs/rustfs` Docker Hub pull, so **RustFS is scanned here like every
+other server image**, in every compose file that pins it. The from-source build, its workflow, its
+promoter, its Renovate rule and its four allowlist entries were deleted in the same change, and
+`scripts/__tests__/no-minio-references.guard.test.mjs` now fails on any *live* reference to the retired
+machinery — the runbook keeps its case study inside an explicit `<!-- history:begin -->` block, which is
+the only place such prose is allowed to survive. See "What feature 080 changed" below for the
+transferable lessons; nothing in that section describes a mechanism that still runs.
 
 ## How a run flows
 
@@ -133,25 +132,32 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   here anyway and loses nothing, for the same reason.
 - **Scanner partition rule: by coverage, not by namespace.** An image is scanned by whoever *builds*
   it; everything else belongs here. `cd-deploy` owns its six app images (see
-  [CI/CD pipeline](../projects/ci-cd-pipeline.md)); `minio-image` owns the from-source MinIO image. The
-  exclusion rule used to be `if (ref.includes('jumbleknot/')) continue` — matching "anything named like
-  ours" rather than "anything already scanned by a builder". Feature 069 broke that coincidence by
-  adding a `jumbleknot/*` image built outside cd-deploy; under the old rule it was excluded here and
-  absent from cd-deploy's set — published and examined by neither gate, zero findings, no error. The
-  rule is now membership of `BUILT_IMAGE_NAMES`. Any future image built outside cd-deploy must be added
-  to `BUILT_IMAGE_NAMES` or explicitly enumerated here — the invariant is exactly one scanner per
-  image, not zero and not two. Completeness is asserted against a **hypothetical** fixture in
+  [CI/CD pipeline](../projects/ci-cd-pipeline.md)); nothing else builds an image any more, so
+  `BUILT_IMAGE_NAMES` is exactly those six and every pulled third-party image — RustFS included — is
+  enumerated here. The exclusion rule used to be `if (ref.includes('jumbleknot/')) continue` — matching
+  "anything named like ours" rather than "anything already scanned by a builder". Feature 069 broke that
+  coincidence by adding a `jumbleknot/*` image built outside cd-deploy; under the old rule it was
+  excluded here and absent from cd-deploy's set — published and examined by neither gate, zero findings,
+  no error. The rule is now membership of `BUILT_IMAGE_NAMES`, and the guard asserts the list is exactly
+  cd-deploy's six. Any future image built outside cd-deploy must be added to `BUILT_IMAGE_NAMES` or
+  explicitly enumerated here — the invariant is exactly one scanner per image, not zero and not two.
+  Completeness is asserted against a **hypothetical** fixture in
   `scripts/__tests__/infra-image-scan.test.mjs` (`jumbleknot/future-widget`), not against the live
-  tree: the earlier fixture named `jumbleknot/minio`, and when that image joined the exclusion set the
-  test failed for a reason that had nothing to do with the property it asserts.
+  tree: the earlier fixture named a real image, and when that image's classification changed the test
+  failed for a reason that had nothing to do with the property it asserts.
 - **The registry host is interpolated in compose, and the scanner must resolve it or refuse to run.**
-  `check-topology-scrub` forbids the real forge host in a committed file, so our own images can only be
-  referenced as `${REGISTRY_HOST}/…` — and a blanket `${` skip would have made exactly the image the
-  partition rule exists to cover invisible here. With `REGISTRY_HOST` set (CI) the ref is concretely
-  pullable and is enumerated; without it the ref is skipped, and on a real scan that is a **hard
-  failure** (`exit 2`), not a quiet reduction in coverage — a sweep that silently covers less than the
-  tree and still passes is worse than one that fails loudly. The variable is matched by regex, not as a
-  literal, so the guarded compose form (`${REGISTRY_HOST:?…}`, which contains spaces) resolves too.
+  `check-topology-scrub` forbids the real forge host in a committed file, so an image this project
+  publishes to its own registry can only be referenced as `${REGISTRY_HOST}/…`. With `REGISTRY_HOST`
+  set the ref is concretely pullable and is enumerated; without it the ref is skipped, and on a real
+  scan that is a **hard failure** (`exit 2`), not a quiet reduction in coverage — a sweep that silently
+  covers less than the tree and still passes is worse than one that fails loudly. The variable is
+  matched by regex, not as a literal, so the guarded compose form (`${REGISTRY_HOST:?…}`, which contains
+  spaces) resolves too. **The workflow stopped supplying `REGISTRY_HOST` in feature 080**, because its
+  only consumer — feature 069's from-source object-store ref — is gone and every remaining
+  `${REGISTRY_HOST}` ref in the tree is a cd-deploy image excluded for two other reasons (a second
+  `${…}` and membership of `BUILT_IMAGE_NAMES`). Those are deliberately *not* reported as unresolved:
+  a warning that cries wolf is one nobody reads. If a future compose ref genuinely needs the host,
+  the scan exits 2 naming the ref rather than silently shrinking what it covers.
 - **Only a fixable Critical blocks the gate.** An unfixable Critical (no upstream patched version yet)
   is a report-only warning, since a version bump can't clear it and it must not wedge the gate
   indefinitely. `normalizeTrivy()` marks `blocking = Critical AND a fix exists upstream` — the same bar
@@ -160,9 +166,9 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
 - **A finding and a scanner fault are two different exit codes on two commands.** `scripts/infra-image-scan.mjs`
   invokes Trivy with `--format json` and **no** `--exit-code`, so a non-zero scan exit can only mean
   the scanner could not run; `scripts/check-infra-image-findings.mjs` then carries the verdict from the
-  normalized report. This split is what both the `minio-image` builder and `cd-deploy` run per image
-  before the push, and it is why accepted findings on the deploy path live in
-  `security/infra-images/allowlist.yaml` rather than in a `.trivyignore` nobody reviews. Pinned by
+  normalized report. This split is what `cd-deploy` runs per image before the push, and it is why
+  accepted findings on the deploy path live in `security/infra-images/allowlist.yaml` rather than in a
+  `.trivyignore` nobody reviews. Pinned by
   `scripts/__tests__/cd-scan-push-gate.guard.test.mjs`, which asserts the gate runs before
   `docker push` and inside the per-image loop.
 - **A Trivy vulnerability-DB blip is bounded-retried, and the retry must not soften the gate.**
@@ -184,7 +190,11 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
 - **Keyless and fail-closed**, matching the posture in
   [Secrets management](../invariants/secrets-management.md) and
   [SAST/SCA scanning](./sast-scanning.md) — a Trivy/pull/parse failure fails the job
-  rather than producing a clean-looking report.
+  rather than producing a clean-looking report. Keyless is also *why* an image's own builder scans it
+  rather than routing it here: our built images live in a private registry, so a scan that carries no
+  `${{ secrets }}` cannot pull them (measured: `unable to find the specified image`). A builder already
+  holds the image locally and is already authenticated, so it needs no new credential and gates the
+  publish instead of auditing after it.
 - **The allowlist is baseline, not permanent.** Suppression is gate-only; findings stay visible in the
   report, and a suppressed entry must be deleted once the underlying image is actually bumped — leaving
   a stale entry hides a regression rather than tracking a real accepted risk. Every entry needs
@@ -193,22 +203,24 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
 - **Key a suppression to a VERSION, so an upgrade can discharge it.** `image` is matched as an
   **unanchored** regex against the full scanned reference, and that one property decides whether a
   suppression can ever end: `hashicorp/vault:1\.18` still matches `1.18@sha256:…` but stops matching
-  `1.21`, whereas a bare repository name (`minio/minio`, no tag) matches every tag that image will ever
-  have — it suppresses the advisory it was written for *and every future one in the same image*,
-  silently and permanently. That is not an accepted risk with a review date, it is a permanent hole.
+  `1.21`, whereas a bare repository name (no tag) matches every tag that image will ever have — it
+  suppresses the advisory it was written for *and every future one in the same image*, silently and
+  permanently. That is not an accepted risk with a review date, it is a permanent hole.
   `scripts/__tests__/infra-image-scan.test.mjs` asserts both directions for every formerly-floating
   repository: the key still matches today's pin **and** stops matching a later version derived by
   incrementing the pin's last number (a hand-written "next version" literal silently stopped meaning
-  "later" when a bump moved past it).
+  "later" when a bump moved past it). A tag carrying no number cannot be bumped this way; the helper
+  fails loudly and asks for a declared exception rather than passing vacuously.
 - **Re-keying an allowlist entry is required whenever a pinned tag changes, not optional tidy-up.**
   An entry keyed to the old tag matches nothing after the bump, the finding it covered becomes
   un-allowlisted, and the gate blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line,
   which reads like housekeeping rather than like the cause. Check that line before assuming a new CVE
   appeared. Unmatched detection is also **scoped to the images the run actually scanned**
-  (`generatedForImages`, item #423), because two jobs consult this one allowlist — the sweep and the
-  single-image `minio-image` builder, whose findings both carry the same literal scanner label — and
-  each used to report the other's live entries as stale. The field is required, not defaulted: a
-  producer that stops writing it fails the gate rather than silently restoring the old behaviour.
+  (`generatedForImages`, item #423), because two jobs consult this one allowlist — the full sweep and
+  the single-image `cd-deploy` scan-push loop, whose findings both carry the same literal scanner
+  label — and each used to report the other's live entries as stale. The field is required, not
+  defaulted: a producer that stops writing it fails the gate rather than silently restoring the old
+  behaviour.
 - **A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once.** A version-keyed
   entry names one version, but during a bump two are live: `main` still references the old tag, the
   Renovate branch references the new one. Whichever single version the key names, the other side blocks.
@@ -220,57 +232,19 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   enumeration left to grow one version at a time becomes the wildcard by instalments. Do this only when
   the bump is **not** the remediation — where the new version actually clears the advisory, delete the
   entry when the bump lands.
-- **The floating-tag exception set is now EMPTY — that is correct, not a regression.** The two MinIO
-  images are no longer pulled, so they are no longer exceptions. The old rule ("a floating count of 0 is
-  a FAILURE") still guards against widening `isFloatingTag` to hide exceptions, but it no longer works
-  by asserting a magic count: the guard asserts **set equality** between the refs the classifier calls
-  floating in `infrastructure-as-code/**` and the declared exceptions read out of renovate.json's
+- **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
+  object-store images left the tree with feature 069, and their from-source successor left with feature
+  080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count
+  of 0 is a FAILURE") still guards against widening `isFloatingTag` to hide exceptions, but it no longer
+  works by asserting a magic count: the guard asserts **set equality** between the refs the classifier
+  calls floating in `infrastructure-as-code/**` and the declared exceptions read out of renovate.json's
   docker-datasource `regex:^RELEASE` rules, with the count derived from that same declaration so the
   two cannot disagree. Tests `(fd1)`–`(fd4)` assert the classifier's behaviour directly and do not
   depend on the count at all — a count of 0 with an empty declared list is passing; a count of 0 where
-  the declared list is non-empty is the failure.
-- **Publishing a rebuilt MinIO image is not the same as promoting it into the stacks.** A push that
-  edits the Dockerfile both publishes **and** promotes — `scripts/promote-minio-digest.mjs` runs,
-  repoints every pinned ref it finds in the tree, and opens (or updates) one always-current pull
-  request. The weekly canary publishes **only** — its digest changes every Friday regardless, since
-  the `apk` installs float, so promoting it would mean a no-content PR most weeks. A
-  `workflow_dispatch` run promotes only when its `promote` input is explicitly ticked; the default is
-  false, because dispatch is also how the build is proven still working and that must stay read-only.
-  The split exists because publication alone left the stacks stale: PR #559 bumped the builder's
-  `golang` base as a security bump, the image rebuilt and published, and every compose ref still pinned
-  the pre-#559 digest three weeks later (item #577).
-  A third fact makes the canary safe rather than merely pointless: **every build is also tagged with a
-  per-run immutable tag** (`<tag>-r<run id>`). This registry drops a manifest the moment nothing tags
-  it — measured 2026-09-12, when a re-push left the previous digest returning 404 — so with the moving
-  release tag alone the weekly canary would have orphaned whatever digest the compose files pinned,
-  every Friday, in dev and prod. The per-run tag keeps each manifest alive, so updating a pin is a
-  deliberate act rather than a weekly breakage.
-  Two measured traps in the promoter itself: (1) the digest it writes must be resolved from the
-  registry as the **manifest list**, by asking `GET /v2/<ns>/minio/manifests/<tag>` directly — not via
-  `docker buildx imagetools inspect`, which is a **client-side** operation that talks to the registry
-  itself and ignores the daemon's `insecure-registries` config, so it fails over plain HTTP even
-  though `docker push` succeeds in the same job; (2) the count of refs to repoint must come from a
-  **live scan of the tree** (`findRefs()`, which throws rather than reporting an empty promotion), never
-  from a stale count recorded in a spec note — a later feature can add more pinned refs than the note
-  remembers. The promoter also **refuses to guess the registry scheme**: `registryBase()` takes it from
-  `REGISTRY_SCHEME` or the forge origin and fails loudly if neither is set, because assuming https is
-  precisely what broke run 4093.
-  The promotion opens a **pull request** rather than pushing to `main`, and it carries no `[skip ci]`:
-  `app-e2e` running on the ref change is what makes proposing it automatically safe, and
-  `scripts/__tests__/minio-promote.guard.test.mjs` fails if `infrastructure-as-code/docker/**` ever
-  leaves app-ci's `app` paths filter. The **unmerged promotion PR is itself the stale-pin signal** —
-  there is deliberately no second reporting mechanism.
-- **MinIO's date-based update types are calendar arithmetic, not semantic versioning.** The regex
-  versioning scheme maps year→major, month→minor, day→patch. A January release reports **major** because
-  the year advanced, not because anything broke. Do not read the label as a risk signal the way you
-  would for `opa` or `unleash`. (`loose` versioning cannot parse `RELEASE.…` tags at all — its `_parse`
-  returns null for anything beginning `RELEASE.`, which makes those tags *invisible* rather than merely
-  unordered.) Since feature 069 the rule that carries this versioning targets the upstream **source**
-  release on the `github-releases` datasource rather than a pulled image, because we compile MinIO
-  ourselves. Our own image uses an orderable tag format (`2025.09.07-161309`) and needs no versioning
-  exception. One trap that belongs to the Renovate side rather than to this scan: a `packageRule` can
-  resolve while nothing extracts the dependency it describes — see
-  [Renovate](./renovate.md) for the `MINIO_TAG` case (item #560).
+  the declared list is non-empty is the failure. The declared set is read from **docker-datasource**
+  rules specifically, because that list means "image references whose tag the classifier cannot order";
+  feature 069 briefly added a `github-releases` date-versioning rule describing the *source* release we
+  compiled, which was deliberately excluded here and was deleted with feature 080.
 - **A green `infra-image-scan` tick usually proves nothing — check the duration.** The required context
   posts `success` on every PR, including ones where Trivy never ran. That is deliberate (a job-level
   `if:` skip posts no status at all, and the required pattern then blocks the PR forever) — but it means
@@ -286,7 +260,7 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   one with a 2–14 s job duration. A PR's green tick can therefore be a stale green, and it stays
   "mergeable" after the images it pins go dirty. To force a real sweep, touch an infra path — editing
   `security/infra-images/allowlist.yaml` is itself enough.
-- **A red scheduled sweep is now visible on the commit — as a status that cannot gate (item #485).** A
+- **A red scheduled sweep is visible on the commit — as a status that cannot gate (item #485).** A
   `schedule`-triggered run posts **no** `infra-image-scan / infra-image-scan` status, so a red `main`
   used to be silent until an unrelated Renovate PR ran the same sweep and became unmergeable.
   `scripts/publish-sweep-verdict.mjs` now posts `infra-image-scan/weekly` with a **real**
@@ -364,22 +338,60 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   in the gate's output that is indistinguishable from remediation. Read the installed package version
   before writing "remediated".
 
+## What feature 080 changed — and the lessons that transfer
+
+Feature 080 (item #560) replaced the from-source object-store image with upstream `rustfs/rustfs`,
+digest-pinned in every compose file that pins it, and deleted the build, its workflow, its promoter,
+its Renovate rule and its four allowlist entries. The full case study lives in
+`docs/runbooks/infra-image-scanning.md` § "The from-source object store … — retired by feature 080";
+what matters here is that four of its lessons are about the *shape*, not about that image.
+
+- **Publishing is not promoting.** A rebuilt, published image is not a deployed one: PR #559 bumped the
+  builder base image as a security bump, the workflow rebuilt and published, and every compose ref
+  still pinned the pre-#559 digest three weeks later (item #577). Anything a build scans is a claim
+  about the image *as built* until a promotion repoints the pins. `cd-deploy` keeps the two acts
+  distinct for its own images: `scripts/cd/scan-push.sh` scans and gates the push, and
+  `scripts/cd/promote-digest.sh` writes the resulting digests into the tracked `.env.deploy` files as a
+  separate step. On a registry that drops a manifest once nothing tags it, a build must also be pushed
+  under an immutable per-run tag or a rebuild orphans the digest the compose refs pin — `cd-deploy`
+  pushes each image as `${REGISTRY}/${NS}/<repo>:${GITHUB_SHA}`, and the promoter repoints the refs by
+  digest. Without that, updating a pin would be a weekly breakage rather than a deliberate act.
+- **A count of things to repoint comes from the tree, never from a note.** The promoter's spec note
+  recorded "all four refs repointed", correct when written; a later feature added two more and the note
+  went stale with nothing noticing. A live tree scan that treats an empty result as a hard failure is
+  the only shape that cannot silently match nothing — a promoter that repoints zero refs is
+  indistinguishable from one that worked.
+- **Choosing a tool to avoid a decision removes your control of the decision.** Resolving a published
+  digest via `docker buildx imagetools inspect` failed over plain HTTP while `docker push` succeeded in
+  the same job, because `imagetools` is a **client-side** operation that talks to the registry itself
+  and ignores the daemon's `insecure-registries` configuration. The lesson generalises past that tool:
+  ask the registry directly for the manifest **list**, and take the scheme from an explicit setting or
+  the forge origin and **fail rather than defaulting**, because assuming https is exactly what broke
+  the run that chose the tool.
+- **A rule is not an update channel — extraction is.** A Renovate `packageRule` can resolve, and its
+  guard can pass, while nothing extracts the dependency it describes: the rule is only a claim about
+  what would happen if the dep were ever seen. Read the Dependency Dashboard's *Detected Dependencies*,
+  which is Renovate telling you what it actually extracted. See [Renovate](./renovate.md) for the
+  measured case (item #560) and for the visibility guard in
+  `scripts/__tests__/infra-image-scan.test.mjs` that asserts it — a guard should assert visibility, not
+  configuration.
+
 ## Guards
 
 | guard | what it pins |
 |---|---|
-| `scripts/__tests__/infra-image-scan.test.mjs` | pure enumeration + normalization: the partition/completeness case against a **hypothetical** fixture, `${REGISTRY_HOST}` resolution, `isFloatingTag` `(fd1)`–`(fd4)`, set equality of floating refs against renovate's declared exceptions, the two-directional allowlist-key assertion, and digest pinning. Runs without Trivy, so it is Windows-friendly. |
-| `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact run-3622 stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
+| `scripts/__tests__/infra-image-scan.test.mjs` | pure enumeration + normalization: the partition/completeness case against a **hypothetical** fixture, `BUILT_IMAGE_NAMES` being exactly cd-deploy's six, `${REGISTRY_HOST}` resolution and its loud unresolved-ref report, `isFloatingTag` `(fd1)`–`(fd4)`, set equality of floating refs against renovate's declared exceptions, the two-directional allowlist-key assertion, the digest-pin count and Renovate's compose-file visibility, and the RustFS ref being enumerated digest-pinned. Runs without Trivy, so it is Windows-friendly. |
+| `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
 | `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, and both are UTC-fixed 5-field expressions — so a later "tidy the crons together" cannot silently undo it. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
-| `scripts/__tests__/minio-promote.guard.test.mjs`, `promote-minio-digest.test.mjs` | the promoter: the promotion step's `if:` admits a Dockerfile push and never the canary, `REGISTRY_SCHEME` is passed and never guessed, and the ref count comes from the tree. |
+| `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |
 
 A guard is not decoration here: each one above exists because its absence was paid for — a silent
 coverage hole, a retry that would have masked a finding, a gate that ran after the push, a cron that
-could be tidied back into a race with the window.
+could be tidied back into a race with the window, a rename that missed one runbook line.
 
 Full scanner-vs-scanner coverage table, the allowlist entry shape and seeding steps, the local Trivy
 recipe, and the remediation ownership: `docs/runbooks/infra-image-scanning.md`.

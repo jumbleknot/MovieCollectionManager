@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
-description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall (including the Ollama registry/blob pair), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-15T10:11:13.472Z
 sources:
   - id: openwiki-source-f7c89635dfc6efb0ecec007f
     resource: repo://.devcontainer/devcontainer.json
@@ -33,6 +30,9 @@ sources:
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -216,11 +216,29 @@ a claim asserted from inside the thing being claimed about is not proof.
 - **Local Ollama runs inside the dev container itself** via the `dev-ollama` nested container
   (`scripts/devcontainer-ollama.sh`, run at `postStartCommand`), publishing `0.0.0.0:11434` so
   nested containers reach it through the bridge gateway; the agent gateway already targets
-  `host.docker.internal:11434` and reaches it with no gateway change, image rebuild, or firewall
-  change. Re-measured 2026-08-09: reachable from inside the gateway container. **Verify with the
+  `host.docker.internal:11434` (its compose default plus an `extra_hosts: host-gateway` mapping)
+  and reaches it with no gateway change, image rebuild, or firewall change. The image is pinned by
+  tag **and digest** in `infrastructure-as-code/docker/dev-ollama.compose.yaml`; the script pulls
+  `qwen2.5` once into the `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB
+  download must never block container readiness), overridable via `DEVCONTAINER_OLLAMA_MODEL`, and
+  the balanced `qwen2.5:32b` tier is a by-hand pull only (`docker exec dev-ollama ollama pull
+  qwen2.5:32b`) because CPU inference makes it slow. The script is best-effort and idempotent **by
+  design**: it exits 0 when the nested dockerd is not ready or the API has not answered, so a failed
+  Ollama start can never block container start — agent flows just fall back to Anthropic.
+  Re-measured 2026-08-09: reachable from inside the gateway container. **Verify with the
   liveness probe before trusting this note** — it has flipped once:
   `docker exec movie-assistant-gateway python -c "import urllib.request,json; print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"`.
   See [Model-provider scoping](../invariants/model-provider-scoping.md).
+- **A blocked Ollama destination is a blocked merge gate, not an inconvenience.** The canonical
+  allowlist carries both `registry.ollama.ai` (the manifest host compiled into the ollama binary) and
+  the pinned Cloudflare R2 blob host every model layer is actually served from (item #394). With
+  either absent, `ollama pull` dies at DNS and `ollama list` stays empty — which retires the golden
+  tier (`nx test:golden movie-assistant`), the agent half of the E2E gate and `nx up-agents-prod`'s
+  model precheck to CI-only, and makes a real defect indistinguishable from an absent model. The blob
+  host is pinned by exact FQDN rather than `*.r2.cloudflarestorage.com`: the subdomain is Ollama's R2
+  account id, constant across pulls, and the wildcard would open every account's bucket. So a layer
+  failure *after* a clean manifest means the account id changed, not a stale ipset — read the new
+  name out of the error and add it; do not widen.
 - **A Docker CDN blob timeout on `docker compose up` is usually firewall/CDN-IP drift, not a real
   outage** — re-run `init-firewall.sh` to re-resolve the allowlisted CDN IPs and retry, rather than
   disabling the firewall.

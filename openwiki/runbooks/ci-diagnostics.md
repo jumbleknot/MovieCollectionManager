@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the skip-cause annotation model (item #396), watch waiting for advisory contexts including trigger-cd before reporting settled (item #403), the live-fetched required-check list, the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload, the durations subcommand and the anti-ratchet per-step app-e2e ceiling table (scripts/ci-step-ceilings.tsv, item #338), the event-vs-trigger_event field split that makes a scheduled run look like a push, the ⏳ trap where absence in the 50-row tasks window is not evidence a job was never scheduled, the scheduled-run-posts-no-commit-status fix (item #485), the commit-status bookkeeping pattern for green jobs whose output would otherwise vanish (item #457), and the mc-service evidence-bundle log-ordering trap that can manufacture a race that never happened (item #568).
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states, the skip-cause annotation model, the live-fetched required-check set, the query shape that keeps a lookup fast, the event-versus-trigger_event split, the per-step durations ceiling table, and the AGit detached-head trap that silently empties every secret.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
 sources:
@@ -34,25 +34,76 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # CI self-serve diagnostics
 
-The forge's API exposes no log, artifact, or per-run-jobs endpoint, so `scripts/ci-status.mjs`
-inverts the usual direction: CI pushes a curated status digest somewhere the API can already read,
-and the script reads it back to answer "is this commit/PR mergeable" and "why did it fail" without a
-human copy-pasting logs into the session. It resolves the forge host from the `origin` remote at
-runtime rather than any literal configured value.
+The forge API in this build (`15.0.3+gitea-1.22.0`, measured) exposes **no log, artifact or per-run-jobs
+endpoint**, and no re-run endpoint either. So `scripts/ci-status.mjs` inverts the usual direction: CI
+pushes a curated digest into channels the API can already read, and the script reads it back to answer
+"is this commit/PR mergeable" and "why did it fail" without a human copy-pasting logs into the session.
+Its four entry points are `status`, `watch`, `failure` and `durations`, plus `--selftest`; it resolves the
+forge host from the `origin` remote **at runtime**, so no host literal exists to keep in sync.
+
+Two facts decide almost every reading:
+
+- **Exit `0` means mergeable, `1` a required context genuinely failed, `2` bad arguments/auth, `3` still
+  waiting when `watch` timed out.** The `3` is load-bearing — it is deliberately *not* a failure, because
+  there is one runner and a saturated queue is the normal state of this repository.
+- **`watch` answers a different question from its exit code.** It waits for advisory contexts too
+  (`app-ci / trigger-cd` is the only place a declined or failed deploy is visible), while the exit code is
+  decided by the required set alone.
+
+```mermaid
+flowchart TD
+  T{"which target"} -->|"sha full-sha"| S["that commit"]
+  T -->|"pr n"| P["PR head sha, plus head.ref and PR state"]
+  T -->|"run id"| R["the run commit_sha, plus the run own status"]
+  T -->|"branch, or HEAD"| L["git rev-parse"]
+  S --> ST["GET commits sha statuses — the contexts on that commit"]
+  P --> ST
+  R --> ST
+  L --> ST
+  BP["GET branch_protections for the BASE branch"] --> V
+  ST --> C["classifyCheckState per context"]
+  C --> V{"verdict over the WHOLE commit"}
+  C --> VIEW["single-event view, for the readable table"]
+  V --> E["exit 0 mergeable, 1 required failed, 3 still waiting"]
+  V --> ALSO["ALSO GATING names required contexts missing from the view"]
+```
+
+How a lookup flows: the target resolves to one commit, contexts are classified, and the whole-commit
+verdict is rendered separately from the single-event view.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Raw
+  Raw --> Superseded: cancelled wording or owning run cancelled
+  Raw --> Waiting: status pending
+  Raw --> Skipped: success plus skipped wording
+  Raw --> Passed: success
+  Raw --> Failed: anything else
+  Skipped --> Gate: every needs edge passed
+  Skipped --> Dependency: a needed job failed or was cancelled
+  Skipped --> Undetermined: workflow unreadable or dependency still pending
+```
+
+The five states `ci-status` reports, and how two of them are derived rather than read literally — the
+skipped branch then splits three ways on the `needs:` graph.
 
 ## Gotchas
 
 - **Two of the five reported check states are misreported by the raw API and must be derived, not
   trusted literally.** A skipped job reads `success` with description "Has been skipped" — but the
-  payload does not say *why* it was skipped (see item #396 below); a cancelled-by-newer-push run
+  payload does not say *why* it was skipped (see item 396 below); a cancelled-by-newer-push run
   reads `failure` on **every** job it touched, even though nothing was actually broken — the tell is
   that unrelated jobs die together on a change that couldn't have affected them all, confirmed by the
-  literal "Has been cancelled" description or the owning run's `cancelled` status.
+  literal "Has been cancelled" description or the owning run's `cancelled` status. Cancellation is
+  tested **first** and both wordings are anchored (`^(?:has been )?cancelled$`), so a genuine failure
+  whose message merely *contains* the word cannot be silently reclassified as superseded — that would
+  hide a real break. Either signal alone suffices, so a UI wording change cannot turn superseded back
+  into failed.
 - **There is no re-run endpoint — measured 2026-08-31.** All three plausible shapes answer `404`:
   `actions/runs/{id}/rerun`, `actions/tasks/{id}/rerun`, `actions/runs/{id}/rerun-failed-jobs`.
   Nothing can re-run a job in place, and there is no way to re-run *one* failed job at all.
@@ -75,7 +126,7 @@ runtime rather than any literal configured value.
   actually differ by. Measured on PR #262: three-dot said "three version moves remain unique to this
   PR"; two-dot showed merging it would have downgraded crates, and Renovate autoclosed it minutes
   later.
-- **`--run N` — FIXED 2026-09-01 (item #226), and worth knowing what it used to do.** `--run N`
+- **`--run N` — FIXED 2026-09-01 (item 226), and worth knowing what it used to do.** `--run N`
   now resolves the run's own commit and fetches its bundle. It previously did **nothing at all**: the
   flag was parsed and read by no code path, so `resolveSha` fell through to `git rev-parse HEAD` and
   the tool answered about your working copy. **The old failure mode is the one to remember, because
@@ -87,7 +138,8 @@ runtime rather than any literal configured value.
   N` or `--sha $(git rev-parse <ref>)`.** An abbreviated sha is refused outright; a short sha
   returns zero runs and reads as "no CI ran".
 - **`app-e2e` is SKIPPED on most pull requests — the board hides its true failure rate.** `app-e2e`
-  is path-gated on `changes.outputs.app`. A PR touching only `scripts/`, `docs/` or `openwiki/`
+  is path-gated on `changes.outputs.app`. A PR touching only `docs/` or `openwiki/`, or only a
+  `scripts/` file the `app` filter does not name (it lists specific scripts, not `scripts/**`),
   renders it `skipped → satisfied` and the board goes green **without the E2E suite ever running**.
   Measured 2026-09-02: of eleven recent `app-ci` runs that looked like a clean green streak, only
   three had actually executed `app-e2e`; the rest were path-gated skips. Two readings of the same
@@ -100,6 +152,17 @@ runtime rather than any literal configured value.
   failure percentage is NOT evidence about recent stability** — it spans months including
   known-broken periods and does not isolate the failure class in question. Use the right data, not
   merely more of it.
+- **A ⏳ is not a future pass, and the filter — not the spinner — says whether a job will run.**
+  `waiting` can still resolve to `skipped` (path-gated) or `superseded` (cancelled by a newer push);
+  both are non-runs that a green board then presents as satisfied. Item 568 hit this twice in one
+  afternoon in both directions: a second `app-e2e` execution declared "in flight on main's head"
+  resolved `skipped` (docs-only merge, correctly gated out), and the merge commit of the fix itself
+  plus the commit after it both resolved `superseded` — three candidate runs, three non-runs. Derive
+  it from the FILTER and the changed paths (`git diff --name-only origin/main...HEAD`, then read the
+  `app:` / `mobile:` filters in `app-ci.yml`), never from the spinner. Worth knowing while reading
+  them: `app` lists **named scripts, not `scripts/**`**, and `mobile` is a deliberate strict subset of
+  `app` (no `infrastructure-as-code/docker/**`, no lockfile), so a PR can run the whole web half while
+  the emulator half never fires.
 - **The "superseded" trap is the dangerous direction: it fails loud, announcing a broken build that
   isn't.** The other misreport (skipped) fails safe. Both were measured against real API responses,
   not inferred from documentation.
@@ -107,7 +170,7 @@ runtime rather than any literal configured value.
   `app-ci / trigger-cd` runs `scripts/cd-dispatch-gate.mjs`, which imports `ci-status.mjs` to reuse
   its check classification. That job runs node directly with no `pnpm install` step, so every module
   reachable from the gate may import node builtins and repo-local files, and nothing else. Measured
-  2026-09-09, on the merge of PR #400: item #396's needs-graph was implemented with
+  2026-09-09, on the merge of PR #400: item 396's needs-graph was implemented with
   `import { parse } from 'yaml'` — a devDependency, so every local test passed — and `trigger-cd`
   then died on `main` with `ERR_MODULE_NOT_FOUND`. The reason this matters: `trigger-cd` is
   *advisory*, so the PR merged green, `main` stayed green, no required context moved — and the CD
@@ -118,7 +181,7 @@ runtime rather than any literal configured value.
   hand parser against the real `yaml` package over every workflow in `.forgejo/workflows/`. Reproduce
   the CI condition locally: copy `scripts/*.mjs` somewhere with no `node_modules` anywhere up the
   tree, then `node -e "import('./cd-dispatch-gate.mjs')"`.
-- **A skip annotation is NOT safe to read as "path-gated — this diff doesn't apply" (item #396).**
+- **A skip annotation is NOT safe to read as "path-gated — this diff doesn't apply" (item 396).**
   `ci-status` used to label every skip `(path-gated → satisfied)`. On PR #393 (2026-09-08) that was
   wrong on both counts: the commit touched `agents/**` and `mcp-servers/**`, which are in app-ci's
   `changes` filter; `app-e2e` was skipped because `affected`, which it `needs:`, failed on one E501.
@@ -131,7 +194,7 @@ runtime rather than any literal configured value.
   the dependency has not yet reported. A dependency-skipped required context still counts as satisfied
   for the verdict — the merge is blocked by the failed dependency itself.
 - **`cd-dispatch / trigger-cd` is NOT a CI result — it is the deploy gate's own answer, and it is
-  the ONLY place a declined deploy is visible.** Before item #230, a run that declined to dispatch
+  the ONLY place a declined deploy is visible.** Before item 230, a run that declined to dispatch
   and a run that deployed looked identical from outside — both were advisory, both silent. A commit
   went undeployed for a day because of this (measured 2026-08-22: PR #217's changes reached `main`
   and were never deployed; the advisory job gave no signal). `scripts/cd-dispatch-gate.mjs` now
@@ -141,15 +204,22 @@ runtime rather than any literal configured value.
   job. **Read this status before concluding a deploy was lost.**
 - **The required-check list is fetched live from branch protection, never hand-maintained.** It
   previously drifted (a hardcoded array missed a check added by a later feature) and let the tool
-  report "mergeable" for a PR the forge then rejected outright — over-reporting mergeable is the
-  dangerous direction here, because a wrapper that chains a status check into an actual merge call
-  will attempt a merge that cannot succeed.
+  report "mergeable" for a PR the forge then rejected outright — measured 2026-07-26: `VERDICT
+  mergeable` and exit 0 for PR #103 while `POST /pulls/103/merge` answered **405 "Not all required
+  status checks successful"**. Over-reporting mergeable is the dangerous direction here, because a
+  wrapper that chains a status check into an actual merge call will attempt a merge that cannot
+  succeed. Three consequences: a fetch failure **degrades rather than aborts** (a verdict from a
+  possibly-stale built-in list beats no verdict) but the header always says so; the globs come from
+  the rule covering the target's **base** branch, since a PR is gated by its base, not its head; and
+  the parser returns **null, never an empty array**, when no rule covers the branch — an empty
+  required set would mark every context optional and render *everything* mergeable, the same
+  over-reporting bug in a louder disguise.
 - **A context string carries an event suffix, and getting the event wrong goes wrong in both
   directions.** Ignoring the event over-reports failure (a green push run blocks a PR that was fine).
   Selecting *one* event over-reports **success** — the dangerous direction: a required job that
   failed on `push` while its `pull_request` twin was path-gated to a 2 s skip produced `VERDICT
   mergeable` and exit 0, then `POST /pulls/{n}/merge` answered **405**. Four occurrences: PRs #276,
-  #302, #263, and two dependency PRs. **Since item #281 the two concerns are separated**: the
+  #302, #263, and two dependency PRs. **Since item 281 the two concerns are separated**: the
   *verdict* is whole-commit (evaluates every context the globs match, exactly as branch protection
   does); the *view* is one event. When a required context is gated but absent from the view, the
   tool calls it out explicitly in an `ALSO GATING` block — that block is what makes a "green PR"
@@ -158,47 +228,211 @@ runtime rather than any literal configured value.
 - **Query shape is a correctness rule here, not a performance tweak.** Filtering by the full commit
   SHA is server-side honored and returns a small payload; several other filter parameters are
   silently ignored by the API and fall back to a payload roughly 800x larger — using the wrong query
-  doesn't just make a lookup slower, it can make it impractically slow.
+  doesn't just make a lookup slower, it can make it impractically slow. Measured 2026-07-18:
+  `?head_sha=<full-sha>` 15 KB / 0.48 s, `?page=N&limit=M` 82 KB / 1.2 s, and `?limit=N` alone,
+  `?status=`, `?event=`, `?branch=` each 12.4 MB / 94 s. The *timings* were taken while the homelab's
+  tailnet transmit was throttled to ~135 KB/s by a tun segmentation-offload bug (fixed 2026-07-25),
+  so the latency gap has largely closed — the **payload** difference is the durable reason, since
+  12.4 MB still has to be transferred, parsed and held. An abbreviated sha is **rejected**: `head_sha`
+  is exact-match, so a short sha returns zero runs and reads as "no CI ran".
+- **A missing route and an empty result are different facts, and both render as "nothing there".**
+  Measured on this build: `/actions/runs/{id}/jobs` answers with a **non-JSON body**, so a naive
+  `| jq` dies on a parse error rather than a 404; `/actions/workflows/<file>/runs` is a real **404**;
+  `?limit=N` **alone is silently ignored** and returns every run (measured: 3614 runs / 371 KB) while
+  it is honoured alongside `page`; `?workflow_id=<file>` **works** server-side (the value is the
+  workflow file name); `?trigger_event=schedule` is **silently ignored** and returns the unfiltered
+  set; and querying a **padded** sha — one abbreviated in `git log --oneline` and then typed out to 40
+  characters — returns `[]` and `{"state":"","statuses":[]}`, indistinguishable from a commit with no
+  checks. A filter that does nothing reads as "matched everything"; an empty array reads as "no CI
+  ran". Treat "not found in the page" as **unknown**, never as a pass, and filter `trigger_event`
+  client-side.
+- **A queued run's `started` is the EPOCH, so any time filter hides it (measured 2026-09-26).** A run
+  with `status: waiting` reports `started: "1970-01-01T00:00:00Z"` — not `null`. The natural narrowing
+  filter (`select(.started > "2026-09-25T23:20")`) therefore drops every queued run: three runs had
+  been created for a push and all three were invisible, which reads exactly like "the push triggered
+  nothing". Filter on `status` or `id`, and read `started` only once you know the run has begun; a
+  *sort* by `Date.parse(started)` is safe (a queued run sorts oldest), a *filter* on it is not.
+- **A scheduled run reports `event: push` — the trigger is in a DIFFERENT field (item 418).**
+  `GET /actions/runs` returns **two** event fields per run, and they disagree on every cron run:
+
+  | field | value on a weekly cron run | what it actually is |
+  |---|---|---|
+  | `trigger_event` | `schedule` | what fired the run |
+  | `event` | `push` | the class of the **synthesized payload** |
+
+  Measured 2026-09-12 across **all 68** scheduled runs since 2026-07-31: `trigger_event` is `schedule`
+  for every one, `event` is `push` for every one. There is no counter-example, and the `ScheduleID`
+  (non-zero only on a cron run) agrees with `trigger_event` throughout — it **is** present in the
+  listing, not only on the run-detail endpoint.
+
+  **`github.event_name` inside the job follows `trigger_event`.** A step gated
+  `if: github.event_name == 'schedule'` DOES run on the weekly cron. Item 418 read `event`, saw
+  `push`, and concluded the repository's only allowlist-expiry check had never once executed; the step
+  had in fact been running weekly since the Friday after it was added, and had gone red for three
+  consecutive weeks. Nothing was broken. **Do not "fix" a `== 'schedule'` gate from the `event` field.**
+
+  `ci-status.mjs` filters `--event` on `event`, not `trigger_event`, and that is **correct for its
+  purpose**: the commit-status context suffix (`… (push)`) is derived from the same `event` field, so a
+  cron run's statuses really do land in the `push` view. The two fields answer different questions —
+  `event` is "which context bucket", `trigger_event` is "what fired it". To list scheduled runs,
+  filter on `ScheduleID !== 0` or `trigger_event === 'schedule'`:
+
+  ```js
+  const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`)).workflow_runs;
+  runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
+  ```
+
 - **Exit code `3` (still waiting when `watch` timed out) is deliberately distinct from exit `1` (a
   required context failed).** There is a single CI runner in this homelab, so a saturated queue is
-  expected and must never be conflated with an actual build failure.
-- **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30` reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool — is enumerated in [E2E testing](./e2e-testing.md) § instrument traps.
-- **Exit `3` twice running is usually SERIALIZATION, not a dead runner.** A merge commit fires `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead of every open PR. Measured 2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from PR #369, then PR #372's waited on `main`'s from PR #370. Distinguish the two: a `running` row for your own branch means wait; recent rows for *other* branches with nothing for yours means starvation. Use `GET /actions/tasks?limit=14` and read `status` not `conclusion` — `conclusion` is `null` even for successful tasks in this listing.
-- **A ⏳ that will not resolve looks exactly like one that will — and the honest answer is usually "wait longer" (measured 2026-09-18).** Both are the absence of a commit status rendered as a state, and `actions/tasks` does NOT disambiguate them: a run queued but not yet dispatched has no task row at all. PRs #479 and #482 sat ⏳ on `app-e2e` and `infra-image-scan` through two watches (3000 s and 3300 s), each ending in the correct message — *"still waiting … runner starvation, not failure"*. `actions/tasks` showed no row for either job, and that absence was read as "path-gated out, never scheduled, waiting is futile." **It was wrong.** The statuses resolved on their own at 11:08:59Z and 11:18:52Z, roughly seven minutes after the check that declared them dead. Two lessons, in order of how much they cost:
+  expected and must never be conflated with an actual build failure. An advisory context still
+  running at the timeout does **not** change the exit code either: `exit 0 ⟺ mergeable` is
+  load-bearing for a `ci-status … && merge` wrapper, so the verdict's own code stands and the
+  unfinished advisory row is named instead of silently dropped.
+- **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30`
+  reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed
+  `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
+  `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372
+  --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on
+  by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool —
+  is enumerated in [E2E testing](./e2e-testing.md) § instrument traps.
+- **Exit `3` twice running is usually SERIALIZATION, not a dead runner.** A merge commit fires
+  `app-e2e` on `main`, and with capacity 1 that run takes the runner ahead of every open PR. Measured
+  2026-09-06: PR #370's `app-e2e` waited on `main`'s post-merge run from PR #369, then PR #372's
+  waited on `main`'s from PR #370. Distinguish the two: a `running` row for your own branch means
+  wait; recent rows for *other* branches with nothing for yours means starvation. Use
+  `GET /actions/tasks?limit=14` and read `status` not `conclusion` — `conclusion` is `null` even for
+  successful tasks in this listing.
+- **A ⏳ that will not resolve looks exactly like one that will — and the honest answer is usually
+  "wait longer" (measured 2026-09-18).** Both are the absence of a commit status rendered as a state,
+  and `actions/tasks` does NOT disambiguate them: a run queued but not yet dispatched has no task row
+  at all. PRs #479 and #482 sat ⏳ on `app-e2e` and `infra-image-scan` through two watches (3000 s and
+  3300 s), each ending in the correct message — *"still waiting … runner starvation, not failure"*.
+  `actions/tasks` showed no row for either job, and that absence was read as "path-gated out, never
+  scheduled, waiting is futile." **It was wrong.** The statuses resolved on their own at 11:08:59Z and
+  11:18:52Z, roughly seven minutes after the check that declared them dead. Two lessons, in order of
+  how much they cost:
 
-  - **Absence in a 50-row shared-queue window is not evidence.** `actions/tasks?limit=50` is capped and repo-wide; a busy period pushes your job out of it, and a queued-but-undispatched job was never in it. Use the listing to confirm what IS running, never to prove what is not.
-  - **A path-gated job does eventually SAY so.** It posts `skipped` (API `success`, description `"Has been skipped"`) once evaluated. If a context is genuinely gated out, you get that word; you do not get a permanent ⏳. So ⏳ means *not yet evaluated*, whatever the paths say.
+  - **Absence in a 50-row shared-queue window is not evidence.** `actions/tasks?limit=50` is capped
+    and repo-wide; a busy period pushes your job out of it, and a queued-but-undispatched job was
+    never in it. Use the listing to confirm what IS running, never to prove what is not.
+  - **A path-gated job does eventually SAY so.** It posts `skipped` (API `success`, description
+    `"Has been skipped"`) once evaluated. If a context is genuinely gated out, you get that word; you
+    do not get a permanent ⏳. So ⏳ means *not yet evaluated*, whatever the paths say.
 
   The reliable check is the commit's own status history (carries timestamps and is not a capped window):
 
   ```bash
   node --input-type=module -e "
-  const r=await fetch(process.env.FORGE+'/api/v1/repos/jumbleknot/mcm/commits/'+process.env.SHA+'/statuses?limit=50',
+  const r=await fetch(process.env.FORGE+'/api/v1/repos/'+process.env.OWNER+'/'+process.env.REPO+'/commits/'+process.env.SHA+'/statuses?limit=50',
     {headers:{Authorization:'token '+process.env.MCM_FORGE_TOKEN}});
   for(const s of await r.json()) console.log(s.context.padEnd(38), String(s.status).padEnd(8), s.created_at);
   "
   ```
 
-  A context whose newest entry is `pending` is still coming. Compare its timestamp with the others: an hour behind a green board on this capacity-1 runner is normal serialization, not a dead job.
+  A context whose newest entry is `pending` is still coming. Compare its timestamp with the others: an
+  hour behind a green board on this capacity-1 runner is normal serialization, not a dead job.
 
-- **`/actions/runs/{id}/jobs` does not exist in this Forgejo build** (measured 2026-09-06 — it answers with a non-JSON body, so a naive `| jq` dies on a parse error rather than a 404). There is no per-job listing; `actions/tasks` is the only queue view.
-- **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
-  branch — its `head.ref` is `refs/pull/<n>/head`. Forgejo treats a non-branch head as untrusted
-  and runs it **without Actions secrets**: every `${{ secrets.* }}` arrives as the empty string.
-  The failure does not mention secrets. `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` is empty, the
-  cache server rejects the request, and nx reports `Misconfigured remote cache endpoint: Requests
-  should respond with text/plain on 401s` — which reads as a cache or credential fault. The cache
-  server, the token, the MinIO bucket, and the nx wrapper are all healthy; the tell is measuring the
-  secret's **length inside the job** — `0`, sha256 `e3b0c44298fc` (empty string) — versus `64` on a
-  branch-backed PR. This cost two sessions most of a day on PR #126. `ci-status.mjs` now prints a
-  **DETACHED HEAD** warning for this case. Always use `git push origin HEAD:<branch>` (a real
-  branch), then open the PR via `POST /pulls` with the **`git credential fill`** credential (not
-  `MCM_FORGE_TOKEN`, which is read-only and 403s).
+- **A bundle is named after the JOB, which is not always the tail of the context (item 563).**
+  Bundles are versioned `<runId>--<jobName>`, and two shapes of context reach a commit here, nesting
+  **differently**: a real Actions check renders as `<workflow> / <job>` **with spaces**, so the job is
+  the **tail** (`guardrails / naming` → `naming`); a narrow status a job posts about **itself** by curl
+  (`infra-image-scan/weekly`, from items 418/485) carries **no ` / `**, so the tail is a *label*
+  (`weekly`, `expiry`) and the bundle-owning job is the **head**. Deriving it with
+  `context.split('/').pop()` is right for one shape and wrong for the other, and the wrong answer is
+  not a blank — it is a confident sentence: `failure --run 3946` asked for `3946--weekly` and reported
+  *"no bundle exists … the job may have died before the digest step ran"*, while the bundle sat there
+  as `3946--infra-image-scan`, on the one run that was telling you `main` was failing a required gate.
+  The separator-less form is deliberate — branch protection requires `infra-image-scan /
+  infra-image-scan*`, and a context with no ` / ` cannot match it, which is the only reason posting
+  them is safe. **List the package registry before believing a bundle is absent.**
+- **"No digest" and "no digest under my filter" are different claims.** A job that dies *before* the
+  digest step runs — runner crash, malformed workflow YAML, a fault in the digest step itself —
+  publishes nothing, and `failure` says so rather than reporting "no failure"; that class is a known,
+  accepted gap, deliberately not covered by widening host access. Before believing it, drop `--job` and
+  look again: measured 2026-08-30 on PR #289, `failure --pr 289 --job "infra-image-scan /
+  infra-image-scan"` (the value copied out of this tool's own status table) reported *"1 job(s) failed,
+  but no digest was published for them"*, while the digest was on the PR the whole time naming all five
+  blocking findings — the marker carries the **bare** job name, the filter compared it against the
+  `workflow / job` context form, and an unmatched filter rendered as absence. Both halves are fixed
+  (`--job` accepts either form, and a filter that excludes every digest now names what IS available),
+  but the habit is the durable protection: **absence reported under a filter is a claim about the
+  filter until you have checked without it.** The bundle's own `meta.digestOutcome` is the second
+  opinion — it distinguishes "never ran" from "ran, and you did not find it".
+- **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`) — a PR's head must be a real branch.**
+  AGit creates a PR with no backing branch — its `head.ref` is `refs/pull/<n>/head` — and Forgejo
+  treats a non-branch head as untrusted: the run executes **without Actions secrets**, so every
+  `${{ secrets.* }}` arrives as the empty string. The failure never mentions secrets.
+  `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` is empty, the cache server rejects the request, and nx
+  reports `Misconfigured remote cache endpoint: Requests should respond with text/plain on 401s` —
+  which reads as a cache or credential fault. Measured on **2026-08-01** (PR #126), that cost two
+  sessions most of a day: the cache server, the token, the object-store bucket, and the nx wrapper
+  were each investigated and found healthy, because they *were* healthy, and jobs that never touch the
+  nx cache passed, so the failure looked selective and content-specific. The tell is measuring the
+  secret's **length inside the job** — `0`, sha256 `e3b0c44298fc` (the empty string) — versus `64` on a
+  branch-backed PR; the same commits reopened from a real branch (PR #129) passed first try.
+  `scripts/ci-status.mjs` prints a **DETACHED HEAD** warning for this shape because it is invisible in
+  the web UI, and deliberately stays silent once the PR is closed or merged — a deleted head branch
+  makes `head.ref` revert to the same ref, so the warning would otherwise call a green, correctly-run
+  PR untrustworthy (measured on PR #125, opened from a real branch, flagged only after tidy-up).
+  Always use `git push origin HEAD:<branch>`.
+- **`POST /pulls` needs the write-capable `git credential fill` credential — `MCM_FORGE_TOKEN` cannot
+  create a PR.** Measured 2026-08-01: four consecutive `201 Created` (#125, #127, #128, #129) with the
+  credential-helper credential, with a full markdown body and an editable PR afterwards. The read
+  token answers `403 token does not have at least one of required scope(s): [write:repository]` — a
+  scope fact, not expiry, and the same token 200s elsewhere in the same second. That credential split
+  recurs: the write credential 403s on `issues/{n}/comments` and 401s on the package registry, so it
+  can read neither a digest nor a bundle, while `MCM_FORGE_TOKEN` is the one to use for packages;
+  `workflow_dispatch` also needs the write credential. In the dev container VS Code's credential-helper
+  proxy forwards the credential over an IPC socket, so `git credential fill` works non-interactively;
+  in a bare session with no VS Code attached it returns nothing, and the fallback is to push the branch
+  and open the PR in the web UI — **never** AGit.
 - **`GET /pulls/{n}` reports `head.sha` as the branch's current tip, not the commit that was
   merged.** After a PR is merged, further pushes to the same branch update `head.sha`, so
   `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
   though it shipped those commits, but `main` does not contain them. Use
   `git merge-base --is-ancestor <sha> origin/main` to verify, not the API `merged` flag.
+- **A scheduled run posts NO commit status — `failure --run <id>` used to exit 0 and say "no failed
+  jobs" for a truly failed run (item 485, fixed 2026-09-19).** A `schedule`-triggered run posts **no
+  `<workflow> / <job>` commit status at all**. Its red is visible only in the runs listing, the job log
+  and the evidence bundle. Nothing attached to the commit says `main` is failing. Previously `failure
+  --run <id>` read contexts, found none, and answered `No failed jobs on <sha> — checked every event's
+  contexts` with exit 0 — not wrong about what it read, and the opposite of the truth. **Fixed:** the
+  run's own `status` field is now carried through from the `--run` lookup; the same command now answers
+  with `⚠ Run <id> is FAILED (status=failure conclusion=<unset>) but posted NO commit status` and exits
+  1. Note: `conclusion` is `undefined` on every run measured in this forge — a reader that consults
+  only `conclusion` sees nothing, and `ci-status` reads both. A red scheduled sweep is now also visible
+  on the commit: `infra-image-scan.yml` posts an `infra-image-scan/weekly` status after each sweep.
+- **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
+  status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
+  push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
+  verified without a PR — dispatch with the `git credential fill` credential, not `MCM_FORGE_TOKEN`
+  (read-only, 403s). Two traps: (1) a dispatched run posts **no commit status**, so
+  `ci-status status --sha` keeps saying *waiting* no matter the outcome — read `/actions/tasks`
+  instead; (2) **`run_number` in `/actions/tasks` is NOT the bundle ID** — the bundle name comes
+  from `GITHUB_RUN_ID` (repository-wide counter), not `run_number` (per-workflow counter). Fetching
+  `<run_number>--<job>` returns 404, which looks like "no bundle published". List package versions
+  (`GET /api/v1/packages/{owner}?type=generic&limit=10`) and take the newest for the job.
+- **Zero checks on a new commit? Read the commit MESSAGE before anything else.** The forge scans
+  the **entire** commit message for a CI-skip marker and skips every workflow when it finds one:
+  `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`. It applies to `push`,
+  `pull_request`, and `pull_request_sync` alike, and it reads the whole message — so a marker
+  quoted in a body paragraph, inside a bullet, or in a code fence silently disables CI for that
+  commit. Measured 2026-08-31 on PR #322: a commit whose body *described* cd-deploy's `[skip ci]`
+  promotion commit produced zero runs on both the push and the pull request. The tell that separates
+  this from a dead runner: `/actions/tasks?limit=40` still shows recent tasks for *other* branches
+  (a dead runner starves everything; a skip marker starves exactly one commit). Fix: reword the
+  message with `git commit --amend`, then force-push. Quote the marker as `` `skip`-`ci` `` or name
+  it in prose when a commit needs to discuss one — never disable the feature.
+- **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
+  repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
+  2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
+  leaves the branch behind regardless. Measured the same evening: PRs #287 and #293 passed the flag
+  and their branches were gone; PR #291 omitted it and had to be cleaned up by hand. This is not mere
+  housekeeping: a surviving `renovate/*` branch makes Renovate reuse the stale commit instead of
+  regenerating — `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own
+  pruning, so nothing will ever clean it up. Two branches **not** to delete: an open PR's head (same
+  consequence as hand-closing it), and automation-owned branches like `openwiki-maintenance` (their
+  workflow recreates them each scheduled run; a lingering ref is normal working state, not debris).
 - **`durations` — per-step timing exists now, but three traps prevent a naive reading from being
   useful.** `ci-log-step.sh` writes one row per wrapped step into `_step-durations.tsv` (step ·
   seconds · exit · ceiling) on **every** run — success or failure — so a distribution can be built
@@ -209,14 +443,15 @@ runtime rather than any literal configured value.
   (1) **Killed steps are CENSORED, not observed, and are excluded from every percentile** — a step
   killed at its ceiling lasted exactly the ceiling; folding it in makes each ceiling a function of
   the previous one, ratcheting tighter on every kill. (2) **The sample only fills forward from the
-  first run after item #338** — bundles published before that have no durations file and are skipped
-  silently; `runs sampled` in the output is the honest count. (3) **Item #338 shipped: the single
+  first run after item 338** — bundles published before that have no durations file and are skipped
+  silently; `runs sampled` in the output is the honest count. (3) **Item 338 shipped: the single
   2700 s job-wide value is replaced by `scripts/ci-step-ceilings.tsv`** — one ceiling per step,
   generated (never hand-edited) by `durations --propose`, with the rule `max(observed) x 3` rounded
   up to a minute and floored at 300 s. `CI_STEP_TIMEOUT_SECONDS` survives as the backstop for
   uncalibrated steps (n < 10 or failure-path-only); a table miss never falls through to unbounded.
-  See `docs/runbooks/ci-diagnostics.md` § "The ceilings themselves" for the full arithmetic and guard
-  details.
+  See
+  [the evidence-pipeline runbook's ceiling section](../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-and-the-three-traps)
+  for the full arithmetic and guard details.
 - **Container-executor step logs are read in-job, before teardown — they do not need host
   persistence.** The wrong mental model ("`$HOME/mcm-ci-step-logs/` disappears when the container
   dies → containerized jobs are undiagnosable") is tempting and false. `Publish failure digest` is
@@ -230,7 +465,7 @@ runtime rather than any literal configured value.
   requires every `run:` step to be wrapped or carry a justified `# ci-log-step-exempt:` marker.
   Every new CI job forces a choice: instrument it, or write down why it does not need
   instrumentation.
-- **Per-COMMAND coverage is the follow-on trap — a substring test is not a parse (item #177 variant 4).**
+- **Per-COMMAND coverage is the follow-on trap — a substring test is not a parse (item 177 variant 4).**
   "Every `run:` step must be wrapped" was checked by testing whether `ci-log-step.sh` appeared
   anywhere in the block — so a multi-line block passed if the wrapper appeared at the bottom, and
   every command above it ran unwrapped: no log, no `_failed-step` marker, digest names nothing.
@@ -240,7 +475,7 @@ runtime rather than any literal configured value.
   idiom so every command runs inside the wrapper. The gate checks PRESENCE, not REACHABILITY — it
   reads YAML and shell as text and cannot verify the wrapper can actually execute where it is placed.
   When a job dies in seconds with no digest content, suspect wrapper preconditions first.
-- **The step-log directory is scoped by run AND job — a run-scoped directory causes sibling-job contamination (item #180).**
+- **The step-log directory is scoped by run AND job — a run-scoped directory causes sibling-job contamination (item 180).**
   `app-e2e` and `dast` run as two jobs of one run on the same self-hosted runner (shared `$HOME`).
   A run-scoped directory gave them one `_failed-step` file and one pool of step logs; whichever
   failed first wrote the marker, and the other published it as its own. Measured on run **#1683**:
@@ -249,7 +484,7 @@ runtime rather than any literal configured value.
   would keep reading the sibling's marker on exactly the overlapping runs the scoping is for.
   Writer (`ci-log-step.sh`) and reader (`stepLogDir` in `ci-failure-digest.mjs`) derive the path
   independently and must move together.
-- **On a red `app-e2e`, read the `Run health` row FIRST (item #173).** Roughly one run in seven
+- **On a red `app-e2e`, read the `Run health` row FIRST (item 173).** Roughly one run in seven
   *collapses*: every agent/dock spec fails at once, `flaky=0`, and the gateway receives about a
   quarter of its usual turns because the client stops sending them. `scripts/e2e-turn-tally.sh`
   labels this, and its verdict is now a digest field. `verdict=collapsed` means the failures say
@@ -279,25 +514,14 @@ runtime rather than any literal configured value.
   `session_evicted > 0`. **Neither gate may carry `continue-on-error`** — adding it back makes the
   step invisible in the log while the job passes regardless. `flaky` is still NOT observable on a
   green run; do not claim "no flakes" from a green tick.
-- **`--job` filter was fail-open — "no digest published" under a filter is a claim about the filter,
-  not about the digest.** Measured 2026-08-30 on PR #289: `failure --pr 289 --job "infra-image-scan /
-  infra-image-scan"` (the context form this tool prints in its own status table) reported "1 job(s)
-  failed, but no digest was published for them". The digest was on the PR the whole time, naming all
-  five blocking findings. The marker carries the **bare** job name (`job=infra-image-scan`); the
-  filter compared against the `workflow / job` context string, matched nothing, and an unmatched filter
-  rendered as absence — the same fail-open shape as the backlog tool's unknown-label bug. That sent a
-  session into an hour of local Trivy reproduction to re-derive what the digest already stated.
-  Fixed: `--job` now accepts either form, and a filter that excludes every digest names what IS
-  available instead of claiming absence. The habit is the durable protection: **if absence is reported
-  under a `--job` filter, drop the filter and look again before concluding no digest was published.**
 - **`maestro debug output — not present` in a bundle does NOT mean the capture did not happen — it
-  may mean the packer dropped a directory (item #241).** The packer originally read
+  may mean the packer dropped a directory (item 241).** The packer originally read
   `~/mcm-ci-last-failure` with a flat `readdirSync` filtered to `*.log`, `_ps.txt` and
   `*.health.json`, so a **directory** matched nothing and was silently dropped. Feature 062's device
   diagnostics land in `container-logs/_mobile-diagnostics/<flow>-attempt<n>/` — exactly such a
   directory. Measured on run **2049**: the runner held the whole Maestro tree; the retrieved bundle
-  held 69 files and none came from it; diagnosing the failure needed `ssh ci@homelab` — the
-  out-of-band step the bundle exists to remove. Fixed: the walk is now recursive (depth 6, 400
+  held 69 files and none came from it; diagnosing the failure needed out-of-band SSH to the CI host —
+  the out-of-band step the bundle exists to remove. Fixed: the walk is now recursive (depth 6, 400
   entries). Nested files are admitted by format (`.log .txt .json .ya?ml .md .xml .html`); the flat
   rules are unchanged so a `*.health.json` is not collected twice. Screenshots travel as base64
   manifest entries (3 files / 1 MB each / 2 MB total, `❌`-marked captures first) and `--full`
@@ -313,7 +537,7 @@ runtime rather than any literal configured value.
   now **three-way**: carried / captured on the runner but not folded into `container-logs` / genuinely
   not present.
 - **A bundle's `logs/mc-service.log` is ordered by completion, not by start — read literally it
-  manufactures races that never happened (item #568).** mc-service logs its domain event in the same
+  manufactures races that never happened (item 568).** mc-service logs its domain event in the same
   emit as the response, at the END of the handler, so a slow request's line appears *after*
   everything that ran during it. Two emitters produce that ordering: `logging_middleware`
   (`backend/mc-service/src/api/middleware/logging.rs`) awaits `next.run(request)` first and only then
@@ -354,72 +578,18 @@ runtime rather than any literal configured value.
   on the same collection regardless of how their timestamps or sequential-looking ObjectIds line up.
   Sequential ObjectIds prove nothing either: ids differing by one only mean concurrent creations in
   the same second, which is consistent with any number of independent writers.
-- **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
-  repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
-  2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
-  leaves the branch behind regardless. Measured the same evening: PRs #287 and #293 passed the flag
-  and their branches were gone; PR #291 omitted it and had to be cleaned up by hand. This is not mere
-  housekeeping: a surviving `renovate/*` branch makes Renovate reuse the stale commit instead of
-  regenerating — `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own
-  pruning, so nothing will ever clean it up. Two branches **not** to delete: an open PR's head (same
-  consequence as hand-closing it), and automation-owned branches like `openwiki-maintenance` (their
-  workflow recreates them each scheduled run; a lingering ref is normal working state, not debris).
-- **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
-  status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
-  push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
-  verified without a PR — dispatch with the `git credential fill` credential, not `MCM_FORGE_TOKEN`
-  (read-only, 403s). Two traps: (1) a dispatched run posts **no commit status**, so
-  `ci-status status --sha` keeps saying *waiting* no matter the outcome — read `/actions/tasks`
-  instead; (2) **`run_number` in `/actions/tasks` is NOT the bundle ID** — the bundle name comes
-  from `GITHUB_RUN_ID` (repository-wide counter), not `run_number` (per-workflow counter). Fetching
-  `<run_number>--<job>` returns 404, which looks like "no bundle published". List package versions
-  (`GET /api/v1/packages/{owner}?type=generic&limit=10`) and take the newest for the job.
-- **Zero checks on a new commit? Read the commit MESSAGE before anything else.** The forge scans
-  the **entire** commit message for a CI-skip marker and skips every workflow when it finds one:
-  `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`. It applies to `push`,
-  `pull_request`, and `pull_request_sync` alike, and it reads the whole message — so a marker
-  quoted in a body paragraph, inside a bullet, or in a code fence silently disables CI for that
-  commit. Measured 2026-08-31 on PR #322: a commit whose body *described* cd-deploy's `[skip ci]`
-  promotion commit produced zero runs on both the push and the pull request. The tell that separates
-  this from a dead runner: `/actions/tasks?limit=40` still shows recent tasks for *other* branches
-  (a dead runner starves everything; a skip marker starves exactly one commit). Fix: reword the
-  message with `git commit --amend`, then force-push. Quote the marker as `` `skip`-`ci` `` or name
-  it in prose when a commit needs to discuss one — never disable the feature.
+- **A green job that is not `app-e2e` emits nothing — use a commit status recorder when the output must survive (item 457 AC4).** Every other job's green publication finds nothing and uploads nothing. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items 418, 268, 485, 457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
 
-- **A scheduled run reports `event: push` — the trigger is in a DIFFERENT field (item #418).**
-  `GET /actions/runs` returns **two** event fields per run, and they disagree on every cron run:
+## Where the procedures live
 
-  | field | value on a weekly cron run | what it actually is |
-  |---|---|---|
-  | `trigger_event` | `schedule` | what fired the run |
-  | `event` | `push` | the class of the **synthesized payload** |
+This page is the distilled map plus the traps. The full exit-code table, the exact endpoints and
+payload measurements, the required-check fetch/fallback logic, the PR-opening recipe with its
+credential split, and the evidence-bundle hardening details are in
+[the source runbook](../../docs/runbooks/ci-diagnostics.md), whose
+[PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request)
+is the canonical statement of the AGit rule and of the `POST /pulls` credential split.
 
-  Measured 2026-09-12 across **all 68** scheduled runs since 2026-07-31: `trigger_event` is `schedule`
-  for every one, `event` is `push` for every one. There is no counter-example, and the `ScheduleID`
-  (non-zero only on a cron run) agrees with `trigger_event` throughout — it **is** present in the
-  listing, not only on the run-detail endpoint.
-
-  **`github.event_name` inside the job follows `trigger_event`.** A step gated
-  `if: github.event_name == 'schedule'` DOES run on the weekly cron. Item #418 read `event`, saw
-  `push`, and concluded the repository's only allowlist-expiry check had never once executed; the step
-  had in fact been running weekly since the Friday after it was added, and had gone red for three
-  consecutive weeks. Nothing was broken. **Do not "fix" a `== 'schedule'` gate from the `event` field.**
-
-  `ci-status.mjs` filters `--event` on `event`, not `trigger_event`, and that is **correct for its
-  purpose**: the commit-status context suffix (`… (push)`) is derived from the same `event` field, so a
-  cron run's statuses really do land in the `push` view. The two fields answer different questions —
-  `event` is "which context bucket", `trigger_event` is "what fired it".
-
-  To list scheduled runs, filter on `ScheduleID !== 0` or `trigger_event === 'schedule'`:
-
-  ```js
-  const runs = (await api(`/repos/${owner}/${repo}/actions/runs?page=1&limit=50`)).workflow_runs;
-  runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
-  ```
-
-- **A scheduled run posts NO commit status — `failure --run <id>` used to exit 0 and say "no failed jobs" for a truly failed run (item #485, fixed 2026-09-19).** A `schedule`-triggered run posts **no `<workflow> / <job>` commit status at all**. Its red is visible only in the runs listing, the job log and the evidence bundle. Nothing attached to the commit says `main` is failing. Previously `failure --run <id>` read contexts, found none, and answered `No failed jobs on <sha> — checked every event's contexts` with exit 0 — not wrong about what it read, and the opposite of the truth. **Fixed:** the run's own `status` field is now carried through from the `--run` lookup; the same command now answers with `⚠ Run <id> is FAILED (status=failure conclusion=<unset>) but posted NO commit status` and exits 1. Note: `conclusion` is `undefined` on every run measured in this forge — a reader that consults only `conclusion` sees nothing. A red scheduled sweep is now also visible on the commit: `infra-image-scan.yml` posts an `infra-image-scan/weekly` status after each sweep (cannot gate — no ` / ` separator in the context name, unlike `infra-image-scan / infra-image-scan*`). Also: `?trigger_event=schedule` in `GET /actions/runs` is **silently ignored** — returns the unfiltered set. Filter `trigger_event` client-side, or use `?workflow_id=<file>&page=1&limit=50` server-side then filter locally.
-- **A green job that is not `app-e2e` emits nothing — use a commit status recorder when the output must survive (item #457 AC4).** Every other job's green publication finds nothing and uploads nothing. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items #418, #268, #485, #457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
-
-Full exit-code table, the exact API endpoints and payload measurements, the required-check
-fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:
-`docs/runbooks/ci-diagnostics.md`.
+Related: [CI evidence pipeline](./ci-evidence-pipeline.md) (the producing half — digest, bundle,
+durations, ceilings), [E2E testing](./e2e-testing.md), [Renovate](./renovate.md),
+[SAST scanning](./sast-scanning.md), [Testing tiers](../invariants/testing-tiers.md), and
+[the CI/CD pipeline](../projects/ci-cd-pipeline.md).

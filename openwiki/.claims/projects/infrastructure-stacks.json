@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a1d38e1f057a684c5199785660ffc1ab9d59775d725d8c3bb1744cbd23b9b593",
+  "pageVersion": "sha256:87d746e8e1042628e832ac9c20131d170c581afd9828eeb729d50437bdcbfbd3",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
-          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+          "version": "repo-file-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json",
@@ -36,11 +36,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
-          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+          "version": "repo-file-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.yaml",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -64,7 +64,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -74,7 +74,7 @@
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
-          "version": "repo-file-v1:sha256:00bb396bdf192813bf78907e5ec3c3dc3ee71a13ca3bc785c444c22ac5f443ee"
+          "version": "repo-file-v1:sha256:1b9f02a4af0aa60c0f3c719bf3d5d15bb82e43752151668627dc87b3853b992a"
         }
       ]
     },
@@ -91,8 +91,8 @@
           "version": "repo-lines-v1:sha256:6a0385aad430e240a295f3b3b460d2bde3551c819af86dae8ec02692947e8826:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ0ZjMxNzExZDU2MTg0NzE3OTY3MzI1NzViMjMzNmI5OThkZTI1YjE2YzUzMjNjNzY4MzI0MTA1ZWI4NDZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYTk2ZjM0MzE2ZTQxZmEyNjJmZWI4Y2FhMzRlYzkxYmY0NDM4ODNkZDgwNjhlNTIwYTA5ZDRjNmU3Y2NmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM3OGRjY2UxN2FjYzczMzI0MTBiOThjOWFjYzEzNGY0NDBjOWM0ZjlkMjc2NmEyMzgwMTQyYTE3MGJkNTdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2I1NWZiN2JlYTY5ZTQ3Njg4ZjZjNzExYTAzMjIyOTcwNmYxYzc0MmQ4OGJiMzhhNTNkMzkzN2JhZTEyY2JiOCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L172",
-          "version": "repo-lines-v1:sha256:f9d701622691e7d2d2ba6ee2f1c0d8ba93102cd72f387c49f9dccd9ba999edad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZWRhM2QyYWY3MjZkYjExNmQwODA5MTY5NTllODViZDE5YTdjMGI5ZmVhYTA5ZGE4NjA3ODI0YmYzYjNlZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L175",
+          "version": "repo-lines-v1:sha256:cea17e566fac184eacc5662895d34503d7413539a71c182d79bae92189b3dbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
         }
       ]
     },
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         },
         {
           "resource": "repo://scripts/check-komodo-sync.mjs",
@@ -120,11 +120,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:e7d02aaaf8d9ec1b70e04831fa5e61be38f38e4873337bea8a8c111ad38e42f0"
+          "version": "repo-file-v1:sha256:db92c4aefc8aac2c25146191c635e09c7b6be550ec2b8f6838b256c90be3adde"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -138,7 +138,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -148,7 +148,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
@@ -162,11 +162,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:e3b9a5c194413b279d00f51d711b0bc0c7c1e606a2493511bea7ae07363fc56a"
+          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
         },
         {
           "resource": "repo://scripts/check-prod-restart-policy.mjs",
-          "version": "repo-file-v1:sha256:c6367ac6f4c51643d17a3e9f4fecad592e4ce1f058b69051f01e15131a9c8a72"
+          "version": "repo-file-v1:sha256:282b8c0e9d9a1186f42a47251c09b32425b58e96a3124b1e3747ad7751f4c431"
         }
       ]
     },
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -194,7 +194,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
-          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+          "version": "repo-file-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7"
         }
       ]
     },
@@ -204,11 +204,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:d47a078cc804b69fa963b7b225f164751a52e8b681474c3f54934db7b7442eb3"
+          "version": "repo-file-v1:sha256:cd659b191e36569ed974403a796d9e145b7f134c3ec641994151207ac2a185a1"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
-          "version": "repo-file-v1:sha256:2093cf31c7a400440ad8775dafe613ee1099e95da0be93c93177b7fd3dc4bafe"
+          "version": "repo-file-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7"
         }
       ]
     },
@@ -218,11 +218,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:7cf49183e2ff4b36e03076ae14a4d3bcdd95d14b664c7333f2f407458d9dea23"
+          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
+          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
         }
       ]
     },
@@ -247,7 +247,7 @@
           "version": "repo-lines-v1:sha256:cd55289dbca8678d68c424c1654788fe5ea8d562389f48351b4a3f8b83c1cfbc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyYzIyYjczYWU3YjA2Y2ExNjFlMTZkNjljOWZlOGVjNmQ0ZmNkM2JjNTI0YjY3NWYyNDNmNjVmNWFmN2U1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNhOTQxNzYxMDUyOGRjZDViZmM0ZDlmODliYjBjYjBkMTgyZGEyYmM5ODA3ZTY1OGZhNDg2OGU1N2E3ZTI3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJkN2E1Njk0ZjM2NGMyM2IyYWU3MjVhYmFlMTNiYzE0NDlmOGU0MzY0MTA5ZWU4MGY3MzA3NDU5ZmZkNzJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L34-L46",
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L35-L47",
           "version": "repo-lines-v1:sha256:d2b054ec26a30d212ac5618cc09b64a19e050c4da7f3277e2be6e7cec82edeb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkZWI1ODE1ZDc4MTJiOWEzNGYzZWRlMTIwZWZkZjc5ZjdjM2NiNzI3OWVhNTAzZmJkOTlhOTU4NDMwOTBiMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1MjAxOGUxOWZkNzIzZTdlMTg3YmJhYzZhNDExOGMzYWU5MzdmZmI2MWQyNDMwMDZmNDc2MmQ4NWQ0NmQyOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -288,11 +288,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
+          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
         }
       ]
     },
@@ -302,11 +302,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:99e6409347ce4584149dbff893a4ad1f897141551df04e1d8d0cfcb827ce4a32"
+          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:a5fe862e349bde9a17861ee7702e056ec14693a7e42f32b238a273cf9fe1b5b0"
+          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -320,29 +320,33 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
-          "version": "repo-file-v1:sha256:dac871e6f7f3d5e0c398fbc36f453c529ce3a84d333f77d1c92323055ce23204"
+          "version": "repo-file-v1:sha256:1e2ac906c269329f02764b68abd00f33620b23112ec80c367cfe6a596909ff12"
         }
       ]
     },
     {
       "id": "claim_1219c14f8be844c2ae3efc6426a3f9c7",
-      "statement": "Every compose file under infrastructure-as-code/ is constrained by static gates in the guardrails CI 'naming' job: scripts/check-resource-naming.mjs enforces the <context>-<role>-<engine> grammar on declared volume/network/container names, requires container_name == service key, permits only the BFF the mcm- qualifier and forbids re-introducing a retired service key as a network alias, while scripts/check-no-inline-secrets.mjs requires every secret-shaped key, password-bearing URL and command/healthcheck/entrypoint auth literal to be a pure ${VAR} or ${VAR:?} reference and fails an inline ${VAR:-default}; the infra-scan target separately enumerates and Trivy-scans the third-party images pulled in infrastructure-as-code/**.",
+      "statement": "The guardrails CI 'naming' job runs the compose static gates over the files it discovers by basename — scripts/check-resource-naming.mjs (enforcing the <context>-<role>-<engine> grammar on declared volume/network/container names, container_name == service key, the BFF-only mcm- qualifier, and no retired service key re-introduced as a network alias) and scripts/check-no-inline-secrets.mjs (requiring every secret-shaped key, password-bearing URL and command/healthcheck/entrypoint auth literal to be a pure ${VAR} or ${VAR:?} reference, and failing an inline ${VAR:-default}) — where discovery is the globs infrastructure-as-code/docker/**/compose*.yaml plus infrastructure-as-code/docker/stacks/*.compose.yaml plus the retired root compose.yaml by name, so a file whose basename does not begin with 'compose' (e.g. infrastructure-as-code/docker/dev-ollama.compose.yaml) escapes all three basename-discovering gates; the infra-scan target separately enumerates and Trivy-scans the third-party images pulled in infrastructure-as-code/**.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:0a124147dc3b4088c296242b4033762c9c44bbe492309d24d3acfa88e3dcc708"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L93-L128",
+          "version": "repo-lines-v1:sha256:7dc23b85f87a621cdaea02096a80d5a51dd353657fb170986c1bb29bd9c6d08b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZGRhZmFiMmZkZDljNTY3OGU3OTYyZjg3MmJkY2VhYzQ5NmZhMjU4ZWE1ZGRlMjczYTZlNWE5OTE4MDVjZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YTg5OTAyYjVkMDZiYTUwMWU4NjU3MTk2Mzc0ZWM4YzY4MzlmMGEwNWI2OGU1OGY4NGI0OWMyMmQzYWEyN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjMTA2YWY0NDlkMTkyNGJlYjE3NDViMDdlMTgwYzY2MTIwOWI5NmUzN2MwNjFiNDBiNjQyNzRjNWJhMzlkYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMGRkMGI3NWQ0YmFlMGFjMjA1MDBjNDYwNmU4ODU3MTc4ZDZlMTYxN2FkMzAwNGFmZDYxZTlhYTA5OWQ2ODgifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "resource": "repo://infrastructure-as-code/project.json#L148-L166",
+          "version": "repo-lines-v1:sha256:43580d6ddb98fa7b4322c62c00e7689e1c9f1fb5c50cf793cf3affc3192e8bfd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNzkwYWJkZWYwYmM0M2RhNDJjMDJkY2IxOWY3NWFmOGJhOWQ0OWY3ZjE2ZjcwMWY5Zjc2NWQwMDM0ZGVhYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2OTlkMWY0MWIzNjI0ODljYTZlZDIwMzNjYThmMzExZjg2YjY2OWU2OTk0ZDEzMzcwNjNiNjYwMjJkMGRiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0OWRmZDQ3NDc3ZTYwZWQ0ODgzYTM5ZTA5NmY4NjNmMDc5ZWViZTQ4ZDExMzEyNTMwMzNiZWRiNDcwZDI4OTAifQ"
         },
         {
-          "resource": "repo://scripts/check-no-inline-secrets.mjs",
-          "version": "repo-file-v1:sha256:57b4b9c6f32a873da0caec9be010045c8ed822cdcf00cdd19d38ddc1783a8fc8"
+          "resource": "repo://scripts/check-no-inline-secrets.mjs#L143-L152",
+          "version": "repo-lines-v1:sha256:335555e376379932355c72e16af07695468396c5ec1125a07a4ce8291539b934:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYThjMmMwZTNiMGRlMWJjNGE1Mzc4MjA1ZGUwMTQwYTZlYjgwM2ViNjVkNGJiNzZmMTJmNDBhZmQyYWYyNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0NDhiZTlmNjQ0MzZkOGVmYTFjZWFlM2I4NzQ4NTcwZGQwMzc5OWMxMzg0ZjU3YzI1NGNhNDk0MzFkNmI5MjgifQ"
         },
         {
-          "resource": "repo://scripts/check-resource-naming.mjs",
-          "version": "repo-file-v1:sha256:9d1725737b73b44853bc7cf30703113db0290aff9f498d46630ecc80c1fd461a"
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs#L103-L127",
+          "version": "repo-lines-v1:sha256:d5579144cea5909a3045ee7f508940f115f6a5299bf62c75ee521c56d44325e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OWFiYjM2YTQyNTY3OTA0ZDFlYjc5N2ZiYWYwNTNmNWM4MzM3OWRjMzExMjU0YjU2OTljMTQzYmNiYzFjZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzYWIwMzFhMDliNDYwNmU3OTI5ZTdmMzg1N2JmODEwZDg5MzUwYWM2YmI4NTQ0ZjQ2OTM5MDNhMGY5Y2U5Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjZmM2QwOWJiOGNhYTZiOTUyYWVkZWE5ZTFmZWI3M2IyNjE3MzNjOTBiMGNiZWI1OGM4MjZmMGIxNjAxZDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs#L83-L87",
+          "version": "repo-lines-v1:sha256:f3e908cc164cd9edcaf50aa4db76cbf3949b11c48b05316ca84fc379ac2e52e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFhOGMyYzBlM2IwZGUxYmM0YTUzNzgyMDVkZTAxNDBhNmViODAzZWI2NWQ0YmI3NmYxMmY0MGFmZDJhZjI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNjZTY2NDhjYWQwNTc3NjdhY2Y2NmY5ZWU4MDYxYjUxOTQ2NmI1Yjk1OTY4YzRkZWYyYzYxZDRhMDg5ZjZmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc1ODNiYzU2MWI5Y2VlYWNhMDljNWJiNGEzOTEwZjQ4ZTEyMWEzNjk2MjM3ZmJlMGYwZDQ1Yjc5NzA1YzE5YiJ9"
         }
       ]
     },
@@ -360,7 +364,7 @@
         },
         {
           "resource": "repo://scripts/gen-dev-secrets.mjs#L97-L167",
-          "version": "repo-lines-v1:sha256:1a8dd73d6f86170c35e9b998e0b73727a5ea568be796883678a448980ad7febd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmMwNWM5NDBhZjliM2Y2ZGU3M2ExNzFlM2VmMDY0NDllNjFmZGFmYWVjNGQ2OWI2ZDNjOTg1ZmRjZTJlYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
+          "version": "repo-lines-v1:sha256:f8ea6a055fe2ceffeb3aea9df373c81d4e145b40763c4e027ebc4a9bdfb08b6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmMwNWM5NDBhZjliM2Y2ZGU3M2ExNzFlM2VmMDY0NDllNjFmZGFmYWVjNGQ2OWI2ZDNjOTg1ZmRjZTJlYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzhlMDA3Y2Q5NTFjNmU0ODE0N2NiZWQ0NzQzYWQ1OTIwNjhlNGIxODRlYWViYzRiZjAyODRjZTk1ZTFkMTAifQ"
         }
       ]
     },
@@ -384,19 +388,27 @@
     },
     {
       "id": "claim_46e0c61d49b6437c928b914ce8ca6d2b",
-      "statement": "mcm.env.example and observability.env.example carry a deliberately blank REGISTRY_HOST= that the generator never fills (it is a topology value, not a <generate:KIND> placeholder), because check-topology-scrub.mjs forbids a real host in a committed file; the operator sets it per machine, and left unset the compose ref fails loudly naming the variable rather than resolving to an invalid image reference.",
+      "statement": "No dev-stack template carries a topology value any more: feature 080 removed the deliberately blank REGISTRY_HOST= from both mcm.env.example and observability.env.example when the from-source object-store image became upstream RustFS, and mcm.compose.yaml keeps only the note about the interpolation failure it once caused. The generator rule that remains is that a template key which is not a <generate:KIND> placeholder is never filled, so a blank entry stays blank and a complete <stack>.env still reports 'up to date'; in production REGISTRY_HOST is a per-stack Komodo Variable declared in stacks.toml instead.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example#L31-L38",
-          "version": "repo-lines-v1:sha256:30e3078009b4dd0ac4a4cd18110f1972743e4320ec592d2c9b34a65a4881ee9d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAxYzAyNzQ3NmNhMzk3Nzc0N2Y5MGM1ZWFmZWRkNWZmZThmYTU4YmQyODljNzJlYzdiZjQxNGNmNTYxYjU0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L15-L23",
+          "version": "repo-lines-v1:sha256:b1769bcf27bff6489fc20c04f529b6c68a2ced8717a6613548bd44f680eba11e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkMGQ2ZTYyNjY0Y2ZkNTk1M2Y0NjUwMzQzMDVkZDJlYjE4NmFhYmI2MTVjNzllZWRhYmFlOTg1NTdmZDkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZkNzYwZDNjYTZlMDk3NjZjNjlhMjYyZjY0ZGI3MmQ0ODJjNzUwMzc4NzZjODBjMjMyNzQyYjBiZWY0ZDg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQzODFjYWQzNzU2NTUzZGE1YjA3OWY2NWEyNjI5YmM3MjU5ZDQ3NzUyYzNjM2JiNjE4YTY5ODJiMmZmNWM4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNzFlYTBmNjczNWZjNjUzYWNhZmM2MmJjOGZjMTUxMmNkMzhmZGQ0MzdiYjNmYzhkYWU1NTgyM2VhYmY4MyJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example#L24-L31",
-          "version": "repo-lines-v1:sha256:42adaaf348b01d6cc14f536f32542929501a5d0dce21092286b77c827f89a00f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU5ZTlmMDBiMzQyOWQ4NmI0NTQwNjA1YzU2ZGQ4MGQ4NDlhNGVjMDk1YWJiNTE3NjVlYmNlODg5ZGU0M2U3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcyZjU5ODk3MDY0ZjI2ZmYyYjU5Yjk4NjM5NzU0NWE3OTBlYzc2NTM1NDYxZjU1ZWIxYThjMDg2M2Q3MTZiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzY2E4OWNlYzIzOTU3MGM3OThhYTM2M2JmNzljNGZmMTU0MDdmMTRlZDdhOGZiOGFlYjcxYjVhZDY0MzdlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.env.example",
+          "version": "repo-file-v1:sha256:fa1315b6ea5d8503c6ff68d96c197973bc1e45d05e3099f4273a357d637c7c8a"
         },
         {
-          "resource": "repo://scripts/gen-dev-secrets.mjs#L102-L107",
-          "version": "repo-lines-v1:sha256:e608263cd3458102f4822f1b4aa785286499e1bd01b893c2a358fb0f2e2a84dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmZTM4NzhhOGQzMzczNTkyMzQyNTFiOGNiNDQ2NTI0OGQyYjBmOWQ4M2Q1NzIzZDlkOTlhNDhkOGM1NGMwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBjNTM3YjYxNWI0YjE1Y2NkYjY2N2RhMTc0NTI2Nzg0MDlhMmEwZTFmZWIzZDdjZGFlYmYyNjk1NTRiYTU1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU2MTQwYmMyNmUyMGEzZjM1YjM3NjI2NzI1ZTE0MTMyYjYyYjg3ZTUxZjdhODg3MmY1MzY5NzBmNzRjODM0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM1ZTMyNTM1ZjA1ZWY0ZGRkYzE5ZDVkNjBhMzYyZjllNGY4ZmMzYzRlZGY3OWFiOGNkZTczOTUxYzU3YWVkNSJ9"
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.env.example",
+          "version": "repo-file-v1:sha256:56600b6d18ff0a5515167bfee025971f964828ac3d36f07cc72fdde120e4a821"
+        },
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs#L127-L144",
+          "version": "repo-lines-v1:sha256:650d5151aefcfe6a2f420c2fcbe2b9f4564a74a08259afdfceac50b38b8fdfed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNmZlOWM2MDA1NzRmYjQyZTE5YzlmMjEyM2ZiM2M5YzZlODZkOGVmOTBmMDI4ZDYxNDNkN2FkZDcyYjJmOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNTA2MDM1NmE0ZDUyNTdkMzg1NGIxNTljYWFhYTA0NmQxZmQ3ZDgyZjdmOWRhNDIyNzcxNTI3OTM3MmQxNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-secrets.mjs#L97-L108",
+          "version": "repo-lines-v1:sha256:116a37a97a7bedf9421453b8cacac345e1198c6fdeb815b237781216971d4046:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmMwNWM5NDBhZjliM2Y2ZGU3M2ExNzFlM2VmMDY0NDllNjFmZGFmYWVjNGQ2OWI2ZDNjOTg1ZmRjZTJlYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTgzZjVlMmQwM2EyODcxOTRlYzA5MTMyNWQ1N2U3MmFhYmUyOWRhNDhjMDViMDgzN2U2NzAxYWE1NTU0NTIifQ"
         }
       ]
     },
@@ -420,7 +432,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
@@ -430,31 +442,103 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:7cf49183e2ff4b36e03076ae14a4d3bcdd95d14b664c7333f2f407458d9dea23"
+          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:f2b01c304d51ac623f17651d80ed49d2b73f88220c980abfb7d6bee2430ab3f7"
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
         }
       ]
     },
     {
       "id": "claim_a1cd0505d1c74d3ba703d21a9b47e6e7",
-      "statement": "The infra-image CVE scan excludes an image by build ownership (membership of a built-image name list) rather than by registry prefix, so an image this repository builds in a different workflow — the from-source jumbleknot/minio, gated by its own minio-image publish workflow — is excluded from infra-scan rather than being left uncovered by both scanners.",
+      "statement": "The infra-image CVE scan excludes an image by build ownership — membership of BUILT_IMAGE_NAMES, the six images cd-deploy builds — rather than by registry prefix, so a jumbleknot/-namespaced image cd-deploy does not build is still enumerated and scanned; feature 080 deleted the one from-source object-store image that ever needed the distinction, so upstream rustfs/rustfs is scanned by this keyless sweep like any other third-party image and its name left the exclusion list in the same change, since leaving it would exclude an image nothing scans. The invariant is that every image is scanned by exactly one scanner.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/minio-image.yml",
-          "version": "repo-file-v1:sha256:9415bcaa61d3f358cb427539b986018a63240bf71042ec348c5cbbc993824880"
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L82-L120",
+          "version": "repo-lines-v1:sha256:319d5705bbe20f1bd49eb582079053122a19649a01ce4e1831cc95751cf096c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMTI4MGYzMWFlMmUxYTE0OWIxZmMwOTRiYmE0ZjVkOGI0NjBiMzYzYTJlZTdlNzBhM2JlN2QzMDIyNGM2NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0OTVkNDk2OWY5M2M3OWJhOGQwMTljMzVkODY2YTg2NzJmZDFmZjFlM2I3ODA0YTk4MDIxZWI2ODA2ZWRlNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YTEyNzIzMTY2ZGQ3YmQwZTI4YTQxN2Q2YTVmYTA0ZGM2MDYwNGZlMzE0OGQyMTZmODY1ZGYwOGZkMGQyMjQifQ"
         },
         {
-          "resource": "repo://scripts/infra-image-scan.mjs",
-          "version": "repo-file-v1:sha256:99dc8addc843dfc62c6cd987ac8d727a716852b8757bcc5b579860d4ea2472fd"
+          "resource": "repo://scripts/infra-image-scan.mjs#L134-L151",
+          "version": "repo-lines-v1:sha256:f8db912da740cad368a12224ab8570d590722addcb30b7c89b990fcbeaf1e568:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwM2RhMTgzNTU0MDk0NGQwMGIwOTY2MjFhNjE0ZjI1ZmI5ZmQ0NjU5YTM4NmE5MTYxZGI4ZDM1NmUyMGFlMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5MmIyNzBkOGQ4ZDQ4MTJhZGQ2ZjMzNGNkZmM0ZTBlYWM4YzhlMjA4MThjMWZiMGRhNWJlMGM0YzZmNGU1M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjNGE1OTU4MDg4NjMxZDEwYWU4N2M2YzBkYzliMmVkOTA0ZDkxZjkzZWExYzM1YjI0NjViMjYyNTZiOGE5OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZjc3N2E4NWZmZmU0NmQ5YWU0MTM3MDcxYzhmMjVlNzI0ODYxZDIzZWE2NGUxOGNlNTY2NzVkYzlhZmViOTgifQ"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L34-L45",
+          "version": "repo-lines-v1:sha256:bfb9e50e693bab016d5265f82ec9c5eb804e4154a0877fa5e2badbf6bab4f8e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YzVjMWQxNzJiN2ZkMDZjM2YzMGQyZDEzNjQzZWE3ZjdkNGNmMTY4N2ZhMDM0MWE3NWRmODFkOGY4Mzg2ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YjdiNzEzZGQxYzNhNzgwNGI2NTkyMGZjNDQ1ZWE5NjNkOGZjZmJjMGYyODU5OThlMjUzYmE3ZDExZTI2OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5MWMxYmZjN2YyZGY4MzcwMDkxNDEwYWIwYTI5YzNlZTVjNjg4MTQ1NmE4YzI2NDJkZDU0ZTgzZDMzOWE3MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOTczMmM1ZWZhZWFkZGNiM2MxNDNhMTFiNGU2YWJlODFhODFjY2E4NDNjZjlkYjU1NGFmZjAwMDk4NDdiNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b49a2af338e249cbbea800c4867b063d",
+      "statement": "Feature 080 changed prod-observability's declared inputs in both directions: REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left the stack's environment block because it no longer pulls a ${REGISTRY_HOST}/jumbleknot/… image, and LANGFUSE_RUSTFS_SECRET_KEY was added for the upstream RustFS store (its access key being the literal langfuse). The Komodo Variables for the two departed names are deliberately kept until the rollback window closes, because reverting the merge restores the lines that need them and a revert cannot recreate a Komodo Variable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L55-L56",
+          "version": "repo-lines-v1:sha256:94d0943e23f6d27ca1fc4bf0ab8d36dba2a75f52300a9493b884ca50336abbde:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwZDQ5YWU0OTBmZjBiYmI2MmJlYTY4NjRmY2I2NjAzMDA0OTcyMTQ1NzU4ZGI1YjYyY2YwYmNiNDZlNTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZjYxZDljMGFiODgzNWZkMmRiYTBjMTM0Njk0NmI3ZmJmMjQ5OTJkYjE0ZGM4MTA1OTAwY2E3OGYwODk4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM2YWM0ZWVkNTZlMjBjNmE5ZDY3NmJlOTY2ZWEwY2EwNmM1YmVlZTIzZjRjMzlmODZmYmI0OWEyOTg5NDdmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzU5MzhjY2U0MjlhZmI5MmZiZDU0Yjk3NGFmNTVmYjQzY2E5NDIwMmFlYjRhYjQzY2Y1NjNkNjg0ZTRmZDAyNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L182-L192",
+          "version": "repo-lines-v1:sha256:0063984c1f31c1a1cdca36a9257a199ac8be314ba2e78b7c25786f9d756bf0d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L175",
+          "version": "repo-lines-v1:sha256:cea17e566fac184eacc5662895d34503d7413539a71c182d79bae92189b3dbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_94f354b570f246b3b7b7ee5c71dd1ad5",
+      "statement": "A Komodo Variable referenced by a stack's environment block must be seeded before the sync that first references it: an unseeded [[VAR]] interpolates empty, and the ${VAR:?} guard in that stack's prod compose then aborts the deploy, which is the intended fail-fast rather than a silent default.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L121-L126",
+          "version": "repo-lines-v1:sha256:645e2830423439f866f93f49f69d25217d2a90597016e1b8001d809e41347d55:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdhYjI0Mjg0ZmI1YTY0NmJmYmZjMjBjOWMyMmQ4NjMyYjAwMTE2MGRlOTE2NDZiYjEyNmUxYjdkNTU5ODQzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBhOGUwMDBhNWM0ZGViYTc1MDFlNTEzNWFkOGMyNDliNGEyM2UxNjRhM2I2NWY1MDk5YzA5MjI0MzRiYWJiOCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L1-L26",
+          "version": "repo-lines-v1:sha256:610794af46093c4f63a4fee134da34a98ecd11442adf200bbba86ccb59548ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjMxZGViMzdkZTJiMWU1YjYyYTA3YTE5ZDAzZDRkYTQyYTBjY2E2ZjBjNzg2ZjFlOTliMmE1OTY3ZWM1NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkODNmNmZlMDY5YzQ0ZDQ4Y2QzMzdkOGU5ZGE2Mjk2YWEyMzE1OTg5OTA3ZDYwMGNkYzc3MGI2ZWIxOTc3YzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3MTA2OGI1YjlhNGY4YWNmNDY0MmQzYjFmMWI2NGYwMWE4Y2I3MGRmMDRkYjZiZmZmMmYwZWExNGQ4NjllYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89c323e79b0640c49542bdba72c6033e",
+      "statement": "scripts/infra-image-scan.mjs refuses to report on a partial image set: it resolves ${REGISTRY_HOST} in an image ref when the variable is set (this project's own images can only be written that way, because check-topology-scrub.mjs forbids the real host in a committed file), and when the variable is unset it exits 2 naming the skipped locations on a real scan while only warning on --list — because a sweep that quietly covers less of the tree and still passes is indistinguishable from one that scanned everything and found nothing.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L152-L167",
+          "version": "repo-lines-v1:sha256:a47291b7f652e00a6099e97e860b40fa4f874708c5f532fa9697377ed78cfe17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0OTk1YTE2MmJhOWE1MjIxZTNlZTE3MTlmNTZlMzhkNTg0YmQ5YzY3YWM3NGU5ZWJlZjA0YTA3Y2UzZGEyZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhYjYyYjUxNzE3OWYzMTZhMTZkYmViMzEyNDFhOWQ0NzMwNDU1ODc2ZDE1NmY5YzdhYWI2NmQyNjJkZTIyNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5YjJhZDQ2Nzg3NTRmMTZiZDI1YzUzZDYwNjBmMTUxODgzYjZkNGU1NzIwMzJlNmI1ZjZjMDk2YTczZGFlMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L342-L371",
+          "version": "repo-lines-v1:sha256:cce22587c68ea4ebe960eb6d3b85bc3887a2379b902e482361d95bc088518662:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ODcxOWVkZmQ4ZGQzZDdlNWJlZWIwMjMyMzQ2ZGVkMzk3Y2Q0YzJkOGQ3NjI3NDdhZmZkNjA5YzM5OTY1MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzOWE5MTYxMzUwOGU0Njk2ODI4YTg1ZmM5MGNiNTFlOTY2ODdhYzFjM2QzNTJmMzgzMTYyYzdjNGExMDlkODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwOTkyZjIxZWEzYzYxMzI0M2I1OTM4NjdjMDcxYzUyYzBhOTFjMGQwYzA2YzJjZjg1ZWZlYWY1N2JhNjMxYjMifQ"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L99-L133",
+          "version": "repo-lines-v1:sha256:1fe2e187520d68f2e9665ea42990a91724c193e8c5bac5f4c258d965508b2de0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NzM1NDMyMTAwMWU5MmQ3ZWZhMzQ1ZmI2NWM4YzMzZTEzMzc1MmMwMzZkY2RjZTE5Y2ZmZTU2YzU1YTQyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZWE2YTJhMmY5Yjc1ZTUzZWM2ZjI4OGU4Mjg3NmFjMWEzOWYzMTg1ZTliNTg1YjAyN2M4NmEzMjRhNjhlMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5ZTVhODQ1ZDVlN2Q0MTYxZjZmY2E0ODM5YmZmMWIxNmMwOGUxZGQyMjBmMTc0M2I5Y2RiNmY1ZGQ2NTYxYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NjE3NjRmYzI0ZWFhMTNkNjAwOWE2YzhlN2UwMjFmYTBlNWFmYWI3ZDUzMzAwYjVmMTNkZjJiNmY5ODBlMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7379c00c816341a497e1df714a9b60ed",
+      "statement": "The compose static gates are self-verified and locally reproducible: the secret gate runs in the naming job as --selftest then scan (so a detector that silently stopped flagging cannot report green), the naming gate has no selftest and is invoked plain as --section=all, and scripts/preflight.mjs reproduces both locally with the same argument shapes.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L103-L108",
+          "version": "repo-lines-v1:sha256:6730c74778bb1bc3cbf199d5b2c106eb8ded17b89c6c71bf7166232baa7e1eb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNkODkzNTk3NWZiMjA4YjEwY2ZmN2FmZGZhZTI3OTAxNTJhNGJkMjFjZjc1Nzg3MmQ2ZDc4ZmNkNGJkNmJiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODY4MzcwYzJmY2I4YWVlMmZlZGQxZjMwNWJkMDc3ODc0ODFmNmE3NDk5NmMyZTgyMDk0NjRkYWE5NjY5MGE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjI5OGYzMWQxYzk2ZDQ2YzRjOTZjMmU2ZTc5MzU5ODFhMGEyYzFjNjRiYTQ4ODUzZjQ3NDllYzM4MmY3YThhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWUzNWViYzExYmJkY2ZhNTIyMDYyMjlkOGVmYTYzN2QwYmQ5YzkwMDJlZWNiYzNlZjVmMmRmNzlkYWEzNTYzNCJ9"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L31-L49",
+          "version": "repo-lines-v1:sha256:d3a0c214eb47693833f30c39c2b8ab6536b786fb4656f2c14189a96dca1424a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmExZTIxYjY1NTU3N2U2MTAxMzhjYThkMWFlOTQwMTIwN2Q0N2JjNmUxYWViM2RjZTc4MTBkMTdjNzdiMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYmU2YWY4YmY2YjI5YmRkZTY1ZDczOGFlZjVhNGY1ZTZhOTc3ZjM2NjA2MDE5YWM0OTEzN2E3ZmIxMDI0YjEifQ"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L66-L73",
+          "version": "repo-lines-v1:sha256:5881b07e0df73461661bb5262d90e505b320a24f12066c49a8ea50fdaa53ca0c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI1Y2ZlMmFhNmNkOTc4OTgxMmRlMzM4ODUyNTU3ZDNjMmEzNTdlOTRlZGUxNWRiYjNlMTJlOGM0MDAxYTI0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE4MGE4M2VhZjk3YjMzODgxNmJmOWE2ZDllMDgzYzhmMDIzNmQ2ZTBhZTRlYzY4YzZhZWQ3OTEzN2U1MDBmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE0NWVmM2VkMWI1ODdiZTY0MzcxMDI3YTlhOWU3YTE5NGY0MDljZjZiZTg0YjE0NDJmOTIwODQxZDU4Y2RmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1MmJkYzI3MDZlOTZhODg3MjY5ZWNhY2JkYTAwNTcwM2NmZDhlMTk5Yjg1ODE3ZWI5NzY4YjFiMTA5YzM0MyJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T02:04:22.270Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

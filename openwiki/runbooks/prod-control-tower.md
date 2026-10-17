@@ -1,12 +1,9 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the one-time MinIO uid-1000, Langfuse 4 + ClickHouse 25 and OpenSearch 2→3 migrations with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the one-time RustFS object-store cutover, Langfuse 4 + ClickHouse 25 and OpenSearch 2→3 migrations with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-tags: [production, observability, audit, vault, komodo, opensearch, langfuse, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-14T01:54:06.604Z
+tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, runbook]
 sources:
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
     resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
@@ -20,8 +17,6 @@ sources:
     resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-9ccd48df872db70bfebbfa90
-    resource: repo://infrastructure-as-code/docker/minio/Dockerfile
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-5c295e2a3945cc4a649c1abc
@@ -34,9 +29,16 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-bf15c8e3067ce028059a1350
     resource: repo://scripts/check-resource-naming.mjs
+  - id: openwiki-source-b5c1c7c3c0b1e0f9a1c62a44
+    resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-767dd8a5885ff03fcbe9c2c0
-    resource: repo://specs/070-minio-non-root/tasks.md
+    resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
+  - id: openwiki-source-2a44e0b0a1c9d3e5f6081b72
+    resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -65,6 +67,9 @@ plain `${VAR}`, never `${VAR:?}`. An unseeded Komodo Variable therefore aborts a
 (intended) but can never abort the app. Fifteen new masked Variables are needed (13 observability + 2
 audit; the dormant Vault needs none), plus `TAILNET_HOST`, already seeded for `prod-auth` and reused for
 LangFuse's tailnet `NEXTAUTH_URL`. The LangFuse bootstrap keys are the *same* values the gateway consumes.
+The object store's Variable is `LANGFUSE_RUSTFS_SECRET_KEY`; the retired `LANGFUSE_MINIO_ROOT_PASSWORD` is
+kept out of the compose but retained in Komodo until the cutover's rollback window closes, because a revert
+restores the line that needs it and a revert cannot recreate a Komodo Variable.
 
 Wiring is least-privilege rather than symmetric: the BFF consumes the audit sink and OPA only, while the
 gateway is the primary emitter (audit + LangFuse + OTel + OPA + Unleash). The LangFuse and Unleash secrets
@@ -72,7 +77,7 @@ reach `prod-movie-assistant` and never `prod-mcm-bff`; `UNLEASH_API_TOKEN` is th
 admin one. The audit sink sits on its own external `agent-audit-network`, which only
 `agent-audit-opensearch`, its init container, and the gateway/BFF consumers join — keycloak and mc-service
 cannot reach it. Adding that network to `APPROVED_NETWORKS` and the `vault` volume prefix to `VOLUME_RE`
-was the whole guardrail delta for this feature (`scripts/check-resource-naming.mjs`); feature 071 later
+was the whole guardrail delta for the feature (`scripts/check-resource-naming.mjs`); feature 071 later
 added the narrow `-snapshots` volume form alongside them.
 
 ## Additive no-op and rollback
@@ -103,13 +108,16 @@ independently up/down-able.
   counts *any* exited container as unhealthy, so every init container in this stack set provisions then
   idles (`… && exec sleep infinity`) behind a trivial passing healthcheck. Where a downstream service needs
   the init's result, gate on a completion marker rather than on "the container exited":
-  `langfuse-minio-init` touches `/tmp/ready` after creating the bucket, its healthcheck tests for that
+  `langfuse-rustfs-init` creates the `langfuse` bucket, touches `/tmp/ready`, its healthcheck tests for that
   marker, and `langfuse-worker` depends on `service_healthy` (a never-exiting container can never satisfy
   `service_completed_successfully`).
 - **Non-root image runtimes and bind-mount ownership are the dominant class of prod-only failures here**
   — memlock rlimits, root-owned bind mounts under a non-root image user, and double-loaded entrypoint
-  config all passed local `compose config` validation and only broke on the real prod host. Diagnose from
-  container logs on the prod host itself, not from the compose file; see the table below.
+  config all passed local `compose config` validation and only broke on the real prod host. The object
+  store is the same shape: RustFS runs as the image's own uid (`10001` for the pinned 1.0.1) with no
+  compose `user:` key, a fresh named volume inherits the image's `/data` with that ownership, and any other
+  uid fails at startup. Diagnose from container logs on the prod host itself, not from the compose file;
+  see the table below.
 - **The two tailnet-reachable operator UIs (LangFuse, Grafana) use the prod-reserved port range**,
   binding broadly but staying tailnet-only via the host firewall — see
   [Published-port reservation](../invariants/published-port-reservation.md) for the collision this
@@ -126,6 +134,12 @@ independently up/down-able.
 - **A capacity check was done before enabling observability**, because the LangFuse/ClickHouse stack is
   the heaviest addition on the shared host — re-run a capacity check before any future footprint
   increase rather than assuming headroom persists.
+- **`restart: always` on every long-running prod service is a self-enforcing property, not a default.**
+  A host reboot once proved `restart: unless-stopped` does not bring containers back here, so
+  `scripts/check-prod-restart-policy.mjs` scans every `compose.prod.yaml` and fails on a missing policy,
+  on `unless-stopped`, or on `no`/`on-failure` for anything that is not a genuine one-shot
+  (name matching `-init`/`-seed`/`-rs-init` or `createbucket`). Add a prod service without a policy and
+  the gate goes red, not the reboot.
 
 ## Prod-only failure class (none catchable by `docker compose config`)
 
@@ -136,7 +150,7 @@ realities: non-root images, root-owned mounts, one-shot exits, orchestrator heal
 |---|---|---|
 | OpenSearch: `error setting rlimit type 8: operation not permitted` | the prod daemon's memlock rlimit is finite, so `ulimits.memlock: -1` for `bootstrap.memory_lock` cannot be set | drop `bootstrap.memory_lock` + the memlock ulimit — memory-lock is a nicety for a 1 GB audit sink |
 | `agent-audit-init` Exited(1): `mkdir: … Permission denied` | the image runs as uid 1000; the bind mount makes `/opt/audit` root-owned | run the one-shot init as `user: "0:0"` |
-| Komodo marks the stack **unhealthy** although services work | Komodo counts any exited container as unhealthy; the one-shot inits exit 0 | init provisions then idles, with a trivial passing healthcheck |
+| Komodo marks the stack **unhealthy** although services work | Komodo counts any exited container as unhealthy; the one-shot inits (`agent-audit-init`, `langfuse-rustfs-init`, `unleash-seed`) exit 0 | init provisions then idles, with a trivial passing healthcheck |
 | Vault: `open /vault/data/vault.db: permission denied` | the image runs Vault as non-root uid 100, and `/vault/data` is not in the image → the volume lands root-owned | mount raft at `/vault/file` (a vault-owned image dir); an empty volume inherits `vault:vault` |
 | Vault: `Failed to lock memory: cannot allocate memory` | finite memlock rlimit again; `mlockall` fails even with `IPC_LOCK` | `disable_mlock = true` in `vault.hcl` (also the recommended raft/BoltDB setting) |
 | Vault: `bind: address already in use` on :8200, crash-looping | the vault entrypoint already appends `-config=/vault/config`; passing the file explicitly loads the listener twice | `command: ["server"]` only |
@@ -178,64 +192,128 @@ Two smaller prod-only details worth knowing:
 
 Full failure-symptom table and the reproduction recipe: `docs/runbooks/prod-control-tower.md`.
 
-## MinIO data-volume migration (uid 1000, feature 070)
+## Object-store cutover to RustFS (feature 080, item #560)
 
-The `langfuse-minio` image was built as root until feature 070. Migrating to non-root requires a one-time
-`chown -R 1000:1000` on the data volume, done **in the deploy window with the service stopped** — not
-ahead of time. Full procedure, including the dev variant and the volume-name traps:
-[the runbook's MinIO migration section](../../docs/runbooks/prod-control-tower.md).
+The Langfuse event/media store was a from-source MinIO image built by this repository until feature 080
+replaced every instance with upstream `rustfs/rustfs`, digest-pinned and pulled rather than built. The
+prod instance runs as the image's own uid (`10001` for the pinned 1.0.1) with **no** compose `user:` key —
+a fresh named volume inherits the image's `/data` with that ownership, and any other uid fails at startup —
+and the bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the
+same digest and Renovate moves them together, so a split that would run the server and its init on
+different images cannot arise from a hand edit. The production data is moved **in place**: the old drive is
+**copied** to a new external volume that RustFS reads, and the original is never written, so rollback is a
+revert onto it. The old store is deleted only after the rollback window closes.
 
-Three gotchas, all measured for real:
+### Merging the PR IS the deploy — so the copy must exist BEFORE the merge
 
-- **An early chown does NOT stay valid.** Root bypasses DAC checks, so the running root image keeps
-  working on a `1000:1000` volume — but every object it writes afterwards is created **root-owned
-  again**. Measured: `find /data ! -user 1000` went from `0` straight back to `2` after a single new
-  object. So the chown must be the last thing before the non-root image starts, with nothing root-owned
-  running in between. It is cheap and fast; it is not durable while root is writing.
-- **Stop by container name, not via compose.** The prod stacks are Komodo-managed: Komodo clones the
-  repo and runs compose from its own stack directory with env injected from Komodo Variables, so a
-  hand-run `docker compose` from `$HOME` fails with "no configuration file provided" and unresolved
-  `${LANGFUSE_*}` interpolation errors. Use `docker stop langfuse-minio` — the `container_name` is
-  set explicitly and makes this equivalent without either problem.
-- **The real gate is the digest-pin update, not the PR merge.** Both compose files pin `langfuse-minio`
-  by digest. Merging the non-root image PR publishes a new digest but changes nothing live until the
-  pins are updated in a separate commit. Do not perform the chown and then redeploy the old pinned
-  image — the root process immediately resumes and undoes the migration. The sequence is only durable
-  when the final step (`docker redeploy prod-observability` via Komodo) starts the non-root image.
+Komodo deploys `prod-observability` from `main` on every push, and the new compose mounts the EXTERNAL
+volume `observability-langfuse-rustfs-data`, which nothing but the migration tool's `copy --apply` creates.
 
-Verify with `find /data ! -user 1000 | wc -l` — must print `0`. Do not use `stat /data`; the
-top-level directory can show `1000:1000` while children are still root-owned. Two further traps: a
-`docker run -v <name>:/data` **creates** the volume when it does not exist, and a fresh volume is `0:0`,
-which reads as a successful measurement of the wrong thing — ownership alone cannot tell a just-created
-volume from the production one, but ownership *plus contents* can. The real name is the
-compose-prefixed `observability-langfuse-minio-data`; there is also an unprefixed `minio_minio-data` on
-the prod host belonging to a different/older project, so confirm which stack owns a `minio*` volume
-before touching it.
-
-### Fresh volumes — the migration is not owed
-
-The migration above is for a volume carrying **root-era data**. A volume created empty — by the
-`docker volume create` prerequisite or by `compose up` on a host that has never run the stack —
-needs no chown and no operator step at all.
-
-That is true because the **image** carries `/data` owned by `1000:1000`, and Docker seeds a fresh
-empty named volume from the image directory it is mounted over, ownership included. It was **not**
-true of the image published as `sha256:629bcee8…`, which has no `/data`: a from-empty bring-up on
-that image creates a `0:0` volume and MinIO fails with the *same* `unable to rename … file access
-denied` as an unmigrated volume — so the error points at a migration that was never owed. Fixed
-2026-09-13; it takes effect only once the new digest is pinned in both compose files, and the
-`langfuse-minio` and `langfuse-minio-init` refs must move together (a split would run the server and
-the bucket-init one-shot on different images).
-
-**If you see that error on a volume you just created**, do not chown it and do not conclude the
-migration was missed — check the image first:
-
-```sh
-docker run --rm --entrypoint sh <the pinned image> -c 'stat -c "%u:%g" /data'   # must be 1000:1000
+```mermaid
+flowchart TD
+  Pre["M0-M3 inventory, manifest, stop writers, stop old store, copy --apply"] --> Exists{"new external volume exists?"}
+  Exists -- no --> Abort["deploy aborts: external volume not found, zero containers created"]
+  Exists -- yes --> Merge["M4 merge the PR: Komodo redeploys prod-observability onto RustFS"]
+  Merge --> Check["M5 verify: parity.json pass, old and new traces load"]
+  Check -- fail --> Revert["M6 revert the merge: the untouched old volume comes back"]
+  Check -- pass --> Clean["M7 after the 14-day window: delete the old volume, the Variable and the registry package"]
 ```
 
-After the deploy, `langfuse-minio` healthy is necessary but not sufficient: a stack that starts proves
-the permissions, a trace written *after* the deploy proves the write path.
+*The cutover order, and why the copy is a precondition of the merge rather than a step after it.*
+
+**If the merge lands first, the deploy fails instead of starting on an empty store.** Measured 2026-10-11
+in the dev container against the shipped `compose.prod.yaml` (Docker Compose 5.6.0, with every OTHER
+external volume present so the RustFS one was the only gap), with and without pulling: compose aborts with
+`external volume "observability-langfuse-rustfs-data" not found`, creates **zero** containers, and does
+**not** create the volume. A scratch project then showed that a failed `up` of this kind leaves the
+previously deployed containers **running and unchanged** — so an early merge leaves Langfuse on the old
+store, still serving. Recover by doing M1–M3 and redeploying.
+
+### The tool runs ON the host, from a checkout, through a wrapper
+
+The prod host has no `node`. `scripts/object-store-migration.sh` runs the tool in a digest-pinned node
+container with the host's rootless socket mounted, and the Docker CLI copied out of a digest-pinned image —
+nothing is installed. It copies the evidence directory in before the run and back out after it, so the
+relative `--out`/`--manifest` paths land on the host. Credentials go in by **name** from your shell, never
+on a command line:
+
+```sh
+cd <a checkout of this repository at the PR's commit>
+export MIGRATION_DIR=$HOME/080-cutover          # evidence (inventory/manifest/copy/parity .json) lands here
+
+# M0.4 — advance go/no-go (read-only; the store may be running — the record says sourceInUse)
+scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory-advance.json
+
+# M1 — quiesce writers (by container name: this host's stacks are Komodo-managed, so a hand-run
+#      `docker compose` fails with "no configuration file provided")
+docker stop langfuse-web langfuse-worker
+
+# M2 — manifest from the RUNNING old store, with ITS credentials
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=minio      # value of LANGFUSE_MINIO_ROOT_PASSWORD
+scripts/object-store-migration.sh manifest --endpoint http://langfuse-minio:9000 --network backend-network --out manifest.json
+
+# M3 — stop the old store, inventory the STOPPED drive, copy
+docker stop langfuse-minio-init langfuse-minio
+scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory.json
+scripts/object-store-migration.sh copy --from observability-langfuse-minio-data \
+     --to observability-langfuse-rustfs-data --out copy.json --apply
+
+# M4 — merge the PR; watch app-ci → trigger-cd → cd-deploy deploy=true complete
+
+# M5 — verify against the NEW store, with ITS credentials
+read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=langfuse   # value of LANGFUSE_RUSTFS_SECRET_KEY
+scripts/object-store-migration.sh verify --endpoint http://langfuse-rustfs:9000 --network backend-network \
+     --manifest manifest.json --out parity.json
+```
+
+`--image` defaults to the RustFS pin read out of `compose.prod.yaml`; the tool also reads the runtime uid
+from that image rather than writing it as a literal, and asserts the copied entries are owned by it.
+
+**Every step refuses rather than guesses.** `copy` without `--apply` is refused (there is no dry-run
+spelling — `inventory` is how you look), and the wrapper refuses it before any container exists, as it does
+`rehearse` (a dev-container activity). The tool additionally refuses an existing target volume, a source
+still mounted by a running container, a volume that does not exist (it is never created by looking at it),
+and an `inventory` whose search instrument failed its self-test — because a BusyBox `grep` in its default
+locale misses every marker inside a binary `xl.meta`, so a zero proves nothing until the search has been
+shown to find a planted marker. A drive is `migratable` only if its format is `xl-single` with exactly one
+set and one drive, and there are zero SSE and zero tiered objects.
+
+`copy.json` must show `targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0` and equal source digests
+before and after — a source that changed during the copy is no longer a valid rollback target and the tool
+says so instead of continuing. `verify` then compares the running new store against the pre-migration
+manifest and exits non-zero on any discrepancy.
+
+### Rollback and cleanup
+
+**Rollback (M6)** — only if M5 or later checking fails: `git revert` the merge via a PR as usual (it
+restores the old compose and the `stacks.toml` lines); Komodo redeploys the old store on the untouched
+`observability-langfuse-minio-data` with `LANGFUSE_MINIO_ROOT_PASSWORD`. Writes accepted by RustFS since
+the merge are lost (one-way format; accepted). Leave the new volume for diagnosis.
+
+**Cleanup (M7)**, after the 14-day rollback window: delete `observability-langfuse-minio-data`, the Komodo
+Variable `LANGFUSE_MINIO_ROOT_PASSWORD` and the old registry package (rollback pulls it until then), then a
+cleanup PR removes the migration tool. A guard test (`scripts/__tests__/no-minio-references.guard.test.mjs`)
+scans every tracked file's path and content for the old store's name with a closed exemption list, so a
+missed runbook line cannot survive the cutover — the exemptions naming the migration tool are themselves
+temporary and are removed with it.
+
+### Traps this procedure is built around, all of them hit for real
+
+1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and reports an empty drive
+   that reads as a measurement of production. The tool checks the volume exists before mounting it. There
+   is also an unrelated `minio_minio-data` volume on the host — the Nx-cache store's, not Langfuse's.
+2. **A top-level `stat` is not ownership.** A drive can report the right owner at `/data` while entries
+   below it do not. The tool counts every entry not owned by the image's uid, and requires 0.
+3. **A search that finds nothing proves nothing until it is shown to find something.** BusyBox `grep` in
+   its default locale misses every marker inside a binary `xl.meta`; the first production go/no-go reported
+   "0 SSE" through exactly that blind spot. The tool's `inventory` runs with `LC_ALL=C` and self-tests its
+   search on a planted marker first.
+4. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep the
+   window short and re-check the old store is still stopped before `copy`.
+5. **Stop by container name, not via compose.** The prod stacks are Komodo-managed: Komodo clones the repo
+   and runs compose from its own stack directory with env injected from Komodo Variables, so a hand-run
+   `docker compose` from `$HOME` fails with "no configuration file provided" and unresolved `${LANGFUSE_*}`
+   interpolation errors.
 
 ## Langfuse 4 + ClickHouse 25 cutover (feature 072)
 
@@ -267,11 +345,9 @@ Four things that will catch you out, all hit for real:
    the 2026-09-13 cutover: `langfuse-postgres` and `langfuse-clickhouse` must be `docker rm`'d after
    stopping, before attempting to remove their volumes.
 
-**The MinIO volume is deliberately NOT recreated.** It holds blobs, not schema, and it was already
-`chown`'d to uid 1000 by the migration above. A freshly-created MinIO volume failed to initialise in
-dev even when correctly `chown`'d (`Unable to initialize backend: file access denied`), so recreating
-it risks the stack not coming back for no benefit; orphaned blobs are harmless. `langfuse-redis` has
-no volume at all — its queue state clears on restart by itself.
+**The object-store volume is deliberately NOT recreated by this cutover.** It holds blobs, not schema, so
+it is irrelevant to whether Langfuse 4's migrations run; its own cutover is the separate feature-080
+procedure above. `langfuse-redis` has no volume at all — its queue state clears on restart by itself.
 
 **Rollback:** revert the merge and redeploy. The volumes stay as they are — rollback does not restore
 the old traces, which were discarded by design. Langfuse 3 re-initialises the empty volumes and comes up

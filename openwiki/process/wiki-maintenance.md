@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T01:57:21.062Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -245,8 +245,10 @@ proposal, and the always-on gates sit after it rather than inside it.
 
 Full CLI contract and the conformance gate's rule set: `specs/043-openwiki-okf/contracts/` and
 `specs/043-openwiki-okf/data-model.md` (rules V1–V15, the last two added for item #491 after `resource`
-verification alone proved insufficient; V16 followed for item #611 to hold a covered page's bytes to
-its verified Claims sidecar); the maintenance machinery's contract is
+verification alone proved insufficient); V16 followed for item #611 to hold a covered page's bytes to
+its verified Claims sidecar, and unlike the rest of the table it is defined in code rather than in
+`data-model.md` — once, in `scripts/openwiki-claims.mjs`, shared with `wiki-maintain`'s post-generation
+link rewrite. The maintenance machinery's contract is
 `specs/044-openwiki-automation-migration/contracts/`. Day-to-day invocation notes live in
 `docs/runbooks/devcontainer.md`, the operator runbook is
 `docs/runbooks/wiki-maintenance.md`, and the corrections note is in `CLAUDE.md`'s OpenWiki section.

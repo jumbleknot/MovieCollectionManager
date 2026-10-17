@@ -1,36 +1,12 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
-tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
-    resource: repo://scripts/cd/publish-apk.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T00:46:58.372Z" }
+tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-14T00:46:58.372Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -40,8 +16,8 @@ and production: OS install and hardening, Tailscale-only remote access, two segr
 daemons (one per service user — `ci` and `prod` — each with its own socket, data root, networks, and
 volumes so a breakout in one cannot reach the other or the host as root), Forgejo as the
 source-of-truth forge with its own OCI registry and generic package registry (push-mirrored to
-GitHub), and Komodo driving CD to production. Every literal in the source is a placeholder, and the
-topology-scrub gate forbids the real ones from entering git.
+GitHub), a self-hosted Nx remote cache, and Komodo driving CD to production. Every literal in the
+source is a placeholder, and the topology-scrub gate forbids the real ones from entering git.
 
 This document was relocated here from `docs/proposals/homelab-setup/` because it is a live operator
 reference, not pre-specification ideation — see the
@@ -100,10 +76,17 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   on the host as the unprivileged `ci` user with no job container — the emulator job and the
   Docker-image-building jobs, which need `/dev/kvm`, a single-host view of `localhost:8082` /
   `10.0.2.2:8082`, and a reachable `ci` rootless daemon.
-- **8 — Self-hosted Nx remote cache.** MinIO plus the open-source Rust `nx-cache-server` on the prod
-  daemon; the first-party `@nx/s3-cache` / `@nx/shared-fs-cache` packages are deprecated over an
-  unpatchable CVE. Client wiring is entirely env-driven, so local runs without the token fall back to
-  the local cache and no remote-cache config leaks into the repo.
+- **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
+  `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
+  custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`
+  packages are deprecated over an unpatchable CVE and must not be used. The backing store is an S3
+  object store, **RustFS** since feature 080, run from a host-managed compose beside a one-shot
+  bucket-creating init container on the same pinned image the git-tracked observability stack uses,
+  with its console disabled and only the S3 port published. Moving an existing cache is an in-place,
+  verified copy driven by `scripts/object-store-migration.sh` (`manifest` → `inventory` → `copy` →
+  `verify`); recreating it empty is an accepted alternative, because the cache is rebuildable — a cold
+  cache costs time, not correctness. Client wiring is entirely env-driven, so local runs without the
+  token fall back to the local cache and no remote-cache config leaks into the repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
@@ -160,7 +143,7 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 flowchart TD
   Host["Phases 0-4 · firmware, OS, hardening, tailnet, KVM"] --> Daemons["Phase 5 · two rootless daemons + external networks and volumes"]
   Daemons --> Forgejo["Phase 6 · Forgejo SSOT + OCI registry + GitHub push mirror"]
-  Daemons --> Cache["Phase 8 · Nx remote cache on the prod daemon"]
+  Daemons --> Cache["Phase 8 · RustFS-backed Nx remote cache on the prod daemon"]
   Daemons --> Ops["Phases 12-14 · extended hardening, monitoring, backups"]
   Forgejo --> Runner["Phase 7 · Actions runner on the ci daemon"]
   Forgejo --> Komodo["Phase 9 · Komodo CD on the prod daemon"]
@@ -211,6 +194,12 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   `PERIPHERY_ROOT_DIRECTORY` onto persistent disk at install time, so a rebuild cannot reintroduce the
   default; the recovery ordering when a reboot does land dirty is in
   [Prod reboot resilience](./prod-reboot-resilience.md).
+- **The Nx-cache store is host state, so nothing in CI keeps its image pin fresh.** Phase 8's RustFS
+  compose lives under the `prod` user's home like the other host-managed composes, which means
+  Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
+  in the observability stack whenever that moves. The store's volume and network names are host state
+  too, so confirm them by ownership *and* contents before running the migration copy — and if the
+  backup script captures the previous store's directory, it has to be pointed at the new one as well.
 - **The forge's Actions-artifact API is a missing route, not an empty result.** `GET
   /api/v1/repos/.../actions/artifacts` answers `404 page not found` on this build
   (15.0.3+gitea-1.22.0), so `upload-artifact` APKs are reachable only by a human clicking through the

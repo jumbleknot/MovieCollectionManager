@@ -9,8 +9,6 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-c950e0aee079c6db1d918078
-    resource: repo://.forgejo/workflows/minio-image.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
@@ -81,10 +79,9 @@ sources:
     resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T23:36:23.499Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T02:04:22.270Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -145,11 +142,14 @@ The pin is per include, not blanket. All of `auth`'s two includes, plus `audit`'
 stack-scoped variable (`agent-db` and `agent-gateway`, both for `${AGENT_DB_PASSWORD}`) and includes
 the other five bare.
 
-`mcm.env` and `observability.env` also carry a deliberately **blank** `REGISTRY_HOST=`. It is topology,
-not a secret, and `check-topology-scrub.mjs` forbids a real host in a committed file, so the operator
-sets it per machine; a blank key that is not a `<generate:KIND>` placeholder is never filled by the
-generator, and until it is set the compose ref fails loudly naming the variable rather than resolving
-to an invalid image reference.
+No dev-stack template carries a topology value any more. `REGISTRY_HOST` left `mcm.env.example` and
+`observability.env.example` when feature 080 replaced the from-source object-store image with upstream
+RustFS — `mcm.compose.yaml` keeps the note because a required `${REGISTRY_HOST:?}` in a profile-gated
+service once broke `up` for the whole stack. The generator rule that survives is narrower and still
+load-bearing: a template key that is **not** a `<generate:KIND>` placeholder is never filled, so a
+deliberately blank entry stays blank and a complete file still reports "up to date" —
+`scripts/__tests__/gen-dev-secrets.guard.test.mjs` pins that with a synthetic template. In production
+the same name is a Komodo Variable, declared per stack in `stacks.toml`.
 
 The generator is **idempotent and back-filling**, not skip-on-exists: an existing `<stack>.env` keeps
 every value it already holds — including ones edited by hand — and gains only keys the template has
@@ -232,15 +232,24 @@ are declared:
   `UNLEASH_API_TOKEN`; plus `.env.deploy`.
 - **`prod-audit`** (`docker/opensearch`) — `OPENSEARCH_INITIAL_ADMIN_PASSWORD`,
   `OPENSEARCH_AUDIT_WRITER_PASSWORD`. No `additional_env_files`.
-- **`prod-observability`** (`docker/observability`) — `REGISTRY_HOST`, thirteen LangFuse/Unleash secret
-  tokens (`LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY`, `LANGFUSE_NEXTAUTH_SECRET`,
-  `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`,
-  `LANGFUSE_MINIO_ROOT_PASSWORD`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`,
-  `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`,
-  `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet
-  `NEXTAUTH_URL`. No `additional_env_files`.
+- **`prod-observability`** (`docker/observability`) — thirteen LangFuse/Unleash secret tokens
+  (`LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY`, `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_PG_PASSWORD`,
+  `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_RUSTFS_SECRET_KEY`,
+  `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`,
+  `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`,
+  `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet `NEXTAUTH_URL`. No
+  `additional_env_files`.
 - **`prod-vault`** (`docker/vault`) — **no `environment` block at all**: a dormant Vault has no root
   token to inject.
+
+Two names left `prod-observability`'s block with feature 080, which swapped the from-source object-store
+image for upstream `rustfs/rustfs`: `REGISTRY_HOST` (the stack no longer pulls a
+`${REGISTRY_HOST}/jumbleknot/…` ref) and `LANGFUSE_MINIO_ROOT_PASSWORD`, replaced by
+`LANGFUSE_RUSTFS_SECRET_KEY`. The Komodo **Variables** for both are deliberately kept until the
+rollback window closes, because reverting the merge restores the lines that need them and a revert
+cannot recreate a Variable. New Variables must be seeded *before* the sync that first references them:
+an unseeded `[[VAR]]` interpolates empty, and the `${VAR:?}` guard in the compose then aborts the
+deploy — the intended fail-fast, not a silent default.
 
 Because the list is the contract, an entry can outlive the compose that read it — and both bind-prefix
 variables have now run that course to completion. `KC_ADMIN_BIND_IP` was only ever the bind *prefix*;
@@ -265,7 +274,14 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 ## Side artifacts and the static gates over every compose file
 
 Not every file under `infrastructure-as-code/` is a stack. Four artifacts exist to serve the stacks
-without being one, and every compose file in the tree is subject to a set of static gates.
+without being one, and every compose file the gates discover is subject to a set of static gates.
+Three of those gates (naming, inline-secret, port-collision) discover files by basename glob —
+`infrastructure-as-code/docker/**/compose*.yaml` plus
+`infrastructure-as-code/docker/stacks/*.compose.yaml`, with the retired root `compose.yaml` added by
+name — so a compose file whose basename does not *begin* with `compose` falls outside all three:
+`infrastructure-as-code/docker/dev-ollama.compose.yaml` is neither name-checked, secret-checked nor
+port-checked (the CVE enumerator uses its own wider `infrastructure-as-code/**/*.{yaml,yml}` glob and
+does see it). Name the file `compose.<something>.yaml` if it needs that coverage.
 
 **ClickHouse system-log TTL config** — `infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml`
 is bind-mounted read-only into `langfuse-clickhouse` in *both* the dev and the prod observability
@@ -291,25 +307,37 @@ agent gateway reaches it via `host.docker.internal` with zero gateway/compose ch
 
 **Backups** — `infrastructure-as-code/docker/backups/compose.yaml` is the separate file that carries
 the backup-destination test services; see the interpolation gotcha below for why it is not an `mcm`
-profile.
+profile. Both destinations are upstream images pulled by digest (`rustfs/rustfs` for S3, `httpd` for
+WebDAV) and join the mcm stack's `mcm-bff-network` as an external network, so the mcm stack must be up
+first.
 
 **Static gates.** `scripts/check-resource-naming.mjs` — the `naming` CI job, also exposed as the
 `check-naming` Nx target — enforces the `<context>-<role>-<engine>` grammar on every declared volume
 name, external network name and `container_name`, requires `container_name == service key`, permits
 only the BFF to carry the `mcm-` qualifier, and forbids re-introducing a retired service key as a
 network alias so a missed reference fails loudly instead of silently resolving.
-`scripts/check-no-inline-secrets.mjs` asserts the structural property that no tracked compose file
+`scripts/check-no-inline-secrets.mjs` asserts the structural property that no *discovered* compose file
 holds a literal credential: every secret-shaped key, password-bearing URL, and
 command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?msg}` reference, and an
-inline `${VAR:-default}` *fails* because it re-leaks plaintext. `.gitignore` backs the template
-contract: it ignores `*.env` / `*.env.*` and carves out
+inline `${VAR:-default}` *fails* because it re-leaks plaintext. The secret gate runs in the `naming`
+job as `--selftest` then scan, so a detector that quietly stopped flagging cannot report green; the
+naming gate has no selftest and is run straight as `--section=all`, and `scripts/preflight.mjs`
+reproduces both locally (the secret gate as selftest-then-scan, the naming gate plain). `.gitignore`
+backs the template contract: it ignores `*.env` / `*.env.*` and carves out
 `!infrastructure-as-code/docker/stacks/*.env.example`, scoped to that directory so other deliberately
-ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the images
-pulled in `infrastructure-as-code/**` that no other workflow builds and scans each with Trivy; the
-exclusion is by *build ownership* (membership of a built-image name list), not by registry prefix, so an
-image this repository builds elsewhere — the from-source `jumbleknot/minio`, scanned by its own
-`minio-image` publish gate — is excluded here rather than left uncovered by both.
-Together these three are why a compose file added here is not just "a YAML file that runs" — it is
+ignored `*.env.example` files stay ignored. Separately, `infra-scan` (feature 035) enumerates the
+images pulled in `infrastructure-as-code/**` that no other workflow builds and scans each with Trivy.
+The exclusion is by *build ownership* — membership of `BUILT_IMAGE_NAMES`, exactly the six images
+`cd-deploy` builds — not by registry prefix, so a `jumbleknot/`-namespaced image that `cd-deploy` does
+not build is still enumerated rather than excluded by name. Feature 080 deleted the one image that
+ever needed the distinction (the from-source object store, built and scanned by its own workflow), so
+upstream `rustfs/rustfs` is scanned here like any other third-party image and its name left the list in
+the same change — leaving it would exclude an image nothing scans. The sweep also resolves
+`${REGISTRY_HOST}` when the variable is set, because this project's own image refs can only be written
+that way (`check-topology-scrub.mjs` forbids the real host in a committed file), and it exits 2 rather
+than report a partial sweep when an unresolved ref would otherwise go unscanned. The invariant the
+partition exists for: every image is scanned by exactly one scanner.
+Together these gates are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
 ## Gotchas
@@ -342,8 +370,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   `env_file_path`, so a variable absent there is absent at `docker compose config` time and the `:?`
   guard fires — only on a real deploy. `scripts/__tests__/komodo-stack-env.guard.test.mjs` makes the
   coupling mechanical: every required variable in a stack's prod compose files must be supplied by that
-  stack's `environment` block or its `additional_env_files`. (This is exactly how `prod-observability`
-  broke once `REGISTRY_HOST` reached a fourth consumer.)
+  stack's `environment` block or its `additional_env_files`. The guard is scoped to the `${VAR:?…}`
+  form only (an optional `${VAR}` is allowed to be absent by definition) and strips comments, so a
+  documented pattern is not counted as a requirement. Its instrumentation test plants the removal of
+  `LANGFUSE_RUSTFS_SECRET_KEY` from `prod-observability` — the live instance of the coupling since
+  feature 080, the same shape as the `REGISTRY_HOST` break in feature 069, arrived at from the other
+  direction: that variable had to be declared in `stacks.toml` before the deploy that needed it.
 - **A stack's `environment` key can outlive the compose line that read it, and the Komodo Variable must
   stay until its last consumer goes.** The guard above only checks one direction (every `${VAR:?}` has a
   supplier); nothing detects a supplied variable nobody reads. `KC_ADMIN_BIND_IP` sat in `prod-auth`'s
@@ -351,7 +383,9 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   `prod-observability` after feature 028 made the operator-UI binds `0.0.0.0`, and was dropped on
   2026-10-13. No stack or compose file reads either name now. Retire the `stacks.toml` line and the
   Komodo Variable together, and read the effective value from `.env.prod` rather than from a historical
-  comment. See
+  comment. The mirror image is deliberate: `REGISTRY_HOST` and `LANGFUSE_MINIO_ROOT_PASSWORD` are *out*
+  of `prod-observability`'s block yet their Variables are kept until feature 080's rollback window
+  closes, because a revert restores the lines that need them. See
   [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
   the port-move rule.
 - **The committed `stacks.toml` never carries a real host, domain, or IP.** The git-provider host lives
@@ -381,9 +415,11 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   consolidation that got the core stacks to this ResourceSync-managed state.
 - **Every prod admin/UI port lives in the reserved range `19000–19099`, and moving one requires updating
   its own self-referencing URL variable too.** `scripts/check-prod-ci-port-collision.mjs` compares the
-  fixed host ports of every `compose.prod.yaml` against every other tracked compose file and fails on an
-  overlap, because the prod and CI daemons share one host's port space and a collision crash-loops the
-  losing side. The gate scans only the compose `ports:` key, not secondary URL references — see
+  fixed host ports of every `compose.prod.yaml` (classified by basename) against every other compose file
+  it discovers and fails on an overlap, because the prod and CI daemons share one host's port space and a
+  collision crash-loops the losing side. It compares port *numbers*, ignoring `host_ip`, since a prod
+  `0.0.0.0` bind collides with a CI bind on that port whatever interface CI names. The gate scans only
+  the compose `ports:` key, not secondary URL references — see
   [Published-port reservation](../invariants/published-port-reservation.md) for the collision this
   convention exists to prevent and the secondary-reference trap.
 - **Every long-running prod service must declare `restart: always`.** `restart: unless-stopped` does

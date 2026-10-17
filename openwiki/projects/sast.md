@@ -56,7 +56,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T22:25:03.651Z
+    at: 2026-10-16T20:39:10.335Z
 ---
 
 # SAST & SCA static security scanning
@@ -673,22 +673,25 @@ a scan that happened to pass.
 
 - **Dockerfiles were the same defect a second time, and the response is now a standing blocking
   guard rather than a third comment.** `--scope changed` matches code extensions and the two workflow
-  trees; a Dockerfile has **no extension**, so PR #422's new Dockerfile was handed to nothing, its
-  `guardrails / sast` was a real passing run, and the post-merge full scan reddened `main` on
-  `dockerfile.security.missing-user-entrypoint` until an accepted-risk entry landed (item #426).
-  That finding and its entry are **both gone now**: the minio image sets `USER 1000:1000` before its
-  `ENTRYPOINT` (feature 070) and no `dockerfile.*` entry remains in the allowlist, so a regression
-  re-blocks. `DOCKERFILE_PATH_RE` now admits Dockerfile spellings (`Dockerfile`, `Dockerfile.prod`,
-  `toolchain.Dockerfile`) without substring-matching `.dockerignore` or prose.
+  trees; a Dockerfile has **no extension**, so PR #422's new Dockerfile (feature 069's from-source
+  object-store image) was handed to nothing, its `guardrails / sast` was a real passing run, and the
+  post-merge full scan reddened `main` on `dockerfile.security.missing-user-entrypoint` until an
+  accepted-risk entry landed (item #426). Finding, entry and file are **all gone now**: the image set
+  `USER 1000:1000` before its `ENTRYPOINT` (feature 070), and feature 080 then deleted the whole
+  from-source MinIO build — workflow, Dockerfile, promotion script — in favour of an upstream-pulled
+  RustFS image. No `dockerfile.*` entry remains in the allowlist, so a regression re-blocks.
+  `DOCKERFILE_PATH_RE` now admits Dockerfile spellings (`Dockerfile`, `Dockerfile.prod`,
+  `toolchain.Dockerfile`) without substring-matching `.dockerignore` or prose, and the first-party
+  Dockerfiles that remain are all scanned.
 
   Because that class of bug is invisible from a green gate, the gate itself now reports it:
   `GATE-SCOPE ASYMMETRY (blocking on push, invisible on a pull request)` lists blocking SAST findings
   whose paths are not scan targets, and — unlike every other diagnostic section — **it moves the exit
   code** (its own blocking path, separate from the ordinary "this code is wrong" failure). Four
   properties matter:
-  - It counts **suppressed** findings too, not just un-allowlisted ones. The minio Dockerfile case was
-    an accepted risk with an allowlist entry, so the gate was green and the asymmetry was invisible
-    *because* everything looked fine.
+  - It counts **suppressed** findings too, not just un-allowlisted ones. The feature 069 object-store
+    Dockerfile case was an accepted risk with an allowlist entry, so the gate was green and the
+    asymmetry was invisible *because* everything looked fine.
   - It runs only on a `--scope full` report; `generatedAtScope` is therefore **required**, and a
     report missing or carrying an unknown value is a hard `GateError` rather than a silent skip.
   - SCA findings are excluded — the three audit scanners ignore `--scope` entirely and always run over

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container (its own Docker CLI plus a rootless-daemon assertion, and a named `/dev/kvm` check that fails loud), the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container (its own Docker CLI plus a rootless-daemon assertion, and a named `/dev/kvm` check that fails loud), the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the device-diagnostics capture that must happen inside the emulator script because the emulator is gone before the job's collect step runs, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -38,7 +38,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T00:05:43.068Z
+    at: 2026-10-16T16:45:16.789Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -235,12 +235,29 @@ through `adb reverse`.
   lands on a command line readable via `ps`. Only non-secret values go on argv, e.g. the unique
   `COLLECTION_NAME` the `agent-add-ownership` flow needs per attempt.
 - **A failed mobile flow's device evidence is captured inside the emulator script, not by the workflow.**
-  `scripts/ci-mobile-agent-flows.sh` writes `mobile-diagnostics/<flow>-attempt<n>/` per failed attempt
-  (ReactNativeJS + full logcat and the newest `~/.maestro/tests/` directory), because the
-  `android-emulator-runner` action terminates the emulator before the job's collect-logs step runs and
-  because the uploaded `maestro-debug` artifact is unreachable through this forge's API. The
-  failure-time collect step folds that directory into `container-logs/` as `_mobile-diagnostics`. See
-  [CI evidence pipeline](./ci-evidence-pipeline.md) for how that bundle is retrieved.
+  `scripts/ci-mobile-agent-flows.sh` runs each flow up to three attempts and, on *every* failed attempt,
+  its `capture_mobile_diagnostics` function writes `mobile-diagnostics/<flow>-attempt<n>/` containing
+  `logcat-react.log` (`ReactNativeJS` + `ReactNative` + `AndroidRuntime`), the unfiltered
+  `logcat-full.log`, and a copy of the newest `~/.maestro/tests/*/` directory as `maestro/` (view
+  hierarchy, screenshots, Maestro's own device logcat). It must happen there for two reasons: the
+  `android-emulator-runner` action terminates the emulator before the job's collect-logs step runs, so
+  logcat is unobtainable afterwards, and the uploaded `maestro-debug` artifact is unreachable through
+  this forge's API. The failure-time `Collect container logs + health on failure` step folds the
+  directory into `container-logs/` as `_mobile-diagnostics` (underscore-prefixed so the digest ranks it
+  above ordinary container logs) **before** it copies `container-logs/` to `$HOME/mcm-ci-last-failure`,
+  so the device evidence also lands in the durable on-host bundle that survives the `always()` teardown.
+  Two properties are load-bearing when editing that function: the `local` assignments must stay on
+  separate lines — bash expands every assignment word of one `local` call before any of the locals
+  exist, which on run 2049 filed the admin flow's capture under the *previous* flow's directory — and
+  every capture command is best-effort, because a diagnostic must never change the run's result. See
+  [CI evidence pipeline](./ci-evidence-pipeline.md) for how the bundle is retrieved.
+- **The emulator script also leaves a logcat trail on the runner itself, because the job log is not
+  readable back.** An `EXIT` trap in `scripts/ci-mobile-agent-flows.sh` dumps a *filtered* logcat
+  (ReactNativeJS output, the OAuth `mcm-app://` redirect handoff, and network/auth keywords) to
+  `$HOME/ci-mobile-logcat.txt` and the whole buffer to `$HOME/ci-mobile-logcat-full.txt`. On the
+  non-ephemeral `kvm` runner those files are the post-mortem channel for a session that cannot read
+  workflow logs or artifacts through this forge's API; the trap re-returns the original exit code and
+  never fails the run itself.
 - **Two emulator-state traps that look like app bugs.**
   - **A second MCM build steals the OAuth redirect.** `frontend/mcm-app/app.json` sets
     `"scheme": "mcm-app"`, so *every* installed build claims `mcm-app://native-auth-callback`

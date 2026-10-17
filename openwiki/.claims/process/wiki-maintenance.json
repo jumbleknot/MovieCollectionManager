@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:587a5be0862054313e67034810d19fd5865b8b452103a350a1aeae8ffd9d795a",
+  "pageVersion": "sha256:5ce1c719f45646f99759644b0de215327c139613814b22a0e6e5cde91b521424",
   "claims": [
     {
       "id": "claim_48336ae10f46486caf689e37d3d26063",
@@ -157,8 +157,12 @@
       "statement": "The OKF conformance gate (`scripts/check-openwiki-okf.mjs`) is offline, keyless and fail-closed with no skip flag, resolving repository-relative `resource` links against the working tree while only shape-checking external ones, so it cannot fail because a third-party host is down; drift rule V12 is the sole rule that warns without affecting the exit code.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L209-L233",
-          "version": "repo-lines-v1:sha256:5c757dc9ec80e64a51ddc85ecccf6edc9ba9e400ea1c1d402e553ff5759075f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOWYxODE0ZDI4YmI5YzlkZWU2ZDE4N2FlOGNjOGY0NmI2M2UwNTc3ODNjNmMzZmVhM2UxY2FiMTE2NDhlMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YzUzNWZlYWUwNGYwODBjZmUzYzMxN2ZhYzFjN2UyOTkwMzg5Y2FhYzJiOWFjNzU1YmRhNmMzNGE0N2JhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwOGM1YTQ5YmZlMjUyMzIzNWQxMTc0MGZiZDNhM2RmZDlmN2I4NGE3NWYxYjliN2UxZTk4MzA1NTFlM2U1MGUifQ"
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs",
+          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/data-model.md#L59-L77",
@@ -293,8 +297,8 @@
       "statement": "Both gates run as steps of the same always-on `okf` CI job, each preceded by its own `--selftest` so that a rule which silently stopped detecting its case would turn the build red.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L216-L243",
-          "version": "repo-lines-v1:sha256:223d1750cd5ca3ccf71737aed78e22990becb5a6f7aa1be596b7a487e6c3c8d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMTFmNTE5ZWFiODAzZWI2MGY4ZTIyZTE0MTQ3ZTNlMmYwMzM2NTk1Nzk2Mjc3ODczNDU0YThjOTA0Nzk3MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMGNhNGE3ZWI2NDVjMjMwOTMzODBlOWQzMzk3OGIwNDRlYzNkNzFiYzlkNDg4NGYzMzE4OTViMDYyODk4MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
         }
       ]
     },
@@ -445,10 +449,24 @@
           "version": "repo-lines-v1:sha256:9f5e5ad943c709806ec1b5abb5dc6ff00e0095f30ad171c0d5edb55cf970676a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGQ2YTJlMmEyMTRjZGJmMDIyYThmYTdiZWRjZDM2MjNjOWZmMGEwYjRlYTQ5ZmEwZGU2NWFkMzQ2MzdjMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViN2YxOTVmODIzNDFlYWRiZmJmZWNmNDBlMDU2YzMxMzQ0MmVkMjI4NWYzZDhiZmVjYTEwMjk5MjhlZGE4YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MjdlZmVjMmQ1YzEzZDRkYjNjNTlmNTUxNWI2NTI3YTk5MjE5ZmRjY2FmYjdjZjUwN2UyYTVmYmYxMDViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NTZiNTljN2RmZTI4NjM0MmI2YjkyYWM1ZjFmMjUwYjUzMTk1Mjk4N2JmNjMxODEyZTE5Zjk2NGJlYmE0YTEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6d1e1ad0101f45fe92fd472fb90dd25b",
+      "statement": "The conformance gate's rule table in `specs/043-openwiki-okf/data-model.md` stops at V15; rule V16 (a covered page's bytes must still hash to the `pageVersion` its verified Claims sidecar certifies) exists only in code, defined once in `scripts/openwiki-claims.mjs` and shared with `wiki-maintain`'s post-generation link rewrite, so a reader looking for V16 in the data model will not find it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs",
+          "version": "repo-file-v1:sha256:9aa3742082e7cc9ea3b7af0da7d036ad2d31845f9eac0f462151ec2bb9b7c1e4"
+        },
+        {
+          "resource": "repo://specs/043-openwiki-okf/data-model.md#L59-L77",
+          "version": "repo-lines-v1:sha256:3d9c1f63bc9f2293f1a4f3f17679ab6a38109e5a2256543f70878a66c426f79e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYTdhNjFmNjUxZDI1NDZmOTY2OTc3OGEzN2Q2NGUwNTJlNTkyOTYwNTViNjRjOTY5MGFjYjJkNjFjNjE5MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4OTY0MGUyZGM0ODI4MmJkZWNlZjEwY2E3NDQzNzcwMjVkNDhlZjlhZmE0MDAwODE3MWNmNTI0ZDU4MTA3NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjOWI1OGYxODVkMzcxYThjNmFlMjZkYzc3YTc0NTM5YWM3NThmYzE0MDZiY2RkZjZiMWE0NWZhODNkZDU2MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZTUzNmUyMjJlZWZiOGM5ZDg3ODQxMTk4MWU1NTY4M2UyMzY3ZGYxOWFmZGUxZDBjNzBiYzlmYjdhYTI5ODQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T01:57:21.062Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

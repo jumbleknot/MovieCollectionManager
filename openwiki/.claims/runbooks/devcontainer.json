@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9febd9b29d86b408c791a94967e15139cc506adb92544fbce8eeca4a3c4f3166",
+  "pageVersion": "sha256:f680bd281c3d14949ed2de6d7db0f9e95f5e4848339be384d956948c4f7d5b9a",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -134,7 +134,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L27",
-          "version": "repo-lines-v1:sha256:d2c0e3abcd6b2132fdffff361430885e1782bb94a30e59d5041463b49d97febc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
+          "version": "repo-lines-v1:sha256:8afce274914f31df2e111c866e428848834bf926005caa5c56bad0d52d3d104c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-ollama.sh#L1-L15",
@@ -377,10 +377,44 @@
           "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
         }
       ]
+    },
+    {
+      "id": "claim_fee2a793adf84f078f7a3d5e26375ae1",
+      "statement": "The dev-ollama compose file pins its image by tag AND digest (ollama/ollama:0.40.3@sha256:adca95a1…), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L36",
+          "version": "repo-lines-v1:sha256:6ae522e4e63faf1b0c778efe28744aec09e69b2ea5bc6a63681bc56c1a52ba1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d7f4a7f1b15f4e1581dcc5ec6a0e7b15",
+      "statement": "scripts/devcontainer-ollama.sh is deliberately best-effort and idempotent: it exits 0 when the nested dockerd is not ready or the API has not answered within its ~10 s probe loop, so a failed Ollama start can never block container start and agent flows simply fall back to Anthropic. It pulls the model named by DEVCONTAINER_OLLAMA_MODEL (default qwen2.5) once, backgrounded via setsid, because a first-run ~4.7 GB pull must not delay container readiness; the balanced qwen2.5:32b tier is a by-hand pull only because CPU inference makes it slow.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/devcontainer-ollama.sh#L15-L51",
+          "version": "repo-lines-v1:sha256:f33c242f8e0cd232ea04eebb7c8cfa827278508164b292a5dba20c53e4320e07:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4N2FmNDhiMGQ5YThkMjg5YWQ4MzlmNTFhMGFhMTg3MWJjOTkyODVkZTc1N2VjN2NmNzgyNDdhOTcxYWE5ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDhjMTRkYzdmZDgwYTAwNjBjMDljZTlhMjhhMWJlZjFiZWUxNzYxNDliNzRjNjIyM2VlNDA1NDZkYzIwZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjZTdhNGFjNDhkMjk0Y2NhZjJmNGFjMGFmNjUwZGE1Y2U3ZDMyNjU1NjQzOThlYTM4NzU1ODE0MDg1YTEwNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b4cd10ceb4f4f7399857bd0bfe82590",
+      "statement": "A blocked Ollama egress destination retires merge-gating tiers rather than merely failing a command: the canonical allowlist carries both `registry.ollama.ai` (the manifest host compiled into the ollama binary) and the pinned Cloudflare R2 blob host every model layer is served from (item #394). With either absent, `ollama pull` dies at DNS and `ollama list` stays empty, which makes the golden tier (nx test:golden movie-assistant), the agent half of the E2E gate, and nx up-agents-prod's model precheck unreproducible locally, and makes a real defect indistinguishable from an absent model. The blob host is pinned by exact FQDN instead of `*.r2.cloudflarestorage.com` because the subdomain is Ollama's R2 account id (constant across pulls) and the wildcard would open every account's bucket — so a layer failure after a clean manifest means the account id changed, not a stale ipset.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/egress-allowlist.json#L174-L185",
+          "version": "repo-lines-v1:sha256:503e7a10ce33f241aed2009281bab3e40e3e3ca77dc53d88766cdacf2e34a6ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlM2Q4MzY5MmFmNjMwYzlmY2E5MGNhMmU1ZDViYjNhYzYwODIwNzY4YjI2NWRjMTI5NDQ3OWZmMDU1NzFjOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4YmVkZjQ3ODE2YjU4NDVmNGUyOGFmZWUyNTBlZWM1YWRjMzlhYzg3OTMxMTg0YmUwMDc1ZmQ5ZmI4ZjczYmEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L309-L347",
+          "version": "repo-lines-v1:sha256:be74213e0746c631d3159d9559848e3df3290fbac036881b3b9350f863ce052f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWE5NDM3MDIwMDE4MmM4MDA2YzQ3ODZlY2M5NjZiZmNlMThhMDFiYTYzNzRhNWRkNmRkZmZlYTNkN2E5N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTI1NGExNGRkMTY4YWRkNmU1Y2U5YjI0MjIzZDJlOWY5NTMxMzBlNjljY2Y5YTNkODUyZDYyMWFkOGQ4MjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2Y2MzZWVmN2U5NTQ2MDUwYjVjMWJiZWM1MTQ4NzNiZTI3MmVmZDcxMTM2ZmRiYjg3ZDhiN2M5MjhmMzQxOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNDA4ZjllNDQzMTUxZjA1MTMwNjBhMzI2ZDQyNDYyNjQ4ZmNjNWFhYmU0YTc2MDljMWNjNDA4NmI4Y2U1YzgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T10:11:13.472Z"
+    "at": "2026-10-16T20:39:10.335Z"
   }
 }

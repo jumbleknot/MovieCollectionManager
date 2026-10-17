@@ -88,7 +88,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-13T10:46:04.907Z
+    at: 2026-10-16T16:45:16.789Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -112,9 +112,10 @@ up one level up: the realm's built-in default role is still `default-roles-jumbl
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
 carries four facts worth reading directly, because none of them is visible in a realm file:
 
-- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.0@sha256:…`, the
-  identical pin in `compose.prod.yaml`. A version bump has to move both files, and the digest is the
-  unit the image-scan allowlist is keyed to.
+- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:79c623a2…`, the
+  identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
+  drift apart. The digest matters separately from the tag: an infra-image allowlist entry is keyed to
+  version **and** digest, so a bumped image re-blocks instead of inheriting the previous suppression.
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
@@ -295,8 +296,8 @@ Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the 
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
 command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md). Treat a
 green run as a schema/deserialisation check, **not** a version-parity check: the README's one-minute
-proof pins a Keycloak image a version behind the deployed one (`26.7.0` in the command against the
-`26.8.0` compose pin), so a realm can import under the proof image and still meet a stricter schema on
+proof pins a Keycloak image a minor version behind the deployed one (`26.7.0` in the command against the
+`26.8.1` compose pin), so a realm can import under the proof image and still meet a stricter schema on
 the deployed pin. That is the same class of change that made 26.6+ enforce the realm password policy
 against imported credentials.
 
@@ -365,9 +366,11 @@ variable that names no Keycloak option. Read the effective admin URL from `.env.
 `prod-observability` stack block in the same `stacks.toml` kept receiving `TS_ADMIN_IP` long after
 feature 028 moved those admin binds to `0.0.0.0`, so no compose file read the IP any more — the
 Komodo Variable had to stay seeded until its last consumer line went. That line finally went on
-2026-10-13 (item #727), so no stack or compose file reads `TS_ADMIN_IP` now and the Variable can be
-retired. A stack `environment` key outlives the compose that read it; removing a variable on the
-strength of "the bind is gone" is what breaks the next deploy.
+2026-10-13 (item #727), and the operator checklist now records the Variable itself as removed; the
+observability compose's header comment records why its binds no longer use it. A stack `environment`
+key outlives the compose that read it; removing a variable on the strength of "the bind is gone" is
+what breaks the next deploy. (A tree-wide grep still finds both retired names — but in guard selftest
+fixtures and historical comments, not in a stack or compose that reads them.)
 
 **Both prod invariants are self-enforcing guardrails.** `scripts/check-prod-ci-port-collision.mjs` fails
 if any prod published port overlaps a CI/dev one — compared by port *number*, because a `0.0.0.0` prod
