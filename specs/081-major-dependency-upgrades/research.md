@@ -530,3 +530,11 @@ root runs 12.13.0, passes its supply-chain verification (471 entries), and leave
 ("15 versions do not meet the minimumReleaseAge constraint"); `12.13.0` resolves. `sast`'s nested-lockfile
 audit (item #721) is unchanged: `sast-scan.mjs --scope full --only pnpm-audit` gives the identical 30-finding
 list under 11.25.0 (control) and 12.13.0, including the `tools/openwiki-generator:` entries.
+
+**BFF image (`docker-build mcm-app`, cold `--no-cache`, control = `origin/main` under 11.25.0)**: the build
+passes under 12.13.0. `pnpm deploy --legacy` under 12 selects among the LOCKED versions differently from 11.
+The prod runtime tree is 81 packages in both, with one difference: `es-object-atoms` 1.1.1 → 1.1.2. Both
+versions are in the lock, which assigns 1.1.1 to `get-intrinsic`/`get-proto`. The build-time `standalone`
+tree shrinks from 2497 to 1908 entries. Every deployed `name@version` is present in `pnpm-lock.yaml`, so no
+version outside the lock enters the image. Builder deploy step: 79 s (11, under load) vs 54 s (12, unloaded);
+one 775 s run under 12 was contention plus the sandbox's slow registry (`Request took 10758ms`).
