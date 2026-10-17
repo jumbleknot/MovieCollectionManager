@@ -97,7 +97,7 @@ diagnosing an nx failure from a path that no longer exists.
 
 ## Phase 5: US3 — nx 23 + plugins (P1) — PRs 3a, 3b — lockfile-wholesale
 
-- [ ] T015 [US3] PR 3a: T002 check; bump `@nxlv/python` ^21 → ^23 and `@monodon/rust` ^2 → ^3 in root
+- [x] T015 [US3] PR 3a: T002 check; bump `@nxlv/python` ^21 → ^23 and `@monodon/rust` ^2 → ^3 in root
   `package.json` (nx stays 22).
   **Verify RED (upgrade)**: `pnpm nx run-many -t test lint -p mc-service movie-assistant --skip-nx-cache`
   — record failures (or "bump was clean").

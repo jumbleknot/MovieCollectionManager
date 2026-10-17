@@ -15,10 +15,10 @@
     "build:dev": "nx eas-build-local mcm-app"
   },
   "devDependencies": {
-    "@monodon/rust": "^2.3.0",
+    "@monodon/rust": "^3.0.0",
     "@nx/expo": "22.7.10",
     "@nx/playwright": "22.7.10",
-    "@nxlv/python": "^21.0.3",
+    "@nxlv/python": "^23.2.1",
     "@playwright/test": "1.63.0",
     "ajv": "^8.17.1",
     "nx": "22.7.10",
