@@ -62,3 +62,5 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 - `scripts/check-no-inline-secrets.mjs` (CI: the `naming` job in `guardrails.yml`) fails the build if any literal credential is re-inlined into a tracked compose file. Run locally: `node scripts/check-no-inline-secrets.mjs` (and `--selftest`).
 
 See [`docs/runbooks/local-dev.md`](../../../../docs/runbooks/local-dev.md) and `specs/021-externalize-compose-secrets/` for the full design.
+
+<!-- spec 081 US1 PR 1b (T010): this comment exists so a CI-actions PR touches the infra paths-filter area and proves the gated scan RUNS. Safe to delete. -->

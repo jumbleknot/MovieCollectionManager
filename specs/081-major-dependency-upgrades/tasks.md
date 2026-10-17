@@ -66,7 +66,7 @@ diagnosing an nx failure from a path that no longer exists.
 - [ ] T008 [US1] Verify PR 1a: all required contexts green; `cd-deploy` `workflow_dispatch` with
   `build_apk=true` and no deploy green; `infra-image-scan`, `renovate-health` green; job logs show the new
   majors executed. **Done when**: PR 1a merged with that evidence in its body.
-- [ ] T009 [US1] PR 1b: bump `actions/setup-java` v4→v6 (keep `java-version: '17'`), `android-actions/setup-android`
+- [x] T009 [US1] PR 1b: bump `actions/setup-java` v4→v6 (keep `java-version: '17'`), `android-actions/setup-android`
   v3→v4, `astral-sh/setup-uv` v5→v10, `dorny/paths-filter` v3→v4, `pnpm/action-setup` v4→v6. **Done when**:
   preflight passes.
 - [ ] T010 [US1] Verify PR 1b, including a commit that touches a path-filtered area so each filtered job is
