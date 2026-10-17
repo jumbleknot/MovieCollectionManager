@@ -272,6 +272,10 @@ export const COUNTS_SOURCES = Object.freeze([
   'step:e2e-result-gate-model',
   'step:e2e-contention-tally',
   'step:e2e-turn-tally',
+  // The OPT-IN full mobile suite's per-flow table (flow, PASS/FAIL, attempts, seconds). Present only
+  // on a `mobile-e2e-full` / mobile_suite=full run; absent otherwise, and an absent source is not
+  // collected — so ordinary runs publish exactly what they did before.
+  'step:maestro-full-results',
 ]);
 
 /**

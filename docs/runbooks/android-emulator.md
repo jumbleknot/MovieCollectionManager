@@ -2,16 +2,17 @@
 
 > Procedures for mobile E2E on the Windows 11 host and in the Docker Desktop dev container. Loaded on demand — referenced from CLAUDE.md. For the flakiness-diagnosis protocol and the BFF-container E2E modes, see [e2e-testing.md](e2e-testing.md).
 
-## Mobile E2E approach — prefer CI for AGENT flows; local emulator for non-agent
+## Mobile E2E approach — CI for agent flows and native-layer changes; local emulator to iterate
 
 **Decision rule (read this before running any mobile E2E):**
 
 | Mobile flows | Where to run | Why |
 |---|---|---|
-| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: the `app-e2e` job of `.forgejo/workflows/app-ci.yml`** | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
-| **Non-agent flows** (login, collection/movie CRUD, sort, browse — no `/run`) | **Local emulator** (the ritual below) | These don't hit the agent route, don't hammer Metro, and iterate fast locally. |
+| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: the `app-e2e` job of `.forgejo/workflows/app-ci.yml`** — runs by default whenever the mobile half runs | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
+| **Non-agent flows, for a NATIVE-layer change** — an Expo / React Native SDK bump, a native module added/removed/upgraded, `app.json` / `android/` config | **CI, opt-in full suite**: label the PR **`mobile-e2e-full`**, or dispatch app-ci with `mobile_suite=full` | The change alters the binary *every* flow runs on, so every flow needs re-proving — on the standalone release APK the change actually ships as, not on a debug build against Metro. A local DinD emulator is the slow, flaky way to get that evidence. |
+| **Non-agent flows, while iterating** on a JS/UI change (login, collection/movie CRUD, sort, browse — no `/run`) | **Local emulator** (the ritual below) | These don't hit the agent route, don't hammer Metro, and iterate fast locally (`pnpm nx e2e:mobile mcm-app`, or one flow via `scripts/maestro-run.sh`). |
 
-**The `app-e2e` job of the Forgejo `app-ci` workflow is the supported harness for mobile agent E2E.**
+**The `app-e2e` job of the Forgejo `app-ci` workflow is the supported harness for CI mobile E2E.**
 It is **Metro-less**: it builds a **standalone embedded-bundle APK** (`APK_VARIANT=release`,
 `APK_ABI=x86_64` → `pnpm nx run mcm-app:build-apk`, JS baked in, with
 `EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082` and `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099`
@@ -19,23 +20,43 @@ inlined), runs it against the **containerized dev BFF (:8082) + containerized pr
 MCP** on a **KVM emulator on the `kvm` host runner**, `adb reverse`s 8082/8099 (Keycloak's issuer is
 pinned to `localhost`, so `10.0.2.2` would break login — see
 [below](#which-address-for-which-service--10022-for-metro-adb-reverse-for-keycloakbff)), and runs
-the flows per-file through `scripts/ci-mobile-agent-flows.sh`.
+the flows per-file in two halves:
 
-- **When it runs:** every push to `main` and every `workflow_dispatch`. On a `pull_request` the
-  mobile half runs only when the PR touches a path in the job's `mobile` filter (`frontend/**`,
-  `agents/**`, `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the two Maestro
-  scripts) **or** carries the `mobile-e2e` label; otherwise the PR gets the web E2E and integration
-  tiers from the same job and skips the ~35-min emulator half.
+1. **Agent half — always** (`MOBILE_SUITE=agents`, the default): `scripts/ci-mobile-agent-flows.sh` —
+   gating → enable-anthropic → the agent flows → disable, then `admin-settings-access` last after a
+   Chrome SSO reset (it logs in as the seeded mc-admin). Up to 3 attempts per flow.
+2. **Full suite — opt-in only** (`MOBILE_SUITE=full`): `scripts/ci-mobile-full-flows.sh`, in the same
+   emulator session, after the agent half. It runs every non-agent flow the local `e2e:mobile` suite
+   runs — the selection is shared, in `scripts/mobile-flows.mjs` (`node scripts/mobile-flows.mjs
+   ci-full` prints it), so the two cannot drift. Excluded: the agent flows (the agent half owns
+   them), the Metro-restart-only `session-timeout*` flows (`MANUAL_FLOWS`), and `CI_FULL_EXCLUDED` in
+   that file, each entry with its reason. Each flow gets a `pm clear`ed app (they `launchApp` with
+   `clearState: false`, exactly as `maestro-e2e.mjs` prepares them locally), Chrome's SSO is reset
+   once before the batch (the agent half ends logged in as the admin), 2 attempts per flow, and the
+   batch runs to the end and fails if ANY flow failed. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
+   fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
+   per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the
+   counts bundle on a green run and the failure digest on a red one. **Cost: not yet measured — first full run pending.** The job
+   ceiling is 110 min in full mode (75 otherwise).
+
+- **When the mobile half runs:** every push to `main` and every `workflow_dispatch`. On a
+  `pull_request` it runs only when the PR touches a path in the job's `mobile` filter (`frontend/**`,
+  `agents/**`, `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the Maestro
+  runner scripts) **or** carries the `mobile-e2e` **or** `mobile-e2e-full` label; otherwise the PR
+  gets the web E2E and integration tiers from the same job and skips the ~35-min emulator half. Only
+  `mobile-e2e-full` / `mobile_suite=full` adds the full suite — `main` pushes stay agents-only.
 - **Trigger on a branch without a PR:** `POST …/actions/workflows/app-ci.yml/dispatches` with
-  `{"ref":"<branch>","inputs":{"provider":"anthropic"}}` and the `git credential fill` credential —
-  the full recipe, and why a dispatched run posts **no commit status**, is in
-  [ci-diagnostics.md](ci-diagnostics.md#verifying-a-branch-without-opening-a-pull-request).
+  `{"ref":"<branch>","inputs":{"provider":"anthropic","mobile_suite":"full"}}` (omit `mobile_suite`
+  for the agents-only default) and the `git credential fill` credential — the full recipe, and why a
+  dispatched run posts **no commit status**, is in
+  [ci-diagnostics.md](ci-diagnostics.md#verifying-a-branch-without-opening-a-pull-request). The runner
+  has capacity 1: never fire a dispatch while another app-ci run is in flight.
 - **Watch / diagnose:** for a PR or `main` push, `node scripts/ci-status.mjs watch --pr <n>` (or
   `--sha`), then `node scripts/ci-status.mjs failure … --job app-e2e` for the published failure
-  digest; for a dispatched run read `/actions/tasks` as described in ci-diagnostics.md. The job also
-  uploads a `maestro-debug` artifact (screenshots + hierarchy) on failure, but this forge exposes no
-  artifact API, so only a human in the web UI can retrieve it; `ci-mobile-agent-flows.sh` also leaves
-  the emulator logcat on the runner.
+  digest; for a dispatched run read `/actions/tasks` as described in ci-diagnostics.md. A failed
+  attempt's view hierarchy, screenshots and logcat land in the bundle under
+  `_mobile-diagnostics/<flow>-attempt<n>/` (captured in-script by `ci-mobile-lib.sh`, because the
+  emulator is gone before the collect step and this forge exposes no artifact API).
 
 **If you must run an agent mobile flow locally (debugging the flow itself, not the app):** point the
 app at the **dev-container BFF (:8082)** instead of Metro's BFF so the OOM-prone server is the
@@ -114,8 +135,8 @@ sudo chown -R coder:coder "$D"
 > SDK, then on one whose Docker daemon was dead, then on one that could emulate but not build. Each
 > time the fix was to assert the capability, not the binary.
 
-**Agent flows still prefer CI.** The [decision rule](#mobile-e2e-approach--prefer-ci-for-agent-flows-local-emulator-for-non-agent)
-above is unchanged: the local emulator is for **non-agent** flows + the rare local agent-flow debug;
+**Agent flows still prefer CI.** The [decision rule](#mobile-e2e-approach--ci-for-agent-flows-and-native-layer-changes-local-emulator-to-iterate)
+above holds: the local emulator is for ITERATING on **non-agent** flows + the rare local agent-flow debug;
 agent flows run in the `app-ci.yml` `app-e2e` job (local Metro OOM-crashes after ~1-2 `/run` calls).
 
 ## Android (Emulator) — Windows host

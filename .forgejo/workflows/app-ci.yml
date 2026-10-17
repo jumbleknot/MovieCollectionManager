@@ -22,6 +22,16 @@ on:
         type: choice
         options: [anthropic, ollama]
         default: anthropic
+      # OPT-IN full mobile suite (item #254 follow-on). `agents` (the default, and what every PR / push
+      # runs) = the agent flows only. `full` = the agent flows, THEN every non-agent flow the local
+      # `e2e:mobile` suite runs (scripts/ci-mobile-full-flows.sh). The PR equivalent is the label
+      # `mobile-e2e-full`. Use it for a NATIVE-layer change (Expo / React Native SDK bump, native
+      # module change) — see docs/runbooks/android-emulator.md (runtime cost measured there). Raises the job ceiling.
+      mobile_suite:
+        description: 'Mobile E2E suite: agents (default) or full (agent + every non-agent flow)'
+        type: choice
+        options: [agents, full]
+        default: agents
   # push only on main (merges) — feature branches are gated via `pull_request`, so a branch push with an
   # open PR no longer runs app-ci twice. A main push also drives trigger-cd → cd-deploy.
   #
@@ -163,6 +173,9 @@ jobs:
               # anything; the guard test now enforces that rather than a comment claiming it.
               - 'scripts/ci-mobile-agent-flows.sh'
               - 'scripts/maestro-run.sh'
+              - 'scripts/ci-mobile-full-flows.sh'
+              - 'scripts/ci-mobile-lib.sh'
+              - 'scripts/mobile-flows.mjs'
             # `mobile` gates ONLY the emulator half of app-e2e (APK build + Maestro agent flows,
             # ~35 min of the run). It is a STRICT SUBSET of `app`: everything that can change what
             # the app renders or how the agent behaves, minus the pieces that can only affect the
@@ -195,6 +208,9 @@ jobs:
               - '.forgejo/workflows/app-ci.yml'
               - 'scripts/ci-mobile-agent-flows.sh'
               - 'scripts/maestro-run.sh'
+              - 'scripts/ci-mobile-full-flows.sh'
+              - 'scripts/ci-mobile-lib.sh'
+              - 'scripts/mobile-flows.mjs'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -355,7 +371,12 @@ jobs:
     # `kvm:host`; `runs-on` uses the label NAME `kvm`) runs the job directly on the ci host, the way
     # GitHub's VM did (Server-Setup-Runbook Phase 7 anticipated this).
     runs-on: kvm
-    timeout-minutes: 75
+    # 75 min by default; 110 min ONLY in the opt-in full mobile suite (MOBILE_SUITE=full, below), which
+    # adds the non-agent flows (maestro-full-flows, on the 2700 s backstop) after the agent half. The
+    # expression's DEFAULT arm is the binding one for every ordinary run — the #326j / #338k guards in
+    # scripts/__tests__/ci-log-step.test.mjs check the per-step arithmetic against it, and
+    # app-ci-mobile-full.guard.test.mjs pins both arms.
+    timeout-minutes: ${{ ((github.event_name == 'workflow_dispatch' && github.event.inputs.mobile_suite == 'full') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full'))) && 110 || 75 }}
     env:
       # PER-STEP CEILING, BELOW THE JOB'S (item #326). `always()` does not survive a job kill: when
       # the runner enforces `timeout-minutes: 75` above, the "Publish failure digest" step never
@@ -418,6 +439,10 @@ jobs:
       EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://localhost:8099
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
+      # `agents` (default — every PR and push) or `full` (opt-in: PR label `mobile-e2e-full`, or a
+      # workflow_dispatch with mobile_suite=full). `full` also runs scripts/ci-mobile-full-flows.sh —
+      # the non-agent Maestro flows — after the agent flows, in the same emulator session.
+      MOBILE_SUITE: ${{ ((github.event_name == 'workflow_dispatch' && github.event.inputs.mobile_suite == 'full') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full'))) && 'full' || 'agents' }}
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
       # Feature 075. The supervisor's ~2,650-token classifier prompt was the single largest line on
       # the model bill ($22.24 of a $74.89 month) because `claude-haiku-4-5` CANNOT cache it: that
@@ -1184,7 +1209,7 @@ jobs:
         # time. Every push to main still runs the full set, `main` is protected, and cd-deploy
         # self-reverts on a failed health probe — so it is detected before it reaches users, just
         # later than it used to be.
-        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full') }}
         working-directory: frontend/mcm-app
         env:
           APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
@@ -1216,7 +1241,7 @@ jobs:
 
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
       - name: Install Maestro
-        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full') }}
         run: |
           bash scripts/ci-log-step.sh app-e2e-install-maestro bash -e /dev/stdin <<'CI_LOG_STEP'
           # PINNED (item #224, the uv/Trivy shape of item #307/#303). The installer URL is fixed but
@@ -1242,7 +1267,7 @@ jobs:
       # flow. (BFF Mongo: bff_db.user_agent_config.)
       - name: Run agent E2E flows on emulator
         # MOBILE GATE — see the note on the APK build step above.
-        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full') }}
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
@@ -1272,11 +1297,29 @@ jobs:
             adb reverse tcp:8099 tcp:8099
             adb install -r "$APK_PATH"
             bash scripts/ci-log-step.sh maestro-agent-flows bash scripts/ci-mobile-agent-flows.sh
+            if [ "$MOBILE_SUITE" = full ]; then bash scripts/ci-log-step.sh maestro-full-flows bash scripts/ci-mobile-full-flows.sh; else echo "MOBILE_SUITE=$MOBILE_SUITE - non-agent flows not run (opt in: label mobile-e2e-full / mobile_suite=full)"; fi
+
+      # The full suite's per-flow table (flow, PASS/FAIL, attempts, seconds). Its own wrapped step so
+      # the failure digest AND the green-run counts bundle carry it (COUNTS_SOURCES in
+      # scripts/ci-failure-digest.mjs) — this forge exposes no job log, so without it a GREEN full run
+      # could not say which flows ran. `always()`: a red full suite is exactly when the table matters.
+      - name: Full mobile suite results
+        if: ${{ always() && env.MOBILE_SUITE == 'full' }}
+        run: |
+          bash scripts/ci-log-step.sh maestro-full-results bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Absent = the full suite never started (an earlier step, or the agent half, failed first) —
+          # say so rather than fail this step on a missing file and add a second red to the same cause.
+          if [ -f mobile-diagnostics/full-suite-results.tsv ]; then
+            cat mobile-diagnostics/full-suite-results.tsv
+          else
+            echo "no full-suite results: scripts/ci-mobile-full-flows.sh did not run (an earlier step failed)"
+          fi
+          CI_LOG_STEP
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
         # Only meaningful when the mobile half actually ran (see the MOBILE GATE above).
-        if: ${{ failure() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e')) }}
+        if: ${{ failure() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full')) }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: maestro-debug

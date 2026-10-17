@@ -307,6 +307,22 @@ test('(#326e) a step that finishes INSIDE its timeout is untouched', needsBash, 
 // while looking like the fix is still in place — so the arithmetic is pinned, not left to review.
 const APP_CI = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows', 'app-ci.yml');
 
+// The app-e2e job ceiling, in seconds, as an ORDINARY run sees it. Since the opt-in full mobile suite
+// it is an expression — `${{ <full-mode> && 110 || 75 }}` — and the DEFAULT arm (after `||`) is the
+// binding one: every PR and push runs under it, and it is the smaller, so arithmetic that holds for it
+// holds for both. Read from the app-e2e job's OWN `timeout-minutes:` line: a bare `(\d+)` scan from the
+// job header would skip an expression and silently read the NEXT job's ceiling instead.
+function appE2eJobCeilingSeconds(yaml) {
+  const start = yaml.indexOf('\n  app-e2e:');
+  assert.ok(start > 0, 'app-e2e job not found — this guard is reading the wrong file');
+  const end = yaml.indexOf('\n  dast:', start);
+  const line = yaml.slice(start, end > start ? end : undefined).match(/^ {4}timeout-minutes:\s*(.+)$/m);
+  assert.ok(line, 'app-e2e has no timeout-minutes');
+  const m = line[1].match(/^(\d+)\s*$/) ?? line[1].match(/\|\|\s*(\d+)\s*\}\}\s*$/);
+  assert.ok(m, `app-e2e's timeout-minutes has no readable default: ${line[1]}`);
+  return Number(m[1]) * 60;
+}
+
 test('(#326j) app-e2e sets a per-step ceiling, and it is comfortably below the job ceiling', () => {
   const yaml = readFileSync(APP_CI, 'utf8');
   const step = yaml.match(/CI_STEP_TIMEOUT_SECONDS:\s*'?(\d+)'?/);
@@ -314,11 +330,7 @@ test('(#326j) app-e2e sets a per-step ceiling, and it is comfortably below the j
   const stepSeconds = Number(step[1]);
 
   // The app-e2e job ceiling: the `timeout-minutes` nearest above the app-e2e job declaration.
-  const jobIdx = yaml.indexOf('\n  app-e2e:');
-  assert.ok(jobIdx > 0, 'app-e2e job not found — this guard is reading the wrong file');
-  const jobCeiling = yaml.slice(jobIdx).match(/timeout-minutes:\s*(\d+)/);
-  assert.ok(jobCeiling, 'app-e2e has no timeout-minutes');
-  const jobSeconds = Number(jobCeiling[1]) * 60;
+  const jobSeconds = appE2eJobCeilingSeconds(yaml);
 
   assert.ok(stepSeconds < jobSeconds,
     `the step ceiling (${stepSeconds}s) is not below the job ceiling (${jobSeconds}s)`);
@@ -523,13 +535,6 @@ function committedCeilings() {
     });
 }
 
-function appE2eJobCeilingSeconds(yaml) {
-  const jobIdx = yaml.indexOf('\n  app-e2e:');
-  assert.ok(jobIdx > 0, 'app-e2e job not found — this guard is reading the wrong file');
-  const m = yaml.slice(jobIdx).match(/timeout-minutes:\s*(\d+)/);
-  assert.ok(m, 'app-e2e has no timeout-minutes');
-  return Number(m[1]) * 60;
-}
 
 test('(#338k) EVERY ceiling in the table stays below the job ceiling, with room for the digest', () => {
   // #326j pinned this arithmetic while there was one value to pin. A table makes it 28 values, and
