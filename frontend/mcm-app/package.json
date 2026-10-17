@@ -94,7 +94,8 @@
     ],
     "transformIgnorePatterns": [
       "node_modules/\\.pnpm/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@expo-google-fonts|react-navigation|@react-navigation|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|@copilotkit|@ag-ui|uuid|tamagui|@tamagui|standard-navigation)[^/]*/node_modules)",
-      "node_modules/(?!(\\.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@expo-google-fonts|react-navigation|@react-navigation|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|@copilotkit|@ag-ui|uuid|tamagui|@tamagui|standard-navigation))"
+      "node_modules/(?!(\\.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@expo-google-fonts|react-navigation|@react-navigation|@unimodules|unimodules|sentry-expo|native-base|react-native-svg|@copilotkit|@ag-ui|uuid|tamagui|@tamagui|standard-navigation))",
+      "/node_modules/react-native/Libraries/Renderer/implementations/"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",

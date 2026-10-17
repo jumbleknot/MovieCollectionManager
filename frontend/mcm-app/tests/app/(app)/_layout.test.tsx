@@ -99,17 +99,6 @@ jest.mock('@/hooks/use-auth', () => ({
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const AppLayout = require('@/app/(app)/_layout').default;
 
-// The first render in this file pays a ONE-TIME React Native renderer load, and that is why the first
-// test carries its own timeout. RN 0.86 (Expo SDK 57, feature 081 US4) made
-// `Libraries/ReactNative/RendererImplementation.js` import `../Renderer/shims/ReactFabric` EAGERLY
-// (0.85 required it lazily inside getFabricRenderer()). The jest preset's RendererProxy mock
-// `requireActual`s that module, so the first `Animated` touch — the nav bar's TouchableOpacity, reached
-// only during render — now loads and transforms ReactFabric-dev.js (~2.2 MB) INSIDE the test body.
-// Measured 2026-10-17, this test alone, cold transform cache, --maxWorkers=1, three runs each:
-// main (RN 0.85.3) 563–582 ms; SDK 57 (RN 0.86.3) 1105–1110 ms; warm cache 66–178 ms vs 97–103 ms.
-// On a loaded CI runner that doubling crossed jest's 5 s default (PR #778, run 5489: 13.9 s suite).
-// The cost is upstream and per worker, not this app's; the bound is raised for this test only.
-const FIRST_RENDER_LOADS_RN_RENDERER_TIMEOUT_MS = 15_000;
 
 describe('(app) layout — AssistantConfigProvider placement', () => {
   it('resolves the assistant config from a descendant of the Stack AND of the dock gate', async () => {
@@ -129,7 +118,7 @@ describe('(app) layout — AssistantConfigProvider placement', () => {
     // refresh the dock in-session. Two providers would give two independent fetches.
     expect(getByTestId('probe-under-stack').props.children).toBe('true');
     expect(getByTestId('probe-under-dock').props.children).toBe('true');
-  }, FIRST_RENDER_LOADS_RN_RENDERER_TIMEOUT_MS);
+  });
 
   // FR-007 (feature 077): a user who cannot run the assistant must not cause its runtime chunk to be
   // fetched. The mechanism is this gate: `AuthedAssistant` renders nothing, so `AssistantDock` never

@@ -793,3 +793,24 @@ that test only with a named 15 s bound and the measurement in a comment. The tim
 `affected` publishes evidence only on failure, so `main`'s green runs record no per-test timings to compare. The
 three `affected` bundles in retention (runs 3589, 4899 and this one) contain no earlier failure of this test, and
 the backlog has no item for flaky mcm-app unit timeouts.
+
+### US4 follow-up: the RN 0.86 renderer slowdown removed at its cause (2026-10-17)
+
+The 15 s per-test timeout added in `d83678f4` treated the symptom. The cost was not loading
+`ReactFabric-dev.js` but **Babel-transforming** it. The app's `transformIgnorePatterns` lets all of
+`react-native` through Babel, and RN 0.86 now loads the 725 KB renderer eagerly. That file is
+already-compiled CommonJS (`@noflow`, no Flow types, no ESM), so a fresh Jest process pays a transform
+it does not need. CI is always a fresh process.
+
+The fix adds `/node_modules/react-native/Libraries/Renderer/implementations/` to
+`transformIgnorePatterns`. The test-specific timeout and its comment are removed.
+
+Measured with this test alone, cold (`--no-cache`), `--maxWorkers=1`, three runs each:
+
+| state | test duration |
+|---|---|
+| `main`, RN 0.85.3 (from d83678f4's measurement) | 563–582 ms |
+| SDK 57, renderer transformed | 1104–1260 ms |
+| SDK 57, renderer **not** transformed | **591–630 ms** |
+
+This is back to the SDK 56 figure, so the default 5 s Jest timeout is ample again.
