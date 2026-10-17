@@ -41,7 +41,7 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 
 | Area | Technology |
 |---|---|
-| Frontend | React Native 0.85, React 19.2, Expo SDK 56, Expo Router, Tamagui 2.3 (`@mcm/design-system`), CopilotKit 1.70 + AG-UI, TypeScript |
+| Frontend | React Native 0.86, React 19.2, Expo SDK 57, Expo Router, Tamagui 2.3 (`@mcm/design-system`), CopilotKit 1.70 + AG-UI, TypeScript |
 | BFF | Expo Router API routes (Node 24 container), Redis 8 sessions, Axios |
 | Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, `medi-rs` (CQRS), MongoDB 8 |
 | AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
@@ -166,7 +166,7 @@ The dev container covers backend/API development, compose-based test stacks, the
 
 How to develop the Expo app from inside the container:
 
-- **Web** — run `pnpm start` in-container and open the forwarded `localhost:8081` in a host browser (ports `8081` Metro/web/dev-BFF, `8082` containerized BFF, and `8099` Keycloak are forwarded; the legacy Expo `19000/19001/19006` ports are unused by SDK 56).
+- **Web** — run `pnpm start` in-container and open the forwarded `localhost:8081` in a host browser (ports `8081` Metro/web/dev-BFF, `8082` containerized BFF, and `8099` Keycloak are forwarded; the legacy Expo `19000/19001/19006` ports are unused by SDK 57).
 - **Physical device** — point Expo Go / a dev build at the in-container Metro server over LAN; if LAN routing to the container isn't available, use the documented **Expo tunnel fallback** (`pnpm start --tunnel`).
 - **Emulator / native builds** — switch to the host for `expo run:android`, APK builds, and `pnpm nx e2e:mobile`; mobile agent E2E flows run in CI regardless (see [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md)).
 

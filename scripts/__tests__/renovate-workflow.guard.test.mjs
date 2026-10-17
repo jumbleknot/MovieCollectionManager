@@ -3245,15 +3245,59 @@ const ciActionDep = (depName, updateType, datasource = 'github-tags') => ({
   updateType,
 });
 
-const JAVA_JDK_HELD_CEILING = '<18';
+// Feature 081 US4 (T027) DECIDED the JDK against SDK 57's Android template: it STAYS 17. SDK 57's
+// `expo-template-bare-minimum@57.0.32` android/ tree is byte-identical to SDK 56's (Gradle 9.3.1), and
+// `@react-native/gradle-plugin@0.86.3` — like 0.85.3 — builds with `kotlin { jvmToolchain(17) }` on AGP
+// 8.12.0, so a JDK move buys nothing and costs a toolchain download. Re-check rule: lift when an SDK's
+// React Native gradle plugin moves its jvmToolchain off 17.
+//
+// The ceiling is a REGEX, and that is load-bearing. github-actions extracts `java-version` with
+// `semver-partial` versioning (renovate@44.166.0, manager/github-actions/known-actions/java-version-
+// dynamic.js), and Renovate's allowedVersions filter tries the dep's OWN versioning before npm semver.
+// semver-partial accepts '<18' as a valid "range" by COERCING it to 18.0, and its matches() is then
+// `major === 18 && minor === 0` — so the US1 hold `allowedVersions: "<18"` admitted EXACTLY 18.0.x and
+// nothing else: the 2026-10-17 dashboard (item #29) proposed `java-jdk 17 -> 18`. A hold that reads as
+// "below 18" and means "only 18.0" is the inverse of itself; a regex is evaluated before any versioning.
+const JAVA_JDK_HELD_CEILING = '/^17\\./';
 
-test('(081) java-jdk on setup-java is held at 17 on every track until US4 decides it', () => {
+// semver-partial's `matches(version, range)` as shipped in renovate@44.166.0 (versioning/semver-partial),
+// reduced to the non-regex path the filter takes when `isValid(range)`; used to prove what a ceiling
+// ACTUALLY admits rather than what its text looks like.
+const semverPartialAdmits = (version, range) => {
+  const v = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?/.exec(version);
+  const coerced = /(\d+)(?:\.(\d+))?/.exec(range.trim().replace(/^v/i, ''));
+  if (!v || !coerced || v[4]) return false;
+  if (Number(v[1]) !== Number(coerced[1])) return false;
+  if (/^\d+$/.test(range.trim())) return true;
+  return Number(v[2]) === Number(coerced[2] ?? 0);
+};
+const javaJdkCeilingAdmits = (version, ceiling) => {
+  const regex = /^\/(.*)\/$/.exec(ceiling);
+  return regex ? new RegExp(regex[1]).test(version) : semverPartialAdmits(version, ceiling);
+};
+
+test('(081) java-jdk on setup-java is held at 17 on every track — the SDK-57 decision (US4)', () => {
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(ciActionDep('java-jdk', updateType, 'java-version')),
       JAVA_JDK_HELD_CEILING,
-      `java-jdk ${updateType} is not held — the major-ci-actions branch would carry JDK 17 -> 25 into US1,\n` +
-        '  an Android toolchain decision that belongs to US4 (spec 081 US1 AC4).',
+      `java-jdk ${updateType} is not held — the major-ci-actions branch would carry a JDK major that SDK 57's\n` +
+        '  Android template does not ask for (RN 0.86 gradle plugin: jvmToolchain(17)).',
+    );
+  }
+});
+
+test('(081) the java-jdk ceiling ADMITS 17.x and nothing else, under the versioning Renovate really uses', () => {
+  const ceiling = resolvedAllowedVersions(ciActionDep('java-jdk', 'major', 'java-version'));
+  // Adoptium `semver` strings, the shape the java-version datasource returns.
+  for (const version of ['17.0.12+7', '17.0.16+8']) {
+    assert.ok(javaJdkCeilingAdmits(version, ceiling), `the java-jdk hold '${ceiling}' blocks ${version} — JDK 17 patches must still flow`);
+  }
+  for (const version of ['18.0.2+101', '18.0.0+36', '21.0.8+9', '25.0.1+8']) {
+    assert.ok(
+      !javaJdkCeilingAdmits(version, ceiling),
+      `the java-jdk hold '${ceiling}' ADMITS ${version} under semver-partial versioning — '<18' is coerced to 18.0 and\n` +
+        '  matches only 18.0.x, so the hold proposes the very major it was written to stop.',
     );
   }
 });
