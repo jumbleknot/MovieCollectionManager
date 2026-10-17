@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3d67e05388e4bdb68a6c8cce58cb0cb9f9f8748488f0c991d20982afaa692067",
+  "pageVersion": "sha256:7261eb4c24e6f56bb88b3303aad8b708a57d7f8b2910f64d48c0f281642071f6",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -177,10 +177,190 @@
           "version": "repo-lines-v1:sha256:5ffcb984031b5f3ad835bde1465356fe977d14a86dce06ec8d9caedb606735d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0NThjMjZhNTA4M2JhOTc3NWRkZmY3ZmFkNWJlNjQ1NThlMzVkZDMyMTUyODg5ODE3NzI2ZjU4ZmNkZjdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2YjA2ZTZiNWMzZGQyZTAzOGFlNDE2MmU2NTYwYjlmMzRhNGRkODdmM2Q4OTI1YjlhMjIxNTlmN2IwNDFhMjgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f745743be41847248f842e0270a54d49",
+      "statement": "Metro's dev transform-worker derives a `require.context(<projectRoot>, false, /\\.env/)` for the virtual module `expo/virtual/env.js`, which crawls every project-root `.env*` file whose extension Metro watches while dotenv-parsing only six names (`.env`, `.env.local`, `.env.development`, `.env.development.local`, `.env.production`, `.env.production.local`); the unparsed remainder falls through to Babel's JavaScript transform, so `frontend/mcm-app/.env.e2e.local` produced a `SyntaxError: Missing semicolon` and made `pnpm web` return HTTP 500 for every request (item #242, measured 2026-09-07).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/metro-env-blocklist.js#L1-L71",
+          "version": "repo-lines-v1:sha256:d8c1d09b79ceab1cba69dee3e2526819fe02a903923bf7ab5deda0b3bb1276e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ODA3OTljMjM4ZmNhMTU5MmYxNGMxYWE1ODdmNThiZjI3Yjc5NWIyZjJiZjkxNmRkOGQ4ODljNDQ0MTQwODYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/metro.config.js#L15-L31",
+          "version": "repo-lines-v1:sha256:b4ed47ce3cee92aee81a31c0f30d0bf3bfa7efeb0c760ae9607a7d6375a4918d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ZmUzNjFhMTJkZmJiZjg5MDlhMzIwMWQ1MGVlZTkyN2UyOTMwMzYyMDBiMWZmMmRmMmQzNzM5Y2Y1MTQ1NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxOTJiZmVhYWVlYzEzODdjZWUwYjIyMDU3OWZjNzY0NTIwYzQ0MjA0MzMyNjU1NjlmODAxNmI3YjVmMzdkNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViZWI4ZTViMDk2NDBhOWEwMDE5NTFkNDNhYTgzNWM3ZmU2YzNjOWU4MzMzNTIwYTMzMDkzMjQ1ZGQ1NDJkN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5NThkYjIzOTRmZjNmMjY0MzVmNmYxNzlhNmY4ZjMzYmIxZjRlMmY5YjZkZTI3Mjc5YWY1ODVlNDE2YmNkYTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_09de93edb65642b4882d47677af6f763",
+      "statement": "The fix for item #242 is a Metro `resolver.blockList` entry computed by `metro-env-blocklist.js` that matches every root-level `.env*` file outside Expo's six parseable names, deliberately chosen over dropping `'local'` from `watcher.additionalExts` (which would also stop Metro crawling `.env.local`, a file Expo legitimately reads); the regex must stay in step with Expo's own parseable set, and reformatting the offending file is not an option because no dotenv-valid formatting satisfies a JavaScript parser and the format is shared with bash `source`, `docker run --env-file`, and the Python `_load_env_file` helpers.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/metro-env-blocklist.js#L34-L71",
+          "version": "repo-lines-v1:sha256:3b2eb386db365e5ce19d72d8e5c9fccd8f63a8849000b9462d68d7c099ff7a2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZWZjODNjYzJjZjcwOWJiZGNlNjQ2MjMzZjZkYWUxMjJkMzEzMmY5MWMwYzY1YmYxZDk0OTZmZTRiYjEwODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyMzNiY2IyYzMyYTlkMTk5YjUwYmM0MTNmNmE0YzdiMGVhZmFjMWNhYWNlYWJjYzMyZjY3M2E1ZWE5Y2JiODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ODA3OTljMjM4ZmNhMTU5MmYxNGMxYWE1ODdmNThiZjI3Yjc5NWIyZjJiZjkxNmRkOGQ4ODljNDQ0MTQwODYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/metro-env-blocklist.test.js#L20-L56",
+          "version": "repo-lines-v1:sha256:acf4f4f344d3ef526d1edd36cab73889ea7171ea0ced54edf1449ef146ecb6f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YzBhMzIxOTA5YWM3MWM1NjQxN2U3N2FlNGJlYWE5MDRjNTY0YzdjN2ZiZThkOTM1MGRmMGExYTI2MjFhODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ODY4MTU2ZDlkZTRjZGM0MDFiM2EzZGU4Mzg1NjlmY2QwNmY0NzBiYTM2MDJjOWRkMDA2ZDE1YzA3MGU1NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0YjYwMmQ5MGFkNzI5NGU2YTExNmRlN2I2Y2RkZDkyNWNmNmEzMTM1ODZlOGU2OTcwNGI5OWM1ZmQyMTJhNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96ccd8f93f6444f8a7968a281f529761",
+      "statement": "`metro.config.js` redirects the `@segment/analytics-node` specifier to `metro-shims/segment-analytics-node.js` because CopilotKit's React Native entry statically imports a telemetry client that pulls `jose`, whose Node build requires `crypto` and thus breaks the Android/iOS bundle with `Unable to resolve module crypto from jose/.../node/cjs/runtime/verify.js`; the shim is a no-op with a preserved API surface rather than an empty module, because the telemetry client constructs `new Analytics(...)` unconditionally on native and an empty module would throw \"undefined is not a constructor\".",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/metro-shims/segment-analytics-node.js#L1-L26",
+          "version": "repo-lines-v1:sha256:ae36048af56ed35563b2fb508b910e3f38f39a498b3a4928471b591128396fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNDA1MzYwYmZlYmQxZDUyODZlNGM0ZjE1YjU2ZmEwMjJjNTA3Njg3OGFiMzUwNzZjY2Y4YWIyOTEwMGZiYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNjgyMDI0MWEyYTFlOTI3MmQ1YmI1OGE5MTYyYmEyYmI2OTc1MGRiMzVkZTNhN2RkM2JlZmYyYWFhNDU2NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/metro.config.js#L1-L43",
+          "version": "repo-lines-v1:sha256:dfc80017ed735f6fe4638b9ed76c86856bd1fb16a17acee2964305a53553ccc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZTllMzRhNDk5MzI0NGIyNGQwZjZhOThiZDEwNTJiYjQ5OGEzNzA4NmE3NTIxODRmZTVlZTRiNDIzNGUwMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNzY0ZWFiOWVjYWVlZmE2NTNmYjc1MDg4ZmYyOWJmZTE3NDQ0Y2UwNzlkZGYxNTJkMjE5YzZlYjAwOTg1ZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ddc7b4e57fbd4da2bf800033b3d6cf68",
+      "statement": "`scripts/check-no-server-imports.mjs` is a keyless gate (run in the guardrails `naming` job as `--selftest` plus the real scan) that fails on any non-exempt file under `frontend/mcm-app/src` importing into `src/bff-server/`; it resolves both the `@/` alias and a relative walk, and matches import statements over the whole file rather than line by line, because the first line-based version could not see the multi-line import it was written to catch.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L159-L162",
+          "version": "repo-lines-v1:sha256:384057314997b7b5a038cc3357de82dfaad73a63911409212c0d97badf3860a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YxOTM2MTYwZjU1Y2Y1ZDUxOTRmMWY4ODkyZGUzZDNjMzRjOGYyZTkxMWM5YzdiNDBhN2NiNmUxZDA3ZjFjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQxZDFiYjQ5NWMwYTI2M2IwYmZhNzdjMjRkN2EwNmZhYmNmYzQzZTRkMjRmMGRkMDdiMDM4ODkyNDViODMxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjJlOWIwMDY3Zjc2ZmVlOTYwYmM2NjQ1Y2NkMDUxNmM4YjA0OTE0NmQyM2NkZGU3YmZkMTE4YjkyNTlkYTgyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQ0MDU1MDg3MTZiZDM3YjZmZGZkNWQwMGE0MGUzMDBkNjVlOTE3ZjMzZDI3YTBlZmU5Mzg3ZTMyZjA1MTkyOSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-no-server-imports.mjs#L1-L13",
+          "version": "repo-lines-v1:sha256:b54c0ed64cfbcd05ebaeaa3e8319c49b6a56bcf9fa657fd876d1eb7e6d7b5e83:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzODI1MDI3ODgwZGZlNDc4NGE4YjA5ZjlkZGM2YjgzZGVhMWM5NGFkYThiYTUwNmQ5OWFiMDhmYjEwZmE1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NjZkMjU5YTFlYjkyZWU0Zjk3NzRiNGIyNGI2YWMwOTk5NmNhODMyOGMwNDhjYjMxMDJhNGJkMzQ1ZWFlNDcifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-server-imports.mjs#L107-L150",
+          "version": "repo-lines-v1:sha256:ad8a8cfa0b200ab29e68f88fa0f21cbeb6ababeec0942a1739fae9a9327de280:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWIxNTJlN2M0NjJkYmRjYTFlOGE1ZTQ5NDFiODgwMDJkNDkwZWJmNjk3NmUyNGRmMTIzNWQwMjg1ZWNkYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MmM0ZmZlZGM1NzYzNTZmYzllZGE5N2E2NTY3MzU1YTFiOTZkNzQ3NTk0MTEyMWM0ZTcxMDY5ODYyZDQ4NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNTRlNDhjMjViZjQwZjA3OTgyYzIzYjkxODBjMTIwY2I3MGQ4ZDIxOWRkYTUyMjQwYjAyYjVjY2I2NTNkMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e3195d2a2944761bc230049bb8e3843",
+      "statement": "The server-import gate's exemption mechanism is an `@client-safe: <reason>` marker written inside the module itself rather than an allowlist entry in the gate — a bare marker with no reason is not honoured, and a marker must also be paired with an entry in `SERVER_ONLY_EXEMPT` in `scripts/check-web-bundle-budget.mjs`; no module carries a marker today because item #566 relocated the only candidate (`api-client.ts`) to the Utils-Layer, and the mechanism is retained deliberately so its tests keep documenting the rule.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-no-server-imports.mjs#L15-L41",
+          "version": "repo-lines-v1:sha256:c7a3932f35bfb2ea887d33c37d03b13b57125190c8a17871f3d4fc75a101a74e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZmU4YjUwOTRlZDA5ZjFiZWQyYzFhYjExMzhkY2M5MzZkMDhlZWRjYTBmYTI4MDczZWM5OTMzNDQ3ZDg2YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYjhhMDNjMDhlYWNmYWVlNTZlMDEyZmU4MjNlNzFjOGY4ODIzMjZkMjVhZWI0MzczMzA2YTlmZDM1YmVkZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjMjM4YmUzZjM0NmE2NTNmYjFlZjc5MTQ2NTI1NDQ5YjA5MWEzYjBlMWFhMmUyNGI0NTMzYzQ0Nzg5YWVkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2NDJlYmRkMmMxOTE5MzJhN2VmMWY3NzMxZGQ2YjQyNWFhYzRjNTZjMjFjNDBhNDJjNzc0ZDNjMDA4Yjc1YmEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-server-imports.mjs#L152-L173",
+          "version": "repo-lines-v1:sha256:5f6ada7b4c4038b668395318a80fc46f786576a5888f26c6b0f536a10c7af3dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYmIwZTZkYWVhODc5ZDliNGJmODFlY2UxMjExMmU0NzE0OTBjN2ZkN2E4ODkwNDEyNTQxN2I0M2NlMWY3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NTM1ZGVjZDE1ZWVlYzJlZjgxZTVlZWRmODc3ZmJlNjM3NmQwOWJkZTdjYTMyMzQ2MWM1ZjMyNTZkM2ZkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYThiMWZiZjZhZmY1OTI4MzU3NTY5MjllMjRhMTI0YTFhNzA1ODk3MDNjZDg4N2E0YTc2NjBhMWMxZDI0MWQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L73-L86",
+          "version": "repo-lines-v1:sha256:ae53b7497fc0d6a3ca1103fa08cb577312148ed7a001ee330b9f30443cdcf596:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhODlhOGJkZGE1MjEyMWQ2NzkzMDhkZGRhMzFiN2Y2YTZjNDMxODAwMGFkNmRhZmJiYTdkZWZjZjZlNzRhYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YmMwZDJkYjQzZDMwMDdiNWU0YjVjMzYxNTIxZWJjMGJjYmM5NWY3YjMxNTZkNmE0MjRhNDljYjI4ZWJkNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNjI1ODg2MGRkOTVmYjFlYzY3MjliOTMzZTUzZDJlMGUwMDhkYmZiNjM4NmJmOTk4MGRjMzQ5MmJlYzRjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMTVjMzlkODk0MWQxODI0ZTIzNzg2OGI4NTVhMGNkZjBhOTE3NTc4NmZmYzk5YjUzZGZhMDdhZmY5MjI3NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b615f8092e7c42bdb436de820844a90e",
+      "statement": "`scripts/check-web-bundle-budget.mjs` asserts three separate things: the web entry chunk stays inside a committed byte budget, the deferred assistant packages are absent from the entry chunk, and server-only code (`src/bff-server/`, `luxon`) is absent from EVERY client chunk rather than only the entry chunk, since a gate reading just the entry chunk would report clean while server code shipped inside a deferred chunk.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L11-L27",
+          "version": "repo-lines-v1:sha256:71610c30a47660e14f4e7c88c34b121a858cd467c8bd0584ff6582466ea565a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YmRjZWVkNDA4ZGEwMzdjNzBiYmQzNTBjZTRlMWM0YmRmNTZkMTI2MmJkMTcyMWYxZjI3NzI2NTJiNTVjZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmODNjNDEwMzFmYmVhMmJiYzA5NDkwMDE5MDlkNzZjNzBmNjlmNGQzYzhkNjYxMDQyYzVhNjNlNGZkNWY0MGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ODMzZWVkMDAxMzIyZjYwMzBjNThiZWE0OTQwNTBmZjQ1OGNkMDQ4MDUyY2QwNjUxODcyNDRhMDlmMDgzZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZGI0OGVhZTZkYzdkNTZmMTkzNWZkYWNkYzE2ZjdiMTc2M2NkOGJjOWJhZmVjNThmMzk5NDE1Y2IwNjliZTcifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L169-L207",
+          "version": "repo-lines-v1:sha256:3386b2d9c1d9c84d77f2fbc0ca9629f2d27660db297071b5a0b13af3f3d4fcea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDA5NmQ2YzBkMTc4YjBjY2IxOTdiM2QzMGE4NWRmNjQ2NmU1YjFjOGVkZGJmZGI0NmNjYWQyYjQ1MjA3MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZDY4MmU4ZDFhMWRlYmRlODFkMTM5ZWRmNDlhMWM2ZGUyMTNlNzgyNmYyZDI4Y2Y4NjJkOTQxMDRmMzM2MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ca56f1b42134a8b8a47c3fc1895c53c",
+      "statement": "The web security-header layer is built by `frontend/mcm-app/web-security-headers.js`, a pure plain-CommonJS module (not TypeScript) because the hand-written `server.js` Expo adapter lives outside the Metro bundle and cannot import the app's compiled TS; it builds an enforcing (never report-only) CSP whose `script-src` allow-lists Expo Router's single inline hydration bootstrap script by a stable sha256 hash so neither `'unsafe-inline'` nor `'unsafe-eval'` is needed, plus three always-on static baseline headers stamped on every response.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L31-L71",
+          "version": "repo-lines-v1:sha256:77d1d83c9c20c8e37eb1fb0f189670e4e28e3e6e70426fa6478cb41e7d7fded7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYmEwMzlkZTJmMjg5N2IwNTM0NGI0MGE3M2Q1ZjQ5Nzg0MTcyMzgzNWM1OTMzMjliMDBkODliODhlMmViNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYTczMGVlNTJjZTUwN2E0YTA5MjJlOGE0NzI5OGNhMGZkNmJiMDVmMDAzMzVlOGI2Mzg4NzA0ZGY2OGJlMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L1-L40",
+          "version": "repo-lines-v1:sha256:aa5526ee09e21887e433e83e0a2a2d27d7910c840bfbcdc702588479e8a7f391:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MjI0OTllZDkwMDc2ODhhYjMzYWIxZTVlMjUzYmIxNWUxMGQ4YWZlNWU2MjQxN2EwYTIwODM1ZmI3YmE1NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L93-L119",
+          "version": "repo-lines-v1:sha256:11732c3fdda5b96c51e8ab10efc8e284d2ff4e42e8ce10758112429f34588304:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMTczYjA1MDRkNjY5ODUyYmQ2YmNkOThiNzFhOGI0ZDk0NGFjYWI4YWVmZGM5M2ViZjQ4M2JhNjhiYjNiNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYTg1ODM2Y2JlOWVjNTUwMzQ3NDE4MTQ0MDVlYjM3ZjQ2YTExZmM1YmM5ZjdiMTUxZjMzZDYwOTEwZDAzYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35137765c221418b8b6b02ebe0078548",
+      "statement": "The browser-facing Keycloak origin that the CSP's `connect-src` needs is read from env at boot and reduced to a bare `http(s)` origin, falling back to a localhost default on anything malformed, because a scheme-less or non-web-scheme value does not throw in the WHATWG `URL` parser — it yields the opaque origin string `null`, which would emit a broken `connect-src 'self' null` directive.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L45",
+          "version": "repo-lines-v1:sha256:bf96f3fc54a97360e888a08cf39768d945805b0adcedb755a3c0f1777b27159c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNDQ1YjgwYjdlMGE0NTI3YTk1YTdiNDk2Zjg2M2Y3MDA0MWJiZmMxMmE3ZTZlNmE4YzFmZDZkMDBlN2RlMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5YTViZGI1Y2Q4OWY0NGZmNDAwMDljYzFhOTUyMTAxY2IxZjJjZTcwZTUyZmY3MzNmNjQ0MDM1MzY3NGZiMDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L42-L64",
+          "version": "repo-lines-v1:sha256:4452394fc05c486579863a4af325bbc42569fd2af7209b4ec11ba80321968840:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDUxOGMzMGZkYWVkYzVhMjM1MTA1MzE3Nzk1MmU5MzkzMDg1ODA4YjNhYTM5YjViOTA1YjAxOWM1MjAzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMGQ0YWQ2NDdlMjljN2Y0MDk3ZDZiYjEyMzYxNmM2NGVjNzQzMDNmZjc0MzVlYzA1NmFkMmY4MTNmZGM1MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3fd7133b802145f788052011865cbb72",
+      "statement": "The web-app CSP is path-scoped out of `/bff-api` by `isApiPath`, so the API surface keeps exactly one CSP — its own strict handler policy — rather than depending on adapter same-name header merge order, while the three static baseline headers apply to all paths.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L57-L71",
+          "version": "repo-lines-v1:sha256:1f367afb6018f9ed1c64ba1bb1eec89e25029598c64ba6fbd0875ba385482630:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNDQ4YTlkYjFkYzY0NzYzOTBkYmE0Y2RkOWI0Yzg1NzRlZWQxMmNkMjU4YTYzOTFiZWYyOWUyNmRjOTQwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts#L51-L60",
+          "version": "repo-lines-v1:sha256:43aeb56ab6de84268012e3cc020aac4bf3bc8ed3c4c25fd1a881b01313f50d26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1M2ZjNmY0Y2YyZDQxMDc2Y2MwODljYmY2ODcwZjlmYTcyZmQwNjdhNGZlZjBlNWQwMWE1MzdlY2VkZGFhMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZDAxMDE3N2FmYTBkZjQ4OGI2ZmRhYWJlYjMwMmNhZTQ0N2M4YjNhYzg5ZjAzODRlYmUyZDAwMGRlYmY3ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L108-L118",
+          "version": "repo-lines-v1:sha256:0546fe80a19402d0ddcdadeb9a1c16b4e14930730f56ad054d80572d65a935e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NTYwNDNiZmIzZTU3NjgwOWNhYTIyMmM5ZDA5MDI0NWUyZGZhZmUzNDcyYTRhZDBhOWQ5ZjU2NTAyNDMzODQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fdea116b761486fbdf2592ed20ddfd6",
+      "statement": "The strict CSP's blocking of a third-party `new Function(\"\")` eval-availability probe is a documented, accepted residual: the probe is wrapped in try/catch, the library degrades gracefully with the app fully functional, and the browser logs one benign `eval` CSP violation — `'unsafe-eval'` is deliberately not added to silence it, because permitting real eval app-wide would defeat the hardening.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L19-L32",
+          "version": "repo-lines-v1:sha256:1b6e52a2729595159bf8be44ac14d9ce6c25e666f4794cece062028fea426a2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYzc2YTBmYmJkY2Y2MGM2NTEwYTU1ZjcwMjFhMmY0M2E3MmIyY2FlZTg1Y2ZhYWFlOGM2MWRjZjE5NDEzZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZmYyNTQ0ZDNiZjNmMmQzY2ZiYjk4ZjhkMzNhMDVjMGM5ZDg1MjFkNTczZDk5ZWU2ODBkOGIwM2RhNmEyZDYifQ"
+        },
+        {
+          "resource": "repo://specs/032-security-header-hardening/contracts/security-headers-contract.md#L16-L26",
+          "version": "repo-lines-v1:sha256:77a549210dfcb2e839e60fbbc3fe1d4c6226ce6f16b3cba679d624e16ec67e22:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxODQyYTFiNDMzZWU4YzFhMjUzNmJjODY1Yzc5Nzg3ZWNjZDk0OWVmMTYyZTIzM2NiNmYxYzFkMzYxNzNlMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZGYwODkzZDM4ODRmZjhmYmQyNmE3NGQyMzY3ODQ1MzZlODNiYzk5N2Q0ZWZkZGMwYTAxNGFlYTUxY2I2MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhZTIyN2IxYjM2NDRhYzZjOGNjYjliZDQ0MTUwNzdmZTQ5MWVmMDJmZjQxMGJlMTIwMWQ0Y2YwMTQ3NGI0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZjFlMjFlYzgwMzZhMDc5ZGJmZGJkMDA1MzY5ZjEyN2ExYzBhOTY3ZGZjNDUyYzZkY2RiMmM4NDI0ZTRmNDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2b9b28467ab49ba9a39e2a83d75f9f3",
+      "statement": "`tests/e2e/web/security-headers.spec.ts` asserts the response contract across the three classes this process serves — SSR HTML, a static asset, and a JSON API response — including that `X-Powered-By` is absent from all three, and opts out of the shared authenticated Playwright `storageState` because all three are public routes.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:7017190a6d375a6c10d64ecba4416484be589b7e17ba1fd855276e66e9dd9584:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b4f01b8058b426eb90bbedead2e2653",
+      "statement": "`frontend/mcm-app/plugins/with-dev-cleartext.js` (a config plugin listed in `app.json`, run at `expo prebuild` time because `android/` is gitignored and regenerated) permits Android cleartext HTTP for `localhost`, `127.0.0.1` and the emulator host alias `10.0.2.2` only, via a generated network security config referenced by `android:networkSecurityConfig`; without it the standalone release APK the mobile E2E suite installs cannot reach the dev BFF and the login POST fails with `ERR_NETWORK`, while every other host stays cleartext-blocked so the production HTTPS build is unaffected.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/app.json#L28-L42",
+          "version": "repo-lines-v1:sha256:07e76f4f1465097ee1225d0d2a13378756498840b37261e4a7a459888f9e1ecd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/plugins/with-dev-cleartext.js#L1-L56",
+          "version": "repo-lines-v1:sha256:a783ddbce62c5a123af3e97d858df041e149f029fc3d52b6e7b3547fc6e4618d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NzI0NTdlMTI4NTYyMTE5YzY0NzkzZWE2ZjRhOGU3OTJkYjViNGM5NTMxOWUyNDgxYjRkZDU3ZjA3Y2NhNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-26T05:36:02.343Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-17T13:24:33.842Z"
   }
 }
