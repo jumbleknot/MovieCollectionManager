@@ -51,7 +51,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse as parseYaml } from 'yaml';
+import { parseAllDocuments } from 'yaml';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -344,10 +344,29 @@ const PLAYWRIGHT_WORKFLOW = '.forgejo/workflows/app-ci.yml';
  * Returns a SET rather than a single version so the caller can tell "absent" (0) from "ambiguous"
  * (>1); collapsing either to a pick is how a gate starts passing vacuously.
  */
+/**
+ * The DEPENDENCY lockfile out of pnpm-lock.yaml's text.
+ *
+ * pnpm 12 (measured 2026-10-17, feature 081 US2) writes the file as TWO YAML documents when
+ * `packageManager` pins it: an "env lockfile" first — `packageManagerDependencies` and the
+ * `@pnpm/exe.*` native binaries — and the dependency lockfile LAST. A single-document parse throws
+ * "Source contains multiple documents"; on the bump commit that turned this gate into `could not run`
+ * (exit 2) on a lockfile pnpm itself had just written. The last document is the one read — the same
+ * choice Renovate's pnpm extractor makes (`parseYaml(raw).at(-1)`) — and a single-document (pnpm 11)
+ * lockfile is simply its own last document. A YAML error in ANY document still throws: a lockfile
+ * that is half-parseable is not one this gate may read a pass out of.
+ */
+export function parseDependencyLockfile(text) {
+  const docs = parseAllDocuments(text);
+  const list = Array.isArray(docs) ? docs : [];
+  for (const doc of list) if (doc.errors.length) throw doc.errors[0];
+  return list.length ? list[list.length - 1].toJS() : null;
+}
+
 export function collectLockfilePlaywrightVersions(root = REPO_ROOT) {
   const lockPath = join(root, 'pnpm-lock.yaml');
   if (!existsSync(lockPath)) return [];
-  const lock = parseYaml(readFileSync(lockPath, 'utf8'));
+  const lock = parseDependencyLockfile(readFileSync(lockPath, 'utf8'));
   const prefix = `${PLAYWRIGHT_PACKAGE}@`;
   const versions = new Set();
   for (const key of Object.keys(lock?.packages ?? lock?.snapshots ?? {})) {
