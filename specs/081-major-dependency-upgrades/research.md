@@ -538,3 +538,47 @@ versions are in the lock, which assigns 1.1.1 to `get-intrinsic`/`get-proto`. Th
 tree shrinks from 2497 to 1908 entries. Every deployed `name@version` is present in `pnpm-lock.yaml`, so no
 version outside the lock enters the image. Builder deploy step: 79 s (11, under load) vs 54 s (12, unloaded);
 one 775 s run under 12 was contention plus the sandbox's slow registry (`Request took 10758ms`).
+
+### US3 (PR 3a, the nx plugins) — 2026-10-17
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-17T03:01:38Z`, read only);
+REPO = `origin/main` = `be862e64` (PR 2, #771, merged); NPM = the `@monodon/rust`, `@nxlv/python` and `nx`
+packuments (`time`, `dist-tags`, per-version `dependencies`/`peerDependencies`); UPSTREAM = the GitHub
+releases of `Cammisuli/monodon` (`rust-*`) and `lucasvieirasilva/nx-plugins` (`nx-python-v22.*`, `v23.*`), every
+body read; TARBALL = the published 2.3.0/3.0.0 and 21.3.1/23.2.1 tarballs, diffed.
+
+| What | R1 / R11 (2026-10-10) | Today | Consequence |
+|---|---|---|---|
+| DASH, the two plugins | ride `renovate/major-js-majors-(review-individually)` | unchanged: still in that group (Awaiting Schedule); Detected `@monodon/rust ^2.3.0 → ^3.0.0`, `@nxlv/python ^21.0.3 → ^23.0.0` | PR 3a lands both by hand; Renovate drops them from the group on its next run |
+| Newest `@monodon/rust` 3 (NPM) | 3.0.0 | `latest` = **3.0.0** (2026-06-01T20:53Z), still no release for nx 23 | target **3.0.0** |
+| Newest `@nxlv/python` 23 (NPM) | 23.2.1 | `latest` = **23.2.1** (2026-09-28T18:09Z) | target **23.2.1** (past the 3-day cooldown) |
+| `@nxlv/python` devkit relation | `>=22.0.0` peer | confirmed: **peer** `@nx/devkit >=22.0.0` since 22.2.1 (no longer a dependency), so it binds to the root `22.7.10` | the 21.6.11 copy leaves the lock |
+| nx (DASH/NPM) | 23.3.0 | `latest` = **23.3.0** (2026-10-07T15:17Z); nx minor 22.7.12 Awaiting Schedule | owned by PR 3b; re-read at its start |
+| `@nx/devkit` copies (REPO lock) | 20.8.4, 21.6.11, 22.7.10 | 20.8.4 (only via `@monodon/rust@2.3.0`), 21.6.11 (only via `@nxlv/python@21.3.1`), 22.7.10 | after PR 3a: **22.7.10 only** |
+
+**Breaking changes (UPSTREAM + TARBALL) mapped to this repo:**
+
+- `@monodon/rust` 3.0.0 "drop createNodes v1 and migrate to Nx 22": `src/graph.js` exports only `createNodesV2`
+  (nx 22 uses v2 already), and the inferred project's `release.version` moves from `generator:
+  '@monodon/rust:release-version'` to `versionActions: '@monodon/rust/src/release/version-actions'` (the nx 22
+  release API). The executor set (`build check lint run test wasm-pack napi release-publish`) is unchanged and
+  the `run` executor (the only one this repo uses, `mc-service:serve`) is byte-identical apart from its source
+  map. The `nx.json` plugin options (`testTargetName` …) are ignored by both versions (the plugin infers only
+  `nx-release-publish`). This repo runs no `nx release`, so nothing to migrate.
+- `@nxlv/python` 22.0.0 "migrate workspace to nx 22.x" (requires nx 22 — met); 23.0.0 is a version-alignment
+  bump with no code change. The `install` and `run-commands` executor schemas (the only two this repo uses,
+  across movie-assistant and the three MCP servers) are identical 21.3.1 → 23.2.1. 23.2.0's uv-lock external
+  nodes come from the plugin's `createNodes`, which this repo does not register in `nx.json` — not active here.
+- Result: the project list and every project's target list (with executors) are identical BEFORE/AFTER; the
+  only change in `nx show project --json` across all 8 projects is mc-service's `release` block above.
+
+**Lockfile**: the first resolving install under pnpm 12 lands the re-key US2 predicted. Proven separable with a
+control: `origin/main` + only `yaml ^2.9.0 → ^2.9.1`, `--lockfile-only`, produces the same 8 re-keyed snapshots,
+the same 34 in-place snapshot rewrites (byte-identical to this PR's) and the same 4 package-metadata rewrites.
+That set includes one change US2 did not list: an **orphan** `expo-router@56.2.21(0b04…)` snapshot carrying
+`react-native-screens@4.30.0` (expo-router peers `^4.26.0`; the app pins `~4.25.2`). Nothing references it —
+the app's `expo-router` stays on the `f61e…` snapshot with `react-native-screens@4.25.2` (checked in the lock and
+in `node_modules` links) — so it changes no resolved runtime tree. Everything else is the two plugins: devkit
+20.8.4/21.6.11 and their `ejs`/`jake`/`filelist`/`enquirer`/`minimatch@9.0.3` leave; `archiver` 7→8 (and its
+`zip-stream`/`compress-commons`/`crc32-stream`/`readdir-glob`/`is-stream`), `@renovatebot/pep440`,
+`chalk-template`, `tree-sitter-wasms`, `web-tree-sitter` arrive as `@nxlv/python@23.2.1` dependencies.
