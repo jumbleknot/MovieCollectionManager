@@ -1,75 +1,65 @@
 {
-  "coveredCommit": "be862e64e19743f3fefb6ac4afcb876327607e7b",
-  "coveredAt": "2026-10-17T03:47:46.475Z",
+  "coveredCommit": "4aae23df5924dd9e662d41b5d1e8e93ab00bd06d",
+  "coveredAt": "2026-10-17T14:11:20.497Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "bff.md",
-        "expo-app.md",
-        "stacks.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: frontend/mcm-app/README.md; source changed: infrastructure-as-code/docker/stacks/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md; openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 772,
-    "headCommit": "57c8226fc08e51759c05c0f9acad9804c0abd381",
-    "markerBefore": "b8da85d5ee69829564a5b81938b76b4a00a21cd2",
+    "number": 775,
+    "headCommit": "05aef9807043f5db23a692d9f260433fb042c2cb",
+    "markerBefore": "be862e64e19743f3fefb6ac4afcb876327607e7b",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "projects",
         "pages": [
-          "renovate.md"
+          "bff.md",
+          "expo-app.md",
+          "stacks.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/prod-reboot-resilience.md; source changed: docs/runbooks/renovate.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: frontend/mcm-app/README.md; source changed: infrastructure-as-code/docker/stacks/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md; openwiki/projects/stacks.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-17T03:47:46.979Z"
+    "updatedAt": "2026-10-17T14:11:20.892Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 23,
-    "elapsedSeconds": 2099,
-    "stoppedAtBudget": true
+    "pagesWritten": 3,
+    "elapsedSeconds": 2811,
+    "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 380,
+    "calls": 326,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2986077,
-    "cached": 26493254,
+    "uncached": 2507155,
+    "cached": 31867144,
     "cacheWrite": 0,
-    "output": 529394,
-    "reasoning": 442936,
-    "ms": 4729287,
-    "estCostUsd": 1.6901,
+    "output": 527975,
+    "reasoning": 432680,
+    "ms": 4377043,
+    "estCostUsd": 1.5769,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/renovate.md"
+        "projects/bff.md",
+        "projects/expo-app.md",
+        "projects/stacks.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 1.6901,
+      "estCostUsd": 1.5769,
       "rateLimited": null
     }
   ],
