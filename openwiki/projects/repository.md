@@ -7,18 +7,26 @@ tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
+  - id: openwiki-source-c7639ce8b1868ce09091cbc9
+    resource: repo://.devcontainer/devcontainer-lock.json
+  - id: openwiki-source-6da8a375957bf9b9f92e62dd
+    resource: repo://.devcontainer/Dockerfile
+  - id: openwiki-source-774d00b5d62cc6221b5968ea
+    resource: repo://.devcontainer/fix-workspace-ownership.sh
   - id: openwiki-source-61f1a679973e2c37988cd802
     resource: repo://.devcontainer/gen-container-secrets-env.sh
+  - id: openwiki-source-2385709088cc31988986f1d3
+    resource: repo://.devcontainer/sandbox/devcontainer-lock.json
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-84525c5b1053cfa785b83c28
     resource: repo://.devcontainer/verify/run-harness.sh
   - id: openwiki-source-4811c78aebdb18972e0c3805
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-81dfe425b1bf98f80dc07cd0
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
-  - id: openwiki-source-8037e2358a2c4f9b2c722a11
-    resource: repo://AGENTS.md
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-f83bd1373e0f000fa5d548c0
@@ -29,16 +37,20 @@ sources:
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
+  - id: openwiki-source-f8d87cfe0689163c27061841
+    resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T13:30:11.885Z
+    at: 2026-10-18T03:00:26.889Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -75,7 +87,12 @@ For the full description, architecture diagram, feature list, and tech stack tab
 
 The portable dev-environment asset is `.devcontainer/` — the two `devcontainer.json` variants, the
 `toolchain.Dockerfile` that builds the pre-provisioned image, the canonical egress allowlist and its
-generator, and the `verify/` harness described below.
+generator, and the `verify/` harness described below. Both variants reference their Dev Containers
+*feature* by a **floating tag**, so the real pin is the committed `devcontainer-lock.json` beside each
+config: the CLI re-resolves the tag to a digest on **every** build and rewrites the lock file, which is
+tracked in git on purpose as the supply-chain control. A rebuild that rewrites it with the same digest
+leaves a clean tree; a lock file that shows as **MODIFIED** is the intended signal that upstream moved
+the tag — review that diff deliberately, because discarding it discards the only notice you get.
 
 All tasks run through [Nx as the universal task runner](../invariants/nx-task-runner.md) — never
 npm/yarn, and never the underlying tools directly (`pnpm nx test mcm-app`, `pnpm nx lint
@@ -95,6 +112,16 @@ Each path has **its own config file**: `.devcontainer/devcontainer.json` for Doc
 extension** — the sandbox variant carries its own `containerEnv`, `runArgs` and `onCreateCommand` —
 so a change made only to the Docker Desktop file is real, committed, and **inert** on the path in
 daily use. Edit both until FR-032 collapses them.
+
+```mermaid
+flowchart TD
+  A["What are you working on?"] --> B{"Native mobile build, emulator or Maestro flow?"}
+  B -->|no| C["Docker Sandbox microVM - the default"]
+  B -->|yes| D["CI, or the retained Docker Desktop container"]
+  C --> E["scripts/open-sandbox.ps1 opens VS Code inside the container"]
+```
+
+*Which environment a task belongs on: the microVM for everything except native mobile work, which the microVM cannot host at all.*
 
 ### Primary: Docker Sandbox microVM (feature 060)
 
@@ -258,6 +285,12 @@ documents it — this is a pointer, not a restatement:
 - **The E2E gate / model-decision tier split** — `@gate` blocks a merge, `@model-decision` does not,
   and an unclassified agent test fails rather than defaulting into a tier:
   [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
+- **Run the tiers your diff touches, not the ones you remember** — `affected` caught findings that
+  the remembered tier list did not, and a tier you did not think of is a tier that did not run:
+  [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
+- **A guard that fails because you changed what it protects is updated at the cause, never
+  deleted** — a guard removed for being inconvenient is the regression it was written to catch:
+  [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
 - **Renovate's silent channels** — a channel with a missing toolchain dies quietly, and the nightly
   cron is not the Friday window: [Renovate](../runbooks/renovate.md).
 - **A whole CI board going red at once** — suspect the install before the code:
@@ -407,10 +440,15 @@ wrote from the VM shell was unwritable by the container user — the failure app
 `docker exec -u coder …`, never `ssh <sandbox> 'git …'`.
 
 **✅ FIXED 2026-08-17:** `toolchain.Dockerfile` now creates `coder` at **1000:1000** (moving the
-base image's `node` to 1100 first), so both sides share the same uid. The rule above still stands
-for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after the fix, and
-`.devcontainer/fix-workspace-ownership.sh` still runs at create and at every start to repair an
-already-poisoned tree. See
+base image's `node` to 1100 first), so both sides share the same uid. The sandbox config also sets
+`updateRemoteUserUID: true` **explicitly** rather than leaving it to its implicit `true` default —
+the dev-container spec's own renumber-the-remote-user-to-match-the-workspace mechanism — because an
+implicit default that silently no-ops is indistinguishable from one that worked; the thin-layer
+`Dockerfile` header records that on its own path the mechanism was set and rebuilt and `coder`
+stayed 1001. The rule
+above still stands for automation scripts — `ssh <sandbox> 'git …'` re-poisons the tree even after
+the fix, and `.devcontainer/fix-workspace-ownership.sh` still runs at create and at every start to
+repair an already-poisoned tree. See
 [docs/runbooks/devcontainer-sandbox.md §7d](../../docs/runbooks/devcontainer-sandbox.md) for the
 re-pin procedure and the two rejected alternatives.
 
@@ -454,3 +492,4 @@ treat those credentials as exposed.
 - [Dev container on Docker Sandbox microVM — lifecycle](../runbooks/devcontainer-sandbox-lifecycle.md) — recreate, disk, verification harness, `sbx` upgrade
 - [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md) — wiki summary of the retained Docker Desktop runbook
 - [Local dev infrastructure & environment variables](../runbooks/local-dev.md) — the compose stacks and their profiles
+- [Android emulator & APK builds (mobile E2E)](../runbooks/android-emulator.md) — where mobile E2E runs, and why not on the microVM

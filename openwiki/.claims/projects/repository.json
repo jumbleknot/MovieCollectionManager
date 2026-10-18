@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:851ce85e45c5ee4b55293212a51afc78290e97abe5c0ba41b7f3389652687d70",
+  "pageVersion": "sha256:6dd19b620423445146a5b119ca5bbb30341662ea9dcf457fe325fcf0c1aa6ac7",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -438,21 +438,73 @@
     },
     {
       "id": "claim_c4aba1e35f254ca083a6032c0c5f41fd",
-      "statement": "`CLAUDE.md` is an index, not a document — the governance gate fails on prose beyond the index and its managed regions — and its 'Gates that run before you act' list is longer than the four pre-work gates the repository page details; the remaining classes (instrument-before-belief checks, the agent E2E gate/model-decision tier split, Renovate's silent channels, and the whole-CI-board-red install hypothesis) are owned by the concept pages that document them.",
+      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run), and a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L26-L41",
-          "version": "repo-lines-v1:sha256:8926524de63a1266e7592d9f1256ec367b67e9fa0583f343808e3e51f19d4990:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTgwZjljMTI2OTAzYmNjMzMxYWE5NTQ1NmU0OTQ0NGE3ZDRkMDExZThhMmE4M2Y1ZGM4NzAyMzkxODEyZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Zjc4NzE0ODkzYWE3Nzk0MmNlYTFjNGEyZTAyMzFkYmI3ZmEyYTQxYTcwYzgxNDYwYTNjNjc1NjJkYTNhYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMmQ5NTUwMzZmNjExYTI4MjFmMjY2YWY4NmZlNGViMDFlODEyNGM3OTExNTg4ZDQ5MDE4YWE3ZWY3MDY2NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYzg0NmRiNWQ4ZTFlOTljZWI2MWIzMjAxNzc5OWY5NzQyNjNlMmQ4NzBhYjc1NjIwNGYxODE1MWNkMGEzNTgifQ"
+          "resource": "repo://CLAUDE.md#L13-L14",
+          "version": "repo-lines-v1:sha256:b524c6568a6bd1e695d53d3fbf592144f610ae0486e6f7ac4be07c536a32d7c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjYTNiMzc1MjZiNjYwNjU2ODYxOWU1NTI5Yzc3YmQxNDg2ZTZjMDM5YjA0OWJlMWFiY2ZlMDBhOWQyZGQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VkYzI1ZGUyMmQxY2RmNzliZmE4ZDkyN2Y1OTYxYWVjMjQzNDJiMDc0MGE2NTZmOWY1NWQ3MmYxOGZlNTliYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVlOTE2M2EzYWQ0N2IxYjlkMTBhNGE4OGVmNDZlZGNmZjdmYTI4ODFlNTI5MGQ3ZmFlMDg0ODY2ZTk2N2RiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY0ZTYyODI0NWU5NjYxZWRhOTIyOTYxNGIyYzBiZWI2YmU5M2JmYTg1NDY2ZWI0YTI1Mjc3ZWQ2NDczZGMyOCJ9"
         },
         {
-          "resource": "repo://CLAUDE.md#L1-L16",
-          "version": "repo-lines-v1:sha256:991e26cf8a5f033de19b4171da4def9d1d50cdaace204ce4bbf1d9dd0e8f3726:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NmI2NTUxMmY0ZDFhNWYxNTI1ODZhYTAzMjUxYjE1ZWU5ZGQxNzMxN2ZmOTg0NWM5OWZlN2IyYmZlZTNiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGQ5OGJkMTMxYTYxYjc1Y2RkNzE3NjA0NmY1NjA1YTdiYzM1MjA1YmI0YmVjYTRjYjVlMzQ3YjA4YjhlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlM2FhZDU2MmYwZGU0ZWE3MjcyZjk5OGU4YmY4ZjZlYTE2NGI5YjhjZTVmZDY1Y2YwYzM0MzEzY2E0NmQ1OTQifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+        },
+        {
+          "resource": "repo://docs/runbooks/e2e-testing.md",
+          "version": "repo-file-v1:sha256:92333b985d6cb2b08ed3ef4afad8c49009f2a71c607d4f969b979f3e9770a89a"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:df0bb8c736fc089079c7e6c74e91bf117f67230bdcfdf63272ddf90ca0ade30f"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ddb6de47e604f909295a57f72718055",
+      "statement": "Both devcontainer configs reference their Dev Containers feature by a floating tag, so the real pin is the committed `devcontainer-lock.json` beside each config: the CLI re-resolves the tag to a concrete digest on every build and rewrites the lock file, which is tracked in git on purpose as the supply-chain control. A rebuild that rewrites it with the same digest leaves a clean tree, while a lock file showing as MODIFIED is the intended signal that upstream moved the tag and must be reviewed rather than discarded.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer-lock.json",
+          "version": "repo-file-v1:sha256:41b8de31d8c52979a6a6624e594fdab2e57512383c7f690bc91f92078af653c2"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer-lock.json",
+          "version": "repo-file-v1:sha256:dd03b33853062b42635fc43f11fbf0975c2c3151195cf0ca540ca46ad001d857"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L43-L61",
+          "version": "repo-lines-v1:sha256:231f1dc499985303c253f6b46cd906c5deee86aea496085b841ade6f3a1b7fb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YTk1ZjZkMzQ2ODA4NGMwY2I1NWFlZDcxNjdmZjA1ZDUyN2Y5NTUxYzA3NGJmNjVkYjI0MzRiYmFlMzE1ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWI2YmM1OTU0ODgzMzhkZWRiMzU0YmJjYjA2ODYyYmNiM2VhMmQzOWYyMjM3ZmUxZDhkNzAyY2I0N2M1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhZWI5MmJlNTk4YTAyZDVhYWMyZjcwZGY4MjQ0NzQ5MGE4OTMyYjRiNTUzNWNlMDc0ZTg5OGNiNjg4MzdiZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjUwMGRkMWQ1N2E4NjRjZWNkMGZhYjRmNmYyNjQ0NDA3NjZlZmM1NDg5OTk2MzRjMTVkNDY2ZDRlYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f024f2dd71d4ba0a292b85496c8585d",
+      "statement": "The sandbox config sets `updateRemoteUserUID: true` explicitly rather than relying on its implicit `true` default, because an implicit default that silently no-ops is indistinguishable from one that worked; the thin-layer `Dockerfile` header records that the mechanism was set and rebuilt on that path and `coder` stayed 1001, which is why the working fix lives in `toolchain.Dockerfile` (creating `coder` at 1000:1000 by moving the base image's `node` to 1100) and `fix-workspace-ownership.sh` is retained as the repair that runs at create and at every start.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/Dockerfile#L19-L44",
+          "version": "repo-lines-v1:sha256:91b46b6f6b30e67ebff361e91849698b1dc40951efbcbf5644eb360b7529606b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNzU1YTkwZWViYTlkNzQyMjE3NjQxMjA4NTFkODUyNDAyNmEzYmFmNDg3YmJlN2YxOGFmYWZkOGE1OTFkZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZTQ3MmYxZjc4Njg5OGEwOGEwNjRkNTI3Mzk1MzAwNzcxMzczMTI2ZTJjNjM1YWMxMTZiYzExNDk0ODcyNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlY2M5MTYxNzQwY2UyZjcxOTZhYThjMjM2NGM1MjE3ZmE3OGY0ZDEyYjA5ZDYwZjE4ODk2NzU0OWUwZDA5ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/fix-workspace-ownership.sh#L1-L38",
+          "version": "repo-lines-v1:sha256:52303d7fd7c1669e1def8cbe770d1d1af1f493fb3d3cdb25f8f3904b434020ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhOWM4MmQ0OTYwMGVmNzM2N2UwZTYxNWViZDRmMTA5M2Y2Mjc4OWFjNTI4ZWY1OTY4MzI5YTA5M2EyZWNhM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMGVhNmMxMWI0YWRiY2E0YTdmM2UwNzMwZWU0ZjRiNDgwYzJhYjRkOGQ1N2U0OGY5ZmU4Y2U4ZTkxMzE0ZDgifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L126-L152",
+          "version": "repo-lines-v1:sha256:251b782e21c8bd36fcf60282a434cefde910d391387d1ab03656330a50d9f904:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZjExZTg3YWExZmE0MTljZjEyMWFjNmE0ZjY4OTIyOTQ0MzljOGZmZmI0ZDkzNTEzOTIwMzU1M2JiMWE1MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlY2QzODQ0MmZiNjNmOTE2Y2U0ODgwYTI5YmM4ZTdmYzk5MTg0OTY2NzYwMDVlZmI2Njg1OWFjMTU5YjcxYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YmQ2MmMwZDZlYjQyNTE5OTEyZmQwM2IzYmVkODkxYzlmZmY2ZmNlNzdmZjU2ZGI3YTg2ZjczNzJkNGU3Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2Nzk2MWVjNjc1ZTI0MWMwN2RhY2ZjYzkzYzU2OGM0ODNlOTliZmNmNjI5MGNiOTQ1NmQ2MTU3NDNkZWNjNDgifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L435-L440",
+          "version": "repo-lines-v1:sha256:d3831c37fae8e7c19808c8f77078ea7a38965ea188bf055a13477cd6c503499f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg2YmU3NzI0NzkzNDhjZDQ1ZmJjMzQ0ZTA5MWQxN2YwZTlhYWE2Nzc3N2E1YTU5M2Q0OTBiZjljZDllOTdlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwMjNhY2FlODgwMjYxMjc5NWIwNzQ0ZTYwZDExNjIzNmUyMjdlZmY0NDgwY2ZlM2NlNjhhNGQxY2E5NTI2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRjNjExYTY5MmM1MDAxMTFiOGM1YjZkOWZjZGFhY2EyYWYyYzdlMjA0NTVkZjQ3MzgyZmY5ZjM5MTgyZWE0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L99-L140",
+          "version": "repo-lines-v1:sha256:f82e23bd5302362fb0c62bd5f6669c532f6f1610386810cfc25c424bef4b5c97:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNDJiZDUzZjliYWU4ZmI2NjcxODk3ZWY1MTg5NGNkYzVhNmYxNDRmOWM1YTg1N2YyNGQ4OGU5NTYzNjJlOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NjFkNjE5ZTljZjMzYmUyMzRlY2Q1ZDk5MTk5ZmNlMDZlMDJmZTRhMmZjZjYwZTY5N2I2ZWIyNTRlNTc5NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhYTlhNWY1NGNjOTNjMzBkNWI4MDAxNWY2MGJjMjI1YjliNDUyOGFmMzU4NWZmNWZkZmUzMzcyZTAyODc2NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMWYzYzk1NDUxZjg3NzJiMjM2MWQyYzE5MjQzNWJiMTA2ZDc4ODE0OTEyNDg4MzRiN2QyYzdhOWQ0OWE5NjYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T13:30:11.885Z"
+    "at": "2026-10-18T03:00:26.889Z"
   }
 }

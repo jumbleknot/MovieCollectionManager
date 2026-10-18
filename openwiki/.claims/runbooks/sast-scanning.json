@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:af095bfeafd1876ddfa72fc3e8cdc3ff3b5931f2c993dfeabe4da8632a6a21d2",
+  "pageVersion": "sha256:ba043ef6f0e1646e6d79f6e591e660b919b811ed95e92cec4ac238fcf23ebc22",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -310,11 +310,15 @@
     },
     {
       "id": "claim_b71a714526414f16b4f2df5f0dbcbba0",
-      "statement": "Keyed entries in `pnpm-workspace.yaml`'s `overrides:` map are a range keyed on a range where the key names the vulnerable span excluded and the value the patched floor forced; `scripts/check-override-consistency.mjs` enforces equality between the key's exclusive upper bound and the value's inclusive lower bound on pull requests, scoped to keys carrying an `@<range>` suffix while plain pins are out of scope.",
+      "statement": "Keyed entries in `pnpm-workspace.yaml`'s `overrides:` map are a range keyed on a range where the key names the vulnerable span excluded and the value the patched floor forced; `scripts/check-override-consistency.mjs` enforces equality between the key's exclusive upper bound and the value's inclusive lower bound on pull requests, scoped to keys carrying an `@<range>` suffix while plain pins are out of scope and a compound key such as `js-yaml@>=3.0.0 <3.15.1` is compared on its `<` bound alone.",
       "evidence": [
         {
-          "resource": "repo://pnpm-workspace.yaml#L81-L103",
-          "version": "repo-lines-v1:sha256:72ae1f6322d22deb1dbce2e1c8bd0c868554726d14eb64ec01bbb79bf4711788:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+          "resource": "repo://pnpm-workspace.yaml#L81-L109",
+          "version": "repo-lines-v1:sha256:203c8bafea65ac2142ead84eb73f53fbe42d3c1435573f434a20bd3078c58035:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L60-L63",
+          "version": "repo-lines-v1:sha256:bd2596b8565705e2f1eec76fb285e7d1665d97c73fb99873173fe988fe0c82fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjYTI3MzE0ZDhiOTFmM2IzMzlmNDIwMmU4MWEyYTU3NDdjMjg5Mzg3ZTZmOTZhMDI3OWIzNTViNDYyOTAzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFlNzEzNDIwMGFlNDA5MjQyN2VlZWZmZTFiZjhjMTIwM2JlNTUzOGE3ZWU1MjA3MzVmNjZjMGI2YzdlOTE3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZjZGVlMjc4ZTAxM2IxNjlmNWMxMGU2NmUzNGUxOWI2NjM0Nzg0MDI5ZDlhMDk2M2JjMTY0MTY2MmZiMmI2ZSJ9"
         },
         {
           "resource": "repo://scripts/check-override-consistency.mjs#L110-L147",
@@ -644,12 +648,8 @@
     },
     {
       "id": "claim_78928d7463d540bdad8b9130c1a38375",
-      "statement": "A nested pnpm workspace is audited as `pnpm --dir <ws> audit --json` launched FROM THE REPO ROOT, because corepack resolves the pnpm version from the directory pnpm is launched in: a nested `package.json` declaring no `packageManager`, run from its own parentless directory, resolved pnpm 12.10.1 instead of the root manifest's pinned 11.25.0 (measured 2026-10-10).",
+      "statement": "A nested pnpm workspace is audited as `pnpm --dir <ws> audit --json` launched FROM THE REPO ROOT, because corepack resolves the pnpm version from the directory pnpm is launched in: a nested `package.json` declaring no `packageManager`, run from its own parentless directory, resolved pnpm 12.10.1 instead of the then-pinned 11.25.0 (measured 2026-10-10). The root pin has since moved to `pnpm@12.13.0`, and the nested audit's finding set was measured identical under both pins — 30 findings, the `tools/openwiki-generator:` entries included — on 2026-10-17.",
       "evidence": [
-        {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L27-L40",
-          "version": "repo-lines-v1:sha256:99f900b1a7b7705d54f72ec8e4f8abca2b87bd214dedc05d5fd9cfa3f52ec513:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjgyZjBiZjM2Zjk1NmFmNDJjZWMyYTVhNTNlZmNiMTgxYmI3YWUyNGUzMDAwNTY1NWQyMWJjZTE4MDIxNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMGE5NjRmOTkzNzQ5NTY4YmRmNjIxY2M0ZjcxNTExZjM1ZmIyODQ3NjU3YWM3N2JlNGQ1N2UzZGNjYjllYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYjM4ZWRmNmE2NTU0MzVhMTkyNzU2MzIyYTYzMjdiNjE5ZDc5NDJhZDYxZGVjMWVjOTc4OTQ4YzkyYjViN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YzNlMmUwZTc3Y2M3ZTIwMzBiOTAyMWNiMjBkOTc3NjJmMTVkNjFiZmZhMDcxOThkNzg4NzRlMDY0ODI2YTAifQ"
-        },
         {
           "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L449-L455",
           "version": "repo-lines-v1:sha256:a5739c88d9a59521b1251f5a5baceaa2d5d3a994e9f1eecc7d53be7c661500ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFlOGE2YmM0ZjdjNzAxZDY0OWE0NDAyNjBiNTlhMGVlYjEzMzBlN2M0M2RlNzYwODc0MTViMzNjYmE2N2VjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDc2ZTVkMDg4MDY0YTNhNWE5ZGFkYjhhNDI1OTU2M2QyYjA0ZGE2ZjVlYjgxOTdlZGVkMzNkNDI1OTViY2EzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM2NzUyOGQ3ZDY1YmNhZDdlYzVhODdiMzVkYzljOWU5MDJmZGIwNGU3ZmQ0NTUyNGZiYjdjMGUzYTQzMzNmYyJ9"
@@ -657,6 +657,10 @@
         {
           "resource": "repo://scripts/sast-scan.mjs#L462-L486",
           "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L526-L532",
+          "version": "repo-lines-v1:sha256:79dcc7355f709be994d0674cdb5bceef97aaac7a7b14c6c1a56b4a9580d4e75a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NTdjOTg3NjQ4ZjIyNzRjMWUwYWVjN2E5NTIyNDA1NGI2OWI1MmUxMDUzODg4MjE5NTQ5MjMxZTU2Nzc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhMWY0NWY0ZGEyMzFjNmJhZmY5MDZhZWU4NjBjNDMwNDZiMjM2MGMwZjc4YzkzODFmNDJjOWVkZWRmMTNjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMzMjk5NjgyMTU3YTA2OTg1MzBiODg2NjkyNWQ3OWM3MmUyMzc1YjM0ZGRlMTI3MDg1MTAwNzhlMTUwYTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3Y2RmMmQ3NDc0NzQzYjgzMWI1YzNmMjZkNTAyNWRjODczZTE4ZWE2MzJiNGUyNTFhMjVjNzcxMGMwOTI4YSJ9"
         }
       ]
     },
@@ -703,7 +707,7 @@
       "statement": "The scan is invoked locally either through the Nx target `pnpm nx sast infrastructure-as-code` (which runs `node scripts/sast-scan.mjs --scope full`) or directly, and gated with `node scripts/check-sast-findings.mjs` (exit 0 pass / 1 un-allowlisted blocking finding / 2 bad input); reports are written to the gitignored `security/sast/reports/` as `findings.json` (the gate's input contract), `findings.sarif`, `summary.txt` and one `<scanner>-native.json` per scanner, with `--scope changed --base <ref>` narrowing only Semgrep, `--only <scanner,...>` restricting the scanners, and `--emit-allowlist` writing a proposed baseline to `reports/allowlist.proposed.yaml` for triage.",
       "evidence": [
         {
-          "resource": "repo://.gitignore#L533-L534",
+          "resource": "repo://.gitignore#L534-L535",
           "version": "repo-lines-v1:sha256:016c5cc1dda4ac611457955e9273c775286d340ecd1f171910cf4510df20528a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYzNlMWE3OTE0NWFhNWJkNWExYmNlOGQ0NDAyMGM2NzM0OTVmOGQxZjZhMThlNDFhYmQ2ZmY4NjU1MzBhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcwMWQ1OGM4MTI4NzEwZjY0MTE1MmRlODUyYTk3NTRhOTJmYmE1NjYwMTg5Y2NlNGU4NmM1YWEzMDFhYzcxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBhNjg4ZjVjMmUwYzlhMGJjZTg5Yjg5MWEwZTQ4OWU2MTI1YmYzOWFmY2VjZGNiMzA5MWMxOWMyMTAxOTI4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVhZDk0MzI2OTA2NzlhOTJhM2FjOGE5NjY2MTcwOGQ5YTQ2MDQyYzQxOGJlMDU4ODVmZTk5NDVmN2YxMTcyMiJ9"
         },
         {
@@ -757,10 +761,42 @@
           "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
         }
       ]
+    },
+    {
+      "id": "claim_2991b09e789c459ab133852d7ad1f2ef",
+      "statement": "A keyed override floor whose halves cannot be parsed — a vulnerable-range key with no `<` bound, or a patched-floor value with no `>=` bound — is refused out loud with exit 2 rather than skipped, because silently passing over the entry it cannot read leaves the control unguarded.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L82-L87",
+          "version": "repo-lines-v1:sha256:0003ecddc67d686173065e91df0dfc473f63309a3208864a6186d7ed2d414f0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM3NmJkY2Y3ZmRlYjk4MDk1MGUyMzk4MDUxYTEzZDZiZjRhYTFjY2ZjYWQ0NGJlNDk2NGE3MjZlMWYxNzdlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY1ZTlkMDdhZjI0ODkwMmRkYjQxNDE5MTA5NTFjOGNhNjdlYzI4ZWYzNWRjZGZmNjcwNWVmYzFkMDI3M2RiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFhNDZlYjY2OWZhOWMyYzY0NTRkYzM2MTdjOWQyZDYwNDJkOWRlZDJkMmI4ZjVkYTM1YWU4Zjc4NDc1M2Y0YyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L131-L138",
+          "version": "repo-lines-v1:sha256:2c96d85ccd9145383d74bcea2bc782fa20e7657562e0a1069c9290aa62952a50:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNhNmRmODMxNTNhOWYwNzlkMGJmMTBlNzVkMDk4MTdhMzM2YmU1ZjFjN2IzMWQ1NTk4MWUzNjE1NDQzN2U5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdiODc3OTk5NWMwYjhiMjhiNTgxNTI4Zjc0NGMzYWRmODNhMzAwY2I3ZGQyOTg3MjE3NmNjZTZhNGQ5NTJkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2IwNmRmNjhjYjE3N2QxZGJlYTMyNjc0NDk1MDAyNjA1ZTlkYWMxNDhjNmEzM2IwMmIyNzBlNjQxZjExMDU5ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L186-L193",
+          "version": "repo-lines-v1:sha256:2e735f7587dfcc2a5d83df2c07c3409c22181ef0bfea5810ae8eb8a768a0af82:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFjMmFhMWQ4MjY4ZjQxOWZkMjI5ZTFlODYzMTc3MDk4ZDcwMGViOTY0ZDg1ZmY2YTBhMzg5OWJhNjI5ZWNhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM5YTkxNjEzNTA4ZTQ2OTY4MjhhODVmYzkwY2I1MWU5NjY4N2FjMWMzZDM1MmYzODMxNjJjN2M0YTEwOWQ4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYwOTdhODg1Y2Y2YTc3NDkwMjFhNTQxMDA2MGJlNjJjZDc4ZmJmNTJiODZiN2IxZjQ2N2ZiYzdjMTMwOTgwNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_95d33d9fded74cc69c70c7fd634038d9",
+      "statement": "A keyed override floor is also the remedy when an UPGRADE would downgrade a transitive into advisories rather than when an advisory has already landed: `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'` was added 2026-10-17 (feature 081) because `nx@23.3.0` depends on `undici: 7.29.0` exactly while nx 22 used `axios`, and 7.29.0 carries ten advisories that 7.29.1 fixes (two High) — the lock's only other 7.x, 7.29.1 via `@module-federation/dts-plugin`, leaves with nx 22's plugin tree, so without the floor the nx bump resolves below the patched version.",
+      "evidence": [
+        {
+          "resource": "repo://pnpm-workspace.yaml#L88-L93",
+          "version": "repo-lines-v1:sha256:3334be56e27c9a1c8989ff068699d908514539d178bb7b4739db6a0e936f3a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY5OWZkNDM4YmRiNDAzM2VhMWQ1M2VmM2UwZWY3OGRkM2UxNTFjOTA0MTMwNDBlZmM3YmIzYTdkMTBmYzJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJjMTViY2I3MDBjNTRiY2IxZjcxMTM3YmM0MDYyNzdiZDA2ODhmMDcxY2NiYThiM2JhNzZjNjkwM2YwZTc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L666-L678",
+          "version": "repo-lines-v1:sha256:ff8e44efed90c30ebbef312a7ff8b86e361a6e9318c281be288ed54e3313422b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDhjYjljNWY3NDZiNTI5NDYxODBkYTIzZjM2MjgyNGM1MzBlNTE1ZmIwZjI2MjlkNmJhMDkzYjNkMmM2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODQ0YmVkM2VmZjQwOGIyZjhmZDYwNTgxZDQ3ODM2NTI5MmVkM2FiNjEyNjIzYTRlM2M5MTM0Y2JlMTYxMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YzNhOTI2ODFjMmUwOTY0ZGI1ZDlmYTNhMzU2YjYyNDI3NTMwYTcwYWFmMTUzMjJjNjYxMTU1NzRlNTBkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODIxYjA2YzA3NDZhY2JkNmY1YzJmYzRiNGM5NWNmMmJmZTIxMDAwMDBhN2Q3ZDg0OGVjZGQ2YTIxMTM5NWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T03:12:52.160Z"
+    "at": "2026-10-18T03:00:26.889Z"
   }
 }

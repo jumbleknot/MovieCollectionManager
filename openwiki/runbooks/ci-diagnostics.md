@@ -7,6 +7,8 @@ tags: [ci, forgejo, diagnostics, tooling, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-96c32d20fcdefc48cf9ec296
     resource: repo://backend/mc-service/src/api/collections/create.rs
   - id: openwiki-source-c3e333457ea705ec015d1cbd
@@ -27,20 +29,30 @@ sources:
     resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
   - id: openwiki-source-afea6a4b73f1abee8610bd58
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
+  - id: openwiki-source-583e0d299d9b65d403bcd328
+    resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
+  - id: openwiki-source-02881b4039babfbc8f305d7c
+    resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
+  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
+    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
     resource: repo://scripts/cd-dispatch-gate.mjs
+  - id: openwiki-source-478a776ff0b75f2af5dc3190
+    resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
     resource: repo://scripts/ci-log-step.sh
   - id: openwiki-source-70875ab1853f42b7c7d4b78a
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+  - id: openwiki-source-48dc88a52302b6581d98158e
+    resource: repo://scripts/e2e-failure-set.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+    at: 2026-10-18T03:00:26.889Z
 ---
 
 # CI self-serve diagnostics
@@ -180,8 +192,11 @@ skipped branch then splits three ways on the `needs:` graph.
   not inferred from documentation.
 - **`ci-status.mjs` must stay dependency-free — `trigger-cd` runs it with no `node_modules`.**
   `app-ci / trigger-cd` runs `scripts/cd-dispatch-gate.mjs`, which imports `ci-status.mjs` to reuse
-  its check classification. That job runs node directly with no `pnpm install` step, so every module
-  reachable from the gate may import node builtins and repo-local files, and nothing else. Measured
+  its check classification. That job checks out the repo and runs node directly — no `pnpm install`
+  step, no `setup-node` — so every module reachable from the gate may import node builtins and
+  repo-local files, and nothing else. The graph today also reaches `ci-digest-redact.mjs` →
+  `secret-scan.mjs` and `ci-failure-digest.mjs` → `lib/argv-contract.mjs`, so an import added in any
+  of them is bound by the same rule. Measured
   2026-09-09, on the merge of PR #400: item 396's needs-graph was implemented with
   `import { parse } from 'yaml'` — a devDependency, so every local test passed — and `trigger-cd`
   then died on `main` with `ERR_MODULE_NOT_FOUND`. The reason this matters: `trigger-cd` is
@@ -474,8 +489,7 @@ skipped branch then splits three ways on the `needs:` graph.
   up to a minute and floored at 300 s. `CI_STEP_TIMEOUT_SECONDS` survives as the backstop for
   uncalibrated steps (n < 10 or failure-path-only); a table miss never falls through to unbounded.
   See
-<!-- openwiki: broken internal link [../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-and-the-three-traps] heading anchor "recalibrating-and-the-three-traps" does not exist in "../../docs/runbooks/ci-evidence-pipeline.md". Fix the href or restore the target, then delete this comment. -->
-  [the evidence-pipeline runbook's ceiling section](../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-and-the-three-traps)
+  [the evidence-pipeline runbook's ceiling section](../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-the-table)
   for the full arithmetic and guard details.
 - **Container-executor step logs are read in-job, before teardown — they do not need host
   persistence.** The wrong mental model ("`$HOME/mcm-ci-step-logs/` disappears when the container
@@ -531,14 +545,26 @@ skipped branch then splits three ways on the `needs:` graph.
   **Residual:** T034 proved the run token *can* write statuses but did NOT prove it is populated on
   a secretless run — that requires an AGit-headed push, which is forbidden. If a secretless run
   still publishes nothing, check this first.
-- **A passing run publishes no bundle — the result gate is how CI judges its own counts.** The
-  digest publishes only on failure, so on a green run `failed=` / `skipped=` / `passed=` are
-  unreadable from outside. `app-ci` now runs `node scripts/e2e-failure-set.mjs gate <web-e2e.log>`
-  right after the web E2E: it fails on `skipped > 0`, `did not run > 0`, or a log with no summary
-  at all. A second gate (`scripts/e2e-contention-tally.sh --gate`) fails on `refresh_429 > 0` or
-  `session_evicted > 0`. **Neither gate may carry `continue-on-error`** — adding it back makes the
-  step invisible in the log while the job passes regardless. `flaky` is still NOT observable on a
-  green run; do not claim "no flakes" from a green tick.
+- **A green `app-e2e` publishes a counts-only bundle — a green job of any OTHER kind publishes nothing,
+  and the in-job gates are how CI judges its own counts.** `shouldPublish` is three-way: a cancelled run
+  publishes nothing, `failure` publishes the full digest, and an **explicit `success`** publishes
+  `counts` — a small bundle carrying only the `[e2e-gate]` counts (gate tier and model tier), the
+  `[e2e-contention]` tally, the turn-tally verdict, the opt-in full mobile suite's per-flow table, and
+  the `web-e2e` `[global-setup]`/`[playwright]` lines, with no PR comment. The source list is
+  self-limiting by construction to steps only `app-e2e` produces, so every other green job finds
+  nothing and says `digest-outcome=not-needed`. It needs the
+  purpose-scoped `CI_DIGEST_TOKEN`, because the run-provisioned token can only write a commit status —
+  on that path the counts still reach the job log, narrowed rather than lost. `failed=` / `skipped=` /
+  `passed=` are therefore readable from outside on a green `app-e2e`, but only if you go and read the
+  bundle.
+  Two gates stay in the job rather than depending on someone remembering to look: `app-ci` runs
+  `node scripts/e2e-failure-set.mjs gate <web-e2e.log>` right after the web E2E, failing on
+  `skipped > 0`, `did not run > 0`, or a log with no summary at all, and a second gate
+  (`scripts/e2e-contention-tally.sh --gate`) fails on `refresh_429 > 0` or `session_evicted > 0`.
+  **Neither gate may carry `continue-on-error`** — with it restored the step still runs and still prints
+  its failure, so the log looks identical while the job passes regardless, which is exactly the state the
+  gate was added to end. `flaky` is readable only from the counts bundle, where item 568's
+  identities name each flaky test; from a green tick alone, still do not claim "no flakes".
 - **`maestro debug output — not present` in a bundle does NOT mean the capture did not happen — it
   may mean the packer dropped a directory (item 241).** The packer originally read
   `~/mcm-ci-last-failure` with a flat `readdirSync` filtered to `*.log`, `_ps.txt` and
