@@ -882,7 +882,7 @@
     },
     {
       "description": [
-        "HELD: jest 30 (jest, babel-jest, @types/jest) — feature 081 US5, item #254; backlog item #TBD-JEST.",
+        "HELD: jest 30 (jest, babel-jest, @types/jest) — feature 081 US5, item #254; backlog item #792.",
         "The test runner major is PINNED BY THE EXPO SDK's test preset. MEASURED 2026-10-18 (npm): jest-expo 57.0.6 (the",
         "newest SDK-57 build, what frontend/mcm-app and packages/design-system declare as ~57.0.6) DEPENDS on the jest 29",
         "family (babel-jest, @jest/globals, jest-snapshot, jest-environment-jsdom all ^29.2.1). Installing jest 30 beside it",
@@ -907,7 +907,7 @@
     },
     {
       "description": [
-        "HELD: babel 8 (@babel/core, @babel/runtime) — feature 081 US5, item #254; backlog item #TBD-BABEL.",
+        "HELD: babel 8 (@babel/core, @babel/runtime) — feature 081 US5, item #254; backlog item #793.",
         "The transpiler major is PINNED BY THE EXPO SDK's transpiler preset. MEASURED 2026-10-18 (npm):",
         "babel-preset-expo 57.0.16 (what frontend/mcm-app declares as ~57.0.16) PEERS @babel/runtime ^7.20.0 and its plugin dependencies are",
         "all ^7 (@babel/preset-typescript ^7.23.0, @babel/plugin-transform-typescript ^7.25.2, ...). SDK 58's",
@@ -926,7 +926,7 @@
     },
     {
       "description": [
-        "HELD: typescript 7 — feature 081 US5 (research R5), item #254; backlog item #TBD-TYPESCRIPT.",
+        "HELD: typescript 7 — feature 081 US5 (research R5), item #254; backlog item #794.",
         "The compiler major is PINNED BY THE LINT PARSER, not by Expo. MEASURED 2026-10-18 (npm):",
         "@typescript-eslint/parser 8.71.2 (latest; also the canary 8.71.3-alpha.13), @typescript-eslint/eslint-plugin and typescript-eslint all peer",
         "typescript '>=4.8.4 <6.1.0'. Both projects reach the parser through eslint-config-expo. typescript 7.0.2 is the",
@@ -945,7 +945,7 @@
     {
       "description": [
         "HELD: @react-native-async-storage/async-storage 3 — feature 081 US5 (research R4), item #254; backlog item",
-        "#TBD-ASYNC-STORAGE. A NATIVE module whose version the Expo SDK pins: MEASURED 2026-10-18 (the published tarballs'",
+        "#795. A NATIVE module whose version the Expo SDK pins: MEASURED 2026-10-18 (the published tarballs'",
         "bundledNativeModules.json), expo 57.0.30 AND 58.0.14 both list 2.2.0. A version outside bundledNativeModules",
         "fails `expo install --check` and is a native-binary mismatch on Android.",
         "RE-CHECK RULE: re-read the SDK's bundledNativeModules.json at each new SDK.",

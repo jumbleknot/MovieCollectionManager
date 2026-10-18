@@ -1139,6 +1139,6 @@ dep's versioning, an approval gate has none.
 | async-storage (mcm-app) | flows | flows | flows, js majors | **tick**, `held async-storage major` |
 | control: eslint, express, RNTL, openai | flows | flows | flows, js majors | flows, js majors (unchanged, no tick) |
 
-**Backlog items (T037)** — filed by the coordinator: jest 30 → item #TBD-JEST; babel 8 → item #TBD-BABEL;
-typescript 7 → item #TBD-TYPESCRIPT; async-storage 3 → item #TBD-ASYNC-STORAGE.
+**Backlog items (T037)** — filed by the coordinator: jest 30 → item #792; babel 8 → item #793;
+typescript 7 → item #794; async-storage 3 → item #795.
 
