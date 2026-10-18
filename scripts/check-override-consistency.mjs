@@ -36,6 +36,23 @@
 // A half that cannot be parsed is refused OUT LOUD (exit 2), never skipped. Silently passing over
 // the entry it cannot read is how a gate comes to protect nothing.
 //
+// THE CAP RULE (feature 081 US5a, research R2) — the OTHER half of the value. Renovate's npm manager
+// reads a keyed override's value as a plain version range and "widens" its upper bound to admit the
+// newest major: `undici@<6.27.0: '>=6.27.0 <7'` arrives as `'>=6.27.0 <9'`. The floor is untouched, so
+// the rule above stays green, and no advisory is any closer to closed. What the widening DOES is hand a
+// dependent that resolved into the vulnerable span a different MAJOR than it declared — a silent
+// cross-major substitution of a transitive (fc3c47ae measured js-yaml 5 arriving exactly this way).
+// Six such proposals were pending on the dashboard on 2026-10-18. So, for every keyed floor:
+//
+//     the value's exclusive upper bound (its cap)   must be   <=  (the key's major) + 1
+//
+// where the key's major is the major of the key's own `<` bound (equal to the floor, by the rule
+// above). A cap TIGHTER than the next major is fine. A value with NO cap admits every major already;
+// four such floors pre-date this rule, and capping them would churn the lockfile, so they are out of
+// scope but NAMED on every run rather than passed in silence. A value not written as `>=A` or
+// `>=A <B` (a `<=` cap, a `||` union, a caret) is refused with exit 2: the gate cannot say what such a
+// cap admits, and guessing is how a widening gets through.
+//
 // Usage:
 //   node scripts/check-override-consistency.mjs             # scan; exit 0 clean / 1 mismatch
 //   node scripts/check-override-consistency.mjs --selftest  # prove detection; exit 0/1
@@ -74,6 +91,17 @@ export function exclusiveUpperBound(range) {
 export function inclusiveLowerBound(range) {
   const m = String(range).match(/>=\s*(\d+(?:\.\d+)*)/);
   return m ? m[1] : null;
+}
+
+/**
+ * The ONLY value shapes the cap rule can read: `>=A` (uncapped) or `>=A <B`. Anything else — `<=`,
+ * `||`, `^`, `~`, a hyphen range — admits versions this gate cannot bound, so it is refused.
+ */
+const VALUE_FORM = /^\s*>=\s*\d+(?:\.\d+)*\s*(?:<\s*\d+(?:\.\d+)*\s*)?$/;
+
+/** The major of a dotted version string. */
+export function majorOf(version) {
+  return Number(String(version).split('.')[0]);
 }
 
 /** `3.1.4` → [3,1,4]; shorter forms pad with zeros so `4` and `4.0.0` compare equal. */
@@ -115,6 +143,8 @@ function sameVersion(x, y) {
 export function findOverrideMismatches(overrides) {
   const mismatches = [];
   const unparseable = [];
+  const capViolations = [];
+  const uncapped = [];
   let checked = 0;
   let skipped = 0;
 
@@ -137,13 +167,29 @@ export function findOverrideMismatches(overrides) {
       continue;
     }
 
+    if (!VALUE_FORM.test(String(value))) {
+      unparseable.push({ key, value, problem: `the value '${value}' is not of the form '>=A' or '>=A <B', so the cap rule cannot say which majors it admits` });
+      continue;
+    }
+
     checked += 1;
     if (!sameVersion(keyUpper, valueLower)) {
       mismatches.push({ name: parsed.name, key, value, keyUpper, valueLower });
     }
+
+    const cap = exclusiveUpperBound(value);
+    if (cap === null) {
+      uncapped.push({ name: parsed.name, key, value });
+      continue;
+    }
+    const keyMajor = majorOf(keyUpper);
+    const maxCap = `${keyMajor + 1}`;
+    if (compareVersions(cap, maxCap) > 0) {
+      capViolations.push({ name: parsed.name, key, value, cap, keyMajor, maxCap });
+    }
   }
 
-  return { mismatches, unparseable, checked, skipped };
+  return { mismatches, unparseable, capViolations, uncapped, checked, skipped };
 }
 
 /** Read and parse the `overrides` map from a repository root. Throws with a readable message. */
@@ -174,6 +220,18 @@ function reportMismatch(m) {
   );
 }
 
+function reportCap(c) {
+  return (
+    `✗ override cap widened past its major: ${c.name}\n` +
+    `    key   ${c.key}    is a major-${c.keyMajor} floor\n` +
+    `    value ${c.value}    caps at <${c.cap}, which admits majors above ${c.keyMajor}\n` +
+    `  The cap may be at most <${c.maxCap}. A wider cap fixes no advisory (the floor is unchanged) and silently hands ` +
+    'every dependent in the vulnerable span a major it never declared. If Renovate proposed this, reject it: ' +
+    'its npm manager reads the value as a direct range (research R2, feature 081). A genuine floor raise moves ' +
+    'both halves and keeps the cap.'
+  );
+}
+
 function runScan(root) {
   let overrides;
   try {
@@ -183,7 +241,7 @@ function runScan(root) {
     process.exit(2);
   }
 
-  const { mismatches, unparseable, checked, skipped } = findOverrideMismatches(overrides);
+  const { mismatches, unparseable, capViolations, uncapped, checked, skipped } = findOverrideMismatches(overrides);
 
   if (unparseable.length) {
     console.error(`✗ override-consistency gate could not run: ${unparseable.length} keyed floor(s) could not be read:`);
@@ -192,13 +250,25 @@ function runScan(root) {
     process.exit(2);
   }
 
-  if (mismatches.length) {
-    console.error(`✗ override-consistency gate FAILED: ${mismatches.length} of ${checked} keyed floor(s) disagree:`);
-    for (const m of mismatches) console.error(reportMismatch(m));
+  if (mismatches.length || capViolations.length) {
+    if (mismatches.length) {
+      console.error(`✗ override-consistency gate FAILED: ${mismatches.length} of ${checked} keyed floor(s) disagree:`);
+      for (const m of mismatches) console.error(reportMismatch(m));
+    }
+    if (capViolations.length) {
+      console.error(`✗ override-consistency gate FAILED: ${capViolations.length} of ${checked} keyed floor(s) cap past their major:`);
+      for (const c of capViolations) console.error(reportCap(c));
+    }
     process.exit(1);
   }
 
-  console.log(`✓ override-consistency gate passed (${checked} keyed floor(s) agree; ${skipped} plain pin(s) carry no key half and are out of scope)`);
+  const uncappedNote = uncapped.length
+    ? `; ${uncapped.length} uncapped floor(s) admit every major and are outside the cap rule: ${uncapped.map((u) => u.key).join(', ')}`
+    : '';
+  console.log(
+    `✓ override-consistency gate passed (${checked} keyed floor(s) agree and none caps past its major; ` +
+      `${skipped} plain pin(s) carry no key half and are out of scope${uncappedNote})`,
+  );
 }
 
 function selftest() {
@@ -254,7 +324,7 @@ function selftest() {
     console.error('✗ check-override-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ check-override-consistency --selftest passed (half-bump detection in both directions, plain-pin scoping, scoped names, unparseable halves)');
+  console.log('✓ check-override-consistency --selftest passed (half-bump detection in both directions, plain-pin scoping, scoped names, unparseable halves, the major cap)');
 }
 
 function main() {
