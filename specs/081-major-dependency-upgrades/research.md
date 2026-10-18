@@ -213,6 +213,53 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
 - Requires node `^20.19 || ^22.13 || >=24` and a `jiti` peer for TS config files (only if the config is
   written in TS — it need not be).
 
+**Measured at US5b (PR 5b), 2026-10-18.** REPO = `origin/main` `62556d3b`; NPM = the packuments of `eslint`,
+`eslint-config-expo`, its plugins, and `@eslint/compat`.
+
+- **Version: `^10.12.0`, not 10.13.0.** 10.13.0 (2026-10-16) is inside Renovate's 3-day cooldown. 10.12.0
+  (2026-10-02) was already in the lock as `@nx/eslint`'s auto-installed peer, so pnpm reused it and resolved nothing
+  new for eslint itself.
+- **eslint-config-expo's plugins are NOT eslint-10 ready.** This is the R6 gap.
+  - eslint-config-expo 57.0.2 (the newest 57.x) and 58.0.4 (`latest`) both peer `eslint >=8.10`.
+  - But they depend on `eslint-plugin-react@^7.37.3`, whose newest is 7.37.5 (2025-04-03), peering
+    `eslint … ^9.7`.
+  - They also depend on `eslint-plugin-import@^2.30.0`, whose newest is 2.32.0, peering `… ^8 || ^9`.
+  - Upgrade RED (T038) was `ESLint couldn't find an eslint.config.* file` on both projects.
+  - With a plain flat config, every file then failed to load:
+    `react/display-name: contextOrFilename.getFilename is not a function`. ESLint 10 removed `context.getFilename()`.
+  - **Bridge: `@eslint/compat@2.1.1`** (`fixupConfigRules`; peer `eslint ^8.40 || 9 || 10`). It restores
+    `getFilename`/`getCwd`/`getSourceCode`/`parserOptions` on the rule context and changes no rule. `pnpm peers
+    check` still reports the two plugins' eslint peer, as expected.
+  - **Re-check:** drop `@eslint/compat` when both plugins, as eslint-config-expo ships them, declare eslint 10.
+  - **Alternative not taken:** eslint 9.39.5 (`maintenance`) has every peer clean and needs no shim. It was not
+    taken because 9.x is the maintenance line and US5's target is the current major.
+- **The flat preset is not the legacy preset re-expressed.** `--print-config` on the same file, `main` vs flat:
+  - **15 rules are stronger**: `react/*` takes `flat.recommended` (display-name, jsx-uses-react/vars,
+    no-danger-with-children, no-deprecated, no-direct-mutation-state, no-string-refs and require-render-return go
+    warn → error). jsx-key, jsx-no-comment-textnodes, no-children-prop, no-find-dom-node, no-is-mounted and
+    no-render-return-value are new errors, and `import/no-named-as-default` becomes a new warning.
+  - **0 rules are weaker.** 9 core rules differ only in ESLint 10 spelling out its default options.
+  - **Turned off for parity with main (each off or absent on `main`), because they report on today's code:**
+    - `reportUnusedDisableDirectives` (ESLint 9+ default `warn`): 9 findings;
+    - `react/no-unescaped-entities`: 4 errors;
+    - `import/no-duplicates`: 10 warnings;
+    - `import/no-named-as-default-member`: 14 warnings, all `axios.create` / `axios.isAxiosError`.
+    - Enabling them is a separate change: 33 findings in mcm-app, 0 in design-system.
+- **Scope kept identical.** Flat config cannot narrow extensions from the CLI, so `*.{js,jsx,mjs,cjs}` are globally
+  ignored. That matches `--ext .ts,.tsx`: the linted file sets are byte-identical to `main` (mcm-app 356, design-system
+  59). `tests/` stays unlinted, so the pre-existing rules-of-hooks error in `tests/app/(app)/_layout.test.tsx` is
+  still out of scope.
+- **Result (T039 GREEN):**
+  - mcm-app 0 errors / 43 warnings. `main` also has 0/43, the **same 43 at the same file:line:rule** (5
+    `no-require-imports`, 5 `no-unused-vars`, 33 `import/first`).
+  - design-system 0/0 (`main` 0/0).
+  - typecheck 0 errors; jest 131/131 and 1578/1578.
+- **T040 mutation:** `var` in `src/utils/errors.ts` and an un-keyed, undefined `<Text>` in a design-system
+  component made lint FAIL on both projects (`no-var`; `react/jsx-key` + `react/jsx-no-undef`). Then reverted.
+- **Lock:** eslint family only. eslint 8.57.1 and its private tree leave (24 packages). `@eslint/compat` 2.1.1
+  arrives. 14 snapshots re-key from the `eslint@8.57.1` peer to `eslint@10.12.0`. Every override resolves as before,
+  and the pnpm-audit findings are identical (12 on both).
+
 ## R7. Stage 6 is copilotkit + AG-UI first, then openai / ai-sdk — and the latter are not on the model path
 
 - `@copilotkit/runtime` and `@copilotkit/react-native` pin `@ag-ui/client` **exactly**: 1.70.1 → `0.0.59`
