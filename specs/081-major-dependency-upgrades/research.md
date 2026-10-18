@@ -37,6 +37,7 @@ dashboard now carries majors the item never listed.
 | 8 | cargo | bson 3, base64 0.23, reqwest 0.13 | **Pending**: `bson` 2→3 (DASH `renovate/major-cargo-deps`), `base64` 0.22→0.23 + `reqwest` 0.12→0.13 (DASH Pending Approval, `cargo 0.x breaking`). | Two of the three are **blocked upstream today** — see R9. |
 | — | **copilotkit 1.77** (not in item) | — | Pending Approval (1.70.1 → 1.77.0; 1.78.0 now latest). | Placed in stage 6 — R7. |
 | — | **Override ranges** (not in item) | — | Five js-majors entries: `undici@<6.27.0`, `nanoid@>=3.0.0 <3.3.18`, `js-yaml@>=3.0.0 <3.15.1`, `js-yaml@>=4.0.0 <4.3.1`, `fast-uri@<3.1.5`. | Not dependency upgrades at all — R2. |
+| — | **Tamagui 3** (not in item; added 2026-10-18) | — | Not pending on 2026-10-10: Tamagui 3.0.0 was published that day at 03:03Z, after this table was measured. First seen on the dashboard as drift by US3 PR 3b on 2026-10-17: `tamagui` and `@tamagui/{config,core,shorthands,stacks}` ^2.3.0 → ^3.0.0, in js-majors. | **Planned as US10** (operator decision 2026-10-17, item #254), placed after US4. See R12. |
 
 Minor/patch items on the dashboard (playwright 1.64, node 24.21, uv 0.13, rust 1.99, trivy, semgrep,
 maestro, ollama, `@types/react` ~19.3, langfuse 4.53, nx 22.7.12) are **out of scope**: they are routine
@@ -307,6 +308,189 @@ via `nx migrate`, so a red names either the plugins or nx — never both.
 
 ---
 
+## R12. Tamagui 2 → 3 (US10) — measured 2026-10-18
+
+**Instruments** (all read 2026-10-18 around 06:10Z):
+
+- **REPO**: `origin/main` = `64e7715d` (US4, #778, merged).
+- **NPM**: the packuments (`time`, `dist-tags`, per-version `dependencies`/`peerDependencies`/`deprecated`) of
+  `tamagui` and of `@tamagui/` `core`, `config`, `stacks`, `shorthands`, `babel-plugin`, `static`,
+  `static-sync`, `static-worker`, `metro-plugin`, `cli`, `compiler-core`, `font-inter`, `config-v5`,
+  `animations-react-native` and `codemod-flat-values`.
+- **TARBALL**: `@tamagui/core` and `@tamagui/web` at 2.7.7 and at 3.0.18, `@tamagui/shorthands` at 2.7.7 and
+  at 3.0.18, plus `@tamagui/react-native-types` 3.0.18 and `@tamagui/style-grammar` 3.0.18, read and diffed.
+- **UPSTREAM**: every GitHub release body from v3.0.0 to v3.0.18
+  (`https://api.github.com/repos/tamagui/tamagui/releases`; v3.0.0 is
+  <https://github.com/tamagui/tamagui/releases/tag/v3.0.0>). Also the v3 upgrade guide, read from its source at
+  the v3.0.18 tag:
+  <https://raw.githubusercontent.com/tamagui/tamagui/v3.0.18/code/tamagui.dev/data/docs/guides/how-to-upgrade.mdx>.
+  That source is the page published at <https://tamagui.dev/docs/guides/how-to-upgrade>, but `tamagui.dev`
+  does not resolve from the dev container (DNS), so the source was read instead. "Guide §N" below means its
+  numbered sections.
+
+### What is installed (REPO)
+
+| Manifest | Specifier → resolved |
+|---|---|
+| `frontend/mcm-app` dependencies | `tamagui`, `@tamagui/config`, `@tamagui/core`, `@tamagui/stacks`: `^2.3.0` → **2.7.7** |
+| `frontend/mcm-app` devDependencies | `@tamagui/babel-plugin` `^2.3.0` → **2.7.7** |
+| `packages/design-system` dependencies | `tamagui`, `@tamagui/config`, `@tamagui/core`, `@tamagui/shorthands`, `@tamagui/stacks`: `^2.3.0` → **2.7.7**; peer `tamagui: ">=2.0.0"` |
+| `packages/design-system` devDependencies | `@tamagui/font-inter` **`>=2.0.0`** → **3.0.13** |
+
+The lock holds **121** `tamagui`/`@tamagui/*` packages at 2.7.7 and **21 at 3.0.13**. The v3 packages came in
+through `@tamagui/font-inter`, whose open range `>=2.0.0` resolved the v3 line in the lock regeneration of
+`d79a994e` (2026-10-16), with no Renovate PR involved. It drags `@tamagui/core@3.0.13` and 20 v3 internals in
+beside `@tamagui/core@2.7.7`. Nothing imports it; the only mention is a comment in
+`packages/design-system/fonts/index.ts`. It is harmless today, but it is the duplicate `@tamagui/core` that
+guide §1 says to remove, and it shows that an open range can take a major in without anyone reviewing it.
+
+**What the code actually uses (REPO grep, non-test sources).** The import surface is small:
+
+- `@tamagui/core`: `useTheme` (81 files), `Text`, `View`, `ViewProps`, `TamaguiProvider`, `styled`,
+  `createTamagui`, `createTokens`, `createFont`.
+- `@tamagui/stacks`: `XStack`, `YStack`.
+- `@tamagui/shorthands`: `shorthands`.
+
+Nothing imports from `tamagui` itself. `frontend/mcm-app/README.md` forbids it, and the root package appears
+only as a compiler component name in `babel.config.js`. Nothing imports from `@tamagui/config` either. The
+config is fully custom (`createTamagui` from `@tamagui/core`), so no v4/v5/v6 preset is in use. It configures
+**no animation driver**. Zero hits for any of these: Sheet, Adapt, Dialog/Popover/Select from Tamagui, Toast,
+`themeInverse`, `<Theme inverse>`, `$true`, token stepping, `useProps`/`useStyle`/`usePropsAndStyle`,
+`styleable`, `createStyledContext`, `ThemeableStack`/`SizableStack`, `createMedia`,
+`onDidAnimate`/`onAnimationComplete`, `animateOnly`, `backgroundActive`, sigil-detection code
+(`[0] !== '$'`), `$sm={…}`-style media props, and `useMedia`.
+
+### Target version (NPM)
+
+| Version | Published (the five Renovate-grouped packages) | Past the 3-day cooldown at |
+|---|---|---|
+| 2.7.7 (installed) | 2026-08-15T00:25–00:27Z | — |
+| 3.0.0 | 2026-10-10T03:03–03:04Z | 2026-10-13 |
+| 3.0.13 | 2026-10-14T21:33–21:55Z | **2026-10-17T21:55Z**: the newest fully past the cooldown when measured |
+| 3.0.14 | 2026-10-15T12:23–12:28Z | 2026-10-18T12:28Z |
+| **3.0.18** (`latest`) | 2026-10-16T10:08–10:15Z (`@tamagui/metro-plugin` 10:11Z) | **2026-10-19T10:15Z** |
+
+There were 19 stable patches in six days (3.0.0 → 3.0.18). The `beta` and `canary` tags are 3.0.0
+pre-releases and out of scope. **The target is the newest 3.0.x whose every package in the set is past
+3 days when the stage starts (M10).** That is expected to be **3.0.18** or later: the stage cannot start
+before 2026-10-19 anyway (plan US10). **`@tamagui/babel-plugin` has no 3.x**: `latest` is 2.7.7, and the same
+is true of `@tamagui/static-sync` and `@tamagui/static-worker`. Guide §1 lists all three as removed packages.
+
+### Compatibility with what US4 installed (Expo ~57.0.30, RN 0.86.3, React 19.2.3, RNW 0.21.4, TS 6.0.3)
+
+- **Peers (3.0.18)**:
+  - `tamagui`: `react >=19`, plus `react-native-safe-area-context *` (optional).
+  - `@tamagui/core`, `@tamagui/stacks` and `@tamagui/static`: `react >=19`.
+  - `@tamagui/web`: `react >=19` and `react-dom *`.
+  - `@tamagui/config` and `@tamagui/shorthands`: none.
+  - **No `react-native`, `react-native-web` or `expo` peer**, so nothing pnpm can flag.
+- **Stated baseline** (guide intro): React 19, React Native 0.81+, TypeScript 5+.
+- **Upstream ran the US4 pair itself.** v3.0.0 merged "chore(deps): upgrade Expo 57 and React Native 0.86"
+  (tamagui#4173). Later patches added RN 0.87 startup (3.0.2, #4266) and Metro 0.87 (3.0.14, #4326): both
+  lines are supported.
+- **`@tamagui/metro-plugin` 3.0.18** peers `metro` and `metro-resolver` `>=0.84.4 <0.88.0`. The lock has
+  `metro` **0.84.5 / 0.84.6**, so it is in range. SDK 58's Metro 0.87 is in range too.
+- **`@tamagui/static` 3.0.18** depends on `react-native-web ~0.21.0`. The lock has 0.21.4, so it is satisfied.
+- **Verdict: compatible. No hold is proposed.** Only the stage's RED/GREEN runs can show it works.
+
+**A typing risk that only the typecheck can settle: the RN 0.87 types arrive with Tamagui 3, not with
+RN.** `@tamagui/web` 2.7.7 imports `PressableProps`, `ViewProps`, `TextProps` and related types from
+`'react-native'`, so they are whatever the app installs. `@tamagui/web` 3.0.18 imports them from
+`@tamagui/react-native-types` 3.0.18 instead. That file's header reads *"GENERATED … from react-native
+0.87.1"*, and `onPress?: PressableProps['onPress']` keeps its shape. PR #217's 15 errors in 14 files were
+this exact pairing: an app `GestureResponderEvent` checked against Tamagui's `PressableProps['onPress']`
+under the RN 0.87 narrowing. R4 §2 placed that narrowing at SDK 58 (RN 0.88). Under Tamagui 3 it may arrive
+**now, on RN 0.86**. The exposure is 168 `onPress=` sites in 69 files. Two design-system components declare
+`onPress?: (e: GestureResponderEvent) => void` against `'react-native'`: `primitives/Button.tsx:45` and
+`primitives/PillButton.tsx:24`. This was not measured (it needs an install); the typecheck RED (T077)
+records the count.
+
+### Breaking changes (UPSTREAM) that touch this repo (REPO)
+
+| # | v3 change (source) | Exposure here | What the stage must do |
+|---|---|---|---|
+| B1 | **The Babel compiler plugin is removed**; Metro compiles through `@tamagui/metro-plugin` / `@tamagui/cli/metro` (guide §1 "Remove tooling packages", "Replace the React Native animation driver on web") | `frontend/mcm-app/babel.config.js` runs `@tamagui/babel-plugin` (feature 015, `c236106f`) on everything except `NODE_ENV=test`. It is **load-bearing**: per its own comment, it lets Metro tree-shake the `@mcm/design-system` barrel, and without that the un-tree-shaken graph OOM-crashed Metro's dev bundler. | Replace it with `withTamagui()` from the standalone **`@tamagui/metro-plugin`**, composed with the existing `metro.config.js` overrides (segment shim, dotenv blocklist). Do **not** use `@tamagui/cli`: 3.0.18 depends directly on `typescript 7.0.2`, `express ^4` and `micromatch ^4`. The Metro plugin also touches the **Android** bundle, which the Babel plugin did too, so this needs the full mobile suite. Upstream warns that the plugin does not invalidate Metro's transform cache when the Tamagui config changes, so clear it (`expo export --clear`, `rm -rf node_modules/.cache/tamagui`) and re-check the nx cache inputs of `export-server` (T079). If the plugin cannot be made to work, the fallback is runtime-only, provided the bundle budget and a dev `expo start` both hold (see "Bundle budget" below). |
+| B2 | **`$`-sigil token values have no runtime compatibility path** (guide "Required: migrate tokens…") | **113 sites in 36 files** (design-system 56 in 21, app 57 in 15). Almost all are `fontFamily="$body"` / `"$heading"`. Also `outlineColor: '$primary'` ×6, `borderRadius: '$9'` ×2, and the `defaultProps` `color: '$onBackground'`. Colours are mostly `theme.<role>?.val` raw values, so they are unaffected. | Run `@tamagui/codemod-flat-values --source-semantics v2-pixels` (report mode, then `--write`). Hand-fix every flagged row, then grep `="\$` and `'\$` to zero. A missed site still typechecks but resolves to nothing. |
+| B3 | **Pseudo-state objects are replaced by flat clauses** (`hover:`, `press:`, `focus-visible:`); v3 *forwards* an unconverted `hoverStyle` instead of applying it (guide "What a clean typecheck will not catch") | Design system: `hoverStyle` 19 in 11 files, `pressStyle` 22 in 12, `focusVisibleStyle` 12 in 6. App: `hoverStyle` 3 in 3, `pressStyle` 3 in 3. Several are conditional (`pressStyle={interactive ? {…} : undefined}`, `surfaces/Card.tsx:81–92`), which is the shape the codemod reports rather than converts. | Convert, then grep the guide's quick-reference patterns to zero. **The focus-ring guard** `packages/design-system/components/focus-ring.test.ts` asserts the v2 spelling (`focusVisibleStyle`, never `focusStyle`). It is **updated at its cause** to the v3 spelling: the `focus-visible` state modifier (`@tamagui/style-grammar` 3.0.18 `CoreStateModifierName`), and no bare `focus:`. It is never deleted. |
+| B4 | **`createTamagui({ defaultProps })` is removed** (guide §17; the 3.0.18 `ConfProps` type has no `defaultProps`) | `packages/design-system/tamagui.config.ts:154–160` defaults every Tamagui `Text` to `fontFamily: '$body'` and `color: '$onBackground'`. | Move the defaults into the design system: a styled `Text`, or `variables` read by the styles. If they were dropped silently, every bare `Text` would change font and colour with no type error. Assert it in a unit test (T074). |
+| B5 | **A numeric `lineHeight` on a Tamagui component becomes a ratio** (guide §7) | Up to **31** numeric `lineHeight` sites (design system 18 in 9 files, app 13 in 12). Some are React Native `StyleSheet`s, which are unaffected. Font-token `lineHeight` scales in `createFont` stay absolute. | The codemod's `v2-pixels` mode rewrites proven sites to `"Npx"`. Review the rest by hand. |
+| B6 | **An explicit `undefined` prop no longer clears a default variant** (guide §5) | `styled()` is used only in `primitives/Button.tsx` (`ButtonBase`, `StateLayer`). | Covered by the Button unit tests. Check that none passes `undefined` to mean "no variant". |
+| B7 | **The provider order flips when `@tamagui/native/setup-safe-area` is used** (guide, "Provider order") | `src/app/_layout.tsx:75–76` puts `TamaguiProvider` outside `SafeAreaProvider`, and nothing imports `setup-safe-area`. | Not triggered. Recorded because the failure is `NO_INSETS_ERROR` at startup, and its message names `SafeAreaProvider`, which points away from the upgrade. |
+| B8 | **Native defaults to `optimizeFor: 'first-render'`**, so a theme change re-renders more of the tree | The dark/light toggle is exercised by the mobile and web suites. | Nothing to change. A theme-toggle regression would show in those suites. |
+| — | Unchanged, by diff or type read | The `@tamagui/shorthands` root export is identical apart from quote style (v3 adds a `v6` entry). `allowedStyleValues` and `mediaQueryDefaultActive` are still `TamaguiSettings` keys. `useTheme()` values still carry `.val`. Package `exports` have the same shape (`require` → `dist/cjs`), so Jest's `transformIgnorePatterns` entries for `tamagui\|@tamagui` still apply. | — |
+
+**Config v6 is out of scope.** The guide recommends staying on the current values and moving to v6 as a
+separate design migration. Here there is no preset to move: tokens and themes are the repo's own, and they
+stay byte-identical.
+
+### What must move together
+
+- **Renovate's group**: `tamagui` and `@tamagui/{config,core,shorthands,stacks}`.
+- **Outside that group, but it must move in the same change:**
+  - `@tamagui/babel-plugin` → removed. `@tamagui/metro-plugin` 3.x is added, pinned to the same version.
+  - `@tamagui/font-inter` → removed (unused), or pinned to the same version.
+  - the design-system peer `tamagui: ">=2.0.0"` → `>=3.0.0 <4`.
+- **Unused direct dependencies**: `tamagui` (root) and `@tamagui/config` are declared in both manifests and
+  imported nowhere. Each is either removed (the remaining imports resolve, and `pnpm why` shows the lock
+  shrank) or moved, and the decision is recorded (T073). This follows US7b's pattern for `@ai-sdk/openai`.
+- **Exact pins, one version.** Guide §1 says to bump every Tamagui package together and leave no duplicate
+  `@tamagui/core`, `@tamagui/web` or `tamagui` in the lock. `@tamagui/static` depends on
+  `check-dependency-version-consistency`. Tamagui publishes several patches a day, so a later partial lock
+  refresh under `^3.0.x` could split the set. US10 therefore pins **exact** versions and adds a Renovate
+  `tamagui` group covering `tamagui` and `/^@tamagui\//` on every update type. A guard (T072) enforces both.
+
+### Supply chain (SAST)
+
+- **The braces entry is not discharged.** `@tamagui/metro-plugin` 3.0.18 → `@tamagui/static` 3.0.18 →
+  `fast-glob ^3.2.11` → `micromatch ^4.0.8` → `braces ^3.0.3`. The `^braces@3\.0\.3$` entry (item #648)
+  already names "fast-glob@3.3.3 (via @tamagui/static…)" in its justification, and that stays true. Nothing
+  is re-dated. `@tamagui/cli` would add a direct `micromatch` dependent, which is another reason not to
+  install it.
+- **The node-forge entry is unaffected.** Tamagui does not reach node-forge.
+- **New build-time pins**: `esbuild 0.28.1` (exact, through `@tamagui/static`; v2 had 0.27.7) and
+  `@tamagui/compiler-core` → `yuku-analyzer 0.6.1`, `magic-string 0.30.21`. All are build tooling. The audit
+  decides; no allowlist entry is pre-written.
+
+### Bundle budget
+
+`scripts/check-web-bundle-budget.mjs` holds the web entry chunk to **2,000,000 B**. It was 1,762,630 B after
+feature 077, and the constitution's v2.5.0 exception counts `@tamagui/web` among its irreducible ~1,000 KB.
+On disk, v3 is larger:
+
+| Directory | 2.7.7 | 3.0.18 | Change |
+|---|---|---|---|
+| `@tamagui/web` `dist/esm` | 1,662,331 B | 2,618,786 B | +58% |
+| `@tamagui/core` `dist` | 1,125,578 B | 1,632,527 B | +45% |
+
+Those figures include source maps and are not a bundle measurement. They are still a real risk to a ~237 KB
+headroom. **Raising the budget is not this stage's call**: it bounds a constitutional exception. If T081
+fails the budget, the story stops and asks the operator. The other levers are removing the unused root
+`tamagui` package and checking the compiler's flattening (B1).
+
+### `movie-sort` (item #781)
+
+`src/components/movie-sort-control.tsx` lays out a React Native `ScrollView` + `StyleSheet` row of design-system
+`Chip` and `IconButton` components. Their sizes come from the repo's own tokens, not from Tamagui's v3 control
+ladder (guide §5 applies only to Tamagui's own `Button`/`Input`/… which are not used). Its geometry should
+not move. Its status in the full mobile suite is **recorded either way**. A `PASS-REMOVE-NONBLOCKING` there
+would be a layout change to explain, not a fix to claim: item #781 owns the fix.
+
+### Hold?
+
+**No hold is proposed.** Tamagui 3 admits React 19.2, and its peers do not constrain RN, RNW or Expo.
+Upstream ran Expo 57 / RN 0.86 in v3.0.0, and the Metro plugin admits Metro 0.84. If M10 or the RED
+measurements find a blocker the stage cannot fix (for example the Metro plugin breaking the Android bundle
+with no runtime-only fallback inside the budget), the stage stops and records a hold:
+
+- the Tamagui majors go behind dashboard approval, with the measured error in the rule description;
+- the backlog item cites "item #254";
+- the re-check rule is: *"re-measure at each new Tamagui 3.x minor and at the next Expo SDK"*.
+
+The open `@tamagui/font-inter >=2.0.0` range is bounded to `<3` in that case, so the lock stops carrying a
+second major.
+
+---
+
 ## 11. Stage-start measurements (cannot be settled today; each has its command)
 
 | ID | Stage | Question | How it is settled |
@@ -321,6 +505,7 @@ via `nx migrate`, so a red names either the plugins or nx — never both.
 | M7 | US7 | Is the app's direct `@ai-sdk/openai` still needed after copilotkit ≥1.77? Does openai 7's undici peer interact with the override? | Remove it in the worktree, build the prod BFF image, load the agent route; `pnpm why undici`. |
 | M8 | US8 | MongoDB 9 upgrade path from 8.0 (FCV steps), Rust driver 3.9.1 + Node driver 7.7 server-9 support, 9.0 digest scan. | MongoDB compatibility tables + the infra-image scan in CI (ADR-0002 §3: CI is the authoritative scanner). |
 | M9 | US9 | Do bson/mongodb still require base64 0.22? Does axum-keycloak-auth still require reqwest 0.12? | `curl` the crates.io dependency endpoints as in R9. |
+| M10 | US10 | Which is the newest Tamagui 3.0.x with **every** package in the set past the 3-day cooldown? Do its peers, and `@tamagui/metro-plugin`'s `metro` range, still admit the US4 stack? Does `@tamagui/static` still reach `braces` through `fast-glob`? Is the dashboard still proposing only the five grouped packages? | The R12 recipe: the packuments' `time`, `dist-tags` and per-version `peerDependencies`/`dependencies`, plus every GitHub release body after R12's 3.0.18, read for anything breaking. |
 
 ---
 
@@ -596,7 +781,7 @@ vs 23.3.0, diffed.
 | DASH `renovate/major-nx-monorepo` | 23.3.0 | **Awaiting Schedule**, `nx`/`@nx/expo`/`@nx/playwright` 22.7.10 → **23.3.0**; `renovate/nx-monorepo` (minor) 22.7.12 still Awaiting Schedule | this PR lands the major by hand; the 22.7.12 minor is superseded |
 | Newest nx 23 (NPM) | 23.3.0 | `latest` = **23.3.0** (2026-10-07T15:17Z, 10 days old); `next` = 24.0.0-beta.2 | target **23.3.0** — past the 3-day cooldown; every `@nx/*` 23.3.0 was published the same day (15:13–15:17Z) |
 | DASH, the two plugins | still in js-majors | **still listed** (`@monodon/rust ^2.3.0 → ^3.0.0`, `@nxlv/python ^21.0.3 → ^23.0.0`) although PR 3a merged at 12:33Z | DASH lag (body 12:42Z, extraction older); REPO is the truth |
-| **NEW drift, not in R1** | — | js-majors group now also carries **`tamagui`, `@tamagui/config`, `@tamagui/core`, `@tamagui/shorthands`, `@tamagui/stacks` ^2.3.0 → ^3.0.0** | not US3's; recorded for the story that owns the design system / US5 re-scope |
+| **NEW drift, not in R1** | — | js-majors group now also carries **`tamagui`, `@tamagui/config`, `@tamagui/core`, `@tamagui/shorthands`, `@tamagui/stacks` ^2.3.0 → ^3.0.0** | not US3's. **Resolved 2026-10-18:** planned as **US10** (operator decision 2026-10-17 on item #254), after US4. See R12 |
 | `@nx/devkit` copies | 22.7.10 only (after PR 3a) | **22.7.10** (only via `@monodon/rust@3.0.0`, a *dependency* `^22.0.0`) + **23.3.0** (every `@nx/*` 23.3.0, and `@nxlv/python`, whose *peer* `>=22.0.0` now binds 23.3.0) | M3 below |
 
 **M3 — `@monodon/rust` 3.0.0 (devkit ^22) under nx 23: it loads.** pnpm keeps a devkit-22.7.10 copy for it,
@@ -742,7 +927,8 @@ transitive tree: every Expo module is a `~57.0.x` range and resolves its newest 
 - `react-native-svg` 15.15.5 → **15.15.4** (the SDK's bundled pin; 15.15.5 stays in the lock for design-system's
   `>=15.0.0`). `react-native-screens` ~4.25.2 → ~4.26.2, which also retires the orphan `react-native-screens@4.30.0`
   snapshot US3 recorded.
-- Tamagui: **untouched** (still `^2.3.0`); `--fix` does not manage it. Tamagui 2 → 3 is its own later stage.
+- Tamagui: **untouched** (still `^2.3.0`); `--fix` does not manage it. Tamagui 2 → 3 is its own later stage:
+  **US10** (R12).
 
 **`@react-native/metro-config` stays 0.85.3, an unmet *optional* peer.** It enters only as `react-native-worklets`'
 peer `'*'`, and pnpm prefers the version already locked. `@react-native/community-cli-plugin@0.86.3` peers it at

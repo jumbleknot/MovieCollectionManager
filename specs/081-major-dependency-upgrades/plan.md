@@ -7,10 +7,11 @@
 
 ## Summary
 
-Nine user stories, one PR each (US1, US7 and US8 split further), landed strictly in order. Six end in an
+Ten user stories, one PR each (US1, US7 and US8 split further), landed strictly in order. US10 (Tamagui 3,
+added 2026-10-18 by operator decision on item #254) lands **after US4 and before US5**. Seven end in an
 upgrade; parts of US5, US8 and US9 are expected — on today's measurements — to end in a **recorded hold**
 (blocked upstream), which item #254's acceptance criterion counts as done when it carries its own backlog
-item and re-check rule. The three lockfile-wholesale stories (pnpm 12, nx 23, Expo SDK 57) each start
+item and re-check rule. The four lockfile-wholesale stories (pnpm 12, nx 23, Expo SDK 57, Tamagui 3) each start
 against a quiet lock and never overlap.
 
 | Story | PR(s) | What moves (current → target) | Expected end state |
@@ -19,6 +20,7 @@ against a quiet lock and never overlap.
 | US2 | 2 | `pnpm` 11.25.0 → 12.x (`packageManager`, Dockerfile corepack pins) | upgrade |
 | US3 | 3a, 3b | 3a: `@nxlv/python` 21→23, `@monodon/rust` 2→3 (on nx 22). 3b: `nx`/`@nx/expo`/`@nx/playwright` 22.7.10 → 23.x via `nx migrate` | upgrade |
 | US4 | 4 | `expo` 56 → 57.0.x, `react-native` 0.85.3 → 0.86.3, every companion per `bundledNativeModules.json`; JDK decided; constitution 2.5.0→2.6.0 | upgrade |
+| **US10** | 10 | `tamagui` + `@tamagui/{config,core,shorthands,stacks}` 2.7.7 → **3.0.x exact** (3.0.18 or newer, past cooldown at start — M10); `@tamagui/babel-plugin` 2.7.7 → **removed**, replaced by `@tamagui/metro-plugin` 3.0.x; `@tamagui/font-inter` (unused, `>=2.0.0` already resolving 3.0.13) and the unused `tamagui`/`@tamagui/config` deps → removed (OQ-7); design-system source migrated (sigil tokens, pseudo-state objects, `defaultProps`, `lineHeight`) | upgrade (no hold expected — R12) |
 | US5 | 5a, 5b, 5c | 5a: reject five override widenings + guard + Renovate rules for blocked majors. 5b: `eslint` 8→10 (flat config). 5c: `@testing-library/react-native` 13→14 | upgrade (eslint, RNTL); **hold**: jest 30 + babel-jest 30 (until SDK 58), `@babel/core`/`@babel/runtime` 8 (blocked through SDK 58), `typescript` 7 (typescript-eslint peer `<6.1.0`), async-storage 3 (bundled 2.2.0 through SDK 58) |
 | US6 | 6 | `express` 4→5 + `@types/express` 4→5, `ioredis` 5→6 | upgrade |
 | US7 | 7a, 7b | 7a: `@copilotkit/react-native` + `@copilotkit/runtime` 1.70.1 → latest (1.78.0 today) with `@ag-ui/client` 0.0.59 → the exact version they pin (1.0.2). 7b: `openai` 6→7; `@ai-sdk/openai` 3→4 **or removed** | upgrade / removal |
@@ -48,7 +50,7 @@ America/New_York; Android verification needs `/dev/kvm` → Docker Desktop/DinD 
 (`openwiki/runbooks/android-emulator.md`), not the sandbox microVM; worktree per PR, a real
 `pnpm install` in it before any `pnpm nx` target (CLAUDE.md worktree gate)
 
-**Scale/Scope**: ~30 pending majors across 9 stories, ~18 PRs
+**Scale/Scope**: ~31 pending majors across 10 stories, ~19 PRs
 
 ## Constitution Check
 
@@ -59,6 +61,7 @@ America/New_York; Android verification needs `/dev/kvm` → Docker Desktop/DinD 
 | **AI Assistant Constraints — Clarification / No Vibe Coding** | PASS | Every target version comes from research.md's measurements; stage-start measurements (M0–M9) re-check before acting. |
 | **Technology Agnosticism in Specification** | PASS | spec.md names no package; every package is here and in research.md. |
 | **Frontend Technology Stack (Expo SDK 56, RN 0.85, React 19.2)** | **AMENDMENT REQUIRED** | US4 changes the stated stack. A constitution MINOR amendment (2.5.0 → 2.6.0, stack guidance only, same shape as v1.4.0's 55→56) lands in the US4 PR, with explicit human approval. |
+| **Frontend Technology Stack — UI / Design System (Tamagui)** | PASS (no amendment) | The constitution names Tamagui and `@mcm/design-system` but **no Tamagui version** (`.specify/memory/constitution.md`, "UI / Design System" line), so US10 needs no FR-015 amendment. The same line calls the compiler plugins "optional optimisations". Replacing the Babel plugin with the Metro plugin (US10, OQ-5) stays within that. The line's "wired runtime-only by default" has been inaccurate since feature 015 enabled the Babel plugin (`c236106f`). That is recorded here for the operator; US10 proposes no constitution change. |
 | **Backend Technology Stack (mongodb image line)** | **AMENDMENT REQUIRED** | US8a changes the document-database image the constitution names (and which is already stale: it names `8.2.6-ubuntu2204-slim`, the stacks run `8.0.8-ubi9`). Amended in US8a with human approval. |
 | **Package Manager (pnpm only)** | PASS | US2 stays on pnpm; `packageManager` updated in lockstep with the Dockerfile pins. |
 | **Monorepo Build Tool (Nx)** | PASS | Every test/lint/build invocation below goes through `pnpm nx`; guards are `node --test` scripts, as today. |
@@ -85,14 +88,18 @@ specs/081-major-dependency-upgrades/
 
 ```text
 .forgejo/workflows/*.yml                       # US1
-renovate.json                                  # US1 (holds), US5a (holds), US8b, US8c
+renovate.json                                  # US1 (holds), US5a (holds), US8b, US8c, US10 (tamagui group)
 scripts/check-override-consistency.mjs         # US5a (cap rule)
 scripts/__tests__/renovate-workflow.guard.test.mjs, check-override-consistency.test.mjs,
   langfuse-postgres-shared-pin.guard.test.mjs  # US1, US5a, US8b
 package.json, nx.json, pnpm-lock.yaml, pnpm-workspace.yaml   # US2, US3, US4, US5
 frontend/mcm-app/Dockerfile                    # US2 (corepack pins)
 frontend/mcm-app/package.json, app.json, metro/babel config  # US4, US5, US6, US7
-packages/design-system/package.json            # US4, US5
+packages/design-system/package.json            # US4, US5, US10
+packages/design-system/**/*.ts(x), tamagui.config.ts   # US10 (v3 source migration)
+frontend/mcm-app/babel.config.js, metro.config.js      # US10 (Babel plugin out, Metro plugin in)
+frontend/mcm-app/src/**/*.tsx                  # US10 (sigil tokens, pseudo-state objects)
+scripts/__tests__/tamagui-version-lockstep.guard.test.mjs   # US10 (new guard)
 frontend/mcm-app/.eslintrc.json → eslint.config.js, packages/design-system/ same   # US5b
 frontend/mcm-app/project.json (lint command)   # US5b
 frontend/mcm-app/src/bff-server/**             # US6 (express, ioredis), US7
@@ -109,7 +116,7 @@ full web E2E regression (`pnpm nx e2e mcm-app` / CI `app-e2e`), because the feat
 requires it for every feature. Skip-escalation (`MCM_REQUIRE_LIVE_STACK=1`, `E2E_REQUIRE_AGENT_STACK=1`) is
 on wherever the suite supports it, and **skip counts are read**, not just exit codes.
 
-### Quiet-lock protocol (US2, US3, US4) — FR-003/FR-004
+### Quiet-lock protocol (US2, US3, US4, US10) — FR-003/FR-004
 
 Before the first commit of a lockfile-wholesale story:
 
@@ -172,6 +179,117 @@ If a Renovate PR opens mid-stage, stop, let it merge/close, rebase, re-run.
 - **Rollback**: revert; no data. Android installs from the previous APK.
 - **Exit**: green board, mobile flows green on emulator, `expo install --check` clean, allowlist entries
   still match exactly (or deleted if discharged).
+
+### US10 — Tamagui 2 → 3 (PR 10) — lockfile-wholesale
+
+All of the facts below are measured in research R12.
+
+**Order position: after US4, before US5. Nothing forces a different place.**
+
+- *After US4*: Tamagui 3 states a React Native 0.81+ baseline. Upstream itself moved to Expo 57 / RN 0.86 in
+  v3.0.0, and `@tamagui/metro-plugin` peers the SDK-57 Metro (0.84.x). Every precondition is now on `main`.
+- *Before US5*: US5c moves `@testing-library/react-native` 13 → 14, which renders the same design-system
+  components. If the two landed together, a red design-system test would not name a cause.
+- *US5a and US5b are independent of it* (Renovate rules, eslint). They could go first, but there is no reason
+  to reorder: the operator's decision says "after US4", and the stage list keeps one story per lock rewrite.
+
+**Approach.** Packages and source move in one PR, but as separately committed steps, so that the PR history
+names which step turned a tier red:
+
+1. **Guard first (RED)**: `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. It asserts four things:
+   (a) every `tamagui` / `@tamagui/*` specifier in `frontend/mcm-app/package.json` and
+   `packages/design-system/package.json` is one **exact** version, and the two manifests agree;
+   (b) `pnpm-lock.yaml` holds exactly one version of `@tamagui/core`, `@tamagui/web` and `tamagui`;
+   (c) no `@tamagui/babel-plugin` remains, in a manifest or in `babel.config.js`;
+   (d) `renovate.json` resolves every `tamagui` / `@tamagui/*` update, on every update type, to one group.
+   On today's `main` it fails on (a), (b) (2.7.7 + 3.0.13), (c) and (d).
+2. **Packages** (the upgrade RED): exact-pin the five grouped packages to the M10 version in both manifests.
+   Remove `@tamagui/babel-plugin`. Add `@tamagui/metro-plugin` at the same version. Remove or pin
+   `@tamagui/font-inter`, the root `tamagui` and `@tamagui/config` (OQ-7, T073). Move the design-system peer
+   to `tamagui >=3.0.0 <4` (or drop it with the dependency). Then run **one** `pnpm install`, so the lock is
+   rewritten once. The touched tiers, measured **before** any source change, are the RED: design-system and
+   mcm-app typecheck and unit, with the press-event error count named (R12, PR #217).
+3. **Source migration**:
+   - Run `pnpm dlx @tamagui/codemod-flat-values@<M10> --source-semantics v2-pixels` in report mode over
+     `packages/design-system` and `frontend/mcm-app/src`, read every flagged row, then `--write`. It runs
+     at the exact M10 version and is never added as a dependency.
+   - Then fix by hand: `defaultProps` → design-system-owned `Text` defaults (B4); conditional pseudo-states
+     (B3); leftover sigils (B2); `lineHeight` (B5).
+   - Then grep the guide's quick-reference patterns to zero. The patterns are in research R12; the result is
+     recorded in the PR.
+   - **No Config v6.** `tamagui.config.ts` tokens and themes stay byte-identical. Only `defaultProps` leaves
+     it.
+4. **Compiler** (OQ-5): in `metro.config.js`, `withTamagui(config, { components: ['@mcm/design-system'],
+   config: './tamagui.config.ts' })` wraps the existing config, keeping the segment shim and the dotenv
+   blocklist. `babel.config.js` keeps only `react-native-worklets/plugin` (still last). Verify three things:
+   a cold `export-server`, a dev `expo start --web` that does **not** OOM (the reason the Babel plugin existed),
+   and the APK build. Upstream says the plugin does not invalidate Metro's transform cache when the config
+   changes, so every measurement in this stage uses `--clear` / `--skip-nx-cache`. The `export-server` nx
+   target's inputs are checked to include `tamagui.config.ts` and the design-system sources. If the plugin
+   cannot be made to work, measure runtime-only against the budget and the dev-server OOM before choosing it.
+5. **Renovate**: add a `tamagui` packageRule (`matchPackageNames: ["tamagui", "/^@tamagui\\//"]`, `groupName:
+   "tamagui"`, all update types), ordered after `js patch/minor` and `js majors` so it wins. This is the
+   nx-monorepo lesson: a later npm rule pulls half a group back out. `rangeStrategy: "pin"` keeps the exact
+   pins. The guard's (d) asserts the resolved behaviour, not that the rule exists.
+6. **Docs**: correct the stale lines in `frontend/mcm-app/README.md` ("Runtime-only Tamagui", "Pin Tamagui to
+   v1") and in `packages/DESIGN-SYSTEM.md` (the `$token` examples, babel-plugin setup), since these are the
+   canonical sources behind `openwiki/projects/design-system.md`. The openwiki page itself is regenerated,
+   never hand-edited.
+
+**Tiers** (derived from the diff, testing-tiers invariant):
+
+- the new guard and `renovate-workflow.guard.test.mjs`;
+- design-system `test` and `lint`, plus `pnpm exec tsc --noEmit -p packages/design-system` (the project has no
+  nx `typecheck` target; mcm-app's typecheck only reaches the design-system files it imports);
+- `mcm-app:typecheck`, `test` and `lint`, with the press-event count named;
+- `mcm-app:export-server`, then `bundle-budget` (≤ 2,000,000 B; OQ-6 if not), and the BFF prod image build;
+- `pnpm nx e2e mcm-app` (web, full regression, zero skipped);
+- **the CI full mobile suite**: label `mobile-e2e-full` **added before** the push it should run on (a label
+  event alone does not start CI), or an app-ci dispatch with `mobile_suite: full`. It runs the 22 blocking
+  non-agent flows and the agent flows on the KVM emulator. The known non-blocking flows are `movie-sort`
+  (item #781, a real app defect: the sort-direction toggle is off-screen at 411 dp; its row is design-system
+  `Chip`s and `IconButton`s, so record its status) and `login-invalid` (item #782, a CI-environment issue);
+- `build-apk` (the Metro plugin runs on the Android bundle);
+- `sast` (braces entry still matching `^braces@3\.0\.3$`; R12 expects it to);
+- visual parity (FR-019, OQ-8): before/after captures of a fixed screen list, attached to the PR. The list is
+  login, collections list, collection detail with movies, movie detail, the sort/filter row, a dialog,
+  settings, and the assistant dock, each in light and dark, on web (Playwright `page.screenshot` from a
+  scratch script, not committed) and on Android (the full-suite run's Maestro artefacts, or a local
+  emulator).
+
+**Quiet lock (FR-003).** US10 rewrites `pnpm-lock.yaml` wholesale (about 140 Tamagui entries, plus the
+compiler's tree):
+
+- Before the first commit there must be no open `renovate/*` PR.
+- The stage must not be open across the **Renovate window, Fri 02:00–04:59 America/New_York. The next one is
+  Fri 2026-10-23.** The implementation PR either **merges before 2026-10-23 02:00 ET** or is opened after
+  05:00 ET that day.
+- The package set itself cannot be past the cooldown before **2026-10-19T10:15Z** (3.0.18). In practice the
+  workable slot is Mon 2026-10-19 to Thu 2026-10-22. A CI cycle with the full mobile suite is about 110
+  minutes, so a red late on Thursday means waiting for the window to pass.
+
+**Memory and disk (the sandbox VM has ~15 GB of RAM and crashed twice).**
+
+- Run one heavy step at a time. Never run `pnpm install`, a Metro export, Jest and Playwright concurrently.
+- Run nx with `--parallel=1` and Jest with `--maxWorkers=2`.
+- `pnpm install` in the worktree runs alone.
+- Commit and push WIP to the real branch before each heavy step, so a VM crash loses nothing. The worktree
+  does not survive a rebuild.
+- Check `df -h` before the export and E2E steps, and delete scratch captures after attaching them.
+- The emulator is never run in the sandbox VM. Android evidence comes from the CI full suite.
+
+**Rollback**: revert the PR. There is no data change. Theme preference in AsyncStorage (`mcm.theme`) is
+untouched, and the previous APK still installs.
+
+**Exit**:
+
+- a green board with the full mobile suite and the web E2E (zero skipped);
+- the guard GREEN, and `pnpm why @tamagui/core` showing one version;
+- the bundle within budget;
+- visual-parity captures attached, with each difference explained;
+- `movie-sort` status recorded;
+- the braces entry still matching exactly;
+- the next dashboard read (T003) showing no Tamagui major pending and the `tamagui` group in place.
 
 ### US5 — toolchain
 
@@ -252,4 +370,5 @@ rollback by tested restore.
 ## Constitution re-check after design
 
 Unchanged: the two amendments (US4, US8a) are the only constitution touches, both require human approval
-in their PRs, neither redefines a principle.
+in their PRs, neither redefines a principle. US10 (added 2026-10-18) adds no amendment: no Tamagui version
+is named, and the compiler change stays inside "optional optimisations".
