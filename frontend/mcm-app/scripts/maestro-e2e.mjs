@@ -1,8 +1,9 @@
 import { spawnSync } from 'child_process';
-import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { resolve, dirname, basename } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
+import { localSuiteFlows } from '../../../scripts/mobile-flows.mjs';
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const envFile = resolve(dir, '..', '.env.e2e.local');
@@ -29,18 +30,10 @@ if (!envVars.E2E_TEST_USER || !envVars.E2E_TEST_PASSWORD) {
   process.exit(1);
 }
 
-// Flows that require a non-default Metro env config (e.g. a short absolute-timeout
-// override) and must be run in isolation with Metro restarted. See each file for
-// manual invocation instructions.
-// Flows that require Metro to be restarted with a non-default env config.
-// Run them via: pnpm nx e2e:mobile:session-timeout mcm-app  (see scripts/maestro-session-timeout.mjs)
-const MANUAL_FLOWS = new Set(['session-timeout.yaml', 'session-timeout-absolute.yaml']);
-
-const flowsDir = resolve(dir, '..', 'tests/e2e/mobile');
-const flows = readdirSync(flowsDir)
-  .filter(f => f.endsWith('.yaml') && !f.startsWith('_') && !MANUAL_FLOWS.has(f))
-  .sort()
-  .map(f => resolve(flowsDir, f));
+// Flow selection (helpers `_*.yaml` and the Metro-restart-only MANUAL_FLOWS excluded) lives in the
+// repo-root scripts/mobile-flows.mjs, shared with CI's opt-in full mobile suite so the two can never
+// drift into separate lists. MANUAL_FLOWS run via: pnpm nx e2e:mobile:session-timeout mcm-app
+const flows = localSuiteFlows(resolve(dir, '..', 'tests/e2e/mobile'));
 
 // Build --env args for all non-empty vars.
 // Values with spaces must be quoted so the shell (shell: true) passes them

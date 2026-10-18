@@ -50,3 +50,8 @@ mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 #   calibrated 300s and killed the job. Regenerate this table once ~10 runs have published a
 #   duration for it; until then the 2700s backstop bounds it.
 # app-e2e-collect-container-logs	-	n=2 < 10 observed samples (0 killed)
+# maestro-full-flows	-	new with the OPT-IN full mobile suite (label mobile-e2e-full / dispatch
+#   mobile_suite=full); NO observations yet, and it runs only on opt-in runs, so ~10 samples will
+#   take a while. ~24 non-agent flows x 2 attempts. The 2700s backstop bounds it; the job ceiling
+#   is raised to 110 min in full mode so backstop + digest still fit.
+# maestro-full-results	-	new with the full mobile suite; prints the per-flow results table (a cat).
