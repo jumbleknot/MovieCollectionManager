@@ -1000,3 +1000,59 @@ Measured with this test alone, cold (`--no-cache`), `--maxWorkers=1`, three runs
 | SDK 57, renderer **not** transformed | **591–630 ms** |
 
 This is back to the SDK 56 figure, so the default 5 s Jest timeout is ample again.
+
+### US10 (PR 10, Tamagui 2.7.7 → 3.0.x) — 2026-10-18
+
+**Instruments**: NPM = packuments of `tamagui`, `@tamagui/{core,config,stacks,shorthands,metro-plugin,web,static,font-inter,codemod-flat-values}`
+(read 2026-10-18T11:00Z); REPO = `origin/main` `323c8997`; DASH = `node scripts/backlog.mjs show 29` (body updated
+2026-10-18T04:42Z, read only); TARBALL = `@tamagui/{web,core,style-grammar,codemod-flat-values}@3.0.13` and
+`@tamagui/metro-plugin@3.0.18`, read; WEB = before/after captures of the static `expo export` (main vs branch) served
+locally with every `/bff-api/*` call stubbed, in `mcr.microsoft.com/playwright:v1.63.0-noble`, pixel-diffed (`compare -fuzz 2%`).
+
+**Version (M10).** At stage start (2026-10-18T11:00Z) the newest 3.0.x whose whole set is past the 3-day cooldown is
+**3.0.13** (last package 2026-10-14T21:55Z). 3.0.14 clears 10-18T12:29Z, 3.0.18 (`latest`, nothing newer) clears
+10-19T10:15Z. The work was done on 3.0.13; the PR moves to the newest qualifying version when it opens. `@tamagui/metro-plugin`
+3.0.13 peers `metro`/`metro-resolver` `^0.84.4` (lock: 0.84.5/0.84.6). No new release body after 3.0.18.
+
+**DASH delta vs R12**: Tamagui still in `js majors` (`@tamagui/{config,core,shorthands,stacks}`, `tamagui`); new since
+US4: `pnpm 12.14.0` (Pending Status Checks), `@types/react ~19.3.0` (js patch/minor), `langfuse v5` (major-python-deps);
+`java-jdk 17 → 18` still listed in Pending Status Checks.
+
+**RED (T077, bump only, sources untouched)**: `mcm-app:typecheck` **32 errors in 19 files**, of which **2 press-event**
+(`Button.tsx` onPress → frame, `PillButton.tsx` handler call: `GestureResponderEvent` vs Tamagui 3's RN-0.87-generated
+event); design-system `tsc` **29 in 16** (same 2 press-event). Jest: every Tamagui suite *failed to run* — 56 suites
+(`@tamagui/style-grammar/token-categories` and `@tamagui/core/inject-styles` map their `react-native` export to an ESM-only
+`.mjs`) — then, once loadable, `createTokens` threw on `true` keys and on a token named `transparent`. Real RED after those
+two: design-system 9 failed / 118 passed (T074 Text defaults ×2, T075 focus-ring ×7); mcm-app 1578/1578.
+
+**Sites**: `$` sigils 111 in 35 files (R12's 113/36 counted differently); pseudo-state objects 59; numeric `lineHeight` on
+Tamagui Text 31 → `"Npx"`; `defaultProps` 1. Codemod 3.0.13: design-system 86 sites (79 clean, 7 flagged), app 67 (64/3).
+
+**Two v3 semantics no codemod or typecheck catches (measured, fixed)**:
+- A bare name on a colour property resolves **token-first, theme second**. The config duplicated the light roles as
+  colour tokens, so `onBackground`/`primary` rendered the LIGHT value in the dark theme (#1a1c1e for #e3e2e6). The
+  duplicates are removed; all 39 roles are theme-defined.
+- Tamagui 2's web stylesheet gave every Tamagui text the font's `true` line height (20px); v3 does not. Restored on the
+  design-system Text, web only.
+
+**GREEN**: typecheck 0/0, design-system jest 131/131, mcm-app jest 1578/1578, lint 0 errors, lockstep guard 6/6,
+renovate guard 131/131, SAST gate passed (braces/node-forge entries unchanged and still exact).
+
+**Bundle**: web entry 1,767,030 B (main) → **1,881,353 B** with the Metro plugin / **1,881,066 B** runtime-only, of
+2,000,000. Dev server (`expo start --web --clear`) serves `/` and the 6.17 MB web bundle without OOM either way (min
+available 8.8–9.0 GB of 15). BFF prod image builds (417 MB).
+
+**OQ-5 — the Metro plugin, MEASURED, needs the operator.** `@tamagui/metro-plugin` 3.0.13 (3.0.18's code is identical
+here) wired as OQ-5's default:
+1. Its resolver resolves almost nothing in this repo (34,780 `metro/resolve-failed` warnings per export): it `lstat`s
+   pnpm's symlinked `node_modules/<pkg>` and treats the directory as a file, and it does not know Expo's `@/` tsconfig
+   alias. `metro-resolver` must also be resolvable from the app's own `package.json` (added at 0.84.5).
+2. Worse, on **web** it lowers some app modules to static atomic classNames and never emits their CSS (plan CSS is only
+   published in the experimental zero-runtime mode). Measured on `/settings` alone: 7 classes with no rule — the app
+   bar lost its 24px gap, the settings menu its width/gap, a chip its radius/gap/cursor. `disableExtraction: true` does
+   not stop it.
+3. It saves nothing: entry chunk 1,881,353 B vs 1,881,066 B runtime-only, and the dev server does not need it.
+Runtime-only (no Metro plugin) + the two fixes above is **pixel-identical to `main`** on 44 of 48 captures; the other 4
+(settings/account, the elevated Card) differ because v2 dropped `shadowOpacity` on web (`0 1px 3px rgb(0,0,0)`) and
+v3 applies it (`0 1px 2px rgba(0,0,0,.12)`) — native is unaffected. Runtime-only is OQ-5's fallback, which needs
+operator approval; it is prepared on branch `081-us10-tamagui-3-runtime-only`, not chosen.
