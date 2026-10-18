@@ -861,6 +861,106 @@
     },
     {
       "description": [
+        "OVERRIDE MAJORS ARE NEVER PROPOSED — feature 081 US5a (research R2), item #254.",
+        "Every keyed entry in pnpm-workspace.yaml `overrides:` is a SECURITY FLOOR: the key names the vulnerable span,",
+        "the value forces the patched floor and CAPS it at the floor's own major (`undici@<6.27.0: '>=6.27.0 <7'`).",
+        "Renovate's npm manager reads that value as a direct range and 'widens' the cap to the newest major — MEASURED on",
+        "the 2026-10-18 dashboard (item #29): six such proposals in `js majors` (undici x2, js-yaml x2, fast-uri, nanoid).",
+        "None of them closes an advisory (the floor is unchanged); each hands any dependent that resolved into the",
+        "vulnerable span a major it never declared (fc3c47ae measured js-yaml 5 arriving exactly this way).",
+        "So the MAJOR track is disabled here, permanently: a new major of a transitive is its DEPENDENT's decision, made",
+        "in that dependent's manifest, never by widening a security override. PATCH/MINOR stay enabled and ungated — a",
+        "genuine floor raise (a new advisory) arrives on that track. check-override-consistency.mjs's cap rule (value cap",
+        "<= key major + 1) is the second line if a widening ever arrives by another route.",
+        "RE-CHECK RULE: none — this is a rejection, not a hold. Asserted by renovate-workflow.guard.test.mjs (major",
+        "disabled, patch/minor enabled and ungated, no leak onto package.json majors)."
+      ],
+      "matchManagers": ["npm"],
+      "matchFileNames": ["pnpm-workspace.yaml"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": [
+        "HELD: jest 30 (jest, babel-jest, @types/jest) — feature 081 US5, item #254; backlog item #TBD-JEST.",
+        "The test runner major is PINNED BY THE EXPO SDK's test preset. MEASURED 2026-10-18 (npm): jest-expo 57.0.6 (the",
+        "newest SDK-57 build, what frontend/mcm-app and packages/design-system declare as ~57.0.6) DEPENDS on the jest 29",
+        "family (babel-jest, @jest/globals, jest-snapshot, jest-environment-jsdom all ^29.2.1). Installing jest 30 beside it",
+        "runs two jest majors in one test process. jest-expo 58.0.11 (SDK 58) moves to ^30.0.0 and peers jest",
+        "'^29.0.0 || ^30.0.0' — so jest 30 becomes possible AT SDK 58, which is not this feature's target (OQ-1).",
+        "@types/jest is held with jest: US4 moved it to 29.5.14 to match the jest 29 runtime.",
+        "RE-CHECK RULE (FR-016): re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK.",
+        "LIFT when the jest-expo of the SDK in frontend/mcm-app/package.json depends on the jest 30 family; then move jest,",
+        "babel-jest and @types/jest together in the SDK PR.",
+        "dependencyDashboardApproval, NOT allowedVersions: an approval gate has no version semantics to get wrong (US4: a",
+        "'<18' ceiling admitted ONLY 18.0 under semver-partial). Its OWN group, because a branch's approval is",
+        "upgrades.some(u => u.dependencyDashboardApproval) (renovate@44 updates/generate.js) — left in `js majors` it would",
+        "gate every js major behind one tick. PATCH/MINOR are not matched and stay in `js patch/minor`, ungated.",
+        "ORDERED AFTER `js majors` (the last matching groupName wins). Asserted by renovate-workflow.guard.test.mjs."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["jest", "babel-jest", "@types/jest"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "held jest major",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
+        "HELD: babel 8 (@babel/core, @babel/runtime) — feature 081 US5, item #254; backlog item #TBD-BABEL.",
+        "The transpiler major is PINNED BY THE EXPO SDK's transpiler preset. MEASURED 2026-10-18 (npm):",
+        "babel-preset-expo 57.0.16 (what frontend/mcm-app declares as ~57.0.16) PEERS @babel/runtime ^7.20.0 and its plugin dependencies are",
+        "all ^7 (@babel/preset-typescript ^7.23.0, @babel/plugin-transform-typescript ^7.25.2, ...). SDK 58's",
+        "babel-preset-expo 58.0.17 peers the same ^7.20.0, and expo 57.0.30 / 58.0.14 themselves depend on",
+        "@babel/runtime ^7.20.0 — so babel 8 is blocked THROUGH SDK 58. (@babel/core 8 also needs node ^22.18 || >=24.11.)",
+        "RE-CHECK RULE (FR-016): re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK.",
+        "LIFT when babel-preset-expo of the SDK in use peers @babel/runtime ^8 (and its plugin deps leave ^7).",
+        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@babel/core", "@babel/runtime"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "held babel major",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
+        "HELD: typescript 7 — feature 081 US5 (research R5), item #254; backlog item #TBD-TYPESCRIPT.",
+        "The compiler major is PINNED BY THE LINT PARSER, not by Expo. MEASURED 2026-10-18 (npm):",
+        "@typescript-eslint/parser 8.71.2 (latest; also the canary 8.71.3-alpha.13), @typescript-eslint/eslint-plugin and typescript-eslint all peer",
+        "typescript '>=4.8.4 <6.1.0'. Both projects reach the parser through eslint-config-expo. typescript 7.0.2 is the",
+        "native port and ships no in-process compiler API (`bin` only), which is what typescript-eslint loads.",
+        "RE-CHECK RULE (FR-016): re-read the lint parser's supported compiler range.",
+        "LIFT when the latest @typescript-eslint/parser's typescript peer admits 7.",
+        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "held typescript major",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
+        "HELD: @react-native-async-storage/async-storage 3 — feature 081 US5 (research R4), item #254; backlog item",
+        "#TBD-ASYNC-STORAGE. A NATIVE module whose version the Expo SDK pins: MEASURED 2026-10-18 (the published tarballs'",
+        "bundledNativeModules.json), expo 57.0.30 AND 58.0.14 both list 2.2.0. A version outside bundledNativeModules",
+        "fails `expo install --check` and is a native-binary mismatch on Android.",
+        "RE-CHECK RULE: re-read the SDK's bundledNativeModules.json at each new SDK.",
+        "LIFT when the SDK in use lists async-storage 3.x; then move it with `expo install`, in the SDK PR.",
+        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@react-native-async-storage/async-storage"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "held async-storage major",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
         "hashicorp/vault IS HELD BELOW 1.19, and this is a SECURITY decision rather than a currency one.",
         "MEASURED 2026-08-30 on PR #289. The `docker base images` group proposed vault 1.18 -> 1.21 and",
         "reddened `infra-image-scan / infra-image-scan`. Scanned with the gate's OWN criteria",

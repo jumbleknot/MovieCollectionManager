@@ -295,28 +295,28 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 ## Phase 7: US5 — toolchain (P2) — PRs 5a, 5b, 5c
 
-- [ ] T032 [US5] SC-003: re-derive US5 scope from the companion metadata of the SDK US4 landed, plus M5
+- [x] T032 [US5] SC-003: re-derive US5 scope from the companion metadata of the SDK US4 landed, plus M5
   (`@typescript-eslint/parser` latest's `typescript` peer). **Done when**: research.md R4/R5 updated; any
   majors that became free move into 5b/5c.
 
 **PR 5a — overrides + holds (no lockfile churn)**
 
-- [ ] T033 [P] [US5] Guard RED — in `scripts/__tests__/check-override-consistency.test.mjs` add cases: a keyed
+- [x] T033 [P] [US5] Guard RED — in `scripts/__tests__/check-override-consistency.test.mjs` add cases: a keyed
   override whose value cap admits a major above the key's (`undici@<6.27.0: '>=6.27.0 <9'`) FAILS; the
   current `'>=6.27.0 <7'` passes; a plain pin (`react-dom`) is out of scope; extend `--selftest` likewise.
   **Verify RED**: `node --test scripts/__tests__/check-override-consistency.test.mjs`
   **Expected RED**: the widening case is not rejected (the gate checks only floor/key agreement today).
-- [ ] T034 [US5] Implement the cap rule in `scripts/check-override-consistency.mjs` (value's exclusive upper
+- [x] T034 [US5] Implement the cap rule in `scripts/check-override-consistency.mjs` (value's exclusive upper
   bound ≤ key-major + 1; unparseable → exit 2, never skip).
   **Verify GREEN**: same command, 0 failures; `node scripts/check-override-consistency.mjs` exits 0 on
   `main`'s file; `--selftest` exits 0.
-- [ ] T035 [P] [US5] Guard RED — in `renovate-workflow.guard.test.mjs` assert: `major` updates of entries in
+- [x] T035 [P] [US5] Guard RED — in `renovate-workflow.guard.test.mjs` assert: `major` updates of entries in
   `pnpm-workspace.yaml` resolve to disabled; `jest`, `babel-jest`, `@babel/core`, `@babel/runtime`,
   `typescript`, `@react-native-async-storage/async-storage` majors require dashboard approval; their
   patch/minor do NOT (the security stream stays open).
   **Verify RED**: `node --test scripts/__tests__/renovate-workflow.guard.test.mjs` | **Expected RED**: new
   assertions fail.
-- [ ] T036 [US5] Implement the packageRules in `renovate.json`, ordered after `js majors`, each description
+- [x] T036 [US5] Implement the packageRules in `renovate.json`, ordered after `js majors`, each description
   carrying its re-check rule (FR-016): jest/babel-jest → "jest-expo of the current SDK depends on jest 30"
   (expected at SDK 58); babel → "babel-preset-expo peers @babel/runtime ^8"; typescript → "typescript-eslint
   parser peer admits 7"; async-storage → "expo bundledNativeModules lists 3.x".
