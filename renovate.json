@@ -801,6 +801,27 @@
     },
     {
       "description": [
+        "TAMAGUI MOVES AS ONE VERSION \u2014 feature 081 US10 (research R12). Every `tamagui` / `@tamagui/*` package must sit",
+        "at the same exact version: Tamagui's upgrade guide requires a single @tamagui/core, @tamagui/web and tamagui in",
+        "the lock, and @tamagui/static runs its own version-consistency check. Upstream publishes several patches a day",
+        "(19 stable 3.0.x patches in six days), so a range lets a partial lock refresh split the set \u2014 MEASURED: the open",
+        "`@tamagui/font-inter >=2.0.0` range pulled @tamagui/core 3.0.13 into the lock beside 2.7.7 on 2026-10-16 with no",
+        "PR at all. Both manifests therefore pin EXACT versions, and this rule groups every update type into one `tamagui`",
+        "branch; `rangeStrategy: pin` keeps a proposal writing exact pins.",
+        "NO matchUpdateTypes, deliberately, and ORDERED AFTER `js patch/minor` and `js majors` (the last matching groupName",
+        "wins): restricted or placed earlier, those two pull part of the set back onto its own branch \u2014 the nx half-bump",
+        "of PR #141 / PR #193. tamagui-version-lockstep.guard.test.mjs asserts the RESOLVED group on all three tracks, the",
+        "exact pins, the single core/web in the lock, and that no @tamagui/babel-plugin (no 3.x) comes back.",
+        "A major still gets its own `major-` branch; prove it with the design-system tiers and the full mobile suite (US10)."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["tamagui", "/^@tamagui//"],
+      "groupName": "tamagui",
+      "rangeStrategy": "pin",
+      "automerge": false
+    },
+    {
+      "description": [
         "@copilotkit/* SHIPS BREAKING CHANGES IN MINOR BUMPS, so it must not ride `js patch/minor` \u2014 the",
               "group whose whole premise is that a human skims it and merges. Same defect as the cargo 0.x rule",
               "above, with a version number that does not advertise it: there, a 0.x MINOR is a semver-major and",

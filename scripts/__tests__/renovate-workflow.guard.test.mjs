@@ -960,7 +960,10 @@ test('the copilotkit gate leaves the PATCH track routine, so a security patch is
 });
 
 test('the copilotkit rule does NOT swallow unrelated npm packages', () => {
-  for (const depName of ['@ai-sdk/openai', 'express', '@tamagui/core']) {
+  // `@tamagui/core` was the third control until feature 081 US10 gave the Tamagui family its own
+  // `tamagui` group on purpose (asserted by tamagui-version-lockstep.guard.test.mjs). It is replaced
+  // by another routine npm dependency of the app, so this still checks three unrelated packages.
+  for (const depName of ['@ai-sdk/openai', 'express', 'axios']) {
     const group = resolvedGroupName(copilotkitDep(depName, 'minor'));
     assert.equal(
       group,
