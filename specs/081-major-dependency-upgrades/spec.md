@@ -11,6 +11,11 @@ jest/babel/TS", including its 2026-08-27 correction comment. Operator decision (
 specification covers **all eight** stages of that item; each stage is its own user story and its own pull
 request, in order; no stage is silently dropped or deferred to "a later spec". The item's statement that
 the mobile-platform SDK stage would get its own specification is overridden — it is a user story here.
+**Amended 2026-10-18**: a further stage, the UI styling library's major (US10), was added by operator decision
+on 2026-10-17 (item #254), after it surfaced as drift during US3. It sits right after US4 in the order.
+
+**Stage status (2026-10-18)**: US1 done (#769, #770); US2 done (#771); US3 done (#773, #774); US4 done
+(#778). **Next: US10**, then US5 → US9.
 
 ## Overview
 
@@ -37,13 +42,16 @@ one change, and without losing stored user data.
    means each of them happens once, under the final package manager.
 3. **Monorepo task runner** — with its plugins.
 4. **Mobile/web application platform SDK** — the release line that pins the test toolchain.
-5. **Test, lint and language toolchain** — what the platform no longer pins moves; what it still pins is
+5. **UI styling library** (US10) — it moves with the platform's release line, so it comes right after the
+   platform. It also comes before the component-test library's major in stage 6, so that a red design-system
+   test names one of the two.
+6. **Test, lint and language toolchain** — what the platform no longer pins moves; what it still pins is
    recorded as blocked.
-6. **Server-side web framework + session store client** — request and session paths.
-7. **Assistant transport** — the client/runtime libraries for the conversational assistant.
-8. **Datastore images** — stateful; each is a data migration.
-9. **Backend data-format and HTTP libraries** — last, because the data-format move depends on the
-   datastore driver and on stage 8 having settled the server.
+7. **Server-side web framework + session store client** — request and session paths.
+8. **Assistant transport** — the client/runtime libraries for the conversational assistant.
+9. **Datastore images** — stateful; each is a data migration.
+10. **Backend data-format and HTTP libraries** — last, because the data-format move depends on the
+    datastore driver and on stage 9 having settled the server.
 
 ### What this feature deliberately does not do
 
@@ -82,6 +90,16 @@ prerequisite) merged on 2026-10-16 (PR #730).
 The two constitution amendments (US4: the platform SDK/native runtime version; US8a: the document-database
 image name) are **not** approved by these answers — they remain pending human approval in their own
 stories (FR-015) and are not needed for US1.
+
+### Session 2026-10-17 (operator, on item #254)
+
+- Q: The UI styling library's new major surfaced as drift during US3. Add it to this spec as a stage, or
+  give it its own backlog item with a recorded reason? → A: **A stage of this spec, after US4**, because it
+  moves with the platform's release line. It uses the same RED/GREEN and quiet-lock discipline. It is added
+  as **US10**, the next free story number, and its place in the order is set by FR-001, not by its number.
+- The constitution names the UI library but **no version** of it (§Frontend App Technology Stack, "UI /
+  Design System"), so FR-015 requires no amendment for US10. The new questions US10 raises are OQ-5 to OQ-8
+  below.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -182,6 +200,61 @@ platform's own dependency check reports no mismatches.
    exact pinned versions and nothing is re-dated.
 5. **Given** the project's governing constitution names the SDK version, **Then** it is amended in the same
    change with human approval.
+
+---
+
+### User Story 10 - UI styling library 2 → 3, with the product looking and behaving the same (Priority: P2)
+
+The maintainer moves the UI styling library that the design system is built on, and every companion package
+of that library, to its next major in one change. The design system's components, and the screens built from
+them, must look and behave as before. Placed **after US4 and before US5** (FR-001). The story number is only
+the next free one.
+
+**Why this priority**: The library moves with the platform's release line. US4 has put the platform on the
+line this major supports, so the move is possible now. Every UI component depends on it, so it has to land
+before US5 changes the component-test library: otherwise a red design-system test would not say which change
+caused it. The bot proposes the major every week until it lands.
+
+**Independent Test**: The design-system and app typecheck and unit tiers pass. The web E2E regression and the
+full mobile suite pass with zero skipped suites. The web entry chunk stays inside its committed byte budget.
+A before/after capture of a fixed set of representative screens shows no unexplained visual difference.
+
+**Acceptance Scenarios**:
+
+1. **Given** a quiet lock (FR-003), **When** the major lands, **Then** every package of the library in both
+   workspace manifests sits at **one exact version**, the lock holds exactly one copy of the library's core,
+   and a guard fails if either stops being true. That includes the open-ranged development dependency that
+   already pulled a second major into the lock (research R12), which is removed or pinned.
+2. **Given** the bump applied before any migration, **Then** the design-system and app typecheck and unit
+   failures are recorded as the RED, including the count of press-event type errors. The library's new
+   major ships its own copy of the next native-runtime line's types, so the narrowing measured on PR #217
+   may arrive here instead of at the next SDK. After migration, both tiers are GREEN with 0 errors.
+3. **Given** the library's removed authoring forms (token values with a sigil, the separate pseudo-state
+   style objects, configuration-level default props, numeric line heights read as ratios), **Then** none
+   remains anywhere in the design system or the app. This is shown by a search that returns zero, not by
+   typecheck alone: an unconverted value typechecks and silently stops applying.
+4. **Given** the design system's focus-ring guard, which asserts the old keyboard-focus style spelling,
+   **Then** it is updated at its cause to assert the new spelling and still fails on a mouse-focus ring. It
+   is not deleted.
+5. **Given** the build-time compiler that the app relies on to tree-shake the design-system barrel, whose
+   old integration no longer exists at the new major, **Then** its replacement is wired in, or the app is
+   shown to build and serve without a compiler. Either way, a cold web export, a dev server start and the
+   Android build all succeed.
+6. **Given** the full mobile suite (every blocking non-agent flow plus the agent flows on the hardware-
+   virtualised emulator) and the full web E2E regression, **Then** both pass with zero skipped suites.
+   `movie-sort`'s status is recorded (it is non-blocking for a known app defect). A change in its status is
+   explained, not claimed as a fix.
+7. **Given** the committed web bundle byte budget, **Then** the entry chunk stays inside it. If it does not,
+   the story stops and asks the operator. The budget bounds a constitutional exception, so it is not raised
+   inside this story.
+8. **Given** the supply-chain allowlist entry that rides on the library's build-time compiler (item #648),
+   **Then** a fresh audit shows whether the upgrade discharged it. If it did not, the entry still matches
+   its exact pinned version and nothing is re-dated (FR-018).
+9. **Given** the bot's weekly proposals, **Then** after this story the library's packages are proposed as
+   **one** group, on every update type, so they cannot drift apart, and the major no longer appears as a
+   pending proposal.
+10. **Given** the constitution names the library but no version of it, **Then** no constitution amendment
+   is made by this story. If one is found to be needed after all, it goes through FR-015's human approval.
 
 ---
 
@@ -303,7 +376,7 @@ release binary's linkage is unchanged.
 
 ### Edge Cases
 
-- **A bot PR opens mid-stage** for a lockfile-wholesale story (US2, US3, US4): the stage pauses; it is
+- **A bot PR opens mid-stage** for a lockfile-wholesale story (US2, US3, US4, US10): the stage pauses; it is
   rebased only after that PR merges or closes, never run concurrently.
 - **The bot's weekly window arrives** while a lockfile-wholesale stage is open: the stage must not be open
   inside the window; it is started on a non-Friday or the window's run is waited out.
@@ -315,6 +388,9 @@ release binary's linkage is unchanged.
 - **An upgrade discharges an allowlist entry**: the entry is deleted in the same change, never left to
   expire.
 - **An upgrade changes a security-override's resolution**: the change is reviewed as a security change.
+- **A library publishes several patches a day** (US10's did 19 in six days): the stage takes the newest
+  release whose whole package set is past the bot's cooldown when the stage starts. It does not chase a
+  patch published mid-stage.
 
 ## Requirements *(mandatory)*
 
@@ -322,11 +398,11 @@ release binary's linkage is unchanged.
 
 **Ordering and isolation**
 
-- **FR-001**: The stories MUST land in the order US1 → US2 → US3 → US4 → US5 → US6 → US7 → US8 → US9, each as
-  its own pull request (US1 as two; US7 as two; US8 as one per datastore image; US9 as one per library
-  family).
+- **FR-001**: The stories MUST land in the order US1 → US2 → US3 → US4 → **US10** → US5 → US6 → US7 → US8 →
+  US9, each as its own pull request (US1 as two; US7 as two; US8 as one per datastore image; US9 as one per
+  library family; US10 as one).
 - **FR-002**: US1 MUST NOT start until feature 080 has merged.
-- **FR-003**: Each lockfile-wholesale story (US2, US3, US4) MUST start only against a merged, quiet lock: no
+- **FR-003**: Each lockfile-wholesale story (US2, US3, US4, US10) MUST start only against a merged, quiet lock: no
   open bot pull request, not inside the bot's weekly window, and no other lockfile-wholesale story open.
   The quiet state MUST be recorded (time and evidence) in the PR description.
 - **FR-004**: No two lockfile-wholesale stories may be open at the same time.
@@ -345,7 +421,8 @@ release binary's linkage is unchanged.
 
 - **FR-008**: Each story MUST run the test tiers its diff touches (derived per story in plan.md), plus the
   full web E2E regression; a skipped suite MUST be treated as a failure (skip-escalation flags set).
-- **FR-009**: US4 MUST verify Android on an emulator with hardware virtualisation, in addition to web.
+- **FR-009**: US4 MUST verify Android on an emulator with hardware virtualisation, in addition to web. So
+  MUST US10, through the CI full mobile suite (opted in on the PR before the push it should run on).
 - **FR-010**: US7 MUST run the non-blocking model-decision tier on its branch and compare to `main`, and
   MUST load the assistant route in the production server image.
 - **FR-011**: US8 MUST preserve user data in the document database: document counts per collection
@@ -359,12 +436,18 @@ release binary's linkage is unchanged.
 
 - **FR-015**: Where the governing constitution names a version this feature changes (the platform SDK and
   native runtime; the document database image), it MUST be amended in the same PR, with human approval.
+  The constitution names the UI styling library (US10) without a version, so US10 needs no amendment unless
+  its implementation finds otherwise.
 - **FR-016**: The toolchain majors held on the platform SDK MUST carry the re-check rule *"re-read the SDK's
   test-preset and transpiler-preset companion metadata at each new SDK"*; the language-compiler major
   MUST carry *"re-read the lint parser's supported compiler range"*.
 - **FR-017**: Each story's PR MUST state its rollback and its exit criterion (plan.md, per story).
 - **FR-018**: An allowlist entry an upgrade discharges MUST be deleted in that change; one it does not
   discharge MUST be shown still to match its exact pinned version.
+- **FR-019**: US10 MUST leave every package of the UI styling library at one exact version in every workspace
+  manifest, with one copy of its core in the lock, enforced by a guard. It MUST show visual parity on a fixed
+  list of representative screens (before/after captures attached to the PR), in addition to the test tiers.
+  It MUST NOT adopt the library's new default design configuration: tokens and themes stay byte-identical.
 
 ### Key Entities
 
@@ -383,11 +466,11 @@ release binary's linkage is unchanged.
 
 These restate item #254's acceptance criteria as measurable outcomes, plus what this spec adds.
 
-- **SC-001** (item #254 AC1): Every one of the eight stages — and the two majors the item did not list
-  (package manager, assistant runtime) — is either landed or has its own backlog item with a recorded
-  reason; the count of pending majors from research R1 with neither outcome is **zero**. Item #254 closes
-  only then.
-- **SC-002** (item #254 AC2): US2, US3 and US4 each record quiet-lock evidence showing **zero** open bot
+- **SC-001** (item #254 AC1): Every one of the eight stages, and the three majors the item did not list
+  (package manager, assistant runtime, and since 2026-10-17 the UI styling library), has either landed or has
+  its own backlog item with a recorded reason. The count of pending majors from research R1 (the R1 table
+  including its 2026-10-18 UI-library row) with neither outcome is **zero**. Item #254 closes only then.
+- **SC-002** (item #254 AC2): US2, US3, US4 and US10 each record quiet-lock evidence showing **zero** open bot
   PRs at start, and no two of them overlap in time.
 - **SC-003** (item #254 AC3): US5's scope is re-derived from the metadata of the SDK US4 landed, not
   carried forward from item #254's list — evidenced by the companion-metadata read recorded in its PR.
@@ -412,7 +495,11 @@ These restate item #254's acceptance criteria as measurable outcomes, plus what 
 - Feature 080 (object-storage migration) must merge before US1 (it rewrites the same workflow files).
 - A parallel PR moving the observability trace service within its current major does not block anything
   here, but US8's relational-database PR must start after it merges (same compose files).
-- Android verification requires the hardware-virtualisation-capable dev container, not the sandbox VM.
+- Android verification requires the hardware-virtualisation-capable dev container, not the sandbox VM, or,
+  since PR #780, the CI full mobile suite (PR label `mobile-e2e-full`, or app-ci dispatch `mobile_suite:
+  full`). That is how US4 proved it and how US10 must.
+- US10 depends on US4 (the platform line its new major supports), and US5's component-test library major
+  depends on US10.
 
 ## Out of Scope
 
@@ -420,4 +507,22 @@ These restate item #254's acceptance criteria as measurable outcomes, plus what 
 
 ## Open Questions (for the operator)
 
-None — all answered 2026-10-10 (see Clarifications).
+OQ-1 to OQ-4 were answered on 2026-10-10 (see Clarifications). US10 raises four more. Each has a stated
+default, which applies unless the operator says otherwise before US10 starts:
+
+- **OQ-5 — Compiler integration.** The library's new major removes the build-time compiler's old
+  integration, which the app uses to tree-shake the design-system barrel. Should US10 wire its replacement,
+  which also runs on the Android bundle, or go without a compiler? **Default: wire the replacement.** Go
+  without a compiler only as a measured fallback, if the replacement cannot be made to work and both the
+  bundle budget and a dev server start hold without it.
+- **OQ-6 — Bundle budget.** If the new major pushes the web entry chunk over its committed byte budget,
+  should the budget be raised, or the story held? **Default: hold and ask, with the measurement.** The budget
+  bounds a constitutional exception (v2.5.0), so it is not raised inside this story.
+- **OQ-7 — Unused library packages.** Two of the library's packages are declared in both manifests and
+  imported nowhere, and a third (a development-only font package with an open range) is unused. **Default:
+  remove all three in US10**, after showing that nothing imports them, rather than moving them to the new
+  major.
+- **OQ-8 — Visual parity evidence.** The repository has no screenshot-regression suite. **Default:**
+  before/after captures of a fixed list of representative screens (web and Android, light and dark),
+  attached to the PR as evidence. US10 does not add a committed visual gate; adding one would be its own
+  backlog item.
