@@ -9,7 +9,8 @@
 
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
+import { Text } from '@mcm/design-system';
 import { XStack } from '@tamagui/stacks';
 import { Link, usePathname } from 'expo-router';
 import { useTheme as useThemePref } from '@/hooks/use-theme';
@@ -40,7 +41,7 @@ export function NavigationBar(): React.JSX.Element {
       paddingVertical={12}
       backgroundColor={theme.surface2?.val}
     >
-      <Text fontFamily="$heading" fontSize={22} fontWeight="700" letterSpacing={2} color={theme.primary?.val}>
+      <Text fontFamily="heading" fontSize={22} fontWeight="700" letterSpacing={2} color={theme.primary?.val}>
         MCM
       </Text>
       <XStack gap={24} alignItems="center">
@@ -55,7 +56,7 @@ export function NavigationBar(): React.JSX.Element {
                 accessibilityLabel={`Navigate to ${link.label}`}
               >
                 <Text
-                  fontFamily="$body"
+                  fontFamily="body"
                   fontSize={16}
                   fontWeight={active ? '700' : '500'}
                   color={active ? theme.primary?.val : theme.onSurfaceVariant?.val}

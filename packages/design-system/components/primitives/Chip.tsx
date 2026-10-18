@@ -14,7 +14,8 @@
  */
 
 import React from 'react'
-import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from './Text'
 
 export type ChipType    = 'assist' | 'filter' | 'choice' | 'input' | 'suggestion'
 export type ChipVariant = 'flat' | 'elevated'
@@ -130,20 +131,15 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       paddingHorizontal={type === 'filter' && selected ? 8 : 16}
       overflow="hidden"
       cursor={disabled ? 'not-allowed' : 'pointer'}
-      opacity={disabled ? 0.38 : 1}
+      opacity={`${disabled ? 0.38 : 1} hover:0.92 press:0.88`}
       pointerEvents={disabled ? 'none' : 'auto'}
       onPress={disabled ? undefined : onPress}
-      pressStyle={{ opacity: 0.88 }}
-      hoverStyle={{ opacity: 0.92 }}
-      // focusVisibleStyle (not focusStyle) so the ring shows for KEYBOARD focus only — a mouse
-      // click otherwise leaves a persistent :focus outline until blur (feature 015 bug fix).
-      outlineStyle="none"
-      focusVisibleStyle={{
-        outlineStyle:  'solid',
-        outlineWidth:  2,
-        outlineColor:  '$primary',
-        outlineOffset: 2,
-      }}
+      // Ring on KEYBOARD focus only (`focus-visible`, never `focus`) — a mouse click otherwise
+      // leaves a persistent :focus outline until blur (feature 015 bug fix).
+      outlineStyle="none focus-visible:solid"
+      outlineWidth="focus-visible:2px"
+      outlineColor="focus-visible:primary"
+      outlineOffset="focus-visible:2px"
       {...shadowProps}
       {...rest}
     >
@@ -152,17 +148,15 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         backgroundColor={stateLayer}
-        opacity={0}
+        opacity="0 hover:0.08 press:0.12"
         pointerEvents="none"
-        hoverStyle={{ opacity: 0.08 }}
-        pressStyle={{ opacity: 0.12 }}
       />
 
       {/* Leading: checkmark (filter selected) or icon */}
       {showCheckmark && (
         <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {/* Inline SVG check using Text; replace with icon library in app */}
-          <Text color={fg} fontSize={14} fontWeight="600" lineHeight={18}>✓</Text>
+          <Text color={fg} fontSize={14} fontWeight="600" lineHeight="18px">✓</Text>
         </View>
       )}
 
@@ -174,7 +168,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
 
       {/* Label — MD3 labelLarge */}
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={14}
         fontWeight="500"
         letterSpacing={0.1}
@@ -195,7 +189,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
           onPress={(e) => { e?.stopPropagation?.(); onRemove() }}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
-          <Text color={fg} fontSize={14} lineHeight={18}>×</Text>
+          <Text color={fg} fontSize={14} lineHeight="18px">×</Text>
         </View>
       )}
 

@@ -11,7 +11,7 @@
  */
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
 import {
   Card,
   CardHeader,
@@ -23,6 +23,7 @@ import {
   TextButton,
   Chip,
   Banner,
+  Text,
 } from '@mcm/design-system';
 
 import type { DestinationDraft } from '@/hooks/use-backup-destinations';
@@ -208,7 +209,7 @@ export function DestinationForm({
       </CardActions>
       {!canSubmit && !editing ? (
         <CardContent>
-          <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val}>
+          <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
             Fill in every required field to save or test this destination.
           </Text>
         </CardContent>

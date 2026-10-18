@@ -21,7 +21,8 @@
 
 import React, { useCallback } from 'react';
 import { FlatList } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
+import { Text } from '@mcm/design-system';
 import { XStack, YStack } from '@tamagui/stacks';
 import { MovieListItem } from '@/components/movie-list-item';
 import type { Movie, ColumnVisibility } from '@/types/collection';
@@ -79,7 +80,7 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
       {/* Title is always visible — matches flex:2 in MovieListItem.
           minWidth:0 lets each flex cell shrink to its share so the header columns
           line up with the (often wider) row values below (feature 015 alignment fix). */}
-      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={12} fontWeight="500" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
+      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="body" fontSize={12} fontWeight="500" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
         Title
       </Text>
 
@@ -91,7 +92,7 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
             flexShrink={1}
             flexBasis={0}
             minWidth={0}
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             fontWeight="500"
             color={labelColor}
@@ -143,7 +144,7 @@ export function MovieList({
       <YStack flex={1}>
         <MovieListHeader visibleColumns={visibleColumns} />
         <YStack testID="movie-list-empty" flex={1} alignItems="center" justifyContent="center" paddingVertical={48}>
-          <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val}>
+          <Text fontFamily="body" fontSize={16} color={theme.onSurfaceVariant?.val}>
             No movies found
           </Text>
         </YStack>

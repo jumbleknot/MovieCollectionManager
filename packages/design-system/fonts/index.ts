@@ -1,12 +1,11 @@
 /**
  * MCM Design System — Tamagui Font Definitions
  *
- * Uses @tamagui/font-inter for body/label text and a custom Outfit font
+ * Defines the Inter font (body/label text) and the Outfit font
  * definition for display/headline/title text.
  *
  * Installation:
  *   expo install expo-font @expo-google-fonts/outfit @expo-google-fonts/inter
- *   npx expo install @tamagui/font-inter
  *
  * In your Expo app's _layout.tsx:
  *   import { useFonts } from 'expo-font'

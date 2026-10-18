@@ -19,7 +19,8 @@
 
 import React, { useState } from 'react'
 import { TextInput, type TextInputProps } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack } from '@tamagui/stacks'
 
 export type SearchBarVariant = 'docked' | 'full'
@@ -85,7 +86,9 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
       shadowOffset={{ width: 0, height: focused ? 2 : 0 }}
       shadowOpacity={focused ? 0.2 : 0}
       shadowRadius={focused ? 6 : 0}
-      elevation={focused ? 3 : 0}
+      // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+      // forwards it on Android at runtime, so this renders exactly as the prop did).
+      style={{ elevation: focused ? 3 : 0 }}
     >
       {/* Leading icon / button */}
       <View
@@ -100,7 +103,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           <Text
             fontSize={20}
             color={theme.onSurface?.val}
-            lineHeight={20}
+            lineHeight="20px"
           >
             🔍
           </Text>
@@ -141,7 +144,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           cursor="pointer"
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
-          <Text fontSize={18} color={theme.onSurfaceVariant?.val} lineHeight={18}>×</Text>
+          <Text fontSize={18} color={theme.onSurfaceVariant?.val} lineHeight="18px">×</Text>
         </View>
       )}
 

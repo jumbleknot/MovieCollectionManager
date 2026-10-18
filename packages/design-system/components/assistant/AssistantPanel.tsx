@@ -29,7 +29,8 @@
 import React, { useRef, useState, useCallback } from 'react'
 import {
   ScrollView, KeyboardAvoidingView, Platform, TextInput, } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar }               from './AssistantAvatar'
 import { ChatBubble }                    from './ChatBubble'
@@ -86,7 +87,7 @@ function PanelHeader({
       {/* Title / subtitle */}
       <YStack flex={1}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={18}
           fontWeight="500"
           color={theme.onSurface?.val}
@@ -95,7 +96,7 @@ function PanelHeader({
         </Text>
         {subtitle || isThinking ? (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             letterSpacing={0.4}
             color={isThinking ? theme.primary?.val : theme.onSurfaceVariant?.val}
@@ -115,13 +116,12 @@ function PanelHeader({
           justifyContent="center"
           cursor="pointer"
           onPress={onClose}
-          pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
-          hoverStyle={{ backgroundColor: theme.surface1?.val }}
+          backgroundColor={{ hover: theme.surface1?.val, press: theme.surfaceVariant?.val }}
           accessible
           accessibilityLabel="Close assistant"
           accessibilityRole="button"
         >
-          <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight={20}>✕</Text>
+          <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">✕</Text>
         </View>
       )}
     </XStack>
@@ -143,7 +143,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
     <YStack padding={16} gap={8} alignItems="center">
       <AssistantAvatar size="xl" />
       <Text
-        fontFamily="$heading"
+        fontFamily="heading"
         fontSize={20}
         fontWeight="400"
         color={theme.onSurface?.val}
@@ -156,19 +156,17 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
         {SUGGESTED_PROMPTS.map((prompt) => (
           <View
             key={prompt}
-            backgroundColor={theme.surface2?.val}
+            backgroundColor={{ default: theme.surface2?.val, press: theme.surface3?.val }}
             borderRadius={12}
             borderWidth={1}
-            borderColor={theme.outlineVariant?.val}
+            borderColor={{ default: theme.outlineVariant?.val, hover: theme.outline?.val }}
             paddingHorizontal={16}
             paddingVertical={12}
             cursor="pointer"
             onPress={() => onSelect(prompt)}
-            pressStyle={{ backgroundColor: theme.surface3?.val }}
-            hoverStyle={{ borderColor: theme.outline?.val }}
           >
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={14}
               letterSpacing={0.25}
               color={theme.onSurface?.val}
@@ -258,7 +256,9 @@ function InputBar({
         justifyContent="center"
         cursor={canSend ? 'pointer' : 'default'}
         onPress={handleSend}
-        pressStyle={canSend ? { opacity: 0.8, scale: 0.96 } : undefined}
+        // A disabled send has no press feedback: the clauses exist only while it can send.
+        opacity={canSend ? 'press:0.8' : undefined}
+        scale={canSend ? 'press:0.96' : undefined}
         accessible
         accessibilityLabel="Send message"
         accessibilityRole="button"
@@ -266,7 +266,7 @@ function InputBar({
       >
         <Text
           fontSize={18}
-          lineHeight={18}
+          lineHeight="18px"
           color={canSend ? theme.onPrimary?.val : theme.onSurfaceVariant?.val}
         >
           ↑

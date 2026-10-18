@@ -1,14 +1,13 @@
 /**
  * MCM Design System — Tamagui Configuration
  *
- * Drop this file into the root of `mcm-app/` and reference it in tamagui.config.js
- * (or tamagui.config.ts if your bundler supports it).
+ * mcm-app re-exports this from its own tamagui.config.ts, which the Tamagui Metro plugin
+ * (metro.config.js) and <TamaguiProvider> both read.
  *
- * Prerequisite packages:
- *   npx expo install tamagui @tamagui/core @tamagui/config
- *   npx expo install expo-font @expo-google-fonts/outfit @expo-google-fonts/inter
+ * Packages: @tamagui/core, @tamagui/shorthands, @tamagui/stacks — one exact version, kept in
+ * lockstep by scripts/__tests__/tamagui-version-lockstep.guard.test.mjs.
  *
- * Tamagui version: ^1.x  (tested with 1.102+)
+ * Tamagui version: 3.x (exact pin; feature 081 US10)
  */
 
 import { createTamagui, createTokens } from '@tamagui/core'
@@ -22,15 +21,14 @@ import {
   radiusTokens,
   zIndexTokens,
 } from './tokens/spacing'
-import { lightColors } from './tokens/colors'
 import { palette }                 from './tokens/palette'
 
 // ─── Flatten all palette colours into a single colour token map ──────────────
-// This makes every tonal palette colour available as $primaryP40 etc.
+// This makes every tonal palette colour available as `primaryP40` etc. (Tamagui 3 token names carry no `$`).
 // The semantic roles (primary, onPrimary …) come from the theme, not here.
 
 const colorTokens = {
-  // Raw palette tones — available as $color.primaryP40 etc.
+  // Raw palette tones — available as `primaryP40` etc.
   primaryP0:   palette.primary[0],
   primaryP10:  palette.primary[10],
   primaryP20:  palette.primary[20],
@@ -101,11 +99,15 @@ const colorTokens = {
   errorP99:  palette.error[99],
   errorP100: palette.error[100],
 
-  // Semantic aliases duplicated here so they survive outside of a theme context
-  ...lightColors,
+  // NO semantic aliases here (they were `...lightColors`). Tamagui 3 resolves a bare name on a colour
+  // property TOKEN-FIRST, theme second (getSplitStyles), where v2's `$name` was theme-first. With
+  // the light values duplicated as tokens, `color: 'onBackground'` / `outlineColor: 'primary'`
+  // resolved to the LIGHT colour inside the dark theme (measured: #1a1c1e instead of #e3e2e6,
+  // components/text-defaults.test.tsx). Nothing reads them as tokens, and every theme defines all
+  // 39 roles, so the theme is now their only source — as it already was in practice (feature 081 US10).
 
-  // Transparent utility
-  transparent: 'rgba(0,0,0,0)',
+  // `transparent` is not a token: Tamagui 3 rejects a token named after a CSS keyword, which
+  // always resolves as the literal CSS value anyway (feature 081 US10).
   white:       '#FFFFFF',
   black:       '#000000',
 } as const
@@ -151,14 +153,9 @@ const config = createTamagui({
   media,
   shorthands,
 
-  // Default props applied to every Tamagui component
-  defaultProps: {
-    Text: {
-      fontFamily: '$body',
-      color:      '$onBackground',
-    },
-    // Stack / XStack / YStack — no opinion; keep flexible
-  },
+  // No `defaultProps`: Tamagui 3 removed config-level default props (guide §17). The body-font /
+  // onBackground defaults every Text used to get from here now live on the design system's own
+  // `Text` (components/primitives/Text.tsx) — feature 081 US10.
 
   // Settings
   settings: {

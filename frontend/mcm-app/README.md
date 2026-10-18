@@ -16,13 +16,22 @@ Outfit headings / Inter body, Cinematic-Blue primary, restrained orange accent).
 
 - **`tamagui.config.ts`** re-exports the design-system config. The app is wrapped
   in `<TamaguiProvider>` in [src/app/_layout.tsx](src/app/_layout.tsx).
-- **Runtime-only Tamagui.** The Tamagui babel/metro compiler plugins are **not**
-  installed — only the runtime. This keeps the (fragile, Windows) Android build,
-  the `@segment` metro shim, and the Reanimated worklets babel plugin untouched.
-  Bundle/TTI cost is accepted in exchange (measured in the feature-015 PR).
-- **Pin Tamagui to v1 (`^1.144`).** The design system is authored against the
-  Tamagui **v1** API; `expo install tamagui` pulls a breaking v2 by default. Keep
-  the v1 pin on any future install. Migrating the DS to v2 is a separate effort.
+- **Runtime-only Tamagui, again** (feature 081 US10). Tamagui 3 removed the Babel plugin the
+  app used since feature 015. Its replacement, `@tamagui/metro-plugin` 3.0.x, was measured to
+  lower some web modules to static class names *without emitting their CSS* (lost gaps, widths,
+  radii) while saving no bytes (entry chunk 1,881,353 B with it, 1,881,066 B without), and the dev
+  server serves the app without it. So no Tamagui compiler is wired; see specs/081 research
+  "US10" before re-adding one.
+- **Tamagui is pinned to ONE exact 3.x version** across both manifests
+  (`@tamagui/core`, `@tamagui/stacks`, `@tamagui/shorthands`),
+  grouped as one Renovate `tamagui` branch, and guarded by
+  `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. Never add a range.
+- **Tamagui 3 spelling.** Token and theme names have no `$` (`fontFamily="body"`,
+  `outlineColor="primary"`); a state is a clause on the property it modifies
+  (`opacity="hover:0.92 press:0.88"`, or `backgroundColor={{ default: a, hover: b }}`
+  for a computed value) — `hoverStyle` / `pressStyle` / `focusVisibleStyle` are
+  gone and an unconverted one is silently ignored. A numeric `lineHeight` on a
+  Tamagui component is a **ratio**; write pixels as `"20px"`.
 - **Fonts** (Outfit/Inter via `@expo-google-fonts/*`) load non-blocking in
   `_layout.tsx`; the Tamagui families fall back to `system-ui, sans-serif` so a
   font-load failure never hangs the app or flashes unstyled text (FR-017).
@@ -42,8 +51,11 @@ Outfit headings / Inter body, Cinematic-Blue primary, restrained orange accent).
 
 - Style with **theme tokens**: `const theme = useTheme()` then `theme.<role>?.val`
   (Tamagui's `useTheme` values are optionally typed — always `?.val`).
-- Import leanly: stacks from `@tamagui/stacks`, `Text`/`useTheme` from
-  `@tamagui/core`, DS components from `@mcm/design-system` — **never** `from 'tamagui'`.
+- Import leanly: stacks from `@tamagui/stacks`, `useTheme` from `@tamagui/core`,
+  `Text` and DS components from `@mcm/design-system` — **never** `from 'tamagui'`, and
+  never `Text` from `@tamagui/core`: the design system's `Text` carries the body-font /
+  `onBackground` defaults that Tamagui 2 applied from config (`text-defaults.test.tsx`
+  fails on a core `Text` import).
 - **Preserve every `testID`** — the stable selectors are a contract
   (`specs/015-apply-design-system/contracts/selectors-baseline.txt`; FR-018).
 - Unit tests that render a themed component must import `render` from

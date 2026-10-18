@@ -9,8 +9,8 @@
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Badge } from '@mcm/design-system';
+import { useTheme } from '@tamagui/core';
+import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Badge, Text } from '@mcm/design-system';
 
 import type { BackupVersion } from '@/types/backups';
 
@@ -34,7 +34,7 @@ export function VersionList({ versions, busy = false, onRestore, downloadUrl }: 
     return (
       <Card testID="backup-version-list-empty">
         <CardContent>
-          <Text fontFamily="$body" fontSize={14} lineHeight={20} color={theme.onSurfaceVariant?.val}>
+          <Text fontFamily="body" fontSize={14} lineHeight="20px" color={theme.onSurfaceVariant?.val}>
             No backups at this destination yet. Run this job once and its versions appear here.
           </Text>
         </CardContent>
@@ -55,7 +55,7 @@ export function VersionList({ versions, busy = false, onRestore, downloadUrl }: 
               <CardContent>
                 <View style={styles.statusRow}>
                   <Badge inline count="Unreadable" colorScheme="error" testID={`backup-version-unusable-${version.key}`} />
-                  <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val}>
+                  <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
                     This file is at your destination but cannot be read, so it cannot be restored.
                     You can still download it.
                   </Text>

@@ -15,7 +15,8 @@
  */
 
 import React from 'react'
-import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 
 export interface BannerProps extends ViewProps {
   tone:      'success' | 'error'
@@ -44,7 +45,7 @@ export const Banner = React.forwardRef<any, BannerProps>(function Banner(
       {...rest}
     >
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={14}
         fontWeight={emphasis ? '600' : '400'}
         textAlign={align}

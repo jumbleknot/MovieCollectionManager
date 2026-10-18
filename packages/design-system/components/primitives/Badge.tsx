@@ -17,7 +17,8 @@
  */
 
 import React from 'react'
-import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from './Text'
 
 export type BadgeColorScheme = 'error' | 'primary' | 'tertiary'
 
@@ -88,12 +89,12 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
     >
       {!isDot && (
         <Text
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={11}
           fontWeight="500"
           letterSpacing={0.5}
           color={c.fg}
-          lineHeight={12}
+          lineHeight="12px"
         >
           {label}
         </Text>

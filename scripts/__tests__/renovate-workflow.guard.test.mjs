@@ -28,6 +28,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import { ruleMatches, resolvedGroupName as resolveGroupName } from '../lib/renovate-package-rules.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const WORKFLOW = resolve(REPO_ROOT, '.forgejo/workflows/renovate.yml');
@@ -253,85 +254,9 @@ test('a workflow cron falls inside the permitted branch-creation window under BO
 /** The repo's own packageRules only — presets are deliberately excluded (see above). */
 const packageRules = config.packageRules ?? [];
 
-/**
- * Does one packageRule match a dependency? Models only the `match*` forms this config actually uses,
- * and THROWS on any it does not know — a guard that silently treats an unrecognised matcher as
- * "no match" would quietly stop asserting the moment someone adds a rule form, which is the failure
- * mode this whole file exists to prevent.
- */
-function ruleMatches(rule, dep) {
-  const known = new Set([
-    'description',
-    'matchManagers',
-    'matchPackageNames',
-    'matchUpdateTypes',
-    'matchDatasources',
-    'matchFileNames',
-    'groupName',
-    'automerge',
-    'enabled',
-    'minimumReleaseAge',
-    'prPriority',
-    'matchCurrentVersion',
-    'dependencyDashboardApproval',
-    'allowedVersions',
-    // Item #349. Per-registry timestamp behaviour; see the `timestamp-optional` rule in renovate.json.
-    'minimumReleaseAgeBehaviour',
-    // Feature 063 / item #297. Added here FIRST and on its own, because this set is deliberately
-    // fail-closed: the moment `versioning` appears in renovate.json, every one of the 43 assertions
-    // in this file throws on the unknown key rather than on its own subject. Teaching the model the
-    // key changes no behaviour and asserts nothing new — it is what lets the assertions below say
-    // anything at all.
-    'versioning',
-  ]);
-  for (const key of Object.keys(rule)) {
-    if (!known.has(key)) {
-      throw new Error(
-        `packageRule uses '${key}', which this guard does not model — extend ruleMatches() before ` +
-          'adding it, or the nx grouping assertion below silently stops meaning anything.',
-      );
-    }
-  }
-
-  const matchesName = (pattern, value) => {
-    if (pattern === '*') return true;
-    if (pattern.startsWith('!')) {
-      throw new Error(
-        `matchPackageNames negation '${pattern}' is not modelled — extend ruleMatches() before using it.`,
-      );
-    }
-    if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
-      return new RegExp(pattern.slice(1, pattern.lastIndexOf('/'))).test(value);
-    }
-    return pattern === value;
-  };
-
-  if (rule.matchManagers && !rule.matchManagers.includes(dep.manager)) return false;
-  if (rule.matchDatasources && !rule.matchDatasources.includes(dep.datasource)) return false;
-  if (rule.matchUpdateTypes && !rule.matchUpdateTypes.includes(dep.updateType)) return false;
-  if (rule.matchCurrentVersion) {
-    // Only the one form this config uses. Anything else must be modelled before it is used, or the
-    // rule silently matches everything — the same fail-open shape as an unknown label name.
-    if (rule.matchCurrentVersion !== '<1.0.0') {
-      throw new Error(`matchCurrentVersion '${rule.matchCurrentVersion}' is not modelled — extend ruleMatches().`);
-    }
-    if (dep.currentVersion === undefined) return false;
-    if (!/^0\./.test(dep.currentVersion)) return false;
-  }
-  if (rule.matchFileNames && !rule.matchFileNames.includes(dep.packageFile)) return false;
-  if (rule.matchPackageNames && !rule.matchPackageNames.some((p) => matchesName(p, dep.depName))) return false;
-  return true;
-}
-
-/** The group a dep ends up in: the LAST matching rule that names one wins, as Renovate resolves it. */
-function resolvedGroupName(dep) {
-  let groupName = null;
-  for (const rule of packageRules) {
-    if (!ruleMatches(rule, dep)) continue;
-    if (rule.groupName !== undefined) groupName = rule.groupName;
-  }
-  return groupName;
-}
+// ruleMatches() and the "last matching groupName wins" resolution live in scripts/lib/renovate-package-rules.mjs
+// (feature 081 US10), shared with tamagui-version-lockstep.guard.test.mjs so both guards resolve through ONE model.
+const resolvedGroupName = (dep) => resolveGroupName(packageRules, dep);
 
 // The nx family as the pipeline presents it. The two HALVES are the pair item #194 is about; the
 // @nx/* PLUGINS are here because grouping only `nx` would have fixed the half-bump by splitting the
@@ -1035,7 +960,10 @@ test('the copilotkit gate leaves the PATCH track routine, so a security patch is
 });
 
 test('the copilotkit rule does NOT swallow unrelated npm packages', () => {
-  for (const depName of ['@ai-sdk/openai', 'express', '@tamagui/core']) {
+  // `@tamagui/core` was the third control until feature 081 US10 gave the Tamagui family its own
+  // `tamagui` group on purpose (asserted by tamagui-version-lockstep.guard.test.mjs). It is replaced
+  // by another routine npm dependency of the app, so this still checks three unrelated packages.
+  for (const depName of ['@ai-sdk/openai', 'express', 'axios']) {
     const group = resolvedGroupName(copilotkitDep(depName, 'minor'));
     assert.equal(
       group,

@@ -20,9 +20,14 @@
  */
 
 import React from 'react'
-import { ActivityIndicator, type GestureResponderEvent, } from 'react-native'
+import { ActivityIndicator } from 'react-native'
 import {
-  View, Text, styled, useTheme, type ViewProps } from '@tamagui/core'
+  View,
+  styled,
+  useTheme,
+  type ViewProps,
+} from '@tamagui/core'
+import { Text } from './Text'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,7 +47,10 @@ export interface ButtonProps extends Omit<ViewProps, 'onPress'> {
   /** Allow the label to wrap (up to 3 lines) instead of truncating — for full-width list/option
    *  buttons with long text (e.g. the assistant's selectable result buttons). */
   multiline?:    boolean
-  onPress?:      (e: GestureResponderEvent) => void
+  /** Tamagui's own press handler type. Tamagui 3 types its events from React Native 0.87
+   *  (@tamagui/react-native-types), where the press event narrowed; declaring react-native's
+   *  `GestureResponderEvent` here no longer matches the frame it is forwarded to (feature 081 US10). */
+  onPress?:      ViewProps['onPress']
 }
 
 // ─── Size config ──────────────────────────────────────────────────────────────
@@ -60,32 +68,24 @@ const ButtonBase = styled(View, {
   flexDirection:   'row',
   alignItems:      'center',
   justifyContent:  'center',
-  borderRadius:    '$9',     // MD3 extraLarge = full pill for buttons
+  borderRadius:    '9',      // MD3 extraLarge = full pill for buttons
   overflow:        'hidden',
   cursor:          'pointer',
   userSelect:      'none',
   // MD3 min touch target 48x48 — enforced via minHeight even for sm
   minHeight:       48,
-  // No default outline; the ring is added on KEYBOARD focus only (focusVisibleStyle) so a mouse
-  // click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
-  outlineStyle:    'none',
-
-  pressStyle: {
-    opacity: 0.88,
-  },
-  hoverStyle: {
-    opacity: 0.92,
-  },
-  focusVisibleStyle: {
-    outlineStyle: 'solid',
-    outlineWidth: 3,
-    outlineColor: '$primary',
-    outlineOffset: 2,
-  },
-  disabledStyle: {
-    opacity: 0.38,
-    cursor: 'not-allowed',
-  },
+  // No default outline; the ring is added on KEYBOARD focus only (`focus-visible`, never `focus`) so
+  // a mouse click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
+  outlineStyle:    'none focus-visible:solid',
+  outlineWidth:    'focus-visible:3px',
+  outlineColor:    'focus-visible:primary',
+  outlineOffset:   'focus-visible:2px',
+  // Tamagui 3: a state is a clause on the property it modifies (was pressStyle / hoverStyle). The
+  // instance below must NOT pass a resting opacity of its own — a prop replaces this whole program,
+  // so `opacity={1}` would silently switch hover and press off. The v2 `disabledStyle` is not carried
+  // over: Button never passed `disabled` to this frame, so it never applied, and v3's `disabled:`
+  // clause matches `aria-disabled` on web — it would start dimming the LOADING state too.
+  opacity:         'hover:0.92 press:0.88',
 })
 
 // ─── State-layer overlay (MD3 ripple equivalent) ─────────────────────────────
@@ -94,12 +94,9 @@ const StateLayer = styled(View, {
   name:            'MCMButtonStateLayer',
   position:        'absolute',
   top: 0, right: 0, bottom: 0, left: 0,
-  borderRadius:    '$9',
+  borderRadius:    '9',
   pointerEvents:   'none',
-  opacity:         0,
-  hoverStyle:      { opacity: 0.08 },
-  pressStyle:      { opacity: 0.12 },
-  focusVisibleStyle: { opacity: 0.12 },
+  opacity:         '0 hover:0.08 press:0.12 focus-visible:0.12',
 })
 
 // ─── Button component ─────────────────────────────────────────────────────────
@@ -205,7 +202,8 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
       height={multiline ? undefined : cfg.height}
       paddingVertical={multiline ? 10 : undefined}
       paddingHorizontal={paddingH}
-      opacity={disabled ? 0.38 : 1}
+      // undefined (not 1) when enabled, so ButtonBase's hover/press opacity program stays in force.
+      opacity={disabled ? 0.38 : undefined}
       pointerEvents={isInactive ? 'none' : 'auto'}
       onPress={isInactive ? undefined : onPress}
       aria-disabled={isInactive ? true : undefined}
@@ -241,7 +239,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
           - paddingHorizontal: a few px so Android doesn't clip the trailing glyph's side-bearing (the
             'k' in "Keycloak"); harmless now that the label no longer shrinks. */}
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={cfg.fontSize}
         fontWeight="500"
         letterSpacing={0.1}

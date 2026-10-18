@@ -19,7 +19,8 @@
 
 import React from 'react'
 import { Image } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -103,7 +104,7 @@ function FormatBadge({ format }: { format: MediaFormat }) {
       paddingVertical={2}
     >
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={10}
         fontWeight="700"
         letterSpacing={0.5}
@@ -131,8 +132,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
       overflow="hidden"
       cursor="pointer"
       onPress={onPress}
-      pressStyle={{ opacity: 0.9, scale: 0.98 }}
-      hoverStyle={{ opacity: 0.95 }}
+      // Tamagui 3 clauses (were pressStyle / hoverStyle).
+      opacity="hover:0.95 press:0.9"
+      scale="press:0.98"
       borderWidth={selected ? 2 : 0}
       borderColor={selected ? theme.primary?.val : undefined}
       // MD3 elevation 1
@@ -140,7 +142,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.12}
       shadowRadius={2}
-      elevation={1}
+      // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+      // forwards it on Android at runtime, so this renders exactly as the prop did).
+      style={{ elevation: 1 }}
     >
       {/* Poster image — 2:3 aspect ratio */}
       <View width={160} height={240} backgroundColor={theme.surfaceVariant?.val}>
@@ -154,7 +158,7 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
         ) : (
           // Placeholder
           <View flex={1} alignItems="center" justifyContent="center">
-            <Text fontSize={48} lineHeight={48}>🎬</Text>
+            <Text fontSize={48} lineHeight="48px">🎬</Text>
           </View>
         )}
 
@@ -171,7 +175,7 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
             alignItems="center"
             justifyContent="center"
           >
-            <Text fontSize={12} lineHeight={12}>♥</Text>
+            <Text fontSize={12} lineHeight="12px">♥</Text>
           </View>
         )}
       </View>
@@ -179,19 +183,19 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
       {/* Info */}
       <YStack padding={10} gap={4}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={14}
           fontWeight="500"
           color={theme.onSurface?.val}
           numberOfLines={2}
-          lineHeight={18}
+          lineHeight="18px"
         >
           {movie.title}
         </Text>
 
         {movie.year && (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             letterSpacing={0.4}
             color={theme.onSurfaceVariant?.val}
@@ -230,13 +234,15 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
       testID={testID}
       accessibilityLabel={accessibilityLabel ?? movie.title}
       accessibilityRole="button"
-      backgroundColor={selected ? theme.secondaryContainer?.val : 'transparent'}
+      backgroundColor={{
+        default: selected ? theme.secondaryContainer?.val : 'transparent',
+        hover: theme.surface1?.val,
+        press: theme.surfaceVariant?.val,
+      }}
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
       onPress={onPress}
-      pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
-      hoverStyle={{ backgroundColor: theme.surface1?.val }}
       paddingVertical={8}
       paddingHorizontal={16}
       alignItems="center"
@@ -268,7 +274,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
       {/* Info */}
       <YStack flex={1} gap={2}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={16}
           fontWeight="500"
           color={theme.onSurface?.val}
@@ -278,7 +284,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
         </Text>
 
         <Text
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={12}
           letterSpacing={0.4}
           color={theme.onSurfaceVariant?.val}

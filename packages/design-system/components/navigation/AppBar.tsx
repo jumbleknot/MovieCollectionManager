@@ -18,7 +18,8 @@
 
 import React from 'react'
 import { Animated, StatusBar, Platform, type ViewStyle, } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack } from '@tamagui/stacks'
 
 export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large'
@@ -174,10 +175,10 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
           }}
         >
           <Text
-            fontFamily="$heading"
+            fontFamily="heading"
             fontSize={variant === 'large' ? 32 : 28}
             fontWeight="400"
-            lineHeight={variant === 'large' ? 40 : 36}
+            lineHeight={variant === 'large' ? '40px' : '36px'}
             color={theme.onSurface?.val}
             numberOfLines={2}
           >
@@ -185,7 +186,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
           </Text>
           {subtitle && (
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={14}
               letterSpacing={0.25}
               color={theme.onSurfaceVariant?.val}

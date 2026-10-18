@@ -7,6 +7,8 @@
  */
 module.exports = {
   preset: 'jest-expo',
+  // Tamagui 3 ESM-only `react-native` exports -> CJS (feature 081 US10); see the resolver header.
+  resolver: '<rootDir>/jest/tamagui-cjs-resolver.js',
   // Was `components/**` only, which silently EXCLUDED tokens/ — with-alpha.test.ts was written,
   // committed and never executed, reporting green while testing nothing. Match the whole
   // package instead, so a new test directory cannot be invisible to the runner again.

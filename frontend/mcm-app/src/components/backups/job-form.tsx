@@ -7,8 +7,8 @@
  */
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, TextField, Chip, FilledButton, TextButton } from '@mcm/design-system';
+import { useTheme } from '@tamagui/core';
+import { Card, CardHeader, CardContent, CardActions, TextField, Chip, FilledButton, TextButton, Text } from '@mcm/design-system';
 
 import type { BackupDestinationView } from '@/types/backups';
 import type { JobDraft, JobView } from '@/hooks/use-backup-jobs';
@@ -56,7 +56,7 @@ export function JobForm({
           testID="backup-job-label"
         />
 
-        <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
+        <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
           Destination
         </Text>
         <View style={styles.chipRow}>
@@ -71,7 +71,7 @@ export function JobForm({
           ))}
         </View>
 
-        <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
+        <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
           Collections
         </Text>
         <View style={styles.chipRow}>
@@ -85,7 +85,7 @@ export function JobForm({
             />
           ))}
         </View>
-        <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={8}>
+        <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={8}>
           {selected.length === 0
             ? 'Nothing selected — every collection you own will be backed up, including ones you add later.'
             : `${selected.length} selected.`}

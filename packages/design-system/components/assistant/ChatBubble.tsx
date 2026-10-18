@@ -20,7 +20,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar } from './AssistantAvatar'
 
@@ -85,7 +86,7 @@ function Timestamp({ date }: { date: Date }) {
   const m = date.getMinutes().toString().padStart(2, '0')
   return (
     <Text
-      fontFamily="$body"
+      fontFamily="body"
       fontSize={11}
       letterSpacing={0.5}
       color={theme.onSurfaceVariant?.val}
@@ -119,7 +120,7 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
           paddingVertical={8}
         >
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             letterSpacing={0.4}
             color={theme.onSurfaceVariant?.val}
@@ -194,9 +195,9 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
               {/* Text message */}
               {message && (
                 <Text
-                  fontFamily="$body"
+                  fontFamily="body"
                   fontSize={15}
-                  lineHeight={22}
+                  lineHeight="22px"
                   letterSpacing={0.25}
                   color={textColor}
                 >
@@ -267,7 +268,9 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         shadowOffset={{ width: 0, height: 1 }}
         shadowOpacity={0.12}
         shadowRadius={4}
-        elevation={2}
+        // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+        // forwards it on Android at runtime, so this renders exactly as the prop did).
+        style={{ elevation: 2 }}
       >
         {/* Header */}
         <XStack
@@ -277,9 +280,9 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
           alignItems="center"
           gap={8}
         >
-          <Text fontSize={16} lineHeight={16}>⚡</Text>
+          <Text fontSize={16} lineHeight="16px">⚡</Text>
           <Text
-            fontFamily="$heading"
+            fontFamily="heading"
             fontSize={15}
             fontWeight="500"
             color={theme.onPrimaryContainer?.val}
@@ -292,9 +295,9 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         {/* Description */}
         <View paddingHorizontal={16} paddingVertical={12}>
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={14}
-            lineHeight={20}
+            lineHeight="20px"
             letterSpacing={0.25}
             color={theme.onSurface?.val}
           >
@@ -317,11 +320,10 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               borderWidth={1}
               borderColor={theme.outline?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
-              opacity={loading ? 0.5 : 1}
+              opacity={`${loading ? 0.5 : 1} press:0.8`}
               onPress={loading ? undefined : onReject}
-              pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
+              <Text fontFamily="body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
                 Reject
               </Text>
             </View>
@@ -331,11 +333,10 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               borderRadius={20}
               backgroundColor={theme.primary?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
-              opacity={loading ? 0.7 : 1}
+              opacity={`${loading ? 0.7 : 1} press:0.8`}
               onPress={loading ? undefined : onApprove}
-              pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
+              <Text fontFamily="body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
                 {loading ? 'Applying…' : 'Approve'}
               </Text>
             </View>
@@ -343,7 +344,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         ) : (
           <View paddingHorizontal={16} paddingBottom={12}>
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={13}
               color={approved ? theme.primary?.val : theme.onSurfaceVariant?.val}
             >
