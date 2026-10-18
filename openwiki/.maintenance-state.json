@@ -1,27 +1,34 @@
 {
   "coveredCommit": "62556d3befc8e633d4dee805d6a853528cad8bf7",
   "coveredAt": "2026-10-18T17:47:14.691Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "projects",
       "pages": [
         "repository.md",
-        "bff.md",
-        "expo-app.md",
-        "design-system.md"
+        "expo-app.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md; openwiki/projects/bff.md; openwiki/projects/expo-app.md; openwiki/projects/design-system.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "renovate.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/renovate.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 791,
-    "headCommit": "d4b57a3ae295a51f6cceaf793d13d23a4101f49b",
+    "headCommit": "bd962adebf28632de483fd4d74fe012d0d12ec32",
     "markerBefore": "4d942df6e84df55a14a30bf37a6f5a14a62f6cee",
     "slices": [
       {
@@ -35,44 +42,77 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md; openwiki/runbooks/devcontainer.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "bff.md",
+          "design-system.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md"
       }
     ],
-    "updatedAt": "2026-10-18T17:47:15.132Z"
+    "updatedAt": "2026-10-18T21:21:09.762Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 9,
-    "elapsedSeconds": 1467,
-    "stoppedAtBudget": true
+    "pagesWritten": 3,
+    "elapsedSeconds": 2200,
+    "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "projects/expo-app.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-18T21:21:09.318Z",
+      "failuresAtLow": 0
+    },
+    "projects/repository.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-18T21:21:09.318Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/renovate.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-18T21:21:09.318Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 311,
+    "calls": 399,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1748155,
-    "cached": 27296082,
+    "uncached": 3158391,
+    "cached": 38906994,
     "cacheWrite": 0,
-    "output": 458556,
-    "reasoning": 372697,
-    "ms": 3747598,
-    "estCostUsd": 1.2385,
+    "output": 571774,
+    "reasoning": 474309,
+    "ms": 4123224,
+    "estCostUsd": 1.8671,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/android-emulator.md",
-        "runbooks/devcontainer.md"
+        "projects/repository.md",
+        "projects/bff.md",
+        "projects/expo-app.md",
+        "projects/design-system.md",
+        "runbooks/renovate.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 1.2385,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 1.8671,
       "rateLimited": null
     }
   ],
