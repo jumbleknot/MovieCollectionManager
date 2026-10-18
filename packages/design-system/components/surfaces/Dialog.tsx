@@ -23,7 +23,8 @@
 
 import React from 'react'
 import { Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { YStack, XStack } from '@tamagui/stacks'
 
 export interface DialogProps {
@@ -81,7 +82,9 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         shadowOffset={{ width: 0, height: 6 }}
         shadowOpacity={0.2}
         shadowRadius={6}
-        elevation={6}
+        // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+        // forwards it on Android at runtime, so this renders exactly as the prop did).
+        style={{ elevation: 6 }}
       >
           {/* Scrollable content region — title/supporting/children scroll; the divider + actions
               row below stay pinned so the buttons are always reachable even with long content. */}
@@ -100,10 +103,10 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
               paddingBottom={16}
             >
               <Text
-                fontFamily="$heading"
+                fontFamily="heading"
                 fontSize={24}
                 fontWeight="400"
-                lineHeight={32}
+                lineHeight="32px"
                 color={theme.onSurface?.val}
                 textAlign={icon ? 'center' : 'left'}
               >
@@ -115,10 +118,10 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
             {supportingText && (
               <View paddingHorizontal={24} paddingBottom={16}>
                 <Text
-                  fontFamily="$body"
+                  fontFamily="body"
                   fontSize={14}
                   letterSpacing={0.25}
-                  lineHeight={20}
+                  lineHeight="20px"
                   color={theme.onSurfaceVariant?.val}
                 >
                   {supportingText}

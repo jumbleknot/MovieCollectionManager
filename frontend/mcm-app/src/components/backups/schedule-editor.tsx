@@ -18,7 +18,7 @@
  */
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
 import {
   Card,
   CardHeader,
@@ -30,6 +30,7 @@ import {
   Banner,
   FilledButton,
   TextButton,
+  Text,
 } from '@mcm/design-system';
 
 import type { BackupFrequency, Schedule } from '@/types/backups';
@@ -154,7 +155,7 @@ export function ScheduleEditor({
             disabled={busy}
             label="Run this backup automatically"
           />
-          <Text fontFamily="$body" fontSize={14} color={theme.onSurface?.val} marginLeft={12}>
+          <Text fontFamily="body" fontSize={14} color={theme.onSurface?.val} marginLeft={12}>
             {enabled ? 'On' : 'Off'}
           </Text>
         </View>
@@ -193,7 +194,7 @@ export function ScheduleEditor({
 
         {enabled && (
           <>
-            <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
+            <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
               How often
             </Text>
             <View style={styles.chipRow}>
@@ -219,7 +220,7 @@ export function ScheduleEditor({
             {draft.frequency === 'weekly' && (
               <>
                 <Text
-                  fontFamily="$body"
+                  fontFamily="body"
                   fontSize={12}
                   color={theme.onSurfaceVariant?.val}
                   marginTop={16}
@@ -295,7 +296,7 @@ export function ScheduleEditor({
             </View>
 
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={12}
               color={theme.onSurfaceVariant?.val}
               marginTop={12}

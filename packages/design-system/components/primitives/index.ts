@@ -18,3 +18,6 @@ export type { BadgeProps, BadgeColorScheme } from './Badge'
 
 export { Divider }      from './Divider'
 export type { DividerProps, DividerVariant, DividerDirection } from './Divider'
+
+export { Text }         from './Text'
+export type { TextProps } from './Text'

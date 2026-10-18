@@ -15,7 +15,8 @@
 
 import React, { useCallback, useState, useEffect } from 'react'
 import { Animated, Platform } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,11 +91,13 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
         shadowOffset={{ width: 0, height: 2 }}
         shadowOpacity={0.2}
         shadowRadius={6}
-        elevation={6}
+        // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+        // forwards it on Android at runtime, so this renders exactly as the prop did).
+        style={{ elevation: 6 }}
       >
         <Text
           flex={1}
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={14}
           letterSpacing={0.25}
           color={theme.inverseOnSurface?.val}
@@ -111,7 +114,7 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={14}
               fontWeight="500"
               letterSpacing={0.1}

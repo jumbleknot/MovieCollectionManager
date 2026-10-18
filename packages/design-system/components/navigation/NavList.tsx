@@ -24,7 +24,8 @@
 
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { withAlpha, stateLayer } from '../../tokens/with-alpha'
 
 export interface NavListItem {
@@ -85,9 +86,14 @@ export const NavList = React.memo<NavListProps>(function NavList({
               paddingHorizontal={compact ? 16 : 24}
               // ONE shape for both states — this is the property the component exists for.
               borderRadius={28}
-              backgroundColor={isActive ? theme.secondaryContainer?.val : 'transparent'}
-              // hoverStyle ONLY — never `pressStyle` on this inner Tamagui View. Measured on
-              // Android (CI run 2063): a Tamagui `pressStyle` makes the View a touch responder,
+              // Tamagui 3: the hover is a clause on backgroundColor (was `hoverStyle`); an active row
+              // has none, as before.
+              backgroundColor={isActive
+                ? theme.secondaryContainer?.val
+                : { default: 'transparent', hover: hoverLayer }}
+              // A hover clause ONLY — never a `press` clause (v2: `pressStyle`) on this inner Tamagui
+              // View. Measured on Android (CI run 2063): a Tamagui press state makes the View a touch
+              // responder (v3 still attaches press events for a press clause, createComponent),
               // which SWALLOWS the press, so the outer Pressable's onPress never fires. The tap
               // itself succeeds — Maestro logged `Tap on id: settings-nav-assistant... COMPLETED`
               // — and then nothing navigates, so it reads as a routing bug rather than a styling
@@ -95,12 +101,11 @@ export const NavList = React.memo<NavListProps>(function NavList({
               // jest renders React Native but `fireEvent.press` targets the Pressable directly, so
               // the unit tier cannot see it either. The pressed visual belongs on the outer
               // Pressable (styles.rowPressed), which is what `Tabs` does for the same reason.
-              hoverStyle={isActive ? undefined : { backgroundColor: hoverLayer }}
               cursor="pointer"
             >
               {item.icon}
               <Text
-                fontFamily="$body"
+                fontFamily="body"
                 fontSize={14}
                 fontWeight={isActive ? '700' : '500'}
                 letterSpacing={0.1}

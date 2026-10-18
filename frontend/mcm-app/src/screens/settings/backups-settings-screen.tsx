@@ -14,8 +14,8 @@
 
 import React, { useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Banner } from '@mcm/design-system';
+import { useTheme } from '@tamagui/core';
+import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Banner, Text } from '@mcm/design-system';
 
 import { DestinationForm } from '@/components/backups/destination-form';
 import { DestinationList } from '@/components/backups/destination-list';
@@ -88,9 +88,9 @@ export function BackupsSettingsScreen(): React.JSX.Element {
         <CardHeader title="Backups" subtitle="Back up and restore your collections" />
         <CardContent>
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={14}
-            lineHeight={20}
+            lineHeight="20px"
             letterSpacing={0.25}
             color={theme.onSurfaceVariant?.val}
           >
@@ -123,7 +123,7 @@ export function BackupsSettingsScreen(): React.JSX.Element {
             <CardHeader title="Destinations" subtitle="Where your backups are written" />
             <CardContent>
               {loading ? (
-                <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
+                <Text fontFamily="body" fontSize={14} color={theme.onSurfaceVariant?.val}>
                   Loading your destinations…
                 </Text>
               ) : (
@@ -196,11 +196,11 @@ export function BackupsSettingsScreen(): React.JSX.Element {
             <CardHeader title="Backup jobs" subtitle="What gets backed up, and where it goes" />
             <CardContent>
               {jobs.loading ? (
-                <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
+                <Text fontFamily="body" fontSize={14} color={theme.onSurfaceVariant?.val}>
                   Loading your backups…
                 </Text>
               ) : jobs.jobs.length === 0 ? (
-                <Text fontFamily="$body" fontSize={14} lineHeight={20} color={theme.onSurfaceVariant?.val}>
+                <Text fontFamily="body" fontSize={14} lineHeight="20px" color={theme.onSurfaceVariant?.val}>
                   No backups set up yet. Add a destination above, then create one here.
                 </Text>
               ) : (

@@ -16,12 +16,13 @@
  */
 
 import React from 'react'
-import { type GestureResponderEvent } from 'react-native'
-import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from './Text'
 
 export interface PillButtonProps extends Omit<ViewProps, 'onPress'> {
   label:               string
-  onPress?:            (e: GestureResponderEvent) => void
+  /** Tamagui's press handler type (RN 0.87 event shape under Tamagui 3) — see Button. */
+  onPress?:            ViewProps['onPress']
   disabled?:           boolean
   accessibilityLabel?: string
   testID?:             string
@@ -47,7 +48,7 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       paddingHorizontal={16}
       backgroundColor={theme.tertiary?.val}
       cursor={disabled ? 'not-allowed' : 'pointer'}
-      opacity={disabled ? 0.38 : 1}
+      opacity={`${disabled ? 0.38 : 1} hover:0.92 press:0.88`}
       pointerEvents={disabled ? 'none' : 'auto'}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       // MD3 elevation 1 (the CTA lifts slightly off the surface).
@@ -56,15 +57,16 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       shadowOpacity={0.25}
       shadowRadius={3}
       style={{ elevation: 3 }}
-      pressStyle={{ opacity: 0.88 }}
-      hoverStyle={{ opacity: 0.92 }}
-      outlineStyle="none"
-      focusVisibleStyle={{ outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }}
+      // Ring on KEYBOARD focus only (`focus-visible`, never `focus`).
+      outlineStyle="none focus-visible:solid"
+      outlineWidth="focus-visible:3px"
+      outlineColor="focus-visible:primary"
+      outlineOffset="focus-visible:2px"
       onPress={(e) => { if (disabled) return; onPress?.(e) }}
       {...rest}
     >
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={16}
         fontWeight="600"
         color={theme.onTertiary?.val}

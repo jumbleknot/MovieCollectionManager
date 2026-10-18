@@ -20,7 +20,8 @@
 
 import React, { useCallback } from 'react';
 import { FlatList } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
+import { Text } from '@mcm/design-system';
 import { XStack, YStack } from '@tamagui/stacks';
 import { hasMediaQualityMismatch } from '@/components/movie-list-item';
 import type { Movie, ColumnVisibility } from '@/types/collection';
@@ -55,24 +56,27 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
       onPress={() => onPress(movie.movieId)}
       accessibilityRole="button"
       accessibilityLabel={movie.title}
-      backgroundColor={theme.surface1?.val}
+      // Tamagui 3 clauses (were pressStyle / hoverStyle).
+      backgroundColor={{ default: theme.surface1?.val, hover: theme.surface2?.val }}
       borderRadius={12}
       paddingVertical={12}
       paddingHorizontal={16}
       marginBottom={8}
       gap={4}
       cursor="pointer"
-      pressStyle={{ opacity: 0.92, scale: 0.99 }}
-      hoverStyle={{ backgroundColor: theme.surface2?.val }}
+      opacity="press:0.92"
+      scale="press:0.99"
       shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.12}
       shadowRadius={2}
-      elevation={1}
+      // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+      // forwards it on Android at runtime, so this renders exactly as the prop did).
+      style={{ elevation: 1 }}
     >
       <Text
         testID="movie-list-item-title"
-        fontFamily="$heading"
+        fontFamily="heading"
         fontSize={16}
         fontWeight="600"
         color={theme.onSurface?.val}
@@ -82,7 +86,7 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
       </Text>
 
       {meta.length > 0 && (
-        <Text fontFamily="$body" fontSize={14} letterSpacing={0.4} color={theme.onSurfaceVariant?.val}>
+        <Text fontFamily="body" fontSize={14} letterSpacing={0.4} color={theme.onSurfaceVariant?.val}>
           {meta}
         </Text>
       )}
@@ -91,7 +95,7 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
         <XStack gap={8} marginTop={2} flexWrap="wrap" alignItems="center">
           {media.length > 0 && (
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={12}
               fontWeight={mismatch ? '700' : '400'}
               color={mismatch ? theme.tertiary?.val : theme.onSurfaceVariant?.val}
@@ -100,13 +104,13 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
             </Text>
           )}
           {media.length > 0 && quality.length > 0 && (
-            <Text fontFamily="$body" fontSize={12} color={theme.outlineVariant?.val}>
+            <Text fontFamily="body" fontSize={12} color={theme.outlineVariant?.val}>
               ·
             </Text>
           )}
           {quality.length > 0 && (
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={12}
               fontWeight={mismatch ? '700' : '400'}
               color={mismatch ? theme.tertiary?.val : theme.onSurfaceVariant?.val}
@@ -155,7 +159,7 @@ export function MovieList({
       borderBottomWidth={2}
       borderBottomColor={theme.primary?.val}
     >
-      <Text fontFamily="$body" fontSize={12} fontWeight="500" color={theme.primary?.val} textTransform="uppercase" letterSpacing={0.5}>
+      <Text fontFamily="body" fontSize={12} fontWeight="500" color={theme.primary?.val} textTransform="uppercase" letterSpacing={0.5}>
         Movies
       </Text>
     </XStack>
@@ -166,7 +170,7 @@ export function MovieList({
       <YStack flex={1}>
         {header}
         <YStack testID="movie-list-empty" flex={1} alignItems="center" justifyContent="center" paddingVertical={48}>
-          <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val}>
+          <Text fontFamily="body" fontSize={16} color={theme.onSurfaceVariant?.val}>
             No movies found
           </Text>
         </YStack>

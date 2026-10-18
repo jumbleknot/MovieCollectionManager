@@ -7,8 +7,8 @@
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, TextButton, OutlinedButton, Badge } from '@mcm/design-system';
+import { useTheme } from '@tamagui/core';
+import { Card, CardHeader, CardContent, CardActions, TextButton, OutlinedButton, Badge, Text } from '@mcm/design-system';
 
 import type { BackupDestinationView } from '@/types/backups';
 
@@ -41,7 +41,7 @@ export function DestinationList({
     return (
       <Card testID="backup-destination-list-empty">
         <CardContent>
-          <Text fontFamily="$body" fontSize={14} lineHeight={20} color={theme.onSurfaceVariant?.val}>
+          <Text fontFamily="body" fontSize={14} lineHeight="20px" color={theme.onSurfaceVariant?.val}>
             No destinations yet. Add storage you control — an S3-compatible bucket or a WebDAV
             server — and MCM will write your backups there.
           </Text>
@@ -65,14 +65,14 @@ export function DestinationList({
                     colorScheme={destination.lastTestResult.ok ? 'primary' : 'error'}
                     testID={`backup-destination-status-${destination.id}`}
                   />
-                  <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val}>
+                  <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
                     {destination.lastTestResult.ok
                       ? `Last checked ${destination.lastTestedAt ?? ''}`
                       : destination.lastTestResult.reason}
                   </Text>
                 </View>
               ) : (
-                <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val}>
+                <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
                   Not tested yet.
                 </Text>
               )}

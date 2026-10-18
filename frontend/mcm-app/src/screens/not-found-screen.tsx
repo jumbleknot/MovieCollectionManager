@@ -24,9 +24,9 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
 import { useRouter } from 'expo-router';
-import { Button, Card, CardHeader, CardContent } from '@mcm/design-system';
+import { Button, Card, CardHeader, CardContent, Text } from '@mcm/design-system';
 import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -55,9 +55,9 @@ export function NotFoundScreen(): React.JSX.Element {
           <CardHeader title="Page not found" subtitle="This address does not exist" />
           <CardContent>
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={14}
-              lineHeight={20}
+              lineHeight="20px"
               letterSpacing={0.25}
               color={theme.onSurfaceVariant?.val}
             >

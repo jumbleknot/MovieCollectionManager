@@ -19,7 +19,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { Animated, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { withAlpha, stateLayer } from '../../tokens/with-alpha'
 import { XStack } from '@tamagui/stacks'
 
@@ -168,7 +169,9 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             // produces an invalid colour for any other notation — which renders NOTHING rather
             // than erroring — and 8% over a dark surface is invisible even when it is valid.
             // Measured on feature 062: this hover could not be seen at all in dark mode.
-            hoverStyle={{ backgroundColor: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }}
+            // Tamagui 3: the hover is a clause on backgroundColor (was hoverStyle). The typed form
+            // keeps the computed rgba() — which contains spaces — out of a space-separated program.
+            backgroundColor={{ hover: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }}
           >
             {/* Icon */}
             {tab.icon && (
@@ -201,7 +204,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
 
             {/* Label */}
             <Text
-              fontFamily="$body"
+              fontFamily="body"
               fontSize={14}
               fontWeight={isActive ? '700' : '500'}
               letterSpacing={0.1}

@@ -15,8 +15,9 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { Animated, useWindowDimensions, type StyleProp, type ViewStyle, } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { Animated, useWindowDimensions } from 'react-native'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack } from '@tamagui/stacks'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -32,7 +33,8 @@ export interface NavDestination {
 export interface NavigationBarProps {
   destinations: NavDestination[]
   activeKey:    string
-  style?:       StyleProp<ViewStyle>
+  /** The Tamagui frame's own style type (Tamagui 3 types it from React Native 0.87). */
+  style?:       ViewProps['style']
 }
 
 const BAR_HEIGHT = 80
@@ -107,7 +109,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               accessibilityRole="tab"
               accessibilityLabel={dest.label}
               accessibilityState={{ selected: isActive }}
-              pressStyle={{ opacity: 0.8 }}
+              opacity="press:0.8"
             >
               {/* Icon area (48dp tall, icon centered in 64dp wide indicator zone) */}
               <View
@@ -136,7 +138,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                     zIndex={1}
                   >
                     {dest.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val} lineHeight={12}>
+                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val} lineHeight="12px">
                         {Number(dest.badge) > 99 ? '99+' : String(dest.badge)}
                       </Text>
                     )}
@@ -149,7 +151,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
 
               {/* Label — MD3 labelMedium */}
               <Text
-                fontFamily="$body"
+                fontFamily="body"
                 fontSize={12}
                 fontWeight={isActive ? '700' : '400'}
                 letterSpacing={0.5}

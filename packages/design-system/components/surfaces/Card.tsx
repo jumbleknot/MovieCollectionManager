@@ -17,7 +17,8 @@
  */
 
 import React from 'react'
-import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { YStack, XStack } from '@tamagui/stacks'
 import { Image, type ImageSourcePropType } from 'react-native'
 
@@ -70,26 +71,27 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       accessible={interactive}
       accessibilityRole={interactive ? 'button' : undefined}
       accessibilityState={interactive ? { disabled } : undefined}
-      backgroundColor={bg}
+      // Tamagui 3: each state is a clause on the property it modifies (were pressStyle / hoverStyle /
+      // focusVisibleStyle). The clauses exist only when the card is interactive, as before; an
+      // elevated card also tints to surface2 on hover/press, the other variants keep their fill.
+      backgroundColor={interactive && variant === 'elevated'
+        ? { default: bg, hover: theme.surface2?.val, press: theme.surface2?.val }
+        : bg}
       borderRadius={12}          // MD3 medium shape
       borderWidth={border ? 1 : 0}
       borderColor={border}
       overflow="hidden"
       cursor={interactive ? 'pointer' : 'default'}
-      opacity={disabled ? 0.38 : 1}
+      opacity={interactive
+        ? { default: 1, hover: 0.98, press: 0.94 }
+        : disabled ? 0.38 : 1}
       onPress={interactive ? onPress : undefined}
-      pressStyle={interactive
-        ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.94 }
-        : undefined}
-      hoverStyle={interactive
-        ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.98 }
-        : undefined}
-      // focusVisibleStyle (not focusStyle) so an interactive card's ring shows for KEYBOARD focus
+      // `focus-visible` (never `focus`) so an interactive card's ring shows for KEYBOARD focus
       // only — a mouse click otherwise leaves a persistent :focus outline (feature 015/017 fix).
-      outlineStyle={interactive ? 'none' : undefined}
-      focusVisibleStyle={interactive
-        ? { outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }
-        : undefined}
+      outlineStyle={interactive ? 'none focus-visible:solid' : undefined}
+      outlineWidth={interactive ? 'focus-visible:3px' : undefined}
+      outlineColor={interactive ? 'focus-visible:primary' : undefined}
+      outlineOffset={interactive ? 'focus-visible:2px' : undefined}
       {...shadowProps}
       {...rest}
     >
@@ -126,7 +128,7 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
       )}
       <YStack flex={1}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={16}
           fontWeight="500"
           letterSpacing={0}
@@ -137,7 +139,7 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
         </Text>
         {subtitle && (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={14}
             letterSpacing={0.25}
             color={theme.onSurfaceVariant?.val}

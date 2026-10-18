@@ -15,7 +15,8 @@
 
 import React from 'react'
 import { Image } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ function PosterMosaic({ urls, size }: { urls: string[]; size: number }) {
               resizeMode="cover"
             />
           ) : (
-            <Text fontSize={slotW * 0.4} lineHeight={slotW * 0.4}>🎬</Text>
+            <Text fontSize={slotW * 0.4} lineHeight={`${slotW * 0.4}px`}>🎬</Text>
           )}
         </View>
       ))}
@@ -102,7 +103,7 @@ function RoleChip({ role }: { role: CollectionRole }) {
       paddingVertical={2}
     >
       <Text
-        fontFamily="$body"
+        fontFamily="body"
         fontSize={11}
         fontWeight="500"
         letterSpacing={0.5}
@@ -130,13 +131,16 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
       overflow="hidden"
       cursor="pointer"
       onPress={onPress}
-      pressStyle={{ opacity: 0.9, scale: 0.98 }}
-      hoverStyle={{ opacity: 0.95 }}
+      // Tamagui 3 clauses (were pressStyle / hoverStyle).
+      opacity="hover:0.95 press:0.9"
+      scale="press:0.98"
       shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.12}
       shadowRadius={2}
-      elevation={1}
+      // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+      // forwards it on Android at runtime, so this renders exactly as the prop did).
+      style={{ elevation: 1 }}
     >
       {/* Mosaic */}
       <PosterMosaic urls={collection.posterUrls ?? []} size={300} />
@@ -145,7 +149,7 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
       <YStack padding={16} gap={8}>
         <XStack alignItems="center" justifyContent="space-between">
           <Text
-            fontFamily="$heading"
+            fontFamily="heading"
             fontSize={18}
             fontWeight="500"
             color={theme.onSurface?.val}
@@ -155,7 +159,7 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
             {collection.name}
             {collection.isDefault && (
               <Text
-                fontFamily="$body"
+                fontFamily="body"
                 fontSize={12}
                 color={theme.primary?.val}
               > ★ Default</Text>
@@ -167,7 +171,7 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
 
         <XStack alignItems="center" gap={8}>
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={14}
             letterSpacing={0.25}
             color={theme.onSurfaceVariant?.val}
@@ -179,7 +183,7 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
             <>
               <Text color={theme.outlineVariant?.val} fontSize={14}>·</Text>
               <Text
-                fontFamily="$body"
+                fontFamily="body"
                 fontSize={14}
                 color={theme.onSurfaceVariant?.val}
               >
@@ -191,7 +195,7 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
 
         {collection.description && (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={13}
             letterSpacing={0.4}
             color={theme.onSurfaceVariant?.val}
@@ -215,13 +219,11 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
       testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      backgroundColor="transparent"
+      backgroundColor={{ default: 'transparent', hover: theme.surface1?.val, press: theme.surfaceVariant?.val }}
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
       onPress={onPress}
-      pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
-      hoverStyle={{ backgroundColor: theme.surface1?.val }}
       paddingVertical={12}
       paddingHorizontal={16}
       alignItems="center"
@@ -234,7 +236,7 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
       {/* Info */}
       <YStack flex={1} gap={2}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={16}
           fontWeight="500"
           color={theme.onSurface?.val}
@@ -243,7 +245,7 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
           {collection.name}
         </Text>
         <Text
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={13}
           color={theme.onSurfaceVariant?.val}
         >
@@ -256,7 +258,7 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
       </YStack>
 
       {/* Arrow */}
-      <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight={20}>›</Text>
+      <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">›</Text>
     </XStack>
   )
 }

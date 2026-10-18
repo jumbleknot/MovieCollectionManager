@@ -18,8 +18,8 @@
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, Badge, Banner } from '@mcm/design-system';
+import { useTheme } from '@tamagui/core';
+import { Card, CardHeader, CardContent, Badge, Banner, Text } from '@mcm/design-system';
 
 import {
   describeCollectionCounts,
@@ -81,7 +81,7 @@ export function RunHistory({
       */}
       <View style={styles.nextRun}>
         <Text
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={12}
           color={theme.onSurfaceVariant?.val}
           testID="backup-next-run"
@@ -94,7 +94,7 @@ export function RunHistory({
         <CardHeader title="Recent runs" subtitle="The last few backups for this job" />
         <CardContent>
           {runs.length === 0 ? (
-            <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
+            <Text fontFamily="body" fontSize={14} color={theme.onSurfaceVariant?.val}>
               This job has not run yet.
             </Text>
           ) : (
@@ -115,12 +115,12 @@ export function RunHistory({
                 <View key={run.runId} style={styles.row} testID={`backup-run-${run.runId}`}>
                   <Badge inline count={run.status} colorScheme={TONE[run.status] ?? 'tertiary'} />
                   <View style={styles.facts}>
-                    <Text fontFamily="$body" fontSize={12} color={theme.onSurfaceVariant?.val}>
+                    <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
                       {facts.join(' · ')}
                     </Text>
                     {perCollection ? (
                       <Text
-                        fontFamily="$body"
+                        fontFamily="body"
                         fontSize={12}
                         color={theme.onSurfaceVariant?.val}
                         testID={`backup-run-collections-${run.runId}`}
@@ -129,7 +129,7 @@ export function RunHistory({
                       </Text>
                     ) : null}
                     {run.failureReason ? (
-                      <Text fontFamily="$body" fontSize={12} color={theme.error?.val}>
+                      <Text fontFamily="body" fontSize={12} color={theme.error?.val}>
                         {run.failureReason}
                       </Text>
                     ) : null}
@@ -138,7 +138,7 @@ export function RunHistory({
                       // prune that failed has not cost the user the backup that was just
                       // written, and colouring it as an error would say that it had.
                       <Text
-                        fontFamily="$body"
+                        fontFamily="body"
                         fontSize={12}
                         color={theme.onSurfaceVariant?.val}
                         testID={`backup-run-prune-note-${run.runId}`}

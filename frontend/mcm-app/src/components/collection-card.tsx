@@ -12,9 +12,9 @@
  */
 
 import React from 'react';
-import { Text, useTheme } from '@tamagui/core';
+import { useTheme } from '@tamagui/core';
 import { YStack, XStack } from '@tamagui/stacks';
-import { Badge, Button } from '@mcm/design-system';
+import { Badge, Button, Text } from '@mcm/design-system';
 import type { CollectionSummary } from '@/types/collection';
 
 interface CollectionCardProps {
@@ -40,19 +40,22 @@ export function CollectionCard({
       testID="collection-card"
       accessibilityLabel={`Open collection ${name}`}
       onPress={() => onOpen(collectionId)}
-      backgroundColor={theme.surface1?.val}
+      // Tamagui 3 clauses (were pressStyle / hoverStyle).
+      backgroundColor={{ default: theme.surface1?.val, hover: theme.surface2?.val }}
       borderRadius={12}
       padding={16}
       marginBottom={12}
       gap={6}
       cursor="pointer"
-      pressStyle={{ opacity: 0.92, scale: 0.99 }}
-      hoverStyle={{ backgroundColor: theme.surface2?.val }}
+      opacity="press:0.92"
+      scale="press:0.99"
       shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.12}
       shadowRadius={2}
-      elevation={1}
+      // Android elevation via `style`: Tamagui 3 dropped `elevation` from its prop types (it still
+      // forwards it on Android at runtime, so this renders exactly as the prop did).
+      style={{ elevation: 1 }}
     >
       {/*
        * accessibilityRole="button" intentionally omitted on this outer wrapper.
@@ -63,7 +66,7 @@ export function CollectionCard({
       {/* Header row: name + default badge */}
       <XStack alignItems="center" gap={8}>
         <Text
-          fontFamily="$heading"
+          fontFamily="heading"
           fontSize={16}
           fontWeight="600"
           color={theme.onSurface?.val}
@@ -81,7 +84,7 @@ export function CollectionCard({
       {description != null && (
         <Text
           testID="collection-card-description"
-          fontFamily="$body"
+          fontFamily="body"
           fontSize={14}
           color={theme.onSurfaceVariant?.val}
           numberOfLines={2}
@@ -91,7 +94,7 @@ export function CollectionCard({
       )}
 
       {/* Movie count */}
-      <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
+      <Text fontFamily="body" fontSize={14} color={theme.onSurfaceVariant?.val}>
         {movieCount} movies
       </Text>
 

@@ -25,7 +25,8 @@
 
 import React, { useState, useCallback } from 'react'
 import { TextInput, Animated, type TextInputProps } from 'react-native'
-import { View, Text, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
+import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
 
 export type TextFieldVariant = 'filled' | 'outlined'
@@ -251,7 +252,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
       <XStack paddingHorizontal={16} justifyContent="space-between">
         {(errorText && error) || supportingText ? (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             letterSpacing={0.4}
             color={error ? theme.error?.val : theme.onSurfaceVariant?.val}
@@ -265,7 +266,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
 
         {maxCount !== undefined && (
           <Text
-            fontFamily="$body"
+            fontFamily="body"
             fontSize={12}
             letterSpacing={0.4}
             color={theme.onSurfaceVariant?.val}
