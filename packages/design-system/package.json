@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "jest --watchAll=false",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@tamagui/core": "3.0.18",
@@ -25,6 +25,7 @@
     "react-native-svg": ">=15.0.0"
   },
   "devDependencies": {
+    "@eslint/compat": "^2.1.1",
     "@expo-google-fonts/inter": "^0.4.0",
     "@expo-google-fonts/outfit": "^0.4.0",
     "@testing-library/react-native": "^13.2.0",

@@ -12,7 +12,7 @@
     "test:integration": "jest --testPathPattern=tests/integration --watchAll=false",
     "test:e2e:mobile": "maestro test tests/e2e/mobile/",
     "test:e2e:web": "npx nx e2e",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@ag-ui/client": "0.0.59",
@@ -67,6 +67,7 @@
     "@axe-core/playwright": "^4.11.3",
     "@babel/core": "^7.25.2",
     "@babel/runtime": "^7.25.0",
+    "@eslint/compat": "^2.1.1",
     "@playwright/test": "1.63.0",
     "@testing-library/react-native": "^13.2.0",
     "@types/express": "^4.17.21",
