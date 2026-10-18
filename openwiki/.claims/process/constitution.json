@@ -1,32 +1,32 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1acbe160e487698779e58d50f1271ede5269c6963dfd0a7615a78ba764b0739d",
+  "pageVersion": "sha256:b498989d46f0e5828ecd52dcec9eeac9f2a0e7fc11fa949fb1f32b8f763d3743",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
       "statement": "`.specify/memory/constitution.md` is the repository's single ratified source of core principles governing Frontend Apps, Backend Services, and AI Agents, and it is versioned semver-style with a change log at the top of the file recording every amendment and rationale.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L1-L28",
-          "version": "repo-lines-v1:sha256:7a85d1b15fe7cd05fb172be803121beba02de102c3b4db9902fe636eaf348ca8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTc2NzI3NmM0NThmMDFmYjVjZGI4NDBlODA1YTk3YjNiNTEwNWQxYTA5NmJjNDMwMDA1ZTQ1NDQ0NDNmYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2Mzc2ZWJiNWViNTQ4OTliMmNiZDZmOTk3YjE2NjMyYzJkMTZlMGNhOWU4OWM3YTkwN2Q1OTRiOGQ3YWJiZGIifQ"
+          "resource": "repo://.specify/memory/constitution.md#L1-L29",
+          "version": "repo-lines-v1:sha256:229a17178e0614399af4d2f397139bec9791cf1443ecd97716b034fe5a4de8d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTc2NzI3NmM0NThmMDFmYjVjZGI4NDBlODA1YTk3YjNiNTEwNWQxYTA5NmJjNDMwMDA1ZTQ1NDQ0NDNmYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2Mzc2ZWJiNWViNTQ4OTliMmNiZDZmOTk3YjE2NjMyYzJkMTZlMGNhOWU4OWM3YTkwN2Q1OTRiOGQ3YWJiZGIifQ"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L1006-L1019",
-          "version": "repo-lines-v1:sha256:5b14e459381ddda85ba9c15fc10e58543101ca8a39f14908720dda7aabd4e47f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1MGIwMDk4ZDg2YTljMjZjMGJmMzE2OTY5ZmI0NDA3NWIxNzhlYTVlMjBjZGZiMzljMmI3MDI3Y2ZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMmIzNGQzMTdiNGFmZjY5ZWMwNTI2ZmExOTc5MzNkMDhmYjcyMWM1ZTE3NWJiZTUyMWIxZTJhM2I2MDRmYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmNhZWYxN2JjOTJlZDZlZmE4ZWYwN2I1NjUzZTFhZmY0N2M2OWI4YmVkNWJjMmI3NmUyZTUzMWU2ZDIxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.specify/memory/constitution.md#L1007-L1020",
+          "version": "repo-lines-v1:sha256:0e416b692b7c5780dd0514dae8e1336c7430851fbc2bc5a8a527a329af59d8a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1MGIwMDk4ZDg2YTljMjZjMGJmMzE2OTY5ZmI0NDA3NWIxNzhlYTVlMjBjZGZiMzljMmI3MDI3Y2ZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4OTk3MWIzNWVkZjUzOTlhYWY5ZWIyMjc2NDM3NDdiNWE0MjgxMmVhOTZjMzBjMDE4NDg5OTlmZDg0MTJiNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmNhZWYxN2JjOTJlZDZlZmE4ZWYwN2I1NjUzZTFhZmY0N2M2OWI4YmVkNWJjMmI3NmUyZTUzMWU2ZDIxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_8276a6149b28464086b53ffffc85dc99",
-      "statement": "The constitution currently stands at v2.5.0 (ratified 2026-03-08, last amended 2026-09-26), and the `[CURRENT]` marker at the end of the version-history block is the authoritative signal for which amendment is latest.",
+      "statement": "The constitution currently stands at v2.6.0 (ratified 2026-03-08, last amended 2026-10-17), and the `[CURRENT]` marker at the end of the version-history block is the authoritative signal for which amendment is latest.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L1017-L1019",
-          "version": "repo-lines-v1:sha256:ba254719a212bdce97cceb6306782d72eafe0bc44717171f74709869a8f801c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGM4N2M2NWU0ZTJkNjk2MmVjOGFkYjA0OWU3ZWFmMjZiY2ViYmI5Y2RkMWU2OTMwMmQzNDljOTNkOTVhZjJmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyYjM0ZDMxN2I0YWZmNjllYzA1MjZmYTE5NzkzM2QwOGZiNzIxYzVlMTc1YmJlNTIxYjFlMmEzYjYwNGZiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWE1MDU3NTgwZjg2Y2E2NmUwZmQxZGU3MGI2YmFlOGViYzc2ZDc3ZmJjMzYwM2NkZmEzNDNkNTM1NWVkZmJmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://.specify/memory/constitution.md#L1020-L1020",
+          "version": "repo-lines-v1:sha256:f89971b35edf5399aaf9eb227643747b5a42812ea96c30c01848999fd8412b61:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg5OTcxYjM1ZWRmNTM5OWFhZjllYjIyNzY0Mzc0N2I1YTQyODEyZWE5NmMzMGMwMTg0ODk5OWZkODQxMmI2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg5OTcxYjM1ZWRmNTM5OWFhZjllYjIyNzY0Mzc0N2I1YTQyODEyZWE5NmMzMGMwMTg0ODk5OWZkODQxMmI2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGJiNGQyNWM1NzJlYWFhMGY0MTY5MGQwODcxMTZlODZkOWY4OTBkOGM4NDllYTFmNTUzODQyMDhmZTA2OGM2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L23-L23",
-          "version": "repo-lines-v1:sha256:5d0365e6ee5a7cbf096ef54027fa478cbdde1c8ea0aa168a7d034cbf15833ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyYmEyODQ1MWNlZGViMTk1MzM5OTM0ZTViNjdiZjJjNDQyOTM2MDA2YzgwMjgzYjU1ZmE3NzJmZGNlY2MwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
+          "resource": "repo://.specify/memory/constitution.md#L24-L24",
+          "version": "repo-lines-v1:sha256:b16168e08f2fb44efe63c792a6fa4409872d4e7eb747cf424f0a3527f98d9986:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2MTY4ZTA4ZjJmYjQ0ZWZlNjNjNzkyYTZmYTQ0MDk4NzJkNGU3ZWI3NDdjZjQyNGYwYTM1MjdmOThkOTk4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2MTY4ZTA4ZjJmYjQ0ZWZlNjNjNzkyYTZmYTQ0MDk4NzJkNGU3ZWI3NDdjZjQyNGYwYTM1MjdmOThkOTk4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTZmYWNjZDE0YzM5ZjllYzlkNzE2ZDNhY2FlNDVmYmJiZmIxNjkxNmNlZjUxOTcwNDUyOWM1MGM5ZGI0NGFhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
         }
       ]
     },
@@ -35,7 +35,7 @@
       "statement": "Constitution amendments must follow the file's Governance procedure: a proposal documenting rationale, impact and migration plan; review and formal approval; a version bump where MAJOR signals a principle change, MINOR a guidance addition and PATCH a clarification; and alignment of existing code within one release cycle.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L1006-L1015",
+          "resource": "repo://.specify/memory/constitution.md#L1007-L1016",
           "version": "repo-lines-v1:sha256:c4ebf7d0e1f979141e3a794422b0dcfb7b12b8e56011aa1db2f4100d7ee83d20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MTE1MGIwMDk4ZDg2YTljMjZjMGJmMzE2OTY5ZmI0NDA3NWIxNzhlYTVlMjBjZGZiMzljMmI3MDI3Y2ZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZGQyNzg5Mjk0ODZjYTFmYTg1ODc5Yjk1NDBmNTI1YWVjYTM5M2M0Y2E4NDgxY2Q5NWNmMmJkYWY5ODgyZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYmNhZWYxN2JjOTJlZDZlZmE4ZWYwN2I1NjUzZTFhZmY0N2M2OWI4YmVkNWJjMmI3NmUyZTUzMWU2ZDIxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiYjRkMjVjNTcyZWFhYTBmNDE2OTBkMDg3MTE2ZTg2ZDlmODkwZDhjODQ5ZWExZjU1Mzg0MjA4ZmUwNjhjNjEifQ"
         }
       ]
@@ -45,7 +45,7 @@
       "statement": "A deviation from the constitution requires explicit human approval and a documented rationale, whereas a spec or plan may deviate from itself and simply be updated — this is the one asymmetry in the spec-driven lifecycle, so an AI assistant meeting an apparent task/constitution conflict must stop and ask rather than choose silently.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L36-L37",
+          "resource": "repo://.specify/memory/constitution.md#L37-L38",
           "version": "repo-lines-v1:sha256:e81b225add158ed3d14a54ad5f426eb87e54d0d34e9aeabe53b2856fbac288ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmMyNTBjODM1OTA3OTQ1ZWE4YzAxZWNkYWI3MWI5OGZhMzllYmRlMDk1NzExMDAxMWNkMmUzMGQwZTY4ZjY3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVjZjhkYjA2MmZiNWQyMjU3OWUxNzc3N2RhZjYyYjA1YjZhOTg4M2RkNzVjODdlOTg5NDllN2I2YTMyMDAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2MjlkYWJkM2ExYmVlMjU3NmFkMzdmMjIxMTA1OWZiMmY5MmNiZTE3MjUxNDQ3ODJjMWE2MDgxMzY5MDkxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM5OWUxNmU5ZmZkNTMxOTYyNTFiNzcyYWVhOGVhZWYxNjcyODhlNTBkMTM5NDFjMDQ1Yjg4YzdlNThiODI2ZiJ9"
         },
         {
@@ -63,11 +63,11 @@
       "statement": "\"No Vibe Coding\" is a named AI Assistant Constraint requiring the assistant to always refer to the current `plan.md` and `spec.md` before writing code, with deviations requiring explicit documentation and approval — mirroring the constitution's own amendment discipline.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L36-L37",
+          "resource": "repo://.specify/memory/constitution.md#L37-L38",
           "version": "repo-lines-v1:sha256:e81b225add158ed3d14a54ad5f426eb87e54d0d34e9aeabe53b2856fbac288ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmMyNTBjODM1OTA3OTQ1ZWE4YzAxZWNkYWI3MWI5OGZhMzllYmRlMDk1NzExMDAxMWNkMmUzMGQwZTY4ZjY3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVjZjhkYjA2MmZiNWQyMjU3OWUxNzc3N2RhZjYyYjA1YjZhOTg4M2RkNzVjODdlOTg5NDllN2I2YTMyMDAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2MjlkYWJkM2ExYmVlMjU3NmFkMzdmMjIxMTA1OWZiMmY5MmNiZTE3MjUxNDQ3ODJjMWE2MDgxMzY5MDkxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM5OWUxNmU5ZmZkNTMxOTYyNTFiNzcyYWVhOGVhZWYxNjcyODhlNTBkMTM5NDFjMDQ1Yjg4YzdlNThiODI2ZiJ9"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L43-L43",
+          "resource": "repo://.specify/memory/constitution.md#L44-L44",
           "version": "repo-lines-v1:sha256:6a34164a0908e39ee4eeaede53f879a4486ef4c7e5802de55be6b4e00650e549:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEzNDE2NGEwOTA4ZTM5ZWU0ZWVhZWRlNTNmODc5YTQ0ODZlZjRjN2U1ODAyZGU1NWJlNmI0ZTAwNjUwZTU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEzNDE2NGEwOTA4ZTM5ZWU0ZWVhZWRlNTNmODc5YTQ0ODZlZjRjN2U1ODAyZGU1NWJlNmI0ZTAwNjUwZTU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDljNWIwMzY1ZWUzNzk4MjM4ZjhkMGI4MDU2ZDNiY2RkZTBiNGRiMWIyZWI3OWM5MDgxYjVkMmUxMGU5NmJmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGVmZDgxMzU4Y2UwMzFlYTlkM2QzMmRlMmQ1ODZlM2IzZjAyZjA1MWRmYzE5NGViZWZkODY5Nzk4MDNiYWNiMiJ9"
         }
       ]
@@ -77,7 +77,7 @@
       "statement": "The Identity Provider boundary is a hard trust line: a validated, signed JWT is treated as proof the IdP already evaluated and satisfied Conditional Access and MFA, so the application must never re-implement MFA, CA checks or raw credential verification, and its authentication responsibility is limited to cryptographic token validation (signature and `iss`/`aud`/`azp`/`exp`/`nbf` claims), with authorization remaining the application's own responsibility.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L59-L69",
+          "resource": "repo://.specify/memory/constitution.md#L60-L70",
           "version": "repo-lines-v1:sha256:f700f142b7b21dab32ef88b8ddffdf7e646746aa7ba965e02829175065c05bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ZjVkODlmNjI2OGRjOTcxZGRhZTk1MmU0ZWQyMGRhOTM5NDE0OGU5Mzk4ZThmOWQxYjJlN2Q5MzVhMGM5NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ZWNhZTZiNThlMmE2YWY5OTI5MGIwYjY1YWNlNWM2OGJjNzQxN2FiMGY0MmUzMDg5ZjdlYWY2NTA5MDkxZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDNlYzNjYWU2OGRjYjI3ZWFjYjBkOTE1YjYzN2Q1MTQ4ODFlZTQ2NmU1YzM5NmM4ZTYyZTNiOGViMGYyNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NTM2YzcyNzFmNjQ4MTUyZjc5OGNlZDg2ODVjODhmNDg2M2RmOGRiMWVlZWFiMzI2MmU3ZDk5YzI1MWI5YjMifQ"
         }
       ]
@@ -87,7 +87,7 @@
       "statement": "The Behavior-Descriptive Identifiers principle bans requirement/specification IDs (e.g. `FR-###`, `SC-###`, `T-###`, `US#`) from code identifiers such as files, modules and exported symbols; the IDs belong in a traceability comment on the artifact, which is the one explicit exception to the prohibition on WHAT-comments.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L38-L39",
+          "resource": "repo://.specify/memory/constitution.md#L39-L40",
           "version": "repo-lines-v1:sha256:407bc20f785ba706c23296fd35e71ca789b3d13241e79a64986c9faa5b3321ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdhYjM0ZjFkYjc3NGI4OGQyM2NjNzIyMDRlMGZhYjBhMGEyYjE4MDg4MGNjMmYwMTM0Mzg4NWZlMmJkOTY2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM0OWJmZjAyNjUzNjcxNjA4NzI4MTRiMDA0MTJkZGU2MmFmMTBiYjNmOTU5MDYxMDdjOGRhMTA4MjgxYjI3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ1ODMxYWRmZGIzMTI4YjZhMGMwZWNhYmFjMGU0NDIyYTczZWYzZWJkZTlmZGU0MDY5MDc4OWFlM2Y3NWY0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDljNWIwMzY1ZWUzNzk4MjM4ZjhkMGI4MDU2ZDNiY2RkZTBiNGRiMWIyZWI3OWM5MDgxYjVkMmUxMGU5NmJmZiJ9"
         }
       ]
@@ -97,11 +97,11 @@
       "statement": "Constitution v2.5.0 records a scoped, bounded accepted exception to the Frontend performance-budgeting rule (2-second time-to-interactive on simulated 3G) for the mcm-app web client's cold load only; it covers residual framework weight, is capped by a committed entry-chunk byte budget, and leaves the principle's JavaScript-lazy-loading clause in force.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L23-L23",
-          "version": "repo-lines-v1:sha256:5d0365e6ee5a7cbf096ef54027fa478cbdde1c8ea0aa168a7d034cbf15833ffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQwMzY1ZTZlZTVhN2NiZjA5NmVmNTQwMjdmYTQ3OGNiZGRlMWM4ZWEwYWExNjhhN2QwMzRjYmYxNTgzM2ZmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyYmEyODQ1MWNlZGViMTk1MzM5OTM0ZTViNjdiZjJjNDQyOTM2MDA2YzgwMjgzYjU1ZmE3NzJmZGNlY2MwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
+          "resource": "repo://.specify/memory/constitution.md#L23-L24",
+          "version": "repo-lines-v1:sha256:7823df30b25b4ea5cc29bd0df10dfff3d4e478185a38a1689c012ccfbfb3d16f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDllZjgyNjUxYTg1MDk2N2JhMTk4NDYyN2RmYjg0OTRjZWZkNjdhMmJiYjhiOTc2NzBhMjQzY2RjMGEwMzkxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2MTY4ZTA4ZjJmYjQ0ZWZlNjNjNzkyYTZmYTQ0MDk4NzJkNGU3ZWI3NDdjZjQyNGYwYTM1MjdmOThkOTk4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyYmEyODQ1MWNlZGViMTk1MzM5OTM0ZTViNjdiZjJjNDQyOTM2MDA2YzgwMjgzYjU1ZmE3NzJmZGNlY2MwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L294-L298",
+          "resource": "repo://.specify/memory/constitution.md#L295-L299",
           "version": "repo-lines-v1:sha256:c85ee81b67477442b76658350da479c56f13321645a0cb9acbe8999a33826a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExZTIwMzZjZDkzNTI1ZTY3MTI0YmQ0ZmNlOTc3MTEzOWRjNTUyZjE2N2E5YTQxYjBhMjg5ZjJjMTZiNmE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNlODkxZjdlMmFhYzc0NjBiOTk0NGJiNGRmYWMxYzE0NGVjM2Q5ZTRhZDhlMTg1ZmMxNzQxNzNiMDcxYjljYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
         }
       ]
@@ -111,7 +111,7 @@
       "statement": "The bounded web cold-load exception is enforced as a byte ceiling on the mcm-app web entry chunk (2,000,000 bytes against a measured 1,762,630) by `scripts/check-web-bundle-budget.mjs`, which also asserts that deferred packages are absent from the entry chunk and server-only code is absent from every client chunk.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L296-L298",
+          "resource": "repo://.specify/memory/constitution.md#L297-L299",
           "version": "repo-lines-v1:sha256:8392bbc65f068f3ed313d9ce5095e3dd856029c0825f9f4048cfd72651b5161e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY1ZjEwNGM2NTVhNTI3MWQ1MDE2MDljODZhOWQwYWI2NGVmNTU2OGQ1MDFkMzg1MWRjY2Y0NTczNjNlNzdmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVmYTk2ZTNkNWEyOTM5NzJlMzQ2MjFmY2I0OTFkZWMyMTlhM2QxMzhjZGMwM2FhNjI0OTA4ZGE5YWNiMTE1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
         },
         {
@@ -125,19 +125,19 @@
       "statement": "Beyond principles, the constitution binds per-stack technology baselines and the monorepo directory structure — fixing language, framework, data-access library, container images, Nx-first task invocation, naming conventions and test placement for Backend Services, Frontend Apps and the AI Agents layer — so non-compliance is remedied by a constitution amendment or a scoped exception rather than a local convention.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L234-L271",
+          "resource": "repo://.specify/memory/constitution.md#L235-L272",
           "version": "repo-lines-v1:sha256:d72e4c00d21da05923cac0d42d83707e4db8d87ec9712fa9ccc7c0efb1b37efc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNWI1NDM1NWY3MGU1YTkxYjQwZGIzYjQyMTc0NDU5ZTJkYzNlMTQzY2NlOGUzNjYwNDFjZjA1OGZjNjRiOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOWI4MjczNjE3NGJlNGQzZjVkZTA0MjRmYjIyZDFhMDk2NDAzYTVmMzA0NWNjMGYwZDgyNGE3ODg0MTRjYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZjIxYzA2MTg0YjU3YzI3MzY4M2Y5ZDIzZTg5YjY5ZTJiOTZjNWQ1NGZlZWI5YmQ4NzY2ODJjNzBiMDA1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiYmFlMDBlZDA3NzE0MDBiNjEwNTYyMmRiYmI2YmMxMWUxZTVmYTU3NGY2OTAyMGI2MmM3NGEyMGY1NTQyMjYifQ"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L337-L378",
-          "version": "repo-lines-v1:sha256:be632ea3b24c383355b46ef9fc3a5bf63a570568b84b3cfd1878e0e3c71131b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmNlMGIxM2I4MTVjYjZjMzQyYWRlMmJiNmVhMGM5ZGIyMTZmOGZjNGUwOGFhYjA5NjdiNTU3MGE1YjE3M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOWI4MjczNjE3NGJlNGQzZjVkZTA0MjRmYjIyZDFhMDk2NDAzYTVmMzA0NWNjMGYwZDgyNGE3ODg0MTRjYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZGM4NmNlMWM5ZGJkYWE1OTBmMzk3ZTZlZWYyZGY0Mjc1ZDI4YjI4YWQwYjJkNjk0ZDBlZTExNmM1ZmVkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTFhODczODU1NWIzN2M3ZWY3MGJiZjRhZTQ0ZjBhNDA2NjI5YmUyZjk4NmFmNjc2MzdmNTk5NTM5YzkwYjgifQ"
+          "resource": "repo://.specify/memory/constitution.md#L338-L379",
+          "version": "repo-lines-v1:sha256:24c19288689f98c197bac573a214ebc9d476ff38d5846cf2edc5d27c9dea4cfb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmNlMGIxM2I4MTVjYjZjMzQyYWRlMmJiNmVhMGM5ZGIyMTZmOGZjNGUwOGFhYjA5NjdiNTU3MGE1YjE3M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOWI4MjczNjE3NGJlNGQzZjVkZTA0MjRmYjIyZDFhMDk2NDAzYTVmMzA0NWNjMGYwZDgyNGE3ODg0MTRjYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZGM4NmNlMWM5ZGJkYWE1OTBmMzk3ZTZlZWYyZGY0Mjc1ZDI4YjI4YWQwYjJkNjk0ZDBlZTExNmM1ZmVkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTFhODczODU1NWIzN2M3ZWY3MGJiZjRhZTQ0ZjBhNDA2NjI5YmUyZjk4NmFmNjc2MzdmNTk5NTM5YzkwYjgifQ"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L463-L506",
+          "resource": "repo://.specify/memory/constitution.md#L464-L507",
           "version": "repo-lines-v1:sha256:289595aeead8b7408098174d2dd1456baa841ff04310dcdb89fe88f10d24b28d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTcwZmMzY2FmYTVkYzAzZTliNDRlZWZkOGY1ZWZhMzg1YTJiY2E1ODVjNmI3YzcyODM3M2I0MGNhNDRmMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMjViYTgyZWYxZjgyODVhM2ViZGMxMjRlYmM0MjFjMTc4YmUxODVlNmU5YmZhM2MyNjc5N2I5NzViNWZlMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMTRiY2EzMDBmMzg1MDU2ZWI2ZThkNjUwNTNlYWVlNWZlYTk0MWY0NDhiNTk1YzRjNzBlOTk2ODMzZGNhZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMjRkNzM1YTJjNmYxNDhmODY3MGZhNWY2YWYxNGUwY2YzODg2YTFmNDUxYzhkYWI0ZjUzZjU5YjlhM2QyMWMifQ"
         },
         {
-          "resource": "repo://.specify/memory/constitution.md#L512-L662",
+          "resource": "repo://.specify/memory/constitution.md#L513-L663",
           "version": "repo-lines-v1:sha256:02033d9dc1dcd18d9fac64fa3a28c8d7f3af43da2792d240d80d0f086f2b9424:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMzM5Y2ZiZmZhNTAxYzdjODgyOWEzNjA1NDk1OWRmMGE4ZmFlMmQwYzFkNTE0NWFiODY4NzZiZWYzM2JmMDc1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0N2MwNmM1NjFkNWMzMjczNDM2ODUyNjhhNDZiMzM5MWYzOTk4ZWVlODkwZDJiZTUxZjBkMjFjYzRhNTNhZTZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZGUyOTk4MDhiZjU5YTEwM2VhOGRhZmNkYjMwZjc1YTllNjJiOWY3MDMxMzQ4YTYzZjA4NzYwYjhhZDRiN2QxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NjdkNjdkN2VjNGZlYzk5OTMzMzZkZGQyODI3MmU2ODFjZmJhMWY3MDk1Njc3NzhhYTg1ZGYzNDI2ZTFlZDlmIn0"
         }
       ]
@@ -147,7 +147,7 @@
       "statement": "The constitution's TDD mandate includes a mandatory RED-then-GREEN checkpoint format for every test task, with a Verify RED command whose expected failure output must be non-zero — a test that cannot be verified RED is not a TDD test.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L110-L118",
+          "resource": "repo://.specify/memory/constitution.md#L111-L119",
           "version": "repo-lines-v1:sha256:c36787fa3a73b92516fa7191991bd17682e18be4ea4e72a5124331bd3120278c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYxMTdmOGMwMGRjNzZhN2VmZDRjYTg4ZGM2ZWMyNjdiZjAzZTQ1MjU3YWYwZWQxM2Y1NTY5ZTQ1N2QzNzZjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMwZWJmNTI3MDlhMWZkNzUzOTM4YjY0MDY4NGUxYmU0NDk2ZTdlOGZiMTQ4ODBjNjdhMTcxZWUzZDczNGY2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjA2MGZmZTA5NGQ3NzM2NTliYmE4YzQ4NWU5MGI3YTU4NzkxNjIyNDMwNzdiM2I0Mzc4NDZmNmMzNTI3MGU1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNlODgwNTU3MDFhNjIwZWM3MDhjMGQwNjcwOTEyNDhhMjA4NDU3NWEzYzVkMTJiNjhmMDhlM2UzZDAwYTQyNiJ9"
         },
         {
@@ -155,10 +155,56 @@
           "version": "repo-lines-v1:sha256:10e9e7dbf2683fc2d78a509a55a64b73399c28267252c728edfc8cc7def8d0ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZDQ1ZDQ2OGYzZjVkZGEwMmQwOGIzMzU0ZjFjNzgyOGZhZGMyZWIyNDAyMWNmMDE2M2I4ZTZlMjIzOWY4ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NWE1YzlmODRmODZkMDljNWU4NjgxMjFkOTgxYTMwNWJjMWU0MTg0MzhiNTEzZGI0M2I4OWRkYTgwNDY1ZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1NWVhOWRjMGZlYjBmMzYxZWQ4Yjg0OTg2ODFjZjY0ZmI1NmFlOWQ2MTFmNjgyMDYzMTFjMmE0ZDg4YzlmMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiOWE5NDhkYTdmZjAwNzBlMjQ1MGRhYjhjZTcyZDUwNjAyNDVlOTFlODMxMjhhMjQ2MzJiMjVjOTdlYjg1Y2MifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9244f3f44afe4c63be871d9efcf1da1f",
+      "statement": "Constitution v2.6.0 is a MINOR, stack-guidance-only amendment that advances the frontend baseline from Expo SDK 56 to Expo SDK 57 (React Native 0.86, React 19.2); it redefines no principle, and it was drafted in the same pull request as the dependency bump it authorises, per the rule that a version the constitution names must be amended with human approval in the change that moves it.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L24-L24",
+          "version": "repo-lines-v1:sha256:b16168e08f2fb44efe63c792a6fa4409872d4e7eb747cf424f0a3527f98d9986:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2MTY4ZTA4ZjJmYjQ0ZWZlNjNjNzkyYTZmYTQ0MDk4NzJkNGU3ZWI3NDdjZjQyNGYwYTM1MjdmOThkOTk4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2MTY4ZTA4ZjJmYjQ0ZWZlNjNjNzkyYTZmYTQ0MDk4NzJkNGU3ZWI3NDdjZjQyNGYwYTM1MjdmOThkOTk4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTZmYWNjZDE0YzM5ZjllYzlkNzE2ZDNhY2FlNDVmYmJiZmIxNjkxNmNlZjUxOTcwNDUyOWM1MGM5ZGI0NGFhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2YxOTE4NjE2YTk5ODUxMTk2N2ViYjcwNjFkOWRiOTc0NTA5YjUxOWUzNzU2OWQzYzYzZGE2NDQ2ODM1YjRlNiJ9"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md#L347-L347",
+          "version": "repo-lines-v1:sha256:5fba2b820573225ac8329746a9f3e667e38e5afa6772bf467e49a5e0be9e2b8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiYTJiODIwNTczMjI1YWM4MzI5NzQ2YTlmM2U2NjdlMzhlNWFmYTY3NzJiZjQ2N2U0OWE1ZTBiZTllMmI4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiYTJiODIwNTczMjI1YWM4MzI5NzQ2YTlmM2U2NjdlMzhlNWFmYTY3NzJiZjQ2N2U0OWE1ZTBiZTllMmI4ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk5ZmE5MTQyZmMwZjEzNzAxOGI3ZTYzNDJhMmFiNTA4OGVlYTJjOWMwYWE2NjRhNWIxZmI1MTU0NDhkZDFiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA0OWFhZGRkNjZmYmRmOTNkZGIwZjA3YmQ4MWFiNzZjZDcxYTA3MjIyYWZiMmNmMjI4NDcxNjkzZWE4Y2Q0ZiJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/spec.md#L437-L440",
+          "version": "repo-lines-v1:sha256:6ffc2d6054dccef68789671078e1dcc0937bcbd164d40acf29a4fa874a2aca53:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM5ZjZjYjMxNTk5NTg5MzgwMTg0ZTU3YzY5ZDhiYjNiODgxNWUxOTJjMmZlYjBkM2UzYTJmYWM5NjE5MGY5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTIyZmUyMzM1MzY4YjA3OTNjYWVlODQ0YzliZjZmNWMwMDFiN2NjNzY5NzkwNTZjMWNiMzJhZmUxMmI4YzNiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ1Njk5MTVkNTc0MTIyOTY5N2ZiOGU5YmU0ZWFjNTFiNThkZTdiZTZiNzBlMzYxNzg1ZDg2ZmUyMDRlOWNiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RiNDQzYTg2NDhmZTUxYTM1YTY4ZGRlMjg4OGFhMGJlNzE3NmZjNzI0OTg3MjY4Y2ZmNjE1YTAwYWI1YzU3MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_04e9a8be56d7452c94ff7a1942862f6e",
+      "statement": "Only a stack element the constitution names *with a version* forces an amendment when it moves; a library named without a version does not. The frontend stack section names Tamagui and `@mcm/design-system` as the UI/styling engine but pins no version for it, so a Tamagui major is not a constitutional change, whereas the Expo SDK/native runtime, the container images and the toolchain lines are version-named and are.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L359-L359",
+          "version": "repo-lines-v1:sha256:840c08f94ddcaa450e56d4dbde69c8464327a756824ff0713a7cf74b390b1608:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQwYzA4Zjk0ZGRjYWE0NTBlNTZkNGRiZGU2OWM4NDY0MzI3YTc1NjgyNGZmMDcxM2E3Y2Y3NGIzOTBiMTYwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQwYzA4Zjk0ZGRjYWE0NTBlNTZkNGRiZGU2OWM4NDY0MzI3YTc1NjgyNGZmMDcxM2E3Y2Y3NGIzOTBiMTYwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjhkNmYwYzhhZDdhZDE0ZDRkMDNhYWI5MjI0ZTc4ZGZiZmU4ZjAyMTYxZTY5ODI4ODhjZTE0YTg5NDE1MWQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg3MjBmODY2OTE1ZTg0MzJlZGU5NDY1MDk1YmI1ODI0ZDQxM2RmZTRlYzE0MWNmMzZmMjE2NWYxY2I5ZWMyNSJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md#L63-L65",
+          "version": "repo-lines-v1:sha256:9b9b3415a1c8b1a26d0ef3d927fc2c0eb480c8d55b236ab49cb82900ae3959a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDA2OWUzYTk2MDNmZDU2NTZkNmZiMjI3YjI5NDcwNTFjY2ZjYmRlNTcwY2E5MjQzMTNkNTYwNDJiMWRhNGQwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzIwNGViNTdiNjIzMDkyNGEyNzUyMDEyM2ZlM2I5Njg3YmNlMDg2ZjBmZjYzMGY1MjJiNTMyNzViYzdmYmNjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDc3NDEzZDJkZWI4MWM1ZmQxYjMwZmE3M2FjNzFjYWIzOWY4MmMzZDBmZGQwNDI5Njc2YmYyNmI5MjMyOGE5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTg4YzVmNjk3OWRiNDA1YmIyZjExZTllZGM3NGM3NjVhNGM4NGI0Njc4MmNlY2QxNzk5NTNlNWRjYmRlMmNhMiJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/spec.md#L437-L440",
+          "version": "repo-lines-v1:sha256:6ffc2d6054dccef68789671078e1dcc0937bcbd164d40acf29a4fa874a2aca53:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM5ZjZjYjMxNTk5NTg5MzgwMTg0ZTU3YzY5ZDhiYjNiODgxNWUxOTJjMmZlYjBkM2UzYTJmYWM5NjE5MGY5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTIyZmUyMzM1MzY4YjA3OTNjYWVlODQ0YzliZjZmNWMwMDFiN2NjNzY5NzkwNTZjMWNiMzJhZmUxMmI4YzNiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ1Njk5MTVkNTc0MTIyOTY5N2ZiOGU5YmU0ZWFjNTFiNThkZTdiZTZiNzBlMzYxNzg1ZDg2ZmUyMDRlOWNiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RiNDQzYTg2NDhmZTUxYTM1YTY4ZGRlMjg4OGFhMGJlNzE3NmZjNzI0OTg3MjY4Y2ZmNjE1YTAwYWI1YzU3MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8db169fb6d434bbc8d3fad371dba0209",
+      "statement": "Beyond principles and stack baselines the constitution carries the architecture diagrams that are the canonical picture of the runtime topology: two C4 container diagrams (multi-frontend/multi-service, and the additive AI-agents layer) and three auth-flow sequence diagrams (login, backend resource access, agent auth), the last of which specifies the RFC 8693 run-scoped subject-token exchange and downscoped backend token that keep token custody with the BFF.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L665-L1005",
+          "version": "repo-lines-v1:sha256:37b9de49f793d08d751f84f63c0673bbd58bd8b803bd246448a40fa207b19147:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWNmMTVmZDM4OTE5ZGRkYjNjNWRmNTk5YmI2M2JiZDMyZWJhOWIzZTcxMjdkNDUwYzQ2ZjY3NmEyMmYwZDdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0N2MwNmM1NjFkNWMzMjczNDM2ODUyNjhhNDZiMzM5MWYzOTk4ZWVlODkwZDJiZTUxZjBkMjFjYzRhNTNhZTZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZWM1OGNhOTViZTEwMjFlMzg3NjcyMDVlYWY4Yzk0ZjRkYjIxZWYzMTA2NWI1ZjVhNTRiYjhkOWY2ZDM3NmJjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYzQxMTJmYzlkZWE4OTMyZWM2YWY2NjRiMDJjNzAwNjE3YjdmNjM3Nzk0NWJmYTc1M2I1YWU5YWEyYzZiMGYwIn0"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T10:29:14.990Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-18T07:04:46.529Z"
   }
 }

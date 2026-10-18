@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6dd19b620423445146a5b119ca5bbb30341662ea9dcf457fe325fcf0c1aa6ac7",
+  "pageVersion": "sha256:86a0b344fcb972af71239a2a005fff074844fb8be6e7501a50c44af28bcf791b",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -70,11 +70,11 @@
     },
     {
       "id": "claim_5d802da5dba442a8b328d3741e60ebb9",
-      "statement": "The Docker Desktop / Docker-in-Docker path is retained solely for the Android emulator, which needs `/dev/kvm` that the microVM cannot provide (no nested virtualization). All other work — web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox.",
+      "statement": "The Docker Desktop / Docker-in-Docker dev container is retained solely for the Android emulator, which needs `/dev/kvm` that the microVM cannot provide (feature 060, gate R2, resolved negative). Everything else — web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox. Its entry point is VS Code's *Dev Containers: Clone Repository in Named Container Volume* command against `.devcontainer/devcontainer.json`.",
       "evidence": [
         {
-          "resource": "repo://README.md#L155-L173",
-          "version": "repo-lines-v1:sha256:931722407bae844b0e4afd8e8e1110533b64bd9f766422f753a22f9435753c65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NzE3N2U1NGI2MDc3YTY0MTM0OTkyNTgwMmU5NmRkMmE1OTI3ZTA0MzVjOGEyZGJmOWQ2YmY1YzFiOTAzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhN2I3YzZhYzgxZjRkZjFiMGIzYzRmMjFkYjA5NjhhNzZhYmVlYWJjYjc3YmZjYWFiYmFhZmNjNGIxZWNkMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+          "resource": "repo://README.md#L138-L155",
+          "version": "repo-lines-v1:sha256:c15e688f9864b03ae261d2e439d00879d437d67fcc644a9e68758aeac8bb005d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZjRiYjA2MjA2ZjczZTg0MTYzN2YzODNlMjAwN2U1MjAxOGQ1ZjE5ZWM0NjQ1NjU1OTFhN2VlNGJkOGMzYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NzE3N2U1NGI2MDc3YTY0MTM0OTkyNTgwMmU5NmRkMmE1OTI3ZTA0MzVjOGEyZGJmOWQ2YmY1YzFiOTAzNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmM2Q5ZGVhZTdjZmUxN2I5ZjY1NDU1ZjAwMDEwMDMxMGRlY2NiZWNmMzhkNmJkZTE2MzdlNDEzNjZhNzYwMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NmZkYjAwMGFjMGFkZmY5M2QxNWE2YjllNmQ3MDc4NzQ5MzM3ZDYyZmY2MjQ2MWZmOGQ1MGQ1YWUxYTk4MzYifQ"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L8-L10",
@@ -362,7 +362,7 @@
       "evidence": [
         {
           "resource": "repo://README.md#L157-L173",
-          "version": "repo-lines-v1:sha256:9755da406099f9d5fcc0757e8fe2311e113f45a3f57a49989eead138229f982a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYTU0NmI2ZGI3ZjBiZTg2OWYxZWEzMjczYTBhOWNmNzNlZjg4MWM5ZDZhZWFiZWJlZWY5MGZhMmJjYWMxOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxNzI2NTU3NzIxNDcyYTAzNjllMTk4MDk4MGQxMTRhMWUzZjU4MTIxZTM2YjFmZWFlMTgzMTFkOTJlYjFhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+          "version": "repo-lines-v1:sha256:81f636298df55b0329c9686c7702a3689016eb2e447e0a06cb28a570acd40b94:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYTU0NmI2ZGI3ZjBiZTg2OWYxZWEzMjczYTBhOWNmNzNlZjg4MWM5ZDZhZWFiZWJlZWY5MGZhMmJjYWMxOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxNzI2NTU3NzIxNDcyYTAzNjllMTk4MDk4MGQxMTRhMWUzZjU4MTIxZTM2YjFmZWFlMTgzMTFkOTJlYjFhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-android.sh#L1-L58",
@@ -501,10 +501,94 @@
           "version": "repo-lines-v1:sha256:f82e23bd5302362fb0c62bd5f6669c532f6f1610386810cfc25c424bef4b5c97:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNDJiZDUzZjliYWU4ZmI2NjcxODk3ZWY1MTg5NGNkYzVhNmYxNDRmOWM1YTg1N2YyNGQ4OGU5NTYzNjJlOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NjFkNjE5ZTljZjMzYmUyMzRlY2Q1ZDk5MTk5ZmNlMDZlMDJmZTRhMmZjZjYwZTY5N2I2ZWIyNTRlNTc5NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhYTlhNWY1NGNjOTNjMzBkNWI4MDAxNWY2MGJjMjI1YjliNDUyOGFmMzU4NWZmNWZkZmUzMzcyZTAyODc2NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMWYzYzk1NDUxZjg3NzJiMjM2MWQyYzE5MjQzNWJiMTA2ZDc4ODE0OTEyNDg4MzRiN2QyYzdhOWQ0OWE5NjYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_ec9ee9e69e9d4c72913b0d77e72a1ce0",
+      "statement": "The README presents exactly two supported environments: the dev container on a Docker Sandbox microVM is the DEFAULT — it carries the entire toolchain and is what the project is developed in day to day — and the native host toolchain is the alternative, needed only for the Android emulator and native mobile builds, which the microVM cannot host.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L73-L89",
+          "version": "repo-lines-v1:sha256:22b05caaa835ca3a065524e362e41b34907c295937215a0c9dfa443006b0a895:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjk1YWIxMGFlOWFiZGU2MGRkYjZjZGMxYThlNDI1YWQ3NDRjYjYyMDMyZDY4N2M5MjQ0OTIxNmFhZjlkNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNmQwN2QyNDJiZjJhNWJmOTkzYTU5NTMzYmFlNWMyOGYxNjU3OWJkZWE1ZmY2YWNlYWI0MzI2MGZlOWVmZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNmI1N2QzNWFiYzNjMzc4ZDE2NWQxNzk0MzFmOGQ5Zjc0ZWNlOTliZTk2OTYyNDkyOTMzZjkyZTIzZmE4OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkZDAwYmY2MDlhN2Q2MDBkMWM2YTNmZTk4NTk1NzIyYTliN2ExYjhlODQyMmI1MDdkZDFhMjEzMjZhYjdkNDYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L30-L57",
+          "version": "repo-lines-v1:sha256:009a2cedd0c78f5898e76ac50bd5f7f719f8931498ad64d7ae95a0ba60d91bdc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZTJmNTMyOGVlNmU4MDUwZThhYWZkOGRjODY5YTA2OWNkOTU4NGVkYWFmNTRmZTU4OWQ3M2MzYjdkY2Q3OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2Y2Q0MDI2ZmUwZmZmZGU3ZjJkNTAyOTliMWFhOGQ5ZTc2ZDRlM2MwZTNjNGM3OWNhYzc1MjZlNTliYjFhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkYzRiZmJhNmVjM2M2NDRhZTljNWJiMzk2NDNhYzY3MWZhMzMzOWQ4ZDZjMjU5ZjE2ZTdmMTcxMWRmMmJiODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNjY2ODI0NWQyYjc2NTA0MzE0YmRjMTIyNDMxYWYyZGJjNWVkNjkzMmY2YmRkOWY5ZmJiMzBhYmI2MzE1MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6315637481d24e7f8d8101290881e530",
+      "statement": "The native host toolchain prerequisites are Node.js 24 with pnpm (via Corepack) and Nx, Rust pinned to 1.98.0 by `rust-toolchain.toml` (which `rustup` reads automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose), Python 3.14 + `uv` for the agent layer, Docker Desktop, and Android Studio + JDK 17 for mobile development only; setup is `pnpm install` plus one-time-per-machine shared Docker networks (backend, keycloak, movie-assistant-mcp), four named volumes, and `node scripts/gen-dev-secrets.mjs`.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L91-L117",
+          "version": "repo-lines-v1:sha256:291f5a5dcc74aa31e889c80ab0d984085777a4a51234f836baaef153b8dc0cc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMWJkZDhlMjE1MjhkOWI4ZWRmNDBkMjdhNmJiODQ0ODU1NjI2MjMzYzYzYmE1YjdjZGJjOTI3YTAwMzgzZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMzNiZTExZTJmMjY1MWIxZWE4ZmM2MmQ0NzFhY2IwNTU3YjZiMjc1MmUxMWRmZWM0N2RkNjIzMGVhOTVmMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ODY2ZTc1MmM2MGM5MjEzZjY5NGUzYTU2N2ZkMjI2NTdhYjdlYjYzODVmZjg5NGZjZTZlM2U1Y2FhNzkzNjYifQ"
+        },
+        {
+          "resource": "repo://rust-toolchain.toml#L27-L34",
+          "version": "repo-lines-v1:sha256:e51f9903fda819b888aa4ac2fe19d56893f5a11b9bde4e22c28143b9a840b965:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTI0ZTY0MTk2NzQ0MWQ4ODc3Njc5NWQ3ZDU3MjBhMDI5NGNhZGFlYTUwMjI0ZWZiYjc1ODhiM2ZiOGFjOWVhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTNhZWUxMzM5ZmM5N2JmMDQ2MWU5YTdjYjYzMDgwNzA5Y2Q2OTg4M2YxMWI4ZGMyNGQ2ODc1ZTlhMTMzNzJkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDQ2N2ExMzY2MTgwMmI4MmE2NGY5NWUzNmIzMmRhNTNiNGM4MDUzM2ViNTE3NjQzODEzNGY4YTgzMWRjMTQ2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_96d9effe0a3a4a4aabee5a45298b2ad8",
+      "statement": "The prebuilt `mcm-devcontainer` toolchain image bakes Rust and its cargo tooling, Python via `uv`, the Specify CLI, Node 24 / pnpm / Nx, and `gh`, so nothing is reinstalled per session; it is pulled from the forge registry by digest or built locally with `node scripts/build-devcontainer-image.mjs`.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L143-L143",
+          "version": "repo-lines-v1:sha256:debedfb0dd9414235b36841c1593b63a6bccdc74e292c9dcc714afe6c43ff5f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViZWRmYjBkZDk0MTQyMzViMzY4NDFjMTU5M2I2M2E2YmNjZGM3NGUyOTJjOWRjYzcxNGFmZTZjNDNmZjVmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViZWRmYjBkZDk0MTQyMzViMzY4NDFjMTU5M2I2M2E2YmNjZGM3NGUyOTJjOWRjYzcxNGFmZTZjNDNmZjVmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJmN2MwMGYxYjc4MzVmY2ZiOWM1ZWRmMDNmODBhNjg1NTE0Yjc1ZDNhOGJjNjQzZmU1MGUxNjBkNTU0ZDIyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTUxODNjZGFiNzEwY2FkYjNlMWZjZTY4ZmUxZjYwMjIxZmI2ZjE0NmQzZjMyM2ViYzBjNzRjYmFiNmE5MzY1NyJ9"
+        },
+        {
+          "resource": "repo://README.md#L83-L83",
+          "version": "repo-lines-v1:sha256:aa70a6e45074f6add526b89c65b62f9c0997ad12b32d0cd01d1f9fefa284412c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE3MGE2ZTQ1MDc0ZjZhZGQ1MjZiODljNjViNjJmOWMwOTk3YWQxMmIzMmQwY2QwMWQxZjlmZWZhMjg0NDEyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE3MGE2ZTQ1MDc0ZjZhZGQ1MjZiODljNjViNjJmOWMwOTk3YWQxMmIzMmQwY2QwMWQxZjlmZWZhMjg0NDEyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQzZGQ0ZDMzZmRkNTQ2NWEzZDRjNDFmNmE5M2IzNzMxZTVkMjQ1MDZiMTAzNzI2ZWQ3Nzc5ZWRjOTY5NGQ0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAwMGI2ZmVkMjFlYWZjNmE0MzM3Yjc3OTMzNmRjZWVhNGVmZGZiNjZhMTY0Njc5MGM4NDVlYjBkNTc3NmY3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cb2f558a1db43669ef41bd3544ba028",
+      "statement": "The headless entry point into the sandbox environment runs inside the VM, where the engine and the workspace clone live: `ssh mcm.sbx` followed by `devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json`.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L12-L15",
+          "version": "repo-lines-v1:sha256:4632ed509dc95e4cd1498c41d0d1185f7d258ba3caa2d19dd774cc54d8c17337:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdkZmJiMWYxYWJmMTFkYzZiY2ZkOTM0MGY4ZmJlMzExZTQzMDcyYzQ1ZmU2MTY3YzQ3MDg1MGVmZTZiODRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA2MGQ0NzY5YjAxZTNjNmM0MDlhNTA5NTI0MmU2MTMxM2YyZjZlNzk0OTljOTU5YzViNGY5OGI4NTZiMWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzRmMzI5MWJmYzcyZWZmMDk3ZWMwNjFlYTJjNDIxNWQxNjk3ZmM4OGE4ZWQyYTQwNWNlNjIyZTliNjYyNTZhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjEzOWRlYzkwYWFjZmQ3MjZjYjg1Y2Y2ZTkwMWYwNWYyZjljZmVhZDhiOGNlNTk4ZDE2ZDhhMjVlNGU3YjhhZiJ9"
+        },
+        {
+          "resource": "repo://README.md#L148-L153",
+          "version": "repo-lines-v1:sha256:f3f95e63c59f0bc650d265b626e5df87a16bafcdc7fec54cecaf500ff7f81f91:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDZjZjRjYTRmMTVlY2ZkOTVlYTQ1YmU2NmUzYjVkYzU4ZTY2YjFiOWM3ZWFkOTMwODc3MjA5ZTNlM2ZkOWFiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzRmN2YwYzFmZjFmNGY1MmUxMjIxNDdmOTI5NWFkNzk5YWMwODlkMDNkOTAwY2E0NzliZmY4NjBmZGVjYmQzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE3MjY1NTc3MjE0NzJhMDM2OWUxOTgwOTgwZDExNGExZTNmNTgxMjFlMzZiMWZlYWUxODMxMWQ5MmViMWFjNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad19004560484595ab9c4962c4c366fa",
+      "statement": "The current pinned tech stack is Expo SDK 57 / React Native 0.86 / React 19.2 on the universal client, Rust 1.98 on the backend, Node 24 for the BFF and dev-container toolchain, with pnpm 12 workspaces and Nx 23 orchestrating JS/TS, Rust and Python through one task runner.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L42-L53",
+          "version": "repo-lines-v1:sha256:6e65879e22438a9acd55ca58aa2abba565e08f0c32254942cfce171cc4813016:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YTZlN2FjNzNiMDUxOWMzN2E1NjY0N2ZlNTMyMzlmM2NhZjEzNTE5NzQxMDUyNzZjZDg2YWEwNjk3OTM1NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjg3OWQ3MmUyNDUyNDFhOTdkZmE0YWJmZjMyZGZkZDlmN2FiNDlhNWUwN2E4ODIyNTVmYzM1MTUyYjA4NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0ZmU4MmQzNTBhYWJhNWNmNWNkOTEyZmZlMTJhZjg5OWZlYjNhODQ3NjhhZjBlODk1Y2MzMTA0YjhmYjcwYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NTNiMTk4MDFiNjU3YTdjY2VkNmFiZmNhYjU5YzgyMTJlYzg0OGJmNzEzNzJhMjQyNzk5ZjZkNTdjZmJmMzAifQ"
+        },
+        {
+          "resource": "repo://rust-toolchain.toml#L29-L31",
+          "version": "repo-lines-v1:sha256:b4ea3c94c934d96a2772b7878c12ccbf3e486313d0988a9c960e0bd87bafc8fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMyMDRhMDcyMDNmZmI4M2MzYTUwZTgwZjE2YmQ1NTY3YTU2YTIzOTA0NDcwY2U2ODAwMmZiNDQ0MGQzMjM2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZkODkyOTNmMWRlMmQ0NmMxZjEzY2RkNDk2MzM2ZGM3YzZiNjc0OWU1MDZlZjIzODBlYjYyMmQwNzE2MjY4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzc5MjNmZWU2YTdkNzEwZjQ1MWVhOWNmMTk0YTFlZWRiMmNiNWQ1Y2RhOWFmM2Q4MDE5MzVlMTQ5MmM3MTFmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmJjZWFkM2U0NWY3ZDdhZTg0ZmJiNGVlNTc0ZjMzZDRlMzdjYjFiZmEwNjdjMDQwOGQwNjVlMDg0M2VhYjQxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7127c940d204df39138b88dae892147",
+      "statement": "How the Expo app is developed from inside the dev container is path-specific: the web target runs `pnpm start` in-container against the forwarded `localhost:8081` (ports 8081 Metro/web/dev-BFF, 8082 containerized BFF and 8099 Keycloak are forwarded, while the legacy Expo 19000/19001/19006 ports are unused by SDK 57); a physical device points Expo Go or a dev build at the in-container Metro server over LAN, falling back to the documented Expo tunnel (`pnpm start --tunnel`) when LAN routing to the container is unavailable; and emulator/native work — `expo run:android`, APK builds, `pnpm nx e2e:mobile` — stays off the sandbox.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L167-L173",
+          "version": "repo-lines-v1:sha256:bf5a5cd1dfa8a75bf435a87f541cc56ece1933958ec35eb7094b748a6becece2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDcxMDM2Y2RlMGZkMmI1YWU4Y2IyMTkxNjYyOGU4NDk2M2FkZWY1M2MyNWQ4OThmMjM2ZWI3OGM1ZWVkN2YwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA0MWVlOGVmOGZlODBkNWZlMzAxODAwZDNiYzYxNjNkZDc3NWNjNGE2M2RmZGZhZjJhOWY5ODBhZTM5YTUwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI5NWVkOTA2OTVjMjI4YjczYzc1NjIxMTAxNmYwOGVlM2I3ZjZmOWIyMGIyOTYwM2ZkZDVjNjA5YThlMjRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmYzOGU4ZTEwNzE5MWU0NmZmMmExMjYwYjBjYzY4ZGQ4ZTg5MTUwOGM0MWY5MmQ0MGQzNzA5NzkxZWMzNDY2ZCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L78-L98",
+          "version": "repo-lines-v1:sha256:9a69b19018d5d1f75dbb3a6fc9761b39dca81663d143e55e65c0db41d701629f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTdkYmJhMTUyZDc1MWQzMWNiNjAxMWU3ZGNlNGE3YWNjYmI5MTZjNzBiMzliMjRkMmJkNjRiMmE5MzBiOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwZDEyODNiYmU3MzVhNWZhOWI0YmQyNDFkMTc1NDVlZWQ5ZjVkOTg1MzZjMmVkNjE5ODgzMWEzMjQwOGNmZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlODBmNTgyZjViNThhNWNkMTlmY2VjY2VmZDg0NmYxY2YyZGJmYzUzOTQwMmU0ODRiOWFhZDE4ZGRiNzE1Y2YifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-18T07:04:46.529Z"
   }
 }

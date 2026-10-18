@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two dev-environment options (sandbox microVM and Docker Desktop), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
 sources:
@@ -50,7 +50,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T03:00:26.889Z
+    at: 2026-10-18T07:04:46.529Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -60,6 +60,11 @@ React Native/Expo universal client, a Rust/Axum domain service, a Python LangGra
 three scoped MCP servers, shared infrastructure-as-code, and a fully self-hosted Forgejo CI/CD
 pipeline. It is also a working example of spec-driven, AI-assisted development — every feature
 flows through a spec → plan → tasks artifact set before any implementation code is written.
+
+The current pins are **Expo SDK 57 / React Native 0.86 / React 19.2** on the universal client,
+**Rust 1.98** on the backend — pinned by `rust-toolchain.toml`, which `rustup` reads automatically
+for every `cargo`/`rustc` call inside the repo, so there is no channel to choose — and **Node 24**
+for the BFF and the dev-container toolchain image.
 
 For the full description, architecture diagram, feature list, and tech stack table, see the
 [README](../../README.md). For individual deployable-unit pages, see the rest of the
@@ -100,36 +105,47 @@ mc-service`, `pnpm nx run-many --targets=test,lint`).
 
 ---
 
-## Dev environment — two options
+## Dev environment — the default and the alternative
 
 Whichever path is used, local service bring-up is the same: `pnpm nx up-auth infrastructure-as-code`
 first (Keycloak + Postgres), optionally `pnpm nx up-mcm infrastructure-as-code`, then
 `cd frontend/mcm-app && pnpm start`. Stack profiles and endpoints:
 [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md).
 
-Each path has **its own config file**: `.devcontainer/devcontainer.json` for Docker Desktop and
-`.devcontainer/sandbox/devcontainer.json` for the sandbox. They are **duplicates, not an
-extension** — the sandbox variant carries its own `containerEnv`, `runArgs` and `onCreateCommand` —
-so a change made only to the Docker Desktop file is real, committed, and **inert** on the path in
-daily use. Edit both until FR-032 collapses them.
+The README presents **two supported environments**: the **dev container on a Docker Sandbox
+microVM**, which is the **default** — it carries the entire toolchain and is what the project is
+developed in day to day — and the **native host toolchain**, which is needed only for the Android
+emulator and native mobile builds. A third entry point survives inside the container family, the
+**retained Docker Desktop / DinD dev container**, kept for the same emulator reason.
+
+The two container paths each have **their own config file**: `.devcontainer/devcontainer.json` for
+Docker Desktop and `.devcontainer/sandbox/devcontainer.json` for the sandbox. They are **duplicates,
+not an extension** — the sandbox variant carries its own `containerEnv`, `runArgs` and
+`onCreateCommand` — so a change made only to the Docker Desktop file is real, committed, and
+**inert** on the path in daily use. Edit both until FR-032 collapses them.
 
 ```mermaid
 flowchart TD
   A["What are you working on?"] --> B{"Native mobile build, emulator or Maestro flow?"}
-  B -->|no| C["Docker Sandbox microVM - the default"]
-  B -->|yes| D["CI, or the retained Docker Desktop container"]
+  B -->|no| C["Dev container on a Docker Sandbox microVM - the default"]
+  B -->|yes| D["Native host toolchain, the retained Docker Desktop container, or CI"]
   C --> E["scripts/open-sandbox.ps1 opens VS Code inside the container"]
 ```
 
 *Which environment a task belongs on: the microVM for everything except native mobile work, which the microVM cannot host at all.*
 
-### Primary: Docker Sandbox microVM (feature 060)
+### Default: dev container on a Docker Sandbox microVM (feature 060)
 
 The AI-assisted development environment runs as a **dev container inside a Docker Sandbox
 microVM** (`sbx`), not on Docker Desktop and not in Docker-in-Docker. Siblings (compose stacks,
 agent stack) build on the microVM's own engine and share its network namespace
 (`docker-outside-of-docker`, `--network=host`). Egress is governed by a deny-by-default policy
 enforced **outside the VM** — closing the gap an in-container firewall never could.
+
+Rust and its cargo tooling, Python via `uv`, the Specify CLI, Node 24 / pnpm / Nx, and `gh` are
+baked into the prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built
+locally via `node scripts/build-devcontainer-image.mjs`), so there is no toolchain to install and
+none to keep current by hand.
 
 **Measured advantages over the Docker-in-Docker path:** 0.43× the wall-clock across five stages;
 `docker-build` alone went from 1024 s to 293 s.
@@ -143,6 +159,13 @@ enforced **outside the VM** — closing the gap an in-container firewall never c
 Runs on **Windows PowerShell 5.1** — the default shell. `pwsh` (PowerShell 7) is **not** required
 and is not installed by default on Windows. It checks whether the sandbox is running, starts it if
 not, waits for SSH, and opens VS Code directly inside the dev container.
+
+**Headless entry** — run inside the VM, where the engine and the workspace clone live:
+
+```bash
+ssh mcm.sbx
+devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbox/devcontainer.json
+```
 
 The operating manual is **two runbooks that share one section numbering**, so a `§8b` reference
 means the same section in either file:
@@ -185,26 +208,62 @@ still has **no `--disk` flag** on v0.47.0, so disk sizes remain creation-time en
 harness to **12/12 PASS** (including `reproducible-recreate`), G5 PASS, `--audit-check` PASS with all
 50 canonical destinations live, and the volumes confirmed at 150 GB / 40 GB from the host.
 
+### Alternative: native host toolchain
+
+The native host toolchain is the alternative environment, and it is needed **only** for the Android
+emulator and native mobile builds, which the microVM cannot host.
+
+**Prerequisites:** Node.js 24, pnpm (via Corepack), Nx; Rust — pinned to **1.98.0** by
+[rust-toolchain.toml](../../rust-toolchain.toml), which `rustup` reads automatically for every
+`cargo`/`rustc` call in the repo; Python 3.14 + `uv` (agent layer); Docker Desktop; and Android
+Studio + JDK 17 for mobile development only.
+
+**Setup** is `pnpm install` plus one-time-per-machine shared infrastructure: three Docker networks
+(`backend-network`, `keycloak-network`, `movie-assistant-mcp-network`), four named volumes (Keycloak
+Postgres, mc-service Mongo, BFF Redis, BFF Mongo), and dev secrets via
+`node scripts/gen-dev-secrets.mjs`. Full step-by-step host setup:
+[docs/runbooks/dev-environment-setup.md](../../docs/runbooks/dev-environment-setup.md).
+
 ### Retained: Docker Desktop / Docker-in-Docker
 
 The Docker Desktop path is kept for **one reason only**: the Android emulator, which needs
 `/dev/kvm` that the microVM cannot provide (gate R2, resolved negative). Everything else —
 web E2E, integration, the agent stack, day-to-day assistant work — belongs on the sandbox.
+Its entry point is VS Code → Command Palette → *Dev Containers: Clone Repository in Named Container
+Volume* → this repo's URL, using `.devcontainer/devcontainer.json`.
 See [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) and the wiki page
 [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md).
 
-### Expo/Metro limitation
+### Expo/Metro limitation — native mobile stays off the sandbox
 
-The dev container is a headless Linux environment. **The Android emulator and iOS Simulator
-cannot run inside it.** Native mobile build, emulator, and device-debug work (including Maestro
-mobile E2E) remain host-side activities. The container covers everything else: backend
-development, compose-based test stacks, the web target, and Metro (watchman-backed, hot-reload).
+The dev container covers backend/API development, compose-based test stacks, the **web target**, and
+the **Metro bundler** (watchman-backed, hot-reload at native speed). It never runs the **iOS
+Simulator** (macOS-only), and whether it can run the **Android emulator** depends on the path:
 
-The Android emulator is the one documented exception, and it is path-dependent: **never** on the
-sandbox microVM (no nested virtualization, so `/dev/kvm` cannot exist however the container is
-configured), available headless with hardware acceleration on the retained Docker Desktop / DinD
-container via the host's `/dev/kvm`, and available in CI — which is the **recommended** route for
-agent mobile flows, because local Metro OOM-crashes after roughly one to two `/run` calls.
+| Path | Android emulator |
+|---|---|
+| **Docker Sandbox microVM** (default) | **never** — no nested virtualization, so `/dev/kvm` cannot exist |
+| Docker Desktop / DinD (retained) | headless with hardware accel, via the host's `/dev/kvm` |
+| CI | and the **recommended** route for agent flows |
+
+How to develop the Expo app from inside the container:
+
+- **Web** — run `pnpm start` in-container and open the forwarded `localhost:8081` in a host browser
+  (ports `8081` Metro/web/dev-BFF, `8082` containerized BFF, and `8099` Keycloak are forwarded; the
+  legacy Expo `19000/19001/19006` ports are unused by SDK 57).
+- **Physical device** — point Expo Go / a dev build at the in-container Metro server over LAN; if LAN
+  routing to the container isn't available, use the documented **Expo tunnel fallback**
+  (`pnpm start --tunnel`).
+- **Emulator / native builds** — `expo run:android`, APK builds, and `pnpm nx e2e:mobile` belong on
+  the native host toolchain (or in the retained Docker Desktop container's emulator); mobile agent
+  E2E flows run in CI regardless — see
+  [docs/runbooks/android-emulator.md](../../docs/runbooks/android-emulator.md).
+
+The **Android emulator is the one documented exception** and the sole reason the Docker Desktop path
+is retained: the microVM offers no nested virtualization, so `/dev/kvm` cannot appear there however
+the container is configured. It is available headless with hardware acceleration on the retained
+Docker Desktop / DinD container via the host's `/dev/kvm`, and in CI — which is the **recommended**
+route for agent mobile flows, because local Metro OOM-crashes after roughly one to two `/run` calls.
 `scripts/devcontainer-android.sh` refuses legibly and names both remaining routes (CI, or the
 retained Docker Desktop container) rather than failing silently or looking like a broken image.
 
@@ -492,4 +551,5 @@ treat those credentials as exposed.
 - [Dev container on Docker Sandbox microVM — lifecycle](../runbooks/devcontainer-sandbox-lifecycle.md) — recreate, disk, verification harness, `sbx` upgrade
 - [Containerized dev environment (devcontainer)](../runbooks/devcontainer.md) — wiki summary of the retained Docker Desktop runbook
 - [Local dev infrastructure & environment variables](../runbooks/local-dev.md) — the compose stacks and their profiles
+- [Developer environment setup (host toolchain)](../runbooks/dev-environment-setup.md) — provisioning the native alternative for the Android emulator
 - [Android emulator & APK builds (mobile E2E)](../runbooks/android-emulator.md) — where mobile E2E runs, and why not on the microVM

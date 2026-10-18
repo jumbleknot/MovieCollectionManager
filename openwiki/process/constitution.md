@@ -5,20 +5,8 @@ description: The repository's ratified, versioned constitution — the immutable
 resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
-sources:
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-baa6cf05f830f1fa193ef74c
-    resource: repo://docs/templates/feature-test-tasks-template.md
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
-    resource: repo://scripts/check-web-bundle-budget.mjs
-  - id: openwiki-source-4388ebe240b6b1a6c540d5c5
-    resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+  - by: openwiki/0.7.1
+    at: 2026-10-18T07:04:46.529Z
 ---
 
 # The governing constitution
@@ -27,11 +15,11 @@ generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
 immutable principles — security, authentication/authorization boundaries, session management, TDD,
 AI-assistant behavioral constraints, and per-stack technology baselines — governing Frontend Apps,
 Backend Services, and AI Agents alike. It is versioned (semver-style, with a change log at the top
-of the file) and has been amended over a dozen times as the system matured, from initial ratification
-through incremental clarifications like the client auth model rewrite and the Tamagui design-system
-mandate.
+of the file) and has been amended more than twenty times as the system matured, from initial
+ratification through incremental clarifications like the client auth model rewrite and the Tamagui
+design-system mandate.
 
-The file currently reads **v2.5.0**, ratified 2026-03-08 and last amended 2026-09-26. The changelog
+The file currently reads **v2.6.0**, ratified 2026-03-08 and last amended 2026-10-17. The changelog
 entry marked `[CURRENT]` is the authoritative "latest amendment" signal — check it rather than
 inferring the version from any summary, this page included. Amendments follow the file's own
 **Governance** section: a proposal documenting rationale, impact and a migration plan; review and
@@ -40,10 +28,38 @@ for a clarification); and alignment of existing code within one release cycle. T
 informative, not decorative — v2.0.0 superseded the previous client auth model outright, while most
 MINOR bumps add a principle area or a scoped exception without redefining anything.
 
+```mermaid
+flowchart TD
+  A["Proposed change that touches the constitution"] --> B{"Principle change, guidance addition, or clarification?"}
+  B -->|"Principle change"| C["MAJOR bump"]
+  B -->|"Guidance addition"| D["MINOR bump"]
+  B -->|"Clarification"| E["PATCH bump"]
+  C --> F["Proposal: rationale, impact on existing code, migration plan"]
+  D --> F
+  E --> F
+  F --> G["Review and formal approval by a human"]
+  G --> H["Amend the file in the same pull request as the change it authorises"]
+  H --> I["Align existing code within one release cycle"]
+```
+
+How a constitution amendment moves from proposal to ratified version.
+
+v2.6.0 is the purest example of the MINOR kind: it advances the frontend stack baseline from Expo
+SDK 56 to Expo SDK 57 (with React Native 0.86 and React 19.2), redefines no principle, and was
+drafted in the same pull request as the dependency bump it authorises. That same-PR rule is the
+constitutional reading of "documentation-first": a version the document names is amended with
+explicit human approval, in the change that moves it, never silently afterwards.
+
 Notable principle areas: AI Assistant Constraints (behavior-descriptive identifiers, no vibe coding,
 comments only for non-obvious rationale); Security (classification, PKCE-only auth via the BFF
 pattern, IdP boundary for MFA/Conditional Access, deny-by-default authorization, server-side session
 storage); and stack-specific standards layered on top for each of the three development surfaces.
+
+Beyond principles, the document carries the monorepo **directory tree** and the **architecture
+diagrams** — the C4 container diagrams for the multi-frontend/multi-service layout and the additive
+AI-agents layer, plus the three auth-flow sequence diagrams (login, backend resource access, agent
+auth). Those diagrams are the canonical picture of BFF token custody and of the RFC 8693 agent token
+exchange, which makes the constitution a design reference as well as a rulebook.
 
 ## Gotchas
 
@@ -67,18 +83,24 @@ storage); and stack-specific standards layered on top for each of the three deve
 - **Constitution changes are rare and deliberate** — the version history at the top of the file is the
   fastest way to see what changed and why before assuming a principle still reads the way you
   remember it; do not rely on a cached mental model of an old version.
-- **An "accepted exception" is bounded and scoped, never a quiet repeal.** v2.5.0 records exactly one
+- **An "accepted exception" is bounded and scoped, never a quiet repeal.** v2.5.0 recorded exactly one
   for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the
-  2-second figure on a React-Native-Web + Tamagui stack. It is capped by a committed entry-chunk byte
+  2-second figure on a React-Native-Web + Tamagui stack, and it stands unchanged in v2.6.0 — that
+  amendment touches stack guidance only. It is capped by a committed entry-chunk byte
   budget enforced by `scripts/check-web-bundle-budget.mjs`, it covers residual framework weight only
   (the same principle's lazy-loading clause stays in force and is CI-enforced), and it applies to that
   one client's cold load and nothing else — every other page and app still carries the 2-second rule.
   Growth past the budget is a failure, not a further exception; raising the budget is a deliberate act.
-- **The document carries more than principles — it also carries stack baselines and the directory
-  tree**, so a "principle doesn't apply to me" reading is usually wrong: the per-stack sections bind
-  language, framework, data-access library, container image, and even naming convention. Where a
-  project legitimately cannot comply, the route is an amendment (or a scoped, bounded exception like
-  the one above), not a local convention.
+- **The document carries more than principles — it also carries stack baselines, the directory tree
+  and the architecture diagrams**, so a "principle doesn't apply to me" reading is usually wrong: the
+  per-stack sections bind language, framework, data-access library, container image, and even naming
+  convention. Where a project legitimately cannot comply, the route is an amendment (or a scoped,
+  bounded exception like the one above), not a local convention.
+- **Only a stack element named *with a version* forces an amendment when it moves.** The frontend
+  stack section names Tamagui and `@mcm/design-system` as the UI/styling engine but pins no version
+  for it, so a Tamagui major is not a constitutional change; the version-named lines — the Expo SDK
+  and native runtime, the database and runtime images, the toolchain — are. Read the line before
+  assuming an amendment is required, and before assuming it is not.
 
 Full text, every principle, and the complete version history:
 [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md). For how the principles
