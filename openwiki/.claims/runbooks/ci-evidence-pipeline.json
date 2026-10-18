@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e073d4c7d584b8e47d73490260199f051849af3c5b0aafa418eaa18191957459",
+  "pageVersion": "sha256:b50a95ddc8c33459f2bc6b49e1b5c6f8de78096168a89ad030e80d5b971796dc",
   "claims": [
     {
       "id": "claim_95cb33eaf9164a0bb4732cc9977a5b54",
@@ -47,7 +47,7 @@
           "version": "repo-lines-v1:sha256:7b4c2edefc09079821dd4a8e080086ef138a329943359c6dd9d87aac28ceda52:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgyN2MxZjc3MGFlZjZjNmRiOTBlZTJmNDlmNmE3NDQ0YzBjZmMxZTQxN2U4ZTA0ODg4NDc2MTdmYjEyZjQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJmN2VhY2E1ZTM1OWJhNDBjM2JlZmU5MDliYWQwYTJhYWY0Yzg3ODdkOTBjMmQ4ZmE2MjJhNjdmNGU3NmQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI4ZWVjNjA0YmU2NTA4MDY0MmU4NGI5MmQzZTg2NmMyNTVkOWNlZjliMmMzODI3M2FjZmFjNTMwZmVjZTk3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyYWM2MmY2N2NkNjk5ZGRiMTVkMWY4MWNmOWUxZjNlNGNhNmU4MjI5OTJiNDY1MjhmZTJjNmJkMmZjYmY0ZSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1468-L1478",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1472-L1482",
           "version": "repo-lines-v1:sha256:eff842a78c59f5dd86b327c3e190fddec38c70baef01c0d633d25001d1f3de49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZmE1YzM0OWRiNWFjMmFiZGJlNDZjNjE0ZTI0MDM2OTBmMDRlMmU1MTBiYTcxYTQ3ZjJiYjU4YTA3ZGE5YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2JlZDAwMTBmODM3YjdlYzM5NzgzNmE4MjdiZjA5MzJlN2I0YjIzZjdlNzkzMzExYTBlNjQzN2YyMDRhMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MjlmZTQ5ZjE2ZjUwZjRkMGZlZTc5MzU1Y2JmMGU5NjgyMTNiYmI1Mzc0OGZmMGM1OTE5MjI4ZmZhYzgyNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNWRmNGFkYjhmMjZjOWI4YTk2ZWE3NjcwZDRiMDExZDcyMjQ0OGFhMWM2YTExYzEyNTdkZjgwYmE4NTdjNTIifQ"
         }
       ]
@@ -99,7 +99,7 @@
           "version": "repo-lines-v1:sha256:3508ecd5639b67bd6f2c12ff0cf4163cc8539c84c2107404a57a1403c2af2257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzgzNzAwZDU5MDI5YjM0ZjM5YzJhYmQ3NTQ1YjdlNDM5OTAyNDE1ZTcxNzc2ZjcyNGYxYWMwNDM1MGUwMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNzgxOWIzMGQ4NTVkZjgzYjQ2ZDc2Njg5NjU4Yjg4Njc4NjllYWI2ZTM1OThhNzBlYmZiZmVhMTM0YjkwMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliMGE5MDAwYWM0MDhiODJiNjk3YzU0MDMzOTNlZTE5ZjE3NzBmMDQwNjY4MDUwNDZmMjI4YzkyMDNhOGYxN2UifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1005-L1023",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1009-L1027",
           "version": "repo-lines-v1:sha256:558d1d44ad8333e32dd8d6b1f769335e21f1d736c3b0eeb78a6fca306f5fbac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYThlNGVkMjRhOWI2OTcwNWJmM2QzYTUwMGIwOWQxNmRkODQ0YTIzMzU2NjM1NDE3YjJiNDcwMTZiMjQyYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZjBlMWQ2ODMxYTEwYzhkMTA0MmVmNzEzMjc1ZGY2NTlhZGJjZjI5OGIwY2JhOGQ0ZDZiOWMyYTk3MDRiMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlNzY2MGYwYmMwZGI5ZDQwYTZiMzc2NzA0ZjYxYzY2YzJiNzFkMDAzZGZlYzBiOWI1NzM5MTI1YWZiMjRiNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMzNiZGNmNmRkMjhkZTE4MzA4YzJmOTMzNGJkMzQxNjI2NDFhOTU3NTFlZDhkNzU1MzgxNWYwZmY3Njk3ZGEifQ"
         }
       ]
@@ -113,7 +113,7 @@
           "version": "repo-lines-v1:sha256:160a9ff834fae709440801067f36f5253e5c45217915203b9fc8477af172cdb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0M2JlNDJkNzMzOThkMDZkYjNmN2VjNjc2NGEyYjQzNDhkMGY0MDY4MGI2ZGQzZWYxNTZmZjA5ZTI2NTcxZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MjFiNWZjNzEyMjg5ZTllMWExNDY3OWU1NjNmNjM3MzExZmU3NzM1YzdjZjI0Mjk1MjY0YTFmMTBjMjVkMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MDM4NmQxODg1ZDBhYmM0MDhlYWNjN2ViODE4ZTFkYmQ2N2VhOWU5YjU3YzY5OWJmOTdmZTBkM2JhMGMyM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1395-L1399",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1399-L1403",
           "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
         }
       ]
@@ -123,11 +123,11 @@
       "statement": "The digest is embedded in the bundle it describes, the bundle manifest is planned before the digest is rendered so a cap-dropped source is named in the digest, and publication happens before the bundle upload so the bundle can record whether publication reached its channel (`meta.publish = {published, channel, reason}`); if the upload itself fails, the job-log line is the only surviving signal, which is why both exist.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1395-L1399",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1399-L1403",
           "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1450-L1466",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1454-L1470",
           "version": "repo-lines-v1:sha256:86a9e5ad8c8783ea573a2d134832060cda44631f279bce9e2e43f0b6af28e214:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZWMwYWIxMzNmZTJjZmQ4MGVlZjNkZmFlMmNhMDVlMmRkMTkxOWFkMzliNjFmNzc2NTcyNTIyMDg4NzM2MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOTI5MzM1NGM4ODJmNTlkNWQ4NWUxNWYwYjc5NDg1ZWQwNGM2MmRjNWRkOGJkNDkwZDE5NTkzOWQ2NTEyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNDYwNDNkYmNjMjVmNzdjNmIxMzQ3OGNjNDQ5NjgwZTA5ZWM5MzFhZDBhYjZhODAzNjlkMjJiNzY2MjllYzYifQ"
         }
       ]
@@ -141,7 +141,7 @@
           "version": "repo-lines-v1:sha256:a2cc7ef06e17505236dfaf2c97213bee0bb62b5403fca95d07e3b92b57572517:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWU2OGQwNDcxZTlkM2EzNTlkZjI1MzRiOWE4Yjg3NGI3ZDQwYTcyZThiMjI0Y2Q1N2YyYzg4NGIzYTU1ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NmI4MWQ5NWZmNjljZmU3M2EwYzhiMWI0NzYwNTkzZThiMmEzNzliMGI2MjFlYTI1OGMyOGQyYmI2MTZhZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMzFlOGU4MDZlMDhiZjEzZGYyZDVkMDg1MGNiMzQxZGNjMzQ3ZGY0MzBkZjZmZWJhZGU3NWEwNzExNmNjMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNzJiNzg2M2E1ZGJlMGRjMGE3Y2Q4NGNiMWU4ODBjNTQxZmFiNDQ3NWE0ZmQ3NmQ5N2UxMTZkMTllYWQzMDAifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1403-L1438",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1407-L1442",
           "version": "repo-lines-v1:sha256:e1a74f00018b2fdbc6621a4db0aae79767f96722eeb9c5e61d0adcf1fd320cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzhhNjU5NDU4YzdkODgwYzU2ZTZhMzYwMzI3NTBjYWRmYTc1ZjI5Yjg0ZjQzNGIzYWNlODRmOWVjZmY5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTNlMDg1MjdmMmNmYjMxYWQ4YmI0OGJiMzljN2Y5NjljYTkwMmQyYjY2ZDJmMDMwNzFiN2QwYTg1MDMyZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjVmMTYyZjYwZTVlMmI3OGQ0ZTlhM2EwYTdkZTE2N2JlNmQ2MzZiYWFkYTA3MGVlODUxZjcxMzM3NzhiZDMifQ"
         }
       ]
@@ -179,7 +179,7 @@
       "statement": "The wrapper resolves a ceiling by whole-name match on the table's first field (suffixes and shared prefixes make a substring match unsafe), skips comment rows (a `# web-e2e` row parsed as a ceiling of 0 would mean no limit), locates the table relative to itself rather than `$PWD`, falls through to the `CI_STEP_TIMEOUT_SECONDS` backstop on a missing or unreadable row, and warns naming the source of the value when `timeout` is not on PATH instead of silently running unbounded.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L410-L410",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L431-L431",
           "version": "repo-lines-v1:sha256:82dc2e17f68abd745c79bc4205d4bf4bbb662044069074824682136ae4bf5e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmYzE2MDI3YWM1YzU0NWM2ZGViMDA5NTViNzg5NWNhMDM5MTk1NjE3MzRkNzdjMmIyYTAwNzE1NzBkMWVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAzODAzNTFjNzg5ZjY3MDNlOThhNzRmNjgxNDRiOGZiZDFjMmI4NTE4ZTk1ZTk2ZThmOTZhMWQ1ODQ1ZThiOSJ9"
         },
         {
@@ -190,15 +190,23 @@
     },
     {
       "id": "claim_45484406a9be4caa8b1dd66bd6bff950",
-      "statement": "Three tests keep the ceiling table honest — #338k re-checks the below-the-job-ceiling arithmetic for every row, #338m fails a row whose basis does not state its sample, and #338n fails if a wrapped `app-e2e` step is neither calibrated nor recorded as deliberately on the backstop — but none of them checks that a ceiling matches its own basis, so a hand-edited value beside a stale basis passes every guard.",
+      "statement": "The ceiling table is kept honest by three guards that each check a different thing — #338k re-checks the below-the-job-ceiling arithmetic for *every* row (leaving at least 15 minutes of the job ceiling for the digest step), #338m fails a row whose basis does not state its sample count, observed maximum and run range, and #338n fails if a wrapped `app-e2e` step is neither calibrated nor recorded as deliberately on the backstop — and item #480 added the guard those three were missing: #480a recomputes every row's ceiling from the `max=<n>s` in its own basis and fails a mismatch, because between \"the basis is absent\" and \"the value is too large\" sat every value that was neither, and nothing looked at whether a ceiling matched the sample printed beside it. It calls the exported `ceilingForMax` rather than restating the arithmetic, since a guard holding its own copy keeps asserting the old rule after the rule changes and waves through a table generated under the new one — item #338's original drift one level up. The hole was real: `web-e2e  60  n=40 max=280s x3=840s -> 840s`, a 60 s bound advertising the 840 s answer, passed all 37 prior guards. #480b exempts the commented backstop rows (which carry `-` where a ceiling would be) so a deliberate record is not \"fixed\" by deleting it.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L295-L302",
           "version": "repo-lines-v1:sha256:a1da2f4dc10b3de62d7326440b98b4d7207f4a3b6167d958a645c48b103d8e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQxMTdkZjRmNDk2ZjA5NTgyYzhlZjNlOTFhMWMyY2QxYTY1MTU4ZTAxMjg2MWQ1ZDU3ODNlOWQ0ZTZkMmQ3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJmYjVmZjhkZGZhMDIyNmI5MWU1ODMzY2M0ODVhYzFmNTUxMTQ4ZTM2ZmVjMmM0MjEzY2EyNDA0OTI0ZTU0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE3YTFkMjFhYjg2NTAzMGU2M2ZlNWM0ZDYyMzQxODY4NTM3YjAxNzdkZTZlZDllNTI4N2RkMzIzNGUxYWY0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI1MjVhZDI1OTBhMWU2ZDM3Zjk1ZWEyYjI1OGM0MmVhOTM1OWFhYjViNzZiNzllMjcyYzE3YzQ4YWRmMDU2ZiJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L534-L560",
-          "version": "repo-lines-v1:sha256:056a6ad69216514fdf2956c8c89d8134fb9e9ad5a08b5126958cf60872540e16:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZTAxOGIyZGQ0NzYyM2YwMjVhNTUyOWIzMzAwZGQ1OTZjNGZjMGZjOTI2YjRhNmMxNDdlYmIxYjBlZWNiZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NzI5MTYzYmRkYzgzYWI2OTk2Y2RkODI1MmQyMWE3OGFjMmEwMzQxZTc0OTkwMjIwNWQwNzFlZjE2ZGFlMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmZlNzcwM2U1MmE2YTUwYTg0NDIwNzM2YjA4MmFiZDBlNWQ2M2RiNTBjY2ZlZWMyNDVlOTA1MjgyNjIyYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0Y2Y4ZmI1NGM3ZThjZTYzZDNlNzVmZWNmYTMyYzZmNDU0OWU3NjY2ODhiZmIxNGI4ZDljODkxNTlmOTI2N2EifQ"
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L539-L605",
+          "version": "repo-lines-v1:sha256:ed1839fa2cde07b587787c1e51636d4b58b25f8e37a42db5890b609c1fe677b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZTAxOGIyZGQ0NzYyM2YwMjVhNTUyOWIzMzAwZGQ1OTZjNGZjMGZjOTI2YjRhNmMxNDdlYmIxYjBlZWNiZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZmMyZGVjZjEyYWFhMTJiODAwN2M3ZTgwMjRjN2M5MTFiNTk1YTZjYjFhMWRkYjk0MTg5ZWNmY2I4ZTU4MTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L607-L657",
+          "version": "repo-lines-v1:sha256:157050282bd850dd95a0281969015b7fd95bd64651652c2059f18bfd4f6a44c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMDViZGM3NDNjNmEyZGExZjUxMmFmYjNjM2IyY2U3OTJhMTdlMzNiODg0NmMwYTNlNDY0YmJjZjY2ZDgwNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWE4Mzg3MWNiNzZiMGQ2N2Y3MzVlYjUxODJhOTY2ODNkYzllMzVkMmE4YjBhZWI1OTg4ZDlhMWJlYzFhNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNTNiNjYwN2FkNzAwMzZkOTgwYjU0YjBiOWNjZTNlOTUwN2FmMDYwYmIxMWI5NjA0NGVkMzgxODE2NzVmNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1398-L1409",
+          "version": "repo-lines-v1:sha256:3688204822921c84bc44149a128a35f6c71e565ea62fd21be4518497af6a20df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YmIwZmI5N2Y2NTUxYjQ2MjA4MTBhYzk1OThkM2I4MjllYzhmZDFjZDI3MWJkMzY4YTI1ZTIzYmM1MWJhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NGM1M2IwNjRhZWFiYjllYzUwZjU3ZWZlNzhmZWNjYTc0NGYxYzEzZDZhZTgwMmIwOGYzM2FhZTBjMGRlNGEifQ"
         }
       ]
     },
@@ -432,19 +440,31 @@
     },
     {
       "id": "claim_88d5653877d1450daa305b4d9abb3fee",
-      "statement": "A green run has a third publication mode: `shouldPublish` keys on an explicit `success` and returns `counts`, which uploads a small bundle carrying only the `[e2e-gate]` counts, the contention tally and the `web-e2e` setup lines — no PR comment, no health block, no container logs — and which requires the purpose-scoped credential because the run-provisioned token can only write a commit status. The source list is self-limiting to steps only `app-e2e` produces, so every other green job finds nothing and publishes nothing (`digest-outcome=not-needed`); an unknown job status publishes nothing at all rather than falling into counts mode, because a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious digest on a green run.",
+      "statement": "A green run has a third publication mode: `shouldPublish` keys on an explicit `success` and returns `counts`, which uploads a small counts-only bundle on the same `{runId}--{jobSlug}` version a failure bundle would use — no PR comment, no health block, no container logs, no `digest.md` — and which requires the purpose-scoped credential because the run-provisioned token can only write a commit status. What it carries is `selectCountsSources`: the `[e2e-gate]` counts, the model tier's own gate log (feature 056), the `[e2e-contention]` tally, the `[e2e-turns]` verdict, the opt-in full mobile suite's per-flow table, and the `web-e2e` log reduced to its `[global-setup]` / `[playwright]` lines rather than carried whole. The source list is self-limiting BY CONSTRUCTION to steps only `app-e2e` produces, so every other green job finds nothing and publishes nothing (`digest-outcome=not-needed`); an unknown job status publishes nothing at all rather than falling into counts mode, because a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious digest on a green run and treating unknown as cheaply-publishable would resurrect that bug. Retention prunes on this path too, since publishing on every green run is what makes unbounded growth reachable, and a transport failure here still exits 0.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1524-L1560",
-          "version": "repo-lines-v1:sha256:b0236e1152365d1c91a8c8caf29342be68ad8026baedd8d343f73839a47df156:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzhhNjU5NDU4YzdkODgwYzU2ZTZhMzYwMzI3NTBjYWRmYTc1ZjI5Yjg0ZjQzNGIzYWNlODRmOWVjZmY5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2ZTUxZTBkMDA4ZjE2YzdhMmI3MDAyZThiYzQ2NTQ4N2FlMmY1YTMzYjA4ZjczZjUzNWQwMGJmMjhiODdmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTRlZmE0ZmE0ZDBlODQwYWM0YjdhZTlhNGIyODgzYWE3NjY4Nzc1MWM4Mzg3MzZjMmFlYTY4Yzc5NjI4NDEifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1332-L1347",
+          "version": "repo-lines-v1:sha256:67a1ae082cb5109cc97d3814a28328a29d83e9ff2583811de70d435cc3b072b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOGFlZGE3NGQxZmYyMmZjNmQyYWIxYjFjZTliMDZhNDRmZmQwNDE3YWU4MGRjNzBkNzVhYjlmN2ZjOWQ1NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmEyZjU2ZjlhOGE3NDY1MmEzMzFkZWNjOGU1OGU0NDE4MDgxNjExODkzMjAxNmQxNGY0MmI0MmUyZGJhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-failure-digest.test.mjs#L1040-L1096",
+          "version": "repo-lines-v1:sha256:9f2f815605d1fe68a2f7a5ad85daa10b141bc2f07e6a6b310046837376468b2d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYzU4MjM5MmJjOTFhZTM0MDJhNzgwYTI4ZWE4OTQzOTY4YTIzYWU3MzEwNWQ1MDY3N2Q2MWFmZDhiM2Y4N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMDdkNDQ4ZDI4MmE1N2FkNzBiOTJmNjQ5NTdhZDg0NjVmMWJhYjI4YmFjNWRlZmNiZWZhMzEyYzBhNjcxZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0NTkzZTM2NGYyZDdlZmQ0ZTljZDlmN2EyZmIyNmFhMmQwOTMxZTNlYTJkZDNiZTA3MWM5MDc5MzE0ODRjNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-failure-digest.test.mjs#L1168-L1197",
+          "version": "repo-lines-v1:sha256:80ad40950ad1b52aa219706362f730834b9642b32f885788473eecafa8756800:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYTFmODRhNmUzNzM4ZjM1MmEwNGYxZGQ2MmNhZmVkZjk2NzRlZTY3ODExNmNlN2RmMTdiNmViYzg4MTkwYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViZGQzMWY3MTQ1MDQ0ODNiY2NkN2UyZDNmNjk2N2ZjNGMzZjhjNzFiMGZmMjFhZDBkYjFmODY5ODJhOGM5Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNWM0YmU4M2ZmNzc3NjU0OWQzYzBjYzc1NDY0MDMwMTM3Y2FiZWRlYzAyM2M2ZTE3ZmFmZDQ3NzA1MzAxYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMTBhMGQ3NzU5ZTM4YzA2YzMyN2FiNGVlZjA4MDZhYTc0MDI2ZDU5ZGNjYzdkZDQ5OTNkYmI5ZmRkNmZlNjMifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1503-L1564",
+          "version": "repo-lines-v1:sha256:44536d3110adfea7ef8191604d005ad48dc0ce663efa9390e8450de67f38d026:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTRlZmE0ZmE0ZDBlODQwYWM0YjdhZTlhNGIyODgzYWE3NjY4Nzc1MWM4Mzg3MzZjMmFlYTY4Yzc5NjI4NDEifQ"
         },
         {
           "resource": "repo://scripts/ci-failure-digest.mjs#L227-L251",
           "version": "repo-lines-v1:sha256:89d02dbd625d363f1ee3a3cf4a320be8df1d8ece6d79f836c5a8e4c8dfcd59bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNzhmODY3NWUyNWFlZDc2Mjg1NzllNDAwNTZlM2I5ZjhlYjJmMWE0OWRlOGQxNWViNDY1ZjcyNGU0ODI0ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwZGMwMzJkODM1MTEzNmE2NzNlYTExMTU1OTkwNDRiZmQyYzYzMjM3ZWY2NWIwNjNjNDRiOTg3ODY5OWZlZTEifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L264-L300",
-          "version": "repo-lines-v1:sha256:3b215863dbe015043a4a8ba97af62b7d81a0baf20834d9e1fee9fee330b0e186:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTMxNTZiZTM5ODRlYTEzMjg0NzBhNjRiYTMxOGQxYWI0Y2I1MGI3OTYwZGYyNGIyNjJjY2E2Zjk4NzYxNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYzVmN2FlYWIzZGQ4OTg2ZWYzZDhkYWE4MzEyOTFjNDAwNTIzYjJlZWYyZTExM2IwMTM5OTQ1YjliZTkxYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzNhY2MyYWU2YmVhZGNkN2U4OWVmMDljYWRlMDNmN2YwZmM3OTM1MjAwMDgyMTAzZmZmZWFjM2Y2MjkwZmUifQ"
+          "resource": "repo://scripts/ci-failure-digest.mjs#L253-L304",
+          "version": "repo-lines-v1:sha256:0dad51563f801e88417cf87a6ac9c0fbc75c1689daa0060b83d9d2173c1b364d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMDFlOTljYWVjZjliNmU4ZGRmYzM0Mzk3MDBkZDkyYjc4MWRhMjkyOGNhMDY4Y2I4OTAzYzEzNTVjNDNhM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzNhY2MyYWU2YmVhZGNkN2U4OWVmMDljYWRlMDNmN2YwZmM3OTM1MjAwMDgyMTAzZmZmZWFjM2Y2MjkwZmUifQ"
         }
       ]
     },
@@ -453,7 +473,7 @@
       "statement": "The bundle records the publication outcome twice: `meta.publish = {published, channel, reason}` for whether the digest reached its channel, and `meta.digestOutcome` for the same fact in the three-way `not-needed` / `published` / `failed` vocabulary the reader renders. The older `publish` field is kept alongside rather than replaced, because bundles published before the split still carry it and a reader comparing two bundles should not have to work out which superseded which.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1576-L1594",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1580-L1598",
           "version": "repo-lines-v1:sha256:d838e3a3087e2e1c41da24d996a5ece39a15d738b41d4c3205b7339f6da0e27f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1OGMzNjE0MTJiZTYwNDgyYjdmZjllN2RmYTAxZTJiNmExYmQ0ZDBiNmQzOTM0YWU0ZmZhZGE1MmE2ODFkYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZWQ0NDE0ZDU2NzE4NGUwYjBjMTJhOTRiNmI0ZmVmNjZiOGMxMTY2OWRiMjA1NzkwYTQyNzcxZTI4ZjY4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOWU2OTc4MjM5NGFkNzA2YTUwNzE5NjA5YzViNDUzYTY3YWRlYWEwZjdhMjhlOGZiZjZlMmQ1YzE1ZTFhNTkifQ"
         }
       ]
@@ -463,7 +483,7 @@
       "statement": "A published-but-empty digest is treated as a coverage gap, not as coverage: measured 2026-07-26 on PR #107, `affected` and `mc-service-checks` both failed, both published, and both digests said only that no step in the job was wrapped. Publishing is therefore necessary but not sufficient, and a job with genuinely nothing capturable — a `dorny/paths-filter`-only job such as `app-ci / changes` — declares a job-level `# ci-log-step-exempt:` marker rather than leaving its steps bare.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L117-L121",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L127-L131",
           "version": "repo-lines-v1:sha256:5cc74e9525c2061127e2a53885d760788d7046abe96ba80b710e5d535cd26897:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhmOTIwMTk0MDE2ZTA2YzYzOGEzY2QxYjg0MWU2Njg4NDllZTY5ODRiMzRhYzZmNTg1MGRiNzMwNGEzMTc3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM0ZDliODI0YmYzMjUxM2MxMzE3YTcwNjRlZTNiZDg1YWMzNTYyMmUzZDEwMWQ4NWY5YzRlNTM3ZjM3MmFlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2E1YWZjMjZmNmE5ODQ1ODk2ZTg1ZGM4YWVmM2JjMzQyMGFmYmU5MzUzMDc5YzJhN2NmYzczZDMwZmI5OWI1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVhY2UzZmQ4Y2JmYzEzMjM1ZTJiM2JmMWUwMDdhYzhhY2QwN2I4YmQzZTllZTU4YjVmMDhhNzY4ZDE1OWVmZCJ9"
         },
         {
@@ -477,14 +497,36 @@
       "statement": "The digest's own absence message still claims only `app-ci / app-e2e` writes `~/mcm-ci-last-failure/`, and that is stale: `app-ci / dast` captures into the same directory too (item #645), overwriting it with its own per-container `docker logs`/`docker inspect` captures plus an owner stamp, because the digest had been presenting the previous `app-e2e` failure's logs as dast's own.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1602-L1625",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1662-L1685",
           "version": "repo-lines-v1:sha256:6b4d6adbace00993069ac79b412cdfd7db114663d25c2f4689eeee2a572e110b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0N2MwOTU4MDg1MjZkMjE2OWY3MzM5NDM0MWVhZGU2MjJiZmI1M2Y3ZDkwOTFlMDcyNGIwNTQ0ZjYxNzAzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNjE1YTRhZGM3OTU1NDAwZTM4NTRiYzIyZmZkYWE4NmFmOGUwOWExZWMyN2JlMzMwOGI0NDUyNmFlOTIyNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYjJiNjY1NmM3YjhiYWQ4ZjExZjA2ZjlmOTkyOWRiMDQ1MmMxZjkyZDgyYTE0YTI0YTJjNWY5MjkxMDkxZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYThmNmQyYTc2NGZhNDI2MWQ5MzkyMWI4NTcxOTlhNTQzMmMxNmUxMTQyOTBjOGJhODQwMDRiNjNlZTk0M2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7258852d45df4cdb8e8e85fd0b9cd5b7",
+      "statement": "The ceiling table's commented `ON THE BACKSTOP` block lists five steps rather than the single one the `app-e2e` workflow comment names: `app-e2e-collect-container-logs` (n=2), `app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of `app-e2e-bring-up-keycloak` by feature 073, with no observations yet under their new names), and the opt-in full mobile suite's `maestro-full-flows` and `maestro-full-results`. None has the 10 observed samples a calibration needs; the last two run only on `mobile-e2e-full` / `mobile_suite=full` runs, so they accumulate samples slowly, and the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode so the 2700 s backstop plus the digest step still fit.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1332-L1347",
+          "version": "repo-lines-v1:sha256:67a1ae082cb5109cc97d3814a28328a29d83e9ff2583811de70d435cc3b072b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOGFlZGE3NGQxZmYyMmZjNmQyYWIxYjFjZTliMDZhNDRmZmQwNDE3YWU4MGRjNzBkNzVhYjlmN2ZjOWQ1NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmEyZjU2ZjlhOGE3NDY1MmEzMzFkZWNjOGU1OGU0NDE4MDgxNjExODkzMjAxNmQxNGY0MmI0MmUyZGJhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L374-L379",
+          "version": "repo-lines-v1:sha256:a030bf6a4a14e33a3218d1e655707233123712909d66bb7157f2d11a7e1f85e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU1MjY1NjczODcxMDUyNTQ3NGYxNjExMzM5NGNkM2I0ZDNjYmVmOTBkY2Y3ZWM5MDdlYzM4OWQ3MWE0MDQ3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE3OTMwNzE4MTFkZjBkNjBiNmFmNTM5NDVkYzg2YmZkNjJkYzM0OGFmYWNkZTZjZDQyZGM2MjgyOTI2MjRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVkNWEyODFmNjlmM2M2YjE3ZTViYmRkOGY1YmNlOWM3ODY5NmY2ZmFjMjRmZWU4NTMxMTZkMTM0MGViZmY0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRlOGMxZmQ5NTBlZjkxMzk1NjkxMWVmZTYzMjkwYmY2ZTBiZjQxYTU1N2Q3ZDE2ZmE2MmYwOTA5YThjMGMwOCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L110-L114",
+          "version": "repo-lines-v1:sha256:a10f9d2afd7e85ff65a858c68a245b817f2f47f53cab6adc3e8fc763b5bfdf48:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdmYzdkNGVhOGVjM2NlNmJmYzgzNzBlZjg1NTBmOTNkMmE5YWE0NjZjYTk0MDcwNjZkMjRkMTM2ZDNjMzQwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNiZDliMDFhNmJiZWFmZWFhOTBiMzIxOTc1MTFhMGM3OTFkYjFhYjZhMTAxMmJmOTU4NjVmNTk5YzM2OWVlMCJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv#L40-L57",
+          "version": "repo-lines-v1:sha256:49cc3ac6adb430c70c3add1955e28381ba02a9b04a47e6ab8337a119533ae4c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYmY2ZDQ1MDQxNzFhN2UzZmUzOWVhYTg5OWE4OWM0NjU3OTg2YjY4YWI4NDVkMDEwOTg2NGM5MTZkOTc0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-11T15:19:14.150Z"
+    "at": "2026-10-18T03:00:26.889Z"
   }
 }

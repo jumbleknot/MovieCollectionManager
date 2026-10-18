@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows (agent flows in CI's app-e2e job on the kvm host runner, everything else on a local emulator), the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job runs on the ci host rather than in a job container (its own Docker CLI plus a rootless-daemon assertion, and a named `/dev/kvm` check that fails loud), the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the device-diagnostics capture that must happen inside the emulator script because the emulator is gone before the job's collect step runs, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -23,24 +23,40 @@ sources:
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-c138086948681bd36101354f
+    resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
+  - id: openwiki-source-900e4fa48a3671f4d583c11d
+    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-2d569134a872251a7d87c36a
     resource: repo://scripts/build-apk-short-path.ps1
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
     resource: repo://scripts/cd/publish-apk.mjs
   - id: openwiki-source-478a776ff0b75f2af5dc3190
     resource: repo://scripts/ci-failure-digest.mjs
+  - id: openwiki-source-1edeb18757a8f02d496d8f2b
+    resource: repo://scripts/ci-log-step.sh
   - id: openwiki-source-b6eb0909d8d068c6d6d9dab4
     resource: repo://scripts/ci-mobile-agent-flows.sh
+  - id: openwiki-source-8f0b3b9c2764324c22056c4b
+    resource: repo://scripts/ci-mobile-full-flows.sh
+  - id: openwiki-source-5b730a5e86c359beda7597f1
+    resource: repo://scripts/ci-mobile-lib.sh
+  - id: openwiki-source-7183777a95d300ed54250302
+    resource: repo://scripts/ci-step-ceilings.tsv
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-33d177ccb5008acd450b4d41
     resource: repo://scripts/maestro-run.sh
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T00:05:43.068Z" }
+  - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
+    resource: repo://scripts/mobile-flows.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T16:45:16.789Z
+    at: 2026-10-18T03:00:26.889Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -55,18 +71,23 @@ directly on the ci host — see below), and drives the flows per-file through
 `scripts/ci-mobile-agent-flows.sh`. The reason for the split is not the emulator: the local Windows
 path runs agent flows against the **Metro dev server**, which OOM-crashes after only a handful of agent
 `/run` calls and then shows a black screen / `status 0` "RN networking issue" that reads as an app bug.
-**Non-agent flows** (login, CRUD, sort, browse) run fine on the local emulator. The retained Docker
+**Non-agent flows** (login, CRUD, sort, browse) run fine on the local emulator while iterating on a
+JS/UI change — but a change that alters the **native layer** (an Expo / React Native SDK bump, a native
+module added or upgraded, `app.json` / `android/` config) alters the binary *every* flow runs on, so
+every flow has to be re-proven on the standalone release APK rather than on a debug build against
+Metro. That is what the **opt-in full suite** is for, not a local DinD emulator. The retained Docker
 Desktop dev container also runs the emulator natively via Linux KVM — see
 [Containerized dev environment](./devcontainer.md).
 
 ```mermaid
 flowchart TD
   A["A mobile E2E flow to run"] --> B{"Does it drive the assistant dock, i.e. POST /bff-api/agent/run?"}
-  B -- yes --> C["CI: the app-e2e job on the kvm runner"]
-  B -- no --> D{"Does the native layer differ from the installed APK?"}
-  D -- yes --> E["Rebuild in CI, or pull the prod APK from the package registry"]
+  B -- yes --> C["CI: the agent half of the app-e2e job on the kvm runner"]
+  B -- no --> D{"Does the change alter the native layer?"}
+  D -- yes --> E["CI, opt-in full suite: PR label mobile-e2e-full, or a dispatch with mobile_suite=full"]
   D -- no --> F["Local emulator: boot, adb reverse 8082 and 8099, run Maestro against Metro"]
   C --> G["Metro-less release APK with the JS bundle embedded, dev BFF reached at localhost 8082"]
+  E --> G
 ```
 
 The flow-type decision, and the build decision that follows from it.
@@ -75,12 +96,13 @@ CI's APK is standalone: the JS bundle is embedded and `EXPO_PUBLIC_BFF_NATIVE_UR
 plus `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099` are inlined at build time, so the app
 talks to the containerized dev BFF and gateway and **never to Metro**. (Being a *release* build, that
 APK can only reach those `http://` URLs because a config plugin allowlists cleartext for them — see
-the gotcha below.) The emulator step runs on an API-34 `google_apis_playstore` `x86_64` image — the
+the gotcha below.) The emulator steps run on an API-34 `google_apis_playstore` `x86_64` image — the
 Play Store image is load-bearing, not cosmetic:
 it ships Chrome, whose Custom Tabs service hands Keycloak's `mcm-app://` redirect back to the OS. The
 AOSP image has only a WebView shell, which drops that redirect and leaves login unable to complete.
-The emulator job `adb reverse`s 8082 and 8099, then runs gating → enable-anthropic → the agent flows →
-disable, followed last and specially by the non-agent `admin-settings-access` flow.
+Both emulator steps `adb reverse` 8082 and 8099, install the same `$APK_PATH`, then hand off to their
+script; the agent half runs gating → enable-anthropic → the agent flows → disable, followed last and
+specially by the non-agent `admin-settings-access` flow.
 
 Three details of that step are load-bearing when editing it:
 
@@ -96,11 +118,16 @@ Three details of that step are load-bearing when editing it:
 
 - **When the mobile half runs:** every push to `main` and every `workflow_dispatch`; on a
   `pull_request` only when the diff touches the job's `mobile` filter (`frontend/**`, `agents/**`,
-  `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the two Maestro scripts
-  `scripts/ci-mobile-agent-flows.sh` / `scripts/maestro-run.sh`) or the PR carries the `mobile-e2e`
-  label. Otherwise the PR still gets the web E2E and integration tiers from the same job and skips the
-  ~35-minute emulator half. That filter must stay a strict subset of the job's `app` filter — a path in
-  `mobile` but not in `app` can never fire.
+  `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the Maestro/selection scripts
+  `scripts/ci-mobile-agent-flows.sh`, `scripts/ci-mobile-full-flows.sh`, `scripts/ci-mobile-lib.sh`,
+  `scripts/mobile-flows.mjs` and `scripts/maestro-run.sh`) or the PR carries the `mobile-e2e` **or**
+  `mobile-e2e-full` label. Otherwise the PR still gets the web E2E and integration tiers from the same
+  job and skips the ~35-minute emulator half. That filter must stay a strict subset of the job's `app`
+  filter — a path in `mobile` but not in `app` can never fire, because `mobile` gates only steps
+  *inside* `app-e2e` while `app-e2e` itself requires `app == 'true'`; two entries violated exactly that
+  until feature 058, which is why a guard test now enforces the subset instead of a comment claiming
+  it. Note that `mobile-e2e` alone opens the mobile half but stays agents-only; only `mobile-e2e-full`
+  (or `mobile_suite=full`) adds the full suite.
 - **The build guards its own bundle.** Before the emulator starts, `app-e2e` asserts that
   `localhost:8082` appears inside `assets/index.android.bundle` of the produced APK. The string is not a
   source literal anywhere, so its presence proves the `EXPO_PUBLIC_*` env was re-inlined in *this*
@@ -134,6 +161,111 @@ Three details of that step are load-bearing when editing it:
   with an `::error::` naming the daemon and the socket — there is **no fallback** to another socket or
   to a container-provided one. Same principle as the KVM check and the bundle guard: a container stack
   that came up somewhere else, or did not come up at all, must not read as a passing mobile run.
+
+## The opt-in full mobile suite (non-agent flows)
+
+`app-e2e` runs **two** suites from one job, chosen by `MOBILE_SUITE`. `agents` is the default and what
+every PR, every `main` push and every ordinary dispatch gets; `full` adds the non-agent flows *after*
+the agent half, on a **second emulator**.
+
+- **How to opt in:** label the pull request **`mobile-e2e-full`**, or dispatch `app-ci` with
+  `mobile_suite=full` (a `choice` input, options `agents` / `full`, default `agents`). A `main` push is
+  always agents-only — nothing about a branch implies the full suite. The label does double duty: it
+  opens every mobile gate *and* sets `MOBILE_SUITE`, because a suite that was selected without opening
+  the gate would never run and would still read as a green tick. Both arms are pinned by
+  `scripts/__tests__/app-ci-mobile-full.guard.test.mjs`, which **evaluates** the trigger expressions
+  rather than string-matching them — this forge exposes no jobs/steps endpoint, so a green run cannot
+  show which arm fired.
+- **Why the non-agent flows belong in CI at all:** a native-layer change alters the binary *every* flow
+  runs on, and a local DinD emulator is the slow, flaky way to get that evidence. They run against the
+  same standalone (Metro-less) release APK and the same containerized dev BFF + Keycloak the agent half
+  used, so the native layer the PR changed is the one that is exercised.
+- **A second, phone-sized AVD, for a measured reason.** The agent step boots the
+  `android-emulator-runner` action's *default* device — a 320x640 screen — and the agent flows are
+  written for it. The non-agent flows were written against a local Pixel 7 (1080x2400), and on the
+  320x640 AVD (first full run, app-ci run 5499) **15 of 22 failed for geometry alone**: the profile
+  screen's logout button sat below the fold, Gboard covered the registration fields, and the
+  card-centre tap in `_navigate-to-collection-helper.yaml` landed on the card's *Edit* button instead
+  of opening it. The full-suite step therefore uses `profile: pixel_6` with the same
+  `google_apis_playstore` Chrome-bearing image. Re-profiling the agent step's AVD would change every
+  default run, so the second boot (~2-3 min) is paid only by the opt-in run.
+- **One flow selection, shared with the local suite.** `scripts/mobile-flows.mjs` is the single place
+  that decides which flows run where: `node scripts/mobile-flows.mjs ci-full` prints the full-mode list,
+  and the local `e2e:mobile` suite (`frontend/mcm-app/scripts/maestro-e2e.mjs`) imports the same
+  `localSuiteFlows` — so a new non-agent flow in `tests/e2e/mobile/` is picked up by both and there is
+  no second, hand-maintained list to drift. Full mode = the local suite minus the agent flows (the
+  agent half owns those, as a curated, ordered, anthropic-provider subset), minus `MANUAL_FLOWS`
+  (`session-timeout*`, which need Metro restarted with a non-default env override and so run only via
+  the dedicated target), minus `CI_FULL_EXCLUDED`. Every entry in those tables has to state its reason:
+  `CI_FULL_EXCLUDED` currently holds one — `admin-settings-access`, which the agent script already runs
+  last, after a Chrome SSO reset, as the seeded mc-admin — and the guard test asserts no flow is run by
+  *both* halves, because a duplicated agent flow is wasted runner time plus a server-side mutation the
+  agent half's ordering does not expect.
+- **`CI_FULL_NON_BLOCKING` — reported, never parked.** Flows in that table still run (one attempt, no
+  retry) and appear in the results table, but cannot fail the step. Each entry must be tagged
+  **ENVIRONMENTAL** or **KNOWN DEFECT** together with the run that measured it, and a listed flow that
+  now passes is reported `PASS-REMOVE-NONBLOCKING`, so a stale entry gets deleted rather than hiding the
+  next regression. Today: `login-invalid` (ENVIRONMENTAL, run 5502, 2/2 — the flow's own assertions
+  hold, but the two `pressKey: back` presses it uses to close the CI image's Chrome Custom Tab leave
+  Chrome still on the Keycloak page, so `login-screen` never returns; Chrome back-stack depth, not the
+  app) and `movie-sort` (KNOWN DEFECT, run 5502, 2/2, on a 1080x2400 pixel_6 — with the default visible
+  columns the sort row holds Title/Year/Type/Owned/Ripped chips and `sort-dir-toggle` sits past the
+  right edge of the horizontal ScrollView in `movie-sort-control.tsx`).
+- **How each flow runs, and why it differs from the agent half.** The non-agent flows `launchApp` with
+  `clearState: false` — they rely on the harness to hand them a logged-out app — so the runner
+  force-stops and `pm clear`s the app before *every* attempt (no Metro SharedPref is written; the APK
+  embeds its bundle). Chrome is reset once before the batch and again before a retry, since a failed
+  attempt can leave Chrome mid-login. Each flow gets **2 attempts** (one bounded retry, the local
+  suite's `MAX_RETRIES=1`) rather than the agent half's 3, because these flows drive no model turn and
+  the Custom-Tab crash is the only transient left; a non-blocking flow gets one. The batch **does not
+  stop at the first failure** — every flow runs, a `flow · result · attempts · seconds` table is printed
+  at the end and written to `mobile-diagnostics/full-suite-results.log`, and the step fails if *any*
+  blocking flow failed. One ~30-minute run has to answer for all of them, and a fail-fast batch would
+  hide every flow after the first red. An **empty selection is an error, not a pass**: the runner exits
+  1 rather than report a vacuous green.
+- **The results table is a step, not a log line.** `maestro-full-results` is wrapped by
+  `scripts/ci-log-step.sh` and listed in the failure digest's `COUNTS_SOURCES`, so the table reaches
+  both the failure digest and the green-run counts bundle — this forge exposes no job log, so without
+  it a *green* full run could not say which flows ran. It runs under `always()` in full mode and says
+  "the full suite never started" when the file is absent, rather than adding a second red for the same
+  cause.
+- **Fixture values are non-secret and fixed:** `E2E_COLLECTION_NAME=E2E Browse` and
+  `E2E_MOVIE_TITLE=Alpha`, taken from the seeded base dataset that the web E2E's global setup seeded
+  earlier in the same job. Credentials still travel only through `scripts/maestro-run.sh`'s
+  `MAESTRO_`-prefixed process env.
+
+**Cost, measured on app-ci run 5502:** the `maestro-full-flows` step took 1748 s (29 min, 24 flows, two
+of them failing through a retry), plus a second emulator boot (~2-3 min) — roughly **+30-35 min** on top
+of an agents-only run, on a capacity-1 runner. That cost is why the suite is opt-in only, and why the
+guard test fails if the trigger expression ever defaults to `full`.
+
+## CI time budget: the 110-vs-75 job ceiling and the per-step ceilings
+
+`app-e2e`'s `timeout-minutes` is **75 by default and 110 only in full mode** — the full suite's
+`maestro-full-flows` step, the results step and the digest all have to fit inside it.
+
+Underneath the job ceiling, `scripts/ci-log-step.sh` enforces a ceiling **per wrapped step**, read from
+the generated `scripts/ci-step-ceilings.tsv` (regenerate with
+`node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose`; do not hand-edit it). Each row
+states the sample it was derived from, and the rule is `max(observed) × 3`, rounded up to a minute,
+floored at 300 s, applied only to a step with at least 10 observed (non-killed) samples — the ×3 is the
+largest retry bound any wrapped step has (`ci-mobile-agent-flows.sh` runs each flow under `max=3`,
+Playwright is `retries: 1`), so a run where every retry fires still has headroom. Today
+`maestro-agent-flows` is the loosest calibrated row at 2580 s (n=27, max 844 s), `web-e2e` is 840 s, and
+most steps sit on the 300 s floor. `maestro-full-flows` and `maestro-full-results` have **no
+observations yet**, so they are bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop** —
+which is exactly why full mode raises the job ceiling: backstop plus digest still have to fit.
+
+The reason this exists rather than one job-wide number: `always()` does not survive a job kill. When the
+runner enforced the 75-minute ceiling, the `Publish failure digest` step never ran, so a **hang** — the
+one failure class with no other evidence trail — produced no digest at all (measured on PR #322, task
+8317: 75.1 min against that ceiling versus a ~29 min healthy baseline, and `ci-status failure` could
+only say the job may have died before the digest step ran). A per-step ceiling turns the hang into a
+*step* failure: the job survives, the step is named in `_failed-step`, and the digest reports a TIMEOUT
+rather than an assertion failure that never happened. The symmetry to keep in mind when raising any
+value: raising one past ~60 min puts a hung step back into job-kill territory and silently restores the
+defect. Pinned by `scripts/__tests__/ci-log-step.test.mjs` and
+`scripts/__tests__/app-ci-mobile-full.guard.test.mjs`.
 
 ## Gotchas
 
@@ -241,7 +373,10 @@ through `adb reverse`.
   its `capture_mobile_diagnostics` function writes `mobile-diagnostics/<flow>-attempt<n>/` containing
   `logcat-react.log` (`ReactNativeJS` + `ReactNative` + `AndroidRuntime`), the unfiltered
   `logcat-full.log`, and a copy of the newest `~/.maestro/tests/*/` directory as `maestro/` (view
-  hierarchy, screenshots, Maestro's own device logcat). It must happen there for two reasons: the
+  hierarchy, screenshots, Maestro's own device logcat). That helper now lives in
+  **`scripts/ci-mobile-lib.sh`**, sourced (never executed) by both mobile runners — the opt-in full
+  suite captures the same way and additionally leaves `mobile-diagnostics/full-suite-results.log` — so
+  there is one implementation rather than two that could drift. It must happen there for two reasons: the
   `android-emulator-runner` action terminates the emulator before the job's collect-logs step runs, so
   logcat is unobtainable afterwards, and the uploaded `maestro-debug` artifact is unreachable through
   this forge's API. The failure-time `Collect container logs + health on failure` step folds the
@@ -250,8 +385,13 @@ through `adb reverse`.
   so the device evidence also lands in the durable on-host bundle that survives the `always()` teardown.
   Two properties are load-bearing when editing that function: the `local` assignments must stay on
   separate lines — bash expands every assignment word of one `local` call before any of the locals
-  exist, which on run 2049 filed the admin flow's capture under the *previous* flow's directory — and
-  every capture command is best-effort, because a diagnostic must never change the run's result. See
+  exist, so a combined `local a="$1" b="${a}"` interpolates the *outer* variable, and on run 2049 that
+  filed the admin flow's capture under the *previous* flow's directory
+  (`mobile-diagnostics/assistant-config-disable-attempt1`), which is the one thing a diagnostic must
+  never do — and every capture command is best-effort (`|| true`, plus a plain `return 0` when the
+  destination cannot be created), because a diagnostic must never change the run's result. A
+  deterministic failure still fails all attempts and exits non-zero via the
+  `::error::flow <flow> failed after 3 attempts` line. See
   [CI evidence pipeline](./ci-evidence-pipeline.md) for how the bundle is retrieved.
 - **The emulator script also leaves a logcat trail on the runner itself, because the job log is not
   readable back.** An `EXIT` trap in `scripts/ci-mobile-agent-flows.sh` dumps a *filtered* logcat
@@ -269,14 +409,17 @@ through `adb reverse`.
     emulator is fresh.
   - **A live Chrome SSO session breaks the *next* login.** If Keycloak has already authenticated the
     browser, the helper still types credentials into the form and Keycloak rejects the submission with
-    `error="already_logged_in"`, redirecting back with **no `code`**. `scripts/ci-mobile-agent-flows.sh`
-    handles this: it runs `adb shell pm clear com.android.chrome` and re-skips Chrome's first-run
-    experience before `admin-settings-access`, which logs in as a *different* seeded user (the seeded
-    `mc-admin`) than the agent flows. That reset also re-establishes the FRE, so it is repeated on each
-    retry.
+    `error="already_logged_in"`, redirecting back with **no `code`**. The shared helper
+    `reset_chrome_sso` in `scripts/ci-mobile-lib.sh` handles this — `adb shell pm clear
+    com.android.chrome`, then re-skip Chrome's first-run experience (which the clear re-establishes, so
+    it is repeated on each retry). The agent half calls it before `admin-settings-access`, which logs in
+    as a *different* seeded user (the seeded `mc-admin`) than the agent flows; the full suite calls it
+    once before its batch and again before any retry, so no SSO session from the agent half's user leaks
+    into it.
 
 For the BFF-container modes an agent/non-agent flow runs against once launched, see
 [E2E testing](./e2e-testing.md); for how the `app-e2e` job fits the rest of the pipeline, see
 [CI/CD pipeline](../projects/ci-cd-pipeline.md). The full session-startup ritual, the exact CI
 trigger/watch commands, the flow-by-flow CI list and retry policy, and the complete Windows build-wall
-workaround recipe live in the authoritative runbook, `docs/runbooks/android-emulator.md`.
+workaround recipe live in the authoritative runbook,
+[`docs/runbooks/android-emulator.md`](../../docs/runbooks/android-emulator.md).

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI evidence pipeline (producing the evidence)
-description: How CI produces the evidence a session reads back — the per-job failure digest and its three channels, the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
+description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
 sources:
@@ -21,6 +21,8 @@ sources:
     resource: repo://backend/mc-service/src/api/middleware/logging.rs
   - id: openwiki-source-f003db5a1a23dba30ccf3b03
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
+  - id: openwiki-source-900e4fa48a3671f4d583c11d
+    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
   - id: openwiki-source-c87b16f17fb0c4f5c8105cae
     resource: repo://scripts/__tests__/check-ci-digest-coverage.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
@@ -41,10 +43,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-18T03:00:26.889Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -71,22 +73,27 @@ flowchart TD
   CH -->|"pull_request"| PR["PR comment, upserted by job marker"]
   CH -->|"push or other"| BUN["digest.md inside the bundle"]
   CH -->|"cancelled run"| NON["nothing published"]
-  DIG --> B["ci-failures package — runId--jobSlug, 5 MB cap, 30 days"]
+  DIG -->|"job status failure"| B["ci-failures package — runId--jobSlug, 5 MB cap, 30 days"]
+  DIG -->|"job status success"| CNT["counts-only bundle — no comment, no health, no container logs"]
+  CNT --> B
   LOG --> DUR["step-durations.tsv, a separate file in the bundle"]
   DUR --> B
 ```
 
 What produces what: a wrapped step writes a log, the in-job digest step reads it and publishes through
-one of three channels, and the bundle carries the full evidence.
+one of three channels, and the bundle carries the full evidence. The green-run path is the one branch
+that never touches a comment.
 
 ## The digest
 
 One `if: always()` + `continue-on-error: true` step per job — `Publish failure digest`, running
-`scripts/ci-failure-digest.mjs`. Measured 2026-10-10: **22 such steps across the ten
-`.forgejo/workflows/*.yml` files** — 22 jobs, 22 digest steps, one per job in every workflow that has
-jobs. (`check-ci-digest-coverage.mjs`'s header still says "16 jobs in 6 workflows": that was the count
-when the machinery was built, and the rule has been enforced on every job added since. The count grows;
-the rule does not.)
+`scripts/ci-failure-digest.mjs`. Counted 2026-10-10: **22 such steps across ten
+`.forgejo/workflows/*.yml` files**, one per job in every workflow that has jobs. That count is not
+monotonic, which matters if you are counting to check coverage: feature 080 retired `minio-image.yml`
+together with its `build-publish` job, so the tree today holds **21 digest steps across nine workflow
+files**. Only the *rule* is invariant. `check-ci-digest-coverage.mjs`'s header (`22 jobs in 10
+workflows`, 2026-10-11) is a dated snapshot already one job ahead of the tree, and the `16 jobs` figure
+in its test file is a snapshot from when the machinery was built.
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -119,13 +126,21 @@ the rule does not.)
   excerpt, and marks itself `degraded: true`. With both credentials absent it prints the digest inline
   and exits 0 — a broken digest must never mask, replace or delay the real job result.
 - **A green run has a third, cheaper mode.** `shouldPublish` keys on an explicit `success` and returns
-  `counts`, which uploads a small bundle carrying only the `[e2e-gate]` counts, the contention tally and
-  the `web-e2e` setup lines — no PR comment, no health block, no container logs. It needs the
-  purpose-scoped credential, since the run-provisioned token can only write a commit status. The source
-  list is self-limiting to steps only `app-e2e` produces, so every other green job finds nothing and
-  publishes nothing (`digest-outcome=not-needed`). An *unknown* job status publishes nothing at all
-  rather than falling into counts mode — a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious
-  digest on a green run, and treating unknown as cheaply-publishable would resurrect that.
+  `counts`, which uploads a small bundle and **no PR comment, no health block, no container logs**. What
+  it carries is `selectCountsSources`: the `[e2e-gate]` counts, the `[e2e-contention]` tally, the
+  `[e2e-turns]` verdict, the **model tier's** own gate log (feature 056 — a green run that reported the
+  gate and said nothing about the tier that left it is the shape of quarantine this split was designed
+  not to become), the opt-in full suite's per-flow table, and the `web-e2e` log **reduced to its
+  `[global-setup]` / `[playwright]` lines** — the identity model and the worker count, filtered rather
+  than whole because `web-e2e` is thousands of lines and counts mode exists to stay small. It needs the
+  purpose-scoped credential, since the run-provisioned token can only write a commit status, and it
+  prunes expired bundles exactly as the digest path does — publishing on every green run is what makes
+  unbounded growth reachable. It lands on the **same `{runId}--{jobSlug}` version** as a failure bundle
+  would, and carries no `digest.md`. The source list is self-limiting to steps only `app-e2e` produces,
+  so every other green job finds nothing and publishes nothing (`digest-outcome=not-needed`). An
+  *unknown* job status publishes nothing at all rather than falling into counts mode — a job that once
+  lost `CI_DIGEST_JOB_STATUS` published a spurious digest on a green run, and treating unknown as
+  cheaply-publishable would resurrect that.
 
 ### Redaction is fail-closed
 
@@ -282,12 +297,15 @@ no calibrated row, so a table miss can never fall through to unbounded and resto
 defect. It stays at 2700 s because an uncalibrated step's legitimate duration is by definition unknown,
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling. The table's
-commented `ON THE BACKSTOP` block currently lists three steps — `app-e2e-collect-container-logs` (n=2),
-plus `app-e2e-build-images` and `app-e2e-bring-up-backup-destinations`, which feature 073 split out and
-which have no observations yet.
+commented `ON THE BACKSTOP` block currently lists five steps — `app-e2e-collect-container-logs` (n=2),
+`app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of
+`app-e2e-bring-up-keycloak` by feature 073), and the opt-in full mobile suite's `maestro-full-flows` and
+`maestro-full-results`. None has the 10 observations a calibration needs, and the last two run only on
+`mobile-e2e-full` / `mobile_suite=full` runs, so they will take a while to accumulate — the job ceiling
+is raised to 110 min in full mode so the backstop plus the digest step still fit.
 
 The wrapper resolves the row with a **whole-name match on field 1** (`web-e2e` and `web-e2e-model` differ
-only by a suffix, and six steps share an `app-e2e-install` prefix, so a substring match would hand one
+only by a suffix, and several steps share an `app-e2e-install` prefix, so a substring match would hand one
 step another's bound), skips comment rows (a `# web-e2e` parsed as a ceiling of 0 would mean `timeout 0`
 — the guard removed by its own data file), locates the table relative to *itself* rather than `$PWD`, and
 falls through to the backstop on an unreadable table rather than failing the step.
@@ -296,6 +314,17 @@ Three guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#33
 below-the-job-ceiling arithmetic for *every* row, **#338m** fails a row whose basis does not state its
 sample, and **#338n** fails if a wrapped `app-e2e` step is neither calibrated nor recorded as
 deliberately on the backstop.
+
+**Item #480 added the guard those three were missing.** #338m checks that a basis is *present* and
+well-shaped, #338k that the value clears the job ceiling — between them sat every value that is neither
+absent nor too large, and nothing looked at whether a ceiling matched the sample printed beside it.
+Measured on `main` at `b8166037`: `web-e2e  60  n=40 max=280s x3=840s -> 840s` — a 60 s bound
+advertising itself as the 840 s answer — passed **all 37** guards. That is item #338's original defect
+reproduced inside the file built to prevent it. **#480a** now re-derives every row's ceiling from its own
+`max=<n>s` through `ceilingForMax` and fails a mismatch; it calls the shared function rather than
+restating the arithmetic, so the guard cannot keep asserting an old rule after the rule changes.
+**#480b** exempts the commented backstop rows (`-` where a ceiling would be) so a deliberate record is
+not "fixed" by deleting it.
 
 ### Recalibrating, and the three traps
 
@@ -306,11 +335,13 @@ need refreshing just because time passed. The procedure — read the distributio
 `durations --propose`, review the **diff** rather than the file, verify with the tests before committing
 — is in [the runbook](../../docs/runbooks/ci-evidence-pipeline.md).
 
-- **NEVER hand-edit a ceiling.** The guards check that a basis is *present* and that the value clears the
-  job ceiling; **neither checks that a ceiling matches its own basis.** Measured: a row stating a 280 s
-  maximum beside a hand-typed 60 s ceiling passes all 37 guards. That is item #338's original defect — a
-  figure whose stated justification describes a different measurement — reproduced inside the file built
-  to prevent it. The file says `GENERATED, do not hand-edit` in its own header for this reason.
+- **NEVER hand-edit a ceiling.** The table is generated by `ci-status.mjs durations --propose`, and the
+  rule lives in one exported function (`ceilingForMax`, `CEILING_RETRY_FACTOR = 3`,
+  `CEILING_FLOOR_SECONDS = 300`, `CEILING_QUANTUM_SECONDS = 60`, `CEILING_MIN_SAMPLES = 10`) precisely so
+  a test can re-run the derivation instead of trusting a row. **#480a** now closes the gap the other
+  guards left — it recomputes each row's ceiling from the `max=<n>s` in its own basis and fails a
+  mismatch — but the file still says `GENERATED, do not hand-edit` in its header, and a hand-typed value
+  that happens to derive from its basis is still a value nobody can trace back to a sample.
 - **A step that keeps timing out gets LOOSER, not tighter.** Kills are censored, so a step killed often
   *loses observations* and can fall under the `n >= 10` floor; it then drops off the table onto the 2700 s
   backstop, recorded as a commented row (measured shape: 9 observed + 31 killed). That is the anti-ratchet
@@ -481,9 +512,9 @@ run: |
 
 ### Two costs of instrumenting a HOST-executor job, accepted deliberately
 
-Container-job captures die with the container. Host-executor captures (`app-e2e`, `dast`,
-`cd-deploy / build-deploy`, `devcontainer-image`, `minio-image / build-publish` — every job on the
-self-hosted Docker runner label) land in `$HOME/mcm-ci-step-logs/<run-id>/<job>/` on the **persistent**
+Container-job captures die with the container. Host-executor captures (`app-ci / app-e2e`,
+`app-ci / dast`, `cd-deploy / build-deploy`, `devcontainer-image / build-publish` — every job on the
+self-hosted `kvm` runner label) land in `$HOME/mcm-ci-step-logs/<run-id>/<job>/` on the **persistent**
 runner and stay there:
 
 - **They are unredacted.** Redaction happens at *publication* time in the digest, not at capture time —

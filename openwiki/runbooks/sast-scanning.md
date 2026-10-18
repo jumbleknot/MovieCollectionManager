@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -26,6 +26,8 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-cf7a80239370178114067d03
+    resource: repo://scripts/__tests__/check-override-consistency.test.mjs
   - id: openwiki-source-77ddbc35c89ae8b3053caaaf
     resource: repo://scripts/__tests__/check-sast-findings.test.mjs
   - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
@@ -54,9 +56,11 @@ sources:
     resource: repo://security/sast/semgrep.yaml
   - id: openwiki-source-4256f85b16adb450a2d592c1
     resource: repo://specs/080-minio-to-rustfs/plan.md
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+    at: 2026-10-18T03:00:26.889Z
 ---
 
 # SAST & SCA static scanning
@@ -175,9 +179,12 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   so a new nested workspace — or a hand-written exclusion — fails the guard by name. A nested
   workspace is audited as `pnpm --dir <ws> audit --json` **from the repo root**, so corepack resolves
   the root manifest's `packageManager` (a nested `package.json` declaring none, run from its own
-  directory with no parent manifest, resolved pnpm 12.10.1 instead of the pinned 11.25.0 — measured
-  2026-10-10). The audit is lockfile-only, so the `sast` job installs nothing extra. **The locations
-  differ:** a root finding keeps the bare `pkg@version` the existing entries anchor to
+  directory with no parent manifest, resolved pnpm 12.10.1 instead of the then-pinned 11.25.0 —
+  measured 2026-10-10; the root pin has since moved to `pnpm@12.13.0`, and the nested audit's finding
+  set was measured **identical** under both pins — 30 findings, the `tools/openwiki-generator:`
+  entries included — on 2026-10-17). The audit is lockfile-only, so the `sast` job installs nothing
+  extra. **The locations differ:** a root finding keeps the bare `pkg@version` the existing entries
+  anchor to
   (`^braces@3\.0\.3$`), while a nested workspace's is prefixed `<workspace>:pkg@version`
   (`tools/openwiki-generator:braces@3.0.3`). A root entry therefore never silently covers the same
   package in another tree, which needs its own entry with its own reachability justification — and
@@ -230,7 +237,7 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   item #394, and it was another merge-gating tier retired to CI-only by accident until then). So the
   whole SCA half runs to completion locally:
   ```bash
-  node scripts/sast-scan.mjs --scope full --only pnpm-audit   # 55 findings, 2 blocking — a real report
+  node scripts/sast-scan.mjs --scope full --only pnpm-audit   # a real report (30 findings measured 2026-10-17, nested-workspace entries included)
   node scripts/check-sast-findings.mjs
   ```
   This matters because every dependency-floor remediation is an SCA finding, and those are exactly
@@ -245,12 +252,22 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   and you get an override that reads as remediated while no longer excluding the version its own key
   names. `scripts/check-override-consistency.mjs` enforces `key's exclusive upper bound == value's
   inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix (the
-  plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope).
+  plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope; a
+  *compound* key such as `js-yaml@>=3.0.0 <3.15.1` is in scope but only its `<` bound is compared).
+  A half the guard cannot parse is refused out loud with exit 2 rather than skipped, because silently
+  passing over the entry it cannot read is how a gate comes to protect nothing.
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
-  this map to need their key half fixed by hand. Note also **where** these live: the map is in
-  `pnpm-workspace.yaml`, not `package.json`'s `pnpm` field — pnpm 11 stopped reading that field and
-  says so with an "ignored keys" warning, which is a security event rather than cosmetics, because
-  every entry in the map exists to force a vulnerable transitive to a patched version.
+  this map to need their key half fixed by hand. **A floor is not always raised against an advisory
+  that already exists** — the newest keyed entry, `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, was added
+  on 2026-10-17 (feature 081) because an *upgrade* would have downgraded a transitive into ten
+  advisories: `nx@23.3.0` depends on `undici: 7.29.0` exactly, where nx 22 used `axios`, and 7.29.0
+  carries ten advisories that 7.29.1 fixes (two High). The lock's only other 7.x — 7.29.1, via
+  `@module-federation/dts-plugin` — leaves with nx 22's plugin tree, so without the floor the nx bump
+  would resolve *below* the patched version. Same keyed shape, same guard. Note also **where** these
+  live: the map is in `pnpm-workspace.yaml`, not `package.json`'s `pnpm` field — pnpm 11 stopped
+  reading that field and says so with an "ignored keys" warning, which is a security event rather than
+  cosmetics, because every entry in the map exists to force a vulnerable transitive to a patched
+  version.
 - **Unmatched allowlist entries are reported but do not block.** An entry that matches nothing this
   run is listed under `UNMATCHED ENTRIES`. The trap: pip-audit switched from CVE ids to PYSEC
   aliases; entries keyed on the old CVE ids silently matched nothing rather than expiring — an entry
