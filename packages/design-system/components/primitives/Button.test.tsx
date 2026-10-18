@@ -1,6 +1,6 @@
 /**
  * Design-system harness smoke test (feature 015, T009).
- * Proves the Tamagui v1 config + a styled DS component render under jest-expo.
+ * Proves the Tamagui config + a styled DS component render under jest-expo.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';

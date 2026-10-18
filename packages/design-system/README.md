@@ -13,7 +13,7 @@ import tamaguiConfig from '@mcm/design-system/tamagui.config';
 
 Every role is **theme-split** (a light-theme value and a dark-theme value) so it meets WCAG AA on
 both the near-white light surface and the near-black "Cinema" dark surface. Roles resolve as theme
-tokens (`$primary`, `$success`, …) and via `useTheme()` (`theme.success?.val`).
+tokens (`primary`, `success`, … — Tamagui 3 names carry no `$`) and via `useTheme()` (`theme.success?.val`).
 
 | Role group | Tokens |
 |---|---|
@@ -26,7 +26,7 @@ tokens (`$primary`, `$success`, …) and via `useTheme()` (`theme.success?.val`)
 
 ### `success` usage
 
-- Positive/verified **text** on a surface → `theme.success?.val` (`$success`).
+- Positive/verified **text** on a surface → `theme.success?.val` (`success`).
 - Verified **banner** (filled) → background `successContainer`, text `onSuccessContainer`.
 - Never use a green colour literal — all positive/verified colour flows through these roles
   (feature 017 SC-004). AA is guarded by `components/success-token.test.tsx`.
@@ -35,7 +35,7 @@ tokens (`$primary`, `$success`, …) and via `useTheme()` (`theme.success?.val`)
 
 Sizes are the MD3 steps `{11,12,14,16,18,22,24,28,32,36,45,57}`. Outfit (display/headline/title)
 loads weights 400/500/600/700; Inter (body/label) loads 400/500/600/700. Declare an explicit
-`fontFamily` (`Outfit-*` / `Inter-*` or the `$heading` / `$body` tokens) on text styles.
+`fontFamily` (`Outfit-*` / `Inter-*` or the `heading` / `body` font tokens) on text styles.
 
 See `frontend/mcm-app/README.md` → "Design-system compliance" for the app-side rules (R1–R5) and
 the sanctioned-deviation catalogue.

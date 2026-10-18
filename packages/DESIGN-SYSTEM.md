@@ -61,17 +61,24 @@ All tokens live in `design-system/tokens/`.
 
 The palette defines 6 tonal palettes (primary, secondary, tertiary, error, neutral, neutralVariant), each with tones from 0 to 100. The `colors.ts` file maps these tones to MD3 semantic roles.
 
-Access palette tones via Tamagui config: `$primaryP40`, `$tertiaryP50`, etc.
-Access semantic roles via theme: `$primary`, `$onSurface`, `$tertiaryContainer`, etc.
+Access palette tones via Tamagui config: `primaryP40`, `tertiaryP50`, etc.
+Access semantic roles via theme: `primary`, `onSurface`, `tertiaryContainer`, etc. — or, in
+component code, `useTheme()` and `theme.<role>?.val`.
+
+Tamagui 3 (feature 081 US10) spells token and theme names **without** a `$` sigil. A leftover
+`"$primary"` typechecks and resolves to nothing. The semantic roles exist **only** in the themes,
+never also as colour tokens: v3 resolves a bare name on a colour property token-first, so a light
+duplicate in the tokens would win inside the dark theme.
 
 ### Spacing (`tokens/spacing.ts`)
 
-4dp base grid. Reference via `$space.4` (= 16dp), `$space.6` (= 24dp), etc.
+4dp base grid. Reference by bare token name on a space property: `padding="4"`, `gap="6"`, etc.
+There is no `true` default key (Tamagui 3 reserves it).
 
-Key sizes:
-- `$size.5` = 40dp — standard button/input height
-- `$size.7` = 56dp — FAB, AppBar height
-- `$size.8` = 64dp — large FAB, AppBar height (alternative)
+Key sizes (size scale):
+- `5` = 40dp — standard button/input height
+- `7` = 56dp — FAB, AppBar height
+- `8` = 64dp — large FAB, AppBar height (alternative)
 
 ### Shape / Radius (`tokens/spacing.ts` → `shapeScale`)
 
@@ -651,33 +658,34 @@ design-system/
    }
    ```
 
-2. **Install Expo dependencies:**
+2. **Install the Tamagui packages at ONE exact version** (they move together — see
+   `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`), plus the Expo companions:
 
    ```bash
-   npx expo install tamagui @tamagui/core @tamagui/config
+   pnpm add --save-exact @tamagui/core@<v> @tamagui/stacks@<v> @tamagui/shorthands@<v>
+   pnpm add --save-exact -D @tamagui/metro-plugin@<v>
    npx expo install expo-font @expo-google-fonts/outfit @expo-google-fonts/inter
    npx expo install react-native-svg
    npx expo install react-native-safe-area-context
    ```
 
-3. **Configure Metro bundler** (`metro.config.js`):
+3. **Configure the Metro bundler** (`metro.config.js`) — Tamagui 3's compiler runs here; the
+   `@tamagui/babel-plugin` of v2 no longer exists, so `babel.config.js` carries no Tamagui entry:
 
    ```js
-   // Tamagui requires this for tree-shaking
    const { withTamagui } = require('@tamagui/metro-plugin')
-   module.exports = withTamagui(config, { components: ['tamagui'], config: './tamagui.config.ts' })
+   // apply LAST, after any resolver overrides, so the compiler resolves through them
+   module.exports = withTamagui(config, { components: ['@mcm/design-system'], config: './tamagui.config.ts' })
    ```
 
-4. **Set up Babel** (`babel.config.js`):
+   The plugin resolves `metro-resolver` from the app's own `package.json`, so the app declares it
+   (at the Metro line its Expo SDK ships). It does not invalidate Metro's transform cache when the
+   Tamagui config changes: after editing tokens, themes or `tamagui.config.ts`, run
+   `rm -rf node_modules/.cache/tamagui` and start Expo with `--clear`.
 
-   ```js
-   module.exports = {
-     presets: ['babel-preset-expo'],
-     plugins: [
-       ['@tamagui/babel-plugin', { components: ['tamagui'], config: './tamagui.config.ts' }],
-     ],
-   }
-   ```
+4. **Use the design system's `Text`**, never `@tamagui/core`'s: Tamagui 3 removed
+   `createTamagui({ defaultProps })`, so the body font and `onBackground` colour live on
+   `components/primitives/Text.tsx`.
 
 5. **Wrap your app** in `app/_layout.tsx` (see configuration section above).
 
