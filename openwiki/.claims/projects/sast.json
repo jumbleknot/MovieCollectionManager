@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:090ee133f9374584265836a11ee851a7dca9c881a13d78fe2df76098def3a6d9",
+  "pageVersion": "sha256:58d9a2bb3b377fb5cb25c794a3b94447ee33d7b31691c5a71edfe9f125e6ef0c",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -398,23 +398,35 @@
     },
     {
       "id": "claim_8b7326e2fafa455188aae1ee43cbf361",
-      "statement": "Entries in pnpm-workspace.yaml's `overrides:` map are range-keyed-on-range, and both halves must move together: the invariant enforced is that the key's exclusive upper bound equals the value's inclusive lower bound, scoped to keys carrying an `@<range>` suffix so the plain pins are out of scope by design. Renovate produces exactly this mismatch by construction because its built-in npm manager parses the key as an opaque dependency name, so scripts/check-override-consistency.mjs runs on pull requests and fails a mismatched pair by name. The `overrides` map must live in pnpm-workspace.yaml rather than package.json's `pnpm` field, because pnpm 11 stopped reading that field and only warns.",
+      "statement": "Entries in pnpm-workspace.yaml's `overrides:` map are range-keyed-on-range, and both halves must move together: the invariant enforced is that the key's exclusive upper bound equals the value's inclusive lower bound, scoped to keys carrying an `@<range>` suffix so the plain pins (`react-dom`, `postcss`, `@expo/dom-webview`) are out of scope by design, and a keyed floor whose half cannot be compared (a range with no `<` bound, a value with no `>=` bound) is refused out loud with exit 2 rather than skipped. Renovate produces exactly this mismatch by construction because its built-in npm manager parses the key as an opaque dependency name and cannot rewrite it, so scripts/check-override-consistency.mjs runs selftest-then-scan in guardrails.yml's `naming` job with no event guard and fails a mismatched pair by name before it can merge — a wiring that a guard test pins by asserting both the step's presence and the absence of an `if:`. The `overrides` map must live in pnpm-workspace.yaml rather than package.json's `pnpm` field, because pnpm 11 stopped reading that field and only warns.",
       "evidence": [
         {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L146-L158",
+          "version": "repo-lines-v1:sha256:8998d3f263c30c40625c9d028f796adc64d805e408c26f8f3d6173b0114cf6fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNmVjMzUwYmRiZjI2MWM1YTM2NWY3NjM4NTkxMGVkMWM3N2Y4YmEyZjM3OTZiYTJlYmFiNzIzZmFmNjUxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNjZiMWI0OGIzYmY1ZWNjYzU1NDc3ODY0YjM5ZGY3N2Q2Mzk2NGJiNjVjMzgyNTQwMmIyZjM1NjJkMzE1NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOTZlYjk1NzkyOGI2NGY1MDQ3MDJkMWI3NWM1YzYyYTcwM2Q5YjJiNGU4NjI1YTQ4ZmY5Y2UwNjhmYzY2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBmNjA1NzIxNjVkMjA5NzNjM2Q5YTI1ODY5Mjk1ZWI5NjY0N2ZhYTlmNTE4MjYzY2MyNGE3Mzg2NjZhNTcifQ"
+        },
+        {
           "resource": "repo://pnpm-workspace.yaml#L68-L81",
-          "version": "repo-lines-v1:sha256:dc0c706e7f8f095e42d50763040197a999be771dba7079ade1ca48af934c1ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0Y2YxNDAwYWRlMTZmNjMyMjgyN2EwYzU0MTYzZDMzZmI3NTNlZWViNTVkZGMwMjY5MDAyYmFlZWFhNzllYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MWE0NjBlYzNiMTA5YWQwODk2YWE4OGYyN2IyZThmZjEyNzM0ZWNiMTYxY2NjN2FjYzA3YWNmZWI1OGQ3NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ZTc5MDY5ZmJmNDFjZDBhNmM5ZTAzYWExNTYyOGI2MjAyODRiM2IyNDAzOGUzNmY4NzZmMWVjMmI2MjU0NDgifQ"
+          "version": "repo-lines-v1:sha256:dc0c706e7f8f095e42d50763040197a999be771dba7079ade1ca48af934c1ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0Y2YxNDAwYWRlMTZmNjMyMjgyN2EwYzU0MTYzZDMzZmI3NTNlZWViNTVkZGMwMjY5MDAyYmFlZWFhNzllYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MWE0NjBlYzNiMTA5YWQwODk2YWE4OGYyN2IyZThmZjEyNzM0ZWNiMTYxY2NjN2FjYzA3YWNmZWI1OGQ3NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2YTZiZWM1MDJiZWJiYWQwMjQ2ZGZjOTA3ZmQ5OWMxYTU4M2FmZWRjYTkxNmNkMGI2MmNlMDNmOTI4ZTQxZWMifQ"
         },
         {
-          "resource": "repo://renovate.json#L91-L138",
-          "version": "repo-lines-v1:sha256:c120d15318632a9c7289310221f7c19a72c7c47caf4510fab02a20e0ee4cbfb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYjJkNGI3MTZkZmY2YTBkMzk1YmQwN2JjZjJlMzZlNTUzZGZiODU3NzhmNzcwYTc5NzMzYTY2MmUyOWQ0NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwZjE4YzJlMGRjODNlZjJjYjI3MWIwOWIzMzBjZmUxMzQyNDhlZTFlMDkwMzZlN2U0M2JiNjM2ZGRkNDllZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwM2ZlNTYzNmVhMmQ3MDk5NjY1ZGQ4MTg3YzNiNjE0MGU0YTQ0NTExNmQ5ZjQ2OTYxOWZiYzhkYzM2ZTcxNmEifQ"
+          "resource": "repo://renovate.json#L36-L53",
+          "version": "repo-lines-v1:sha256:91523429fc3a504a98986b5d7d6913929fb06b4572437e32cd10421fc3e29070:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwN2I4MWRiMzQyY2I5MWFjM2YxMjc4ZGRhZjhmYjI3YzA4ZTcwNDQwYjMzNmQ3ZTI5NzkzNjViOWIwYTcwZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NjEyOTY0ZDMxODFkYjY2OGEwOTg2MTk2YWNhMjY5NDFhYmQ3N2JjNGQ2ZjU3NzQwY2EzNGIyMzY1ZjViNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZThjZGE0MWIwNmMyMDE0NzA3NzAwZmVmMmI1MDE0NTdhMzBhN2JlMThjMzUzZTI4MDdkZWUwZTNjMTU2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYjU5ODMzMjZjYTc0M2NjOTM0ZmRkZTliYWRjNDgwZGFmMzI0NThmOTJjNTQ4MTk2NjIwM2RkNzE5MDRlZjMifQ"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L111-L149",
-          "version": "repo-lines-v1:sha256:ff5665c43bb75f36566cb9071fc47c6bdd4ba81c8ca710f2aa90f496b11cca03:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNzQ4YmE0MjMzNjI4NWM2NDI0Yjg4YTFiNzEwZGM3NjJlOGVhOGY4NWE2ZTEzNTFmYWIzMWVmOTU3ZDAwOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NTFiYmU2MTk5NjM5NTFiNDY0OGE1MTFiZDgwZTJlYmZmNzE2ZjM5MTlkN2Y4YWM3YThlN2ZmOWJhMDlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZDMwODkwZTk1ZjZjNWZlMWE0MDk5ZGE2NGRmYmU0MDJmNTUwNjRmOTA4M2YzNjIwMzA5MmVlNjhmOTMxYTIifQ"
+          "resource": "repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs#L91-L113",
+          "version": "repo-lines-v1:sha256:64a60f455802c29683bedc89766fee0b65b98db9c2d8ce47ac582241fbfc6950:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNzg5MmE2ZDBiODgzMTAxMTc5NjRlYmM5NGJlNjc1YmU1MzAyNWE2N2FkNGE1NGJmOWNiNGQ5ZTQ1YTVhYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxMjgyZjlhZWYyOGVjNjc4ZDMzYWEyMmYxN2Q0MDI1M2ZiNjc4MjE5ZTdiYTQ4OGFhMDI2ODBiOThmMjQ0MzAifQ"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L4-L4",
-          "version": "repo-lines-v1:sha256:a74dc645815640fcf80d81bd4206327d671ea5c6b59f2e0fe231ae8b4d003e0b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc0ZGM2NDU4MTU2NDBmY2Y4MGQ4MWJkNDIwNjMyN2Q2NzFlYTVjNmI1OWYyZTBmZTIzMWFlOGI0ZDAwM2UwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc0ZGM2NDU4MTU2NDBmY2Y4MGQ4MWJkNDIwNjMyN2Q2NzFlYTVjNmI1OWYyZTBmZTIzMWFlOGI0ZDAwM2UwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFjOWU3NDQ3ODU4YmRkNmQ2MmQ4YzlhNDJhNTc1NzA3ZWRjNDg1MTQ4NjBiNjA0NTEzYmQyMzJhMGFkNDJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU0NTJlYmRhN2ViMzYwMzRmNWJlNDk2NTk2NWIyNmUyZDA1MjE2MmVjNGQyM2UyN2YxNjVhZWFmMWYwMmY5YyJ9"
+          "resource": "repo://scripts/check-override-consistency.mjs#L151-L178",
+          "version": "repo-lines-v1:sha256:ea84802af12c9829cdee818341280ec0889748f86fad1c618fcb3fff194fc06f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyOTZlYzNjZmNjNzJiZmE5NDNhMGU3Njg2ZTFjMGMyODYzNTk2MTliODM5MmMxOGRiMzgzNTcyZGMzZjQyNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNzU1NjJlYzlhYThlZTg5NDhiOTkwNTZhNGE5NDJmZjIyZWMwY2ZiNWYzMTNlYzU2ZDQ0NDI2MjA5YjY0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTdlMGQ3YWE4OWYzY2M2NWE5OWVhMmMxNTgxZTAwMzUyZmQyNDI5ZjJjMDU0Y2I4NWMyYmMxZDc2NjgwOTIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L24-L37",
+          "version": "repo-lines-v1:sha256:485507a4ddf855ab976055cd5e736f09206814306c4f903ed05c238987134a3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ODg2YWZjOWRjMzc5MmI4ZmJlZTFjMTE5MTIyY2ViZTk3Njc5NDc5NDExMDgxYTNlZWZiZDE0OWE2YTZmZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2Y2Q1ZmZhZDI0OTRkYWQ3NGRkZjk1ZDUzMzUxZjkzNTBkMzdjMmRkZmQ3MzQ3NWE5ZWVjY2FkNjVmN2JlMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MmM0NTM3NjJlNjRjZmY5ZTk2NmY4ZDJmM2FjODY4MTM1MjMyNWFkYzUzODJlMDM3OTA3YjBmMjk4Nzc1NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZDM4YTAxOGNlOTYzNGJiMDIwODAwNGM2MGJkZDA2NDE2ZGNmZjUzYWEyZTFmMWIwYzI5NmQzOTYzNTNkN2EifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L246-L251",
+          "version": "repo-lines-v1:sha256:13ffccd33bae6018b4dbbc466a9f7f3db3416ec37a9369237079fbf067040ee3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMzMjBjNTU0YjI0OWJlOWRjMDE2YWM4ZjEwY2QwZDNhZjFjYzYzNzJmMzNjZmZlYTZhMmU1YmVjZWM3MTJlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZlZTVkZGNmYjlmYzViYjllNWE3ZDQ5NDg0NmQ0N2ZhMjUyNmMzMTA3NGY2YmFmZDlhOWMzZTg2MDg2NDNlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U5OWM2NmQwMGNhODIzODc1YTUyZWRkZjg1MmRmOTdkMzEwMGUzMWY3MTNhOTQwN2Q4M2M3YTQyY2FhOWUwOCJ9"
         }
       ]
     },
@@ -693,10 +705,76 @@
           "version": "repo-lines-v1:sha256:dda6c7b0133052138d3a49085d64e7507813d94b0823ff42dcae66087741c64a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDc0NTdjZDI1YWRiMWFlYzJlNDQ0ZDExNGZjMTIwODU4MjRiMDgzMTQ2MTIzOGNiYThkYTA5MzNjNDdiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMGIzZDUzYTg2ZGMxZTlmNDVlMGNjZDllOGEzYjk3MTI3NWQ1Zjc0YWZhYWE4YzRhYTM0Y2M1OTdjZWYwODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YTQzMjAxYjkwMDIzZTQ3ZWFkNjBhMTZlNTFlYmUzZTExOGJiYjU3NDlmMjRmYjhhMDI5MjVmM2MwNjBlYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NmIwYjlmOTlmNzdkZjFmY2E3Nzc2ZDZiM2IzM2YzZjYyY2FmNTk1ZTI4NjFiNzg2MjAwNjA3ZWVkZmYxZGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5b6d70c0da7a4eeaa6d9ab13b439d75b",
+      "statement": "The same override-consistency gate also bounds the value's other end, because Renovate's npm manager attacks the cap rather than the floor: it reads a keyed override's value as a plain range and widens the upper bound to admit the newest major (`undici@<6.27.0: '>=6.27.0 <7'` arriving as `'>=6.27.0 <9'`), which leaves the floor rule green and closes no advisory while handing a dependent that resolved into the vulnerable span a different major than it declared. The cap rule therefore requires every keyed floor's value cap to be at most `<key major + 1>`, a tighter cap being fine; an uncapped floor admits every major already and is out of scope but named on every run rather than passed in silence, and a value not written as `>=A` or `>=A <B` (a `<=` cap, a `||` union, a caret) is refused with exit 2 because the gate cannot say which majors it admits. The companion response lives on the Renovate side, where `major` updates matching pnpm-workspace.yaml are permanently disabled while patch/minor stay enabled and ungated, since that is the track a genuine floor raise arrives on.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L837-L842",
+          "version": "repo-lines-v1:sha256:f298f2f953886c47a241d3d153ebe205a2f981f8a78c67317e5dc9ee312511dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYzYzE3NGMxMTQ4NzI0OTcyZmU2ODc1MWNiZGQ3NGJkMmE1ZWZmNWMwMjQ2ZTk4NmJkZTg4MjU4M2IzMTY5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VmM2YyYjNkNDYzN2YxYTI2ODRmYzgxMmVkNjdiN2ZjN2QxMmVkMjExYzYxNzA3ZWY4ZWFjNmExZjg2NWY1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU4ODU3Y2M3MjI4ZjY0ZTYyMzMzNDQ0N2Y3MjFjY2I0ZWIwMzM5MWE2ODBkYzQwMmE2ZjEyYzQwZDZjMGQxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ4MmVhOGYyZTRmOGI0Mzc1YmE1OGE5YmYzNzdkZTViYTI1NGU2YzZkZmVkNDNmMjk3ZWQ2ZDE0MTlhZjdhNyJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L862-L882",
+          "version": "repo-lines-v1:sha256:3cfe4094b0f19f47c00f49050b209c62200c79da25102d0a4cb2b96dbe69c389:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViYjdlNzM5NGU3YmIwYzE1ZjBlZTMzNWVkMTdmZjEyZmM0YTc4NTkyYjNjMGNkMjFjNzIyNjg3YjUxYmJhZTgifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L119-L163",
+          "version": "repo-lines-v1:sha256:e5d19f4964f3b37abae31ec679ebc2176980b1e0214f165c396eb5aeb96bbe52:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MjhhZWE5Y2I5NDBlMGVkMzdkYjNkNTdhZjY0Mzg0Y2UzY2MyNWI5NzIyMzFlNGZiMTU3NTk4YWFkMTcxNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxNmYzNGM2NzQ4M2Y0NzUzNWE4OWNhNjIzYzI1N2ZlNGFhY2UyNGE5YTA5YzMyM2ZkMDNjOTMwOWMxNjZlODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YmExYzkwOGM4YTNkZjM5ZGJmNzNmNGMyN2M1MzZkZjQzZjQyYWYyMTJiMGU3OWI1ZDA0NDNiZmZmZTE3MTMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L180-L189",
+          "version": "repo-lines-v1:sha256:218893b3b0024b14749e2ba281f0e0e08d83db9661564270a653e450766ae48d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNTM2NDMyMzIyMjg3NDM4MjcwYTA0MjdjNjY2M2YzODY4MDNiZjViZjU3ZWNmOWM1NzNkMmU4NjA0ZmEwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkYjg5OTE2OTMzNzRkN2NjOWQ2MWZmYjgzNzdjYmI5Mzk1ZmMyYjA2MWZkOWViMjZlMjZjMTQ3MjIxNGExNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNWRiZDBmZGIyNDZlMDE2YzI2ZTJkNzM2NjVkN2RmNDhiYTUxZTQ1YzgyNGZkMTE2ZWYwMzkwNzllYmZhNGUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L265-L271",
+          "version": "repo-lines-v1:sha256:cbe8678c59cda480d18b2152d554c663f4e352b3a0f89e72a90ab44ba2d8a1ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdkNWZmYWE1NGQwNWJjYWE2ODc3MmM3ZTUyYTFiNWNlNWZlMzFhNGFiZmIzNWEwOGEyNDAxNzgwMDg4ZmMyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc2NmNjMWIwMzRhMjk2ZjUwY2ZhZDk2ODgxNzA4MDVhMDBmODBlZjVhMTAzNzg0YWExMTExNDU0M2ZjYWNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI1MjkyODU1YmNlNTE5NzMyMjBkMTA4MzE3YzhiZWYzNWZhYTM5NmFlNzkwMjhjMmI5YzdlN2QzNjRmMWYzNyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L39-L54",
+          "version": "repo-lines-v1:sha256:a89eae916fdfda3331c753c45c94ac76c1214f696aa9666af8df4e406dc14340:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViY2MyMzZlMDQyOTI2MzcyMmRlMDBjODBlODIyNzA0N2U2ZGNlMWVjOTZmMDRhMTBlNGEzNDJiMWExNzYwNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NDliOTljZTBiOTAxZDczM2YxNmExNzlmODI2MDc5YmRhNmZkMzJkODk1NzQyZjEyYjA2ODMxZGI4ODAzOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYTdhZjk1NWVlN2MzY2FhYjVhY2Y2ZTBhMzE1ODJjMjQ2ZDBlMjI1MDgxODY0M2U4MmYzMWNiZDY2ZGJhYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNDg1OGVjNGFlNTk4MzRkMWM4OGNmZGRmMjljMjgwZTViMjIxZjRhY2MyNzI1ZGY3ZTU4MTM3ZTk2NDZjMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3809bad36bd45ffac6ac34fd928590f",
+      "statement": "scripts/__tests__/check-override-consistency.test.mjs proves the override-consistency gate in both directions of the half-bump (value raised with a stale key and the mirror image), that the three legitimate plain pins pass rather than being flagged, that a scoped name splits on the last `@`, that an unreadable half exits 2, and — for the cap rule — that each of the six real Renovate widenings measured on the 2026-10-18 dashboard fails by name while each entry's current value on `main` passes, that a genuine floor raise inside the major is still accepted, and that an uncapped floor is named in the pass line. It also asserts the live pnpm-workspace.yaml is green, and drives every case through the `--dir` seam against a throwaway manifest so no test reads or writes the real one.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L119-L171",
+          "version": "repo-lines-v1:sha256:457b12c891a6a895689c86b58c01a5b35364ab76c88b0569dcc4aa1449f319b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MjhhZWE5Y2I5NDBlMGVkMzdkYjNkNTdhZjY0Mzg0Y2UzY2MyNWI5NzIyMzFlNGZiMTU3NTk4YWFkMTcxNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxNmYzNGM2NzQ4M2Y0NzUzNWE4OWNhNjIzYzI1N2ZlNGFhY2UyNGE5YTA5YzMyM2ZkMDNjOTMwOWMxNjZlODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L41-L102",
+          "version": "repo-lines-v1:sha256:cf91c748a9e6ceadad3976d0a7f02b22b81368bdb1fe9f9d691273f04f28e6b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiYWVlYzExZjVlMDcxMjk3MTE2YWFhOTc4NTcwNDFiZTM5YWI3OWM2YzNjMzgwMDM0Yjk1YjQ2YjVhMTIwODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2MzM2NDVmM2U5ZDM1MzIxMjU4YzUwMTNkODI5ZGJmYzQ0MTQxZGZmYTZjZjMwZWQ1N2M3Y2M5ZDRiM2FhYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyZGMxNDVkY2RjYzNlNzIzMjdjYTZlOTYxNWVhNzI1NTRkYjNkNWFlMmY5MDk5ZDBjMDhiNzAwZGQwMjk3MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb0e7e8d39f34f51b447a19c5dcd3dcb",
+      "statement": "check-override-consistency.mjs exports its parsers for reuse rather than for its own benefit — scripts/override-lever.mjs imports `parseOverrideKey`, `inclusiveLowerBound`, `exclusiveUpperBound` and `compareVersions` from it, keeping one definition of how an override version is parsed and ordered, which is the class of drift the gate exists to catch — and guards its CLI body behind an `import.meta`-versus-`process.argv[1]` check so importing the module for those parsers cannot scan the repository or `process.exit` out of the importing process. CLI behaviour is unchanged, which the file's own tests prove by shelling out to it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L19-L39",
+          "version": "repo-lines-v1:sha256:d0363c5ccc20e4d2401aec15b5b4b003be8e91e4c85a66e1ba102aaf6d847497:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MWZjNDYxN2M1ZmI5NWE2NzE1ZjI2ZWVkNDllYzRlNTQ5ZmY2ZGZmNzVkOWNiNTkzMzI3MDNkYzc1MTU2MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MjNjNDM0YzQzNDI4N2QxMDBkZDk1NWZiMmMyN2U0YTMwNDJiMzQxMzQ3NTQ5MTZmMTdlM2ZmMjNlZDUzYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyYTM0MmUyMjQ1ZWFiYzc4NzM2NDE4YjljMzg2YTA1N2U4MWIyMTA1MGQ0NTI4ZjJhMGFkNGUzMzA2ZGViMDQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L113-L136",
+          "version": "repo-lines-v1:sha256:06d99766e6c0136ca51aa97b9565dc51d98e77f18ad39f6960c9e8028ad18547:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjZDU0NjZkNzFmODhiMWQ5ODJhZGZkNWFmNzc5ZWY4OGIyYzJjNjBlYjlmMTBjOTY1MTAyMThkNjYxOTAxNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3Y2MzYzNmNzFmMjkzODE4MjlhYzQ5NmU2Yzk3YjhkY2M2NjMyMmUwYmJhMmU4NmE2NDY0NjNlMGU5MzI5ODkifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L354-L365",
+          "version": "repo-lines-v1:sha256:d6d26c38027a1f5c69f42b66b9b011d150ca2fd0a51888cedfdb969a6e257d03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NjI3N2QzZTI3YTA3NDdjZGExODA4MWFjYWI1M2Q2YzZjNDE2ZTZmYzQ2MzU1MDU0ZWRhMzY1ZTg5ZjNlOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4M2FjMjliYjRkZjBjNzNmNTI2ZjdhYmU1NGJkZjgyYjc0NzRjYjY1ZDNiZTQ4MDA0ZmM3ZmJmOTM3YWE4YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1OWI4Y2JiNDA3MDBkMDY5Y2M1ZDdlNWNmMGFiYTRiOTU5MTRkOGUyNDNkYTgyYTQ0MGNiMGRmYTMwNTA2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L31-L34",
+          "version": "repo-lines-v1:sha256:b647b72fe23df79a96c944d8a40d376a00570b23b1ac73c4559c09003207b20b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzAyMTA2NjNhYTczYjEwZDI3ZjRiMmI2NDY0NGI5NTgzYTE2NGE2ZjJhYzUxMzY1NmIyM2QzZjA4ZDkxZWI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDA4NzgyODIxOTM3N2VmN2MzY2E2ZjAxNmY4Y2YyY2ZlOThlMzAwN2M2NGE1ZjcxNDJmOTM1OWY5YTMzOWIwNCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-18T20:44:33.459Z"
   }
 }

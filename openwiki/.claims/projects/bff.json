@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3ab8bfdf2d49690eacc6dff82b7711a37bb0ba68b609ff23b0cf8cc3f9ac8d10",
+  "pageVersion": "sha256:79ab8da602b0c632b0d10832ee675d86e8491ad33896faee4e98101657502000",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -65,7 +65,7 @@
       "statement": "The BFF's Mongo store is a standalone mongod, not a replica set, so no multi-document transaction is available anywhere in it; this shapes the backup feature's design so that all correctness (e.g. exactly-once job claiming) must be expressed within a single document rather than across two.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L122-L143",
+          "resource": "repo://frontend/mcm-app/README.md#L134-L155",
           "version": "repo-lines-v1:sha256:780693e40be237d192a4c2e1d491f97a85ba3298679481eb24dfa443ca5e0f4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTg4YzU1NDRjYTNlYmE1YTNiMWFiMzExNWE0YzJiY2U4YmQ1M2YyZTFmYWM3OTA3NDRiMDFmN2JjNjQ5Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDU3MWQ0OWIxYjE3YjM2ODY4MGMxYTc5ZDRjMzczN2U3NDZiNDYyZTRjZTY5ZjNkNDc4ZTBhNjFiNTBkYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNjdkYTJiMGVmYjhlYTkxNDQ4MmJiNjdhNTcxNjMwZTYzZTY2NTE3NTFjZDFkYzJmMTQzNjMxZWVkZGNjNGIifQ"
         },
         {
@@ -115,7 +115,7 @@
       "statement": "server.js runs outside the Metro/Expo bundle as plain CommonJS and cannot import frontend/mcm-app/src/bff-server modules directly, so the backup feature's scheduling clock (a setInterval in server.js) reaches the scheduling logic via a loopback HTTP POST to /bff-api/backups/tick guarded by a shared secret (BACKUP_TICK_SECRET), rather than by calling a function; this tick never fires under `pnpm start` because server.js does not run under Metro.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L144-L163",
+          "resource": "repo://frontend/mcm-app/README.md#L156-L175",
           "version": "repo-lines-v1:sha256:644a1f55ac0150e9355f8c6645e916219a587b989d61f48b81b2295af1748eb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OTA4ZTA4OWZjZWQxMmE4NjEyM2YxYmNlZDEyYmM1MjY5NTg3ZjFmOTUxOTFlZGMyYzdjYzZiY2EzOTk0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOWJhYWI5ZWNmZjZjNGU0MzVmNjQ4ZWU2YTNmOTZkZGQ5Y2FmYWFjNmRmN2IxZDY0NTQ2NDY3NGNmYzhhZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMGMwMmIzMGUwMzI4OTMxYzNhMDM0MmY4MTgwZTAzZTk4ZGU1ZTk1NTlmZjNkOGI1NDY4N2E1OGZjNDBjNmIifQ"
         },
         {
@@ -345,7 +345,7 @@
       "statement": "Because the BFF's Mongo is a standalone mongod with no multi-document transaction, the backup teardown cannot wrap its deletes in one transaction: destinations, jobs and runs are removed as three independent deleteMany calls, ordered destinations → jobs → runs so a crash part-way through never leaves a job pointing at a destination that is gone.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L127-L142",
+          "resource": "repo://frontend/mcm-app/README.md#L139-L154",
           "version": "repo-lines-v1:sha256:e8813c11ee47fabdefc7ade14d1fe8df338570109ba85e0c3c9bd26896237f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNWIyNGRjYzYzZGNlMmQ1M2MwOTgyYjUzMGFmYWYwZjhhMGUyN2ZlODUyNGFiOTk2YjI0OGQ1NjUyZWY2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjA3Njg4ODhmMWQwODZkYTE2ZGY2MTJmMDI4N2FlMmY4NGQ3YmQwYWY1NmM5ZjdiM2M4NmEwZTA3ODUyYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MDU5Y2IwMjhlZDRmNmI2MTMwNjI2ZWM1ZDFlNWU0ZDNhMDVmZmI1OTQ0YjBmOWNmODdhNjMyYjlmMDhjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMjRhMGNiNTg1MTBlODkwMDkyNzMxZjE1NmVhZTE0NzI1NzYyNDg5MjQ1ZTQwYjgxMjAyMGVhNzU4ZTM1NmEifQ"
         },
         {
@@ -391,10 +391,238 @@
           "version": "repo-lines-v1:sha256:0b73e5f072b68e895e1c301f51fbad0fd241c1127a9fd4b28c753a1ce8841f17:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzUwZDkzMTFlZTEwYTZkNzdhNWYwNTJkNDZiZTNiYmU4MjJmMTU4OTZmMzkyODNlZTgwZjlhZTdkYjA2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNjFjMjg4YTBmZTNmMGIyYmE1NjFkYTUzOWQ3ZWQwOGM0N2E3MjEzNWQ1NTE2MGI4MzMxM2RhN2ZjYTYzNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmFmMzA0ZjMxZDY4NTY0YWI0MGE1ZGYwMGRhNzM2YzhmNjhkNzFiYWViY2JhNjZiMDQxNTQyODM2ZWU4OTYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2c0299af27114e5aa7a897c5509c8990",
+      "statement": "The backups routes do not repeat the requireAuth-then-RBAC prologue by hand: withBackupRoute() in backup-route-support.ts runs the request context, requireAuth(), requireMcUser() and the error translation once and passes the handler body an already-authenticated { userId, jwt }, so a backups handler cannot be written without authorization; it also owns the 404-for-not-yours rule (a 403 would confirm the resource exists) and the strict discriminated-union Zod schemas that reject a spoofed userId in the body with a 400.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts#L1-L100",
+          "version": "repo-lines-v1:sha256:ea6f9589628fb56e216c52de6d9c13d7c1774183648af61678470045d1b51584:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTFmM2NmMjU3MmNhMjIwYWFhMzgxMmMwYmM1ZTE2OTdhZDRkZjRiYjEwMjBiZWIyZTVkZmQwMTQyNDdkYWE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZWY1MDM2NTc5YWQ0NjIxOTI5M2IxZDgwMTM1MTNhMjIwZGI5NTM5ZDFlMzcyMzcxZGQyMGY4ZDZjNGJjZGM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MGJmOWEyNTc0YWIzNWMwZDNkNWNmMjA0NGIzMGNhYjY4Yjg1Y2Q1NWJjZDg4MTM1YWU2ZDg3ZmQ1NWYyZGE4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8b23f43ce824f5284c6bbe29746e4fb",
+      "statement": "tests/integration/route-coverage-map.ts and route-coverage.integration.test.ts enforce endpoint coverage structurally: the test globs the live src/app/bff-api/**/+api.ts inventory and fails CI when a route file has neither an integration test nor a written exclusion, when a mapped test file is missing on disk, or when a stale matrix entry names a route that no longer exists; the auth/login code-exchange endpoint is the single permitted exclusion and the gate asserts it is the only one.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/route-coverage-map.ts#L1-L93",
+          "version": "repo-lines-v1:sha256:b873e559e371a7401bd7140d3f1917098b33ddf8e5ca47f39a24f9a1ceddb4ec:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYTllOWU2NjA3Y2E5OWFjYWUxYzgyNmVjNmM4ZWViOTIxZDJiNGVlNWY2NTRiYmYyMWM4NThhZDg2MDM2OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/route-coverage.integration.test.ts#L1-L68",
+          "version": "repo-lines-v1:sha256:c01eaacedbe3e6f9488ddfbdabc8b93891e31523cb4187093f20c3023f342894:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4035a0268c0440b89cccb5b29f16edf6",
+      "statement": "GET /bff-api/auth/init is the redirect-URI reconciliation route: it is unauthenticated by design, is called once on app mount best-effort by the client root layout (fetch('/bff-api/auth/init').catch(() => {})), and passes ensureClientRedirectUris() the complete six-entry list this client needs — the web PKCE callback, the verified-email redirect, the native login scheme URI, the backup-consent callback, the account-deletion step-up callback and its own native scheme URI. Because the underlying write is additive and one-shot per process, the list is the contract: a URI left out is never registered by this path, and on a fresh realm nothing fails at deploy time until someone hits that flow.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/_layout.tsx#L54-L58",
+          "version": "repo-lines-v1:sha256:d3959780b997dfd400fc9c3ce7c3e544bd355982a17f9ecdfd687f2b751f204c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E1M2YxOTA1ZWI5ZmUzMjcwYmIyZThkYjM0MmY3NTUxNzgxMWQ0M2Q3NDJjNDA0YzNiOWNiZmYyZjY5NWFmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRjNTJmMDhiMzliMDhiMDFjOGQzMDhiZjg4MGIwYmVmMDJmZDFkZmNjOWQ5YWE5M2E0ZDFiNWY0ZDU4YjZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5NjVjOTRjYjE5Mzk2MGE2Y2QwMWRjMTNiMjY0MmU3YTk1ZDA4NzdiMjEwZDA2MzNjYjA2ZThiYTU0MDM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTA5YmNmMDMyNmIxZGQ5M2ZjZDJmNWM2OTk4MTg1MDM3YzgxMjA4YzU0YTMwODUwNmQwYjI1ZGZjZDQyZGViOCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L1-L47",
+          "version": "repo-lines-v1:sha256:53b0eddce81759c1b0e4e200dd6e541ac151f58112794718a7404f41dadeb25c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L516",
+          "version": "repo-lines-v1:sha256:7d431c3edca2085855666a9083e7a13f51f547ad9ee8fb733a5b02883ef94915:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a99e21809f14ce5b0e3f4d5a0b3b81b",
+      "statement": "Three auth cookies cross the wire and nothing else: the access token and session id are scoped to Path=/ while the refresh token is scoped to Path=/bff-api/auth/refresh only, which is what makes it unreachable from an ordinary API request; all three are HttpOnly and SameSite=Strict and Secure outside development, and the clear-cookie set mirrors those attributes exactly because a browser may decline a clear whose attributes do not match the cookie being removed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L137-L170",
+          "version": "repo-lines-v1:sha256:545071908cb83f4475e9a84cbaa9a528b93785017e827d07f95ceb7df578a4e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MjMwN2M5MTY5YmQyNmViYjFmMDMwNGFkODBkMjllNjQ5NTc2OTMzMjMyNmI2Yzk3OGYxMzRhZGRjMWU2NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65087541a5ef4b168dd8d31126606a76",
+      "statement": "Registration is gated by the application-level allowSelfRegistration setting read server-side before any user creation rather than by the realm's self-service flag, because users are created through the Keycloak Admin API; it fails closed on a store error so registration is refused rather than silently allowed, and /register is rate-limited per email and per source IP so varying the email cannot buy unlimited registrations from one source.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts#L28-L85",
+          "version": "repo-lines-v1:sha256:6f2de31b001e1296f2c36a1dd636bb1868bb3e2fc5782cdb0809f067ebd3892a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NDU5NjlmMTg3YmJjMGIxMTJmMTEzZmZlMWFjNTJlMzAzMzUzYWVkYmFlYTI2MTZlMjJiZDc5MTEyYThlMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4Zjc4MjEzMDczMGZkODBmMTQ5NzQ4ODYzMzI0NDM3NWVlNWNhMmZhZmI3MjRhOGYzZWEzMjEzODQ0NjEyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZGYxZDY3YWI4NmMwYzUzNGY2YzY3OWEzYjUxZThmNTdmN2U5NWZjNTJjOGM4NDFhODljNzkzNzZmZjZiOTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L105-L124",
+          "version": "repo-lines-v1:sha256:e5cc828c176b55d92a3f53f547d7d54f2c2076e4f217d0c6b143b258aa62094b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1YmRiZmE0ZWY4ODQxOWRmMTkyZDVkNzcxZTBiZmQ5YTM1Zjc4ODBjMTU0YzhiN2M2ZjUwMDA1NzExNGYyYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d96b80572a14a2aa87092e7d1c6ad5b",
+      "statement": "POST /bff-api/auth/logout terminates only the caller's own session: the handler authenticates first and acts on the session id only when the session record's userId equals the authenticated subject, so an unauthenticated request carrying a victim's X-Session-Id cannot force-logout them; refresh-token revocation and IAM-level SSO termination (logoutUserSessions) then run only for that authenticated owner.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts#L28-L64",
+          "version": "repo-lines-v1:sha256:fa9849613753db313a233d9fd3ebbfad18948a36a0abf74f9762d81efafd8a67:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjdhYTc2ZWI3NTg2ZWU0YzY1YjU2OTMxZWQ0NTlmM2IyZmRhN2RiZmMyZWZkMjIxMWY3YzBkZjc3OTIzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOTNlMTI5MDZhNjFmZDVjMDg5ZmVlOGZjYWZkOTUyZTU3YTU5MDlhMjQ5ZGQxMjUwOTQ5OGQyNzFhNzFjOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYWFmNWFiOTZjMWQ4ZjJiNGY1MWFhNGM1MWRlNjg5ODE4YmY1NzQwOTUyOGU3ZWZlZTEzYzBlZDJjYzFlMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NmNjNmE4ZGI4YjM3YTIxMGM4OTBiNzg2ZmU2NTc3NzRiZmQ3ODg1NmI0MjQxNTM0YjdiNzViN2Q5Y2Y1ZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2602e5f6222747ce99cc9a44d07ab698",
+      "statement": "error-handler.ts (handleBffError) is the older Express-shaped error mapper and is now reachable only from its own unit test: no live route handler imports it (register+api.ts mentions it only in a comment about adapting it), and the live handlers answer with securityHeaders() plus either handleMcApiError() or the RFC 9457-shaped problemResponse()/problem() helpers.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/error-handler.ts#L96-L127",
+          "version": "repo-lines-v1:sha256:cb96d90715060d913fca4a436233aa825d832ee7f2e82a0fb9f303c70e8cccb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzVmOGJmNDUyOGM0ZDkwNDE3M2IzYjk2Nzk2NjFlOWUxZWZkOWNlMmVlMTM4MWI0NjY2MjA2YzAyYTU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMzc0NmViYjEwNGYwNGI5NWU0M2Y4ODEzZGZjN2QzNzJlNWQxOGNkNThjOThkOGJjYzhiNmY0NTkxMDY0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts#L1-L66",
+          "version": "repo-lines-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f04019e6f9f4a07b22934ec9620f1b7",
+      "statement": "The backup destination protocols sit behind one policy-free interface, BackupDestinationDriver (put/get/list/delete/testConnection, with no bucket, ETag, multipart or storage-class concept), and a driver never receives a URL: createBackupDriver() runs the resolving SSRF guard and builds a PinnedTransport whose agent can only resolve to vetted addresses, so there is no code path from a destination document to a socket that skips the check. createBackupDriver() is also the only place a destination's type is switched on, which is what contains the hand-written SigV4 decision to backup-request-signer.ts and backup-driver-s3.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts#L1-L38",
+          "version": "repo-lines-v1:sha256:9291bcb6cf3f784721f13868e7683fb990249a846f57cb4ca349d45bd4e205f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhNDY4ZDc4YTAwYTdhYzBkM2RjNWMyMjM0NTJlZjc4OGFmMmFiMWUyMjM3ZjFkNzhkYzM1MDhlMzBlYjJlNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZTQ3MjU2MTNjOGYzYTdhYWJjYjhlZjQ5NDk2NWIzMDM1YTRkNjNiNjJiNzBkYmI0YWUzZTExZGNlMTYxNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MDQ0NzY5NmI4N2FhYzI3Yzc2NTEyYWI2MTFiOGUwMDcyNjBjZTlhMjVmNWNjY2I2YjEyN2UwMGI2NGY5ZGMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts#L153-L187",
+          "version": "repo-lines-v1:sha256:da994a4fcfeda7ef404658d93a3b6a473eac8b2c399a1ed656ff19bc35761d34:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MWI0ZTY2MzVkMTc5MDIwZTgwNjM1Nzc3ZTQ2ZjU1NzY1ZDI1YjBiMmY5NmM1MWRiMzVlMDYwOGUyOWExMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMmUyYjQ2ODQyMzMwYWFmYTljNWQ5MDIzMWRmODk4ZDc3NWVhNDI4MzU3NjM2MTVhN2Y4MTcyMTA5YzViODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MzBkZmY3NTE0YWVjNDg3MzAzOTA2YTcwYzhkNzlmODlhMmRmYTEzMjk2OThjNGE3ZDQzZjk4NzFiNmI5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d588257200e4e7b989fba9a5dc757da",
+      "statement": "The BFF ships its own AWS Signature Version 4 signer rather than @aws-sdk/client-s3 (ratified by the operator on 2026-09-20 on supply-chain grounds — the SDK pulls roughly fifty transitive packages for the four operations this feature needs), covering SigV4 only with no chunked/streaming payloads and no presigning; it is verified against two independent external oracles, AWS's published vectors vendored under src/bff-server/unit-tests/fixtures/aws-sigv4/ (which assert the canonical request, the string-to-sign and the authorization header at all three intermediate stages) and backup-driver-s3.integration.test.ts against a real S3-compatible object store, because a signer checked only against its own expectations passes while producing a consistently wrong signature.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-request-signer.ts#L1-L16",
+          "version": "repo-lines-v1:sha256:36b0067c7be81ade6a211ce2325b3f8140a8bca81c1fc40fff5163e945f4f72a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NTAzMTllMWE4NGY4YWFkOThiNDZmMGIwMTdkYzk2OTBlNGI4ZDE2Y2VjNzI2NGE4Y2FmZWVlMWE3ZjY2ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1ODNhMmRlMDAzNDA4ZWM1ODY4OWQwNWU0Yjk2NDIyNjkyZmI5NTRmMTg1YzJjMmYyYjRiODBkOGM5YTBiYjkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts#L1-L33",
+          "version": "repo-lines-v1:sha256:9ad6f233bc21d140b7d566858307048a609386b78309f31a68fcaab3dad9c3f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTY4ZGM5ZmVlMTliZmE5OWEzNzBhNDIzM2JhZWJmYmZkMjVkZTU4YzRiZTNjNzM0NWM2NDRhNjE3ZmJmYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjM2M3MDU4MGMxOTE1ZGI2YmU4YTBkNjBlYzE1ZTk4ZmM5MzhhZThmZTU3YmQzMzAxOTRlYjBiNjY1MGM5NjkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts#L1-L18",
+          "version": "repo-lines-v1:sha256:29e5f2e37d80170cf020526320020369da7ff34f66adc208ae1195d17567a400:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4MTc3MmI5NTMxOTVjMzNjYzQ1N2FmNjY5Yzc3NjZmZDRkNGRhYmY2ZGMxODAwMTcyNDgwMmYwYTk2ZWNkNGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a540ac8ea7f14b909670b00c2475a025",
+      "statement": "The signer's subtle rules are the ones that fail as an opaque signature mismatch rather than a diagnosable error: RFC 3986 encoding that escapes !*'() where encodeURIComponent does not; canonical URI built by encoding each path segment with the separators left alone; the canonical query sorted by encoded key then encoded value (sorting by decoded key is the subtly wrong version that AWS's get-vanilla-query-order-encoded vector exists to catch); and x-amz-date and x-amz-content-sha256 added by the signer itself so they fall inside SignedHeaders rather than being added at the transport layer afterwards.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-request-signer.ts#L173-L225",
+          "version": "repo-lines-v1:sha256:a24fb69885f04fe394564164aa93af00fc26f10991670a7edd4cb94402661eba:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkN2Y3ZmFkMmM2ZWZjMmY0ZWEwZDQ4NzUwZDgyZWE3MzBhNmY1ODcwYmJhMTk3YTQwM2VkYTljMjg0YTdlMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MmNhMThjZTNkY2NmODEwMGUzNDNmM2I2YTI5ZjBiOTNjZjY5Y2QzZWFmYTAwZDE5MGRiYmJiZjJjNmEwNWQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-request-signer.ts#L55-L133",
+          "version": "repo-lines-v1:sha256:2478d94cdc3c3ffec87f2c4f3e41d7f5565f5765590d98fa2adf9941e9f0fe08:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZTllMTk5ZWZlMjBmNzM4NDE3MDgwNGEyNWM2MmM4MGVlOWZjNTFkNDI1N2YwYzgyNmU5OWZkODI4MjlkZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhODdmYjRkMWQyNzUxMmJjNmJiZDk5OWQzMjNiY2I2MWMyODY1YzQ0ODA1ZGNmYTdiZmU1ZjY5MjdlMThjMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe3b091556924b6d89803a013b0679a5",
+      "statement": "The S3 driver sends exactly the headers the signer signed (adding one at the transport layer would make the signature cover a different header set than the one on the wire), pages LIST with a continuation token rather than reading only the first response — a first-page-only driver silently under-reports past the 1000-key limit and retention then never prunes below it while reporting success — and never echoes an upstream S3 error document or a credential into a failure reason, exposing only the status and the S3 error Code.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-driver-s3.ts#L102-L146",
+          "version": "repo-lines-v1:sha256:8a91e15b6cfaa0e0811925ce376439d109bc311c1956dec1a448d02c06196603:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMmU2MjkwNjZiMDQyMTRiMjk0NjVmNWFlZjYzYjU0YWZlYzQ5NjAwNTc2ODk0YjVhY2E5Yjg3NTNiYjliMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNjU5YTI5MmJhODNjM2NjN2MxNTI2ZDhlODhjNDU2YTI4YTlmYzkwODQ3YzQ3YzliMmM4ZTQ0OGVmY2FkNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YzJhZjRkOTdkNTE2MjI3MGMyNDIzYmFhNzg1ZTU4MmViOGYzMjY2NTA5OTk5MThiNzJiZjg2Zjg3YmY3OTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-driver-s3.ts#L50-L88",
+          "version": "repo-lines-v1:sha256:6969a85b4c897f63e9b370cb749fd017d304092e4ca4afa80f5fb94f8369c18e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OTIyNTY2NDFiODNkNTFkZTYxNzc4N2ZjMTAyMmNiNjdjNTMxZDg4NjgxNDZkMTk1NzkyNGQzODFlOTJmMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmOWJjNjNiZjY3NWU1ZmJkYjA3OWQ0ODIxNDQyNTRjNzgzYjlkMTgwNTVjMGVhOGRiNzU2NWZjMGYwNTRjZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNzY4Zjg4OWUwZjMxMzY4NWZjZDNjZmRmNDFhMmU5YmJmNGZkMmRhY2NjNzA3YzI5NDUyMDdkNDA3MGE2YzEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts#L107-L152",
+          "version": "repo-lines-v1:sha256:7bfa57518a3e5c0450bb489b2f4ef0e11d698e606274f53d92f420681ff27be1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMzE1MzMxNjc5MmUyMDEzNzIwMDVmMWIyZDUwM2Y2OTdjMGFkMDdlMDJiNzkwOTQ3M2E2NWE1OTdjZjBjMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1YmVhOGIwMGY5M2Q5MDJiNDcxYzMxNzkyNmJlZmRhMDVmMDMwMjBkZjY2NGY2ZDNjZGM3MWQ1ODcxZjgwOWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_236eae689d7945798d7040221aadb2d1",
+      "statement": "The S3 driver's testConnection separates the three failures that have three different fixes — unreachable, credentials-rejected, and authenticated-but-not-permitted — and then performs a write probe (PUT of a .mcm-write-probe object, best-effort DELETE afterwards) because a read-only key that passes a read-only probe and then fails every backup is precisely the outcome the probe exists to prevent; a transport-level throw is reported as unreachable without echoing the underlying message, which can carry an address or a certificate subject.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-driver-s3.ts#L154-L217",
+          "version": "repo-lines-v1:sha256:bd8d3b0673f02b66cce522b5dd6814d8ea28d34f141b655083f78596cae52a37:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNmQ2OTgzZTI4ZjYxNTY1ZDZlZDVkNGY3N2E3ZmExZTgzODllNzYxNjg2YmVhZDQ1ZmRmYTgzN2Y0Y2ZlMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNmU1ODk5MzliNTNlMTg5ZWMzYjFkM2QxMTNkMGI3MGYzYzQyOGY0MzI4YjAxZjkzNzgxYjg3MTcyZTg4MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNDQ2MmQwNzIyZmRmYzA2YmE3YmZlNWMyMTA5ZThhM2RlZDY0N2U3MGNjYTY4MTU1NzBhOWU4MzE1ZDBkM2IifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts#L171-L206",
+          "version": "repo-lines-v1:sha256:087b4a228ddfc0e21f415782ef14ddd6e98959f25c88e73a33d44f2c1a473412:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0YWRhOWYxY2VlODcyNzFjOTllODE3NGJmNGJlMmFkMjI2ZjFhNGFjOTBjNzBhM2RhOWY2NzJmZDg1NWE1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhYmE3ZDJmMmVkMmNmZTk5NDBjNDczODMyMTA3MzFkOTA2M2M2YTQ2MTBjMmZkYjgwMDgyMzM3ZjViN2RiMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_984d5baa7d984b7cbe0264768d1ff295",
+      "statement": "The backup integration suites escalate rather than skip quietly: tests/integration/helpers/backup-targets.ts treats missing destinations as a loud SKIP when MCM_REQUIRE_BACKUP_TARGETS is unset but as a HARD FAILURE at a named assertion (assertBackupTargetsPresent) when it is set, so a suite that passes with the targets down is not possible under the flag; the rule for reading a result is therefore to watch the skip count, not the exit code.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L150-L164",
+          "version": "repo-lines-v1:sha256:7488caf2cc57b3b17130f5f9c7fd8df49e496f43797fde693c299973c0721574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzIwYjcxMTI4NzZiZmMxMmY2MmI0OTg2Mzc3ZmU3ZTk4ODU2YmI2MWQ3YmQ4ODU2ZWU1YTg0YjdkNTdkNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDI3YWJkMDYzMmQxOThhZjBhMTM3MjlkNTZhZjY4NjI3NDhjYTgyNjEzMzRjZWZhY2E5NzJlOWJjZTJlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNzhkZDQ4Y2RmMzI5MTU3ZDIwNzAzNmYzMzlkY2FmMDdlODBlYWRmYjMzNzg2NTU1YjU2MmMxMjFlZGMzZjIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts#L1-L49",
+          "version": "repo-lines-v1:sha256:de52f4a7539b5e25aef3fffa52cf64e53bebce30e5c625646916426f0b5fd8ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_abef7aa677024447947d62a3d05e93e3",
+      "statement": "The scheduling tick route's contract is deliberately narrow beyond the secret check: the ?now= time override is deny-by-default (400 unless BACKUP_TICK_ALLOW_TIME_OVERRIDE=1, a dev/CI-only flag, because with the tick secret alone any caller could otherwise assert that every schedule is due), due jobs run sequentially rather than concurrently (each run holds its whole artifact in memory, so running them together would create the memory spike the size ceiling exists to prevent), nextRunAt is recomputed forward from now and the claim released in a finally, and the due-filter's $type: 'string' check is load-bearing because MongoDB's cross-type ordering sorts null before every string and a bare $lte would make every on-demand-only job read as permanently due.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts#L67-L149",
+          "version": "repo-lines-v1:sha256:3820b2b170cdb7e78b54b31b500b655d241f12a5e68562abb9b32a1fa6ac4b0a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZDE5MmFhNmE4YjliYWNmMzc5YjZkZDU3OGVkMDU1ZGRiOTk3OTU5YWY0YmQyZmEwMDM0MDQ2MzIyZWJjMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Mjc5YzJmNzg0ODM3ZjVkODdlYjkyM2ExZWU0NDM0NjgzZGFhMWE2NGU0Y2UxMjM1NGNkZjhiMmM5ODBlMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5MTRlMTU2Y2ZjNjM0ZmM4NzhlMzdhZmViZjMxMDc0N2JiZjY0YmI5YjJlMzRlZmUwNjFkNDc3ZjE1ODFjM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts#L101-L172",
+          "version": "repo-lines-v1:sha256:fd965f772a2ac8e256bbc420ad5f64261c99bd6b42dd1a9c9483eb3224879e3c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MGNiYzczNWMzYTgyODk5ZWFkZjZhZGQwZDRkMDAzMjdiNWZiMjY0MDhjMDUyN2YxODcyZTY3OGM4MjZiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzMjgzMTAxZGYwZjJmMzVkNDdjMjBhOWMyNjk0YzNmOGFhN2MyMzMwMWZkMzMzZTg0NTU1MzQwNjNhYjRhM2YifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-tick.integration.test.ts#L162-L306",
+          "version": "repo-lines-v1:sha256:70d8229ea45ad04bb7dbd06cc89623d2e2a3a1fd17dfd6bc96e360655e4a6e99:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTM0NGI1MGI1NDgxNjQ0Nzc5NGM4MTA3YjdkYzBiOTgwNmRlZDU2NjU3NzYzYWFlYzFkNzhkZGIzMGRmZTg3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiMTY0OGJjMmFhMjg5ZDZjNmM3MGZkNmYyMTJmNThkMDA1OWJmMzI1MzFlNGE0NTNkZTc3NjYzMjk2ZmQxNTMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_76b5b6f80d174ee78fe62891396e48b8",
+      "statement": "A scheduled backup run mints the user's own access token first and a failed mint ends it: runScheduledBackup catches OfflineTokenUnusableError, records a FAILED run carrying the error's user-facing remedy message, and returns without reading or writing anything or trying another identity — there is no service-account path to fall back to, because a backup that quietly succeeded using broader privilege than the user granted would be worse than one that failed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts#L288-L330",
+          "version": "repo-lines-v1:sha256:16c4c2ac2d535fc5f15ee7bf616785f30eae166d8e8348f54e18125575dfcfe3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b02d90b6f423433293c0e0093fd57dca",
+      "statement": "A backup run holds the whole artifact in memory and writes exactly one object, checking both ceilings before anything is written; the ceiling error names both the limit and the measured value because it is the only guidance an operator gets, and pruning happens only after the PUT returns so a failure leaves no object and the user is never down a version with no replacement.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts#L1-L20",
+          "version": "repo-lines-v1:sha256:b4a9696fee1c302e4f8394308323f7c9c5323634f3755d8776ccf7338ba7a4e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ZjIwYjQ5NTU3NzgwNTQ4ZTY1NTAxMjc3NGM4OTMxY2ZjZWNmNWJjMWVlYjdhMDEzZjAyNmExYTQ5ZWJiM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZDUzYWZhOTI2NjMzZjMyY2NmN2FhMzE1OTA0NDAwZGViMjVmMGVkNjEzYjkyMzAwMmMyZmQ1OWU2NWZmYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMDgyYTllMDNlNjI0MDQ1MWM4ZTcxYTgxNjQwMzMxOWI5YWM5NzliY2Q4ZjU1Y2NhZWM5MDY4ZDg3OTgwN2UifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts#L129-L157",
+          "version": "repo-lines-v1:sha256:efc41369b9389aeb6ceb187b7bec854c7e8494adeb5172f6250de999a84dd4ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNTY5OGEwY2IxYjIzMzllMmEzZmVlMTA5MzgzZWQ1ZWQ0MzM3MTAzMmIwYWMxNjZhZThiMmQ5NzY5MjZhNjMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts#L198-L239",
+          "version": "repo-lines-v1:sha256:0e0c334a6f7b509b2344c2a0bc3d43f78c152280bf654b7e7daf5571df27edfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxZDk1ZWQ0NTNkM2FkZDg0MGNhNzQ0MTkxOWJiMDQ0MjVkMmEwMmEyZDBkNzQxOWY5MTg4ZTUxZWE5YjBjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2NGNmYTVjZjAzNTYxODE0NDU5NDA1MTliMDVhOTUwZGVmNjM4ODllNGEzOGE4NzUxYzYxYTk3NGEwNDdmMmIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T13:24:33.842Z"
+    "at": "2026-10-18T20:44:33.459Z"
   }
 }

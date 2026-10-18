@@ -58,7 +58,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-18T20:44:33.459Z
 ---
 
 # SAST & SCA static security scanning
@@ -269,7 +269,8 @@ alternative — a green that proves nothing — has already happened once:
 | `scripts/__tests__/sast-scan.guard.test.mjs` | pure normalization, the blocking rule, scope classification, toolchain fail-fast, the blinded-rule summary, `isScanTarget()` for both workflow trees and Dockerfile spellings, fixture pairing, the `PYTHON_SURFACES` model, and the pnpm-audit set (every committed lockfile present, `--dir` used for a nested workspace and not for the root, nested locations workspace-qualified, and no root override advice for a nested finding) — the built report is validated against the findings **schema**, which is the gate's input contract |
 | `scripts/__tests__/sast-scan-retry.guard.test.mjs` | both directions of the transient classifier: the exact run-3328 output retries, a real fault (unsynced venv, unparseable lockfile, panic) fails on the first attempt, and an advisory *title* containing "error"/"timeout"/a status phrase does not |
 | `scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs` | the curl-pipe-shell rule's own regexes, applied to the real workflows — including that the pattern still *sees* at least six installers, so the acceptance assertions cannot pass vacuously |
-| `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
+| `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs **and the absence of an event guard on it**, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
+| `scripts/__tests__/check-override-consistency.test.mjs` | both directions of the half-bump, plain-pin scoping, the last-`@` split for scoped names, the exit-2 refusal of a half the gate cannot read, the cap rule against the six real Renovate widenings measured on 2026-10-18 (each failing by name, each entry's current value passing), that a genuine floor raise inside the major still passes, and that the **live** `pnpm-workspace.yaml` is green — every case driven through the `--dir` seam against a throwaway manifest rather than the real one |
 
 The retry guard's shape is worth copying: the usual outcome of a retry is that it silently never
 triggers, so the classifier and retry driver are exported and tested directly rather than inferred from
@@ -458,12 +459,13 @@ a scan that happened to pass.
   Renovate essentially never raises the lower bound of a keyed override — and when it rewrites one it
   half-bumps — so the `check-override-consistency.mjs` guard is the answer.
 
-- **An override floor has TWO halves and both must move.** Entries in `pnpm-workspace.yaml`'s
-  `overrides:` map are keyed-range-on-range: `fast-uri@<3.1.5: '>=3.1.5 <4'`. Raise the value and
-  leave the key stale, and the override reads as remediated but no longer excludes the vulnerable
-  span. The guard's invariant is exact — **the key's exclusive upper bound must equal the value's
-  inclusive lower bound** — and it is scoped to keys carrying an `@<range>` suffix: the plain pins
-  (`react-dom`, `postcss`, `@expo/dom-webview`) have no key half and are out of scope by design. A key
+- **An override floor has TWO halves and both must move — and the value has a THIRD property, its cap.**
+  Entries in `pnpm-workspace.yaml`'s `overrides:` map are keyed-range-on-range:
+  `fast-uri@<3.1.5: '>=3.1.5 <4'`. Raise the value and leave the key stale, and the override reads as
+  remediated but no longer excludes the vulnerable span. The guard's invariant is exact — **the key's
+  exclusive upper bound must equal the value's inclusive lower bound** — and it is scoped to keys
+  carrying an `@<range>` suffix: the plain pins (`react-dom`, `postcss`, `@expo/dom-webview`) have no
+  key half and are out of scope by design. A key
   whose half cannot be compared (a range with no `<` upper bound, a value with no `>=` lower bound) is
   reported as unparseable rather than skipped, so a malformed pair cannot hide. **Renovate produces
   exactly this mismatch by construction** — its built-in npm manager parses the key as an opaque dep
@@ -471,6 +473,51 @@ a scan that happened to pass.
   a mismatched pair by name, so a half-remediation cannot merge even though it appears correct. Adding
   a custom Renovate manager does not fix this (the file is already managed; a second manager
   double-manages it) — the guard is the answer.
+
+  **The same gate also owns the value's other end, because Renovate attacks that instead (feature 081
+  US5a).** The npm manager reads a keyed override's value as a plain range and "widens" its upper bound
+  to admit the newest major: `undici@<6.27.0: '>=6.27.0 <7'` arrives as `'>=6.27.0 <9'`. The floor is
+  untouched, so the rule above stays green and no advisory is any closer to closed — what the widening
+  does is hand a dependent that resolved into the vulnerable span a *different major* than it declared
+  (measured: js-yaml 5 arriving exactly this way). So for every keyed floor, **the value's exclusive
+  upper bound (its cap) must be at most `<key major + 1>`**; a tighter cap is fine. A value with no cap
+  at all admits every major already — four such floors pre-date the rule, and capping them would churn
+  the lockfile, so they are out of scope but **named on every run** rather than passed in silence. Any
+  value not written as `>=A` or `>=A <B` (a `<=` cap, a `||` union, a caret) is refused with exit 2:
+  the gate cannot say which majors such a cap admits, and guessing is how a widening gets through. The
+  companion response is on the Renovate side — `major` updates for `pnpm-workspace.yaml` are disabled
+  permanently, so a new major of a transitive is its dependent's decision rather than a security
+  override being widened; patch/minor stay enabled because that is the track a genuine floor raise
+  arrives on.
+
+  ```mermaid
+  flowchart TD
+    R["read the overrides map from pnpm-workspace.yaml"] --> P{"key carries an at-range suffix?"}
+    P -->|"no: plain pin"| SK["out of scope, counted as skipped"]
+    P -->|yes| U{"key has a less-than bound, value has an at-least bound, value is a readable form?"}
+    U -->|no| E2["exit 2: refused out loud, never skipped"]
+    U -->|yes| F{"key upper bound equals value lower bound?"}
+    F -->|no| E1A["exit 1: half-bump, failed by name"]
+    F -->|yes| C{"value cap at most one major above the key major?"}
+    C -->|no| E1B["exit 1: cap widened past its major"]
+    C -->|yes| OK["exit 0: uncapped floors are named in the pass line"]
+  ```
+
+  *The override-consistency gate's decision path: two failure modes on exit 1 (a half-moved floor, a
+  widened cap) and one refusal on exit 2 (a half it cannot read), with plain pins out of scope by
+  design.*
+
+  Three mechanical properties make the guard trustworthy rather than merely present. It is wired into
+  `guardrails.yml`'s `naming` job as `--selftest` then scan with **no event guard**, because blocking a
+  half-bumped proposal before merge is its entire purpose (contrast the schedule-only expiry check), and
+  a guard test asserts both the presence of the step and the absence of an `if:`. Its entry condition is
+  an `import.meta`-versus-`process.argv[1]` check so the module's parsers can be imported for reuse —
+  `scripts/override-lever.mjs` imports `parseOverrideKey`, `inclusiveLowerBound`,
+  `exclusiveUpperBound` and `compareVersions` from it, keeping one definition of how a version is parsed
+  and ordered — without the importing process having its whole repo scanned or `process.exit`ed out from
+  under it; CLI behaviour is byte-for-byte unchanged, which the file's own tests prove by shelling out.
+  And every case is driven through the `--dir` seam against a throwaway `pnpm-workspace.yaml`, so no test
+  reads or writes the real one.
 
   One more trap the same file records: `overrides` live in **`pnpm-workspace.yaml`, not
   `package.json`'s `pnpm` field**, because pnpm 11 stopped reading that field and only warns. That
