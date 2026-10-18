@@ -1,13 +1,25 @@
 {
   "coveredCommit": "4d942df6e84df55a14a30bf37a6f5a14a62f6cee",
   "coveredAt": "2026-10-18T03:48:01.421Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "android-emulator.md",
+        "devcontainer.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/devcontainer.md"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 783,
-    "headCommit": "8d09b65afcb203db380c9a274b05ef2de8081254",
-    "markerBefore": "4aae23df5924dd9e662d41b5d1e8e93ab00bd06d",
+    "number": 785,
+    "headCommit": "8df404dfe0e13b9b8f204857ab98108693e13f51",
+    "markerBefore": "4d942df6e84df55a14a30bf37a6f5a14a62f6cee",
     "slices": [
       {
         "area": "projects",
@@ -17,42 +29,54 @@
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: README.md"
       },
       {
-        "area": "runbooks",
+        "area": "process",
         "pages": [
-          "android-emulator.md"
+          "constitution.md"
         ],
         "kind": "refresh",
+        "drift": true,
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/android-emulator.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "drift: .specify/memory/constitution.md changed after the page's stamp"
       }
     ],
-    "updatedAt": "2026-10-18T03:48:01.866Z"
+    "updatedAt": "2026-10-18T07:41:27.790Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 5,
-    "elapsedSeconds": 2859,
+    "pagesWritten": 2,
+    "elapsedSeconds": 2205,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/devcontainer.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-18T07:41:27.452Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/android-emulator.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-18T07:41:27.452Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 456,
+    "calls": 282,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3227764,
-    "cached": 43170412,
+    "uncached": 1676780,
+    "cached": 23998668,
     "cacheWrite": 0,
-    "output": 1021418,
-    "reasoning": 906963,
-    "ms": 7178730,
-    "estCostUsd": 2.4531,
+    "output": 521999,
+    "reasoning": 449833,
+    "ms": 4855324,
+    "estCostUsd": 1.2734,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -63,11 +87,13 @@
     {
       "pages": [
         "projects/repository.md",
-        "runbooks/android-emulator.md"
+        "runbooks/android-emulator.md",
+        "runbooks/devcontainer.md",
+        "process/constitution.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 2.4531,
+      "deadlineStop": true,
+      "estCostUsd": 1.2734,
       "rateLimited": null
     }
   ],
