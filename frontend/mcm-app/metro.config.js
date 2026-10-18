@@ -14,7 +14,19 @@
 //
 // Second override (item #242): the project-root dotenv files Expo's own transform-worker cannot
 // parse are kept out of Metro's file map entirely — see metro-env-blocklist.js for the mechanism.
+//
+// Third (feature 081 US10): the Tamagui optimizing compiler. Tamagui 3 removed the Babel plugin that
+// ran it before (feature 015, babel.config.js); it now runs as `withTamagui()` from
+// @tamagui/metro-plugin, applied LAST so it wraps the two overrides above (it captures this config's
+// resolver and Babel transformer and delegates to them). It is what lets Metro tree-shake the
+// `@mcm/design-system` barrel instead of pulling in the whole Tamagui graph — the graph that
+// OOM-crashed Metro's dev bundler before feature 015. It touches the Android bundle too.
+//
+// CACHE: upstream, the plugin does NOT invalidate Metro's transform cache when the Tamagui config
+// changes but app sources do not. After editing tamagui.config.ts or the design system's tokens or
+// themes, clear it: `rm -rf node_modules/.cache/tamagui` and run Expo with `--clear` (`expo start -c`).
 const { getDefaultConfig } = require('expo/metro-config');
+const { withTamagui } = require('@tamagui/metro-plugin');
 const path = require('path');
 const { unparseableDotenvBlockList } = require('./metro-env-blocklist');
 
@@ -42,4 +54,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     : context.resolveRequest(context, moduleName, platform);
 };
 
-module.exports = config;
+module.exports = withTamagui(config, {
+  components: ['@mcm/design-system'],
+  config: './tamagui.config.ts',
+});
