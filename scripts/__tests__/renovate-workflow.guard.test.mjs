@@ -3297,3 +3297,192 @@ test('(081) the CI-action holds do NOT leak onto the actions US1 moves — the c
   // java-jdk's datasource is `java-version`; a hold written by datasource alone must not catch node.
   assert.equal(resolvedAllowedVersions(ciActionDep('node', 'major', 'node-version')), null, 'the java-jdk hold leaked onto node');
 });
+
+// ── Feature 081 US5a (T035) — reject the override widenings; hold the SDK-pinned toolchain majors ──────
+//
+// Two different mechanisms, chosen for what each must ALLOW, not only what it must block:
+//
+//   pnpm-workspace.yaml override MAJORS → `enabled: false`. Renovate's npm manager reads a keyed
+//     override's value (`'>=6.27.0 <7'`) as a direct range and "widens" its cap to the newest major
+//     (research R2). That is never wanted, so it is disabled rather than gated. Its patch/minor track is
+//     how a genuine FLOOR raise arrives and must stay open; check-override-consistency.mjs's cap rule is
+//     the second line if a widening is ever proposed by another route.
+//
+//   jest/babel-jest/@types/jest, @babel/core/@babel/runtime, typescript, async-storage MAJORS →
+//     `dependencyDashboardApproval`, each in its OWN group. Not `allowedVersions`: a ceiling's meaning
+//     depends on the dep's versioning (US4 measured `'<18'` admitting ONLY 18.0 under semver-partial), and
+//     an approval gate has no version semantics to get wrong. Their own group is load-bearing:
+//     renovate@44.167.1 `workers/repository/updates/generate.js:240` sets a branch's approval to
+//     `upgrades.some(u => u.dependencyDashboardApproval)`, so a held major left in `js majors (review
+//     individually)` would gate EVERY js major behind a tick, and one tick would release them all.
+//
+// Asserted on the RESOLVED values (last matching rule wins), per dep, per manifest, per track.
+
+const OVERRIDE_KEYS_WIDENED = [
+  // The six keyed floors Renovate proposed widening on the 2026-10-18 dashboard (item #29).
+  'undici@<6.27.0',
+  'undici@>=7.0.0 <7.29.1',
+  'js-yaml@>=3.0.0 <3.15.1',
+  'js-yaml@>=4.0.0 <4.3.1',
+  'fast-uri@<3.1.5',
+  'nanoid@>=3.0.0 <3.3.18',
+];
+const overrideDep = (depName, updateType) => ({
+  manager: 'npm', datasource: 'npm', packageFile: 'pnpm-workspace.yaml', depName, updateType,
+});
+
+test('(081 US5a) a MAJOR on a pnpm-workspace.yaml override resolves DISABLED — the widenings stop for good', () => {
+  for (const depName of OVERRIDE_KEYS_WIDENED) {
+    assert.equal(
+      resolvedEnabled(overrideDep(depName, 'major')),
+      false,
+      `a major of the override '${depName}' is still proposable. Renovate reads its value as a direct range and\n` +
+        '  widens the cap to the newest major: no advisory is closer to closed, and a dependent in the vulnerable\n' +
+        '  span is handed a major it never declared (research R2). Disable `major` on pnpm-workspace.yaml.',
+    );
+  }
+});
+
+test('(081 US5a) a FLOOR RAISE on a pnpm-workspace.yaml override (patch/minor) is still proposed, ungated', () => {
+  for (const depName of OVERRIDE_KEYS_WIDENED) {
+    for (const updateType of ['patch', 'minor']) {
+      const dep = overrideDep(depName, updateType);
+      assert.equal(resolvedEnabled(dep), true, `${depName} ${updateType} is disabled — a security floor raise can no longer be proposed`);
+      assert.notEqual(
+        resolvedRuleValue(dep, 'dependencyDashboardApproval'),
+        true,
+        `${depName} ${updateType} requires a dashboard tick — the security stream must not wait for a human`,
+      );
+    }
+  }
+});
+
+test('(081 US5a) the override-major disable does NOT leak onto majors in package.json manifests — the control', () => {
+  for (const [depName, packageFile] of [
+    ['express', 'frontend/mcm-app/package.json'],
+    ['eslint', 'packages/design-system/package.json'],
+    ['yaml', 'package.json'],
+  ]) {
+    assert.equal(
+      resolvedEnabled({ manager: 'npm', datasource: 'npm', packageFile, depName, updateType: 'major' }),
+      true,
+      `${depName} major in ${packageFile} resolves disabled — the pnpm-workspace.yaml rule has widened past that file`,
+    );
+  }
+});
+
+// Each hold: its members, the manifests that declare them (REPO, 2026-10-18), the group it gets, and
+// the re-check text its description must carry (FR-016) plus the measured fact that keeps it held.
+const TOOLCHAIN_HOLDS = [
+  {
+    hold: 'jest 30',
+    deps: ['jest', 'babel-jest', '@types/jest'],
+    files: ['frontend/mcm-app/package.json', 'packages/design-system/package.json'],
+    recheck: "re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK",
+    measured: 'jest-expo 57.0.6',
+  },
+  {
+    hold: 'babel 8',
+    deps: ['@babel/core', '@babel/runtime'],
+    files: ['frontend/mcm-app/package.json'],
+    recheck: "re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK",
+    measured: 'babel-preset-expo 57.0.16',
+  },
+  {
+    hold: 'typescript 7',
+    deps: ['typescript'],
+    files: ['frontend/mcm-app/package.json', 'packages/design-system/package.json'],
+    recheck: "re-read the lint parser's supported compiler range",
+    measured: '@typescript-eslint/parser 8.71.2',
+  },
+  {
+    hold: 'async-storage 3',
+    deps: ['@react-native-async-storage/async-storage'],
+    files: ['frontend/mcm-app/package.json'],
+    recheck: "re-read the SDK's bundledNativeModules.json at each new SDK",
+    measured: '2.2.0',
+  },
+];
+const npmDep = (depName, packageFile, updateType) => ({ manager: 'npm', datasource: 'npm', packageFile, depName, updateType });
+const JS_MAJORS = 'js majors (review individually)';
+
+for (const { hold, deps, files, recheck, measured } of TOOLCHAIN_HOLDS) {
+  test(`(081 US5a) the ${hold} hold: every member's MAJOR waits for a dashboard tick, in its own group`, () => {
+    const groups = new Set();
+    for (const depName of deps) {
+      for (const packageFile of files) {
+        const dep = npmDep(depName, packageFile, 'major');
+        assert.equal(resolvedEnabled(dep), true, `${depName} major in ${packageFile} is DISABLED — a hold must stay visible on the dashboard, not vanish`);
+        assert.equal(
+          resolvedRuleValue(dep, 'dependencyDashboardApproval'),
+          true,
+          `${depName} major in ${packageFile} does not require dashboard approval — it is proposed weekly and cannot land (${hold} is blocked upstream)`,
+        );
+        assert.equal(
+          resolvedAllowedVersions(dep),
+          null,
+          `${depName} major in ${packageFile} carries an allowedVersions ceiling. Hold by approval, not a ceiling: a ceiling's\n` +
+            "  meaning depends on the versioning (US4: '<18' admitted ONLY 18.0 under semver-partial).",
+        );
+        const group = resolvedGroupName(dep);
+        assert.notEqual(group, JS_MAJORS, `${depName} major still rides '${JS_MAJORS}' — its approval gate would gate every js major (generate.js:240)`);
+        assert.ok(group, `${depName} major resolves to no group`);
+        groups.add(group);
+      }
+    }
+    assert.equal(groups.size, 1, `the ${hold} members resolve to ${groups.size} groups (${[...groups].join(', ')}) — they must move in ONE branch`);
+  });
+
+  test(`(081 US5a) the ${hold} hold leaves PATCH and MINOR flowing, ungated, in js patch/minor`, () => {
+    for (const depName of deps) {
+      for (const packageFile of files) {
+        for (const updateType of ['patch', 'minor']) {
+          const dep = npmDep(depName, packageFile, updateType);
+          assert.equal(resolvedEnabled(dep), true, `${depName} ${updateType} is disabled`);
+          assert.notEqual(
+            resolvedRuleValue(dep, 'dependencyDashboardApproval'),
+            true,
+            `${depName} ${updateType} in ${packageFile} requires a tick — the within-major security stream must stay automatic`,
+          );
+          assert.equal(resolvedGroupName(dep), 'js patch/minor', `${depName} ${updateType} left the routine group`);
+        }
+      }
+    }
+  });
+
+  test(`(081 US5a) the ${hold} hold's description carries its measured reason and re-check rule (FR-016)`, () => {
+    const dep = npmDep(deps[0], files[0], 'major');
+    const holding = packageRules.filter((rule) => rule.dependencyDashboardApproval === true && ruleMatches(rule, dep));
+    const description = [].concat(holding.at(-1)?.description ?? []).join('\n');
+    assert.ok(description.includes(recheck), `the ${hold} hold does not carry FR-016's re-check rule: "${recheck}"`);
+    assert.ok(description.includes(measured), `the ${hold} hold does not quote its measured blocker (${measured})`);
+    assert.match(description, /LIFT/, `the ${hold} hold does not state its release condition (LIFT …)`);
+    assert.match(description, /item #254/, `the ${hold} hold does not reference item #254`);
+  });
+}
+
+test('(081 US5a) the four toolchain holds are FOUR groups — one tick releases one blocker, not all', () => {
+  const groups = TOOLCHAIN_HOLDS.map(({ deps, files }) => resolvedGroupName(npmDep(deps[0], files[0], 'major')));
+  assert.equal(new Set(groups).size, TOOLCHAIN_HOLDS.length, `the holds share groups: ${groups.join(' | ')}`);
+});
+
+test('(081 US5a) the holds do NOT leak: other js majors still ride js majors, with NO approval gate — the control', () => {
+  // The majors US5b/5c, US6 and US7 land by hand. If any of them picked up an approval gate the js-majors
+  // branch as a whole would wait for a tick (generate.js:240) and stop showing what is pending.
+  for (const [depName, packageFile] of [
+    ['eslint', 'frontend/mcm-app/package.json'],
+    ['eslint', 'packages/design-system/package.json'],
+    ['@testing-library/react-native', 'packages/design-system/package.json'],
+    ['express', 'frontend/mcm-app/package.json'],
+    ['@types/express', 'frontend/mcm-app/package.json'],
+    ['ioredis', 'frontend/mcm-app/package.json'],
+    ['openai', 'frontend/mcm-app/package.json'],
+    ['@ai-sdk/openai', 'frontend/mcm-app/package.json'],
+    ['@types/react', 'frontend/mcm-app/package.json'],
+  ]) {
+    const dep = npmDep(depName, packageFile, 'major');
+    assert.equal(resolvedGroupName(dep), JS_MAJORS, `${depName} major in ${packageFile} left '${JS_MAJORS}'`);
+    assert.notEqual(resolvedRuleValue(dep, 'dependencyDashboardApproval'), true, `${depName} major in ${packageFile} picked up an approval gate`);
+    assert.equal(resolvedEnabled(dep), true, `${depName} major in ${packageFile} is disabled`);
+  }
+});

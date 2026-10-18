@@ -168,6 +168,20 @@ Companion metadata (NPM), re-checking item #254's correction:
    Native 0.85 and React 19.2". v1.4.0 was exactly this kind of amendment (55→56). SDK 57 requires a
    constitution MINOR amendment (2.5.0 → 2.6.0, stack guidance only) with human approval, in the same PR.
 
+**Re-measured 2026-10-18 for US5 (T032, NPM; the SDK US4 landed is 57 — `expo ~57.0.30`).** Nothing became free.
+
+| | SDK 57 (what `main` runs) | SDK 58 (now `latest`, not our target — OQ-1) | US5 consequence |
+|---|---|---|---|
+| `expo` dist-tags | `sdk-57` = 57.0.30 | `latest` = **58.0.14** (stable since R4's `next` 58.0.7), `next` = 58.0.11 | SDK 58 is the trigger for the jest re-check, not a target here |
+| jest-expo (newest of the line) | **57.0.6** (2026-10-12): `babel-jest`, `@jest/globals`, `jest-snapshot`, `jest-environment-jsdom` all **^29.2.1**; peer `@react-native/jest-preset ^0.86.3` | 58.0.11: the same deps at **^30.0.0**; peer `jest` **`^29.0.0 \|\| ^30.0.0`** (R4 read `^30.0.0` on 58.0.9 — relaxed since) | jest 30 / babel-jest 30 stay **held** (approval); released at SDK 58 |
+| babel-preset-expo | **57.0.16**: peer `@babel/runtime ^7.20.0`; plugin deps `^7` | 58.0.17: peer `@babel/runtime ^7.20.0` | babel 8 stays **held** through SDK 58 (`@babel/core` latest 8.0.7, node `^22.18 \|\| >=24.11`) |
+| `expo` itself | 57.0.30 depends `@babel/runtime ^7.20.0` | 58.0.14 the same | — |
+| eslint-config-expo | **57.0.2** (no newer 57.x; `latest` = 58.0.4): peer `eslint >=8.10`, deps `@typescript-eslint/{parser,eslint-plugin} ^8.59.0`, `eslint-plugin-react ^7.37.3`, `eslint-plugin-import ^2.30.0`, `eslint-plugin-react-hooks ^7.0.0`, `eslint-plugin-expo ^1.1.0` | 58.0.4: same set | eslint 10 is reachable (5b) — but `eslint-plugin-react@7.37.5` peers `eslint … ^9.7` and `eslint-plugin-import@2.32.0` `… ^9` (neither declares 10): **measured in 5b, not assumed** |
+| `bundledNativeModules.json` async-storage | **2.2.0** (57.0.30 tarball) | **2.2.0** (58.0.14 tarball) | async-storage 3 (latest 3.1.1) stays **held** |
+| `@testing-library/react-native` | latest **14.1.0**: peers `jest >=29.0.0`, `react-native >=0.78`, `test-renderer ^1.0.0`, node `^22.13 \|\| >=24` | — | still **free** for 5c (jest 29 admitted) |
+
+M5 (`@typescript-eslint/parser`): see R5.
+
 ---
 
 ## R5. TypeScript 7 is NOT independent — it is blocked on typescript-eslint
@@ -184,6 +198,10 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   approval gate in Renovate so it stops arriving weekly.
 
 **This contradicts item #254's 2026-08-27 correction** and is reported as such.
+
+**M5 re-measured 2026-10-18 (T032, NPM).** `@typescript-eslint/parser` `latest` = **8.71.2** (2026-10-12), canary
+8.71.3-alpha.13; both, and `@typescript-eslint/eslint-plugin` / `typescript-eslint` 8.71.2, still peer **`typescript
+">=4.8.4 <6.1.0"`**. `typescript` `latest` = 7.0.2, `next` = 7.1.0-dev. TS 7 stays **held** (approval, PR 5a).
 
 ## R6. eslint 8 → 10 is a config-format migration, not a version bump
 
@@ -1087,3 +1105,40 @@ operator approval; it is prepared on branch `081-us10-tamagui-3-runtime-only`, n
   - CI `perf.spec` on the PR: 1,837 KB / 71.0 s, under the 1,950 KB / 75 s ceilings.
   - Android per-flow seconds (5543 vs `main`-based 5512/5505) all sit inside the ±5 s baseline spread.
   - Verdict: no meaningful regression.
+
+### US5 (PR 5a, override cap + holds) — 2026-10-18
+
+**Instruments**: DASH = `node scripts/backlog.mjs show 29` (body updated `2026-10-18T04:42:40Z`, read only — it
+predates US10's merge); REPO = `origin/main` = `62556d3b` (PR #788, US10, merged); NPM = the packuments in R4/R5's
+2026-10-18 re-measure; RENOVATE = renovate@44.167.1's `applyPackageRules` (`dist/util/package-rules`) run on the
+repo's own `packageRules` (presets not resolved), and `workers/repository/updates/generate.js`, read.
+
+| What | R2 (2026-10-10) | Today | Consequence |
+|---|---|---|---|
+| Override widenings on DASH | five | **six** — US3 3b added `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, which Renovate now proposes as `<9` | the disable rule and the cap rule cover all six; T033's table lists six |
+| Uncapped keyed floors (REPO) | — (fc3c47ae: "every other override bounds its major") | **four**: `form-data@<4.0.6`, `hono@<4.12.25`, `brace-expansion@<5.0.9`, `shell-quote@<1.9.0` — value `>=X` with no cap | out of the cap rule's scope (capping them rewrites the lock's `overrides:` — not a 5a change); NAMED on every gate run. Not filed; recorded for the coordinator |
+| Held majors on DASH | jest, babel-jest, `@babel/core`, `@babel/runtime`, typescript, async-storage in `js majors` | the same six, still in `js majors` | each moved to its own approval-gated group |
+| `@types/jest` | `^30.0.0` | US4 set **`29.5.14`** (matches the jest 29 runtime); `latest` 30.0.0 | held WITH jest (same group): moving it alone re-splits types from runtime |
+
+**The approval trap (RENOVATE, new).** `generate.js:240` computes a branch's approval as
+`config.upgrades.some((upgrade) => upgrade.dependencyDashboardApproval)`. So `dependencyDashboardApproval` on a
+member still grouped into `js majors (review individually)` would gate the WHOLE js-majors branch — eslint, express,
+ioredis, openai, RNTL, … — behind one tick, and that tick would release the held majors with them. Each hold
+therefore sets its own `groupName` (four groups: `held jest major`, `held babel major`, `held typescript major`,
+`held async-storage major`). Not `allowedVersions`, by US4's java-jdk lesson: a ceiling's meaning depends on the
+dep's versioning, an approval gate has none.
+
+**Resolved behaviour (RENOVATE `applyPackageRules`, before = `origin/main`, after = this PR):**
+
+| Dep (manifest) | patch | minor | major BEFORE | major AFTER |
+|---|---|---|---|---|
+| the six keyed overrides (`pnpm-workspace.yaml`) | flows, js patch/minor | flows, js patch/minor | flows, js majors | **disabled** |
+| jest (mcm-app, design-system), babel-jest, @types/jest (mcm-app) | flows | flows | flows, js majors | **tick**, `held jest major` |
+| @babel/core, @babel/runtime (mcm-app) | flows | flows | flows, js majors | **tick**, `held babel major` |
+| typescript (mcm-app, design-system) | flows | flows | flows, js majors | **tick**, `held typescript major` |
+| async-storage (mcm-app) | flows | flows | flows, js majors | **tick**, `held async-storage major` |
+| control: eslint, express, RNTL, openai | flows | flows | flows, js majors | flows, js majors (unchanged, no tick) |
+
+**Backlog items (T037)** — filed by the coordinator: jest 30 → item #792; babel 8 → item #793;
+typescript 7 → item #794; async-storage 3 → item #795.
+

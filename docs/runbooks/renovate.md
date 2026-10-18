@@ -829,6 +829,30 @@ the same change. `infra-image-scan.test.mjs` asserts both halves.
 whole batched PR unmergeable *and* unsplittable — and Renovate regenerates it weekly, so the routine
 bumps riding with it stay blocked for as long as the migration takes (measured on PR #263).
 
+### Majors that cannot land: a held major needs its OWN group, and an override is never widened
+
+Feature 081 US5a (item #254). Two kinds of weekly major proposal could never merge, and both are now
+stopped in `renovate.json`, asserted on the RESOLVED rules by `renovate-workflow.guard.test.mjs`:
+
+- **Override "majors" in `pnpm-workspace.yaml` are disabled.** The npm manager reads a keyed security
+  override's value (`undici@<6.27.0: '>=6.27.0 <7'`) as a direct range and widens its cap to the newest
+  major. That closes no advisory and silently hands a dependent a major it never declared. Six were
+  pending on 2026-10-18. `major` is `enabled: false` for that file. Patch and minor stay open, because a
+  genuine floor raise arrives on them. `check-override-consistency.mjs` also fails any value cap past
+  `<key major + 1`. **Reject such a proposal; never merge one.**
+- **SDK- or lint-pinned toolchain majors wait for a tick.** These are jest/babel-jest/@types/jest,
+  @babel/core and @babel/runtime, typescript, and async-storage. Each rule's description holds its
+  measured blocker and its re-check rule.
+  - **Approval, not `allowedVersions`.** What a ceiling admits depends on the dep's versioning. US4
+    measured `'<18'` admitting *only* 18.0 under semver-partial. An approval gate has no version
+    semantics.
+  - **One group per hold.** renovate@44 `updates/generate.js` sets a branch's
+    `dependencyDashboardApproval` to `upgrades.some(...)`. A held major left inside `js majors (review
+    individually)` would put *every* js major behind one tick, and that one tick would release them all.
+    So a gated rule always sets its own `groupName`, ordered after `js majors`.
+  - **Ticking one is a decision.** Read its LIFT condition first. Ticking it before then only re-proposes
+    a PR that cannot go green.
+
 ### A packageRule whose MANAGER does not exist — the rule/extraction gap (item #560)
 
 "Extraction is not grouping" has a sharper sibling: a `packageRule` matching packages that **nothing
