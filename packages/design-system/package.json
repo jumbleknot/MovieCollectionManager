@@ -18,9 +18,9 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
-    "@tamagui/core": "3.0.13",
-    "@tamagui/shorthands": "3.0.13",
-    "@tamagui/stacks": "3.0.13",
+    "@tamagui/core": "3.0.18",
+    "@tamagui/shorthands": "3.0.18",
+    "@tamagui/stacks": "3.0.18",
     "react-native-safe-area-context": ">=4.0.0",
     "react-native-svg": ">=15.0.0"
   },
