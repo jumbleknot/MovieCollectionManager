@@ -25,14 +25,19 @@ the flows per-file in two halves:
 1. **Agent half — always** (`MOBILE_SUITE=agents`, the default): `scripts/ci-mobile-agent-flows.sh` —
    gating → enable-anthropic → the agent flows → disable, then `admin-settings-access` last after a
    Chrome SSO reset (it logs in as the seeded mc-admin). Up to 3 attempts per flow.
-2. **Full suite — opt-in only** (`MOBILE_SUITE=full`): `scripts/ci-mobile-full-flows.sh`, in the same
-   emulator session, after the agent half. It runs every non-agent flow the local `e2e:mobile` suite
+2. **Full suite — opt-in only** (`MOBILE_SUITE=full`): `scripts/ci-mobile-full-flows.sh`, after the
+   agent half, on a **second emulator with a phone-sized AVD (`profile: pixel_6`)**. The agent step
+   boots the action's default 320x640 device; the non-agent flows were written against a Pixel 7, and
+   on the 320x640 AVD 15 of 22 failed on geometry alone (app-ci run 5499: the profile screen's logout
+   button below the fold, Gboard covering the registration fields, the card-centre tap in
+   `_navigate-to-collection-helper.yaml` landing on the card's *Edit* button). Re-profiling the agent
+   AVD would change every default run, so the second boot is paid only by the opt-in run. It runs every non-agent flow the local `e2e:mobile` suite
    runs — the selection is shared, in `scripts/mobile-flows.mjs` (`node scripts/mobile-flows.mjs
    ci-full` prints it), so the two cannot drift. Excluded: the agent flows (the agent half owns
    them), the Metro-restart-only `session-timeout*` flows (`MANUAL_FLOWS`), and `CI_FULL_EXCLUDED` in
    that file, each entry with its reason. Each flow gets a `pm clear`ed app (they `launchApp` with
-   `clearState: false`, exactly as `maestro-e2e.mjs` prepares them locally), Chrome's SSO is reset
-   once before the batch (the agent half ends logged in as the admin), 2 attempts per flow, and the
+   `clearState: false`, exactly as `maestro-e2e.mjs` prepares them locally), Chrome is reset (`pm
+   clear` + First-Run skip) once before the batch, 2 attempts per flow, and the
    batch runs to the end and fails if ANY flow failed. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
    fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
    per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the

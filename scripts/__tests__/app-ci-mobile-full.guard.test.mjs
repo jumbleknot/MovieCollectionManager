@@ -66,7 +66,6 @@ const EVENTS = {
 };
 
 const mobileSuite = (ctx) => evaluate(job.env.MOBILE_SUITE, ctx);
-const emulatorStep = () => job.steps.find((s) => String(s.uses ?? '').startsWith('reactivecircus/android-emulator-runner'));
 
 /** The flows ci-mobile-agent-flows.sh runs: its `flows=( … )` array plus the trailing admin flow. */
 function agentScriptFlows() {
@@ -114,13 +113,26 @@ test('the job ceiling is 75 min by default and raised only for the full suite', 
   for (const k of ['prFullLabel', 'dispatchFull']) assert.equal(evaluate(t, EVENTS[k]), 110, k);
 });
 
-test('the emulator runs the agent half first, then the full suite only when MOBILE_SUITE=full', () => {
-  const lines = String(emulatorStep()?.with?.script ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-  const agent = lines.findIndex((l) => /ci-log-step\.sh maestro-agent-flows bash scripts\/ci-mobile-agent-flows\.sh/.test(l));
-  const full = lines.findIndex((l) => /ci-log-step\.sh maestro-full-flows bash scripts\/ci-mobile-full-flows\.sh/.test(l));
-  assert.ok(agent >= 0, 'the agent flows are no longer run on the emulator');
-  assert.ok(full > agent, 'the full suite must run AFTER the agent half (it relies on its admin flow finishing first)');
-  assert.match(lines[full], /^if \[ "\$MOBILE_SUITE" = full \]; then /, 'the full suite is not gated on MOBILE_SUITE=full');
+test('the agent emulator step is unchanged; the full suite is its OWN, later, opt-in emulator step', () => {
+  const emus = job.steps.filter((s) => String(s.uses ?? '').startsWith('reactivecircus/android-emulator-runner'));
+  assert.equal(emus.length, 2, `expected the agent emulator step + the full-suite one, found ${emus.length}`);
+  const [agentStep, fullStep] = emus;
+  const agentScript = String(agentStep.with?.script ?? '');
+  assert.match(agentScript, /ci-log-step\.sh maestro-agent-flows bash scripts\/ci-mobile-agent-flows\.sh/,
+    'the agent flows are no longer run on the first emulator');
+  assert.doesNotMatch(agentScript, /full|MOBILE_SUITE/, 'the default (agent) emulator step must not know about the full suite');
+  assert.equal(agentStep.with?.profile, undefined, 'the agent AVD changed — that changes every default run');
+  assert.match(String(fullStep.with?.script ?? ''), /ci-log-step\.sh maestro-full-flows bash scripts\/ci-mobile-full-flows\.sh/);
+  // Phone-sized: the non-agent flows fail on the default 320x640 AVD for geometry alone (run 5499).
+  assert.match(String(fullStep.with?.profile ?? ''), /^pixel_/, 'the full-suite AVD must be a phone-sized profile');
+  assert.equal(fullStep.with?.target, agentStep.with?.target, 'the full-suite AVD needs the same Chrome-bearing image');
+  for (const k of ['push', 'pr', 'prMobileLabel', 'dispatchDefault']) {
+    assert.equal(evaluate(fullStep.if, { MOBILE_SUITE: mobileSuite(EVENTS[k]) }), false, `full step runs on ${k}`);
+  }
+  for (const k of ['prFullLabel', 'dispatchFull']) {
+    assert.equal(evaluate(fullStep.if, { MOBILE_SUITE: mobileSuite(EVENTS[k]) }), true, `full step skipped on ${k}`);
+  }
+  assert.ok(job.steps.indexOf(fullStep) > job.steps.indexOf(agentStep), 'the full suite must run after the agent half');
 });
 
 test('the full-suite results table is published (wrapped step + counts source)', () => {

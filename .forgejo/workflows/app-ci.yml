@@ -1297,7 +1297,37 @@ jobs:
             adb reverse tcp:8099 tcp:8099
             adb install -r "$APK_PATH"
             bash scripts/ci-log-step.sh maestro-agent-flows bash scripts/ci-mobile-agent-flows.sh
-            if [ "$MOBILE_SUITE" = full ]; then bash scripts/ci-log-step.sh maestro-full-flows bash scripts/ci-mobile-full-flows.sh; else echo "MOBILE_SUITE=$MOBILE_SUITE - non-agent flows not run (opt in: label mobile-e2e-full / mobile_suite=full)"; fi
+
+      # ── OPT-IN full mobile suite: the non-agent flows (MOBILE_SUITE=full only) ──────────────────
+      # A SEPARATE emulator, on a phone-sized AVD, for a measured reason. The agent step above boots
+      # the action's DEFAULT device — a 320x640 screen — and the agent flows are written for it. The
+      # non-agent flows were written against the local Pixel 7 (1080x2400): on the 320x640 AVD (first
+      # full run, app-ci run 5499) 15 of 22 failed for GEOMETRY alone — the profile screen's logout
+      # button below the fold, Gboard covering the registration fields, and the card-centre tap in
+      # _navigate-to-collection-helper.yaml landing on the card's "Edit" button instead of opening it.
+      # Re-profiling the agent step's AVD would change the default run, which this mode must not do;
+      # a second boot (~2-3 min) costs only the opt-in run. Runs only if every step above succeeded.
+      - name: Run full mobile suite on emulator (non-agent flows, opt-in)
+        if: ${{ env.MOBILE_SUITE == 'full' }}
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 34
+          arch: x86_64
+          # Same Chrome-bearing image as the agent step (the OAuth Custom Tab needs it — see above).
+          target: google_apis_playstore
+          profile: pixel_6
+          force-avd-creation: true
+          ram-size: 4096M
+          heap-size: 576M
+          cores: 3
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
+          disable-animations: true
+          # LINE-BY-LINE, as above: the loop lives in scripts/ci-mobile-full-flows.sh.
+          script: |
+            adb reverse tcp:8082 tcp:8082
+            adb reverse tcp:8099 tcp:8099
+            adb install -r "$APK_PATH"
+            bash scripts/ci-log-step.sh maestro-full-flows bash scripts/ci-mobile-full-flows.sh
 
       # The full suite's per-flow table (flow, PASS/FAIL, attempts, seconds). Its own wrapped step so
       # the failure digest AND the green-run counts bundle carry it (COUNTS_SOURCES in
@@ -1309,8 +1339,8 @@ jobs:
           bash scripts/ci-log-step.sh maestro-full-results bash -e /dev/stdin <<'CI_LOG_STEP'
           # Absent = the full suite never started (an earlier step, or the agent half, failed first) —
           # say so rather than fail this step on a missing file and add a second red to the same cause.
-          if [ -f mobile-diagnostics/full-suite-results.tsv ]; then
-            cat mobile-diagnostics/full-suite-results.tsv
+          if [ -f mobile-diagnostics/full-suite-results.log ]; then
+            cat mobile-diagnostics/full-suite-results.log
           else
             echo "no full-suite results: scripts/ci-mobile-full-flows.sh did not run (an earlier step failed)"
           fi

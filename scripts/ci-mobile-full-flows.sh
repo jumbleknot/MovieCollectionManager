@@ -7,7 +7,9 @@
 # change — an Expo / React Native SDK bump or a native-module change alters the binary every flow
 # runs on, and a local DinD emulator is the slow, flaky way to get that evidence. This script runs
 # them against the same standalone (Metro-less) release APK and containerized dev BFF + Keycloak the
-# agent half used, AFTER it, in the same emulator session.
+# agent half used, AFTER it — on a SECOND, phone-sized (pixel_6) emulator, because these flows were
+# written against a Pixel 7 screen and the agent step's default 320x640 AVD fails them on geometry
+# alone (see the step's comment in app-ci.yml).
 #
 # It runs only when app-e2e's MOBILE_SUITE is `full`: a pull request labelled `mobile-e2e-full`, or a
 # workflow_dispatch with `mobile_suite=full`. Every other run is unchanged (agent flows only).
@@ -22,14 +24,14 @@
 #     them a logged-out app (locally maestro-e2e.mjs `pm clear`s before every flow). So does this:
 #     force-stop + `pm clear` of the app before EVERY attempt. No Metro SharedPref is written — the
 #     APK embeds its bundle.
-#   * Chrome's SSO session is reset ONCE before the batch: the agent half ends with
-#     admin-settings-access logged in as the mc-admin `e2e-admin-user`, and every flow here logs in
-#     as `e2e-test-user` — without the reset they would silently re-authenticate as the admin. It is
-#     reset again before a retry, since a failed attempt can leave Chrome mid-login.
+#   * Chrome is reset (`pm clear` + First-Run-Experience skip, reset_chrome_sso) ONCE before the
+#     batch: this AVD is freshly created, so Chrome's FRE would otherwise sit on top of the OAuth
+#     Custom Tab, and no SSO session from another user may leak in. It is reset again before a
+#     retry, since a failed attempt can leave Chrome mid-login.
 #   * 2 attempts per flow (one bounded retry — the local suite's MAX_RETRIES=1), not the agent
 #     half's 3: these flows drive no model turn, so the CCT-crash flake is the only transient left.
 #   * The batch does NOT stop at the first failure. Every flow runs, a per-flow result table is
-#     printed at the end (and written to mobile-diagnostics/full-suite-results.tsv, which the failure
+#     printed at the end (and written to mobile-diagnostics/full-suite-results.log, which the failure
 #     path folds into the evidence bundle), and the step fails if ANY flow failed. One ~30-min run
 #     must answer for all of them — a fail-fast batch would hide every flow after the first red.
 #
@@ -46,7 +48,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/ci-mobile-lib.sh"
 
 APP_ID=com.grumpyrobot.mcmapp
 FIXTURE_ENV=(--env "E2E_COLLECTION_NAME=E2E Browse" --env "E2E_MOVIE_TITLE=Alpha")
-RESULTS=mobile-diagnostics/full-suite-results.tsv
+RESULTS=mobile-diagnostics/full-suite-results.log
 
 mapfile -t flows < <(node scripts/mobile-flows.mjs ci-full)
 if [ "${#flows[@]}" -eq 0 ]; then
