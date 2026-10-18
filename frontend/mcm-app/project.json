@@ -126,20 +126,13 @@
     "export-server": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"require('fs').rmSync('node_modules/.cache/tamagui',{recursive:true,force:true})\" && npx expo export --platform web --source-maps --clear",
+        "command": "npx expo export --platform web --source-maps",
         "cwd": "{projectRoot}"
       },
       "outputs": [
         "{projectRoot}/dist"
       ],
-      "cache": true,
-      "inputs": [
-        "default",
-        "^default"
-      ],
-      "metadata": {
-        "description": "Production web export (the BFF bundle). Cold on every run, deliberately (feature 081 US10): @tamagui/metro-plugin does not invalidate Metro's transform cache when the Tamagui config or the design system's tokens/themes change but app sources do not, so a warm export can serve stale compiled styles. The target therefore clears the app-local Tamagui compiler cache and passes --clear. inputs are explicit: this project (tamagui.config.ts, metro.config.js, babel.config.js) plus ^default, i.e. every design-system source, so the nx cache misses on exactly those changes."
-      }
+      "cache": true
     },
     "bundle-budget": {
       "executor": "nx:run-commands",

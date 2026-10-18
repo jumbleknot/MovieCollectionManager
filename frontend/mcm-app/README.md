@@ -16,16 +16,14 @@ Outfit headings / Inter body, Cinematic-Blue primary, restrained orange accent).
 
 - **`tamagui.config.ts`** re-exports the design-system config. The app is wrapped
   in `<TamaguiProvider>` in [src/app/_layout.tsx](src/app/_layout.tsx).
-- **The Tamagui compiler runs in Metro** (feature 081 US10). Tamagui 3 removed the
-  Babel plugin the app used since feature 015; [metro.config.js](metro.config.js) now
-  wraps the config with `withTamagui()` from `@tamagui/metro-plugin`, applied last so the
-  `@segment` shim and the dotenv blocklist stay in its resolver. The plugin does **not**
-  invalidate Metro's transform cache when the Tamagui config changes: after editing
-  `tamagui.config.ts` or the design system's tokens/themes, run
-  `rm -rf node_modules/.cache/tamagui` and start Expo with `--clear` (`expo start -c`).
-  The `export-server` target does both on every run.
+- **Runtime-only Tamagui, again** (feature 081 US10). Tamagui 3 removed the Babel plugin the
+  app used since feature 015. Its replacement, `@tamagui/metro-plugin` 3.0.x, was measured to
+  lower some web modules to static class names *without emitting their CSS* (lost gaps, widths,
+  radii) while saving no bytes (entry chunk 1,881,353 B with it, 1,881,066 B without), and the dev
+  server serves the app without it. So no Tamagui compiler is wired; see specs/081 research
+  "US10" before re-adding one.
 - **Tamagui is pinned to ONE exact 3.x version** across both manifests
-  (`@tamagui/core`, `@tamagui/stacks`, `@tamagui/shorthands`, `@tamagui/metro-plugin`),
+  (`@tamagui/core`, `@tamagui/stacks`, `@tamagui/shorthands`),
   grouped as one Renovate `tamagui` branch, and guarded by
   `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. Never add a range.
 - **Tamagui 3 spelling.** Token and theme names have no `$` (`fontFamily="body"`,

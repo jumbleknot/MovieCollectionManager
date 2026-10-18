@@ -663,25 +663,14 @@ design-system/
 
    ```bash
    pnpm add --save-exact @tamagui/core@<v> @tamagui/stacks@<v> @tamagui/shorthands@<v>
-   pnpm add --save-exact -D @tamagui/metro-plugin@<v>
    npx expo install expo-font @expo-google-fonts/outfit @expo-google-fonts/inter
    npx expo install react-native-svg
    npx expo install react-native-safe-area-context
    ```
 
-3. **Configure the Metro bundler** (`metro.config.js`) — Tamagui 3's compiler runs here; the
-   `@tamagui/babel-plugin` of v2 no longer exists, so `babel.config.js` carries no Tamagui entry:
-
-   ```js
-   const { withTamagui } = require('@tamagui/metro-plugin')
-   // apply LAST, after any resolver overrides, so the compiler resolves through them
-   module.exports = withTamagui(config, { components: ['@mcm/design-system'], config: './tamagui.config.ts' })
-   ```
-
-   The plugin resolves `metro-resolver` from the app's own `package.json`, so the app declares it
-   (at the Metro line its Expo SDK ships). It does not invalidate Metro's transform cache when the
-   Tamagui config changes: after editing tokens, themes or `tamagui.config.ts`, run
-   `rm -rf node_modules/.cache/tamagui` and start Expo with `--clear`.
+3. **No Tamagui compiler.** Tamagui 3 has no Babel plugin, and `@tamagui/metro-plugin` 3.0.x drops
+   the CSS of the web modules it lowers (feature 081 US10), so the app runs Tamagui runtime-only:
+   neither `babel.config.js` nor `metro.config.js` carries a Tamagui entry.
 
 4. **Use the design system's `Text`**, never `@tamagui/core`'s: Tamagui 3 removed
    `createTamagui({ defaultProps })`, so the body font and `onBackground` colour live on

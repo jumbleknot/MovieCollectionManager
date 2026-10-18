@@ -2,10 +2,10 @@
 module.exports = function (api) {
   api.cache(true);
 
-  // The Tamagui optimizing compiler no longer runs here. Tamagui 3 removed its Babel plugin (feature
-  // 081 US10); the compiler now runs through `withTamagui()` in metro.config.js, which keeps what this
-  // file used to provide (feature 015): Metro can tree-shake the `@mcm/design-system` barrel instead of
-  // OOM-crashing its dev bundler on the whole Tamagui graph.
+  // No Tamagui compiler (feature 081 US10, operator decision on OQ-5). Tamagui 3 removed the Babel
+  // plugin that ran here since feature 015, and its replacement, @tamagui/metro-plugin 3.0.x, was
+  // measured to drop the CSS of the web modules it lowers while saving no bytes — so Tamagui runs
+  // runtime-only, as the dev server and the export were measured to handle without OOM.
   //
   // react-native-reanimated v4 requires the worklets babel plugin, and it MUST be listed
   // last (feature 012 / CopilotKit overlay). Plugin moved to react-native-worklets in
