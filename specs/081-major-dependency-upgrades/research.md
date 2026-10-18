@@ -1074,3 +1074,16 @@ operator approval; it is prepared on branch `081-us10-tamagui-3-runtime-only`, n
   - entry chunk **1,881,037 B** of 2,000,000;
   - SAST gate passes;
   - web captures identical to `main` on 44/48, the same 4 shadow-opacity differences.
+- **Android regression found by the full suite, and fixed.** PR #788 run 5540: `assistant-config-gating` failed 3/3 at
+  `Tap on id: settings-nav-assistant`. In Tamagui 3 any state clause, hover included, makes a View attach its own event
+  handlers on native. NavList's inner View (inside an RN `Pressable`) then swallowed the tap: the feature-062 trap,
+  reached through `hover`. NavList and Tabs now pass the hover clause on web only. Run 5543 is green, with all 22 blocking
+  flows passing and the agent flows passing. `movie-sort` (#781) and `login-invalid` (#782) are FAIL-NONBLOCKING as on `main`.
+- **Performance (operator condition).**
+  - Web, same harness for both builds, 5 interleaved runs:
+    - Slow-3G cold TTI 67.7 s → 70.2 s (+3.7%, which is bytes: +111 KB);
+    - CPU 4× TTI 953 → 978 ms;
+    - 300-row table render 1,295 → 1,332 ms.
+  - CI `perf.spec` on the PR: 1,837 KB / 71.0 s, under the 1,950 KB / 75 s ceilings.
+  - Android per-flow seconds (5543 vs `main`-based 5512/5505) all sit inside the ±5 s baseline spread.
+  - Verdict: no meaningful regression.

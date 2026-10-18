@@ -274,7 +274,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   (`^braces@3\.0\.3$`, item #648) and the node-forge entry still match exactly, or are deleted if discharged
   (FR-018; R12 expects braces still reached through `@tamagui/static` → `fast-glob`). No new finding is
   allowlisted without the operator.
-- [ ] T083 [US10] Parity. Add the `mobile-e2e-full` label to the PR **before** the push that should run it
+- [x] T083 [US10] Parity. Add the `mobile-e2e-full` label to the PR **before** the push that should run it
   (a label event alone starts nothing), or dispatch app-ci with `mobile_suite: full`. **Done when** all of
   these hold:
   - the required contexts are green;
@@ -284,7 +284,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   - `pnpm nx e2e mcm-app` (the full web regression) has zero skipped;
   - the AFTER captures of the T076 list are attached beside the BEFORE ones, with every visible difference
     explained or fixed (FR-019).
-- [ ] T084 [US10] Docs and close. Correct the canonical sources: in `frontend/mcm-app/README.md` the
+- [x] T084 [US10] Docs and close. Correct the canonical sources: in `frontend/mcm-app/README.md` the
   "Runtime-only Tamagui" and "Pin Tamagui to v1" bullets, and in `packages/DESIGN-SYSTEM.md` the `$token`
   examples and the Babel-plugin setup. Do not hand-edit `openwiki/` pages. Run `pnpm nx okf-governance
   infrastructure-as-code`. **Done when**: PR 10 is merged before the Fri 2026-10-23 window (or opened after
