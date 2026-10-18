@@ -14,10 +14,16 @@
  * Pinned by components/text-defaults.test.tsx; the no-core-Text rule is enforced there too.
  */
 import { styled, Text as CoreText, type GetProps } from '@tamagui/core'
+import { lineHeightTokens } from '../../tokens/typography'
 
 export const Text = styled(CoreText, {
   fontFamily: 'body',
   color:      'onBackground',
+  // WEB ONLY: Tamagui 2's stylesheet gave every Tamagui text its font's default (`true`) line height
+  // (`.font_* { line-height: var(--f-lineHeight-true) }`, 20px for both fonts); Tamagui 3's only sets
+  // the family, so text without its own lineHeight fell to `normal` (measured: the 22px app-bar title
+  // grew 20 -> 28px, table rows shrank 37 -> 35px). Native never had that rule, so it stays untouched.
+  lineHeight: `web:${lineHeightTokens.true}px`,
 })
 
 export type TextProps = GetProps<typeof Text>
