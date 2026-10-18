@@ -99,6 +99,7 @@ jest.mock('@/hooks/use-auth', () => ({
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const AppLayout = require('@/app/(app)/_layout').default;
 
+
 describe('(app) layout — AssistantConfigProvider placement', () => {
   it('resolves the assistant config from a descendant of the Stack AND of the dock gate', async () => {
     // ThemeProvider is supplied by the ROOT layout above (app); this test mounts (app) alone.

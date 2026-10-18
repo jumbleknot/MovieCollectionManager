@@ -624,21 +624,24 @@
     },
     {
       "description": [
-        "java-jdk IS HELD AT 17 \u2014 feature 081 US1 (T006), an ANDROID TOOLCHAIN decision, not a CI-action one.",
+        "java-jdk IS HELD AT 17 \u2014 feature 081, an ANDROID TOOLCHAIN decision, not a CI-action one. Held in US1 (T006); DECIDED in US4 (T027) against SDK 57: it STAYS 17.",
         "The github-actions manager extracts `actions/setup-java`'s `java-version: '17'` as its own dependency",
-        "(`java-jdk`, datasource `java-version`), and it rides the `ci actions` group above: the 2026-10-10 and",
-        "2026-10-16 dashboards (item #29) both carried `java-jdk 17 -> 25` inside the major-ci-actions branch,",
-        "on app-ci.yml's and cd-deploy.yml's setup-java sites. The JDK must match what the Expo SDK's",
-        "Gradle/AGP template supports, so it moves with the SDK, not with the action (spec 081 US1 AC4).",
-        "MUST STAY AFTER the `ci actions` group rule: last matching rule wins. `allowedVersions` rather than",
-        "`enabled: false`, the vault pattern \u2014 the dep stays visible and grouped, only the version move is",
-        "blocked. LIFT (or re-set the ceiling) in spec 081 US4, decided against SDK 57's Android template.",
-        "renovate-workflow.guard.test.mjs asserts the resolved ceiling on every track and the ordering."
+        "(`java-jdk`, datasource `java-version`), and it rides the `ci actions` group above. The JDK must match what the",
+        "Expo SDK's Gradle/AGP template asks for, so it moves with the SDK, not with the action (spec 081 US1 AC4).",
+        "SDK 57 (measured 2026-10-17): expo-template-bare-minimum@57.0.32's android/ tree is byte-identical to SDK 56's",
+        "(Gradle 9.3.1), and @react-native/gradle-plugin@0.86.3 builds with `kotlin { jvmToolchain(17) }` on AGP 8.12.0.",
+        "RE-CHECK at each Expo SDK move: lift when that SDK's React Native gradle plugin moves jvmToolchain off 17.",
+        "THE CEILING IS A REGEX ON PURPOSE. This dep uses `semver-partial` versioning, and Renovate tries the dep's own",
+        "versioning before npm semver: semver-partial COERCES '<18' to 18.0 and matches only 18.0.x, so the US1 value",
+        "`allowedVersions: \"<18\"` admitted exactly JDK 18.0 and blocked 17 (2026-10-17 dashboard: `java-jdk 17 -> 18`).",
+        "A regex is evaluated before any versioning. MUST STAY AFTER the `ci actions` group rule: last matching rule wins.",
+        "`allowedVersions` rather than `enabled: false` (the vault pattern) keeps the dep visible and grouped.",
+        "renovate-workflow.guard.test.mjs asserts the ceiling, what it really admits under semver-partial, and the ordering."
       ],
       "matchManagers": ["github-actions"],
       "matchDatasources": ["java-version"],
       "matchPackageNames": ["java-jdk"],
-      "allowedVersions": "<18"
+      "allowedVersions": "/^17\\./"
     },
     {
       "description": [

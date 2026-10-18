@@ -20,7 +20,8 @@ VERSION HISTORY:
 - v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14)
 - v2.3.0: Frontend Design System — Tamagui + @mcm/design-system mandated as the UI/styling layer; a Design System principle added under Frontend UI & UX (additive; no principle redefined). (2026-06-14)
 - v2.4.0: Test Type Integrity — sanctioned exception recorded for the agent golden tier (`golden`-marked model-decision tests MAY substitute the LLM dimension via the record/replay cassette seam). Scopes an existing prohibition; does not reverse or weaken it, and no other substitution is permitted anywhere. (2026-08-07)
-- v2.5.0: Performance Budgeting — **accepted exception** recorded for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the 2-second figure on a React-Native-Web + Tamagui stack. The exception is bounded by a committed byte budget rather than open-ended, and the 2-second rule stands unchanged for every other page and every other app. Adds a bounded exception; does not redefine the principle. (2026-09-26) [CURRENT]
+- v2.5.0: Performance Budgeting — **accepted exception** recorded for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the 2-second figure on a React-Native-Web + Tamagui stack. The exception is bounded by a committed byte budget rather than open-ended, and the 2-second rule stands unchanged for every other page and every other app. Adds a bounded exception; does not redefine the principle. (2026-09-26)
+- v2.6.0: Frontend stack baseline advanced — Expo SDK 56 → 57 (with React Native 0.86 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-10-17) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -343,7 +344,7 @@ The following technologies MUST be used unless explicitly amended:
   - **React Native JS Engine:** Hermes
   - **React Native Architecture:** JavaScript Interface (JSI)
   - **Package Manager:** pnpm
-  - **Expo SDK:** Expo SDK 56 (must use `pnpm create expo-app --template default@sdk-56` to create an SDK 56 project), with React Native 0.85 and React 19.2 as the supporting runtime
+  - **Expo SDK:** Expo SDK 57 (must use `pnpm create expo-app --template default@sdk-57` to create an SDK 57 project), with React Native 0.86 and React 19.2 as the supporting runtime
   - **Dev Expo Build:** `eas build --local`
   - **Prod Expo Build:** `eas build`
 - **Monorepo Build Tool Integration:** @nx/expo plugin for Nx
@@ -1016,4 +1017,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.5.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-09-26
+**Version**: 2.6.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-10-17

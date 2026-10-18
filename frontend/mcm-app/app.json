@@ -37,7 +37,9 @@
           "backgroundColor": "#11151F"
         }
       ],
-      "./plugins/with-dev-cleartext"
+      "./plugins/with-dev-cleartext",
+      "expo-font",
+      "expo-status-bar"
     ]
   }
 }

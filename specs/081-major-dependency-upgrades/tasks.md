@@ -121,26 +121,29 @@ diagnosing an nx failure from a path that no longer exists.
 
 Run in the **Docker Desktop/DinD** dev container (needs `/dev/kvm` for the emulator).
 
-- [ ] T020 [US4] M4: re-read `expo` dist-tags and the jest-expo / babel-preset-expo / eslint-config-expo
+- [x] T020 [US4] M4: re-read `expo` dist-tags and the jest-expo / babel-preset-expo / eslint-config-expo
   companion metadata (item #254 correction recipe); re-extract `bundledNativeModules.json` from the
   `expo-57.0.x` tarball. If SDK 58 is stable, STOP and ask the operator (OQ-1). **Done when**: research.md
   R4 updated with the day's numbers.
-- [ ] T021 [US4] T002 quiet-lock check.
-- [ ] T022 [US4] Draft the constitution amendment in `.specify/memory/constitution.md` (2.5.0 → 2.6.0, the
+- [x] T021 [US4] T002 quiet-lock check.
+- [x] T022 [US4] Draft the constitution amendment in `.specify/memory/constitution.md` (2.5.0 → 2.6.0, the
   Expo SDK line at §Frontend App Technology Stack and the version history). **Done when**: drafted and flagged
   in the PR for explicit human approval; not merged without it (FR-015).
-- [ ] T023 [US4] Upgrade in `frontend/mcm-app`: `pnpm expo install expo@^57.0.0` then `pnpm expo install
+- [x] T023 [US4] Upgrade in `frontend/mcm-app`: `pnpm expo install expo@^57.0.0` then `pnpm expo install
   --fix`; mirror `react-native` (0.86.3) and companions into `packages/design-system/package.json`; move the
   `@expo/dom-webview` override in `pnpm-workspace.yaml` to `^57`; run `pnpm expo install --check`.
   **Done when**: `--check` reports no mismatches and `@react-native-async-storage/async-storage` stays 2.2.0.
-- [ ] T024 [US4] Typecheck — **Verify RED (upgrade)**: `pnpm nx typecheck mcm-app --skip-nx-cache` — record
+- [x] T024 [US4] Typecheck — **Verify RED (upgrade)**: `pnpm nx typecheck mcm-app --skip-nx-cache` — record
   the error count and how many are the PR #217 press-event narrowing (`GestureResponderEvent` vs Tamagui
   `PressableProps['onPress']`; expected 0 on RN 0.86).
-- [ ] T025 [US4] Fix typecheck errors. **Verify GREEN**: same command, 0 errors.
+- [x] T025 [US4] Fix typecheck errors. **Verify GREEN**: same command, 0 errors.
 - [ ] T026 [US4] Unit tiers — **Verify RED (upgrade)**: `pnpm nx run-many -t test -p mcm-app design-system
   --skip-nx-cache` — record failures; fix (jest-expo 57 preset, RN 0.86 mocks).
   **Verify GREEN**: same command, 0 failures, coverage ≥70% on mcm-app.
-- [ ] T027 [US4] JDK decision: read SDK 57's Android template (Gradle/AGP JDK requirement). Guard RED: update
+  *US4 (2026-10-17): bump was clean — design-system 12/107, mcm-app 154/1578, 0 failures both before and after any fix
+  (none needed). Coverage is NOT ≥70%: 61.32% lines (3278/5345) on this branch AND on `origin/main` `97106c8e`,
+  file-for-file identical — a pre-existing gap the CI jobs do not gate (no job runs `--coverage`). Left unticked.*
+- [x] T027 [US4] JDK decision: read SDK 57's Android template (Gradle/AGP JDK requirement). Guard RED: update
   the T005 `java-jdk` assertion to the decided state (held at 17 with the SDK-57 reason, OR moved).
   **Verify RED**: `node --test scripts/__tests__/renovate-workflow.guard.test.mjs` fails on the changed
   assertion. Implement in `renovate.json` (+ `java-version` in workflows if moving). **Verify GREEN**: same.
@@ -149,7 +152,7 @@ Run in the **Docker Desktop/DinD** dev container (needs `/dev/kvm` for the emula
   shown to be pre-existing against `main` (baseline per pull-request-batching).
 - [ ] T029 [US4] Web: `pnpm nx export-server mcm-app`, BFF prod image build, `pnpm nx bundle-budget mcm-app`,
   `pnpm nx e2e mcm-app`. **Done when**: green with zero skipped suites.
-- [ ] T030 [US4] SAST re-check: `pnpm nx sast infrastructure-as-code`. **Done when**: the node-forge
+- [x] T030 [US4] SAST re-check: `pnpm nx sast infrastructure-as-code`. **Done when**: the node-forge
   (`^node-forge@1\.4\.0$`) and braces (`^braces@3\.0\.3$`) allowlist entries still match exactly, or — if
   discharged — are deleted in this PR (FR-018). Expected per R4: neither discharged.
 - [ ] T031 [US4] PR 4 with rollback (revert; previous APK) and exit criterion (plan.md US4). **Done when**:
