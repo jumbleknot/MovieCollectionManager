@@ -34,7 +34,6 @@ export const spaceTokens = {
   16:    64,
   18:    72,
   20:    80,
-  true:  16, // default
 } as const
 
 // ─── Size (component dimensions) ─────────────────────────────────────────────
@@ -65,7 +64,6 @@ export const sizeTokens = {
   16:   128,
   18:   144,
   20:   160,
-  true: 40,  // default
 } as const
 
 // ─── Border Radius ────────────────────────────────────────────────────────────
@@ -82,7 +80,6 @@ export const radiusTokens = {
   8:    32,   // extraLarge (top)
   9:    40,   // full (for pill shapes)
   10:   100,  // fully circular
-  true: 12,   // default (medium)
 } as const
 
 // ─── Named shape shortcuts (MD3 shape roles) ─────────────────────────────────

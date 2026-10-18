@@ -86,6 +86,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "resolver": "<rootDir>/../../packages/design-system/jest/tamagui-cjs-resolver.js",
     "verbose": false,
     "setupFilesAfterEnv": [
       "<rootDir>/tests/jest.setup.ts"

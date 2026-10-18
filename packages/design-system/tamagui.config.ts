@@ -104,8 +104,8 @@ const colorTokens = {
   // Semantic aliases duplicated here so they survive outside of a theme context
   ...lightColors,
 
-  // Transparent utility
-  transparent: 'rgba(0,0,0,0)',
+  // `transparent` is not a token: Tamagui 3 rejects a token named after a CSS keyword, which
+  // always resolves as the literal CSS value anyway (feature 081 US10).
   white:       '#FFFFFF',
   black:       '#000000',
 } as const
