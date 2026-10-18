@@ -27,9 +27,8 @@
     "@mcm/design-system": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-picker/picker": "^2.11.4",
-    "@tamagui/config": "^2.3.0",
-    "@tamagui/core": "^2.3.0",
-    "@tamagui/stacks": "^2.3.0",
+    "@tamagui/core": "3.0.13",
+    "@tamagui/stacks": "3.0.13",
     "axios": "^1.7.9",
     "expo": "~57.0.30",
     "expo-auth-session": "~57.0.16",
@@ -62,7 +61,6 @@
     "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.10.1",
-    "tamagui": "^2.3.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -70,7 +68,7 @@
     "@babel/core": "^7.25.2",
     "@babel/runtime": "^7.25.0",
     "@playwright/test": "1.63.0",
-    "@tamagui/babel-plugin": "^2.3.0",
+    "@tamagui/metro-plugin": "3.0.13",
     "@testing-library/react-native": "^13.2.0",
     "@types/express": "^4.17.21",
     "@types/jest": "29.5.14",
