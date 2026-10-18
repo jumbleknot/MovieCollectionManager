@@ -1056,3 +1056,21 @@ Runtime-only (no Metro plugin) + the two fixes above is **pixel-identical to `ma
 (settings/account, the elevated Card) differ because v2 dropped `shadowOpacity` on web (`0 1px 3px rgb(0,0,0)`) and
 v3 applies it (`0 1px 2px rgba(0,0,0,.12)`) — native is unaffected. Runtime-only is OQ-5's fallback, which needs
 operator approval; it is prepared on branch `081-us10-tamagui-3-runtime-only`, not chosen.
+
+**Operator decisions, 2026-10-18 (item #254).**
+- **OQ-5: runtime-only APPROVED.** The reason is the plugin measurements above: it dropped CSS on `/settings` (7 rules),
+  printed 34,780 resolve warnings per export, and saved 0 bytes. No constitution amendment: its "runtime-only by default"
+  line is accurate again.
+- **Cooldown override: Tamagui 3.0.18 now.** It sits inside Renovate's 3-day cooldown until 2026-10-19T10:15Z. The lock
+  moved 22 Tamagui packages 3.0.13 → 3.0.18 and nothing else. MEASURED: pnpm's own install-time release-age policy already
+  admits 3.0.18. It was about 51 h old at install, and the cold frozen install passed `Lockfile passes supply-chain
+  policies` with no `minimumReleaseAgeExclude` entry. So no exemption was added. A no-op entry would break that list's
+  documented rule that an entry is a needed security-floor exception.
+- **Re-run on 3.0.18**:
+  - typecheck 0 errors on both mcm-app and design-system;
+  - jest 131/131 and 1578/1578;
+  - lint 0 errors;
+  - `scripts/__tests__` 1718/1718;
+  - entry chunk **1,881,037 B** of 2,000,000;
+  - SAST gate passes;
+  - web captures identical to `main` on 44/48, the same 4 shadow-opacity differences.

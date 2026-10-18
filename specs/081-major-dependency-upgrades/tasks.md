@@ -168,7 +168,7 @@ Runs after US4 (merged `64e7715d`) and before US5. Every fact is in research R12
 memory rules are in plan.md "US10". **Sandbox memory rule for every task below**: run one heavy step at a
 time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP before each heavy step.
 
-- [ ] T071 [US10] M10 + T003 + T002. Re-read the packuments and every release body after 3.0.18, and pick the
+- [x] T071 [US10] M10 + T003 + T002. Re-read the packuments and every release body after 3.0.18, and pick the
   newest 3.0.x whose whole set is past the 3-day cooldown at that moment (expected 3.0.18 or newer, not before
   2026-10-19T10:15Z). Re-check the peers and `@tamagui/metro-plugin`'s `metro` range against the lock. Then
   read the dashboard and run the quiet-lock check. The PR must not be open across **Fri 2026-10-23
@@ -176,7 +176,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   "Re-baseline deltas → US10" records the version and publish times, any new breaking note, and the
   dashboard delta. The PR body records zero open `renovate/*` heads, the ET time, and the planned merge-by
   time. If a blocker turns up, stop: R12 "Hold?" applies.
-- [ ] T072 [US10] Guard RED. Create `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. It asserts:
+- [x] T072 [US10] Guard RED. Create `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. It asserts:
   (a) every `tamagui` / `@tamagui/*` specifier in `frontend/mcm-app/package.json` and
   `packages/design-system/package.json` is one exact version (no range), and both manifests agree;
   (b) `pnpm-lock.yaml` has exactly one version of each of `@tamagui/core`, `@tamagui/web` and `tamagui`
@@ -188,12 +188,12 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   **Expected RED**: (a) fails on the `^2.3.0` ranges and the `>=2.0.0` font-inter range; (b) fails on core
   2.7.7 + 3.0.13; (c) fails on both files; (d) fails because the packages land in `js majors` /
   `js patch/minor`.
-- [ ] T073 [US10] **[operator: OQ-7]** Decision, measured: `rg "from '(tamagui|@tamagui/config|@tamagui/font-inter)'"` over
+- [x] T073 [US10] **[operator: OQ-7]** Decision, measured: `rg "from '(tamagui|@tamagui/config|@tamagui/font-inter)'"` over
   both projects, including tests, plus every non-import reference (the Babel `components` list, jest
   `transformIgnorePatterns`). **Done when**: each of `tamagui`, `@tamagui/config` and `@tamagui/font-inter`
   is recorded in research as **remove** (zero imports) or **pin** (with the importing file), and the
   operator's OQ-7 answer is applied.
-- [ ] T074 [US10] Behaviour-preservation tests against the CURRENT code, before anything moves (the
+- [x] T074 [US10] Behaviour-preservation tests against the CURRENT code, before anything moves (the
   T044-style **mutation RED**):
   (i) a bare design-system / `@tamagui/core` `Text` inside the provider renders with the body font family
   and `onBackground` colour (B4, today supplied by `createTamagui({ defaultProps })`);
@@ -204,20 +204,20 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   **Verify RED**: `pnpm nx test design-system -- --maxWorkers=2 --testPathPattern='<new test files>'` with
   each named mutation applied: remove `defaultProps.Text`, then delete one `pressStyle`.
   **Expected RED**: the named assertion fails. Revert the mutation, and it passes on 2.7.7.
-- [ ] T075 [US10] Guard update at its cause (CLAUDE.md, never delete): change
+- [x] T075 [US10] Guard update at its cause (CLAUDE.md, never delete): change
   `packages/design-system/components/focus-ring.test.ts` to assert the v3 spelling. Interactive primitives and
   surfaces carry a `focus-visible` clause or key; none carries a bare `focus` state clause, nor a leftover
   `focusStyle` / `focusVisibleStyle` object.
   **Verify RED**: `pnpm nx test design-system -- --maxWorkers=2 --testPathPattern=focus-ring`
   **Expected RED**: fails on the six files still using `focusVisibleStyle`. It turns GREEN in T078, not
   before.
-- [ ] T076 [US10] Visual baseline BEFORE, from `main` (or the branch before T077). Capture the plan.md screen
+- [x] T076 [US10] Visual baseline BEFORE, from `main` (or the branch before T077). Capture the plan.md screen
   list (login, collections, collection detail, movie detail, the sort/filter row, a dialog, settings, the
   assistant dock), in light and dark. On web, use a scratch Playwright `page.screenshot` script against
   `pnpm nx e2e`'s stack. On Android, use the latest full-suite run's Maestro artefacts on `main`. **Done
   when**: the captures are saved outside the repo, the list is recorded in the PR body, and nothing is
   committed.
-- [ ] T077 [US10] **Verify RED (upgrade)**. Bump only the packages: exact-pin the five grouped packages to the
+- [x] T077 [US10] **Verify RED (upgrade)**. Bump only the packages: exact-pin the five grouped packages to the
   T071 version in both manifests; remove `@tamagui/babel-plugin` (and its `babel.config.js` entry); add
   `@tamagui/metro-plugin` at the same version as a devDependency of `frontend/mcm-app`; apply T073; set the
   design-system peer to `tamagui >=3.0.0 <4` (or drop it with the dependency). Then run **one**
@@ -232,7 +232,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
     fails.
 
   A clean bump is recorded as "bump was clean", never as a RED.
-- [ ] T078 [US10] Source migration until GREEN:
+- [x] T078 [US10] Source migration until GREEN:
   1. `pnpm dlx @tamagui/codemod-flat-values@<T071 version> --source-semantics v2-pixels --report
      <scratch>/flat-values-report.md packages/design-system frontend/mcm-app/src` (report mode). Read every
      flagged row, then re-run with `--write`.
@@ -248,7 +248,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   **Verify GREEN**: the T077 commands, all with 0 errors and 0 failures; T074 and T075 pass; the press-event
   count is 0. If the PR #217 narrowing appeared in T077, it is fixed at the two `onPress` type declarations
   (`primitives/Button.tsx:45`, `primitives/PillButton.tsx:24`), with no `any` and no suppression.
-- [ ] T079 [US10] **[operator: OQ-5 if falling back]** Compiler. In `frontend/mcm-app/metro.config.js`, wrap the existing config with
+- [x] T079 [US10] **[operator: OQ-5 if falling back]** Compiler. In `frontend/mcm-app/metro.config.js`, wrap the existing config with
   `withTamagui(…, { components: ['@mcm/design-system'], config: './tamagui.config.ts' })`, keeping the
   segment shim and the dotenv blocklist. Make sure the `export-server` nx target's inputs cover
   `tamagui.config.ts` and the design-system sources (upstream: the Metro plugin does not invalidate the
@@ -260,17 +260,17 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
   If the plugin cannot be made to work, the runtime-only fallback is chosen only with T081's budget and the
   dev-server check both green, and is recorded with the measurement.
-- [ ] T080 [US10] Renovate. Add the `tamagui` packageRule (`matchPackageNames: ["tamagui", "/^@tamagui\\//"]`,
+- [x] T080 [US10] Renovate. Add the `tamagui` packageRule (`matchPackageNames: ["tamagui", "/^@tamagui\\//"]`,
   `groupName: "tamagui"`, `rangeStrategy: "pin"`), ordered after `js patch/minor` and `js majors`. The
   description carries the R12 reason (one version, several patches a day).
   **Verify GREEN**: `node --test scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   scripts/__tests__/renovate-workflow.guard.test.mjs` with 0 failures and every prior test still passing.
   `node scripts/check-toolchain-consistency.mjs` and `node scripts/check-override-consistency.mjs` both exit 0.
-- [ ] T081 [US10] **[operator: OQ-6 if over budget]** Web bundle: `pnpm nx bundle-budget mcm-app --skip-nx-cache` (it depends on
+- [x] T081 [US10] **[operator: OQ-6 if over budget]** Web bundle: `pnpm nx bundle-budget mcm-app --skip-nx-cache` (it depends on
   `export-server`) and the BFF prod image build. **Done when**: the entry chunk is ≤ 2,000,000 B, with the
   before (`main`) and after byte counts recorded. If it is over budget, **stop** and ask the operator (OQ-6):
   the budget is not raised in this PR.
-- [ ] T082 [US10] SAST: `pnpm nx sast infrastructure-as-code`. **Done when**: the braces entry
+- [x] T082 [US10] SAST: `pnpm nx sast infrastructure-as-code`. **Done when**: the braces entry
   (`^braces@3\.0\.3$`, item #648) and the node-forge entry still match exactly, or are deleted if discharged
   (FR-018; R12 expects braces still reached through `@tamagui/static` → `fast-glob`). No new finding is
   allowlisted without the operator.
