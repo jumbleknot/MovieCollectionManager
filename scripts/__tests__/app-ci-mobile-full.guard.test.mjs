@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 
 import {
-  CI_FULL_EXCLUDED, FLOWS_DIR, MANUAL_FLOWS, ciFullFlows, isAgentFlow, localSuiteFlows,
+  CI_FULL_EXCLUDED, CI_FULL_NON_BLOCKING, FLOWS_DIR, MANUAL_FLOWS, ciFullFlows, isAgentFlow, localSuiteFlows,
 } from '../mobile-flows.mjs';
 import { COUNTS_SOURCES } from '../ci-failure-digest.mjs';
 
@@ -197,4 +197,18 @@ test('the full-suite runner hands each flow a logged-out app, resets the admin S
     const filters = parseYaml(job ? workflow.jobs.changes.steps.find((x) => x?.with?.filters).with.filters : '');
     assert.ok(filters.app.includes(p) && filters.mobile.includes(p), `${p} must be in BOTH the app and mobile filters`);
   }
+});
+
+test('every non-blocking flow is in the run, says WHY (environmental vs known defect) and cites its evidence', () => {
+  const full = ciFullFlows();
+  for (const [name, reason] of CI_FULL_NON_BLOCKING) {
+    assert.ok(full.includes(name), `${name} is non-blocking but not in the full run — it would be silently parked`);
+    assert.match(reason, /^(ENVIRONMENTAL|KNOWN DEFECT) \(app-ci run \d+/,
+      `${name}: a non-blocking entry must say which kind it is and which run measured it`);
+  }
+  const s = readFileSync(FULL_SCRIPT_PATH, 'utf8');
+  assert.match(s, /node scripts\/mobile-flows\.mjs ci-non-blocking/, 'the runner does not read the shared non-blocking list');
+  assert.match(s, /PASS-REMOVE-NONBLOCKING/, 'a now-passing non-blocking flow must be flagged for removal');
+  // The blocking set is everything else: a non-blocking flow must never reach `failed+=`.
+  assert.match(s, /if is_non_blocking "\$flow"; then\s+result=FAIL-NONBLOCKING[\s\S]*?else\s+result=FAIL\s[\s\S]*?failed\+=/);
 });

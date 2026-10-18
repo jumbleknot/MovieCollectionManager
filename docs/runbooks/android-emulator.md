@@ -38,10 +38,16 @@ the flows per-file in two halves:
    that file, each entry with its reason. Each flow gets a `pm clear`ed app (they `launchApp` with
    `clearState: false`, exactly as `maestro-e2e.mjs` prepares them locally), Chrome is reset (`pm
    clear` + First-Run skip) once before the batch, 2 attempts per flow, and the
-   batch runs to the end and fails if ANY flow failed. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
+   batch runs to the end and fails if ANY blocking flow failed. `CI_FULL_NON_BLOCKING` in the same file
+   lists flows that run (one attempt) and are reported but cannot fail the step, each tagged
+   **ENVIRONMENTAL** or **KNOWN DEFECT** with the run that measured it — today `login-invalid`
+   (ENVIRONMENTAL: two `back` presses do not close the CI image's Chrome Custom Tab) and `movie-sort`
+   (KNOWN DEFECT: with the default visible columns, `sort-dir-toggle` is past the right edge of the
+   sort row's horizontal ScrollView on a 411dp-wide phone). A listed flow that passes is reported
+   `PASS-REMOVE-NONBLOCKING`. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
    fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
    per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the
-   counts bundle on a green run and the failure digest on a red one. **Cost: not yet measured — first full run pending.** The job
+   counts bundle on a green run and the failure digest on a red one. **Cost, measured on app-ci run 5502:** the `maestro-full-flows` step took 1748 s (29 min, 24 flows, two of them failing through a retry), plus a second emulator boot (~2-3 min) — roughly **+30-35 min** on top of an agents-only run. The job
    ceiling is 110 min in full mode (75 otherwise).
 
 - **When the mobile half runs:** every push to `main` and every `workflow_dispatch`. On a

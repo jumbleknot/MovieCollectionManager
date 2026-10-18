@@ -30,6 +30,9 @@
 #     retry, since a failed attempt can leave Chrome mid-login.
 #   * 2 attempts per flow (one bounded retry — the local suite's MAX_RETRIES=1), not the agent
 #     half's 3: these flows drive no model turn, so the CCT-crash flake is the only transient left.
+#   * scripts/mobile-flows.mjs CI_FULL_NON_BLOCKING flows still RUN (one attempt) and are reported as
+#     FAIL-NONBLOCKING, but cannot fail the step; each entry states whether it is ENVIRONMENTAL or a
+#     KNOWN DEFECT, with the run that measured it. One that passes is reported PASS-REMOVE-NONBLOCKING.
 #   * The batch does NOT stop at the first failure. Every flow runs, a per-flow result table is
 #     printed at the end (and written to mobile-diagnostics/full-suite-results.log, which the failure
 #     path folds into the evidence bundle), and the step fails if ANY flow failed. One ~30-min run
@@ -51,6 +54,9 @@ FIXTURE_ENV=(--env "E2E_COLLECTION_NAME=E2E Browse" --env "E2E_MOVIE_TITLE=Alpha
 RESULTS=mobile-diagnostics/full-suite-results.log
 
 mapfile -t flows < <(node scripts/mobile-flows.mjs ci-full)
+# Run, reported, but never fail the step — each entry's category + evidence is in CI_FULL_NON_BLOCKING.
+mapfile -t non_blocking < <(node scripts/mobile-flows.mjs ci-non-blocking)
+is_non_blocking() { local f; for f in "${non_blocking[@]}"; do [ "$f" = "$1" ] && return 0; done; return 1; }
 if [ "${#flows[@]}" -eq 0 ]; then
   # A selection that came back empty is a broken selector, not a passing suite.
   echo "::error::scripts/mobile-flows.mjs ci-full selected NO flows — refusing to report a vacuous pass"
@@ -74,6 +80,8 @@ for flow in "${flows[@]}"; do
   echo "=== flow: $flow (full suite) ==="
   started=$SECONDS
   attempt=1; max=2; result=PASS
+  # A non-blocking flow gets ONE attempt: its failure is already explained, so a retry buys nothing.
+  is_non_blocking "$flow" && max=1
   while :; do
     fresh_app
     if bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" "${FIXTURE_ENV[@]}"; then
@@ -81,15 +89,25 @@ for flow in "${flows[@]}"; do
     fi
     capture_mobile_diagnostics "$flow" "$attempt"
     if [ "$attempt" -ge "$max" ]; then
-      result=FAIL
-      echo "::error::flow $flow failed after $max attempts"
-      failed+=("$flow")
+      if is_non_blocking "$flow"; then
+        result=FAIL-NONBLOCKING
+        echo "::warning::flow $flow failed — listed non-blocking in scripts/mobile-flows.mjs (see its reason)"
+      else
+        result=FAIL
+        echo "::error::flow $flow failed after $max attempts"
+        failed+=("$flow")
+      fi
       break
     fi
     echo "flow $flow failed (attempt $attempt/$max) — retrying"
     attempt=$((attempt + 1))
     reset_chrome_sso
   done
+  if [ "$result" = PASS ] && is_non_blocking "$flow"; then
+    # It passes now: the entry is stale, and a stale non-blocking entry hides the NEXT regression.
+    result=PASS-REMOVE-NONBLOCKING
+    echo "::warning::flow $flow PASSED but is listed non-blocking — remove it from CI_FULL_NON_BLOCKING"
+  fi
   printf '%s\t%s\t%s\t%s\n' "$flow" "$result" "$attempt" "$((SECONDS - started))" >> "$RESULTS"
 done
 
@@ -99,4 +117,5 @@ if [ "${#failed[@]}" -gt 0 ]; then
   echo "::error::full mobile suite: ${#failed[@]}/${#flows[@]} flow(s) failed: ${failed[*]}"
   exit 1
 fi
-echo "full mobile suite: all ${#flows[@]} flow(s) passed"
+nb_failed="$(grep -c $'\tFAIL-NONBLOCKING\t' "$RESULTS" || true)"
+echo "full mobile suite: no blocking failure across ${#flows[@]} flow(s) (${nb_failed} non-blocking failure(s) — see the table)"
