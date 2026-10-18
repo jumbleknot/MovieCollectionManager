@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -60,7 +60,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T03:00:26.889Z
+    at: 2026-10-18T17:22:52.674Z
 ---
 
 # SAST & SCA static scanning
@@ -254,6 +254,9 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix (the
   plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope; a
   *compound* key such as `js-yaml@>=3.0.0 <3.15.1` is in scope but only its `<` bound is compared).
+  Note **which job owns it**: the guard runs as a step of the `naming` job in
+  [guardrails.yml](../../.forgejo/workflows/guardrails.yml) (`--selftest`, then the scan), not as part
+  of `sast`, so a half-bumped floor reddens `guardrails / naming` and no `sast` output will mention it.
   A half the guard cannot parse is refused out loud with exit 2 rather than skipped, because silently
   passing over the entry it cannot read is how a gate comes to protect nothing.
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against

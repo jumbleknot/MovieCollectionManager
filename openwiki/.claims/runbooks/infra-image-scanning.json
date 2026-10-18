@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:26c2a1ea3d60846dfe226f7f8314d4f6bebe66a4926e0b31c81477203be9505a",
+  "pageVersion": "sha256:8f525466541824080486745bfeb22b5c257abea57afc8eb3284216f174b01854",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -254,7 +254,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:ef60ceb78e60e9a24a2e6d1f863ae5ec628644bb5212ebbf51e6daf50acb2416"
+          "version": "repo-file-v1:sha256:664207188c3c98cdd0dd4e72b65c631a15b830bae636117cec6d03570b2b23a2"
         }
       ]
     },
@@ -389,10 +389,46 @@
           "version": "repo-file-v1:sha256:358c3a115ba3ccbcb690f7d75463e412afdb33cb4440e93097d61fae82b7f668"
         }
       ]
+    },
+    {
+      "id": "claim_a8c6a1fc5c834fb8843f67e8471512bb",
+      "statement": "The cron-ordering guard also asserts the REASON is written down where the next editor will see it: `renovate-workflow.guard.test.mjs` fails unless `.forgejo/workflows/infra-image-scan.yml` still contains an `item #487` reference explaining why its cron sits at 04:00, on the reasoning that an unexplained time is the one a later reader tidies away.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L29-L56",
+          "version": "repo-lines-v1:sha256:d079d27720c510a500ed8da13a8c269118f57891ae4f280170641ac65a793e17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZGIwNDc0NWU2YjZiZmNlZjM5MGMzYWNlN2QwMTgzYTA5Yzk2NjFhYjYzZTM1YWZlNzFlMGMzNzkyNGQ1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNWFmNzBhZGJjZjBjNmI1ZjYxYzM5YzA3ZWYxOTFkMzNmNmUwZGVkMWVmZTZjYmU4ZWQ2ZTllYTE0NTA4OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3Y2FiYjFiODkwODE2ZDlkMTdlOTE5NTYxMjU0YWQwMDQ3NWE5ZDUyOWJkNWI0ZTk3YjkyNTlkMGIwOTllNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YTczNzVmZDkyNjhjMzdiNzg5MmIxNzIxMTc2ZTc4ZDk4MDViODE1ZDg3MDU4YzUwNGUwZGQwYmIyNTUzMDcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2960-L2979",
+          "version": "repo-lines-v1:sha256:889f7601e243e2a296a541df7fcefd9dd2c2a5568625bca203a34d31adb1f3fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGEyMDkzM2Q3N2Y5NWQ0Y2I4MDZiMTAwOTk4OWFkNjQxYTkzNWZjMzg3MmVmZDE0NjkwN2Y4YzhmYjAxMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMDgyMWQyYmExNGM5NTc0ZTMwMjkxOWMxODI2NDU5OTZlZDY1YzlmOGQwZGNkOTE5NDg3MzZlYTg1ZTkzNTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b736c248f7f74c34b5a419213ee255ac",
+      "statement": "The Trivy install in `.forgejo/workflows/infra-image-scan.yml` (and in `cd-deploy.yml`) is version-pinned rather than floating: the install script is fetched from a version tag rather than the moving branch `main`, the same tag is passed as the script's positional argument, and one `TRIVY_VERSION` assignment is interpolated into both sites so a bump cannot move one and strand the other. `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the RESOLVED state — both files pinned, the script ref equal to the installed tag, and the two files agreeing on one version, because a disagreement means one gate can block what the other passes — and that the `aquasecurity/trivy` customManager (datasource `github-releases`) covers both files and actually captures a `currentValue` in each, since a manager whose regex misses is indistinguishable from no manager at all.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L205-L221",
+          "version": "repo-lines-v1:sha256:565e126864118eef9f069369b6e14ce739ecaa9c44e26894907923bd4611e564:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YzE1ZWE5ZWFjNjQzZDk2ZDA5OTI2MGNiY2RhYjEzZTBiZDA0MWViZTk5ODU3MGE5YzFiNmE4OTMzZjFmZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZTE1NjhlOTMxYTIwZDhkOTAxN2NlOWYwYzhhYWJhODRjMTE2YWY3MWVkMTAxMzNlMGQ1N2QzMmY3ZGEyMzQifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L178-L195",
+          "version": "repo-lines-v1:sha256:969deaa9271503a215aa777dde015a98f19844b0c9ef3bba99fc66356e8e62d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjE5NWE5OGNjYmJhYWNjZGY3Zjk4N2FjNjgyOGY4ODk1OTcxMTZkMjFlZDMzNTJjM2Y0ODFmM2IwOWEzMjUifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L208-L245",
+          "version": "repo-lines-v1:sha256:037a461b6365490b63d7a3f6420ebd929f8042038c776102d6a95098b32cb6df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDIxMWI5YzM4MDRkYTYxOGUzNWQ0OWExYTQwZDQ2NTc5NWE5MGQwYjgzMjAwNTU2ZjliMjU1YjdhZTQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNDExM2IwYWRlYzM5NmZkMjk2NWYyYjQzMDZmOGM1NjZmMzA0ODgwNmJkZTJhOTIyMjJjYWY1NDJkMTUzNjUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1893-L1999",
+          "version": "repo-lines-v1:sha256:a14e389fa285a5d4f4910fa07060ef1f0292312e489a89ebcdbe5f4a9262e1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNDgyN2E1OWJkMmRkZTc1NjJmOWMxN2VlYWE2YjdlZjVkYTRjYmUyYTE4NmU5ZTk2NDc1ZGIyOWU0MTRjZWEyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmUzMTRkZTM3ODI3MzAxMjA4NWYyMTg0OTE4MDgwYWFhOGRkMGI5OTRiZjg2NmYwZTc5YjAxMmI1MGM5OTI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTE0ZTM0ZDE2Yjg4ZDI1ZDAzNWIxYmVjOTMwM2JiNTYzOTFjMDJjNDhiNmZjZGI2YjgyZTU1NDliNzRlNTZhIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T03:12:52.160Z"
+    "at": "2026-10-18T17:22:52.674Z"
   }
 }

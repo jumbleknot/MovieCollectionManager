@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba043ef6f0e1646e6d79f6e591e660b919b811ed95e92cec4ac238fcf23ebc22",
+  "pageVersion": "sha256:89a44457ee0f891cb5a303253e6b5e178a6d6fb567d7c308c1a1460659e36976",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -314,7 +314,7 @@
       "evidence": [
         {
           "resource": "repo://pnpm-workspace.yaml#L81-L109",
-          "version": "repo-lines-v1:sha256:203c8bafea65ac2142ead84eb73f53fbe42d3c1435573f434a20bd3078c58035:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+          "version": "repo-lines-v1:sha256:36b54ebf3df7c9286afed257801bae29ea77713d57df64789b299c02781d01ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
         },
         {
           "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L60-L63",
@@ -659,7 +659,7 @@
           "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L526-L532",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L711-L717",
           "version": "repo-lines-v1:sha256:79dcc7355f709be994d0674cdb5bceef97aaac7a7b14c6c1a56b4a9580d4e75a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NTdjOTg3NjQ4ZjIyNzRjMWUwYWVjN2E5NTIyNDA1NGI2OWI1MmUxMDUzODg4MjE5NTQ5MjMxZTU2Nzc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhMWY0NWY0ZGEyMzFjNmJhZmY5MDZhZWU4NjBjNDMwNDZiMjM2MGMwZjc4YzkzODFmNDJjOWVkZWRmMTNjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMzMjk5NjgyMTU3YTA2OTg1MzBiODg2NjkyNWQ3OWM3MmUyMzc1YjM0ZGRlMTI3MDg1MTAwNzhlMTUwYTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3Y2RmMmQ3NDc0NzQzYjgzMWI1YzNmMjZkNTAyNWRjODczZTE4ZWE2MzJiNGUyNTFhMjVjNzcxMGMwOTI4YSJ9"
         }
       ]
@@ -789,14 +789,24 @@
           "version": "repo-lines-v1:sha256:3334be56e27c9a1c8989ff068699d908514539d178bb7b4739db6a0e936f3a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY5OWZkNDM4YmRiNDAzM2VhMWQ1M2VmM2UwZWY3OGRkM2UxNTFjOTA0MTMwNDBlZmM3YmIzYTdkMTBmYzJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJjMTViY2I3MDBjNTRiY2IxZjcxMTM3YmM0MDYyNzdiZDA2ODhmMDcxY2NiYThiM2JhNzZjNjkwM2YwZTc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L666-L678",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L851-L863",
           "version": "repo-lines-v1:sha256:ff8e44efed90c30ebbef312a7ff8b86e361a6e9318c281be288ed54e3313422b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDhjYjljNWY3NDZiNTI5NDYxODBkYTIzZjM2MjgyNGM1MzBlNTE1ZmIwZjI2MjlkNmJhMDkzYjNkMmM2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODQ0YmVkM2VmZjQwOGIyZjhmZDYwNTgxZDQ3ODM2NTI5MmVkM2FiNjEyNjIzYTRlM2M5MTM0Y2JlMTYxMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YzNhOTI2ODFjMmUwOTY0ZGI1ZDlmYTNhMzU2YjYyNDI3NTMwYTcwYWFmMTUzMjJjNjYxMTU1NzRlNTBkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODIxYjA2YzA3NDZhY2JkNmY1YzJmYzRiNGM5NWNmMmJmZTIxMDAwMDBhN2Q3ZDg0OGVjZGQ2YTIxMTM5NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b37e98bfc8e14c14a62cfc8b7400b398",
+      "statement": "The override-consistency guard is a step of the `naming` job in the guardrails workflow (`--selftest` then the scan), not a step of the `sast` job, so a half-bumped override floor reddens `guardrails / naming` and no `sast` output names it; it is placed there deliberately because it must run on pull requests, and every job in that file is a required context by construction.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L146-L158",
+          "version": "repo-lines-v1:sha256:8998d3f263c30c40625c9d028f796adc64d805e408c26f8f3d6173b0114cf6fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNmVjMzUwYmRiZjI2MWM1YTM2NWY3NjM4NTkxMGVkMWM3N2Y4YmEyZjM3OTZiYTJlYmFiNzIzZmFmNjUxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNjZiMWI0OGIzYmY1ZWNjYzU1NDc3ODY0YjM5ZGY3N2Q2Mzk2NGJiNjVjMzgyNTQwMmIyZjM1NjJkMzE1NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOTZlYjk1NzkyOGI2NGY1MDQ3MDJkMWI3NWM1YzYyYTcwM2Q5YjJiNGU4NjI1YTQ4ZmY5Y2UwNjhmYzY2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBmNjA1NzIxNjVkMjA5NzNjM2Q5YTI1ODY5Mjk1ZWI5NjY0N2ZhYTlmNTE4MjYzY2MyNGE3Mzg2NjZhNTcifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-18T17:22:52.674Z"
   }
 }

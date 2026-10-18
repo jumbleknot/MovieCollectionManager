@@ -5,12 +5,16 @@ description: How the project keeps the third-party server images it pulls but do
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-9569e077273f937a713aad61
     resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
@@ -37,10 +41,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+    at: 2026-10-18T17:22:52.674Z
 ---
 
 # Infra-image CVE scanning
@@ -60,7 +64,9 @@ exists only for fast feedback, not as the source of truth. The Friday run is ord
 of the Renovate window on purpose (see [Renovate](./renovate.md)), and that ordering is pinned rather
 than commented: `renovate-workflow.guard.test.mjs` asserts the latest sweep cron fires **strictly
 earlier** than the earliest window cron, with at least a two-hour gap, and that both are UTC-fixed
-5-field expressions (item #487). The Tuesday run (item #642) means an advisory published early in the
+5-field expressions (item #487). The same test also fails if the workflow stops recording *why* its
+cron sits where it does — the file must still carry the `item #487` reference — because an
+unexplained time is the one a later reader tidies. The Tuesday run (item #642) means an advisory published early in the
 week is visible with three days in hand instead of surfacing at the moment the window's PRs already
 exist and inherit a red nobody had seen — GHSA-vcvr-r3jv-pc5j, on the unchanged `langfuse:4` pins,
 was published 2026-09-22 and first surfaced at 04:00 on 2026-10-02. Tuesday 04:00 is hour-of-week 52,
@@ -331,6 +337,19 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   is reachable), and **record in the justification that this is an inference, not a scan**. Prefer the
   direction that fails safe: a key covering a ref that turns out clean suppresses nothing extra; a key
   that omits an affected ref blocks the board.
+- **The scanner itself is version-pinned, and Renovate is what keeps it from rotting.** `infra-image-scan.yml`
+  (like `cd-deploy.yml`) installs Trivy from a **version-tagged** `contrib/install.sh` and passes the same
+  tag as the script's positional argument — one `TRIVY_VERSION` assignment interpolated into both sites,
+  so a bump cannot move one and strand the other. The floating form this replaced (script from `main`,
+  no tag) had no digest underneath either, and it cost real comparability: during item #297 the local
+  sweep ran `aquasec/trivy:0.74.0` while CI ran an unknown version, so two scans of byte-identical
+  images could not be reconciled. A `customManagers` entry (`depNameTemplate: aquasecurity/trivy`,
+  datasource `github-releases`) covers both workflow files, and `renovate-workflow.guard.test.mjs`
+  asserts the *resolved* state rather than the presence of a version string: both files pinned, the
+  script ref equal to the installed tag, the two files agreeing on one version (a disagreement means one
+  gate can block what the other passes, with neither result explaining the other), and the manager's
+  `matchStrings` actually capturing a `currentValue` in each file — a manager whose regex misses is
+  indistinguishable from no manager at all.
 - **Is the advisory still the severity you triaged it at?** The gate blocks on fixable **Critical**
   only, so an advisory re-rated Critical→High stops blocking without anything upstream changing — and
   in the gate's output that is indistinguishable from remediation. Read the installed package version
@@ -382,7 +401,7 @@ what matters here is that four of its lessons are about the *shape*, not about t
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, and both are UTC-fixed 5-field expressions — so a later "tidy the crons together" cannot silently undo it. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
 | `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |

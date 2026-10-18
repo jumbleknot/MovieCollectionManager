@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T03:00:26.889Z
+    at: 2026-10-18T17:22:52.674Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -69,8 +69,9 @@ ported from the GitHub-era `android-e2e.yml`, a filename that no longer exists i
 `APK_ABI=x86_64`), runs it on a KVM emulator on the `kvm` runner label (which executes the job
 directly on the ci host — see below), and drives the flows per-file through
 `scripts/ci-mobile-agent-flows.sh`. The reason for the split is not the emulator: the local Windows
-path runs agent flows against the **Metro dev server**, which OOM-crashes after only a handful of agent
-`/run` calls and then shows a black screen / `status 0` "RN networking issue" that reads as an app bug.
+path runs agent flows against the **Metro dev server**, which OOM-crashes after only one or two agent
+`/run` calls (V8 heap dump in Metro's log) and then shows a black screen / `status 0` "RN networking
+issue" that reads as an app bug.
 **Non-agent flows** (login, CRUD, sort, browse) run fine on the local emulator while iterating on a
 JS/UI change — but a change that alters the **native layer** (an Expo / React Native SDK bump, a native
 module added or upgraded, `app.json` / `android/` config) alters the binary *every* flow runs on, so
@@ -132,7 +133,10 @@ Three details of that step are load-bearing when editing it:
   `localhost:8082` appears inside `assets/index.android.bundle` of the produced APK. The string is not a
   source literal anywhere, so its presence proves the `EXPO_PUBLIC_*` env was re-inlined in *this*
   build; a stale Metro transform cache on a persistent runner otherwise silently bakes an older URL and
-  the failure surfaces much later, at login. The build therefore disables the Gradle daemon
+  the failure surfaces much later, at login. `frontend/mcm-app/scripts/build-apk.mjs` attacks the cause
+  as well as the symptom: for a `release` variant it deletes Metro's temp caches
+  (`metro-cache`, `metro-file-map*`, `metro-symbolicate*`, `haste-map*`) so the current env is
+  re-inlined, and the workflow disables the Gradle daemon
   (`GRADLE_OPTS=-Dorg.gradle.daemon=false`), because a reused daemon keeps the env it started with.
 - **A missing KVM capability fails the job; it never skips the mobile suite.** The `app-e2e` job's
   **`Verify KVM is available`** step (wrapped by `scripts/ci-log-step.sh` as
@@ -282,7 +286,11 @@ through `adb reverse`.
 
 - **Agent flows still prefer CI even inside the dev container.** The decision rule is unchanged
   regardless of where the emulator runs; only the *transport* to reach the OOM-prone Metro server
-  differs (tunnel vs. `10.0.2.2`).
+  differs (tunnel vs. `10.0.2.2`). If an agent flow has to be run locally anyway — to debug the *flow*
+  rather than the app — point the app at the **containerized dev BFF on 8082** instead of Metro's own
+  BFF, so the OOM-prone server is the container and Metro only serves JS; and confirm `:8081` answers
+  before each agent-run batch, because a black screen or `status 0` almost always means Metro died
+  rather than the app being wrong.
 - **`10.0.2.2` works fine for TCP on this machine — the old claim that QEMU networking is broken was
   wrong (corrected 2026-08-23).** An older note wasted a session; it was refuted with a negative control
   (a port with no listener returns `rc=1` while a real port returns `rc=0`), because "nothing answered"
@@ -358,7 +366,12 @@ through `adb reverse`.
   are in the runbook.
 - **The dev container can emulate but cannot build the APK.** The SDK and an `android-34`
   `google_apis` `x86_64` system image are baked into the toolchain image, and the privileged DinD
-  container exposes the host `/dev/kvm`, so a headless emulator boots with hardware acceleration. The
+  container exposes the host `/dev/kvm`, so a headless emulator boots with hardware acceleration.
+  `scripts/devcontainer-android.sh` is the lifecycle entry point: its default `prepare` subcommand
+  grants `/dev/kvm` access and creates the AVD idempotently (it runs from `postStartCommand`, so a
+  normal session pays nothing), `boot` starts the AVD headless and `adb reverse`s 8082 and 8099, and on
+  a host with no `/dev/kvm` — the Docker Sandbox microVM, where the device cannot appear at all — it
+  refuses legibly and names both remaining routes instead of failing as if broken. The
   Gradle wrapper distribution is baked too, but Gradle still resolves the Android/Maven plugin graph
   from the open internet at build time, which the container's default-deny egress firewall blocks —
   pre-seeding that graph is impractical, so a release APK comes from CI or a build container with its

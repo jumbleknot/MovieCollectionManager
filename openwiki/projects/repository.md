@@ -29,8 +29,12 @@ sources:
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
+  - id: openwiki-source-dbbd2a072603d7674a1530f2
+    resource: repo://docs/runbooks/android-emulator.md
   - id: openwiki-source-f83bd1373e0f000fa5d548c0
     resource: repo://docs/runbooks/ci-diagnostics.md
+  - id: openwiki-source-8cb0da307c90adb4287997a5
+    resource: repo://docs/runbooks/dev-environment-setup.md
   - id: openwiki-source-3428fee3ac79873bee5650fc
     resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
@@ -43,6 +47,8 @@ sources:
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
+    resource: repo://rust-toolchain.toml
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-08fc841d5e458f6987e87106

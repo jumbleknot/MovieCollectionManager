@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
-description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the canonical egress allowlist behind the in-container firewall (including the Ollama registry/blob pair), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall and its fatal-precondition design, the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 sources:
@@ -11,6 +11,8 @@ sources:
     resource: repo://.devcontainer/Dockerfile
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
+  - id: openwiki-source-774d00b5d62cc6221b5968ea
+    resource: repo://.devcontainer/fix-workspace-ownership.sh
   - id: openwiki-source-61f1a679973e2c37988cd802
     resource: repo://.devcontainer/gen-container-secrets-env.sh
   - id: openwiki-source-2f905dfaa401c44dac71649b
@@ -21,6 +23,8 @@ sources:
     resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-84525c5b1053cfa785b83c28
     resource: repo://.devcontainer/verify/run-harness.sh
+  - id: openwiki-source-4811c78aebdb18972e0c3805
+    resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-a9fc7285078c8062777b3180
@@ -29,12 +33,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-c3ef9454981554d2b5a20dec
     resource: repo://scripts/devcontainer-ollama.sh
+  - id: openwiki-source-0b13188628bc70e422253f37
+    resource: repo://scripts/gen-egress-policy.mjs
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-18T17:22:52.674Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -73,6 +79,15 @@ true` was also tried and does not engage on this path, and a chown-based repair 
 to the container user and the VM user fails, and vice versa — measured in one run as "container git
 write: OK / VM git write: FAILED").
 
+**Where the renumber actually lives.** `toolchain.Dockerfile` creates `coder` at **1000:1000** and
+moves the base image's `node` aside to **1100** first, so the container user matches the uid that
+owns the workspace on the sandbox side. At that point in the build the image is nearly empty, so the
+copy-up cost is zero — which is the whole argument for doing it there and nowhere else. The
+ownership *repair* helper `.devcontainer/fix-workspace-ownership.sh` (which fixes only mismatched
+entries, rather than `chown -R`-ing a large tree on every start) is wired into the **sandbox**
+config's hooks; this path's ownership repair is the inline `chown` list in its own
+`onCreateCommand`.
+
 **Egress is default-deny with an allowlist.** `init-firewall.sh` programs the container's own
 `OUTPUT` chain (plus the nested dockerd's image pulls) and deliberately leaves `FORWARD` to
 dockerd, so nested-container networking is not broken. Since feature 060 the destination list is
@@ -81,7 +96,9 @@ dockerd, so nested-container networking is not broken. Since feature 060 the des
 canonical list — and is read through `scripts/gen-egress-policy.mjs --format ipset-domains`, the
 same generator that emits the sandbox's host-side policy. Adding a destination means editing that
 file and its recorded `reason`; two hand-maintained lists would turn a blocked fetch into the union
-of two allowlists and diagnosis into guesswork.
+of two allowlists and diagnosis into guesswork. The generator never writes a file — both forms are
+piped by their consumer — so no generated artifact can go stale in git and silently disagree with
+its source.
 
 The script treats an unusable allowlist as a reason to **apply nothing at all** rather than to apply
 default-deny with an empty list. Every precondition failure is fatal, because the alternative —
@@ -104,6 +121,12 @@ flowchart TD
 
 *Why the firewall either applies a real allowlist or applies nothing: every precondition failure is fatal, so a crashed generator cannot silently become an egress blackout.*
 
+One deliberate widening lever exists and is **off by default**: `FIREWALL_ALLOW_CDN_RANGES=1`
+additionally allowlists the published AWS-CloudFront and Cloudflare CIDR ranges, for the case where
+a CDN round-robins to an address the per-domain A-record snapshot missed. It opens egress to both
+providers' whole edge networks, which is why the tight per-domain list is the default and a
+re-apply is the first remedy for a stalled pull.
+
 The lifecycle hooks are worth knowing when something is missing rather than broken:
 `onCreateCommand` repairs volume ownership and seeds Claude Code's config, `postCreateCommand` runs
 `pnpm install`, and `postStartCommand` re-applies the firewall (ipset is not persisted), brings up
@@ -117,7 +140,12 @@ each asserts one success criterion and fails rather than self-healing. The aggre
 globbing, so a renamed or lost script fails the run instead of silently shrinking the checked set,
 and anything without an explicit pass counts as a failure. Its scripts span three vantage points —
 in-container, VM-side, and one Windows-side check that must be supplied via `MCM_HOST_CHECK` because
-a claim asserted from inside the thing being claimed about is not proof.
+a claim asserted from inside the thing being claimed about is not proof. The firewall check is
+itself an example of the single-source rule: `verify-firewall-allowlist.sh` used to carry its own
+inline copy of the destinations it checked, which cannot detect drift between the canonical list and
+the live ruleset; it now resolves each canonical domain through the same generator and asserts
+membership in the live ipset, so a `cdnRotating` entry whose A-records moved surfaces as the
+documented re-apply reflex rather than as a missing rule.
 
 ## Gotchas
 

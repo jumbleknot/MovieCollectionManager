@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:02891f678706b12135d351495671ad4260293e2c1805a09dc5207f1820220bac",
+  "pageVersion": "sha256:9dcda16445da13d0efc463af70bae457126039573749317b4b2c6a680d87c6ec",
   "claims": [
     {
       "id": "claim_c94970677b844011986b6c34aa1dac78",
@@ -159,7 +159,7 @@
       "statement": "CI tears its stacks down on every run — the app-ci app-e2e job's 'Tear down CI stacks (always)' step runs under if: always() — so a leftover CI stack cannot hold a host port indefinitely and starve a prod redeploy the way the original incident did.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1360-L1385",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1434-L1459",
           "version": "repo-lines-v1:sha256:79a1a45059b085c594faad02ba4828b6a75072a1793e87483a374bfb79313712:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiOTRmODBhYWNmNmZkOThjOTQxMjhhMjZjZjZmNzMwZThjMDc1NDJlOGMzM2RmMzI0ODhkOTZkYjcyNGFkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZWNmOTBhZWVmODQ3MzlmMDBjYTFiM2VmYzcwZGZlNjIwNjVlYWZlNDVhMjgzNzU5MDljMTdhZmFjNzg4NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         }
       ]
@@ -170,7 +170,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer.md#L434-L440",
-          "version": "repo-lines-v1:sha256:9ccf554418de96c4b6f5a660a81961cd4b4adcf031fcbaf2cd1f1fd5bc4a5bb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY1NTk1ZjNlZTJkZGM3N2U4OGE1NTdkZmMxMTVjOGE2ODkyNGEzZGJhOTgxMjg4ZjI1NTA3ZmEwNTM4YzUwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBlOWNhZTNiMWUyOTVmYTQxN2VhOTkyNDBjZWZiOWIyOTI2YzliZTE5YWI2ZGYxMjE2NGQ4YTA3OGIzMjNkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmI0NWU2ZDBhMDk1NmVlYjI5MjcwODQ4MmZhODU5NTFhNDA4YTU5OTk2YjQ1NzcxM2QyN2VjNjdkOWM3MGQ5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmEwNGI4ZGNlZWJhNWI0ZjIxNTY0ZDk0ZDJjM2ViNWRjNWU3MWIzZWMzOTU2ZWI0OTUzMTQwY2ZhODRkN2Q2NyJ9"
+          "version": "repo-lines-v1:sha256:2890a473d0ec0cc0f779080162f8c584f92199d9d83925d9e1157bb454fb43bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY1NTk1ZjNlZTJkZGM3N2U4OGE1NTdkZmMxMTVjOGE2ODkyNGEzZGJhOTgxMjg4ZjI1NTA3ZmEwNTM4YzUwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU5MzBjMzJmY2ZlZTQ2ZDBhNDMyNjZmNDFlNTNiYTFmMGFjYjI2YzRmNzA1NmRlYmQ0NmJhMGUxYmMwM2M5ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmI0NWU2ZDBhMDk1NmVlYjI5MjcwODQ4MmZhODU5NTFhNDA4YTU5OTk2YjQ1NzcxM2QyN2VjNjdkOWM3MGQ5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmEwNGI4ZGNlZWJhNWI0ZjIxNTY0ZDk0ZDJjM2ViNWRjNWU3MWIzZWMzOTU2ZWI0OTUzMTQwY2ZhODRkN2Q2NyJ9"
         }
       ]
     },
@@ -279,6 +279,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T13:30:11.885Z"
+    "at": "2026-10-18T17:22:52.674Z"
   }
 }

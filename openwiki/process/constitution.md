@@ -7,6 +7,21 @@ tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-18T07:04:46.529Z
+sources:
+  - id: openwiki-source-bff475d8fa855e3592cfedc2
+    resource: repo://.specify/memory/constitution.md
+  - id: openwiki-source-baa6cf05f830f1fa193ef74c
+    resource: repo://docs/templates/feature-test-tasks-template.md
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
+    resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-4388ebe240b6b1a6c540d5c5
+    resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
+  - id: openwiki-source-db3aa5ac2ffb577a529916ad
+    resource: repo://specs/081-major-dependency-upgrades/plan.md
+  - id: openwiki-source-f64018476db6cdad83959624
+    resource: repo://specs/081-major-dependency-upgrades/spec.md
 ---
 
 # The governing constitution

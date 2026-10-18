@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f31f7ea8e90c1f0d831f926e6a862ee58ee65df9aac27675f6cc5b96ad6e2626",
+  "pageVersion": "sha256:59c99abb35b934103f3c05c7e0c63e6ec85588684f93ef336e44483347a04b06",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
-          "version": "repo-file-v1:sha256:454e21a3aa1cb0309d17925888a4aae821efc7687484e604ca0df9f588277011"
+          "version": "repo-file-v1:sha256:63fcb97733c245f1204b4e69db399cdd97334a26b1f424bfa55fa62f291ba1f1"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh",
@@ -212,7 +212,7 @@
         },
         {
           "resource": "repo://README.md#L159-L173",
-          "version": "repo-lines-v1:sha256:b330dfa459beec1e0c479fc9f59d43966ecdbbfe9d56b1aa31a376f8411d9315:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDM1YTdlMDc2MTQyMzYzOGI2YTQ0MGM4ZWQzY2FhYWQ1NzRmYzRmMjI1ZmQ2YWIyZmY0NmVkNGRiZTdiNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NmZkYjAwMGFjMGFkZmY5M2QxNWE2YjllNmQ3MDc4NzQ5MzM3ZDYyZmY2MjQ2MWZmOGQ1MGQ1YWUxYTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
+          "version": "repo-lines-v1:sha256:57573de2d46d3932fe05bca582b5f64957e6c4567092284e2d706332cecc9139:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDM1YTdlMDc2MTQyMzYzOGI2YTQ0MGM4ZWQzY2FhYWQ1NzRmYzRmMjI1ZmQ2YWIyZmY0NmVkNGRiZTdiNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDFlZThlZjhmZTgwZDVmZTMwMTgwMGQzYmM2MTYzZGQ3NzVjYzRhNjNkZmRmYWYyYTlmOTgwYWUzOWE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NmZkYjAwMGFjMGFkZmY5M2QxNWE2YjllNmQ3MDc4NzQ5MzM3ZDYyZmY2MjQ2MWZmOGQ1MGQ1YWUxYTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMzhlOGUxMDcxOTFlNDZmZjJhMTI2MGIwY2M2OGRkOGU4OTE1MDhjNDFmOTJkNDBkMzcwOTc5MWVjMzQ2NmQifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-android.sh#L1-L65",
@@ -240,7 +240,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
-          "version": "repo-file-v1:sha256:454e21a3aa1cb0309d17925888a4aae821efc7687484e604ca0df9f588277011"
+          "version": "repo-file-v1:sha256:63fcb97733c245f1204b4e69db399cdd97334a26b1f424bfa55fa62f291ba1f1"
         },
         {
           "resource": "repo://scripts/ci-mobile-lib.sh#L51-L61",
@@ -313,7 +313,7 @@
           "version": "repo-file-v1:sha256:23d5edc253c34016ff0e749a57c599c435908b1025ae4f70088af484a91a719d"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2934-L2958",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2862-L2886",
           "version": "repo-lines-v1:sha256:dc5b04efbcdc2f8d919c28046c493bb14489dd821cb6fd511ce874ecf92ee3d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOTdkZDc3ZjMzYTQ1MjdlMGVlNTc0YTM4NThkMGYxZTIzZmI0NDNmMDJlZDdlM2UyMzBiODE3ZGQxMGIzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxODljYmVlMzEyZjA1YjdmMGQ3NGQ3OTYyZTllMDBhYzFmNGY5MDM5NDhlOTVjNTRhYmFiMGEyNTIyOGIzZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ODI4MTFlOTFlNDBiYjQ3MzJiYzhlMTI3YWZhMzIzNjdjNWUyOGM3ODM0OWIyZmY4NjFmNDdmMTk5NDY5ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiODZhNzE0ZjQ5NjExMmQyNzk1MDMyM2FkYjdkYmQ0ZjFjZjRkYjEyZjI0MTVkNzBhOGU5ODRhYTg2YWI1NzQifQ"
         }
       ]
@@ -351,8 +351,8 @@
       "statement": "The standalone release APK can reach the cleartext dev BFF only because frontend/mcm-app/plugins/with-dev-cleartext.js (declared in app.json's plugins) writes an Android network security config at prebuild time that permits cleartext for localhost, 127.0.0.1 and 10.0.2.2 only and points android:networkSecurityConfig at it; Android blocks http:// at targetSdk >= 28 and Expo relaxes it only in the debug manifest, so without this plugin the release APK's login POST fails with ERR_NETWORK and never leaves the device, while every other host stays cleartext-blocked so a production HTTPS build is unaffected.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/app.json#L28-L41",
-          "version": "repo-lines-v1:sha256:4b110f7cd283cdb79e87e8e2c463dbc8c76ce6170b4dd7665139adc1a76749a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+          "resource": "repo://frontend/mcm-app/app.json#L28-L43",
+          "version": "repo-lines-v1:sha256:a8405a0bff459e497ba2c73cd5b499ec6979c24c5872e9435e13db19582f2ee3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/plugins/with-dev-cleartext.js#L1-L54",
@@ -477,10 +477,20 @@
           "version": "repo-lines-v1:sha256:68b3c633f54b84dc9367d6ec8347ff3c87915bb6e8cf234d1cc7228b07f3bae6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzgwMzNhMmIxZjQ0Y2YyMWFiYWY2NjFhNWEyN2RjNmIxYTg2MmNhMzgzMjM0MjAxZTVjNDgzNGMzMDljNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a6d2a4a2b45749c08f5962a5f631b4f0",
+      "statement": "When an agent mobile flow must be run locally anyway — to debug the flow rather than the app — the documented fallback is to point the app at the containerized dev BFF on 8082 instead of Metro's own BFF, so the OOM-prone server is the container and Metro only serves JS, and to confirm host port 8081 answers and restart Metro between agent-run batches, because a black screen or `status 0` almost always means Metro died rather than the app being wrong.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/android-emulator.md#L72-L76",
+          "version": "repo-lines-v1:sha256:b4b9600f52580e5cac119f2b08b3b098e0a131460b0b2ea7090d8b4080060869:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ2MmNmYWE5ZmFmNWM1NjYzZWY2OWEyYWIyNWNjNDNlOWYzYzZiNTdjOGNlM2Y5Zjg3NDFkZGI1ZjIyOTYzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0N2UwOTUzOGEyMDljYmZhNDMxZjhlMTljYWUxOGRiNzA1ZWMwMGIyZTE4ODJiOWZmZWFkZjQwMDExYzEyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTRlZjI0ZGNhZDc2NjFjOThiNTQ0M2NhNmQ3NTAwYTM5OWRhNmI4MDY2ZTI3Yjc5ODU2ODMzYWYyZDVkY2E0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDI0OTRjZDk1NjQ2MjI0YTFlZjI1MDNhYzRkMWE2MzZmNTgxOGQyNzZkYTk5ZGY0YWM4ZmU2ZDQyZjViYWZjNCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-18T17:22:52.674Z"
   }
 }

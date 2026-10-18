@@ -1,9 +1,10 @@
 ---
-type: Runbook
-title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
-resource: docs/runbooks/renovate.md
-tags: [renovate, ci, dependencies, runbook]
+type: "Reference"
+title: "Renovate dependency bot"
+openwiki_generated: true
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-18T17:22:52.674Z
 sources:
   - id: openwiki-source-6186a866b56089a82cce5c62
     resource: repo://.forgejo/workflows/devcontainer-image.yml
@@ -27,15 +28,15 @@ sources:
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-e1b32ed173a0f6b508f94a03
+    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-8a0f1bda8bd15d4b15217f58
     resource: repo://scripts/check-lockfile-refresh.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 ---
+
 
 # Renovate dependency bot
 
@@ -328,6 +329,45 @@ together by one customManager plus the `uv pin` packageRule, and asserted equal 
 `renovate-workflow.guard.test.mjs`. It is not a shared file because `astral-sh/setup-uv`'s `version:`
 input is an Actions expression and cannot read a repository file — a file would leave the five action
 sites unpinned, reproducing the exact drift the pin exists to prevent.
+
+## Version holds, permit-lists and approval gates
+
+A hold is expressed as `allowedVersions`, **never** `enabled: false`, because the digest refresh of the
+tag we already run is the security patch stream for that image: disabling the dep would strand it, while
+a ceiling blocks only the version move and leaves the dep in its group. What a hold cannot express —
+"not never, but not by accident" — is `dependencyDashboardApproval` instead.
+
+| dep | hold | why |
+| --- | --- | --- |
+| `hashicorp/vault` | `<1.19` | 1.21 un-suppresses three allowlisted Criticals (the allowlist regex is keyed to `vault:1\.18`) and adds two new pgx ones, measured on PR #289 |
+| `postgres` in the observability files only | `<17` | one digest backs both Langfuse and Unleash, so a major migrates Unleash as a side effect — scoped by `matchFileNames` so keycloak/agent-db (already on 18) keep their own major stream |
+| `python` | `<3.15`, derived from `agents/movie-assistant/.python-version` | the interpreter minor is a toolchain decision, not a base-image sweep; the guard derives the ceiling from the pin for **both** managers and fails when they disagree, so raise them together |
+| `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
+| `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
+| `actions/upload-artifact` | `<4` | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
+| `java-jdk` (from `actions/setup-java`) | `/^17\./` | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
+| `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
+
+**The `java-jdk` ceiling is a regex on purpose, and that is the one hold shape worth copying.** This dep
+uses `semver-partial` versioning, and Renovate tries the dep's own versioning before npm semver:
+`semver-partial` *coerces* `<18` to `18.0` and matches only `18.0.x` — so the intuitive
+`allowedVersions: "<18"` admitted exactly JDK 18.0 and blocked 17, and the 2026-10-17 dashboard proposed
+`java-jdk 17 -> 18` straight through the hold. A regex is evaluated before any versioning, so `/^17\./`
+means what it says. The guard models `semver-partial`'s own matcher and asserts both halves: 17.x
+patches still flow, and 18.0.2/21/25 are refused.
+
+**Both CI-action holds must stay AFTER the `ci actions` group rule**, because the last matching rule
+wins: placed earlier, the group rule pulls the dep back out and the ceiling stops applying. The guard
+asserts the ordering, that neither hold strands the dep out of its group, and — as the control — that
+neither ceiling leaks onto `actions/checkout`, `setup-node`, `astral-sh/setup-uv` or `node` on the
+`node-version` datasource.
+
+**Tamagui is the lockstep-pin case the broad npm rules would otherwise split.** Every `tamagui` /
+`@tamagui/*` specifier in both workspace manifests is an exact version and both manifests agree, with
+one `tamagui` group on all three tracks and `rangeStrategy: pin`. Measured 2026-10-16: an open
+`@tamagui/font-inter >=2.0.0` range let a lock regeneration pull `@tamagui/core@3.0.13` into the lock
+beside 2.7.7 with no PR and no review — which is why the rule carries no `matchUpdateTypes` and must be
+ordered after `js patch/minor` and `js majors`.
 
 ## Silent failure modes
 
