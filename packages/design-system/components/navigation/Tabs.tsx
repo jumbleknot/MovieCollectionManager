@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useState } from 'react'
-import { Animated, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
 import { View, useTheme } from '@tamagui/core'
 import { Text } from '../primitives/Text'
 import { withAlpha, stateLayer } from '../../tokens/with-alpha'
@@ -171,7 +171,14 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             // Measured on feature 062: this hover could not be seen at all in dark mode.
             // Tamagui 3: the hover is a clause on backgroundColor (was hoverStyle). The typed form
             // keeps the computed rgba() — which contains spaces — out of a space-separated program.
-            backgroundColor={{ hover: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }}
+            // WEB ONLY. In Tamagui 3 ANY state clause - hover included - makes this inner View attach its
+            // own event handlers on native (createComponent: `shouldAttach` counts a hover program), so on
+            // Android it swallows the tap meant for the outer Pressable. MEASURED: PR #788's first full-suite
+            // run - `Tap on id: settings-nav-assistant` (NavList, same pattern) did nothing. Native has no
+            // hover, so it gets no clause and nothing to attach.
+            backgroundColor={Platform.OS === 'web'
+              ? { hover: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }
+              : undefined}
           >
             {/* Icon */}
             {tab.icon && (

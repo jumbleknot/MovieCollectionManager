@@ -23,7 +23,7 @@
  */
 
 import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Platform, Pressable, StyleSheet } from 'react-native'
 import { View, useTheme } from '@tamagui/core'
 import { Text } from '../primitives/Text'
 import { withAlpha, stateLayer } from '../../tokens/with-alpha'
@@ -88,9 +88,14 @@ export const NavList = React.memo<NavListProps>(function NavList({
               borderRadius={28}
               // Tamagui 3: the hover is a clause on backgroundColor (was `hoverStyle`); an active row
               // has none, as before.
+              // WEB ONLY. In Tamagui 3 ANY state clause - hover included - makes this inner View attach its
+              // own event handlers on native (createComponent: `shouldAttach` counts a hover program), so on
+              // Android it swallows the tap meant for the outer Pressable. MEASURED: PR #788's first full-suite
+              // run - `Tap on id: settings-nav-assistant... COMPLETED`, then settings-assistant-screen never
+              // appeared, 3/3 attempts. Native has no hover, so it gets a plain value and nothing to attach.
               backgroundColor={isActive
                 ? theme.secondaryContainer?.val
-                : { default: 'transparent', hover: hoverLayer }}
+                : Platform.OS === 'web' ? { default: 'transparent', hover: hoverLayer } : 'transparent'}
               // A hover clause ONLY — never a `press` clause (v2: `pressStyle`) on this inner Tamagui
               // View. Measured on Android (CI run 2063): a Tamagui press state makes the View a touch
               // responder (v3 still attaches press events for a press clause, createComponent),
