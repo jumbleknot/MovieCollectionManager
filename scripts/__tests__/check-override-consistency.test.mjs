@@ -100,3 +100,72 @@ test('(i) the REAL override map is consistent today — the guard is green on ar
   const res = spawnSync(process.execPath, [GATE], { encoding: 'utf8' });
   assert.equal(res.status, 0, `the live pnpm-workspace.yaml must pass\n${res.stdout}${res.stderr}`);
 });
+
+// ── Feature 081 US5a (T033) — the CAP rule ─────────────────────────────────────────────────────────
+//
+// The rule above checks the FLOOR half. Renovate attacks the other half: its npm manager reads a keyed
+// override's value as a plain version range and "widens" its upper bound to admit the newest major, so
+// `undici@<6.27.0: '>=6.27.0 <7'` arrives as `'>=6.27.0 <9'`. The floor is untouched, so the floor rule
+// above stays green — and the override now hands any dependent that resolved into the vulnerable span
+// a DIFFERENT MAJOR than it declared (research R2; fc3c47ae measured js-yaml 5 sneaking in this way).
+// Measured 2026-10-18 on the Dependency Dashboard (item #29): six such proposals were pending, all six
+// in the table below.
+//
+// THE RULE: a keyed floor's value cap (its exclusive `<` bound) may not exceed the key's major + 1.
+// A cap tighter than the major is fine; a value with NO cap is reported by name and out of this rule's
+// scope (four exist on `main` and pre-date it; capping them would churn the lockfile); a cap written in
+// a form the gate cannot read (`<=`, `||`) is refused with exit 2, never skipped.
+
+const LIVE_WIDENINGS = [
+  // [key, the value on main, the value Renovate proposed on 2026-10-18]
+  ['undici@<6.27.0', '>=6.27.0 <7', '>=6.27.0 <9'],
+  ['undici@>=7.0.0 <7.29.1', '>=7.29.1 <8', '>=7.29.1 <9'],
+  ['js-yaml@>=3.0.0 <3.15.1', '>=3.15.1 <4', '>=3.15.1 <6'],
+  ['js-yaml@>=4.0.0 <4.3.1', '>=4.3.1 <5', '>=4.3.1 <6'],
+  ['fast-uri@<3.1.5', '>=3.1.5 <4', '>=3.1.5 <5'],
+  ['nanoid@>=3.0.0 <3.3.18', '>=3.3.18 <4', '>=3.3.18 <7'],
+];
+
+for (const [key, current, widened] of LIVE_WIDENINGS) {
+  test(`(cap) the Renovate widening ${key}: '${widened}' FAILS the gate`, () => {
+    const { status, out } = runAgainst(`  '${key}': '${widened}'`);
+    assert.equal(status, 1, `a cap past the key's major must fail the gate\n${out}`);
+    assert.match(out, /cap/i, 'the failure must say it is the CAP rule that fired');
+    assert.ok(out.includes(key), `the failure must name the offending entry ${key}\n${out}`);
+  });
+
+  test(`(cap) the value on main, ${key}: '${current}', passes`, () => {
+    const { status, out } = runAgainst(`  '${key}': '${current}'`);
+    assert.equal(status, 0, `the major-bounded value must pass\n${out}`);
+  });
+}
+
+test('(cap) a genuine FLOOR RAISE inside the major is still accepted — the security stream stays open', () => {
+  const { status, out } = runAgainst("  undici@<6.28.0: '>=6.28.0 <7'");
+  assert.equal(status, 0, `a floor raise with both halves moved and the cap kept must pass\n${out}`);
+});
+
+test('(cap) a cap tighter than the major passes', () => {
+  const { status, out } = runAgainst("  undici@<6.27.0: '>=6.27.0 <6.30.0'");
+  assert.equal(status, 0, `a cap below the next major admits no other major\n${out}`);
+});
+
+test('(cap) a plain pin is out of the cap rule\'s scope too', () => {
+  const { status, out } = runAgainst(["  react-dom: 19.2.3", "  postcss: '>=8.5.18'"].join('\n'));
+  assert.equal(status, 0, `plain pins have no key major to cap against\n${out}`);
+});
+
+test('(cap) an UNCAPPED keyed floor is out of scope but NAMED, not silently passed', () => {
+  const { status, out } = runAgainst("  form-data@<4.0.6: '>=4.0.6'");
+  assert.equal(status, 0, `an uncapped floor pre-dates the cap rule and must not fail it\n${out}`);
+  assert.match(out, /uncapped/i, 'the pass line must report the uncapped floor');
+  assert.ok(out.includes('form-data@<4.0.6'), `the pass line must NAME the uncapped floor\n${out}`);
+});
+
+for (const value of ['>=6.27.0 <=8.0.0', '>=6.27.0 <7 || >=8.0.0']) {
+  test(`(cap) a value cap the gate cannot read ('${value}') exits 2, never skipped`, () => {
+    const { status, out } = runAgainst(`  undici@<6.27.0: '${value}'`);
+    assert.equal(status, 2, `an unreadable cap must be refused out loud\n${out}`);
+    assert.match(out, /undici/);
+  });
+}

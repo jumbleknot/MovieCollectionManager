@@ -239,6 +239,17 @@ function selftest() {
   t('inclusiveLowerBound reads the >= bound', inclusiveLowerBound('>=3.15.1 <4') === '3.15.1');
   t('a version with fewer parts still compares equal', only({ 'x@<4': '>=4.0.0' }).mismatches.length === 0);
 
+  // (cap) feature 081 US5a — the value's cap may not admit a major above the key's.
+  const capWiden = only({ 'undici@<6.27.0': '>=6.27.0 <9' });
+  t('(cap) a cap widened past the key major is flagged', capWiden.capViolations?.length === 1 && capWiden.capViolations[0].name === 'undici');
+  t('(cap) the major-bounded value is clean', only({ 'undici@<6.27.0': '>=6.27.0 <7' }).capViolations?.length === 0);
+  t('(cap) a floor raise inside the major is clean', only({ 'undici@<6.28.0': '>=6.28.0 <7' }).capViolations?.length === 0);
+  t('(cap) a plain pin is out of scope', only({ 'react-dom': '19.2.3' }).capViolations?.length === 0);
+  const uncapped = only({ 'form-data@<4.0.6': '>=4.0.6' });
+  t('(cap) an uncapped floor is named, not flagged', uncapped.capViolations?.length === 0 && uncapped.uncapped?.length === 1);
+  t('(cap) a `<=` cap is refused as unparseable', only({ 'undici@<6.27.0': '>=6.27.0 <=8.0.0' }).unparseable.length === 1);
+  t('(cap) a `||` value is refused as unparseable', only({ 'undici@<6.27.0': '>=6.27.0 <7 || >=8.0.0' }).unparseable.length === 1);
+
   if (fails.length) {
     console.error('✗ check-override-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
