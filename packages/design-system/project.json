@@ -18,7 +18,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint . --ext .ts,.tsx",
+        "command": "eslint .",
         "cwd": "{projectRoot}"
       },
       "cache": true,

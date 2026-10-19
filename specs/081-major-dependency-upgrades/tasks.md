@@ -327,13 +327,13 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 **PR 5b — eslint 8 → 10**
 
-- [ ] T038 [US5] **Verify RED (upgrade)**: bump `eslint` to ^10 in `frontend/mcm-app` and
+- [x] T038 [US5] **Verify RED (upgrade)**: bump `eslint` to ^10 in `frontend/mcm-app` and
   `packages/design-system`; `pnpm nx run-many -t lint -p mcm-app design-system --skip-nx-cache` — record the
   failure (expected: eslintrc unsupported / `--ext` rejected).
-- [ ] T039 [US5] Migrate both `.eslintrc.json` to `eslint.config.js` using `eslint-config-expo/flat`; drop
+- [x] T039 [US5] Migrate both `.eslintrc.json` to `eslint.config.js` using `eslint-config-expo/flat`; drop
   `--ext` from `frontend/mcm-app/project.json` and `package.json` lint commands.
   **Verify GREEN**: same command, 0 errors, 0 warnings.
-- [ ] T040 [US5] Mutation check: add a deliberate violation (e.g. unused import) to one file, confirm lint
+- [x] T040 [US5] Mutation check: add a deliberate violation (e.g. unused import) to one file, confirm lint
   FAILS, revert. **Done when**: recorded in PR 5b; PR merged.
 
 **PR 5c — @testing-library/react-native 13 → 14**
