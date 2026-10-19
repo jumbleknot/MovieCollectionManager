@@ -4,6 +4,9 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-19T00:33:25.175Z
 sources:
   - id: openwiki-source-6186a866b56089a82cce5c62
     resource: repo://.forgejo/workflows/devcontainer-image.yml
@@ -17,25 +20,32 @@ sources:
     resource: repo://.forgejo/workflows/renovate-health.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
     resource: repo://.forgejo/workflows/renovate.yml
+  - id: openwiki-source-e5d6f72def2648b4025ee519
+    resource: repo://agents/movie-assistant/.python-version
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
-  - id: openwiki-source-083be07d2570a758cc6c0b74
-    resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-914396ae309cbed351491c32
+    resource: repo://scripts/backlog.mjs
   - id: openwiki-source-8a0f1bda8bd15d4b15217f58
     resource: repo://scripts/check-lockfile-refresh.mjs
+  - id: openwiki-source-be4449db5d1cd6939f816b1e
+    resource: repo://scripts/check-override-consistency.mjs
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+  - id: openwiki-source-bd64475e04b69688a7d80d8d
+    resource: repo://scripts/sast-scan.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 ---
-
 
 # Renovate dependency bot
 
@@ -252,6 +262,13 @@ close it — ticking a checkbox is the one sanctioned interaction.
 | Other Branches | `other-branch=` | forces a PR for a branch that has none |
 | Repository Problems | — | **read this** — Renovate reporting its own errors; the toolchain-missing warning appears here |
 
+**Repository Problems is fed by WARNs, so a permanent expected WARN is remapped, not tolerated.**
+`renovate-health.mjs` treats that section as its channel-death signal, so a WARN that fires every run
+by design — the one `minimumReleaseAgeBehaviour: "timestamp-optional"` emits — would either train
+readers to ignore the section or redden the digest weekly. `renovate.json`'s `logLevelRemap` demotes
+that one message to `info`; the pattern matches the message, not the whole class, so a *different* WARN
+still surfaces.
+
 **Re-read the dashboard immediately before ticking — section and checkbox names change between runs.**
 The same update has moved from `unlimit-branch=` under Rate-Limited to `unschedule-branch=` under
 Awaiting Schedule to `other-branch=` under Other Branches across three runs in one day. A tick is a
@@ -342,7 +359,10 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `postgres` in the observability files only | `<17` | one digest backs both Langfuse and Unleash, so a major migrates Unleash as a side effect — scoped by `matchFileNames` so keycloak/agent-db (already on 18) keep their own major stream |
 | `python` | `<3.15`, derived from `agents/movie-assistant/.python-version` | the interpreter minor is a toolchain decision, not a base-image sweep; the guard derives the ceiling from the pin for **both** managers and fails when they disagree, so raise them together |
 | `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
+| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. Patches, minors and digest refreshes stay automatic |
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
+| `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
+| majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
 | `actions/upload-artifact` | `<4` | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
 | `java-jdk` (from `actions/setup-java`) | `/^17\./` | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
 | `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
@@ -378,7 +398,8 @@ None of these produce a red build or a searchable error. They produce absence, a
   `WARN: execa promise rejection suppressed` line under Repository Problems — no PR, ever. Measured
   2026-08-28 (item #218): the `pep621` channel created nothing for weeks until `uv` was added to
   `renovate.yml`'s toolchain steps. Rule out "nothing to refresh" by running the tool by hand
-  (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) before believing a channel is idle.
+  (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) before believing a channel is idle. A new
+  manager means a new toolchain step: the job provisions pnpm (corepack), Rust (rustup) and uv.
 - **The health digest used to read "Healthy" from the wrong signal, twice (items #485, #563, now
   folded together).** It originally read only the advisory `renovate/stability-days` column, which
   missed both red **required** PRs (2026-09-04) and a red main CVE sweep (2026-09-18: the digest posted
@@ -516,8 +537,12 @@ test catches a key Renovate knows but ignores depending on where it is written (
 - [CI/CD pipeline](../projects/ci-cd-pipeline.md) — where a Renovate PR's gates run once it exists
 - [Pull-request batching](../process/pull-request-batching.md) — why the three lockfile channels are
   split rather than grouped into one PR, which is what leaves three of the five slots spoken for
+- [Package-manager enforcement](../invariants/package-manager-enforcement.md) — why the pnpm version is
+  declared exactly once in the root manifest, which is what keeps one Renovate dependency from becoming
+  two on separate major tracks
 - [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why a
   database major waits in Pending Approval, and why `langfuse` takes its own `groupName` (and its
   explicit `prPriority` reset) rather than riding `docker base images`
+- [SAST and SCA scanning](sast-scanning.md) — the gate that consumes the semgrep and cargo-audit pins
 - [Wiki maintenance](wiki-maintenance.md) — the OpenWiki generator tree whose pins this repository
   groups as one `openwiki generator` PR

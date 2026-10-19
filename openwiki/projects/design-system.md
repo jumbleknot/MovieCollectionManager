@@ -4,10 +4,71 @@ title: MCM Cinema design system
 description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring, and the R1-R7 compliance scan that keeps the app from drifting off it.
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
-timestamp: 2026-06-14T16:26:34-04:00
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T20:44:33.459Z
+    at: 2026-10-19T00:33:25.175Z
+sources:
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-d67eac1e98649691c637d9c0
+    resource: repo://frontend/mcm-app/tamagui.config.ts
+  - id: openwiki-source-786e50deebd10dc2a828d4e6
+    resource: repo://frontend/mcm-app/tests/unit/design-system-compliance.test.ts
+  - id: openwiki-source-4a49039347048abc47c466b7
+    resource: repo://frontend/mcm-app/tests/unit/ds-compliance-scan.test.ts
+  - id: openwiki-source-8ab33860194ded866427f647
+    resource: repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts
+  - id: openwiki-source-c847620424d66ef5f2e66d05
+    resource: repo://packages/DESIGN-SYSTEM.md
+  - id: openwiki-source-87ec032633e7c7bbf61a29f6
+    resource: repo://packages/design-system/components/focus-ring.test.ts
+  - id: openwiki-source-08eebdda17baf659b7ce331b
+    resource: repo://packages/design-system/components/interaction-states.test.ts
+  - id: openwiki-source-73371fb6e562a6846976bee5
+    resource: repo://packages/design-system/components/primitives/FAB.tsx
+  - id: openwiki-source-09ee847b43e33b41798d0b11
+    resource: repo://packages/design-system/components/primitives/PillButton.tsx
+  - id: openwiki-source-24ebe237368edff77286c22f
+    resource: repo://packages/design-system/components/primitives/Text.tsx
+  - id: openwiki-source-dbd3a1ab0d2813b1a52d6687
+    resource: repo://packages/design-system/components/success-token.test.tsx
+  - id: openwiki-source-4e5ca09d02519d4415cb5176
+    resource: repo://packages/design-system/components/text-defaults.test.tsx
+  - id: openwiki-source-a9c194be69907f6c04167c36
+    resource: repo://packages/design-system/fonts/index.ts
+  - id: openwiki-source-c946714d585eda56a568ec4a
+    resource: repo://packages/design-system/index.ts
+  - id: openwiki-source-9315324d9a0185179ef416f8
+    resource: repo://packages/design-system/jest.config.js
+  - id: openwiki-source-95aa559e7d1634eddb9fc64d
+    resource: repo://packages/design-system/jest/tamagui-cjs-resolver.js
+  - id: openwiki-source-f7e16ba323424b9790bca8b9
+    resource: repo://packages/design-system/package.json
+  - id: openwiki-source-43b80bf7258168486914092e
+    resource: repo://packages/design-system/README.md
+  - id: openwiki-source-7c01a8501da7bfee76f8ed12
+    resource: repo://packages/design-system/tamagui.config.ts
+  - id: openwiki-source-aebe1152602dd681cb05f131
+    resource: repo://packages/design-system/theme/dark.ts
+  - id: openwiki-source-9ccf7d043a370e9d13139133
+    resource: repo://packages/design-system/tokens/colors.ts
+  - id: openwiki-source-33cc1b67f34fd8d337e8639e
+    resource: repo://packages/design-system/tokens/typography.ts
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+  - id: openwiki-source-e1b32ed173a0f6b508f94a03
+    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-e1a7063386de1c5b8a2e79a9
+    resource: repo://scripts/lib/renovate-package-rules.mjs
+  - id: openwiki-source-4b5e8012f071d7a46c3a91d4
+    resource: repo://specs/017-design-system-consistency/contracts/compliance-rules.md
+  - id: openwiki-source-4a3f18ae9eac44709bf504c7
+    resource: repo://specs/017-design-system-consistency/contracts/sanctioned-deviations.md
+  - id: openwiki-source-54da196e9c02e7f7f455cfb8
+    resource: repo://specs/017-design-system-consistency/contracts/success-token.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 ---
 
 # MCM Cinema design system
@@ -56,7 +117,9 @@ Two properties of that mapping are load-bearing and easy to get wrong:
   name on a colour property *token-first* and theme second, so duplicating the light values as tokens
   made `color: 'onBackground'` resolve to the light colour inside the dark theme. Read roles via
   `useTheme()` → `theme.<role>?.val`, and in component code spell token/theme names **without** the
-  Tamagui 2 `$` sigil — a leftover `"$primary"` still typechecks and resolves to nothing.
+  Tamagui 2 `$` sigil — a leftover `"$primary"` still typechecks and resolves to nothing. The only
+  non-palette colour tokens are `white` and `black`; `transparent` is deliberately *not* a token, since
+  Tamagui 3 rejects a token named after a CSS keyword and the literal resolves correctly anyway.
 - **`success` is a first-class role, not a green literal.** It was added (feature 017) precisely so
   positive/verified state flows through the theme: positive text uses `theme.success?.val`, a filled
   verified banner uses `successContainer` with `onSuccessContainer`, and no consumer may hardcode a
@@ -97,10 +160,13 @@ is a measured decision, not a leftover:
 - **One exact version, never a range.** The design system declares `@tamagui/core`, `@tamagui/stacks`
   and `@tamagui/shorthands`; the app declares `@tamagui/core` and `@tamagui/stacks`. All of them sit at
   the same exact `3.0.18`. `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` fails if either
-  manifest uses a range, if the two manifests disagree, if the lock holds more than one `@tamagui/core`
-  or `@tamagui/web`, if the removed v2 `@tamagui/babel-plugin` is named by a manifest or
-  `babel.config.js` again, or if any Tamagui update escapes the single Renovate `tamagui` group — a
-  range lets a partial lock refresh split the set and leave two style registries behind.
+  manifest uses a range, if the two manifests disagree, if a Tamagui **peer** range is left open rather
+  than bounded to the installed major (`>=3.0.0 <4`), if the lock holds more than one `@tamagui/core`
+  or `@tamagui/web`, if any `@tamagui/*` entry in the lock drifts off the manifests' version, if the
+  removed v2 `@tamagui/babel-plugin` is named by a manifest or `babel.config.js` again, or if any
+  Tamagui update escapes the single Renovate `tamagui` group — a range lets a partial lock refresh split
+  the set and leave two style registries behind. That group rule carries `rangeStrategy: pin` and sits
+  *after* the broad `js patch/minor` / `js majors` rules, because the last matching `groupName` wins.
 - **No Babel or Metro compiler plugin.** Tamagui 3 removed the Babel plugin the app ran from feature
   015, and its intended replacement, `@tamagui/metro-plugin` 3.0.x, was measured and rejected: it
   lowered some web modules to static class names *without emitting their CSS*, while saving no bytes.
@@ -110,9 +176,24 @@ is a measured decision, not a leftover:
 - **The design system's own `Text` carries the defaults.** Tamagui 3 removed config-level
   `defaultProps`, so the body font and the theme's `onBackground` colour now live on
   `components/primitives/Text.tsx`; a bare `@tamagui/core` `Text` would silently fall back to the
-  platform font and, on native, black text on the dark theme. `components/text-defaults.test.tsx` pins
-  the observable defaults *and* fails if any source file outside that one imports `Text` from
-  `@tamagui/core`.
+  platform font and, on native, black text on the dark theme. That `Text` also restores the **web**
+  default line height (`lineHeight: web:20px`), because Tamagui 2's stylesheet gave every Tamagui text
+  its font's default (`true`) line height while Tamagui 3 only sets the family — measured as the 22px
+  app-bar title growing 20 → 28px and table rows shrinking 37 → 35px. Native never had that rule and is
+  left untouched. `components/text-defaults.test.tsx` pins the observable defaults *and* fails if any
+  source file outside that one imports `Text` from `@tamagui/core`.
+- **A numeric `lineHeight` on a Tamagui component is a ratio, not pixels.** Write pixels as the string
+  `"20px"` (which is why the `Text` default above is a `web:`-scoped string). A bare number silently
+  means something else.
+- **A state is a clause on the property it modifies.** Tamagui 3 removed the v2 pseudo-state objects
+  (`hoverStyle` / `pressStyle` / `focusVisibleStyle`), so a state is written either as a string program
+  (`opacity="hover:0.92 press:0.88"`) or as a key of a typed value (`backgroundColor={{ default: a, hover: b }}`).
+  A leftover v2 object is worse than wrong: it still typechecks, is forwarded as an unknown prop, and the
+  interaction silently stops happening. The keyboard-only modifier is `focus-visible`; a bare `focus`
+  clause reproduces the feature-015 bug where a mouse click leaves a persistent focus ring.
+  `components/focus-ring.test.ts` and `components/interaction-states.test.ts` statically assert both —
+  no v2 object survives, every ringed control keeps its `focus-visible` clause, and `Card`/`Button`/`Chip`
+  each declare all three states.
 
 Because the pin is a dependency-level constraint shared by two projects, a bump is a cross-repo change:
 the guard, not prose, is the source of truth for what version is allowed.
@@ -176,12 +257,14 @@ The package's own suite (`jest.config.js`, `pnpm nx test design-system`) uses th
 `jest/tamagui-cjs-resolver.js` — Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only
 `.mjs` files Jest cannot load, while Metro handles them fine, so the resolver redirects exactly those to
 the CJS build. `testMatch` covers the **whole** package rather than just `components/**`, so a new test
-directory cannot be silently invisible to the runner again.
+directory cannot be silently invisible to the runner again (a `tokens/` test was once written, committed
+and never executed). The same resolver is wired into the app's own Jest config
+(`frontend/mcm-app/package.json` → `jest.resolver`), so both suites load Tamagui 3 identically.
 
-Beyond the success-token and text-defaults tests, the suite covers interaction/focus-ring state
-behaviour, the controls, navigation, the inputs and the domain cards. These tests are the package's
-contract with the app: they assert the observable result (resolved theme values, rendered style, AA
-contrast) rather than the implementation.
+Beyond the success-token and text-defaults tests, the suite covers the focus-ring and interaction-state
+guards described above, the controls, navigation, the inputs and the domain cards. These tests are the
+package's contract with the app: they assert the observable result (resolved theme values, rendered
+style, AA contrast) rather than the implementation.
 
 ## Gotchas
 
@@ -198,7 +281,8 @@ contrast) rather than the implementation.
 - **Don't flip the app's default theme or the type scale without revisiting the rationale above** —
   the first is a product decision, the second silently breaks the app's compliance scan.
 - **Never import `Text` from `@tamagui/core`** — use the design system's `Text`, which carries the body
-  font and `onBackground` colour defaults that Tamagui 3 no longer supplies from config.
+  font, `onBackground` colour and web default line height that Tamagui 3 no longer supplies from config.
+  `components/text-defaults.test.tsx` fails on a core `Text` import anywhere in the package or the app.
 
 ## Where to look next
 

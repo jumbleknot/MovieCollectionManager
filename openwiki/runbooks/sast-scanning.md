@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -18,12 +18,16 @@ sources:
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
   - id: openwiki-source-cf7a80239370178114067d03
@@ -60,7 +64,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-19T00:33:25.175Z
 ---
 
 # SAST & SCA static scanning
@@ -257,8 +261,22 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   Note **which job owns it**: the guard runs as a step of the `naming` job in
   [guardrails.yml](../../.forgejo/workflows/guardrails.yml) (`--selftest`, then the scan), not as part
   of `sast`, so a half-bumped floor reddens `guardrails / naming` and no `sast` output will mention it.
-  A half the guard cannot parse is refused out loud with exit 2 rather than skipped, because silently
-  passing over the entry it cannot read is how a gate comes to protect nothing.
+  A half the guard cannot parse — a vulnerable-range key with no `<` bound, or a patched-floor value
+  with no `>=` bound — is refused out loud with exit 2 rather than skipped, because silently passing
+  over the entry it cannot read is how a gate comes to protect nothing.
+  **The value has a second half the guard also owns: its CAP (feature 081, US5a).** Renovate's npm
+  manager reads a keyed override's value as a plain range and *widens* its upper bound to admit the
+  newest major — `undici@<6.27.0: '>=6.27.0 <7'` arrives as `'>=6.27.0 <9'` — which closes no
+  advisory (the floor is untouched, so the equality rule above stays green) while silently handing
+  every dependent that resolved into the vulnerable span a different major than it declared. The cap
+  rule is therefore: the value's exclusive upper bound must be at most the key's major + 1. A cap
+  *tighter* than the next major is fine, and a genuine floor raise inside the major — both halves
+  moved, cap kept — still passes, so the security stream stays open. A value with **no** cap admits
+  every major already; four such floors pre-date the rule and are out of its scope but are **named on
+  every run** rather than passed in silence. A value not written as `>=A` or `>=A <B` (a `<=` cap, a
+  `||` union, a caret) is refused with exit 2, because the gate cannot say which majors such a cap
+  admits. Six widening proposals were pending on the Dependency Dashboard on 2026-10-18, which is why
+  `renovate.json` now disables `major` updates for this file outright (see [Renovate](./renovate.md)).
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
   this map to need their key half fixed by hand. **A floor is not always raised against an advisory
   that already exists** — the newest keyed entry, `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, was added
@@ -487,7 +505,7 @@ flowchart TD
   B --> C["Read the OVERRIDE LEVERS section FIRST"]
   C --> D{"Which verdict does it give?"}
   D -->|"refresh the lockfile"| E["the range already permits the fix - pnpm update pkg --lockfile-only"]
-  D -->|"raise the floor, both halves"| F["move the key and the value together, then pnpm install"]
+  D -->|"raise the floor, both halves"| F["move the key and the value together, keep the value's cap, then pnpm install"]
   D -->|"no advice printed"| G{"Is a patched version published?"}
   G -->|no| I["time-boxed entry pinned to the exact vulnerable version, with expiry"]
   G -->|yes| J{"Do the consumers' latest releases permit the patch?"}
@@ -498,7 +516,8 @@ flowchart TD
 `pnpm why <pkg> --prod -r` (recursive, workspace-spanning) is the by-hand cross-check; the digest's
 tag is authoritative for what the gate saw. Only when the section says *raise the floor* — or says
 nothing because there is no override yet — does the override edit apply, and then both halves move
-together or `check-override-consistency.mjs` fails the PR by name. One case gets no advice at all and
+together while the value's cap stays within the key's major, or `check-override-consistency.mjs` fails
+the PR by name. One case gets no advice at all and
 is not a bug: a **nested** workspace's finding, because the root `pnpm-workspace.yaml`'s overrides do
 not govern `tools/openwiki-generator` — advice to refresh "the lockfile" would name the wrong one, so
 the lever has to be chosen by hand there (`pnpm --dir tools/openwiki-generator audit` /

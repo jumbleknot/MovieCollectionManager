@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1c2296de106a6a25e943d06f4b59efbe3bfff6e0d3299151b88fd6b34a238717",
+  "pageVersion": "sha256:ba1214598c5bcd15cfc9bd8af12898f6fb707d5e5b85f7b2e406b7e6c9df0933",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -369,7 +369,7 @@
           "version": "repo-lines-v1:sha256:e2a3b4f39f38bbf4a3d1a0ddb8149e0f374916b2fcceb43a1a9a51f78b200485:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMmIxMTNhNGNkZjUwYTcwM2JiYWZiZDRiNGU5ODEzYjI5NGIyNTA0ZjAxZTAxZWQ1ZGIzYTgyYWFiMWI5NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjNkYjMwZDg0NGFlYmNiMGZlMDBkYzVlYTUyNGNkOTYxMmY0ZjIxMmFlYzhiYTU4NTE1MGU1NTFkOWUxYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTE2MGVhNWQzMGU4NTIxODUyOTk0NTVhMzM1MjM3MGFiMjU0ZGNkNzlmNGM3YTkzZmU0OThiNDEzOWVjOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmMxZDRlNzZmNDAwOWQ0ZDdkZjE1MDIzYjI2ZjZkODQzZjNhNTk0NDQ5YmQ2YTc1NzYzMGZiODBiOTNkMzQifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L79-L79",
+          "resource": "repo://frontend/mcm-app/package.json#L80-L80",
           "version": "repo-lines-v1:sha256:ba03ddf5e4dac4061d2a2577ee7a787aa5607789e1461a36d2f9e48e39e47e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUxYmNiMWFlMTEwMTg2NjQ5MDk4MDg0Y2VmOWE5Mzg2YTljZWY4MmY1ODI0OGMwOTJkNTVjODdhYmUyNWJjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRhZjkwYmJlYTExYjg0MDNjY2NhMzhmZGZkMmQ2ZDZjMzg4MjkwYjNkNzhmOTNlNjlhZjNlYmVhY2RhNWZmYiJ9"
         }
       ]
@@ -411,7 +411,7 @@
       "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine; the resolver resolves as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L86-L88",
+          "resource": "repo://frontend/mcm-app/package.json#L87-L89",
           "version": "repo-lines-v1:sha256:922d9a9961f7ced904ff158ad4526748ac18b0ca46db081929ebf3f9e7dfd2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
         },
         {
@@ -478,21 +478,101 @@
     },
     {
       "id": "claim_98dcd34c499c4620b715595066c6dfe2",
-      "statement": "frontend/mcm-app/README.md carries prose that contradicts the manifests in two places: its design-system section describes the plugin-era arrangement and its web-E2E note still states the 'Metro's dev web bundler OOMs building the app + Tamagui locally' rationale, so the manifests, babel.config.js and the lockstep guard are the authority for the current Tamagui arrangement.",
+      "statement": "Where prose and the manifests disagree about the Tamagui arrangement, the manifests, `babel.config.js` and `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` are the authority: the design system page and `frontend/mcm-app/README.md`'s design-system section have both been rewritten for the v3/runtime-only arrangement, and the one remaining plugin-era statement is the README's web-E2E note that \"Metro's dev web bundler OOMs building the app + Tamagui locally\".",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/README.md#L118-L123",
           "version": "repo-lines-v1:sha256:273b68da07635f3ea12645a6ed21a02edebb8b2bf6c815d4d00ae9f71e821ecd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTExNDlkZmQzZmVhN2ZiODhkY2E5MmE4MzhmMWI3N2Q3MjUzYWQwZGIyYjcxZTg4OGY4YTM5Yjc5M2JmNTg1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkYjZiMjNjOTNlN2ExODMwMmQ2NDg5MDkxZTIxODc4N2E0OGZiOGJjNGI1NGIwODRkYTRkZDI4NTVjNGI0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAzY2VmY2VhYWRkMzNmN2M5YWI2M2MzYTQ3N2ExZGZkZThkOTNjMWYxNDM5NGQ0NjM1NTVkZDFkZWNkNmZlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTk2ZDBjMzJkNjRlNWZkMjg2NWI4NDI5MTk3NWI4Nzg3ZmRiYzY4ZWYyNThjNzliYTE2NGUxM2QzM2M1NWRmZSJ9"
         },
         {
+          "resource": "repo://frontend/mcm-app/README.md#L19-L28",
+          "version": "repo-lines-v1:sha256:1f81355af6a089b7f668617fb24f0214a39316518c96eda0b43934edc716dcdd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTU0MzBlNDcxYTI2NTMyZDU0ZjRiMTlmYzcyY2NkZmFiZmI3MmI1NDc2MTVjOTVhNGJkOWVkMDVhNmEzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NTk0OTUyNzJkMDc3YzczNmJiMTdhOTQ5MmE0MGI5NjVlY2NmYjJjYzVkMjMwNjIwNThiNTRlMTVkNzBlNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMzIxMmRhNGJhZmYzOWNmY2JjMWIxZGQ4M2RlN2M0ZDQwMTdhODRjOWI3ZDU4YWYxZmEwOWE2YzQxMTQ0OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZjA3ZWEwMzk0NjA4MGE4ZjMyNzllZDhhYzBjNzUzMTZlYTYwM2UxZjM0MGNiNTY4NjMxYzQyYWQ3NmUxOTUifQ"
+        },
+        {
           "resource": "repo://frontend/mcm-app/babel.config.js#L1-L17",
           "version": "repo-lines-v1:sha256:5ff74527b551f804587b61f91fb36b47a1bf78b1c68f7292ce9dafd1ac319ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTBkZDc5NjhhOTQ5YzM2M2FiMjI0MWM5ZTA2ZjkxYTM2ODVhZDRjMTdlNDNmZDc3M2VhZmVmM2YzZDJiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54f55ba16530497aa0acd6a382cf9690",
+      "statement": "Both `frontend/mcm-app` and `packages/design-system` are linted by ESLint 10 through a flat `eslint.config.js` in each project, replacing the `.eslintrc.json` files ESLint 10 no longer supports; each Nx `lint` target runs the project's own eslint (`eslint src` for mcm-app, `eslint .` for the design system) through `nx:run-commands` with the removed `--ext .ts,.tsx` flag gone, and the previous scope is preserved by globally ignoring `**/*.{js,jsx,mjs,cjs}` because flat config lints those by default and cannot narrow extensions from the CLI.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L1-L15",
+          "version": "repo-lines-v1:sha256:a2e79f191284804a07d14a98b494d85d62f0fc36a04d31dff1191c4ec8a1b928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L66-L85",
+          "version": "repo-lines-v1:sha256:7c9d4128407d0c7f5fb2c083d7624e03bf267658acf2039519c97fce86d455bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjI1ZjY4MWIxOGM5YjYzYmUyNjdiMjM4MTcxZDllOGIzOGFlZGNlYWUzMzg1ODFhYzBkMTE0OGRjODc4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NzZiZGYzMWMzODJjOGY3M2U4NzhhYzllNDE0ZjkzNDljODM0ZWZmNDczZWFhMTY2YzI0M2VhNjk3MDNjNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmQzZTcyNjI5ZjUyNTJiYTg5MzkwN2YwZDZjZmU2Nzc3MjQ4MDNiNWUyYTM4YmQwODI0ZjRjNzg4NGU2MTQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L33-L43",
+          "version": "repo-lines-v1:sha256:124ef8789fef4958140aa5caa15d7042e4b1327029a3328943d239778c3b817e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmY4NjMxMDc2ODE4NTA4MWZjOTYxMzQ2Njc1M2VhOGIyYzNmZmMwMjU2MzhlYWYzYzUyZGM0Y2QwYTU0MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyYTNhZjAyOWQ3YjhmZWVmMzQyZDRmMzVlMDRhNDBjNmI4MzliZGFiYmI3NzVhNWFhNTM2NmRiYTc4NmVlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMmJkNDgzOGEyYmFkNDMzOWFhNTdjNzU5NDZkYzA3YTI4ZGViNTFhZTNmZDA2OTAxNGFhNDMwZjIxYTdhMGEifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L1-L14",
+          "version": "repo-lines-v1:sha256:f498ba3fb507e158786820abede45270230b6065f1b9727b42f7903210d2b22b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/project.json#L18-L26",
+          "version": "repo-lines-v1:sha256:6f281c56c3dba4e321d2e21cd28a0f2f21eb2168f1e570d4dab0bdea2f69e598:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmZjg2MzEwNzY4MTg1MDgxZmM5NjEzNDY2NzUzZWE4YjJjM2ZmYzAyNTYzOGVhZjNjNTJkYzRjZDBhNTQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODBjYWVlNTkwMjEzYzBkYzQ4Y2ExNWJiNTMyNjI5OGVhNTg5NTVhZTZmNDdkMzEyYjAzZGYxOTJmZjQ5NTQ3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGY3MzlhMDZjMWNiYjEyNDRlMzM2M2QzOGJjZjlmYTUwY2U4NGZlZDM5OWMyMTkzYTNjN2YwOGQ1OTkxOGIyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c48f5914636d47498f5f18e1010f598a",
+      "statement": "`eslint-config-expo`'s flat preset is not its legacy preset re-expressed — it adopts `eslint-plugin-react`'s `flat.recommended` (a dozen `react/*` rules move warn → error, plus new errors such as `jsx-key` and `no-unescaped-entities`) and `eslint-plugin-import`'s `flatConfigs.warnings` — so the migration carries four parity settings that hold the result at what the legacy setup resolved: `reportUnusedDisableDirectives: 'off'` (ESLint 9+ defaults it to `warn`) and the rules `react/no-unescaped-entities`, `import/no-duplicates` and `import/no-named-as-default-member`. They are parity rather than new exemptions, since turning them on means fixing what they report (33 findings in mcm-app, 0 in design-system), and the measured result is mcm-app 0 errors / 43 warnings and design-system 0/0 — the same 43 warnings at the same `file:line:rule` as before the migration.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L23-L45",
+          "version": "repo-lines-v1:sha256:956897ebd30948a87b6274bfbdcfca9484dbaf096be0d70d1a6a002cacdbdc9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNzU5ZDRkN2Y0M2ZiOWJjMDA3NTM2OWQzMDY3YmJmNDczZGMzM2I0ZWNhMzEwMTkxZDIzZjQxMDEwYmNhYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzBmMDRmZjg0Y2RmYTk4NTZiYzUyMjM1ZjUxMjE2MGQxOWUyMDEzZTIyMTY1MDk3ZDNlNDE2MDA0NjQwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L22-L44",
+          "version": "repo-lines-v1:sha256:956897ebd30948a87b6274bfbdcfca9484dbaf096be0d70d1a6a002cacdbdc9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNzU5ZDRkN2Y0M2ZiOWJjMDA3NTM2OWQzMDY3YmJmNDczZGMzM2I0ZWNhMzEwMTkxZDIzZjQxMDEwYmNhYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzBmMDRmZjg0Y2RmYTk4NTZiYzUyMjM1ZjUxMjE2MGQxOWUyMDEzZTIyMTY1MDk3ZDNlNDE2MDA0NjQwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L206-L261",
+          "version": "repo-lines-v1:sha256:39f51b924b0750b876e62425a2840c701e8c441c3c6ea30b1ace8e6c4b2e564c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNDUwNDZjMzdhOGJhMjkxZDVjZWRiMWZjMTQ2ODg1YjM5ZGU3MTI4N2ExMmI4ZmNjNTc0ZjkwM2I0MGE4NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGI5MmE4MmU1MGMzZjgwZDE5YWUzNWMwZDVhNjMyZmJjYzYwNGRlODk3Y2VmMjVmNTI0M2Q4ZDNlNzMwNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwODMzM2M2NDhjNjY3OWI2OTgwODA4YTZhOTg5MGFmZWNhYzIyYTNlYjMzN2VjMzc3YjU5ZjMxMTBjNWE0ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMjVkYWNjN2ZhNDRmMThlYjRlODM4OTA2NjI1MTE0YTA5YzA4OGI1NjM0YWIyNzA0ZjA4MzZjYWUxMjU4MzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f3398e09ae64c6b84ac52e7fbca0e90",
+      "statement": "`@eslint/compat`'s `fixupConfigRules` wraps the `eslint-config-expo` flat preset because `eslint-config-expo` 57.0.2 (and 58.0.4) bundles `eslint-plugin-react` 7.37.5 and `eslint-plugin-import` 2.32.0, whose newest releases peer `eslint <=9` and still call context methods ESLint 10 removed; without the bridge every file fails at load with `react/display-name: contextOrFilename.getFilename is not a function`, and it changes no rule or severity. It is to be dropped when both plugins, as `eslint-config-expo` ships them, declare eslint 10 in their peers, at which point the preset goes back in unwrapped.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L16-L22",
+          "version": "repo-lines-v1:sha256:8028ac2ed6819235966852c51ede2320ff78b34b7dd27ee2d162b7b794d33704:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc3MWNhMzNhYTRjZDg4ZjI4YmY1Zjc5YWY1NzhhYmQwOWFjNjBkMThhZmQ4NGJjNzMyNDAyNTg1Yzg1YTM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyZGY2MTYwMzE3YTFjYmNhNTM5YWFkZGRmZWQyMWMzZmFlMmU0MzgyMjk0ODg2MmJjNmY2ZTlmNWFkNDI2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFmZjYzNGVkYzJkYjlmNzYyMTYxNzc3MTc1ODdlMjQ0MTRjNDc0ZTdmMTdjMzNlNGI0MzFhNjdhMmFiYjZjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0N2NhZWRhYTdhYmEyZDUzZmY2ODQxMGRkNmI3MjY2YjViNjVmMGY4MTFjNThjZmE1MjgwNWY5N2M3YmY5NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L70-L70",
+          "version": "repo-lines-v1:sha256:187b3400b195617ed53263c06cc9f59942213733406dd2d9e260a038730b4c73:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY5ZjBhNThhYzI1Yjc3YWIyZTBiZDcwZjc2OGQ3MTZhOWM2ZWRiMjA5ZjYyZDc3MTQzMmQxNjY0NTA2NDBkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY2NzRlZjNjMzE5YWFiZTMxNjc3MzllZmZkMjAwOTgyYzc2M2RkYzk1MDk4MjBjMjc1N2I0YTc0MzUxOGIzYyJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L15-L21",
+          "version": "repo-lines-v1:sha256:8028ac2ed6819235966852c51ede2320ff78b34b7dd27ee2d162b7b794d33704:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc3MWNhMzNhYTRjZDg4ZjI4YmY1Zjc5YWY1NzhhYmQwOWFjNjBkMThhZmQ4NGJjNzMyNDAyNTg1Yzg1YTM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyZGY2MTYwMzE3YTFjYmNhNTM5YWFkZGRmZWQyMWMzZmFlMmU0MzgyMjk0ODg2MmJjNmY2ZTlmNWFkNDI2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWI2ZDc5NWZjMTRlOThiZGZlNzIzMDY0ZjllMmRlOWNiZGE3NzI4NjM5MmU1OTRhMjVmZTBkZDVjYzBmZjFjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0N2NhZWRhYTdhYmEyZDUzZmY2ODQxMGRkNmI3MjY2YjViNjVmMGY4MTFjNThjZmE1MjgwNWY5N2M3YmY5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc7cc08fd4be44259c0dc17d47e176ba",
+      "statement": "Jest must be told not to transform React Native 0.86's renderer: `RendererImplementation` now imports `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render touching `Animated` pulls in the ~725 KB already-compiled `ReactFabric-dev.js`, and `frontend/mcm-app/package.json`'s `transformIgnorePatterns` therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, which is back at the SDK-56 figure and why the per-test 15 s timeout that briefly stood in for this was removed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L94-L98",
+          "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1024-L1067",
+          "version": "repo-lines-v1:sha256:de5c36f62889a0e15afca6423d21af3163bb032b1845dae5579fc61b077bdce4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYjJmNzNkNjBlOTI3YmFjOWMwNWNjNmRmZjAyOTAxYjg1Zjc0ZTU3MTA4NDZlYjQ1M2VhNTM4ZDFhYmUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGU4MGU4NDMwMTA4MmFiNGY3ODBjZmFmNGEzNjZhNDIxOGUxNWE2MWYxMmY4Njg0Y2M0ZjljYzY5NTQ5MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDBhYzM3NmM2YjY3YmVlNTFjOTBiODkyNjAxZTE5YjYxZjFkZTk2NDQxYTM4ZmY1Y2FhYWFkODY2ZjY0M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZDNmNGQwMjFlNWQ3ZGQ4MTFjNmU0YWUzMDIwYmQwOWMwY2YwYWRhOWFmYjg5MWUwZTg1ODJkMzMxNjBjMDUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T17:22:52.674Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

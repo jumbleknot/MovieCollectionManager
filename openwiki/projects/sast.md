@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-40275cb92c3610938f16ade3
@@ -19,6 +21,8 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-cf7a80239370178114067d03
+    resource: repo://scripts/__tests__/check-override-consistency.test.mjs
   - id: openwiki-source-1813b4b5c82e84caead4e177
     resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
   - id: openwiki-source-08ab4a1d1f3934b68be3d4ae

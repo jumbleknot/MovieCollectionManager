@@ -11,12 +11,20 @@ sources:
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
     resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-6a3e5dbad8bc4145f0341cf9
+    resource: repo://frontend/mcm-app/src/app/_layout.tsx
   - id: openwiki-source-93d7280d04da25edff0be402
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts
   - id: openwiki-source-2335f107cbd84a8f7aed9777
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
   - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-dc9c673c8dc973e1e621fa45
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
+  - id: openwiki-source-3962f527ba083cef06c1e6a6
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
@@ -27,18 +35,30 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/account-step-up.ts
   - id: openwiki-source-e6a53b75d3e6241fef647e04
     resource: repo://frontend/mcm-app/src/bff-server/agent-config-ssrf.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
+  - id: openwiki-source-f3703151c1ce1fae30ed6c7b
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-db07bf09c075124e1a098dd1
+    resource: repo://frontend/mcm-app/src/bff-server/backup-driver-s3.ts
   - id: openwiki-source-e37e5da5fa7401fdb7992219
     resource: repo://frontend/mcm-app/src/bff-server/backup-job-store.ts
   - id: openwiki-source-28b3de7a863c75f0b1b6b62c
     resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
+  - id: openwiki-source-8bb25265914a7a45958ce98d
+    resource: repo://frontend/mcm-app/src/bff-server/backup-request-signer.ts
   - id: openwiki-source-0476c5058778e33745a9b2c2
     resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
   - id: openwiki-source-284b2b399a6eebffc24d3e93
     resource: repo://frontend/mcm-app/src/bff-server/backup-runner.ts
   - id: openwiki-source-ac55e963094bcd7298e35e63
     resource: repo://frontend/mcm-app/src/bff-server/cache-service.ts
+  - id: openwiki-source-4f96850edb77312043c68c9f
+    resource: repo://frontend/mcm-app/src/bff-server/error-handler.ts
+  - id: openwiki-source-d58b64a5afcc9df80ea92152
+    resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
     resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
   - id: openwiki-source-6129cd750694ad94a5d9cb3f
@@ -55,8 +75,20 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts
   - id: openwiki-source-78eeb348d704a1098ef44480
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts
+  - id: openwiki-source-c5a2ed751f38e7e326a9bb90
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-fe13721a7608b6a93a9e93f2
+    resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
+  - id: openwiki-source-a772a7e2a660182428f932f2
+    resource: repo://frontend/mcm-app/tests/integration/backup-tick.integration.test.ts
+  - id: openwiki-source-53aa23c014c1f05d94e82617
+    resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
+  - id: openwiki-source-ba4838cabca395ce4675ba30
+    resource: repo://frontend/mcm-app/tests/integration/route-coverage-map.ts
+  - id: openwiki-source-b2d2e0a4e2082278dc56a992
+    resource: repo://frontend/mcm-app/tests/integration/route-coverage.integration.test.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8f525466541824080486745bfeb22b5c257abea57afc8eb3284216f174b01854",
+  "pageVersion": "sha256:715e8d761b20c6ad17bd291bb8bcc46da29333dbd289fcd2b3f609114ddd6e51",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -254,7 +254,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:664207188c3c98cdd0dd4e72b65c631a15b830bae636117cec6d03570b2b23a2"
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
         }
       ]
     },
@@ -382,7 +382,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:df0bb8c736fc089079c7e6c74e91bf117f67230bdcfdf63272ddf90ca0ade30f"
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -425,10 +425,28 @@
           "version": "repo-lines-v1:sha256:a14e389fa285a5d4f4910fa07060ef1f0292312e489a89ebcdbe5f4a9262e1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNDgyN2E1OWJkMmRkZTc1NjJmOWMxN2VlYWE2YjdlZjVkYTRjYmUyYTE4NmU5ZTk2NDc1ZGIyOWU0MTRjZWEyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmUzMTRkZTM3ODI3MzAxMjA4NWYyMTg0OTE4MDgwYWFhOGRkMGI5OTRiZjg2NmYwZTc5YjAxMmI1MGM5OTI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTE0ZTM0ZDE2Yjg4ZDI1ZDAzNWIxYmVjOTMwM2JiNTYzOTFjMDJjNDhiNmZjZGI2YjgyZTU1NDliNzRlNTZhIn0"
         }
       ]
+    },
+    {
+      "id": "claim_dd7f0417a3c64b5f9571969ef8163e9a",
+      "statement": "Renovate visibility of the object store is asserted twice at two scopes: `scripts/__tests__/infra-image-scan.test.mjs`'s `(412)` test covers every compose file carrying an `image:` against the docker-compose `managerFilePattern`s (plus the `ignorePaths` exclusion for `docs/proposals/**`), while `scripts/__tests__/renovate-workflow.guard.test.mjs`'s `(080b)` test adds the RustFS-specific case — deriving the file set from `git ls-files` rather than a hand-written list and requiring each file pinning `rustfs/rustfs` to match a `docker-compose` pattern and not be ignored — so a later compose file in an unmatched directory fails the build instead of silently joining the set nothing proposes updates for.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L892-L897",
+          "version": "repo-lines-v1:sha256:0860eb21c70667d5991e1f86f12ae2fd7614f6b2ef3b85f2ce8bb47c896638a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI0MzUxMzVlZGFkNTg2NzU1YTkwOGY0NmQ3MGI2N2M4ZmU1MWRhYjk2NTkzYjkxZWI4NGFlOTNjOGEwMDkxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiMDVkYmY1NTQzNWJjNzJlYmU0YzhlN2QyZTA2MjFkZDQwNmIwNDgxNjg2MDMzYmZjMzk2OTA1MzQ4N2U0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIxZGIwYmI4Y2IwZDc3MjdkYmNiNTgzNWQ2YmEwMGRkZjNjZTk2NjhlNjlhMDQ4NWRhZWM0YzMwMTgxNTFiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZiZGJiNzY5ZmRjOGM4MjA1Njg2MTc4Yjc0ODNiNGM2ZmE1Y2EyM2RkYWYwNWQzZGU1ZDIwZmU4ZjkyYWRmNiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L621-L663",
+          "version": "repo-lines-v1:sha256:436b5e7d22a9c01ca52d6bd60400d5452ea643cec05d4ecb95b5be9f62031ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQ5NDg0ZjlhNjhjNDY1YTFhOTQ0MWFhYmIxZjc5MDhlMTg4ZmM1MGIxYzQyM2U2NWI3ZmFiYmE0MGQ5NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1849-L1867",
+          "version": "repo-lines-v1:sha256:14ae677fc6d57d3038ac26ef27b85aaa5be3dd9f0d53d2e3ff24afc8ddb0e241:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMzFkZWM5YTViZTA2ZTg1NjJiOGUxYTdmOTYzNDI3YWU3NWY4NmQwYmNjOWY4OTc4YzBjZmM3MGMyM2QyYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlYzhmOTJhMDFjYjA3ZTlhMjQwZjk4YWE0MzUwNTE2NjRiY2YxMmUyMWFkYjJhYmNlZDQ1NTg3MTU4MzU3ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxYjQwNjRmMDY2MmRmNzQ5NTgyZGE3MTU1YjA0NWFlN2Y2YWQ0NDRmOGE4Y2JlNjVhNmZhNDk1MjUzODgyYjMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T17:22:52.674Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

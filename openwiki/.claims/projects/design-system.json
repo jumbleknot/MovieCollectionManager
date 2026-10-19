@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a48fe3564eb857b0d6cead7b4cee012d18c7d15c4550370e5a9f20370b5ec574",
+  "pageVersion": "sha256:542260378f1fd3f13049df2e6f441f016eedea782a645568be99fda5ad44197d",
   "claims": [
     {
       "id": "claim_165a779429c54154b88d58468022d8bc",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:777e0576886b84852d1d2e7aa9548571007b04f9c766016dba5bf1ca34d07387"
+          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
         }
       ]
     },
@@ -116,7 +116,7 @@
       "evidence": [
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:777e0576886b84852d1d2e7aa9548571007b04f9c766016dba5bf1ca34d07387"
+          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
         },
         {
           "resource": "repo://packages/design-system/tamagui.config.ts",
@@ -283,10 +283,98 @@
           "version": "repo-file-v1:sha256:1cd8708935f343da167e23ff98562f85ba40bd5b120d55419b7347017fda390b"
         }
       ]
+    },
+    {
+      "id": "claim_29e55fde5f1b46dbb32cc24c8837f460",
+      "statement": "The Tamagui lockstep guard also bounds any Tamagui peer range to the installed major (`>=3.0.0 <4`), requires every `@tamagui/*` entry in the lock to sit at the manifests' one version, and asserts that every Tamagui update resolves to the single `tamagui` Renovate group on patch, minor and major alike. That group rule carries `rangeStrategy: pin` and is deliberately ordered after the broad `js patch/minor` and `js majors` rules, because the last matching `groupName` wins — placed earlier, those pull part of the set back onto its own branch.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L802-L822",
+          "version": "repo-lines-v1:sha256:1ea744bdbdc8ce1b1bd7314534e29d9db9461d1e82d1245c040a86d56e241b00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMGVkZTQ2ZWE3MTkyYWEzNDE4ZTk2MzAyYWEyNDRkYjY0NDIyNjQ2Y2M1ZDBkYzAyNjFlNmQ1YWNiNmIyNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNTZjNDQ3YWRlNDhmNzkwNTBhODhlYTA0YzIyMjg5MzRiYjVkZjgwZWFkYzgxNmFmYWI1ZTFiOWViZjliODUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L69-L162",
+          "version": "repo-lines-v1:sha256:58074d3318f26c1ea2a4834d7a938f699b1b4ca9f335b5772326cb1e5971f9cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkOTA2NGM2ZWMyNTUxY2JlYTk5OTJiYmM0YWRmYzVmYzdhMTljZjEwOGVhMTYxY2EyN2U5YzExNjBjMmNjZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5YTg1YTNmMTMzMWI0Yzg5MDczYTViZDExNDU4YzU2MWI0MjUxZWVkNWIxMGUwOWZjNzY3ODZkYmJhYjAxZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMDAwYzIwZTdkYTIyZmY4NzFjZmQwM2YyYjM4Yjc5YmIwM2U3ZDc3MTZjMTA4NDZlNDg3YTU4NTBlYmUxYmQifQ"
+        },
+        {
+          "resource": "repo://scripts/lib/renovate-package-rules.mjs",
+          "version": "repo-file-v1:sha256:a56f6a554c560cd664837ad93e48a0737e28e01e14fe9c5f85bd5f5502d5061a"
+        }
+      ]
+    },
+    {
+      "id": "claim_b15aa19ddb7c412488f5d0bdf3b8d5d5",
+      "statement": "The design system's `components/primitives/Text.tsx` also restores the **web** default line height (`lineHeight: web:20px`), because Tamagui 2's stylesheet gave every Tamagui text its font's default (`true`) line height while Tamagui 3 only sets the family — measured as the 22px app-bar title growing 20 → 28px and table rows shrinking 37 → 35px. Native never had that rule, so it is left untouched.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/primitives/Text.tsx#L19-L27",
+          "version": "repo-lines-v1:sha256:e650258b6261c70836a904537e59a9cad7ec12301687586d294f5f9ffb7f057b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjNWE3ZjdjMjQ1Mjc5NzQ2MzQ4OTQwOWM0MzJhYThmODU4MzAyYzFlMDFlOTk0OGI4MzNkNTgxZjY3M2JiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4MGI3NjUxOGRhZTk3OWZhZWJkMDIzNjdhMjkyOTJhNTBkOTc2MDkyMjUxYTM4YTZjZTMwODgwYmE0MjgyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdlNzk3ZGMzY2JjYTA5NDgwZDk5NWM1N2QwNTBiYmUzZmM3OGRhYTU2MWQ0NDcxY2JlMDFjZTZjM2UzMWNmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRjYzA0MmJmZTliOTFlMDNkZmE4YTY0MjEyZTQwNTc0MmJlYzA4Y2E4ZjlkMTU4Nzg5MjA5ZGQzNTI1ODc2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b5fc9ae33e3474eb78783b49ba504b3",
+      "statement": "Under Tamagui 3 a numeric `lineHeight` on a Tamagui component is a **ratio**, not pixels; pixel values must be written as a string such as `\"20px\"`, which is why the design system's `Text` default is a `web:`-scoped string.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L29-L34",
+          "version": "repo-lines-v1:sha256:d3ef6a3d25cdede98ec8af4bc05717924e9f449afa73669aec066bfb45f21ec3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcwZjBmODJiZmRhNmNhYTlhODM5YmYwNTFjNDcxNTc2ZTUxODQzZWExYWNkZTA3ZWYzMTk1ZjI5NjExZmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ1YjcwYWQzNTU1N2ZkNjc2N2Y3NDcwYmY3NzIzNmUzY2M0MjUzZDM5ZjFhYzM1ZTJiYmE4MmNjMzNhYTQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdkOTMxMWI5ZDJmYzJiZGRlYjQ1Y2ZkN2ZmZDg1NTk1NmRiNmY5ZjhhM2FkMDQzYzJkOGQxMzkwYzgwZmRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQwYzQ3ZWMzYzAyOGZlZDM5NjcyNjQ3YTVkOGUyODMzNmRhZmI3M2ZjZTcwMTE3ZmM1ZjY5MWQ0ZmExMmJjZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/primitives/Text.tsx#L22-L26",
+          "version": "repo-lines-v1:sha256:52e42ba3cf1f471b1113e7b9811fe0a52c4c3609812c1ab4ab290f1ecf64f81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JiYjMyM2UyODQyNTBmMzE0MzI5ODBlNDk0NjY1ODU4YjU0YzUxN2UxYjkyNTgzZDI4YzBiOTc1ZjQ0MWZhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExMTQxYWUwMDA0MGFkNzgzMDY0MTIwOTA5MWMzN2MwMmZlMWM1NDQxYjU4NTU0M2M4YzhkOWUwMWE5NDE1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJlMWJmNmE2NDM3ZWZmNWNmY2RlNzk0NDBkNjM2NTgyNTc1NzZkYmJjZmY0NzVlYTdiYmUxMmU4Nzk0NzI4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U0OWE3NTlhNTIwNTEyOThhNDYwNjUwOGU1NWEzOTRiMGMxMDY4YTkwNTcxZDhiN2QzOGIwZTc4NDM5MmQ1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c69d9e234c954a42a244210a14c1f342",
+      "statement": "Tamagui 3 removed the v2 pseudo-state objects (`hoverStyle` / `pressStyle` / `focusVisibleStyle`): a state is now a clause on the property it modifies, written as a string program (`opacity=\"hover:0.92 press:0.88\"`) or as a key of a typed value. A leftover v2 object still typechecks and is forwarded as an unknown prop, so the interaction silently stops happening. The keyboard-only modifier is `focus-visible`; a bare `focus` clause reproduces the feature-015 bug where a mouse click leaves a persistent focus ring. `components/focus-ring.test.ts` and `components/interaction-states.test.ts` statically assert that no v2 object survives, that every ringed control keeps its `focus-visible` clause, and that `Card`/`Button`/`Chip` each declare hover, press and focus-visible.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L29-L34",
+          "version": "repo-lines-v1:sha256:d3ef6a3d25cdede98ec8af4bc05717924e9f449afa73669aec066bfb45f21ec3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcwZjBmODJiZmRhNmNhYTlhODM5YmYwNTFjNDcxNTc2ZTUxODQzZWExYWNkZTA3ZWYzMTk1ZjI5NjExZmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ1YjcwYWQzNTU1N2ZkNjc2N2Y3NDcwYmY3NzIzNmUzY2M0MjUzZDM5ZjFhYzM1ZTJiYmE4MmNjMzNhYTQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdkOTMxMWI5ZDJmYzJiZGRlYjQ1Y2ZkN2ZmZDg1NTk1NmRiNmY5ZjhhM2FkMDQzYzJkOGQxMzkwYzgwZmRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQwYzQ3ZWMzYzAyOGZlZDM5NjcyNjQ3YTVkOGUyODMzNmRhZmI3M2ZjZTcwMTE3ZmM1ZjY5MWQ0ZmExMmJjZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/focus-ring.test.ts#L1-L39",
+          "version": "repo-lines-v1:sha256:c0f90a4368a5a0861c76b15a657df0b5bbb645781b70a5f4c46225c493746de1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWRkMDc4ZjQxNGI2Mzc0ZGY5OWQ0MDJmN2E1MzQ1NTNlZDE1NDg1MGJkZTA0MjZlMTk4YzJhMzA4MGVmNWMifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/interaction-states.test.ts#L1-L53",
+          "version": "repo-lines-v1:sha256:51f244fc211db4ba682f8b202249d83b79b8083b14fa16bafcd2d7b8845d2d76:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f60134bdd6c74f88994e8e2bf2be2cfb",
+      "statement": "The only non-palette colour tokens in the Tamagui config are `white` and `black`; `transparent` is deliberately *not* a token because Tamagui 3 rejects a token named after a CSS keyword and the literal resolves correctly anyway.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts#L109-L113",
+          "version": "repo-lines-v1:sha256:1bb5ad146328bb5c8169e6008042ce8c9f9f470f11bde4408f8fe15d3d0fe714:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1N2IzYmU0MWM3MDA4YmRhMTAxMTNlODdiMjhlYzA2YWQxOTY1ZjhjOGFiNjkxMGVmOWQ2MTUwOTMxMWFkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc1ZWQ5NTI0MTk5Y2ZjZGMyMjIzZjg1NzM3ZDY2Y2FiYTI0YzY5ZThjZTc5YTAxNjU1YTZmNWRiZDVkOWU2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJmMjljMjU4OWQwMTQ3YWU0ZjI0ZjE2MGQ3MDU0NTFjYTMxOTMyZTUwODllZjY4MDMyZDliODIyNjY1MGQ4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmE0NTE5MGFlNWY3M2I1Y2YyMTUyZWNmZDNmY2VkNTBmOTNiMzU0NjIzNGIxNDU3NDUxNzRjZTYyNzgwMzk3NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_da6edffcc41b47a39954eff7a1adf2ce",
+      "statement": "The design system's Jest resolver `jest/tamagui-cjs-resolver.js` is wired into the app's own Jest config as well (`frontend/mcm-app/package.json` → `jest.resolver`), so both suites load Tamagui 3 through the same CJS redirect. The package's `testMatch` was widened from `components/**` to the whole package because a `tokens/` test had been written, committed and never executed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L87-L90",
+          "version": "repo-lines-v1:sha256:20e3b8acf4171180108a03e9d91977548d78e2c83bf64ac7a0789d0c7682f8a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiMTYwNTM4MzBjZDgxNGRkNmM1NWNjZDBhNTE0ZDM4ZDNkYzI3NWZiN2Q0N2RiY2VjYmYyMjQxZDA4MTNjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest.config.js#L10-L16",
+          "version": "repo-lines-v1:sha256:24ea10353d2696703b87c707ddc8880e3d8f53a79bb3b41600e0b004404c1795:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY2OTI2NmVlMjZlODJmNzEwNDIyY2YwNDNjMTAzN2ZiODY0NWViNDZlY2EwZWUwNzE3YmVlOTY5MzUwZjQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YmMyMmM1NzJjNTBjNjljMjA2YTFjNTY0MjE1YmRmZWQwNWFmMjU0YjJhOWM4Mzc3MjYzYThmNDM3MDc5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg0OWM0Y2Q4NWI5OWZjNTg4OGYzYTYzMDI2OGY5ODA3NThlMTIyZWY0MmZkYTI1ZDY3ZGFmNGMxMmYwODFmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZiYjZmNWE5ZTMwZTI1ZjNhMzEzOTg4ZTk2MWNiYTYzMjQ3MTYwMDQwYWY1MTU2MWUzYTg1NjZlYzMyOWYxNSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
+          "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T20:44:33.459Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

@@ -41,10 +41,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-19T00:33:25.175Z
 ---
 
 # Infra-image CVE scanning
@@ -392,6 +392,15 @@ what matters here is that four of its lessons are about the *shape*, not about t
   measured case (item #560) and for the visibility guard in
   `scripts/__tests__/infra-image-scan.test.mjs` that asserts it — a guard should assert visibility, not
   configuration.
+- **The property is asserted twice, once generally and once for the image that replaced the build.**
+  `scripts/__tests__/infra-image-scan.test.mjs`'s `(412)` test covers every compose file carrying an
+  `image:`; `scripts/__tests__/renovate-workflow.guard.test.mjs`'s `(080b)` test adds the RustFS-specific
+  case, deriving the file set from `git ls-files` rather than a hand-written list and requiring every
+  file that pins `rustfs/rustfs` to match a `docker-compose` `managerFilePattern` *and* not be excluded
+  by `ignorePaths`. A file added later in a directory nothing matches therefore fails the build instead
+  of silently joining the set nothing proposes updates for. `docs/runbooks/renovate.md` records that
+  this assertion was mutation-tested by narrowing the pattern, because a visibility check nobody has
+  watched fail is the same as no check.
 
 ## Guards
 
@@ -401,7 +410,7 @@ what matters here is that four of its lessons are about the *shape*, not about t
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
 | `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |

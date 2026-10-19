@@ -1,9 +1,9 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack, the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
 resource: README.md
-tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding]
+tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies]
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
@@ -43,20 +43,42 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-7c76000f237dd683a4fb0536
+    resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-8b39d08f4b5008470c9dd1c6
+    resource: repo://frontend/mcm-app/eslint.config.js
+  - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
+    resource: repo://frontend/mcm-app/project.json
+  - id: openwiki-source-6ba748254f38112b13d529da
+    resource: repo://nx.json
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-c2fc016d5fa9c9435755b27e
+    resource: repo://packages/design-system/eslint.config.js
+  - id: openwiki-source-f7e16ba323424b9790bca8b9
+    resource: repo://packages/design-system/package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
+  - id: openwiki-source-e1b32ed173a0f6b508f94a03
+    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
+  - id: openwiki-source-4256f85b16adb450a2d592c1
+    resource: repo://specs/080-minio-to-rustfs/plan.md
+  - id: openwiki-source-f64018476db6cdad83959624
+    resource: repo://specs/081-major-dependency-upgrades/spec.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T07:04:46.529Z
+    at: 2026-10-19T00:33:25.175Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -69,8 +91,9 @@ flows through a spec → plan → tasks artifact set before any implementation c
 
 The current pins are **Expo SDK 57 / React Native 0.86 / React 19.2** on the universal client,
 **Rust 1.98** on the backend — pinned by `rust-toolchain.toml`, which `rustup` reads automatically
-for every `cargo`/`rustc` call inside the repo, so there is no channel to choose — and **Node 24**
-for the BFF and the dev-container toolchain image.
+for every `cargo`/`rustc` call inside the repo, so there is no channel to choose — and **Node 24** for
+the BFF and the dev-container toolchain image, with **pnpm 12** and **Nx 23** as the package manager
+and task runner.
 
 For the full description, architecture diagram, feature list, and tech stack table, see the
 [README](../../README.md). For individual deployable-unit pages, see the rest of the
@@ -108,6 +131,62 @@ the tag — review that diff deliberately, because discarding it discards the on
 All tasks run through [Nx as the universal task runner](../invariants/nx-task-runner.md) — never
 npm/yarn, and never the underlying tools directly (`pnpm nx test mcm-app`, `pnpm nx lint
 mc-service`, `pnpm nx run-many --targets=test,lint`).
+
+---
+
+## Toolchain pins, lint, and the dependency majors feature 081 moved
+
+Feature 081 brings every third-party **major** the bot proposes
+([spec](../../specs/081-major-dependency-upgrades/spec.md)) to a decided end state — upgraded, or held
+with a measured reason and a re-check rule — one stage per pull request, in an order that keeps each
+failure attributable to a single change. Only the stages that changed how the repository itself is
+wired belong on this page; the order, the holds and their re-check rules live in the feature's own
+artifacts.
+
+- **Package manager and task runner.** pnpm 12 (`packageManager: pnpm@12.13.0`) and Nx 23.3.0. The
+  Node **floor** in the root manifest stayed at `engines.node >= 22.13` deliberately: pnpm 12 declares
+  only `>=18`, and every pin already sits at 22/24, so lowering it would buy nothing.
+  `scripts/check-toolchain-consistency.mjs` is what makes that floor binding — it fails on a workflow or
+  Dockerfile Node pin below it, on a pnpm version named anywhere other than `packageManager`, and on a
+  second `packageManager` field outside the root manifest (corepack resolves that field from the
+  *nearest* manifest, so a duplicate silently wins in its directory). The task runner and its plugins
+  are pinned **exactly**, and every `@nx/*` equals `nx`, because a ranged `@nx/*` is one lockfile
+  refresh away from three Nx versions on one tree — a half-bump that ran **zero** tests on the Playwright
+  side and reported no counts at all.
+- **ESLint 10 flat config (US5b).** `.eslintrc.json` is gone from both `frontend/mcm-app/` and
+  `packages/design-system/`, replaced by `eslint.config.js` in each, and the app's lint target now runs
+  `eslint src` with no `--ext`. Three things in those files are load-bearing rather than stylistic: the
+  JS extensions are `globalIgnores`d, because flat config lints `*.js`/`*.mjs`/`*.cjs` by default and
+  cannot *narrow* extensions from the CLI — so the JS extensions are ignored to preserve the old linted
+  set, and widening lint to JS is a separate decision rather than a side effect of the format change;
+  `fixupConfigRules` from `@eslint/compat` wraps the Expo preset, because `eslint-config-expo`'s
+  bundled `eslint-plugin-react` and `eslint-plugin-import` still peer ESLint ≤ 9 and call context
+  methods ESLint 10 removed (without it every file fails to load with `contextOrFilename.getFilename is
+  not a function`, and the wrapper is dropped once both plugins declare ESLint 10); and four rules are
+  pinned to ESLint 8's resolved behaviour for parity, since the flat preset is not the legacy preset
+  re-expressed. `nx.json`'s lint target inputs accept both `.eslintrc*` and `eslint.config*`, so the
+  cache keying survived the rename.
+- **Tamagui 3 (US10).** The design system's UI styling library moved to **v3**, pinned to **one exact
+  version** in both workspace manifests, with no compiler plugin.
+  `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` asserts the exact pin, the single copy in
+  the lock, the absence of the removed v2 Babel plugin, and that every `tamagui`/`@tamagui/*` update
+  resolves into one Renovate group so the bot cannot propose half the set. The reason is measured: a
+  lockfile refresh had already dragged a v3 core in beside the v2 packages through an open `>=`
+  devDependency, with no Renovate PR and no review. The README's tech-stack table is where the whole
+  stack is listed, but it can lag a stage that has landed; for this set the manifests and the guard are
+  authoritative.
+- **Object store (feature 080).** The observability stack's object store — the S3 target behind Langfuse
+  and the feature-073 backups — is an upstream, digest-pinned `rustfs/rustfs` pull rather than the
+  from-source object-store build it replaced. That is why the stack table lists RustFS as upstream and
+  digest-pinned: the image is now scanned like every other third-party image instead of by a bespoke
+  workflow, and the one-way migration that moved the data onto a new external volume is documented in
+  [the prod control-tower runbook](../../docs/runbooks/prod-control-tower.md).
+
+Stages that are **held** rather than upgraded are held with a recorded reason and a re-check rule, never
+deferred: jest and `babel-jest` 30 (unblocked by the *next* platform SDK line, not the current one),
+`@babel/core` / `@babel/runtime` 8 and `@react-native-async-storage/async-storage` 3 (bundled by the
+SDK), and `typescript` 7 (blocked by `typescript-eslint`'s parser peer range). A held major gets its own
+Renovate group behind a dashboard approval, so ticking one is a decision rather than a batch release.
 
 ---
 
@@ -356,8 +435,9 @@ documents it — this is a pointer, not a restatement:
 - **A guard that fails because you changed what it protects is updated at the cause, never
   deleted** — a guard removed for being inconvenient is the regression it was written to catch:
   [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
-- **Renovate's silent channels** — a channel with a missing toolchain dies quietly, and the nightly
-  cron is not the Friday window: [Renovate](../runbooks/renovate.md).
+- **Renovate's silent channels** — the weekly window is Friday (`* 2-4 * * 5`), the nightly cron is
+  *not* it, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a
+  single dashboard line while producing nothing, every run: [Renovate](../runbooks/renovate.md).
 - **A whole CI board going red at once** — suspect the install before the code:
   [CI self-serve diagnostics](../runbooks/ci-diagnostics.md).
 

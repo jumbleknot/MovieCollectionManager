@@ -1,0 +1,648 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:990472dedf8016de57867d5a26a96dbe22dbe78f84911d3e22f074ce60ac4979",
+  "claims": [
+    {
+      "id": "claim_6aaba74607e949ecbb35e08b06560661",
+      "statement": "Renovate has five channels with distinct cadences and priorities: security (vulnerabilityAlerts + OSV) is schedule-exempt and unbudgeted on the nightly cron, while lockfile refresh (lockFileMaintenance), docker base images, docker digest pins and routine work all run only inside the Friday window and are ranked by prPriority 5 / 3 / 2 / 0 respectively; no group auto-merges.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f4961d5ac6641e38dc68ccc14a35d80",
+      "statement": "The prPriority ranking must not be inverted: lockFileMaintenance stays first because it is the channel that clears a CVE finding the manifest range already permits, and docker base images stays deliberately below it; a guard test fails if the docker rule is missing a numeric prPriority or if it is not below the lockfile rule.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ddb8934ffc241798f7c486ab2426e80",
+      "statement": "Because Renovate merges packageRules in order and a later rule overrides only the keys it sets, every later rule that takes a groupName away from docker base images must set an explicit prPriority, or it silently inherits 3 and competes for the slot that rule exists to secure; a guard test enumerates the later docker-matching grouped rules and fails on any that omits the key.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_56f9fbdbf0f1400cb6cb6c1e3faae238",
+      "statement": "The PR budget binds before the schedule: handleConcurrentLimits() checks the hourly PR limit for every key and therefore also blocks branch creation, not just PR creation, so a crowded-out update leaves nothing behind to resume; prConcurrentLimit must stay above prHourlyLimit or it becomes the binding constraint, and a guard test asserts that ordering.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f5c6b63dfc04d36a7754c94182ebd1f",
+      "statement": "The CVE sweep runs twice weekly (Friday and Tuesday, both at 04:00 UTC) and both slots must fire strictly before the earliest Renovate window cron, with at least a two-hour gap sized for queue depth rather than for the sweep's own runtime; a guard test asserts the ordering, the gap, and that infra-image-scan.yml states the item #487 reason.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_20054c1755f6496993ce8a511ce3b413",
+      "statement": "Friday is a cron ladder on the shared capacity-1 runner: the twice-weekly CVE sweep at 04:00, the devcontainer-image build at 06:00, the Renovate window at 07:00, lockfile-refresh-check at 10:00 and renovate-health at 11:00 UTC.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/devcontainer-image.yml",
+          "version": "repo-file-v1:sha256:d9e62b66bbd5ed9745c2e0c9060ce8b60dc64ee08c735e76fb8f0707d373b5ad"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
+          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml",
+          "version": "repo-file-v1:sha256:864ade6166c5071bbfec10d62da585aac32ef07a21888f0a75be5f6c60dec1f5"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate-health.yml",
+          "version": "repo-file-v1:sha256:89251c430774fbdf14b42b0eac22ca06fce847a67866bf62197512852525babb"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5895efe145a4b1d8b331db2c83c45cd",
+      "statement": "The nightly cron is not the Friday window: outside renovate.json's permitted window Renovate returns not-scheduled before branch creation, so routine work never lands on the nightly run and must be forced explicitly.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9a36d286c0f45179722794e958994f9",
+      "statement": "A dispatched run publishes its resolved mode as a renovate/mode commit status before Renovate runs, but the status is only an indicator: the empirical heads-and-ticks check stays mandatory because the dryRun string form resolves correctly only through this forge build's boolean coercion, and the status step is always()-guarded so a dispatch whose toolchain setup dies still records its mode.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        }
+      ]
+    },
+    {
+      "id": "claim_c43c4047754d4f4399db6fdb7d2a96af",
+      "statement": "A dispatch returns HTTP 204 immediately but only queues the run, so the empirical check must be applied only after the run leaves waiting; /actions/tasks lists jobs and therefore shows nothing for a queued run, while /actions/runs?event=workflow_dispatch does.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a7d698c1ca74e8ca360c2a19e525cc1",
+      "statement": "lockfile-refresh-check.yml runs Friday 10:00 UTC after the window and comments its verdict on the item, comment-only and always exit 0, no-oping once the item closes; the load-bearing distinction is unaided versus forced, and the tell is when the PR was created, because a lock-file PR created outside the permitted window cannot have come from the schedule.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml",
+          "version": "repo-file-v1:sha256:864ade6166c5071bbfec10d62da585aac32ef07a21888f0a75be5f6c60dec1f5"
+        },
+        {
+          "resource": "repo://scripts/check-lockfile-refresh.mjs",
+          "version": "repo-file-v1:sha256:19ae6ccd06d33d5312d7fa1d5fc6d0a44bc9a1bd9d625a6a5fb41ef9271c35aa"
+        }
+      ]
+    },
+    {
+      "id": "claim_1177d4cd9c6247e19d2b0ae413962d2c",
+      "statement": "Renovate PRs and branches have hard operating rules: never hand-close a Renovate PR (it marks the update rejected), never hand-push to a Renovate branch, tick rebase-branch= plus one dispatch after landing a main-side fix for a gate, and check branch ancestry with git merge-base --is-ancestor before ticking a surviving renovate/* branch rather than trusting git diff --stat main...branch.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1563d507eb646d18ddbb158e0db481f",
+      "statement": "Closing a lockFileMaintenance PR is a narrow measured exception to the never-hand-close rule: recreateClosed is true for that class, so check-existing.js never looks for a closed PR and the channel is not marked rejected; the exception does not generalize to any other channel.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a17ae9a0304459390d1e752b69762f2",
+      "statement": "renovate/lock-file-maintenance is hard-exempt from Renovate's own branch pruning by exact name, so default_delete_branch_after_merge is the only mechanism that removes it; the suffixed group branches this repository produces are not exempt and are prunable by autoclose.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_a86df940531844ffa9c85d7d8e52e567",
+      "statement": "Merging past a pending renovate/stability-days check defaults to HOLD and requires all three conditions: the pending state is structural rather than temporal, the posture has been measured with the gate's own criteria and recorded on the PR, and the update clears a live finding or unblocks a red gate on main.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1ac4867090449bca02f7c760d27da63",
+      "statement": "Autoclose requires every dependency in a group to be satisfied on main, so a hand-carry one version short does not close the PR but silently shrinks or rebases it instead; a predicted autoclose should be verified with git merge-tree --write-tree rather than by trusting a commit message's claim about its own content.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e22f1c6062048ceb3be994905490bde",
+      "statement": "updateNotScheduled (default true) gates branch creation only, so an out-of-window run still updates a branch that already carries an open PR and a conflicted branch regenerates from scratch under rebaseWhen: conflicted; clearing a conflicted Renovate PR does not have to wait for Friday.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc7e73b11fb140d2ac651b74c58e894e",
+      "statement": "The Dependency Dashboard's per-section checkboxes are the only sanctioned interaction and their section and checkbox names change between runs, so the body must be re-read immediately before ticking; Repository Problems is the section that surfaces Renovate's own errors.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d266c3eb5774c1586671a280f5ccb06",
+      "statement": "A database MAJOR of postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch or langfuse/* waits in Pending Approval and ticking it is the migration decision, because app-e2e never starts the observability stack and a green CI therefore said nothing about the PR #698 clickhouse and redis majors; the within-major patch stream stays automatic and a guard test asserts approval on major but not on patch.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f1b7dd557b944c48ada73104702a6ad",
+      "statement": "The observability postgres is held below 17 outright by an allowedVersions rule scoped with matchFileNames to the two observability compose files, because one digest backs both Langfuse and Unleash; the ceiling must not leak onto keycloak or agent-db, which are already on 18, and a guard test asserts both halves.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_00fc2bd8e21f4b3dbc99fb05d4e15405",
+      "statement": "Ticking the dashboard edits item #29 and needs the issue-scoped token, while the git credential token answers with a missing read:issue scope that reads through jq .body as a null dashboard; the second token is the one that dispatches renovate.yml and merges PRs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://scripts/backlog.mjs",
+          "version": "repo-file-v1:sha256:227b42e3b70cb5b4b59c7b608856152d707f1f7069d9f258f39788a07df79c9e"
+        }
+      ]
+    },
+    {
+      "id": "claim_5013c69f17f94d70a7eef98b62976d21",
+      "statement": "Every merge-gating toolchain pin is exact, identical at every site, and tracked by a manager that will move it: Rust in rust-toolchain.toml plus the devcontainer argument (grouped as rust toolchain), semgrep in scripts/sast-scan.mjs, cargo-audit in guardrails.yml and the toolchain image, the python interpreter minor in agents/movie-assistant/.python-version, and uv as one version string repeated across install-script URLs, setup-uv inputs and image tags.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/.python-version",
+          "version": "repo-file-v1:sha256:a876e0b10411037a012498b9fe18d9bc1df32ed8b722a13564dc944ddcfd9135"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://rust-toolchain.toml",
+          "version": "repo-file-v1:sha256:029517e3b1759c7889f6083bfc2f70cdf779b521e2441cfb770c93d2f2c1b771"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs",
+          "version": "repo-file-v1:sha256:505239881fdaaafa2c773f9e63781d212c6f8a27a40963188a3b960b35911bd9"
+        }
+      ]
+    },
+    {
+      "id": "claim_263b3b9c35f1494a87bd7c422a8cd628",
+      "statement": "The Renovate job pins its own Node because the runner container's bundled Node failed renovate's raised engines.node requirement, and that setup-node step must precede corepack enable because corepack is provisioned from whichever Node is on PATH; a guard test asserts both the pin and the ordering.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_194e29f000b2405297706dff56e5c6fd",
+      "statement": "A Rust toolchain bump breaks local cargo/rustc in the dev container until the image is rebuilt, because rustup keys toolchains by name and the egress allowlist blocks the fetch; the fix is automatic since the rust toolchain group moves rust-toolchain.toml and .devcontainer/toolchain.Dockerfile together and devcontainer-image.yml is path-triggered on that Dockerfile, leaving pulling the rebuilt image as the only manual step.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/devcontainer-image.yml",
+          "version": "repo-file-v1:sha256:d9e62b66bbd5ed9745c2e0c9060ce8b60dc64ee08c735e76fb8f0707d373b5ad"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://rust-toolchain.toml",
+          "version": "repo-file-v1:sha256:029517e3b1759c7889f6083bfc2f70cdf779b521e2441cfb770c93d2f2c1b771"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6c3bccd1ebf4cc8b9581079e9436864",
+      "statement": "The python toolchain packageRule's position is load-bearing: it must sit after docker base images and before docker digest pins, or all eight digest refreshes migrate onto renovate/python-toolchain and share a de-duplication key with the minor updates, reproducing the silent digest-drop shape; the requires-python floors are deliberately excluded and a guard test asserts both the ordering and the exclusion.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_dadac01a86254aaab5d91d109c950a68",
+      "statement": "uv's single source of truth is one version string repeated at every site, held together by one customManager plus the uv pin packageRule and asserted equal across every site by the guard test; it is deliberately not a shared file because setup-uv's version input is an Actions expression that cannot read a repository file.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7b1e63ce19048cc92c169034943455a",
+      "statement": "Version holds are expressed as allowedVersions rather than enabled: false, because the digest refresh of the tag already running is that image's security patch stream and disabling the dependency would strand it; what a ceiling cannot express — not never, but not by accident — is dependencyDashboardApproval instead.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3191ce827024b4c8927df863ad03542",
+      "statement": "The java-jdk ceiling is a regex on purpose: the dependency uses semver-partial versioning, which coerces the intuitive allowedVersions '<18' to 18.0 and matches only 18.0.x, so it admitted exactly JDK 18 and blocked 17; a regex is evaluated before any versioning, and the guard models semver-partial's own matcher to assert both halves.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fe82168e31c4bc2bccacc0484efb90a",
+      "statement": "Both CI-action holds (actions/upload-artifact below v4 and the java-jdk ceiling) must stay after the ci actions group rule, because the last matching rule wins and an earlier placement lets the group rule pull the dependency back out; the guard asserts the ordering and, as a control, that neither ceiling leaks onto other actions or node on the node-version datasource.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c1bb2dbf4bf492dad87cd6c2c2d9ceb",
+      "statement": "Majors of the keyed pnpm-workspace.yaml security overrides are disabled rather than held, because Renovate reads an override's capped floor as a direct range and widens the cap to the newest major, handing a dependent a major it never declared; check-override-consistency.mjs fails any value cap past the key's major plus one as the second line of defence.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs",
+          "version": "repo-file-v1:sha256:fe84ae3df166be2f2ecbf218ba3ac6244802a381c15b9a7d89d8a13141136c1f"
+        }
+      ]
+    },
+    {
+      "id": "claim_a140f22db4874b2d962c33fd994385a2",
+      "statement": "SDK- and lint-pinned toolchain majors (jest/babel-jest/@types/jest, @babel/core/@babel/runtime, typescript and @react-native-async-storage/async-storage) are held behind dependencyDashboardApproval with one group per hold, because a branch's approval is upgrades.some(...) and a held major left inside js majors would gate every js major behind a single tick; patches and minors stay in the routine group.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e4c3d2ca5514ac9981516280ef1ec90",
+      "statement": "Tamagui is the lockstep-pin case the broad npm rules would otherwise split: every tamagui/@tamagui/* specifier in both workspace manifests is one exact version, one tamagui group covers all three update tracks with rangeStrategy pin, and the rule carries no matchUpdateTypes and must stay ordered after js patch/minor and js majors.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
+          "version": "repo-file-v1:sha256:603f7b22dbae2f5e2dacb2c81872a2c24f2f520f430c5f2f04e2ecacfd5ba9ec"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f1dd307bf8c48f086441fe5366b772f",
+      "statement": "A channel whose lockfile toolchain is missing dies silently: Renovate shells out through execa, a missing binary rejects, and the rejection is suppressed to a single WARN line under Repository Problems with no PR ever; renovate.yml therefore provisions pnpm, Rust and uv, and a new manager means a new toolchain step.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        }
+      ]
+    },
+    {
+      "id": "claim_6630bc84e8e34398b5a8940a49fd7249",
+      "statement": "The health digest was fixed twice: it originally read only the advisory renovate/stability-days column, missing red required PRs and a red main CVE sweep, and now also checks branch protection for open Renovate PRs blocked by a required context plus the CVE posture of main; it then read only the newest scheduled sweep run, and now reads the newest run of that workflow on main by schedule or push, names the event, and uses prettyref rather than the always-null head_branch as the branch discriminator.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate-health.yml",
+          "version": "repo-file-v1:sha256:89251c430774fbdf14b42b0eac22ca06fce847a67866bf62197512852525babb"
+        },
+        {
+          "resource": "repo://scripts/renovate-health.mjs",
+          "version": "repo-file-v1:sha256:6d82b4609b1aae09a7fc9580fa9256e295d28c4f47d52bb9d83d8025b65b5cee"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3dcf9781f954cc1ba3adeddb77c4f5b",
+      "statement": "The release-age cooldown gates what Renovate proposes, not what a lockfile regeneration drags in: pnpm independently verifies the lockfile against supply-chain policy at install, so a compliant bump can resolve a too-young transitive and redden unrelated required contexts, which is accepted rather than mitigated; the same cutoff also silently delays a fix, so a refresh must be forced only after the fix's publish time and the resolution confirmed in the regenerated lockfile.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_65655df40df4405f99fa28bf7b3eee25",
+      "statement": "A group rule governs updates, not lockfile re-resolution, so lockstep packages must be pinned exactly: lockFileMaintenance re-resolves every manifest range and no groupName applies to it, which is how a refresh moved @playwright/test alone and made app-e2e run zero tests; nx, every @nx/* and @playwright/test are pinned exactly and check-toolchain-consistency.mjs fails on a range or a disagreeing plugin.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs",
+          "version": "repo-file-v1:sha256:850666528af2c70f9f518cc4ee3ccc71b8a59daa5d5751d72f15b63dfdc372ed"
+        }
+      ]
+    },
+    {
+      "id": "claim_7de8ecd29b494e5da5d4b61c4108d99d",
+      "statement": "Extraction is not grouping: a customManager makes Renovate see a second copy of a version but does not make both copies move in one PR, so each such pair needs its own packageRule matching both managers ordered after the broad rules; the guard test asserts the resolved group for each pair rather than that a rule mentions the package.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e4176e7762b4805ae7e5002ee9501c3",
+      "statement": "The OpenWiki generator's dependency tree is grouped as one openwiki generator PR: a customManager extracts the openwiki pin from .devcontainer/toolchain.Dockerfile while the npm manager reads tools/openwiki-generator/package.json, and a guard test asserts the resolved group on every version track plus controls that mermaid/jsdom named elsewhere are not swallowed and that the Dockerfile matchString hits exactly once.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_6df6be60655d49aa8ffcd8a382826a95",
+      "statement": "A pinDigest or digest update that collides with a version update on the same branch is dropped silently: branchify.js de-duplicates upgrades per branch on ${packageFile}:${depName}:${currentValue} and discards a second update for that key with a different newValue, so docker digest pins needs its own branch namespace covering both pinDigest and digest.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed1de15414fc45c7bdb8df6bd7775c30",
+      "statement": "A release with no releaseTimestamp is pending for ever under the default timestamp-required behaviour, and a group mixing a pending half with a ready one silently strands the pending upgrades every run; uv pin sets minimumReleaseAge to null and ghcr.io/quay.io registries run timestamp-optional, while Docker Hub deliberately keeps timestamp-required because its timestamps are real.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_b25e20e8543843f1937af880cf53eee3",
+      "statement": "Docker Hub's anonymous tag API returns 403 from page 11 and one 403 discards every timestamp for that image, producing permanent Pending Status Checks that read like a cooldown that never elapses; the fix is RENOVATE_DOCKER_MAX_PAGES set to 10 on the Run Renovate step, because dockerMaxPages is globalOnly and cannot live in renovate.json, and a guard test asserts the cap.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_00a4cc0e958241329408642aa3d47490",
+      "statement": "DIGEST-class updates are aged against newestMatchingVersionTimestamp from the version lookup rather than the tag's own tag_last_pushed, so images whose pinned tag falls outside the newest-1000-tag window or is not a versioned release never get their digest refreshed; the diagnosis is the resolved minimumReleaseAgeBehaviour in a debug run's logged object, not the count of 'no releaseTimestamp to age against' lines, which fires under both behaviours.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_94429e364ddb4fdeb9357395c778999d",
+      "statement": "A manager that matches no files is indistinguishable from one with no work: docker:pinDigests sat in extends while this repository's <thing>.compose.yaml files never matched the docker-compose manager's basename pattern, and the fix was a top-level docker-compose key rather than renaming the files.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_e56ad1edcbc745c6a084d797eb82e34d",
+      "statement": "A packageRule can target packages that nothing extracts: the minio MINIO_TAG/MC_TAG rule resolved cleanly and its guard passed against a synthetic dependency while no customManager fed it real data, so the rule proved nothing for a year; the correct check is the Dependency Dashboard's Detected Dependencies counts, and feature 080 replaced the from-source build with a digest-pinned rustfs/rustfs pull whose extraction the guard now asserts.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_48a5e1833d0746b9b69f35c27414a6e5",
+      "statement": "Under bash -e a step body of two gate commands reports one outcome, so 'the first crashed and the second never ran' is indistinguishable from 'both ran and found something'; a CI step must be reproduced as the whole step (bash -e -c 'cmd1 && cmd2') against a clean checkout, not command by command, because gitignored local state can mask the defect.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        }
+      ]
+    },
+    {
+      "id": "claim_db4b2d449f034d07b9a69010e6ad4a18",
+      "statement": "renovate-config-validator runs in two places on the same renovate@44 major as the live run — a required, unconditional job in guardrails.yml and a blocking pre-run step in renovate.yml — and only catches its class with both --strict and --no-global, because without --no-global the file is validated as a global self-hosted config and without --strict a needed migration is a warning at exit 0.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+        }
+      ]
+    },
+    {
+      "id": "claim_03bf2588adc64cceb246f8091b3359f9",
+      "statement": "The validator does not replace the guard test, because they catch different failure classes: the validator catches a key Renovate does not know at all, while the guard test catches a key Renovate knows but ignores depending on where it is written, such as prPriority placed inside lockFileMaintenance instead of at the packageRule level.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        }
+      ]
+    },
+    {
+      "id": "claim_8fdd0ed9231541eab1a5f86f28027918",
+      "statement": "The once-per-run WARN that timestamp-optional emits is remapped to info by a top-level logLevelRemap, because Repository Problems is built from WARNs and renovate-health.mjs reads that section as its channel-death signal; the pattern matches the message rather than the whole class, so a different WARN still surfaces.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+        },
+        {
+          "resource": "repo://scripts/renovate-health.mjs",
+          "version": "repo-file-v1:sha256:6d82b4609b1aae09a7fc9580fa9256e295d28c4f47d52bb9d83d8025b65b5cee"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-19T00:33:25.175Z"
+  }
+}

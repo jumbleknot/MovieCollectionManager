@@ -1,9 +1,9 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57) and a runtime-only Tamagui 3. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, and the client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, and the client-facing build and test traps.
 resource: frontend/mcm-app/README.md
-tags: [expo, react-native, tamagui, frontend, metro, csp]
+tags: [expo, react-native, tamagui, eslint, frontend, metro, csp]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -11,6 +11,8 @@ sources:
     resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-8b39d08f4b5008470c9dd1c6
+    resource: repo://frontend/mcm-app/eslint.config.js
   - id: openwiki-source-23ebb6a3dfd75d37b2feaef1
     resource: repo://frontend/mcm-app/metro-env-blocklist.js
   - id: openwiki-source-50f6865ba7ac6d348318b9e3
@@ -25,6 +27,8 @@ sources:
     resource: repo://frontend/mcm-app/playwright.config.ts
   - id: openwiki-source-a4c39fcf1686803a0f1b3a45
     resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
+  - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
+    resource: repo://frontend/mcm-app/project.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -65,10 +69,14 @@ sources:
     resource: repo://packages/design-system/components/navigation/NavList.tsx
   - id: openwiki-source-e3cf144619c81072e7ba6980
     resource: repo://packages/design-system/components/navigation/Tabs.tsx
+  - id: openwiki-source-c2fc016d5fa9c9435755b27e
+    resource: repo://packages/design-system/eslint.config.js
   - id: openwiki-source-95aa559e7d1634eddb9fc64d
     resource: repo://packages/design-system/jest/tamagui-cjs-resolver.js
   - id: openwiki-source-f7e16ba323424b9790bca8b9
     resource: repo://packages/design-system/package.json
+  - id: openwiki-source-61c8793ba5e804cee6c99b20
+    resource: repo://packages/design-system/project.json
   - id: openwiki-source-7c01a8501da7bfee76f8ed12
     resource: repo://packages/design-system/tamagui.config.ts
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
@@ -79,10 +87,12 @@ sources:
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-92e409c28d1307a334df12c0
     resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-19T00:33:25.175Z
 ---
 
 # Expo/React Native universal app
@@ -93,7 +103,10 @@ export, because the same process also hosts the [BFF](./bff.md) via file-based
 `+api.ts` routes. Client-side code lives in `src/screens/`, `src/components/`, `src/hooks/`,
 `src/config/`, `src/utils/`, `src/types/`; routes (both UI screens and API handlers) live under
 `src/app/`. Routes stay thin by convention — a route file reports its own screen label (see below)
-and renders a screen component, never the other way round.
+and renders a screen component, never the other way round. Both this app and the design system are
+linted by **ESLint 10 through flat config** (`eslint.config.js` in each project, replacing the
+`.eslintrc.*` files feature 081 US5b removed) — see the gotcha below for what the migration did and
+did not change.
 
 The [design system](./design-system.md) is Tamagui-based (`@mcm/design-system`), dark-first by default (theme choice is
 persisted client-side only — no backend involvement), with a compliance test suite enforcing
@@ -245,10 +258,41 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   numeric `lineHeight` on a Tamagui component is a **ratio** (write pixels as `"20px"`), and
   `hoverStyle`/`pressStyle`/`focusVisibleStyle` are gone in favour of clauses on the property they
   modify. If you see stale guidance claiming a v1/v2 pin or a compiler plugin, that no longer reflects
-  this codebase — the [design system page](./design-system.md) still carries the old "pinned to v1 on
-  purpose, no compiler plugin" text and `frontend/mcm-app/README.md` still carries the plugin-era
-  "Metro's dev web bundler OOMs" note; check the manifests, `babel.config.js` and the lockstep guard
-  before trusting prose.
+  this codebase. Both the [design system page](./design-system.md) and `frontend/mcm-app/README.md`'s
+  design-system section have since been rewritten for v3, so the only remaining plugin-era prose is the
+  README's web-E2E note ("Metro's dev web bundler OOMs building the app + Tamagui locally") — where any
+  prose and the manifests disagree, trust the two `package.json` manifests, `babel.config.js` and
+  `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`.
+- **Lint is an ESLint 10 flat config now, and the config file is the whole migration.** ESLint 10
+  removed `.eslintrc.*` support and the `--ext` flag, so feature 081 US5b replaced
+  `frontend/mcm-app/.eslintrc.json` and `packages/design-system/.eslintrc.json` with
+  `eslint.config.js` in each project, and the Nx `lint` targets changed with them: both are now bare
+  `eslint src` (mcm-app) / `eslint .` (design-system) run through `nx:run-commands`, with the old
+  `--ext .ts,.tsx` gone. Three details are
+  load-bearing. First, **`eslint-config-expo`'s flat preset is not its legacy preset re-expressed** —
+  it takes `eslint-plugin-react`'s `flat.recommended` (a dozen `react/*` rules move warn → error, plus
+  new errors such as `jsx-key` and `no-unescaped-entities`) and `eslint-plugin-import`'s
+  `flatConfigs.warnings`, so a reader who assumes the same rules apply is wrong. Second, **four parity
+  settings keep the migration from reporting anything new** — `reportUnusedDisableDirectives: 'off'`
+  (ESLint 9+ defaults it to `warn`) and the rules `react/no-unescaped-entities`, `import/no-duplicates`
+  and `import/no-named-as-default-member`, each of which was absent from the legacy preset; they are
+  parity, not new exemptions, and turning them on means fixing what they report (33 findings in
+  mcm-app, 0 in design-system), which is its own change. Third, **`@eslint/compat`'s
+  `fixupConfigRules` wraps the preset because `eslint-config-expo` 57.0.2 bundles `eslint-plugin-react`
+  7.37.5 and `eslint-plugin-import` 2.32.0, whose newest releases peer `eslint <=9` and still call
+  context methods ESLint 10 removed** — without it every file fails at load with
+  `react/display-name: contextOrFilename.getFilename is not a function`. `@eslint/compat` restores
+  those methods on the rule context and changes no rule or severity; drop it once both plugins, as
+  `eslint-config-expo` ships them, declare eslint 10 in their peers. The linted file set is
+  deliberately unchanged: flat config cannot narrow extensions from the CLI (and lints `*.js`/`*.mjs`/
+  `*.cjs` by default), so `*.{js,jsx,mjs,cjs}` are globally ignored in both configs, matching what
+  `--ext .ts,.tsx` selected. Both projects declare `eslint ^10.12.0`, `eslint-config-expo ~57.0.2` and
+  `@eslint/compat ^2.1.1`; the measured result is mcm-app 0 errors / 43 warnings and design-system
+  0/0, the same 43 warnings at the same `file:line:rule` as before the migration. Renovate still owns
+  this surface: `eslint-config-expo` is version-locked to the Expo SDK family (upgrades go through
+  `expo install` with `expo`/`react-native`, never a raw bump), and TypeScript 7 stays held
+  because `@typescript-eslint/parser` still peers `typescript ">=4.8.4 <6.1.0"` — see the
+  [Renovate runbook](../runbooks/renovate.md).
 - **Project-root dotenv files Expo cannot parse are kept out of Metro's file map — drop the
   blocklist and `pnpm web` 500s on every request.** In development, `@expo/metro-config`'s
   transform-worker rewrites the virtual module `expo/virtual/env.js` into
@@ -361,6 +405,16 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `mcr.microsoft.com/playwright` image with `--network host` instead — and keep its version tag
   matched to the `@playwright/test` lockfile version (see [E2E testing](../runbooks/e2e-testing.md)
   for the toolchain-consistency gate that now enforces this).
+- **RN 0.86's renderer is Babel-transformed unless Jest is told not to, and the transform, not the
+  load, is what cost time.** React Native 0.86's `RendererImplementation` imports `ReactFabric` at
+  module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render that
+  touches `Animated` pulls in the ~725 KB `ReactFabric-dev.js` — a file that is already-compiled
+  CommonJS and needs no transform. `frontend/mcm-app/package.json`'s jest `transformIgnorePatterns`
+  therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold
+  with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, back
+  at the SDK-56 figure. The per-test 15 s timeout that briefly stood in for this is gone; delete the
+  pattern and a loaded CI runner can exceed Jest's default 5 s bound on the first
+  `Animated`-touching render per worker.
 - **Password-manager autofill is deliberately suppressed almost everywhere.** Use
   `NoAutoFillInput` (`src/components/no-autofill-input.tsx`, used across the collection/movie
   forms, search bar, and assistant config) instead of plain `TextInput` for form fields, except the
