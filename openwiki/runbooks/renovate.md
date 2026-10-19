@@ -1,10 +1,9 @@
 ---
-type: "Reference"
-title: "Renovate dependency bot"
-openwiki_generated: true
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+type: Runbook
+title: Renovate dependency bot
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+resource: docs/runbooks/renovate.md
+tags: [renovate, ci, dependencies, runbook]
 sources:
   - id: openwiki-source-6186a866b56089a82cce5c62
     resource: repo://.forgejo/workflows/devcontainer-image.yml

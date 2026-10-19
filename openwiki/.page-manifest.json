@@ -229,13 +229,6 @@
       "gitHead": "33eaa673416f550cd6a2407967cae0b14a138ad3",
       "pageVersion": "sha256:acc48dd47040ae290e983799119cc680bb5b1e59bc3643e8c18598937e106134"
     },
-    "/openwiki/runbooks/renovate.md": {
-      "pageVersion": "sha256:9d9a5cbee59760e447152f93727d5dbc2f5f43115da1535fd17f7c8d4c7177ba",
-      "completedBy": "openwiki/0.7.1",
-      "completedRunId": "063be6f8-2598-4b3b-9583-09e2ccba4196",
-      "gitHead": "62556d3befc8e633d4dee805d6a853528cad8bf7",
-      "sourceFingerprint": "sha256:f9601cbc1275fc532419550f7f37c332387c62f23b772b0d545743eb17ae6f78"
-    },
     "/openwiki/runbooks/sast-scanning.md": {
       "pageVersion": "sha256:89a44457ee0f891cb5a303253e6b5e178a6d6fb567d7c308c1a1460659e36976",
       "completedBy": "openwiki/0.7.1",
