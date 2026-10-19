@@ -959,6 +959,50 @@ test('the copilotkit gate leaves the PATCH track routine, so a security patch is
   );
 });
 
+// ---------------------------------------------------------------------------------------------
+// test-renderer is HELD below 1.3 until React is on 19.3 — feature 081 US5c (PR #798), item #254.
+// test-renderer 1.3.x pulls react-reconciler 0.34, which peers on react ^19.3; the workspace runs
+// 19.2.3, pinned to the Expo SDK. The hold is a REGEX (a semver-partial `<1.3` is the java-jdk trap),
+// and it lives in its OWN group: one held member gates every other member of a shared group.
+
+const TEST_RENDERER_HELD_CEILING = '/^1\\.[0-2]\\./';
+const testRendererDep = (updateType) => ({
+  manager: 'npm',
+  packageFile: 'frontend/mcm-app/package.json',
+  depName: 'test-renderer',
+  datasource: 'npm',
+  updateType,
+});
+
+test('(081) test-renderer is held below 1.3 on every track, in a group of its own', () => {
+  for (const updateType of ['patch', 'minor', 'major']) {
+    assert.equal(
+      resolvedAllowedVersions(testRendererDep(updateType)),
+      TEST_RENDERER_HELD_CEILING,
+      `test-renderer ${updateType} is not held — 1.3.x needs react-reconciler 0.34 (react ^19.3); we run 19.2.3.`,
+    );
+    const group = resolvedGroupName(testRendererDep(updateType));
+    const routine = resolvedGroupName(copilotkitDep('@ai-sdk/openai', updateType));
+    assert.equal(group, 'test-renderer (held: react 19.3)', `test-renderer ${updateType} resolves to ${JSON.stringify(group)}`);
+    assert.notEqual(group, routine, `test-renderer ${updateType} shares the routine group — the hold would gate it`);
+  }
+});
+
+test('(081) the test-renderer ceiling ADMITS 1.2.x and nothing from 1.3 on', () => {
+  const ceiling = resolvedAllowedVersions(testRendererDep('minor'));
+  for (const version of ['1.2.0', '1.2.7']) {
+    assert.ok(allowedVersionsPermits(ceiling, version), `the test-renderer hold '${ceiling}' blocks ${version}`);
+  }
+  for (const version of ['1.3.0', '1.3.2', '1.10.0', '2.0.0']) {
+    assert.ok(!allowedVersionsPermits(ceiling, version), `the test-renderer hold '${ceiling}' ADMITS ${version}`);
+  }
+});
+
+test('(081) a sibling of test-renderer is not caught by its hold (control)', () => {
+  const sibling = { ...testRendererDep('minor'), depName: 'react-test-renderer' };
+  assert.notEqual(resolvedAllowedVersions(sibling), TEST_RENDERER_HELD_CEILING);
+});
+
 test('the copilotkit rule does NOT swallow unrelated npm packages', () => {
   // `@tamagui/core` was the third control until feature 081 US10 gave the Tamagui family its own
   // `tamagui` group on purpose (asserted by tamagui-version-lockstep.guard.test.mjs). It is replaced
