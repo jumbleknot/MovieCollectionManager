@@ -861,6 +861,26 @@
     },
     {
       "description": [
+        "test-renderer IS HELD BELOW 1.3 UNTIL REACT IS ON 19.3 \u2014 feature 081 US5c (PR #798), item #254.",
+        "@testing-library/react-native 14 renders through `test-renderer`. MEASURED 2026-10-18: test-renderer 1.3.x",
+        "depends on react-reconciler 0.34, which peers on react ^19.3; the workspace runs react 19.2.3, pinned to the",
+        "Expo SDK (the react lock above). So 1.3 cannot install cleanly until an Expo SDK move brings React 19.3.",
+        "OWN GROUP ON PURPOSE: a held member gates every member of a group with it, so test-renderer must not ride",
+        "`js patch/minor` (it would block every routine npm bump batched alongside it). MUST STAY AFTER the",
+        "`js patch/minor` and `js majors` rules: the last matching `groupName` wins.",
+        "THE CEILING IS A REGEX ON PURPOSE (the java-jdk lesson): a regex is evaluated before any versioning, so it",
+        "cannot be coerced into meaning something else. It admits 1.0.x-1.2.x patches and nothing from 1.3 on.",
+        "`allowedVersions` rather than `enabled: false`: 1.2.x patches are still wanted.",
+        "LIFT when react reaches 19.3 (an Expo SDK move): delete this rule, and let 1.3+ arrive in the routine groups.",
+        "renovate-workflow.guard.test.mjs asserts the ceiling on every track, its own group, and the ordering."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["test-renderer"],
+      "groupName": "test-renderer (held: react 19.3)",
+      "allowedVersions": "/^1\\.[0-2]\\./"
+    },
+    {
+      "description": [
         "OVERRIDE MAJORS ARE NEVER PROPOSED — feature 081 US5a (research R2), item #254.",
         "Every keyed entry in pnpm-workspace.yaml `overrides:` is a SECURITY FLOOR: the key names the vulnerable span,",
         "the value forces the patched floor and CAPS it at the floor's own major (`undici@<6.27.0: '>=6.27.0 <7'`).",
