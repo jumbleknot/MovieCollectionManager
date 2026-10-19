@@ -3,7 +3,7 @@
  *
  * Contract: specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md. The curator node
  * emits a `render_movie_card` AG-UI tool call carrying read-only TMDB/mc-service metadata (no
- * token, no write). CopilotKit's `useRenderTool` (see `useRenderMovieCardTool` below) maps the
+ * token, no write). CopilotKit's `useFrontendTool` (see `useRenderMovieCardTool` below) maps the
  * tool-call args to this presentational component, rendered inline in the assistant dock.
  *
  * Universal Generative UI (constitution): one React Native component renders identically on web
@@ -14,7 +14,7 @@ import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } fr
 import { useTheme } from '@tamagui/core';
 import { Button } from '@mcm/design-system';
 import { useRouter } from 'expo-router';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -26,7 +26,7 @@ export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
 
 /**
  * Props mirror the `render_movie_card` contract shape (camelCase wire props). A `type` alias
- * (not an interface) so it satisfies `useRenderTool`'s `Record<string, unknown>` constraint.
+ * (not an interface) so it satisfies `useFrontendTool`'s `Record<string, unknown>` constraint.
  *
  * 013 US10: a web (`source="tmdb"`) preview card may carry `url` (the themoviedb.org link) and
  * `addable` (surface an "add to collection" affordance). Both optional so existing curator/query
@@ -255,7 +255,7 @@ export function RenderMovieCard({
 
 /**
  * Zod schema for the `render_movie_card` tool args (mirrors the contract props). Zod v4 is a
- * StandardSchema, which is what `useRenderTool` accepts.
+ * StandardSchema, which is what `useFrontendTool` accepts.
  */
 export const renderMovieCardParameters = z.object({
   movieId: z.string().nullable(),
@@ -280,7 +280,7 @@ export const renderMovieCardParameters = z.object({
  * card is a preview; the write is gated behind the approval flow. Mount once inside the dock.
  */
 export function useRenderMovieCardTool(): void {
-  useRenderTool<RenderMovieCardProps>({
+  useFrontendTool<RenderMovieCardProps>({
     name: RENDER_MOVIE_CARD_TOOL,
     description:
       'Display a read-only movie metadata preview card (title, year, poster, genres, overview). Does not add or modify anything.',

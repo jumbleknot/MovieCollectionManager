@@ -379,10 +379,10 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 **PR 7a — copilotkit + @ag-ui/client**
 
-- [ ] T048 [US7] **Verify RED (upgrade)**: set `@copilotkit/react-native` and `@copilotkit/runtime` to the
+- [x] T048 [US7] **Verify RED (upgrade)**: set `@copilotkit/react-native` and `@copilotkit/runtime` to the
   latest 1.x (1.78.0 on 2026-10-10) and `@ag-ui/client` to the exact version they pin (1.0.2); `pnpm nx
   typecheck mcm-app && pnpm nx test mcm-app` — record failures (expect breaking-minor fallout, cf. PR #263).
-- [ ] T049 [US7] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; `pnpm why @ag-ui/client`
+- [x] T049 [US7] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; `pnpm why @ag-ui/client`
   shows ONE version.
 - [ ] T050 [US7] Stronger verification (FR-010): `E2E_REQUIRE_AGENT_STACK=1 pnpm nx e2e:agents mcm-app`
   (`@gate`); `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`; dispatch app-ci on the branch

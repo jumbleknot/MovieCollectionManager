@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -98,7 +98,7 @@ export const renderImportReportParameters = z.object({
  * `handler`). Mount once inside the dock.
  */
 export function useRenderImportReportTool(): void {
-  useRenderTool<RenderImportReportProps>({
+  useFrontendTool<RenderImportReportProps>({
     name: RENDER_IMPORT_REPORT_TOOL,
     description:
       'Display a collapsible report of spreadsheet-import rows that were skipped or failed, with the reason for each. Does not modify anything.',

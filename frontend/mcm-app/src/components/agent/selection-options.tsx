@@ -18,7 +18,7 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '@mcm/design-system';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -116,7 +116,7 @@ export const renderSelectionParameters = z.object({
  * render tools).
  */
 export function useRenderSelectionTool(): void {
-  useRenderTool<SelectionOptionsProps>({
+  useFrontendTool<SelectionOptionsProps>({
     name: RENDER_SELECTION_TOOL,
     description:
       'Display selectable buttons for the movie-search workflow — search scope, collections, results, or controls. Tapping one advances the search.',

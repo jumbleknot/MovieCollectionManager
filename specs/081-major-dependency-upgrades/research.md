@@ -1322,3 +1322,137 @@ the agent specs, `dast` (`zap-scan.mjs` bind-mounts `security/zap` from the chec
 Docker daemon cannot see from a worktree; CI's `dast` job runs the stronger FULL mode on this PR) and
 `e2e:mobile:session-timeout` (a manual Maestro flow — no `/dev/kvm` in this sandbox, and CI does not run
 it). express and ioredis run only in the BFF, not in the native client.
+
+### US7 (PR 7a, copilotkit 1.79.1 + @ag-ui/client 1.0.2) — 2026-10-19
+
+**Instruments**: REPO = `origin/main` `2b5ba71c` (PR #802, US6, merged); NPM = `pnpm view` packuments on
+2026-10-19 12:00 UTC; PKG = the installed `@copilotkit/{react-native,react-core,core}` 1.70.1 and 1.79.1
+`dist/` (types and JS), read side by side.
+
+**Target (NPM).** `latest` = **1.79.1** (react-native 2026-10-15T23:30Z, runtime 23:31Z: 3.5 days old, past
+Renovate's 3-day cooldown). 1.79.0 (10-12) and 1.78.0 (10-09) are older; nothing newer exists outside
+`canary`. Both 1.79.1 packages pin **`@ag-ui/client` 1.0.2 exactly** (and `@ag-ui/core`/`encoder` 1.0.2), so
+the app's direct pin is 1.0.2, not the 1.0.3 that is `latest` for `@ag-ui/client` (10-16). The newest new
+transitive is `@copilotkit/channels-*` 0.11.1 (2026-10-16T01:32Z, also past 3 days). The install passed
+`Lockfile passes supply-chain policies`, with no `minimumReleaseAgeExclude` entry.
+
+**Lock delta.** +30 / −42 packages. `@ag-ui/client` went from **three** versions on `main`
+(0.0.54, 0.0.59, 1.0.2) to **one** (1.0.2); `@ag-ui/core` likewise (1.0.2 in two zod-peer variants).
+1.79.1's runtime adds `@copilotkit/channels-{core,intelligence,slack,teams,ui}`, `web-inspector`,
+`a2ui-renderer`, `mcp-apps-renderer` and `@slack/bolt` (which drags an express 4 subtree in beside the
+app's express 5; the BFF's own `server.js` still resolves express 5). `openai` stays 6.49.0 and the
+copilotkit runtime still declares `@ai-sdk/openai ^3.0.36` itself, so PR 7b's premise (R7) is unchanged.
+
+**T048 RED (upgrade).**
+- `pnpm nx typecheck mcm-app`: **11 errors in 8 files, all one error**: `TS2344: Type '<Props>' does not
+  satisfy the constraint 'StandardSchemaV1<unknown, unknown>'` at every `useRenderTool<T>(…)` call
+  (disambiguation-options, multi-select-options, render-collection-summary, render-import-report,
+  render-movie-card, request-import-file, selection-options, ui-action-tools ×4).
+- `pnpm nx test mcm-app`: **155/155 suites, 1597/1597 passed — GREEN on the broken code.** See below.
+
+**The breaking change, and why the unit tier was blind to it (PKG).** At 1.70.1 `@copilotkit/react-native`
+shipped its OWN `useRenderTool` (`dist/useRenderTool-*.mjs`): a three-line wrapper that called react-core's
+`useFrontendTool({ name, description, parameters, handler, agentId, render })`, so every MCM generative-UI
+tool was a **frontend tool** carrying a renderer. 1.79 deleted it, and `headless.d.mts` now re-exports
+**react-core's** `useRenderTool` under the same name. That hook is **render-only**: it calls
+`copilotkit.addHookRenderToolCall(renderer)` and nothing else. It takes a schema type parameter
+(`<S extends StandardSchemaV1>`, hence TS2344), has no `description`, and names the arguments `parameters`
+(it also spreads the original props, so `args` still arrives at runtime).
+
+So the bump without migration still draws every card. The renderer lands in the same `renderToolCalls`
+registry that `useRenderToolCall()` reads, which is why 1597/1597 stayed green. But the tools silently
+stop being frontend tools, and that is not cosmetic to CopilotKit core: `processAgentResult` acts on an
+assistant tool call **only** when `getTool(name)` returns a frontend tool. Only the type change made it
+visible. A "fix" that satisfied `tsc` the obvious way (rename `args` → `parameters`, drop the generic)
+would have shipped the semantic change with every gate green.
+
+**Coverage gap closed first (T048, same discipline as US6's T044).** New
+`src/components/agent/generative-ui-tool-registration.test.tsx` mounts the eight registration hooks inside
+the app's real `AssistantProvider` (nothing mocked) and asserts, for each of the 11 tools, (a) a frontend
+tool with that name and a non-empty description, and no handler, and (b) a renderer in `renderToolCalls`:
+- against **1.70.1** (jest `moduleNameMapper` pointed at the 1.70.1 store entry): **22/22**;
+- against **1.79.1, unmigrated**: **11 failed / 11 passed**. Every "frontend tool" case fails with
+  `expect(tool).toBeDefined()`, and every renderer case passes. This is the RED.
+
+**T049 migration.** All 11 call sites call **`useFrontendTool<T>(…)` directly** — the exact registration the
+removed wrapper made, with the same `args`/`status` render props (`args` partial on `InProgress`, which the
+066 schema gates already handle) and the same `description`. Both versions of core append an empty tool
+result and request a follow-up run for a handler-less frontend tool (`executeSpecificTool`, read at 1.70.1
+and 1.79.1). Staying on `useFrontendTool` therefore keeps today's run behaviour rather than changing it as
+a side effect of a dependency bump. Moving to the render-only hook is a separate product decision.
+Lost: the old wrapper narrowed `render`'s return to `ReactElement | null`. `useFrontendTool`
+returns `ReactNode`; every one of the 11 renders returns JSX or `null` today, and 1.79 offers the opt-in
+`FrontendToolRenderFunction` annotation if that narrowing is wanted back. Test mocks that stubbed
+`useRenderTool` now stub `useFrontendTool`; the comments that named the old hook are updated, and so is
+the `run+api.ts` note on the single `@ag-ui/client`.
+
+No other surface broke. `useAgent`, `useCopilotKit`, `useRenderToolCall`, `useInterrupt`, `CopilotKitProvider`
+(`runtimeUrl`, `credentials`, `useSingleEndpoint`), the polyfill entry points, and the runtime's
+`CopilotRuntime` / `ExperimentalEmptyAdapter` / `copilotRuntimeNextJSAppRouterEndpoint` all typecheck
+unchanged. The `HttpAgent` → `agents` map still needs no cast, because the runtime and the app hold one
+`@ag-ui/client`.
+
+**T049 GREEN.**
+- `pnpm nx typecheck mcm-app`: 0 errors;
+- `pnpm nx test mcm-app` (`--maxWorkers=2`): **156/156 suites, 1619/1619** (1597 + 22);
+- `pnpm nx lint mcm-app`: 0 errors, 43 warnings (the same pre-existing 43 as US6);
+- the lockfile `packages:` section holds `@ag-ui/client@1.0.2` and no other version (`pnpm why @ag-ui/client
+  -r` lists only 1.0.2).
+
+**T050 keyless golden replay.** `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`: **51 passed, 0
+failed, 0 skipped** (76 deselected by marker, as on `main`). The Python gateway is untouched by this PR. This
+proves only that the cassettes still replay.
+
+**Finding, pre-existing (not changed here).** `isBillableAgentRun` classifies by GraphQL `operationName`
+(`availableAgents`/`loadAgentState`/`hello`). The client has run in `useSingleEndpoint` mode since 1.59,
+and that mode posts `{"method":"info"}`, `{"method":"agent/connect"}` and `{"method":"agent/run"}` envelopes
+with no `operationName` (core `createSingleRouteRequestInit`, 1.70.1 and 1.79.1 alike). So under
+default-deny, every handshake POST is classified billable. 1.79 adds two more envelope methods,
+`trajectory/connect` and `resource/request`, used by features this app does not enable. Recorded for the
+coordinator; not in this PR's scope.
+
+**T050 local `@gate` agent E2E (Ollama, no API spend).** The stack was the branch's `mcm-bff:latest`
+(`X-BFF-Source: dev-container`) with the agent-e2e limit override, plus `agent-stack.mjs` with
+`SPECIALIST_MODEL=qwen2.5` (gateway with production nodes on, three MCP servers, all built from the
+branch). Playwright ran in `mcr.microsoft.com/playwright:v1.63.0-noble` from a staged named volume, with
+`E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1 E2E_TIER=gate`, across the 11 agent specs that carry
+`@gate` (agent-card-navigate, assistant-navigate, agent-import-disambiguate, agent-cors,
+agent-session-refresh, assistant-list-refresh, assistant-add, assistant-config, agent-import,
+agent-navigate-collection, assistant-add-ambiguous). Result: **19 passed, 0 failed, 0 flaky, 0 skipped**.
+
+Two runs before that one were INSTRUMENT failures, not results. Both are recorded because each reads
+exactly like a client regression:
+1. **No `TMDB_API_KEY` in the harness.** It lives only in `mcp-servers/web-api-mcp/.env.local`, which
+   `agent-e2e.mjs` reads and a hand-built `docker run` does not. `agentSeedingEnabled()` was false, so
+   global-setup silently skipped the seed. With no runnable config the dock never mounted, and every spec
+   timed out on `assistant-dock-toggle`. Global-setup printed no "seeded" line, and that missing line is
+   the tell.
+2. **Seed rejected by the SSRF guard on the sandbox.** The BFF container resolves the default
+   `http://host.docker.internal:11434` to `fe80::1`, which is link-local. `PUT /bff-api/agent/config` → 422
+   *"That address is not allowed (link-local / cloud-metadata range)"*. Fix:
+   `E2E_AGENT_OLLAMA_URL=http://172.18.0.1:11434`, the bridge gateway that devcontainer-sandbox.md §6
+   names. Both the BFF and the gateway reach Ollama there, and it is a private address the guard allows.
+
+**T050 CI.** PR #803 at `7ef32e82` is **mergeable, with every required context green**; the advisory `dast` is
+green too.
+- `app-e2e` gate tier (run 5628): **failed=0 flaky=0 passed=181 did-not-run=0 skipped=0**, contention
+  0/0.
+- The mobile agent flows run inside that green job.
+
+**T050 model tier (dispatch).** `app-ci` was dispatched on the branch with `provider=anthropic` (run 5634, on
+`7ef32e82`), and compared with `main`'s latest model-tier runs (counts bundles, `ci-failures` package):
+
+| Run | Model tier | Gate tier | Turns (posts / 100 tests) |
+|---|---|---|---|
+| **5634, this branch** | **failed=0 flaky=1 passed=29 skipped=0** | failed=0 flaky=1 passed=180 | 220 / 211 → **104** |
+| 5618, `main` `2b5ba71c` | failed=0 flaky=1 passed=29 skipped=0 | **failed=1** did-not-run=3 passed=177 | 215 / 208 → 103 |
+| 5577, `main` `8ea70cab` | failed=0 flaky=0 passed=30 skipped=0 | — | — |
+
+- **Model-tier failures ⊆ `main`'s: both are empty.**
+- The one model-tier flaky test is the same test on both sides: `assistant-organize.spec.ts:107` (multi-item
+  remove), passing on retry.
+- The gate-tier flaky test, `assistant-add-ambiguous.spec.ts:78`, is the one that FAILED `main` run 5618
+  (item #702). It passed on retry here. It also passed first time in the PR run and in the local Ollama run.
+- The turn rate is unchanged, at 104 vs 103 gateway posts per 100 tests. That fits T049 keeping the
+  frontend-tool registration (and with it any follow-up behaviour) exactly as it was. A behaviour change in
+  either direction would have moved this number.

@@ -13,7 +13,7 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '@mcm/design-system';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -104,7 +104,7 @@ export const renderDisambiguationParameters = z.object({
  * inside the dock (alongside the other render tools).
  */
 export function useRenderDisambiguationTool(): void {
-  useRenderTool<DisambiguationOptionsProps>({
+  useFrontendTool<DisambiguationOptionsProps>({
     name: RENDER_DISAMBIGUATION_TOOL,
     description:
       'Display selectable buttons for the candidate movie matches when a look-up is ambiguous. Tapping one chooses that match.',

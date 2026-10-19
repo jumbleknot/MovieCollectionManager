@@ -2,7 +2,7 @@
  * RenderCollectionSummary unit tests (T052).
  *
  * The organizer emits a `render_collection_summary` AG-UI tool call whose args are the contract
- * props (generative-ui-and-actions.md). CopilotKit's `useRenderTool` maps those args to this
+ * props (generative-ui-and-actions.md). CopilotKit's `useFrontendTool` maps those args to this
  * presentational component, rendered inline in the assistant dock. These tests pin the
  * presentational contract deterministically (no agent/gateway).
  */

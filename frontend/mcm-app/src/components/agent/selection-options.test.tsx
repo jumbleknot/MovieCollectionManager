@@ -15,7 +15,7 @@ import { SelectionOptions } from '@/components/agent/selection-options';
 jest.mock('@copilotkit/react-native', () => ({
   useAgent: jest.fn(),
   useCopilotKit: jest.fn(),
-  useRenderTool: jest.fn(),
+  useFrontendTool: jest.fn(),
 }));
 
 const mockedUseAgent = copilot.useAgent as unknown as jest.Mock;
