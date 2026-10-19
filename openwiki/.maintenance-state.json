@@ -1,44 +1,62 @@
 {
-  "coveredCommit": "2ab7579ee14e80db7e63702b562eb29c048c9a0f",
-  "coveredAt": "2026-10-19T10:47:36.951Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "2b5ba71c4e7e4947acb41d02cf339ddba1e85f47",
+  "coveredAt": "2026-10-19T12:57:20.527Z",
+  "lastOutcome": "completed",
   "backlog": [],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 804,
+    "headCommit": "6ee87c17d7268b253b1c5844ab19a0d51b49f0c3",
+    "markerBefore": "2ab7579ee14e80db7e63702b562eb29c048c9a0f",
+    "slices": [
+      {
+        "area": "gotchas",
+        "pages": [
+          "expo-router-and-transport-traps.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: frontend/mcm-app/server.js changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/expo-router-and-transport-traps.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-19T12:57:20.910Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 3,
+    "elapsedSeconds": 2199,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 345,
+    "calls": 333,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 4540630,
-    "cached": 31489844,
+    "uncached": 7745974,
+    "cached": 24413376,
     "cacheWrite": 0,
-    "output": 506262,
-    "reasoning": 412833,
-    "ms": 4619125,
-    "estCostUsd": 2.1586,
+    "output": 672012,
+    "reasoning": 589434,
+    "ms": 6135375,
+    "estCostUsd": 3.2767,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/repository.md",
-        "projects/expo-app.md",
-        "runbooks/renovate.md"
+        "gotchas/expo-router-and-transport-traps.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 2.1586,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 3.2767,
       "rateLimited": null
     }
   ],
