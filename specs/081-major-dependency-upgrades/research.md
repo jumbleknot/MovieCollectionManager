@@ -1236,3 +1236,89 @@ dep's versioning, an approval gate has none.
 **Backlog items (T037)** — filed by the coordinator: jest 30 → item #792; babel 8 → item #793;
 typescript 7 → item #794; async-storage 3 → item #795.
 
+
+### US6 (PR 6, express 5 + @types/express 5 + ioredis 6) — 2026-10-19
+
+**Instruments**: REPO = `origin/main` `25bc4ed6`; NPM = `pnpm view` packuments on 2026-10-19; UPSTREAM =
+the ioredis v6.0.0 GitHub release body and PRs #2127 (RESP3) / #2160 (connection defaults); the installed
+`send` 0.19.2 / 1.2.1 and `@expo/server` 0.5.3 sources, read; IMAGE = `mcm-bff:latest` built from this branch.
+
+**Targets (NPM).** express 5.3.0 (2026-10-09, already in the lock through Expo's tooling, so no new
+package entered); `@types/express` 5.0.6; ioredis 6.0.0 (2026-07-31). All past Renovate's 3-day cooldown;
+the install passed `Lockfile passes supply-chain policies` with no `minimumReleaseAgeExclude` entry. The
+lock moved `ioredis 5.11.1 → 6.0.0`, `@ioredis/commands 1.10.0 → 2.0.0`, added
+`@types/express{,-serve-static-core} 5`, `@types/serve-static 2`, and dropped `redis-parser`.
+
+**M6 inventory (T043).** express is reached in exactly ONE file; ioredis in two source files and four
+integration-test files. No TS source imports express or its types.
+
+| Call site | What it uses | Breaking change that touches it | Outcome |
+|---|---|---|---|
+| `server.js` `app.all('*', …)` | the catch-all to the Expo handler | path-to-regexp v8: a bare `*` is rejected at boot (`Missing parameter name at index 1: *`) | **BROKE** — renamed `'/{*splat}'` (braces = `/` still matches) |
+| `server.js` `express.static(DIST_CLIENT, …)` | static assets, `maxAge`/`immutable` | serve-static 2 changes the `dotfiles` default: it now ignores files INSIDE a dot-directory too | **BROKE, silently** — see below |
+| `server.js` `app.disable('x-powered-by')`, two `app.use` header middlewares, `req.path`, `app.listen` | — | none of the v5 removals (`req.param`, `res.send(status)`, `app.del`, `res.redirect('back')`, …) are used | unchanged |
+| `@expo/server/adapter/express` (0.5.3, vendored) | `req.protocol`, `req.get('host')`, `req.url`, `req.rawHeaders`, `res.status`, `res.setHeaders`, `next(err)` | none removed in v5; `req.query`'s new `simple` parser is irrelevant, the adapter builds a `Request` from `req.url` | unchanged; its d.ts still names `@types/express ^4` (devDependency only) |
+| `cache-service.ts`, `transient-file-store.ts` `require('ioredis').default` | the default export as a constructor | none: 6.0.0 still exports `default === Redis` (measured) | unchanged |
+| the commands used: `get/set EX NX/del/incr/incrby/expire/smembers/sadd/srem/scard/eval/getBuffer/quit` | reply shapes | RESP3 is the new default (`protocol: 3`); `replyMapping` defaults to `legacy`, so sets/maps still arrive as arrays. Redis is 8.10.2 in dev, CI and prod (HELLO 3 supported). The leader-lock `EVAL` returns an integer either way | unchanged — proven against real Redis by the integration tier |
+| connection defaults (#2160) | none overridden | exponential reconnect backoff (5 s cap, jitter) instead of linear (2 s cap); TCP keep-alive 30 s instead of off | accepted: a faster-failing link check and slower retry storms, no behaviour the BFF relies on |
+| Node floor | — | ioredis 6 needs Node ≥ 20 | BFF image runs Node 24 |
+
+**T044 coverage gaps.** Eviction order is covered (`session-manager.test.ts` "evicts the oldest inactive
+session…", plus the real-Redis `concurrent-session-cap.integration.test.ts`); every ioredis call site runs
+against real Redis in the integration tier (unit tests mock ioredis). The gap was `server.js`: nothing
+below the web E2E suite exercised it. New `tests/unit/bff-server-adapter.test.ts` boots the REAL
+`server.js` in a child process with only the Expo handler stubbed (`tests/unit/fixtures/expo-adapter-stub.cjs`).
+16 cases on express 4, all green; each group proved sensitive by a named `server.js` mutation:
+
+| Mutation | RED |
+|---|---|
+| M1 `app.all('*'` → `app.get('*'` | the 4 POST/PUT/DELETE/PATCH forwarding cases |
+| M2 `app.all('*', h)` → `app.use(h)` | `rejects a malformed percent-encoded path with 400 before the Expo handler` (a route decodes params; middleware does not) |
+| M3 drop `app.disable('x-powered-by')` | the 4 header-middleware cases |
+| M4 web CSP not path-scoped | `sends the web CSP … outside /bff-api only` |
+| M5 `immutable: false` (run as `pnpm nx test mcm-app -- --testPathPattern='tests/unit/bff-server-adapter'`) | `serves a built asset with the production cache headers` |
+
+**T045 RED (upgrade).** `pnpm nx typecheck mcm-app`: **0 errors** (nothing in TS touches express;
+the BFF types its Redis client with its own `RedisLike`). `pnpm nx test mcm-app`: **16 failed / 1578
+passed** — every case in the new file, because `server.js` died at boot with `PathError [TypeError]:
+Missing parameter name at index 1: *`. The unit tier is blind to ioredis (mocked), so ioredis produced
+no RED; its proof is T046's integration run.
+
+**The silent break (IMAGE, new).** With only the route renamed, 15/16 passed; the one RED was the
+characterisation case `serves a file inside a dot-directory` (serve-static 1 ignored only a path whose
+LAST segment is a dotfile; serve-static 2 ignores dot-directories too). It first looked harmless — the
+app has no `public/` — and the case was briefly flipped to pin the stricter rule. **That was wrong, and
+building the image showed it**: `expo export` writes every dependency-shipped asset under
+`dist/client/assets/node_modules/.pnpm/…` — **45 files, including the Outfit brand fonts and
+expo-router's icons**. Under plain express 5 they would 404 to the Expo handler. No other test would
+have caught it: `font-fallback.spec.ts` exists precisely to prove the app renders WITHOUT its fonts.
+Fix: `server.js` sends a request whose last DECODED segment is a dotfile to the default (`ignore`)
+static instance and everything else to a `dotfiles: 'allow'` one — serve-static 1's rule, reproduced.
+The case was restored and three added (the real `.pnpm` asset path with cache headers; a dotfile
+inside a dot-directory; `/%2Eenv`). Mutations: plain `express.static` (the bump without the fix) → the
+two dot-directory cases RED; no `decodeURIComponent` → `/%2Eenv` RED; `allow` everywhere → the three
+dotfile cases RED. **All 19 cases also pass against `origin/main`'s `server.js` on express 4.22.3**
+(NODE_PATH pointed at that store entry), so the file characterises express 4 and the fix preserves it.
+
+**T046 GREEN.**
+- `pnpm nx typecheck mcm-app` 0 errors; `pnpm nx lint mcm-app` 0 errors (43 warnings, all pre-existing in `src/`, untouched);
+- `pnpm nx test mcm-app`: **155/155 suites, 1597/1597 tests** (1578 + 19);
+- `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app` against auth + mcm (`app` + `bff-nonsecure`,
+  the BFF built from this branch) + the backup destinations: **58/58 suites, 401 passed, 0 failed, 0
+  skipped**. Two `agent-audit-opensearch` cases return early on `SKIP: OpenSearch unreachable` — the
+  optional `audit` profile, which the preflight documents as legitimate and app-e2e does not bring up either;
+- container smoke on `:8082`: the `.pnpm` font 200 `font/ttf`; `/` 200; `/bff-api/%E0%A4%A` 400; `/.env`
+  404; `/bff-api/auth/user` 401 JSON; `X-BFF-Source` present, no `X-Powered-By`; web CSP on `/`.
+
+**T047 (local part).** Web E2E in `mcr.microsoft.com/playwright:v1.63.0-noble` against the same BFF,
+`E2E_TIER=gate`, 13 non-agent specs (auth incl. logout, **session-timeout**, security-headers,
+font-fallback, collections, movies, settings, theme, account-deletion, backups, responsive, a11y,
+admin-settings-access): **153 passed, 3 failed, 0 skipped**. All three fail waiting for
+`assistant-dock-toggle` (a11y ×2, responsive ×1): the dock renders only once `agent-config-seed`
+can seed a runnable config, which needs the agent stack and a model key that this local run did not
+bring up (the runbook's "Tell"). The concurrent-session cap has no web spec; it is the
+`concurrent-session-cap` integration case above (real Redis, audit events asserted). NOT run locally:
+the agent specs, `dast` (`zap-scan.mjs` bind-mounts `security/zap` from the checkout, which the
+Docker daemon cannot see from a worktree; CI's `dast` job runs the stronger FULL mode on this PR) and
+`e2e:mobile:session-timeout` (a manual Maestro flow — no `/dev/kvm` in this sandbox, and CI does not run
+it). express and ioredis run only in the BFF, not in the native client.
