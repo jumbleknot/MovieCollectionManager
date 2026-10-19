@@ -1456,3 +1456,89 @@ green too.
 - The turn rate is unchanged, at 104 vs 103 gateway posts per 100 tests. That fits T049 keeping the
   frontend-tool registration (and with it any follow-up behaviour) exactly as it was. A behaviour change in
   either direction would have moved this number.
+
+### US7 (PR 7b, openai 7.34.0; `@ai-sdk/openai` removed) — 2026-10-19
+
+**Instruments**: REPO = `origin/main` `f45ea019` (PR #803, US7a, merged as `43e92656`); NPM = `pnpm view`
+packuments at 19:22 UTC; IMG = the shared `mcm-bff:latest` (built 13:08Z today from the US7a tree: openai
+6.49.0, the app's direct `@ai-sdk/openai` still declared); BUNDLE = `pnpm nx export-server mcm-app`'s
+`dist/server` and its source map.
+
+**Target (NPM).** `openai` `latest` is 7.39.0 (10-19). 7.35.0 to 7.39.0 are all under 3 days old. 7.35.0
+was published at 10-16T20:29Z, about an hour short of the cooldown. The newest version past it is
+**7.34.0** (10-14T21:34Z, 4.9 days). It is pinned in the lock and declared `^7.34.0`. The only breaking
+change in 7.x is in 7.0.0: Node ≥ 22. The BFF runs node 24.21.0. `@ai-sdk/openai` 4.x would have been 4.0.95
+(10-15), but it is not taken (T051).
+
+**T051: removed.** The app has declared `@ai-sdk/openai` since `89ec0dae` (012) as an "eager-import
+satisfier" for `@copilotkit/runtime`. It was never the copy the BFF loads:
+- **BUNDLE.** Metro inlines `@ai-sdk/openai` into `run+api.js` from copilotkit's OWN dependency, the
+  `@ai-sdk+openai@3.0.128_zod@3.25.76` entry. It is not an external specifier: `--check-bundle` lists 14
+  dynamic specifiers and none of them is `@ai-sdk/openai`. The app's direct copy is the `(zod@4.6.7)` peer
+  variant, and IMG's source map does not reference it.
+- **IMG.** Inside the shared image, with the dependency still declared,
+  `createRequire('/app/runtime/server.js').resolve('@ai-sdk/openai')` gives **MODULE_NOT_FOUND**. The prune
+  had already removed it, and the agent route served anyway.
+- **Removal.** `pnpm remove` drops 17 lock lines: the importer entry, the `(zod@4.6.7)` variant, and the
+  `@ai-sdk/provider-utils@4.0.59(zod@4.6.7)` subtree that only that variant used. `pnpm why @ai-sdk/openai`
+  went from 1 version in 2 instances to 1 instance, copilotkit's.
+- **Prod image** built without it (`docker build -f frontend/mcm-app/Dockerfile`, private tag):
+  - the prune keeps 77 packages (22.5 MB);
+  - the bundle check gives 14 specifiers, 0 unaccounted;
+  - in a container, `GET` and `POST /bff-api/agent/run` both return **401 JSON** `UNAUTHORIZED`, which means
+    the route module, with `@copilotkit/runtime` and the inlined adapters, evaluated. The same image returns
+    401 on `/bff-api/auth/user`;
+  - the container log has no module error.
+
+  IMG answers identically. `openai` constructs a client in both.
+
+**T052 RED (upgrade), `openai` 6.49.0 → 7.34.0.**
+- `node --test scripts/__tests__/prune-bff-runtime-modules.test.mjs`: **17/17, GREEN on the upgrade.** That is
+  the instrument, not the code. The fixture builds a synthetic `openai@6.49.0` with no links, so no openai
+  version could turn it red. What really changed shape is that openai 7 declares **`undici` as an optional
+  peer** (`>=5 <9`; `require("undici")` in its x509 transport, reached only through the
+  `openai/auth/x509-transport` subpath, not from the main entry). pnpm now links the workspace's
+  `undici@6.29.0` beside it (`openai@7.34.0(undici@6.29.0)(ws)(zod)`).
+- **Gap closed first, as in US6 T044 and US7a T048.** A new case asserts that the walk from the dynamic root
+  ALONE (`computeClosure(nm, [], DYNAMIC_ROOTS)`) reaches `openai@7.*` and its `undici`:
+  - against the old 6.x fixture: **1 failed / 17 passed** (`AssertionError: openai@6.49.0`). This is the RED;
+  - fixture moved to the real 7.x layout (`openai@7.34.0_undici@6.28.0` plus the peer link): **18/18**.
+- `pnpm nx typecheck mcm-app` gives 0 errors, and `pnpm nx test mcm-app` gives 156/156 suites and 1619/1619
+  tests. Nothing in `frontend/` imports `openai`.
+- **BUNDLE.** openai is ALSO inlined: `run+api.js.map` references **229** files of `openai@7.34.0` (154 of
+  6.49.0 in IMG), beside the two external `__require("openai")` sites. So the bump does change the BFF's
+  compiled code, not only `/app/runtime/node_modules`. `--check-bundle` gives 14 specifiers, 0 unaccounted.
+- **Runtime tree.** `pnpm deploy --filter=mcm-app --prod --legacy` on the branch, then `--dry-run`:
+  - 1460 → **77 packages**, the same count as T051 on openai 6;
+  - the dynamic root adds `openai@7.34.0_undici@6.29.0_ws@8.22.0_zod@4.6.7`, `ws@8.22.0` and `zod@4.6.7`;
+  - `undici@6.29.0` was already in the closure through `@expo/server`, so nothing new ships.
+
+**`pnpm why undici` against the `undici@<6.27.0` override (M7).**
+- Versions are unchanged: **6.29.0 and 7.30.1**, before and after.
+- The override does interact, though not the way R7 assumed. pnpm applies a `undici@<6.27.0` selector to
+  any range that INTERSECTS `<6.27.0`, and openai's peer `>=5 <9` does. The lock therefore records
+  openai 7.34.0's peer as **`undici: '>=6.27.0 <7'`**, rewritten from the package's own range.
+- Consequence: in this workspace only an undici 6.x ≥ 6.27 satisfies openai's peer, and it resolves to the
+  6.29.0 that `@expo/server` and the AI SDK already use. That is the intended security floor, and no
+  advisory-bearing undici can enter through this peer.
+- Watch item: if the 6.x floor is ever retired while openai stays on 7, the peer would go back to `>=5 <9`.
+
+**T053 GREEN (local).**
+- The prune test: 18/18, 0 skipped.
+- `renovate-workflow.guard.test.mjs`: 151/151. Its `@ai-sdk/openai` cases are rule-matching inputs, and they
+  hold with the package gone.
+- `pnpm nx lint mcm-app`: 0 errors, 43 warnings (the same pre-existing 43).
+- **Prod-image route-load smoke on openai 7.**
+  - A smoke-only derived image was used: IMG's pruned runtime, plus the branch's exported `dist/`, plus
+    `openai@7.34.0` laid out the way deploy and prune lay it out (the `undici`, `ws` and `zod` sibling
+    links).
+  - Results: openai 7.34.0 resolves from `/app/runtime`; a client constructs;
+    `require('openai/auth/x509-transport')` loads and pulls `undici` 6.29.0 through the peer link; agent
+    route `GET`/`POST` return 401 JSON; no module error in the log.
+  - A second full `docker build` was not run. The first one left about 6 GB of build cache that is
+    `Shared: true` and cannot be pruned by ID, and it took the shared disk from 85% to 90%, over the
+    sandbox's 88% stop line. CI builds the real image for `app-e2e` and `dast`.
+- **NOT run locally: the `@gate` agent E2E.** No agent-gateway or MCP image exists in this sandbox, and
+  `agent-stack.mjs` would build all four on a disk already over the line. CI's `app-e2e` runs the `@gate`
+  agent tier against branch-built images.
+- **NOT run: golden replay.** The Python gateway is untouched, so it would prove nothing about this PR.

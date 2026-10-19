@@ -384,20 +384,27 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   typecheck mcm-app && pnpm nx test mcm-app` — record failures (expect breaking-minor fallout, cf. PR #263).
 - [x] T049 [US7] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; `pnpm why @ag-ui/client`
   shows ONE version.
-- [ ] T050 [US7] Stronger verification (FR-010): `E2E_REQUIRE_AGENT_STACK=1 pnpm nx e2e:agents mcm-app`
+- [x] T050 [US7] Stronger verification (FR-010): `E2E_REQUIRE_AGENT_STACK=1 pnpm nx e2e:agents mcm-app`
   (`@gate`); `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`; dispatch app-ci on the branch
   so the `E2E_TIER=model` selection runs, and compare its failures to `main`'s latest model-tier run
   (`node scripts/ci-status.mjs`). **Done when**: model-tier failures ⊆ `main`'s; mobile agent flows green in
   CI; PR 7a merged.
+  *Done 2026-10-19: PR #803 merged as `43e92656`; `main`'s push run on it was green, `app-e2e` included.*
 
 **PR 7b — openai 7 / @ai-sdk/openai**
 
-- [ ] T051 [US7] M7: remove `@ai-sdk/openai` from `frontend/mcm-app/package.json`, build the BFF prod image,
+- [x] T051 [US7] M7: remove `@ai-sdk/openai` from `frontend/mcm-app/package.json`, build the BFF prod image,
   load the agent route (smoke). **Done when**: decision recorded — removed (route loads) or retained and
   bumped to ^4 (route fails without it).
-- [ ] T052 [US7] **Verify RED (upgrade)**: bump `openai` ^7 (and `@ai-sdk/openai` ^4 if retained);
+  *Done 2026-10-19: **removed**. The app's copy was never the one loaded: `main`'s own image already fails
+  `resolve('@ai-sdk/openai')` (pruned), and its bundle inlines copilotkit's copy. The image without it gives
+  agent route 401 (module evaluated); bundle check 14/0. Evidence in research.md "US7 (PR 7b)".*
+- [x] T052 [US7] **Verify RED (upgrade)**: bump `openai` ^7 (and `@ai-sdk/openai` ^4 if retained);
   `node --test scripts/__tests__/prune-bff-runtime-modules.test.mjs` and the prod-image route-load smoke —
   record failures; `pnpm why undici` checked against the `undici@<6.27.0` override.
+  *Done 2026-10-19: `openai` ^7.34.0. Nothing went RED. The prune test passed 17/17 because its fixture is
+  version-blind, so that gap was closed first: the new peer-link case fails on the 6.x fixture and passes on
+  the 7.x one. The override REWRITES openai's undici peer to `>=6.27.0 <7`. See research.md.*
 - [ ] T053 [US7] Fix until GREEN. **Verify GREEN**: same, 0 failures; `@gate` agents suite green; model tier
   on dispatch ⊆ `main`. **Done when**: PR 7b merged.
 
