@@ -338,7 +338,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 **PR 5c — @testing-library/react-native 13 → 14**
 
-- [ ] T041 [US5] **Verify RED (upgrade)**: bump to ^14 (+ `test-renderer` ^1 peer) in both packages;
+- [x] T041 [US5] **Verify RED (upgrade)**: bump to ^14 (+ `test-renderer` ^1 peer) in both packages;
   `pnpm nx run-many -t test -p mcm-app design-system --skip-nx-cache` — record failures.
 - [ ] T042 [US5] Migrate API changes until GREEN. **Verify GREEN**: same command, 0 failures, coverage ≥70%.
   **Done when**: PR 5c merged; next dashboard read (T003) shows SC-004.
