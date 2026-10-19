@@ -31,8 +31,8 @@ const NO_ACTIVE_FILTERS: MovieListFilters = {};
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('MovieFilterPanel', () => {
-  it('renders the filter panel container', () => {
-    const { getByTestId } = render(
+  it('renders the filter panel container', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -43,8 +43,8 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('movie-filter-panel')).toBeTruthy();
   });
 
-  it('renders genre filter chips from filterOptions', () => {
-    const { getByTestId } = render(
+  it('renders genre filter chips from filterOptions', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -56,8 +56,8 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-genre-Drama')).toBeTruthy();
   });
 
-  it('renders contentType filter chips from filterOptions', () => {
-    const { getByTestId } = render(
+  it('renders contentType filter chips from filterOptions', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -69,8 +69,8 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-contentType-Series')).toBeTruthy();
   });
 
-  it('renders language filter chips from filterOptions', () => {
-    const { getByTestId } = render(
+  it('renders language filter chips from filterOptions', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -82,8 +82,8 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-language-French')).toBeTruthy();
   });
 
-  it('renders decade filter chips from filterOptions', () => {
-    const { getByTestId } = render(
+  it('renders decade filter chips from filterOptions', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -95,12 +95,12 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-decade-2000')).toBeTruthy();
   });
 
-  it('only shows options present in filterOptions (no hardcoded values)', () => {
+  it('only shows options present in filterOptions (no hardcoded values)', async () => {
     const limitedOptions: FilterOptionsData = {
       ...FILTER_OPTIONS,
       genres: ['Action'], // Only Action, no Drama
     };
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = await render(
       <MovieFilterPanel
         filterOptions={limitedOptions}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -112,9 +112,9 @@ describe('MovieFilterPanel', () => {
     expect(queryByTestId('filter-chip-genre-Drama')).toBeNull();
   });
 
-  it('calls onFilterChange with genre key and value when genre chip is pressed', () => {
+  it('calls onFilterChange with genre key and value when genre chip is pressed', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -122,13 +122,13 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+    await fireEvent.press(getByTestId('filter-chip-genre-Action'));
     expect(onFilterChange).toHaveBeenCalledWith('genre', 'Action');
   });
 
-  it('calls onFilterChange with contentType key and value when contentType chip is pressed', () => {
+  it('calls onFilterChange with contentType key and value when contentType chip is pressed', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -136,13 +136,13 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-contentType-Series'));
+    await fireEvent.press(getByTestId('filter-chip-contentType-Series'));
     expect(onFilterChange).toHaveBeenCalledWith('contentType', 'Series');
   });
 
-  it('calls onClearFilters when clear button is pressed', () => {
+  it('calls onClearFilters when clear button is pressed', async () => {
     const onClearFilters = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={{ genre: 'Action' }}
@@ -150,11 +150,11 @@ describe('MovieFilterPanel', () => {
         onClearFilters={onClearFilters}
       />,
     );
-    fireEvent.press(getByTestId('filter-clear-button'));
+    await fireEvent.press(getByTestId('filter-clear-button'));
     expect(onClearFilters).toHaveBeenCalledTimes(1);
   });
 
-  it('renders with empty filterOptions without crashing', () => {
+  it('renders with empty filterOptions without crashing', async () => {
     const emptyOptions: FilterOptionsData = {
       genres: [],
       contentTypes: [],
@@ -164,7 +164,7 @@ describe('MovieFilterPanel', () => {
       ownedMedia: [],
       ripQuality: [],
     };
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={emptyOptions}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -177,8 +177,8 @@ describe('MovieFilterPanel', () => {
 
   // ── TR39: owned/ripped static filter chips ─────────────────────────────────
 
-  it('renders owned Yes and No filter chips (TR39)', () => {
-    const { getByTestId } = render(
+  it('renders owned Yes and No filter chips (TR39)', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -190,8 +190,8 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-owned-No')).toBeTruthy();
   });
 
-  it('renders ripped Yes and No filter chips (TR39)', () => {
-    const { getByTestId } = render(
+  it('renders ripped Yes and No filter chips (TR39)', async () => {
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -203,9 +203,9 @@ describe('MovieFilterPanel', () => {
     expect(getByTestId('filter-chip-ripped-No')).toBeTruthy();
   });
 
-  it('pressing owned-Yes chip calls onFilterChange with owned and "Yes" (TR39)', () => {
+  it('pressing owned-Yes chip calls onFilterChange with owned and "Yes" (TR39)', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -213,13 +213,13 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-owned-Yes'));
+    await fireEvent.press(getByTestId('filter-chip-owned-Yes'));
     expect(onFilterChange).toHaveBeenCalledWith('owned', 'Yes');
   });
 
-  it('pressing ripped-No chip calls onFilterChange with ripped and "No" (TR39)', () => {
+  it('pressing ripped-No chip calls onFilterChange with ripped and "No" (TR39)', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -227,15 +227,15 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-ripped-No'));
+    await fireEvent.press(getByTestId('filter-chip-ripped-No'));
     expect(onFilterChange).toHaveBeenCalledWith('ripped', 'No');
   });
 
-  it('owned and ripped chips render even when all filterOptions arrays are empty (TR39)', () => {
+  it('owned and ripped chips render even when all filterOptions arrays are empty (TR39)', async () => {
     const emptyOptions: FilterOptionsData = {
       genres: [], contentTypes: [], rated: [], languages: [], decades: [], ownedMedia: [], ripQuality: [],
     };
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={emptyOptions}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -249,8 +249,8 @@ describe('MovieFilterPanel', () => {
 
   // ── TR41: filter section display order ────────────────────────────────────
 
-  it('renders filter sections in the correct order: contentType, owned, ownedMedia, ripped, ripQuality, genre, decade, language, rated (TR41)', () => {
-    const { getAllByTestId } = render(
+  it('renders filter sections in the correct order: contentType, owned, ownedMedia, ripped, ripQuality, genre, decade, language, rated (TR41)', async () => {
+    const { getAllByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -275,9 +275,9 @@ describe('MovieFilterPanel', () => {
 
   // ── TR43: active chip tap deselects filter ────────────────────────────────
 
-  it('pressing an inactive chip calls onFilterChange with the value (TR43)', () => {
+  it('pressing an inactive chip calls onFilterChange with the value (TR43)', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
@@ -285,13 +285,13 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+    await fireEvent.press(getByTestId('filter-chip-genre-Action'));
     expect(onFilterChange).toHaveBeenCalledWith('genre', 'Action');
   });
 
-  it('pressing an already-active chip calls onFilterChange with undefined to deselect (TR43)', () => {
+  it('pressing an already-active chip calls onFilterChange with undefined to deselect (TR43)', async () => {
     const onFilterChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={{ genre: 'Action' }}
@@ -299,7 +299,7 @@ describe('MovieFilterPanel', () => {
         onClearFilters={() => {}}
       />,
     );
-    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+    await fireEvent.press(getByTestId('filter-chip-genre-Action'));
     expect(onFilterChange).toHaveBeenCalledWith('genre', undefined);
   });
 });

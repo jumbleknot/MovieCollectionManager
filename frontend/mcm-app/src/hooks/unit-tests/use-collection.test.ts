@@ -30,7 +30,7 @@ describe('useCollection', () => {
 
   it('fetches the single collection by id and exposes its name', async () => {
     mockedGet.mockResolvedValueOnce({ data: COLLECTION } as never);
-    const { result } = renderHook(() => useCollection('col-1'));
+    const { result } = await renderHook(() => useCollection('col-1'));
 
     await waitFor(() => expect(result.current.name).toBe('Wish List'));
     expect(mockedGet).toHaveBeenCalledWith('/bff-api/collections/col-1');
@@ -38,14 +38,14 @@ describe('useCollection', () => {
 
   it('leaves name null when the fetch fails (header simply hides)', async () => {
     mockedGet.mockRejectedValueOnce(new Error('boom'));
-    const { result } = renderHook(() => useCollection('col-1'));
+    const { result } = await renderHook(() => useCollection('col-1'));
 
     await waitFor(() => expect(mockedGet).toHaveBeenCalled());
     expect(result.current.name).toBeNull();
   });
 
-  it('does not fetch when collectionId is empty', () => {
-    renderHook(() => useCollection(''));
+  it('does not fetch when collectionId is empty', async () => {
+    await renderHook(() => useCollection(''));
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });

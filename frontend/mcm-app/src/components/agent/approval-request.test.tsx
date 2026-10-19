@@ -31,8 +31,8 @@ const CREATE_AND_ADD: ApprovalRequestPayload = {
 };
 
 describe('ApprovalRequest', () => {
-  it('renders a per-item preview: create collection + add movie', () => {
-    const { getByTestId } = render(
+  it('renders a per-item preview: create collection + add movie', async () => {
+    const { getByTestId } = await render(
       <ApprovalRequest payload={CREATE_AND_ADD} onApprove={() => {}} onReject={() => {}} />,
     );
     expect(getByTestId('approval-request')).toBeTruthy();
@@ -44,21 +44,21 @@ describe('ApprovalRequest', () => {
     );
   });
 
-  it('calls onApprove when the Approve button is pressed', () => {
+  it('calls onApprove when the Approve button is pressed', async () => {
     const onApprove = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ApprovalRequest payload={CREATE_AND_ADD} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('approval-approve'));
+    await fireEvent.press(getByTestId('approval-approve'));
     expect(onApprove).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onReject when the Reject button is pressed', () => {
+  it('calls onReject when the Reject button is pressed', async () => {
     const onReject = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ApprovalRequest payload={CREATE_AND_ADD} onApprove={() => {}} onReject={onReject} />,
     );
-    fireEvent.press(getByTestId('approval-reject'));
+    await fireEvent.press(getByTestId('approval-reject'));
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
@@ -71,13 +71,13 @@ describe('ApprovalRequest', () => {
     expect(coerceApprovalPayload({ no: 'items' })).toBeNull();
   });
 
-  it('disables the buttons once a decision is pending (no double-submit)', () => {
+  it('disables the buttons once a decision is pending (no double-submit)', async () => {
     const onApprove = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ApprovalRequest payload={CREATE_AND_ADD} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('approval-approve'));
-    fireEvent.press(getByTestId('approval-approve'));
+    await fireEvent.press(getByTestId('approval-approve'));
+    await fireEvent.press(getByTestId('approval-approve'));
     expect(onApprove).toHaveBeenCalledTimes(1); // second press ignored
   });
 });

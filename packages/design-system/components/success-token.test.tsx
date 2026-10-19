@@ -50,9 +50,9 @@ describe('success colour role (contract)', () => {
     }
   });
 
-  it.each(['light', 'dark'] as const)('resolves all success roles via TamaguiProvider (%s)', (themeName) => {
+  it.each(['light', 'dark'] as const)('resolves all success roles via TamaguiProvider (%s)', async (themeName) => {
     const map = themeName === 'light' ? lightColors : darkColors;
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <TamaguiProvider config={config} defaultTheme={themeName}>
         <ThemeProbe />
       </TamaguiProvider>,

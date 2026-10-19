@@ -72,8 +72,8 @@ const MOVIES = [
 
 describe('MovieList', () => {
   describe('column header', () => {
-    it('renders the header row', () => {
-      const { getByTestId } = render(
+    it('renders the header row', async () => {
+      const { getByTestId } = await render(
         <MovieList
           items={MOVIES}
           visibleColumns={VISIBLE_COLS}
@@ -92,8 +92,8 @@ describe('MovieList', () => {
     // these tests assert the native header contract; the web column-header labels
     // (Year/Type/Own/Rip + primary bottom-border) are covered by the web E2E
     // (movies.spec.ts asserts movie-list-header) + manual visual review.
-    it('renders a section header (movie-list-header present)', () => {
-      const { getByTestId } = render(
+    it('renders a section header (movie-list-header present)', async () => {
+      const { getByTestId } = await render(
         <MovieList
           items={MOVIES}
           visibleColumns={VISIBLE_COLS}
@@ -106,8 +106,8 @@ describe('MovieList', () => {
       expect(getByTestId('movie-list-header')).toBeTruthy();
     });
 
-    it('renders header even when the list is empty', () => {
-      const { getByTestId } = render(
+    it('renders header even when the list is empty', async () => {
+      const { getByTestId } = await render(
         <MovieList
           items={[]}
           visibleColumns={VISIBLE_COLS}
@@ -121,8 +121,8 @@ describe('MovieList', () => {
     });
   });
 
-  it('renders a row for each movie in items', () => {
-    const { getAllByTestId } = render(
+  it('renders a row for each movie in items', async () => {
+    const { getAllByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -136,8 +136,8 @@ describe('MovieList', () => {
     expect(rows).toHaveLength(3);
   });
 
-  it('renders movie titles in each row', () => {
-    const { getAllByTestId } = render(
+  it('renders movie titles in each row', async () => {
+    const { getAllByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -152,8 +152,8 @@ describe('MovieList', () => {
     expect(titles[1].props.children).toBe('Inception');
   });
 
-  it('shows empty state when items is empty', () => {
-    const { getByTestId } = render(
+  it('shows empty state when items is empty', async () => {
+    const { getByTestId } = await render(
       <MovieList
         items={[]}
         visibleColumns={VISIBLE_COLS}
@@ -166,8 +166,8 @@ describe('MovieList', () => {
     expect(getByTestId('movie-list-empty')).toBeTruthy();
   });
 
-  it('does not show empty state when items is non-empty', () => {
-    const { queryByTestId } = render(
+  it('does not show empty state when items is non-empty', async () => {
+    const { queryByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -180,9 +180,9 @@ describe('MovieList', () => {
     expect(queryByTestId('movie-list-empty')).toBeNull();
   });
 
-  it('calls onLoadMore when scrolled to end (onEndReached)', () => {
+  it('calls onLoadMore when scrolled to end (onEndReached)', async () => {
     const onLoadMore = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -198,9 +198,9 @@ describe('MovieList', () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call onLoadMore when hasMore is false', () => {
+  it('does not call onLoadMore when hasMore is false', async () => {
     const onLoadMore = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -215,9 +215,9 @@ describe('MovieList', () => {
     expect(onLoadMore).not.toHaveBeenCalled();
   });
 
-  it('calls onMoviePress with movieId when a row is pressed', () => {
+  it('calls onMoviePress with movieId when a row is pressed', async () => {
     const onMoviePress = jest.fn();
-    const { getAllByTestId } = render(
+    const { getAllByTestId } = await render(
       <MovieList
         items={MOVIES}
         visibleColumns={VISIBLE_COLS}
@@ -227,7 +227,7 @@ describe('MovieList', () => {
         onMoviePress={onMoviePress}
       />,
     );
-    fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
+    await fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
     expect(onMoviePress).toHaveBeenCalledWith('mov-1');
   });
 });

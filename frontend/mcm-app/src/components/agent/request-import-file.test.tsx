@@ -66,24 +66,24 @@ afterEach(() => {
 const FILE = new File(['x'], 'movies.xlsx');
 
 describe('RequestImportFile', () => {
-  it('renders Choose file… and Cancel on web', () => {
-    const { getByTestId } = render(<RequestImportFile />);
+  it('renders Choose file… and Cancel on web', async () => {
+    const { getByTestId } = await render(<RequestImportFile />);
     expect(getByTestId('request-import-file-choose')).toBeTruthy();
     expect(getByTestId('request-import-file-cancel')).toBeTruthy();
   });
 
-  it('renders nothing on native (web-first parity exception)', () => {
+  it('renders nothing on native (web-first parity exception)', async () => {
     Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
-    const { queryByTestId } = render(<RequestImportFile />);
+    const { queryByTestId } = await render(<RequestImportFile />);
     expect(queryByTestId('request-import-file')).toBeNull();
   });
 
   it('uploads the picked file then sends the import turn', async () => {
     mockedPick.mockResolvedValue(FILE);
     uploadFile.mockResolvedValue(true);
-    const { getByTestId } = render(<RequestImportFile />);
+    const { getByTestId } = await render(<RequestImportFile />);
 
-    fireEvent.press(getByTestId('request-import-file-choose'));
+    await fireEvent.press(getByTestId('request-import-file-choose'));
 
     await waitFor(() => expect(uploadFile).toHaveBeenCalledWith(FILE));
     await waitFor(() =>
@@ -109,16 +109,16 @@ describe('RequestImportFile', () => {
     mockedPick.mockResolvedValue(FILE);
     uploadFile.mockResolvedValue(true);
     agentState.isRunning = true;
-    const { getByTestId, rerender } = render(<RequestImportFile />);
+    const { getByTestId, rerender } = await render(<RequestImportFile />);
 
-    fireEvent.press(getByTestId('request-import-file-choose'));
+    await fireEvent.press(getByTestId('request-import-file-choose'));
     await waitFor(() => expect(uploadFile).toHaveBeenCalledWith(FILE));
     expect(addMessage).not.toHaveBeenCalled(); // queued, not sent — correct so far
 
     // The in-flight run completes. The agent object keeps its identity; only the mutable property
     // flips — exactly the transition the queue's effect is keyed on.
     agentState.isRunning = false;
-    rerender(<RequestImportFile />);
+    await rerender(<RequestImportFile />);
 
     await waitFor(() =>
       expect(addMessage).toHaveBeenCalledWith(
@@ -131,26 +131,26 @@ describe('RequestImportFile', () => {
   it('does not send a turn when the upload fails', async () => {
     mockedPick.mockResolvedValue(FILE);
     uploadFile.mockResolvedValue(false);
-    const { getByTestId } = render(<RequestImportFile />);
+    const { getByTestId } = await render(<RequestImportFile />);
 
-    fireEvent.press(getByTestId('request-import-file-choose'));
+    await fireEvent.press(getByTestId('request-import-file-choose'));
 
     await waitFor(() => expect(uploadFile).toHaveBeenCalled());
     expect(addMessage).not.toHaveBeenCalled();
     expect(runAgent).not.toHaveBeenCalled();
   });
 
-  it('dismisses locally when Cancel is pressed (no agent round-trip)', () => {
-    const { getByTestId, queryByTestId } = render(<RequestImportFile />);
-    fireEvent.press(getByTestId('request-import-file-cancel'));
+  it('dismisses locally when Cancel is pressed (no agent round-trip)', async () => {
+    const { getByTestId, queryByTestId } = await render(<RequestImportFile />);
+    await fireEvent.press(getByTestId('request-import-file-cancel'));
     expect(getByTestId('request-import-file-cancelled')).toBeTruthy();
     expect(queryByTestId('request-import-file-choose')).toBeNull();
     expect(addMessage).not.toHaveBeenCalled();
   });
 
-  it('shows the error message when the upload hook is in the error state', () => {
+  it('shows the error message when the upload hook is in the error state', async () => {
     setImportState({ status: 'error', error: 'Upload failed — please try a CSV or Excel file.' });
-    const { getByTestId } = render(<RequestImportFile />);
+    const { getByTestId } = await render(<RequestImportFile />);
     expect(getByTestId('request-import-file-error').props.children).toMatch(/upload failed/i);
   });
 });

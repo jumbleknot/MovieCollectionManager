@@ -41,7 +41,7 @@ describe('useAssistantRuntimePrefetch', () => {
     jest.useRealTimers();
   });
 
-  it('does NOT load synchronously during render', () => {
+  it('does NOT load synchronously during render', async () => {
     const scheduled = holder<IdleCb>();
     (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = (cb: IdleCb) => {
       scheduled.current = cb;
@@ -49,7 +49,7 @@ describe('useAssistantRuntimePrefetch', () => {
     };
     (globalThis as { cancelIdleCallback?: unknown }).cancelIdleCallback = () => {};
 
-    render(<Probe />);
+    await render(<Probe />);
 
     // The work is scheduled, and nothing has been fetched yet.
     expect(scheduled.current).not.toBeNull();
@@ -64,7 +64,7 @@ describe('useAssistantRuntimePrefetch', () => {
     };
     (globalThis as { cancelIdleCallback?: unknown }).cancelIdleCallback = () => {};
 
-    render(<Probe />);
+    await render(<Probe />);
     scheduled.current?.();
 
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
@@ -75,31 +75,31 @@ describe('useAssistantRuntimePrefetch', () => {
     jest.useFakeTimers();
     expect((globalThis as { requestIdleCallback?: unknown }).requestIdleCallback).toBeUndefined();
 
-    render(<Probe />);
+    await render(<Probe />);
     expect(load).not.toHaveBeenCalled();
 
     jest.runOnlyPendingTimers();
     expect(load).toHaveBeenCalledTimes(1);
   });
 
-  it('cancels on unmount and never loads', () => {
+  it('cancels on unmount and never loads', async () => {
     const cancelled = holder<number>();
     (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = () => 42;
     (globalThis as { cancelIdleCallback?: unknown }).cancelIdleCallback = (id: number) => {
       cancelled.current = id;
     };
 
-    const { unmount } = render(<Probe />);
-    unmount();
+    const { unmount } = await render(<Probe />);
+    await unmount();
 
     expect(cancelled.current).toBe(42);
     expect(load).not.toHaveBeenCalled();
   });
 
-  it('cancels the timer fallback on unmount too', () => {
+  it('cancels the timer fallback on unmount too', async () => {
     jest.useFakeTimers();
-    const { unmount } = render(<Probe />);
-    unmount();
+    const { unmount } = await render(<Probe />);
+    await unmount();
     jest.runOnlyPendingTimers();
     expect(load).not.toHaveBeenCalled();
   });
@@ -116,16 +116,16 @@ describe('useAssistantRuntimePrefetch', () => {
     };
     (globalThis as { cancelIdleCallback?: unknown }).cancelIdleCallback = () => {};
 
-    render(<Probe />);
+    await render(<Probe />);
     await expect(Promise.resolve(scheduled.current?.())).resolves.not.toThrow();
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
   });
 
-  it('returns nothing — a hook never returns UI', () => {
+  it('returns nothing — a hook never returns UI', async () => {
     // Constitution, Hooks-Layer: "No UI: custom hooks never return any UI components."
     // `renderHook` rather than a component that captures the value: assigning to anything during
     // render is itself a React rule violation, and the lint rule that catches it is right.
-    const { result } = renderHook(() => useAssistantRuntimePrefetch());
+    const { result } = await renderHook(() => useAssistantRuntimePrefetch());
     expect(result.current).toBeUndefined();
   });
 });

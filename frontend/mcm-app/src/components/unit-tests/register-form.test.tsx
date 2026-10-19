@@ -14,22 +14,22 @@ const validValues = {
   password: 'SecurePass1!extra',
 };
 
-function fillAndSubmit(getByTestId: ReturnType<typeof render>['getByTestId'], overrides = {}) {
+async function fillAndSubmit(getByTestId: Awaited<ReturnType<typeof render>>['getByTestId'], overrides = {}) {
   const values = { ...validValues, confirmPassword: validValues.password, ...overrides };
 
-  fireEvent.changeText(getByTestId('input-firstName'), values.firstName);
-  fireEvent.changeText(getByTestId('input-lastName'), values.lastName);
-  fireEvent.changeText(getByTestId('input-username'), values.username);
-  fireEvent.changeText(getByTestId('input-email'), values.email);
-  fireEvent.changeText(getByTestId('input-password'), values.password);
-  fireEvent.changeText(getByTestId('input-confirmPassword'), (overrides as { confirmPassword?: string }).confirmPassword ?? values.password);
+  await fireEvent.changeText(getByTestId('input-firstName'), values.firstName);
+  await fireEvent.changeText(getByTestId('input-lastName'), values.lastName);
+  await fireEvent.changeText(getByTestId('input-username'), values.username);
+  await fireEvent.changeText(getByTestId('input-email'), values.email);
+  await fireEvent.changeText(getByTestId('input-password'), values.password);
+  await fireEvent.changeText(getByTestId('input-confirmPassword'), (overrides as { confirmPassword?: string }).confirmPassword ?? values.password);
 
-  fireEvent.press(getByTestId('btn-create-account'));
+  await fireEvent.press(getByTestId('btn-create-account'));
 }
 
 describe('RegisterForm', () => {
-  it('renders all form fields', () => {
-    const { getByTestId } = render(<RegisterForm onSubmit={jest.fn()} />);
+  it('renders all form fields', async () => {
+    const { getByTestId } = await render(<RegisterForm onSubmit={jest.fn()} />);
     expect(getByTestId('input-firstName')).toBeTruthy();
     expect(getByTestId('input-lastName')).toBeTruthy();
     expect(getByTestId('input-username')).toBeTruthy();
@@ -41,9 +41,9 @@ describe('RegisterForm', () => {
 
   it('calls onSubmit with valid values', async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
-    const { getByTestId } = render(<RegisterForm onSubmit={onSubmit} />);
+    const { getByTestId } = await render(<RegisterForm onSubmit={onSubmit} />);
 
-    fillAndSubmit(getByTestId);
+    await fillAndSubmit(getByTestId);
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
@@ -58,9 +58,9 @@ describe('RegisterForm', () => {
 
   it('does not submit when password is weak', async () => {
     const onSubmit = jest.fn();
-    const { getByTestId } = render(<RegisterForm onSubmit={onSubmit} />);
+    const { getByTestId } = await render(<RegisterForm onSubmit={onSubmit} />);
 
-    fillAndSubmit(getByTestId, { password: 'weak', confirmPassword: 'weak' });
+    await fillAndSubmit(getByTestId, { password: 'weak', confirmPassword: 'weak' });
 
     await waitFor(() => {
       expect(onSubmit).not.toHaveBeenCalled();
@@ -69,24 +69,24 @@ describe('RegisterForm', () => {
 
   it('does not submit when passwords do not match', async () => {
     const onSubmit = jest.fn();
-    const { getByTestId } = render(<RegisterForm onSubmit={onSubmit} />);
+    const { getByTestId } = await render(<RegisterForm onSubmit={onSubmit} />);
 
-    fillAndSubmit(getByTestId, { confirmPassword: 'DifferentPass1!' });
+    await fillAndSubmit(getByTestId, { confirmPassword: 'DifferentPass1!' });
 
     await waitFor(() => {
       expect(onSubmit).not.toHaveBeenCalled();
     });
   });
 
-  it('displays error banner when error prop provided', () => {
-    const { getByTestId } = render(
+  it('displays error banner when error prop provided', async () => {
+    const { getByTestId } = await render(
       <RegisterForm onSubmit={jest.fn()} error="An account with that email already exists." />,
     );
     expect(getByTestId('register-form-error')).toBeTruthy();
   });
 
-  it('shows loading state when isLoading is true', () => {
-    const { getByTestId } = render(<RegisterForm onSubmit={jest.fn()} isLoading />);
+  it('shows loading state when isLoading is true', async () => {
+    const { getByTestId } = await render(<RegisterForm onSubmit={jest.fn()} isLoading />);
     expect(getByTestId('btn-create-account')).toBeTruthy();
   });
 });

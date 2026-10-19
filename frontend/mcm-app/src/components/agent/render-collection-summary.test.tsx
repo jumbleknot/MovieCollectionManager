@@ -18,20 +18,20 @@ const PROPS = {
 };
 
 describe('RenderCollectionSummary', () => {
-  it('renders the collection name', () => {
-    const { getByTestId } = render(<RenderCollectionSummary {...PROPS} />);
+  it('renders the collection name', async () => {
+    const { getByTestId } = await render(<RenderCollectionSummary {...PROPS} />);
     expect(getByTestId('render-collection-summary')).toBeTruthy();
     expect(getByTestId('render-collection-summary-name')).toHaveTextContent('Sci-Fi');
   });
 
-  it('renders a pluralized movie count and the role', () => {
-    const { getByTestId } = render(<RenderCollectionSummary {...PROPS} />);
+  it('renders a pluralized movie count and the role', async () => {
+    const { getByTestId } = await render(<RenderCollectionSummary {...PROPS} />);
     expect(getByTestId('render-collection-summary-count')).toHaveTextContent('3 movies');
     expect(getByTestId('render-collection-summary-role')).toHaveTextContent('Owner');
   });
 
-  it('uses the singular "movie" for a count of one', () => {
-    const { getByTestId } = render(<RenderCollectionSummary {...PROPS} movieCount={1} />);
+  it('uses the singular "movie" for a count of one', async () => {
+    const { getByTestId } = await render(<RenderCollectionSummary {...PROPS} movieCount={1} />);
     expect(getByTestId('render-collection-summary-count')).toHaveTextContent('1 movie');
   });
 });

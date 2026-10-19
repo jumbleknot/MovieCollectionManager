@@ -46,8 +46,8 @@ const TOGGLEABLE_COLUMN_KEYS: ColumnKey[] = [
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('ColumnSelector', () => {
-  it('renders a toggle for each toggleable column key (TR37)', () => {
-    const { getByTestId } = render(
+  it('renders a toggle for each toggleable column key (TR37)', async () => {
+    const { getByTestId } = await render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
     );
     for (const key of TOGGLEABLE_COLUMN_KEYS) {
@@ -55,22 +55,22 @@ describe('ColumnSelector', () => {
     }
   });
 
-  it('does NOT render a toggle for year — year is always visible (FR-019b / TR37)', () => {
-    const { queryByTestId } = render(
+  it('does NOT render a toggle for year — year is always visible (FR-019b / TR37)', async () => {
+    const { queryByTestId } = await render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
     );
     expect(queryByTestId('column-toggle-year')).toBeNull();
   });
 
-  it('does NOT render a toggle for contentType — contentType is always visible (FR-019b / TR37)', () => {
-    const { queryByTestId } = render(
+  it('does NOT render a toggle for contentType — contentType is always visible (FR-019b / TR37)', async () => {
+    const { queryByTestId } = await render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
     );
     expect(queryByTestId('column-toggle-contentType')).toBeNull();
   });
 
-  it('shows correct checked state for visible columns', () => {
-    const { getByTestId } = render(
+  it('shows correct checked state for visible columns', async () => {
+    const { getByTestId } = await render(
       <ColumnSelector visibleColumns={SOME_VISIBLE} onToggle={() => {}} />,
     );
     // owned is visible in SOME_VISIBLE → checked (year/contentType no longer toggleable)
@@ -78,8 +78,8 @@ describe('ColumnSelector', () => {
     expect(ownedToggle.props.accessibilityState?.checked ?? ownedToggle.props.value).toBeTruthy();
   });
 
-  it('shows correct unchecked state for hidden columns', () => {
-    const { getByTestId } = render(
+  it('shows correct unchecked state for hidden columns', async () => {
+    const { getByTestId } = await render(
       <ColumnSelector visibleColumns={SOME_VISIBLE} onToggle={() => {}} />,
     );
     // language is hidden → unchecked
@@ -88,21 +88,21 @@ describe('ColumnSelector', () => {
     expect(checked).toBeFalsy();
   });
 
-  it('calls onToggle with the correct key when a toggle is pressed', () => {
+  it('calls onToggle with the correct key when a toggle is pressed', async () => {
     const onToggle = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={onToggle} />,
     );
-    fireEvent.press(getByTestId('column-toggle-runtime'));
+    await fireEvent.press(getByTestId('column-toggle-runtime'));
     expect(onToggle).toHaveBeenCalledWith('runtime');
   });
 
-  it('calls onToggle with correct key for each column', () => {
+  it('calls onToggle with correct key for each column', async () => {
     const onToggle = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={onToggle} />,
     );
-    fireEvent.press(getByTestId('column-toggle-genres'));
+    await fireEvent.press(getByTestId('column-toggle-genres'));
     expect(onToggle).toHaveBeenCalledWith('genres');
   });
 });

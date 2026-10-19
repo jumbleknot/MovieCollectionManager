@@ -40,32 +40,32 @@ beforeEach(() => {
 });
 
 describe('AccountSettingsScreen', () => {
-  it('renders the danger zone', () => {
-    render(<AccountSettingsScreen />);
+  it('renders the danger zone', async () => {
+    await render(<AccountSettingsScreen />);
 
     expect(screen.getByTestId('account-danger-zone')).toBeTruthy();
     expect(screen.getByTestId('account-delete-button')).toBeTruthy();
   });
 
-  it('does not show the confirmation until the user asks for it', () => {
-    render(<AccountSettingsScreen />);
+  it('does not show the confirmation until the user asks for it', async () => {
+    await render(<AccountSettingsScreen />);
 
     expect(screen.queryByTestId('account-delete-confirm')).toBeNull();
   });
 
   it('takes two deliberate acts to start a deletion', async () => {
-    render(<AccountSettingsScreen />);
+    await render(<AccountSettingsScreen />);
 
-    fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
     expect(mockStart).not.toHaveBeenCalled();
 
-    fireEvent.press(screen.getByTestId('account-delete-confirm'));
+    await fireEvent.press(screen.getByTestId('account-delete-confirm'));
     await waitFor(() => expect(mockStart).toHaveBeenCalled());
   });
 
-  it('states what will be destroyed AND what will not', () => {
-    render(<AccountSettingsScreen />);
-    fireEvent.press(screen.getByTestId('account-delete-button'));
+  it('states what will be destroyed AND what will not', async () => {
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
 
     expect(screen.getByTestId('account-delete-dialog')).toBeTruthy();
     expect(screen.getByText(/permanently delete/i)).toBeTruthy();
@@ -74,18 +74,18 @@ describe('AccountSettingsScreen', () => {
   });
 
   it('cancelling destroys nothing and closes the dialog', async () => {
-    render(<AccountSettingsScreen />);
-    fireEvent.press(screen.getByTestId('account-delete-button'));
-    fireEvent.press(screen.getByTestId('account-delete-cancel'));
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-cancel'));
 
     await waitFor(() => expect(screen.queryByTestId('account-delete-confirm')).toBeNull());
     expect(mockStart).not.toHaveBeenCalled();
   });
 
   it('hands off to the identity provider round trip once confirmed', async () => {
-    render(<AccountSettingsScreen />);
-    fireEvent.press(screen.getByTestId('account-delete-button'));
-    fireEvent.press(screen.getByTestId('account-delete-confirm'));
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-confirm'));
 
     await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
   });
@@ -95,9 +95,9 @@ describe('AccountSettingsScreen', () => {
     // in-process, so the screen owns the final navigation.
     mockStart.mockResolvedValue({ deleted: true });
 
-    render(<AccountSettingsScreen />);
-    fireEvent.press(screen.getByTestId('account-delete-button'));
-    fireEvent.press(screen.getByTestId('account-delete-confirm'));
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-confirm'));
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/account-deleted'));
   });
@@ -106,31 +106,31 @@ describe('AccountSettingsScreen', () => {
     ['reauth', /could not confirm it was you/i],
     ['expired', /timed out/i],
     ['failed', /not.*deleted/i],
-  ])('renders the %s error', (error, pattern) => {
+  ])('renders the %s error', async (error, pattern) => {
     mockSearchParams = { error };
 
-    render(<AccountSettingsScreen />);
+    await render(<AccountSettingsScreen />);
 
     expect(screen.getByTestId('account-delete-error')).toBeTruthy();
     expect(screen.getByText(pattern)).toBeTruthy();
   });
 
-  it('every error message makes clear the account still exists', () => {
+  it('every error message makes clear the account still exists', async () => {
     for (const error of ['reauth', 'expired', 'failed']) {
       mockSearchParams = { error };
-      const { unmount } = render(<AccountSettingsScreen />);
+      const { unmount } = await render(<AccountSettingsScreen />);
 
       // The banner must not read as a completed deletion.
       expect(screen.queryByText(/deleted successfully|account is gone/i)).toBeNull();
       // and must positively say the account survives.
       expect(screen.getByText(/has not been deleted|was not deleted/i)).toBeTruthy();
 
-      unmount();
+      await unmount();
     }
   });
 
-  it('shows no error banner when there is no error', () => {
-    render(<AccountSettingsScreen />);
+  it('shows no error banner when there is no error', async () => {
+    await render(<AccountSettingsScreen />);
 
     expect(screen.queryByTestId('account-delete-error')).toBeNull();
   });
@@ -138,9 +138,9 @@ describe('AccountSettingsScreen', () => {
   it('reports a failed challenge without claiming anything was deleted', async () => {
     mockStart.mockRejectedValue(new Error('network'));
 
-    render(<AccountSettingsScreen />);
-    fireEvent.press(screen.getByTestId('account-delete-button'));
-    fireEvent.press(screen.getByTestId('account-delete-confirm'));
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-confirm'));
 
     await waitFor(() => expect(screen.getByTestId('account-delete-error')).toBeTruthy());
     expect(mockReplace).not.toHaveBeenCalled();

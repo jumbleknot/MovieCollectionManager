@@ -67,7 +67,7 @@ describe('UiActionEffect', () => {
   it('navigates only after the BFF authorizes (204)', async () => {
     const fetchMock = mockAuthorize(204);
     const perform = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <UiActionEffect
         actionKey="navcol:authorized-1"
         type="navigate"
@@ -87,7 +87,7 @@ describe('UiActionEffect', () => {
   it('does NOT navigate when the BFF denies (403) and shows a refusal', async () => {
     mockAuthorize(403);
     const perform = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <UiActionEffect
         actionKey="navcol:denied-1"
         type="navigate"
@@ -107,7 +107,7 @@ describe('UiActionEffect', () => {
     const fetchMock = jest.fn().mockRejectedValue(new Error('offline'));
     global.fetch = fetchMock as unknown as typeof fetch;
     const perform = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <UiActionEffect
         actionKey="prefill:neterr-1"
         type="prefill"
@@ -137,7 +137,7 @@ describe('UiActionEffect', () => {
       .mockResolvedValue({ status: 204 }); // 3rd: succeeds
     global.fetch = fetchMock as unknown as typeof fetch;
     const perform = jest.fn();
-    render(
+    await render(
       <UiActionEffect
         actionKey="navmov:retry-1"
         type="navigate"
@@ -154,7 +154,7 @@ describe('UiActionEffect', () => {
   it('does NOT retry a genuine authorization denial (403 is not transient)', async () => {
     const fetchMock = mockAuthorize(403);
     const perform = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <UiActionEffect
         actionKey="navmov:deny-noretry-1"
         type="navigate"
@@ -181,10 +181,10 @@ describe('UiActionEffect', () => {
       label: 'Opening…',
       perform,
     };
-    const first = render(<UiActionEffect {...props} />);
+    const first = await render(<UiActionEffect {...props} />);
     await waitFor(() => expect(perform).toHaveBeenCalledTimes(1));
-    first.unmount();
-    render(<UiActionEffect {...props} />); // dock re-opened → same key
+    await first.unmount();
+    await render(<UiActionEffect {...props} />); // dock re-opened → same key
     await waitFor(() => expect(perform).toHaveBeenCalledTimes(1)); // still once
   });
 });

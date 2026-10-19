@@ -32,7 +32,7 @@ describe('useAuth', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('starts unauthenticated', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
 
     await act(async () => {});
 
@@ -48,7 +48,7 @@ describe('useAuth', () => {
     };
     mockedGet.mockResolvedValueOnce({ data: mockUser } as never);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
 
     await act(async () => {
@@ -62,7 +62,7 @@ describe('useAuth', () => {
   it('logout clears state and redirects to login', async () => {
     mockedPost.mockResolvedValueOnce({ data: {} } as never);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
 
     await act(async () => {
@@ -77,7 +77,7 @@ describe('useAuth', () => {
   it('onTimeout calls logout', async () => {
     mockedPost.mockResolvedValueOnce({ data: {} } as never);
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    const { result } = await renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
 
     await act(async () => {

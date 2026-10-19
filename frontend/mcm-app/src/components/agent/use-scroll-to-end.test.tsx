@@ -14,28 +14,28 @@ describe('useScrollToEndOnChange', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('scrolls to end (deferred) on mount and again when the revision changes', () => {
+  it('scrolls to end (deferred) on mount and again when the revision changes', async () => {
     const scroll = jest.fn();
-    const { rerender } = renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
+    const { rerender } = await renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
       initialProps: { rev: 1 },
     });
-    act(() => jest.advanceTimersByTime(200));
+    await act(() => jest.advanceTimersByTime(200));
     expect(scroll).toHaveBeenCalledTimes(1);
 
     // A new card/message item appended → revision changes → scroll again.
-    rerender({ rev: 2 });
-    act(() => jest.advanceTimersByTime(200));
+    await rerender({ rev: 2 });
+    await act(() => jest.advanceTimersByTime(200));
     expect(scroll).toHaveBeenCalledTimes(2);
   });
 
-  it('does not re-scroll when the revision is unchanged (a plain re-render)', () => {
+  it('does not re-scroll when the revision is unchanged (a plain re-render)', async () => {
     const scroll = jest.fn();
-    const { rerender } = renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
+    const { rerender } = await renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
       initialProps: { rev: 5 },
     });
-    act(() => jest.advanceTimersByTime(200));
-    rerender({ rev: 5 });
-    act(() => jest.advanceTimersByTime(200));
+    await act(() => jest.advanceTimersByTime(200));
+    await rerender({ rev: 5 });
+    await act(() => jest.advanceTimersByTime(200));
     expect(scroll).toHaveBeenCalledTimes(1);
   });
 });

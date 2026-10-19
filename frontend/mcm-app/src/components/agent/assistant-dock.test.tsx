@@ -51,23 +51,23 @@ describe('AssistantDock', () => {
     jest.restoreAllMocks();
   });
 
-  it('shows the dock toggle without any CopilotKit provider around it', () => {
+  it('shows the dock toggle without any CopilotKit provider around it', async () => {
     // Deliberately NOT wrapped in AssistantProvider: the provider moved into the deferred chunk
     // (feature 077). A dock that still needed it would put @copilotkit/react-native — and the 659 KB
     // of React Native polyfills its entry imports as a side effect — back in the entry chunk.
-    const { getByTestId } = render(<AssistantDock />);
+    const { getByTestId } = await render(<AssistantDock />);
     expect(getByTestId('assistant-dock-toggle')).toBeTruthy();
   });
 
-  it('schedules the idle prefetch — the deferral must not cost the user a wait', () => {
+  it('schedules the idle prefetch — the deferral must not cost the user a wait', async () => {
     // If this stops happening, the feature still "works" and every other test here still passes;
     // the first press just pays for 2.4 MB on the spot.
-    render(<AssistantDock />);
+    await render(<AssistantDock />);
     expect(mockPrefetch).toHaveBeenCalled();
   });
 
-  it('does not render the panel before it is opened', () => {
-    const { queryByTestId } = render(<AssistantDock />);
+  it('does not render the panel before it is opened', async () => {
+    const { queryByTestId } = await render(<AssistantDock />);
     expect(queryByTestId('assistant-dock-panel')).toBeNull();
     expect(queryByTestId('assistant-dock-panel-loading')).toBeNull();
   });
@@ -76,8 +76,8 @@ describe('AssistantDock', () => {
     let release: (m: unknown) => void = () => {};
     load.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
 
-    const { getByTestId, queryByTestId } = render(<AssistantDock />);
-    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    const { getByTestId, queryByTestId } = await render(<AssistantDock />);
+    await fireEvent.press(getByTestId('assistant-dock-toggle'));
 
     // In flight: a loading state, not a blank panel.
     expect(getByTestId('assistant-dock-panel-loading')).toBeTruthy();
@@ -89,13 +89,13 @@ describe('AssistantDock', () => {
   });
 
   it('loads the runtime only once across open/close/open', async () => {
-    const { getByTestId } = render(<AssistantDock />);
+    const { getByTestId } = await render(<AssistantDock />);
     const toggle = getByTestId('assistant-dock-toggle');
 
-    fireEvent.press(toggle);
+    await fireEvent.press(toggle);
     await waitFor(() => expect(getByTestId('assistant-dock-panel')).toBeTruthy());
-    fireEvent.press(toggle); // close
-    fireEvent.press(toggle); // open again
+    await fireEvent.press(toggle); // close
+    await fireEvent.press(toggle); // open again
     await waitFor(() => expect(getByTestId('assistant-dock-panel')).toBeTruthy());
 
     expect(load).toHaveBeenCalledTimes(1);
@@ -105,11 +105,11 @@ describe('AssistantDock', () => {
     let release: (m: unknown) => void = () => {};
     load.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
 
-    const { getByTestId } = render(<AssistantDock />);
+    const { getByTestId } = await render(<AssistantDock />);
     const toggle = getByTestId('assistant-dock-toggle');
-    fireEvent.press(toggle);
-    fireEvent.press(toggle);
-    fireEvent.press(toggle);
+    await fireEvent.press(toggle);
+    await fireEvent.press(toggle);
+    await fireEvent.press(toggle);
 
     release({ default: PanelStub });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
@@ -119,8 +119,8 @@ describe('AssistantDock', () => {
     it('shows a recoverable error rather than a blank panel', async () => {
       load.mockRejectedValue(new Error('chunk load failed'));
 
-      const { getByTestId, queryByTestId } = render(<AssistantDock />);
-      fireEvent.press(getByTestId('assistant-dock-toggle'));
+      const { getByTestId, queryByTestId } = await render(<AssistantDock />);
+      await fireEvent.press(getByTestId('assistant-dock-toggle'));
 
       await waitFor(() => expect(getByTestId('assistant-dock-panel-error')).toBeTruthy());
       expect(queryByTestId('assistant-dock-panel')).toBeNull();
@@ -132,11 +132,11 @@ describe('AssistantDock', () => {
       load.mockRejectedValueOnce(new Error('chunk load failed'));
       load.mockResolvedValue({ default: PanelStub } as never);
 
-      const { getByTestId } = render(<AssistantDock />);
-      fireEvent.press(getByTestId('assistant-dock-toggle'));
+      const { getByTestId } = await render(<AssistantDock />);
+      await fireEvent.press(getByTestId('assistant-dock-toggle'));
       await waitFor(() => expect(getByTestId('assistant-dock-panel-error')).toBeTruthy());
 
-      fireEvent.press(getByTestId('assistant-dock-panel-retry'));
+      await fireEvent.press(getByTestId('assistant-dock-panel-retry'));
       await waitFor(() => expect(getByTestId('assistant-dock-panel')).toBeTruthy());
       expect(load).toHaveBeenCalledTimes(2);
     });
@@ -145,13 +145,13 @@ describe('AssistantDock', () => {
       load.mockRejectedValueOnce(new Error('chunk load failed'));
       load.mockResolvedValue({ default: PanelStub } as never);
 
-      const { getByTestId } = render(<AssistantDock />);
+      const { getByTestId } = await render(<AssistantDock />);
       const toggle = getByTestId('assistant-dock-toggle');
-      fireEvent.press(toggle);
+      await fireEvent.press(toggle);
       await waitFor(() => expect(getByTestId('assistant-dock-panel-error')).toBeTruthy());
 
-      fireEvent.press(toggle); // close
-      fireEvent.press(toggle); // open again
+      await fireEvent.press(toggle); // close
+      await fireEvent.press(toggle); // open again
       await waitFor(() => expect(getByTestId('assistant-dock-panel')).toBeTruthy());
     });
   });

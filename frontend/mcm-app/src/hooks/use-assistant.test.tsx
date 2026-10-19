@@ -58,11 +58,11 @@ const sentMessages = () => mockAgentState.addMessage.mock.calls.map((c) => c[0].
  * that re-rendered without the true→false cycle would assert against a sequence the app never
  * produces.
  */
-function completeRun(rerender: (props: object) => void) {
+async function completeRun(rerender: (props: object) => Promise<void>) {
   mockAgentState.isRunning = true;
-  rerender({});
+  await rerender({});
   mockAgentState.isRunning = false;
-  rerender({});
+  await rerender({});
 }
 
 beforeEach(() => {
@@ -74,8 +74,8 @@ beforeEach(() => {
 });
 
 describe('useAssistantRun — a follow-up typed mid-answer (US5)', () => {
-  it('delivers a message sent while the assistant is running, once the run completes', () => {
-    const { result, rerender } = renderHook(() => useAssistantRun());
+  it('delivers a message sent while the assistant is running, once the run completes', async () => {
+    const { result, rerender } = await renderHook(() => useAssistantRun());
 
     // Turn 1 is in flight and the dock is showing its thinking state. That render is REAL, not
     // scaffolding: `useAgent` re-renders when `isRunning` flips (it is how the spinner appears at
@@ -83,114 +83,114 @@ describe('useAssistantRun — a follow-up typed mid-answer (US5)', () => {
     // it would mean the effect's dependency never observes true→false, and the test would be
     // asserting against a sequence the app never produces.
     mockAgentState.isRunning = true;
-    rerender({});
+    await rerender({});
 
-    act(() => result.current.run('the second thing I wanted to say'));
+    await act(() => result.current.run('the second thing I wanted to say'));
     expect(sentMessages()).toEqual([]); // queued, not sent — correct so far
 
     // The run finishes. `agent` keeps its identity; only the mutable property flips. That is exactly
     // the transition the old dependency list could not observe.
     mockAgentState.isRunning = false;
-    rerender({});
+    await rerender({});
 
     expect(sentMessages()).toEqual(['the second thing I wanted to say']);
     expect(mockCopilotkit.runAgent).toHaveBeenCalledTimes(1);
   });
 
-  it('sends immediately when the assistant is idle (the path that already worked)', () => {
-    const { result } = renderHook(() => useAssistantRun());
-    act(() => result.current.run('hello'));
+  it('sends immediately when the assistant is idle (the path that already worked)', async () => {
+    const { result } = await renderHook(() => useAssistantRun());
+    await act(() => result.current.run('hello'));
     expect(sentMessages()).toEqual(['hello']);
   });
 
-  it('delivers a queued message AT MOST ONCE across a re-render storm', () => {
-    const { result, rerender } = renderHook(() => useAssistantRun());
+  it('delivers a queued message AT MOST ONCE across a re-render storm', async () => {
+    const { result, rerender } = await renderHook(() => useAssistantRun());
 
     mockAgentState.isRunning = true;
-    rerender({});
-    act(() => result.current.run('only once please'));
+    await rerender({});
+    await act(() => result.current.run('only once please'));
     mockAgentState.isRunning = false;
 
-    for (let i = 0; i < 5; i++) rerender({});
+    for (let i = 0; i < 5; i++) await rerender({});
 
     expect(sentMessages()).toEqual(['only once please']);
   });
 
-  it('ignores an empty or whitespace-only message', () => {
-    const { result } = renderHook(() => useAssistantRun());
-    act(() => result.current.run('   '));
+  it('ignores an empty or whitespace-only message', async () => {
+    const { result } = await renderHook(() => useAssistantRun());
+    await act(() => result.current.run('   '));
     expect(sentMessages()).toEqual([]);
   });
 });
 
 describe('useAssistantRun — the empty-registry self-heal must keep working (US5)', () => {
-  it('delivers a message sent before any agent is registered, once one registers', () => {
+  it('delivers a message sent before any agent is registered, once one registers', async () => {
     mockRegistryHasAgent = false;
     mockCopilotkit.getAgent.mockReturnValueOnce(undefined);
 
-    const { result, rerender } = renderHook(() => useAssistantRun());
-    act(() => result.current.run('sent into the void'));
+    const { result, rerender } = await renderHook(() => useAssistantRun());
+    await act(() => result.current.run('sent into the void'));
     expect(sentMessages()).toEqual([]);
 
     mockRegistryHasAgent = true;
-    rerender({});
+    await rerender({});
 
     expect(sentMessages()).toEqual(['sent into the void']);
   });
 });
 
 describe('useAssistantRun — two messages in flight (US5, FR-022)', () => {
-  it('does not silently discard the first when a second is typed', () => {
+  it('does not silently discard the first when a second is typed', async () => {
     // Before this, `pendingRef.current = text` OVERWROTE the slot: the first message vanished with
     // no error and no indication. FR-022 states the property rather than the implementation — each
     // message is delivered, or its supersession is surfaced. A queue satisfies it by delivering both.
-    const { result, rerender } = renderHook(() => useAssistantRun());
+    const { result, rerender } = await renderHook(() => useAssistantRun());
 
     mockAgentState.isRunning = true;
-    rerender({});
-    act(() => result.current.run('first'));
-    act(() => result.current.run('second'));
+    await rerender({});
+    await act(() => result.current.run('first'));
+    await act(() => result.current.run('second'));
 
     mockAgentState.isRunning = false;
-    rerender({});
+    await rerender({});
     expect(sentMessages()).toEqual(['first']);
 
-    completeRun(rerender);
+    await completeRun(rerender);
     expect(sentMessages()).toEqual(['first', 'second']);
   });
 
-  it('preserves order across many queued messages', () => {
-    const { result, rerender } = renderHook(() => useAssistantRun());
+  it('preserves order across many queued messages', async () => {
+    const { result, rerender } = await renderHook(() => useAssistantRun());
 
     mockAgentState.isRunning = true;
-    rerender({});
-    for (const m of ['a', 'b', 'c']) act(() => result.current.run(m));
+    await rerender({});
+    for (const m of ['a', 'b', 'c']) await act(() => result.current.run(m));
 
     mockAgentState.isRunning = false;
-    rerender({});
-    for (let i = 0; i < 4; i++) completeRun(rerender);
+    await rerender({});
+    for (let i = 0; i < 4; i++) await completeRun(rerender);
 
     expect(sentMessages()).toEqual(['a', 'b', 'c']);
   });
 
-  it('bounds the queue rather than growing without limit, and surfaces the refusal', () => {
+  it('bounds the queue rather than growing without limit, and surfaces the refusal', async () => {
     // A memory guard, not a UX limit: 8 is far above any realistic type-ahead during one answer.
     // What matters is that going past it is REFUSED and visible, never dropped silently — dropping
     // would re-create the exact defect this story fixes.
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    const { result, rerender } = renderHook(() => useAssistantRun());
+    const { result, rerender } = await renderHook(() => useAssistantRun());
 
     mockAgentState.isRunning = true;
-    rerender({});
-    for (let i = 0; i < 12; i++) act(() => result.current.run(`m${i}`));
+    await rerender({});
+    for (let i = 0; i < 12; i++) await act(() => result.current.run(`m${i}`));
 
     expect(warn).toHaveBeenCalled();
     const warned = warn.mock.calls.flat().join(' ');
     expect(warned).toMatch(/queue/i);
 
     mockAgentState.isRunning = false;
-    rerender({});
-    for (let i = 0; i < 10; i++) completeRun(rerender);
+    await rerender({});
+    for (let i = 0; i < 10; i++) await completeRun(rerender);
 
     // The first 8 are kept; the rest were refused rather than silently displacing them.
     expect(sentMessages()).toEqual(['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7']);

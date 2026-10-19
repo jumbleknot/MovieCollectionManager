@@ -46,18 +46,18 @@ describe('NotFoundScreen', () => {
       </ThemeProvider>,
     );
 
-  it('renders the not-found container on a host node', () => {
-    const { getByTestId } = renderScreen();
+  it('renders the not-found container on a host node', async () => {
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('not-found-screen')).toBeTruthy();
   });
 
-  it('states that the address was not found', () => {
-    const { getByTestId } = renderScreen();
+  it('states that the address was not found', async () => {
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('not-found-screen')).toHaveTextContent(/not found/i);
   });
 
-  it('offers the affordance back into the app', () => {
-    const { getByTestId } = renderScreen();
+  it('offers the affordance back into the app', async () => {
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('not-found-home-link')).toBeTruthy();
     // FR-004's "exactly ONE affordance" half is asserted in the web E2E, not here. Measured:
     // queryAllByRole('button') returns [] under jest-expo — RNTL's role query does not resolve
@@ -68,18 +68,18 @@ describe('NotFoundScreen', () => {
     // tests/e2e/web/settings.spec.ts, scoped inside the not-found-screen container.
   });
 
-  it("keeps the app's chrome for a signed-in visitor", () => {
+  it("keeps the app's chrome for a signed-in visitor", async () => {
     // FR-002 as REVISED. The original design put a second route inside the (app) group to inherit
     // the navigation bar; web E2E measured that route to be unreachable, because Expo Router
     // groups are URL-transparent and the ROOT +not-found takes every unmatched address. The
     // chrome is rendered by the screen instead — see the header comment.
-    const { getByTestId } = renderScreen();
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('navigation-bar')).toBeTruthy();
   });
 
-  it('offers no authenticated navigation to an anonymous visitor', () => {
+  it('offers no authenticated navigation to an anonymous visitor', async () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false });
-    const { queryByTestId, getByTestId } = renderScreen();
+    const { queryByTestId, getByTestId } = await renderScreen();
     // Every nav link points at an authenticated destination, so showing them here would send an
     // anonymous visitor straight into AuthGuard. The screen and its way back still render.
     expect(queryByTestId('navigation-bar')).toBeNull();
@@ -87,9 +87,9 @@ describe('NotFoundScreen', () => {
     expect(getByTestId('not-found-home-link')).toBeTruthy();
   });
 
-  it('sends the user to the home route, replacing the dead address in history', () => {
-    const { getByTestId } = renderScreen();
-    fireEvent.press(getByTestId('not-found-home-link'));
+  it('sends the user to the home route, replacing the dead address in history', async () => {
+    const { getByTestId } = await renderScreen();
+    await fireEvent.press(getByTestId('not-found-home-link'));
     // replace, not push — the address that matched nothing must not sit in the back stack
     // behind home. See plan.md §"Navigation back".
     expect(mockReplace).toHaveBeenCalledWith('/(app)/home');

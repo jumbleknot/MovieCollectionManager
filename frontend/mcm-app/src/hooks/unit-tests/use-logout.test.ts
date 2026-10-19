@@ -23,7 +23,7 @@ describe('useLogout', () => {
   it('calls BFF /logout and then auth logout on success', async () => {
     mockedPost.mockResolvedValueOnce({ data: { success: true } } as never);
 
-    const { result } = renderHook(() => useLogout());
+    const { result } = await renderHook(() => useLogout());
 
     await act(async () => {
       await result.current.logout();
@@ -37,7 +37,7 @@ describe('useLogout', () => {
   it('still calls auth logout when BFF call fails (best-effort)', async () => {
     mockedPost.mockRejectedValueOnce(new Error('Network error'));
 
-    const { result } = renderHook(() => useLogout());
+    const { result } = await renderHook(() => useLogout());
 
     await act(async () => {
       await result.current.logout();

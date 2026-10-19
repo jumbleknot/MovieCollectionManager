@@ -47,35 +47,35 @@ function setAuth(state: { user: UserProfile | null; isLoading?: boolean }): void
 beforeEach(() => jest.clearAllMocks());
 
 describe('ProfileSettingsScreen', () => {
-  it('renders the profile area with the profile details and the logout control', () => {
+  it('renders the profile area with the profile details and the logout control', async () => {
     setAuth({ user: BASE_USER });
-    const { getByTestId } = render(<ProfileSettingsScreen />);
+    const { getByTestId } = await render(<ProfileSettingsScreen />);
     expect(getByTestId('settings-profile-screen')).toBeTruthy();
     expect(getByTestId('profile-display')).toBeTruthy();
     expect(getByTestId('btn-logout')).toBeTruthy();
   });
 
-  it('renders the loading state while auth is resolving', () => {
+  it('renders the loading state while auth is resolving', async () => {
     setAuth({ user: null, isLoading: true });
-    const { getByTestId } = render(<ProfileSettingsScreen />);
+    const { getByTestId } = await render(<ProfileSettingsScreen />);
     expect(getByTestId('settings-profile-loading')).toBeTruthy();
   });
 
-  it('renders the empty state when there is no user', () => {
+  it('renders the empty state when there is no user', async () => {
     setAuth({ user: null });
-    const { getByTestId } = render(<ProfileSettingsScreen />);
+    const { getByTestId } = await render(<ProfileSettingsScreen />);
     expect(getByTestId('settings-profile-empty')).toBeTruthy();
   });
 
-  it('does NOT render the assistant configuration — it has its own area now', () => {
+  it('does NOT render the assistant configuration — it has its own area now', async () => {
     setAuth({ user: BASE_USER });
-    const { queryByTestId } = render(<ProfileSettingsScreen />);
+    const { queryByTestId } = await render(<ProfileSettingsScreen />);
     expect(queryByTestId('assistant-config')).toBeNull();
   });
 
-  it('does NOT render an admin-settings card — the sub-navigation replaced it', () => {
+  it('does NOT render an admin-settings card — the sub-navigation replaced it', async () => {
     setAuth({ user: { ...BASE_USER, roles: ['mc-user', 'mc-admin'] } });
-    const { queryByTestId } = render(<ProfileSettingsScreen />);
+    const { queryByTestId } = await render(<ProfileSettingsScreen />);
     expect(queryByTestId('profile-admin-settings-card')).toBeNull();
   });
 });

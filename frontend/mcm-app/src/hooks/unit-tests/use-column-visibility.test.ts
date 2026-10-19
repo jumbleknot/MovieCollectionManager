@@ -26,7 +26,7 @@ describe('useColumnVisibility', () => {
   });
 
   it('returns FR-018 defaults when AsyncStorage is empty', async () => {
-    const { result } = renderHook(() => useColumnVisibility(USER_A));
+    const { result } = await renderHook(() => useColumnVisibility(USER_A));
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
     expect(result.current.visibleColumns.year).toBe(true);
     expect(result.current.visibleColumns.ownedMedia).toBe(true);
@@ -39,18 +39,18 @@ describe('useColumnVisibility', () => {
     const stored = JSON.stringify({ language: true, ownedMedia: false });
     await AsyncStorage.setItem(STORAGE_KEY_A, stored);
 
-    const { result } = renderHook(() => useColumnVisibility(USER_A));
+    const { result } = await renderHook(() => useColumnVisibility(USER_A));
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
     expect(result.current.visibleColumns.language).toBe(true);
     expect(result.current.visibleColumns.ownedMedia).toBe(false);
   });
 
   it('toggleColumn flips a column and writes updated state to AsyncStorage', async () => {
-    const { result } = renderHook(() => useColumnVisibility(USER_A));
+    const { result } = await renderHook(() => useColumnVisibility(USER_A));
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
     expect(result.current.visibleColumns.year).toBe(true);
-    act(() => { result.current.toggleColumn('year'); });
+    await act(() => { result.current.toggleColumn('year'); });
     await waitFor(() => expect(result.current.visibleColumns.year).toBe(false));
 
     const raw = await AsyncStorage.getItem(STORAGE_KEY_A);
@@ -62,7 +62,7 @@ describe('useColumnVisibility', () => {
     const stored = JSON.stringify({ year: false, contentType: false });
     await AsyncStorage.setItem(STORAGE_KEY_A, stored);
 
-    const { result } = renderHook(() => useColumnVisibility(USER_A));
+    const { result } = await renderHook(() => useColumnVisibility(USER_A));
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
     expect(result.current.visibleColumns.year).toBe(true);
     expect(result.current.visibleColumns.contentType).toBe(true);
@@ -75,8 +75,8 @@ describe('useColumnVisibility', () => {
     await AsyncStorage.setItem(keyA, JSON.stringify({ language: false }));
     await AsyncStorage.setItem(keyB, JSON.stringify({ language: true }));
 
-    const { result: rA } = renderHook(() => useColumnVisibility(USER_A));
-    const { result: rB } = renderHook(() => useColumnVisibility(USER_B));
+    const { result: rA } = await renderHook(() => useColumnVisibility(USER_A));
+    const { result: rB } = await renderHook(() => useColumnVisibility(USER_B));
     await waitFor(() => expect(rA.current.isLoaded).toBe(true));
     await waitFor(() => expect(rB.current.isLoaded).toBe(true));
 

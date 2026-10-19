@@ -23,28 +23,28 @@ import { AccountDeletedScreen } from '@/screens/account-deleted-screen';
 beforeEach(() => jest.clearAllMocks());
 
 describe('AccountDeletedScreen', () => {
-  it('confirms the deletion', () => {
-    render(<AccountDeletedScreen />);
+  it('confirms the deletion', async () => {
+    await render(<AccountDeletedScreen />);
 
     expect(screen.getByTestId('account-deleted-confirmation')).toBeTruthy();
     expect(screen.getByText(/account has been deleted/i)).toBeTruthy();
   });
 
-  it('repeats that the files at the user own storage were left alone', () => {
-    render(<AccountDeletedScreen />);
+  it('repeats that the files at the user own storage were left alone', async () => {
+    await render(<AccountDeletedScreen />);
 
     expect(screen.getByText(/left untouched/i)).toBeTruthy();
     expect(screen.getByText(/still have the credentials/i)).toBeTruthy();
   });
 
-  it('says the standing permission was withdrawn', () => {
-    render(<AccountDeletedScreen />);
+  it('says the standing permission was withdrawn', async () => {
+    await render(<AccountDeletedScreen />);
 
     expect(screen.getByText(/permission .* withdrawn/i)).toBeTruthy();
   });
 
-  it('offers a way out that does not assume a session', () => {
-    render(<AccountDeletedScreen />);
+  it('offers a way out that does not assume a session', async () => {
+    await render(<AccountDeletedScreen />);
 
     expect(screen.getByTestId('account-deleted-home')).toBeTruthy();
   });

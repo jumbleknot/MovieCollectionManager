@@ -23,8 +23,8 @@ const validRequest = {
 describe('useRegistration', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('starts with default state', () => {
-    const { result } = renderHook(() => useRegistration());
+  it('starts with default state', async () => {
+    const { result } = await renderHook(() => useRegistration());
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.isSuccess).toBe(false);
@@ -39,9 +39,9 @@ describe('useRegistration', () => {
       }),
     );
 
-    const { result } = renderHook(() => useRegistration());
+    const { result } = await renderHook(() => useRegistration());
 
-    act(() => {
+    await act(() => {
       result.current.register(validRequest);
     });
 
@@ -57,7 +57,7 @@ describe('useRegistration', () => {
       data: { success: true, message: 'Account created.', userId: 'user-123' },
     } as never);
 
-    const { result } = renderHook(() => useRegistration());
+    const { result } = await renderHook(() => useRegistration());
 
     await act(async () => {
       await result.current.register(validRequest);
@@ -76,7 +76,7 @@ describe('useRegistration', () => {
       },
     });
 
-    const { result } = renderHook(() => useRegistration());
+    const { result } = await renderHook(() => useRegistration());
 
     await act(async () => {
       await result.current.register(validRequest);
@@ -92,13 +92,13 @@ describe('useRegistration', () => {
       data: { success: true, message: 'Account created.', userId: 'user-123' },
     } as never);
 
-    const { result } = renderHook(() => useRegistration());
+    const { result } = await renderHook(() => useRegistration());
 
     await act(async () => {
       await result.current.register(validRequest);
     });
 
-    act(() => {
+    await act(() => {
       result.current.reset();
     });
 

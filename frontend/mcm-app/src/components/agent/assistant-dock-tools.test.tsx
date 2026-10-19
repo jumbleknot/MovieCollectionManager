@@ -70,9 +70,9 @@ function mockAgentWithToolCall(
 }
 
 describe('AssistantDock generative UI', () => {
-  it('renders a movie card inline when the agent emits a render_movie_card tool call', () => {
+  it('renders a movie card inline when the agent emits a render_movie_card tool call', async () => {
     mockAgentWithToolCall();
-    const { getByTestId } = render(<AssistantRuntime />);
+    const { getByTestId } = await render(<AssistantRuntime />);
 
     expect(getByTestId('render-movie-card')).toBeTruthy();
     expect(getByTestId('render-movie-card-title')).toHaveTextContent('Blade Runner');
@@ -81,9 +81,9 @@ describe('AssistantDock generative UI', () => {
   // 014 UX fix: the dock must NOT show always-on import/export buttons — those surfaced before the
   // user asked for anything. Import is started by typing; export by typing. (The old
   // spreadsheet-import-button / spreadsheet-export-button are removed.)
-  it('shows no always-on import/export buttons when the panel opens', () => {
+  it('shows no always-on import/export buttons when the panel opens', async () => {
     mockAgentWithToolCall();
-    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
+    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
     expect(queryByTestId('spreadsheet-import-button')).toBeNull();
     expect(queryByTestId('spreadsheet-export-button')).toBeNull();
   });
@@ -122,9 +122,9 @@ describe('AssistantDock generative UI', () => {
   // derives Complete from a `toolMessage` and Executing from `executingToolCallIds`, and MCM's
   // render-only tools produce neither). A `status`-based gate would make every card below a
   // permanent placeholder. See specs/066-copilotkit-170-migration/spec.md.
-  it('shows the pending state, not a card, while render_movie_card args are still streaming', () => {
+  it('shows the pending state, not a card, while render_movie_card args are still streaming', async () => {
     mockAgentWithToolCall({ name: 'render_movie_card', arguments: '{}' });
-    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
+    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
 
     expect(getByTestId('tool-call-pending')).toBeTruthy();
     expect(queryByTestId('render-movie-card')).toBeNull();
@@ -133,20 +133,20 @@ describe('AssistantDock generative UI', () => {
   // A partially-written argument object — the model has emitted the title but not yet the rest —
   // is still incomplete. This is the case a `status` gate or a spread-and-cast would both get
   // wrong: the object parses, so it looks like data.
-  it('shows the pending state when only SOME render_movie_card fields have arrived', () => {
+  it('shows the pending state when only SOME render_movie_card fields have arrived', async () => {
     mockAgentWithToolCall({
       name: 'render_movie_card',
       arguments: JSON.stringify({ title: 'Blade Runner' }),
     });
-    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
+    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
 
     expect(getByTestId('tool-call-pending')).toBeTruthy();
     expect(queryByTestId('render-movie-card')).toBeNull();
   });
 
-  it('shows the card and NO pending state once the args are complete', () => {
+  it('shows the card and NO pending state once the args are complete', async () => {
     mockAgentWithToolCall();
-    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
+    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
 
     expect(getByTestId('render-movie-card')).toBeTruthy();
     expect(queryByTestId('tool-call-pending')).toBeNull();
@@ -155,9 +155,9 @@ describe('AssistantDock generative UI', () => {
   // 066/#265 (FR-006): a UI-action tool renders an EFFECT — UiActionEffect performs its
   // router.push on mount — so an incomplete one must render NOTHING, not a placeholder that would
   // still mount and still fire. Before the gate this navigated to `/collections/undefined`.
-  it('renders no navigation effect at all while navigate_to_collection args are incomplete', () => {
+  it('renders no navigation effect at all while navigate_to_collection args are incomplete', async () => {
     mockAgentWithToolCall({ name: 'navigate_to_collection', arguments: '{}' });
-    const { getByTestId, queryByTestId } = render(<AssistantRuntime />);
+    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
 
     expect(queryByTestId('assistant-ui-action-navigate')).toBeNull();
     // Not even the shared pending card — mounting anything here is what fires the effect.
@@ -167,7 +167,7 @@ describe('AssistantDock generative UI', () => {
   // 047 US4 (T082): the ownership toggle lists must be registered in the dock, or the organizer's
   // render_multi_select tool call arrives with nothing to render it and the member sees only the
   // question text with no way to answer by tapping.
-  it('renders a multi-select inline when the agent emits a render_multi_select tool call', () => {
+  it('renders a multi-select inline when the agent emits a render_multi_select tool call', async () => {
     mockAgentWithToolCall({
       name: 'render_multi_select',
       arguments: JSON.stringify({
@@ -179,7 +179,7 @@ describe('AssistantDock generative UI', () => {
         confirmLabel: 'Done',
       }),
     });
-    const { getByTestId } = render(<AssistantRuntime />);
+    const { getByTestId } = await render(<AssistantRuntime />);
 
     expect(getByTestId('multi-select-options')).toBeTruthy();
     expect(getByTestId('multi-select-option-0')).toBeTruthy();
@@ -202,7 +202,7 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     mockedUseCopilotKit.mockReturnValue({ copilotkit: { runAgent: jest.fn() } });
   }
 
-  it('does not NARROW the agent subscription', () => {
+  it('does not NARROW the agent subscription', async () => {
     // `useAgent` resolves `updates ?? ALL_UPDATES`, so the option REPLACES the default rather
     // than adding to it. Passing ['OnStateChanged'] to "be explicit about state" therefore drops
     // OnMessagesChanged and OnRunStatusChanged — and a tool call (navigate_to_movie, the render_*
@@ -212,7 +212,7 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     // So the property is: either take the default (undefined = all three) or list all three.
     // Never a subset.
     mockAgentWithState({});
-    render(<AssistantRuntime />);
+    await render(<AssistantRuntime />);
 
     const ALL = ['OnMessagesChanged', 'OnStateChanged', 'OnRunStatusChanged'];
     for (const [args] of mockedUseAgent.mock.calls) {
@@ -225,19 +225,19 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     }
   });
 
-  it('renders the in-place progress line from agent state while an import applies', () => {
+  it('renders the in-place progress line from agent state while an import applies', async () => {
     mockAgentWithState({ import_applied: 1300, import_total: 2300, import_run_id: 't-1' });
-    render(<AssistantRuntime />);
+    await render(<AssistantRuntime />);
 
     expect(screen.getByTestId('import-progress-label')).toHaveTextContent(
       'Importing 1,300 of 2,300…',
     );
   });
 
-  it('shows no progress surface once the run has finished (FR-014b)', () => {
+  it('shows no progress surface once the run has finished (FR-014b)', async () => {
     // The gateway clears the counters at the end of the run, so the report is what remains.
     mockAgentWithState({ import_applied: 0, import_total: 0, import_run_id: '' });
-    render(<AssistantRuntime />);
+    await render(<AssistantRuntime />);
 
     expect(screen.queryByTestId('import-progress')).toBeNull();
   });

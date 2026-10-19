@@ -76,7 +76,7 @@ describe('AssistantConfigProvider — in-session reactivity (FR-031)', () => {
     mockedPut.mockResolvedValueOnce({ data: {} } as never);
     mockedGet.mockResolvedValueOnce({ data: RUNNABLE_VIEW } as never);
 
-    render(
+    await render(
       <AssistantConfigProvider>
         <Gate />
         <Saver />
@@ -87,7 +87,7 @@ describe('AssistantConfigProvider — in-session reactivity (FR-031)', () => {
     await waitFor(() => expect(screen.getByTestId('gate')).toHaveTextContent('dock-hidden'));
 
     // The OTHER consumer saves → the shared state refreshes → the gate must react in-session.
-    fireEvent.press(screen.getByTestId('saver'));
+    await fireEvent.press(screen.getByTestId('saver'));
 
     await waitFor(() => expect(screen.getByTestId('gate')).toHaveTextContent('dock-visible'));
   });

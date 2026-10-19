@@ -44,9 +44,9 @@ const OPTS = [
 ];
 
 describe('DisambiguationOptions', () => {
-  it('renders a button per candidate and posts the canonical pick on tap (US4-AC1/AC2)', () => {
-    const { getByTestId } = render(<DisambiguationOptions options={OPTS} />);
-    fireEvent.press(getByTestId('disambig-option-1'));
+  it('renders a button per candidate and posts the canonical pick on tap (US4-AC1/AC2)', async () => {
+    const { getByTestId } = await render(<DisambiguationOptions options={OPTS} />);
+    await fireEvent.press(getByTestId('disambig-option-1'));
     expect(addMessage).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'user', content: 'A (2003)' }),
     );
@@ -58,15 +58,15 @@ describe('DisambiguationOptions', () => {
   // it fails. The old `if (!agent || isRunning) return` dropped it whenever the tap landed while the
   // assistant was still streaming, which is precisely when a member taps: the buttons are on screen
   // and the reply below them is still arriving.
-  it('delivers a pick taken mid-answer, once the run finishes', () => {
+  it('delivers a pick taken mid-answer, once the run finishes', async () => {
     agentState.isRunning = true;
-    const { getByTestId, rerender } = render(<DisambiguationOptions options={OPTS} />);
+    const { getByTestId, rerender } = await render(<DisambiguationOptions options={OPTS} />);
 
-    fireEvent.press(getByTestId('disambig-option-1'));
+    await fireEvent.press(getByTestId('disambig-option-1'));
     expect(addMessage).not.toHaveBeenCalled(); // queued, not sent
 
     agentState.isRunning = false;
-    rerender(<DisambiguationOptions options={OPTS} />);
+    await rerender(<DisambiguationOptions options={OPTS} />);
 
     expect(addMessage).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'user', content: 'A (2003)' }),
@@ -74,18 +74,18 @@ describe('DisambiguationOptions', () => {
     expect(runAgent).toHaveBeenCalledTimes(1);
   });
 
-  it('shows ≤5 buttons with an overflow control that reveals the rest (US4-AC4)', () => {
+  it('shows ≤5 buttons with an overflow control that reveals the rest (US4-AC4)', async () => {
     const many = Array.from({ length: 7 }, (_, i) => ({
       title: `M${i}`,
       year: 2000 + i,
       sourceId: `s${i}`,
     }));
-    const { getByTestId, queryByTestId } = render(<DisambiguationOptions options={many} />);
+    const { getByTestId, queryByTestId } = await render(<DisambiguationOptions options={many} />);
     expect(getByTestId('disambig-option-4')).toBeTruthy(); // 5th (index 4) shown
     expect(queryByTestId('disambig-option-5')).toBeNull(); // 6th hidden until expanded
     expect(getByTestId('disambig-more')).toBeTruthy();
 
-    fireEvent.press(getByTestId('disambig-more'));
+    await fireEvent.press(getByTestId('disambig-more'));
     expect(getByTestId('disambig-option-6')).toBeTruthy(); // a beyond-first-5 pick is reachable
   });
 });

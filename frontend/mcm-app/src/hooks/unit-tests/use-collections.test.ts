@@ -53,13 +53,19 @@ describe('useCollections', () => {
   beforeEach(() => jest.clearAllMocks());
 
   describe('initial load', () => {
-    it('starts with empty collections and loading true', () => {
-      mockedGet.mockResolvedValueOnce({ data: [] } as never);
-      const { result } = renderHook(() => useCollections());
+    it('starts with empty collections and loading true', async () => {
+      // RNTL 14's async renderHook flushes already-resolved promises before returning, so the
+      // initial-load state is observed while the fetch is still in flight (held open here).
+      let resolveGet: (value: unknown) => void = () => {};
+      mockedGet.mockReturnValueOnce(new Promise((resolve) => (resolveGet = resolve)) as never);
+      const { result } = await renderHook(() => useCollections());
 
       expect(result.current.collections).toEqual([]);
       expect(result.current.isLoading).toBe(true);
       expect(result.current.error).toBeNull();
+
+      await act(async () => resolveGet({ data: [] }));
+      expect(result.current.isLoading).toBe(false);
     });
 
     it('fetches collections from GET /bff-api/collections on mount', async () => {
@@ -67,7 +73,7 @@ describe('useCollections', () => {
         data: [COLLECTION_1, COLLECTION_2],
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
 
       await act(async () => {});
 
@@ -80,7 +86,7 @@ describe('useCollections', () => {
     it('sets error state when fetch fails', async () => {
       mockedGet.mockRejectedValueOnce(new Error('Network error'));
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
 
       await act(async () => {});
 
@@ -104,7 +110,7 @@ describe('useCollections', () => {
       };
       mockedPost.mockResolvedValueOnce({ data: newCollection } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -130,7 +136,7 @@ describe('useCollections', () => {
       };
       mockedPost.mockResolvedValueOnce({ data: created } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -148,7 +154,7 @@ describe('useCollections', () => {
         response: { data: { title: 'Conflict', status: 409 } },
       });
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -167,7 +173,7 @@ describe('useCollections', () => {
         data: { ...COLLECTION_1, name: 'Renamed' },
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -187,7 +193,7 @@ describe('useCollections', () => {
         data: { ...COLLECTION_1, name: 'Renamed' },
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -204,7 +210,7 @@ describe('useCollections', () => {
       mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPatch.mockRejectedValueOnce({ response: { data: { status: 404 } } });
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -224,7 +230,7 @@ describe('useCollections', () => {
         data: { ...COLLECTION_2, isDefault: true },
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -244,7 +250,7 @@ describe('useCollections', () => {
         data: { ...COLLECTION_2, isDefault: true },
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -267,7 +273,7 @@ describe('useCollections', () => {
         data: { ...COLLECTION_2, isDefault: true },
       } as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -284,7 +290,7 @@ describe('useCollections', () => {
       mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1, COLLECTION_2] } as never);
       mockedDelete.mockResolvedValueOnce({} as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -300,7 +306,7 @@ describe('useCollections', () => {
       } as never);
       mockedDelete.mockResolvedValueOnce({} as never);
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -315,7 +321,7 @@ describe('useCollections', () => {
       mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedDelete.mockRejectedValueOnce({ response: { data: { status: 404 } } });
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {
@@ -333,7 +339,7 @@ describe('useCollections', () => {
       mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPost.mockRejectedValueOnce(new Error('fail'));
 
-      const { result } = renderHook(() => useCollections());
+      const { result } = await renderHook(() => useCollections());
       await act(async () => {});
 
       await act(async () => {

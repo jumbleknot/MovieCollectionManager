@@ -21,20 +21,20 @@ beforeEach(async () => {
 
 describe('use-theme', () => {
   it('defaults to dark when nothing is stored', async () => {
-    const { result } = renderHook(() => useTheme(), { wrapper });
+    const { result } = await renderHook(() => useTheme(), { wrapper });
     await waitFor(() => expect(result.current.theme).toBe('dark'));
   });
 
   it('reads a stored light preference on mount', async () => {
     await AsyncStorage.setItem('mcm.theme', 'light');
-    const { result } = renderHook(() => useTheme(), { wrapper });
+    const { result } = await renderHook(() => useTheme(), { wrapper });
     await waitFor(() => expect(result.current.theme).toBe('light'));
   });
 
   it('toggle() flips the theme and persists it', async () => {
-    const { result } = renderHook(() => useTheme(), { wrapper });
+    const { result } = await renderHook(() => useTheme(), { wrapper });
     await waitFor(() => expect(result.current.theme).toBe('dark'));
-    act(() => result.current.toggle());
+    await act(() => result.current.toggle());
     expect(result.current.theme).toBe('light');
     await waitFor(async () =>
       expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'),
@@ -43,7 +43,7 @@ describe('use-theme', () => {
 
   it('falls back to dark for an unrecognized stored value', async () => {
     await AsyncStorage.setItem('mcm.theme', 'chartreuse');
-    const { result } = renderHook(() => useTheme(), { wrapper });
+    const { result } = await renderHook(() => useTheme(), { wrapper });
     await waitFor(() => expect(result.current.theme).toBe('dark'));
   });
 });

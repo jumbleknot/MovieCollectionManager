@@ -119,64 +119,64 @@ jest.mock('@/utils/api-client', () => ({
 describe('CollectionScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('renders the movie list', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
+  it('renders the movie list', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     expect(getByTestId('movie-list-container')).toBeTruthy();
   });
 
-  it('renders the search bar', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
+  it('renders the search bar', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     expect(getByTestId('movie-search-input')).toBeTruthy();
   });
 
-  it('renders the filter panel', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
+  it('renders the filter panel', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     expect(getByTestId('movie-filter-panel')).toBeTruthy();
   });
 
-  it('renders the column selector', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
+  it('renders the column selector', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     // year/contentType are always visible and no longer toggleable (FR-019b);
     // assert on a still-toggleable column instead.
     expect(getByTestId('column-toggle-language')).toBeTruthy();
   });
 
-  it('renders an "Add Movie" button', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
+  it('renders an "Add Movie" button', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     expect(getByTestId('collection-screen-add-movie')).toBeTruthy();
   });
 
   it('calls listMovies and fetchFilterOptions on screen focus (initial mount)', async () => {
-    render(<CollectionScreen collectionId="col-1" />);
+    await render(<CollectionScreen collectionId="col-1" />);
     await waitFor(() => {
       expect(mockListMovies).toHaveBeenCalledTimes(1);
       expect(mockFetchFilterOptions).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('tapping a movie row navigates to movie detail screen', () => {
-    const { getAllByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
+  it('tapping a movie row navigates to movie detail screen', async () => {
+    const { getAllByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    await fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
     expect(mockPush).toHaveBeenCalledWith(
       expect.stringContaining('mov-1'),
     );
   });
 
-  it('delegates setSearch to useMovies hook when search changes', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    fireEvent.changeText(getByTestId('movie-search-input'), 'batman');
+  it('delegates setSearch to useMovies hook when search changes', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    await fireEvent.changeText(getByTestId('movie-search-input'), 'batman');
     expect(mockSetSearch).toHaveBeenCalledWith('batman');
   });
 
-  it('delegates setFilter to useMovies hook when filter chip is pressed', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+  it('delegates setFilter to useMovies hook when filter chip is pressed', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    await fireEvent.press(getByTestId('filter-chip-genre-Action'));
     expect(mockSetFilter).toHaveBeenCalledWith('genre', 'Action');
   });
 
-  it('delegates toggleColumn to useMovies hook when column toggle is pressed', () => {
-    const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    fireEvent.press(getByTestId('column-toggle-language'));
+  it('delegates toggleColumn to useMovies hook when column toggle is pressed', async () => {
+    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    await fireEvent.press(getByTestId('column-toggle-language'));
     expect(mockToggleColumn).toHaveBeenCalledWith('language');
   });
 });

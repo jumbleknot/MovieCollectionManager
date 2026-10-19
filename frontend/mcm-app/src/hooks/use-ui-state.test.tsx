@@ -53,7 +53,7 @@ function lastPushedSnapshot(): unknown {
 describe('UiStateProvider', () => {
   it('pushes the screen snapshot to the BFF ui-state route on focus', async () => {
     const snapshot = { current_screen: 'collection', collection_id: 'abc', nav_depth: 1 };
-    render(
+    await render(
       <UiStateProvider>
         <ReportingScreen snapshot={snapshot} />
       </UiStateProvider>,
@@ -64,7 +64,7 @@ describe('UiStateProvider', () => {
 
   it('flush re-pushes the latest reported snapshot (no push/run race before a turn)', async () => {
     const snapshot = { current_screen: 'movie-detail', collection_id: 'c1', movie_id: 'm1' };
-    render(
+    await render(
       <UiStateProvider>
         <ReportingScreen snapshot={snapshot} />
         <FlushButton />
@@ -81,13 +81,14 @@ describe('UiStateProvider', () => {
   it('swallows a failed push (best-effort context — never throws)', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network'));
     const snapshot = { current_screen: 'home', nav_depth: 0 };
-    expect(() =>
+    // RNTL 14: render is async, so a render-time throw surfaces as a rejection.
+    await expect(
       render(
         <UiStateProvider>
           <ReportingScreen snapshot={snapshot} />
         </UiStateProvider>,
       ),
-    ).not.toThrow();
+    ).resolves.toBeDefined();
     await waitFor(() => expect(mockFetch).toHaveBeenCalled());
   });
 });

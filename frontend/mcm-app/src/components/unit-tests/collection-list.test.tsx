@@ -35,7 +35,7 @@ const COL_2: CollectionSummary = {
   updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
-function renderList(
+async function renderList(
   collections: CollectionSummary[],
   overrides: Record<string, unknown> = {}
 ) {
@@ -44,7 +44,7 @@ function renderList(
   const onSetDefault = jest.fn();
   const onDelete = jest.fn();
 
-  const utils = render(
+  const utils = await render(
     <CollectionList
       collections={collections}
       onCollectionTap={onCollectionTap}
@@ -58,49 +58,49 @@ function renderList(
 }
 
 describe('CollectionList', () => {
-  it('renders a card for each collection', () => {
-    const { getAllByTestId } = renderList([COL_1, COL_2]);
+  it('renders a card for each collection', async () => {
+    const { getAllByTestId } = await renderList([COL_1, COL_2]);
     expect(getAllByTestId('collection-card')).toHaveLength(2);
   });
 
-  it('renders collection names', () => {
-    const { getByText } = renderList([COL_1, COL_2]);
+  it('renders collection names', async () => {
+    const { getByText } = await renderList([COL_1, COL_2]);
     expect(getByText('My Movies')).toBeTruthy();
     expect(getByText('Classics')).toBeTruthy();
   });
 
-  it('shows empty state message when collections is empty', () => {
-    const { getByTestId } = renderList([]);
+  it('shows empty state message when collections is empty', async () => {
+    const { getByTestId } = await renderList([]);
     expect(getByTestId('collection-list-empty-state')).toBeTruthy();
   });
 
-  it('does not show empty state when collections is non-empty', () => {
-    const { queryByTestId } = renderList([COL_1]);
+  it('does not show empty state when collections is non-empty', async () => {
+    const { queryByTestId } = await renderList([COL_1]);
     expect(queryByTestId('collection-list-empty-state')).toBeNull();
   });
 
-  it('calls onCollectionTap with collectionId when card is tapped', () => {
-    const { getAllByTestId, onCollectionTap } = renderList([COL_1, COL_2]);
-    fireEvent.press(getAllByTestId('collection-card')[0]);
+  it('calls onCollectionTap with collectionId when card is tapped', async () => {
+    const { getAllByTestId, onCollectionTap } = await renderList([COL_1, COL_2]);
+    await fireEvent.press(getAllByTestId('collection-card')[0]);
     expect(onCollectionTap).toHaveBeenCalledWith('col-1');
   });
 
-  it('calls onEdit with the collection when edit action is pressed', () => {
-    const { getAllByTestId, onEdit } = renderList([COL_1, COL_2]);
-    fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+  it('calls onEdit with the collection when edit action is pressed', async () => {
+    const { getAllByTestId, onEdit } = await renderList([COL_1, COL_2]);
+    await fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
     expect(onEdit).toHaveBeenCalledWith(COL_1);
   });
 
-  it('calls onSetDefault with collectionId when set-default is pressed on non-default card', () => {
-    const { getByTestId, onSetDefault } = renderList([COL_1, COL_2]);
+  it('calls onSetDefault with collectionId when set-default is pressed on non-default card', async () => {
+    const { getByTestId, onSetDefault } = await renderList([COL_1, COL_2]);
     // COL_1 is default (no set-default button), COL_2 is not
-    fireEvent.press(getByTestId('collection-card-action-set-default'));
+    await fireEvent.press(getByTestId('collection-card-action-set-default'));
     expect(onSetDefault).toHaveBeenCalledWith('col-2');
   });
 
-  it('calls onDelete with collectionId when delete action is pressed', () => {
-    const { getAllByTestId, onDelete } = renderList([COL_1, COL_2]);
-    fireEvent.press(getAllByTestId('collection-card-action-delete')[1]);
+  it('calls onDelete with collectionId when delete action is pressed', async () => {
+    const { getAllByTestId, onDelete } = await renderList([COL_1, COL_2]);
+    await fireEvent.press(getAllByTestId('collection-card-action-delete')[1]);
     expect(onDelete).toHaveBeenCalledWith('col-2');
   });
 });
