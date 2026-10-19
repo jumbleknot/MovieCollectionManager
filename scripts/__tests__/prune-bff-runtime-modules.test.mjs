@@ -60,7 +60,7 @@ before(() => {
   makePackage('undici@6.28.0', 'undici');
   makePackage('mermaid@11.17.2', 'mermaid');
   makePackage('lucide-react@0.542.0_react@19.2.3', 'lucide-react');
-  makePackage('openai@6.49.0', 'openai');
+  makePackage('openai@7.34.0_undici@6.28.0', 'openai');
 
   linkDep('express@4.22.2_supports-color@8.1.1', 'express', 'ms', 'ms@2.1.3');
   // @expo/server -> undici is the reach that keeps the AI SDK's lazy `createRequire(...)("undici")`
@@ -76,7 +76,9 @@ before(() => {
   linkTopLevel('@expo/server', '@expo+server@0.5.3_supports-color@8.1.1');
   linkTopLevel('mermaid', 'mermaid@11.17.2');
   // openai is a DYNAMIC root: nothing links to it, only a string inside the agent-run bundle.
-  linkTopLevel('openai', 'openai@6.49.0');
+  linkTopLevel('openai', 'openai@7.34.0_undici@6.28.0');
+  // openai 7's optional `undici` peer, linked beside it by pnpm (the deployed tree's real shape).
+  linkDep('openai@7.34.0_undici@6.28.0', 'openai', 'undici', 'undici@6.28.0');
 
   // .bin shims: one belonging to a kept package, one to a package about to be removed. The second
   // is what would otherwise survive as a DANGLING symlink.
@@ -123,7 +125,7 @@ describe('computeClosure', () => {
         '@expo+server@0.5.3_supports-color@8.1.1',
         'express@4.22.2_supports-color@8.1.1',
         'ms@2.1.3',
-        'openai@6.49.0',
+        'openai@7.34.0_undici@6.28.0',
         'undici@6.28.0',
       ]
     );
@@ -133,8 +135,17 @@ describe('computeClosure', () => {
 
   it('keeps a dynamic root nothing links to — the lazy `__require("openai")` reach', () => {
     assert.ok(DYNAMIC_ROOTS.includes('openai'));
-    assert.ok(computeClosure(nmDir).has('openai@6.49.0'));
-    assert.ok(!computeClosure(nmDir, STATIC_ROOTS, []).has('openai@6.49.0'));
+    assert.ok(computeClosure(nmDir).has('openai@7.34.0_undici@6.28.0'));
+    assert.ok(!computeClosure(nmDir, STATIC_ROOTS, []).has('openai@7.34.0_undici@6.28.0'));
+  });
+
+  it('follows the dynamic root\'s own peer links — openai 7 reaches undici by itself (081 US7b)', () => {
+    // openai 7 declares `undici` as an optional peer (its x509 transport `require("undici")`s it), and
+    // pnpm links the workspace's undici beside it. The walk must keep that reach from `openai` ALONE,
+    // not only because `@expo/server` happens to depend on the same undici today.
+    const fromOpenaiOnly = computeClosure(nmDir, [], DYNAMIC_ROOTS);
+    assert.ok([...fromOpenaiOnly].some((e) => e.startsWith('openai@7.')), [...fromOpenaiOnly].join(','));
+    assert.ok(fromOpenaiOnly.has('undici@6.28.0'), [...fromOpenaiOnly].join(','));
   });
 
   it('refuses to prune when a REQUIRED root is missing rather than emptying the tree', () => {
