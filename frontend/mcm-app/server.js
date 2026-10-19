@@ -70,18 +70,48 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve pre-built static web assets with long cache headers
-app.use(
-  express.static(DIST_CLIENT, {
-    maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
-    immutable: process.env.NODE_ENV === 'production',
-  })
+// Serve pre-built static web assets with long cache headers.
+//
+// Feature 081 (US6): DOTFILES KEEP EXPRESS 4's RULE, deliberately. `expo export` writes every
+// asset a dependency ships (the Outfit brand fonts, expo-router's icons — 45 files) under
+// `dist/client/assets/node_modules/.pnpm/…`, a DOT-DIRECTORY. express 4 (serve-static 1) ignored
+// only a path whose LAST segment is a dotfile and served files inside dot-directories; express 5
+// (serve-static 2) ignores both, which would 404 the fonts. So: a request whose last decoded
+// segment is a dotfile goes to the default (`ignore`) instance, everything else to an `allow`
+// one. Decoded, because `/%2Eenv` must count as a dotfile — send decodes before it checks.
+// Pinned by tests/unit/bff-server-adapter.test.ts.
+const STATIC_OPTIONS = {
+  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
+  immutable: process.env.NODE_ENV === 'production',
+};
+const serveStatic = express.static(DIST_CLIENT, STATIC_OPTIONS);
+const serveStaticInDotDirs = express.static(DIST_CLIENT, { ...STATIC_OPTIONS, dotfiles: 'allow' });
+
+function lastSegmentIsDotfile(pathname) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return true; // undecodable: the strict instance, which rejects it exactly as express 4 did
+  }
+  const last = decoded.split('/').filter(Boolean).pop() ?? '';
+  return last.startsWith('.');
+}
+
+app.use((req, res, next) =>
+  (lastSegmentIsDotfile(req.path) ? serveStatic : serveStaticInDotDirs)(req, res, next)
 );
 
 // Expo Router handles all remaining requests:
 //   /bff-api/*  → API route handlers (BFF)
 //   /*          → SSR pages (web frontend)
-app.all('*', createRequestHandler({ build: DIST_SERVER, mode: process.env.NODE_ENV ?? 'production' }));
+//
+// Feature 081 (US6): express 5 routes through path-to-regexp v8, which rejects a bare `'*'` at
+// boot (`Missing parameter name at index 1`) — the wildcard must be NAMED, and the braces make it
+// optional so `/` itself still matches. `app.all` (not `app.use`) is deliberate: a route decodes
+// its params, so a malformed percent-encoded path is still answered 400 here and never reaches
+// the Expo handler (pinned by tests/unit/bff-server-adapter.test.ts).
+app.all('/{*splat}', createRequestHandler({ build: DIST_SERVER, mode: process.env.NODE_ENV ?? 'production' }));
 
 // ─── Feature 073 (T059): the scheduling clock ────────────────────────────────
 //

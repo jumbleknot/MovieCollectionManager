@@ -351,17 +351,17 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 ## Phase 8: US6 — express 5 + @types/express 5 + ioredis 6 (P2) — PR 6
 
-- [ ] T043 [US6] M6 inventory: every `express` import/route/middleware and every `ioredis` call site under
+- [x] T043 [US6] M6 inventory: every `express` import/route/middleware and every `ioredis` call site under
   `frontend/mcm-app/src/` (`session-manager.ts`, `cache-service.ts`, …), mapped to the two majors' breaking
   changes. **Done when**: inventory in research.md.
-- [ ] T044 [US6] Coverage gap check: for each inventoried behaviour with no test (route path matching,
+- [x] T044 [US6] Coverage gap check: for each inventoried behaviour with no test (route path matching,
   malformed-input rejection, eviction order), write the test against CURRENT code and prove it is
   sensitive by **mutation RED** (named source edit → fails → revert).
   **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern='<new test file>'` with the mutation applied
   **Expected RED**: the named assertion fails.
-- [ ] T045 [US6] **Verify RED (upgrade)**: bump `express` ^5, `@types/express` ^5, `ioredis` ^6;
+- [x] T045 [US6] **Verify RED (upgrade)**: bump `express` ^5, `@types/express` ^5, `ioredis` ^6;
   `pnpm nx typecheck mcm-app && pnpm nx test mcm-app` — record failures.
-- [ ] T046 [US6] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; then
+- [x] T046 [US6] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; then
   `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app` — 0 failures, 0 skipped.
 - [ ] T047 [US6] Web E2E incl. session-timeout and concurrent-session specs; `pnpm nx
   e2e:mobile:session-timeout mcm-app`; `pnpm nx dast infrastructure-as-code`. **Done when**: PR 6 merged
