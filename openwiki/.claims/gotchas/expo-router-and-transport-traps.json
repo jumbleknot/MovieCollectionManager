@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d0bd2104a42ddc05302132ae69b59f3bd62857b9ceb7edc80e7442cc8b04327a",
+  "claims": [
+    {
+      "id": "claim_af5a62adb0954433918f6521d9725610",
+      "statement": "frontend/mcm-app/server.js is the BFF's production entrypoint: a CommonJS Express adapter that requires @expo/server/adapter/express, hands the exported dist/server bundle to createRequestHandler, and serves dist/client as static assets; because it runs outside the Metro bundle it cannot require anything from src/, which is why scheduled work reaches the bundle through a loopback HTTP call instead of a function call.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L156-L167",
+          "version": "repo-lines-v1:sha256:b6070338f8608d8e3f8ae3f38710b92e9457de4393f9202dc0cda92662bec848:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OTA4ZTA4OWZjZWQxMmE4NjEyM2YxYmNlZDEyYmM1MjY5NTg3ZjFmOTUxOTFlZGMyYzdjYzZiY2EzOTk0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNTFmZDZhM2MwODYzODhmOWVmYjY0YzlhYTI0ZWU1ODc0MDViNDZiZGM3MDZjM2Q0ZDY2ZDdiYmUzYTEzZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOWJhYWI5ZWNmZjZjNGU0MzVmNjQ4ZWU2YTNmOTZkZGQ5Y2FmYWFjNmRmN2IxZDY0NTQ2NDY3NGNmYzhhZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmMWIyODAxN2E5YTVhNmMwOTUwODJmNmZiYTQ2NmU3YTczZGVjMTM2NTRiNzYyNzQzOWJjYWQzNTAxNWIyYTkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L1-L30",
+          "version": "repo-lines-v1:sha256:6ca21bf6a540fabc4e00c97644a8d4f5cbf1b91cb92e4eea586e8995a1757501:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NjY1NzkxMjM3ODhiNjgyNTI1NzhmYWZiMDgzYzFhYmQ0OWFlMWI0Y2Y2YWFhN2YzNzhmMWEwYTQ1NjE0NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f81c986389f04043986929e9c049874d",
+      "statement": "server.js pre-seeds `globalThis.__ExpoImportMetaRegistry = { url: pathToFileURL(__filename).href }` before createRequestHandler loads the bundle, because Metro rewrites `import.meta.url` in bundled dependencies to `globalThis.__ExpoImportMetaRegistry.url` and the exported @expo/server runtime — unlike the Metro dev server — never populates that registry; the `if (!globalThis.__ExpoImportMetaRegistry)` guard is intentional so a future @expo/server version that populates it makes the line a no-op rather than being clobbered.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L13-L24",
+          "version": "repo-lines-v1:sha256:cab8e34974fbd978268f9362c58b40fe704fee3d1fd4c0c962d8e0d8943409c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMDlhZWUyMjQ4ZDBjZjJhZWYzZjM3MzBiNjNkNmI3YzBiMjFiNTVlYWE0MDJlOTQ4OTUyZDM3ZDI5MWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhYWM3OTE2MjViNGE3Mzc4MzNkMDJlNjUxNWZlNzQ5NGIxNGJhZjEzZmEwYWY0ZTQxZjZmZDU4NjY0YmUwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOWVkODhiNWMyMmEzZGE5NWJjNTlmZWFjZDhhOTY5Y2FiMmRkNzdjNmZmMjhlYWFjYjM3OTNiMzNhN2E4NDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_994404f4df094fb5b79cd494685770eb",
+      "statement": "Without the registry seeding, any bundled dependency calling `createRequire(import.meta.url)` — @copilotkit/runtime's lazily-required adapter on the /bff-api/agent/run path — throws `TypeError: Cannot read properties of undefined (reading 'url')` asynchronously inside the streaming respond pipeline, so the route's own try/catch never sees it: the client hangs with no 500 and no log line, in the container only.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L13-L24",
+          "version": "repo-lines-v1:sha256:cab8e34974fbd978268f9362c58b40fe704fee3d1fd4c0c962d8e0d8943409c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMDlhZWUyMjQ4ZDBjZjJhZWYzZjM3MzBiNjNkNmI3YzBiMjFiNTVlYWE0MDJlOTQ4OTUyZDM3ZDI5MWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhYWM3OTE2MjViNGE3Mzc4MzNkMDJlNjUxNWZlNzQ5NGIxNGJhZjEzZmEwYWY0ZTQxZjZmZDU4NjY0YmUwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOWVkODhiNWMyMmEzZGE5NWJjNTlmZWFjZDhhOTY5Y2FiMmRkNzdjNmZmMjhlYWFjYjM3OTNiMzNhN2E4NDgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L255-L271",
+          "version": "repo-lines-v1:sha256:cfeaba2376c740975ebe821eeb8a1aefcd8e9dec5da2031be7f0baac9c7504c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYWE4YmY2OGVhMDI2NjJhYjUxNmE2Yzk5MWM3Zjg0ODJkNjFjODlkNDNiZTgxYjA5MzExNjEzMzMyMDMzYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YWNkNjZiMTlkOGY5YTg0NjY3M2RjYzNmYjlmNzIyNTRjYzhkNzIxZmRmNDkzYWFiZmJhZmU2YzJkNWM5ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MTkwZTI2Zjk2OThjZGVjZTU2MTRhZmU2MjllMTRjMGM3YmEyOTllNjM2ZmRkNmIyMjBlZWU3OTNlZTk5MDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e30fceff011f438eab2f6a8dd478a5e6",
+      "statement": "The same lazy require is a build-time consequence: because the specifier is a bare string passed to createRequire(globalThis.__ExpoImportMetaRegistry.url), a static closure walk cannot see it, so the BFF image build re-derives the dynamic specifiers from the freshly exported dist/server and fails when one is not accounted for in the prune script's known-specifier map.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/Dockerfile#L54-L67",
+          "version": "repo-lines-v1:sha256:4da8067df0735ad06d4d7f926c0d7b401bd5731e100f03499eab5e5a1bb0e5d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNDNiZTRjMWZiZDBmNGI4YzdjZmY1YzE0ZDQ3MzNjZjUwMTc5MTFiOWZiZDdmOTNmNDZkZmI1NzNlMjg4Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTQzNTJkMjM1ZWMxYjc1MmQzMTgwOWFjMjdmYWM4MTc4ZGFkOTkwNjg4NzY0MjAyMzFhNDNiZjI4YTg2NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2MyYTllYWMxMzY1MTU3ZGM4NDQwMjA2ZDNjNzRjZDdhZWEzYWViZGU1NjhlYWU4M2I0YjYxZDA4MGJmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMjUwMTYyYTI3MzExYWQ4YmU1OGIwYTEwNWIzZDdjYzY3MDI1NWE3ODYzZWQ0ZDNkODI2YWJhOWZhODZhMjEifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L287-L316",
+          "version": "repo-lines-v1:sha256:067902bbf43714c178be4b3edfd362f620d9db07030d83a10e14827dcbb277e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMGQ3YTBmNGNkNWViMjU4YWI5N2Q5ZjlkMmZjMWI2NTFlYzgyZjcyOWJjYzBkNWQ4MGY4NTgxODBlYWI5NDUifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L52-L89",
+          "version": "repo-lines-v1:sha256:69767b6904f019c07f0e301ba63696c3250257844428433f24f7bf80aa9727f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MWNhNmQ1NzJmNjMyMTA4YmYwNTA2NDIxNzQ1ZmJhZmMxZWMwMjRiNTk0YzdmMzM3NzRiNzE3NTgwYjYwMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YmVlNGFmODE1ZjVmY2ZjNjQzZjMyOWEyYjg5MDQ3MjZiZTZmZWMyMjJkMTgzZjE5NTMxMmMwOTA1MzVkYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZWM3MTYwNDQwN2I4NjgyNzRhMjExYmNkMjA4YjBhNjYyOWMwNWJhNDQ5OGI0ODg5OTljYTRiNjc0YTZiNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0439f85385e34bbc8df8db6ab4f935b6",
+      "statement": "Under express 5 (path-to-regexp v8) the Expo catch-all must be the named, braced route `'/{*splat}'`: a bare `'*'` is rejected at BOOT with `Missing parameter name at index 1: *` while routes are being registered, so the process never reaches app.listen, and the braces make the wildcard optional so `/` itself still matches.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L105-L114",
+          "version": "repo-lines-v1:sha256:9876bc4c4bb70d15efe1f7e7c7e6a86737e00292422c2a74d167ef63b8d908c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNTk4MjJhYTA2N2VlNmU5YmJhYjczN2M4Yzk0ZDJkZTk4OWFiMDlmM2E5NjlkOGI5NTlmMjU1NDgyMTk3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMTcyNjBhYTJlMDJjODY1NTk4NjY5OTVmM2NlZDM2NjVkYWExYmU2NmQ2N2U1MDIxYzlkOGI2ZTM2MTkyYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZWY0NDI3MjFlZjMxYmY5ZmNmNWUzODcwNjQ5NjYzYjRjZThkYTEwMmY3MGE3YmQ4ZTI0YjNlYWVjNjMzNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNzQwMjU5YmE5NzdkODQ3ZjBlMDczMGIzZDFjMmQxMTlmMzVkMGU2ZjVkNmQ5MDRiY2E0MjFjMWI2ZDgyZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbd34362dee74a0981616071755ff549",
+      "statement": "The catch-all uses `app.all` rather than `app.use` deliberately: a route decodes its params, so a malformed percent-encoded path such as `/bff-api/%E0%A4%A` is answered 400 by express before the Expo handler sees it, and the single registration forwards every method and the raw query string (bracket syntax included) for both the /bff-api API surface and the SSR pages.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L105-L114",
+          "version": "repo-lines-v1:sha256:9876bc4c4bb70d15efe1f7e7c7e6a86737e00292422c2a74d167ef63b8d908c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNTk4MjJhYTA2N2VlNmU5YmJhYjczN2M4Yzk0ZDJkZTk4OWFiMDlmM2E5NjlkOGI5NTlmMjU1NDgyMTk3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMTcyNjBhYTJlMDJjODY1NTk4NjY5OTVmM2NlZDM2NjVkYWExYmU2NmQ2N2U1MDIxYzlkOGI2ZTM2MTkyYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZWY0NDI3MjFlZjMxYmY5ZmNmNWUzODcwNjQ5NjYzYjRjZThkYTEwMmY3MGE3YmQ4ZTI0YjNlYWVjNjMzNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNzQwMjU5YmE5NzdkODQ3ZjBlMDczMGIzZDFjMmQxMTlmMzVkMGU2ZjVkNmQ5MDRiY2E0MjFjMWI2ZDgyZDUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L108-L134",
+          "version": "repo-lines-v1:sha256:9e967760c69542866452a9021d9ca30b2e369da33bef41198b8a13e9c455af6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWFmZGM4ZGY0MjliYTM5ZGI2NjI5ZTljOGNiM2ExN2Q4NmE3MWM2NmFlZTU2MzkwMzhlMThiZmE3NGM3N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjA0Y2ZiOTNiYjI0YzgyOTcyYTIzNTczNDY1OGJiYTliOGYzYTE2ZDc2ZDUxNGYyNGNlYzg4ZDQzNWE4ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMzZhZGVjYzA2NDU3MGRmN2EyYzZjMjM3NzY4Y2FlOTYwNjRlZDdiNzA2Yzc5ODM5MzMzYTY3YmRhY2Y2YTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c2ca321b421451b81e340b2aa456c26",
+      "statement": "Static serving selects between two express.static instances on the last DECODED segment of the request path (a dotfile-last path goes to the default `ignore` instance, everything else to a `dotfiles: 'allow'` one), and an undecodable path falls to the strict instance — so a dotfile inside a dot-directory is not served, `/%2Eenv` counts as a dotfile because send decodes before it checks, and files inside dot-directories are served.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L73-L103",
+          "version": "repo-lines-v1:sha256:10ff292d7b43c17ad16c63a7ac28881f393c11853c03ed782271f833ab12f175:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MzFjNzZkZGI5YWJjYzk3ZTI2NTE0ODJhYzRjN2NhOGQzMzNiMWRiNGY5ZjA3Nzk3MTVjYzE1MWZlMGFkYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWYyZTJkYTU5OWNjNDAyN2RhZmMwZDg1M2RmYjdhMmJkMjFjMWQ4ZjNkOTU1NjdmMGFiOTc4YTE5YjA4ZDUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L136-L177",
+          "version": "repo-lines-v1:sha256:6e0814fa8ed4a84a161a3e74c6bc8a6a6b7e4b89da397e270d16c7cef6a5bbc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZWY4YzIwZjQwNDU5MzFjMTY4MTdhYzRiYmM0MzMwYWM4N2IwMTgzYzQ4Mjg4NzhiMTFhMWE0Y2IzY2NiNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwZGU2MTU1OGViYzg4N2FkMjNkY2I4MmUzNDhmNWZlZWU0Mzk1ZGRkYmJlNjM2NWNhZGI3MzM3ZDM0NjljNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a869a48ca6fc45ad9cb3a503d89bbf43",
+      "statement": "serve-static 2 (express 5) changed the `dotfiles` default to ignore files INSIDE a dot-directory as well, which would silently 404 the 45 dependency-shipped assets `expo export` writes under `dist/client/assets/node_modules/.pnpm/…` — the Outfit brand fonts and expo-router's icons — so express 4's rule (ignore only a path whose last segment is a dotfile) is deliberately reproduced by the two-instance selection.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L73-L88",
+          "version": "repo-lines-v1:sha256:8a654259a8bf7a083dbca982455763e00896698646e77f18c5a471f8df3c24dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MzFjNzZkZGI5YWJjYzk3ZTI2NTE0ODJhYzRjN2NhOGQzMzNiMWRiNGY5ZjA3Nzk3MTVjYzE1MWZlMGFkYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZGY0ZGQ0NTllZGU5OTRkZDRmOWE5MjRjOGZjYjJjZmQzNDM2OWJiZGM4ZWQ0N2Q4Y2U1YjIyODgyNjFlYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwYmNjZWU3ZGFkN2RjMTQ1NjRmMWFkMWMxNjQ1ODZhYjk3OTllMmM4NDMxMjI0ZjI2YWE5NTJmNjhiODg2OWQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L151-L167",
+          "version": "repo-lines-v1:sha256:99f8265363cd47a521be1f0f230444bda56a84f188c28ebc1ddb155799b9395e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYjNhY2E4YTg3NWZiYTkyNjM0ODhlOTA5MzBmYWYzZmZiYzlmY2NkZGEzM2VlYzE3NzY3MmRjZTFjNzM3MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4YzUxZDI2YmQwNDQ4ODBkZjlkNWU1MmRlOGVmMGYyMTI3NmEzMGRkODA1MTYxMjZlYjZjMjJiNzdkOTE0NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNTJkYmFkNmNkMTFmZjA1MzQ0NTY3ZTM4ZjE0ODRmMGFmNmRkMmQ2MTM0ZmU3M2Q0NTMzNjhjYjliY2E4ZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e872d3ca747f4a23959b4de1df13a95d",
+      "statement": "tests/unit/bff-server-adapter.test.ts is the pin for the express layer: it copies the real server.js and web-security-headers.js into a temp directory beside a fixture dist/client and boots it in a child process with only @expo/server/adapter/express replaced by a `node -r` preload that echoes what express delivered, with express resolved from the package's own node_modules via NODE_PATH — the only test that exercises server.js, since the unit tier imports TS modules and the integration tier calls route handlers directly.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L1-L106",
+          "version": "repo-lines-v1:sha256:401ae1bee2a49cf7c38510ed6026c8d2ffe4d8d0796e7e8ae9c944648e53cf59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiY2RhZGMwZTFmODNiNGRiMjIzZmM2MTYwMTVkOGM3YjYwYzJjY2QyZGI2OGJmMWI1OGE2YmM1YTJjMDExZWI4In0"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs#L1-L29",
+          "version": "repo-lines-v1:sha256:54a05fd6613e9a9e717b827ccbe2a710433903a7ce7b62fdec9b63c2282097b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cdf7a1627d9a40b1ad908ab330622249",
+      "statement": "No other test would catch the font-serving regression: tests/e2e/web/font-fallback.spec.ts deliberately aborts every web-font request and asserts the app still renders on the system fallback, so it passes whether or not the real fonts are servable from dist/client.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/font-fallback.spec.ts#L1-L50",
+          "version": "repo-lines-v1:sha256:772fb92affe5ad037a8da6a9e45d6b8f22f6caf20c6146ba4e8a5f426398639a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b1f52abc0894a3d872df9887ccfc509",
+      "statement": "CopilotKit's React Native runtime issues its /bff-api/agent/run request through its own XMLHttpRequest-based streaming-fetch polyfill, which never passes through the axios token-refresh interceptor, so an expired short-lived `mcm_access_token` cookie 401s the run with no refresh attempted; the cookie rides along only because React Native's XMLHttpRequest defaults `withCredentials` to true — the polyfill does not set init.credentials, so a future RN or CopilotKit upgrade that changes that default breaks cookie delivery silently, with the Android E2E harness as the intended regression net.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:5e1455aeef81e57035b60e915203c7f9fda2df721b60c430eb157600a8f5b34e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxOTkxMDVkZmYwOTY4YzY1YTM3MzM2MWQ2ZDg0YjExNmI0MjhhMjZjODc0NWMwZmY0YmMwYzU3NDdlOWU0OTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/token-refresh.ts#L1-L16",
+          "version": "repo-lines-v1:sha256:783b8d47bfb8b3488f90b59a3e0ab569448d18c54b492c620379891df0e6c47e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYmZiZWJkZThjYThiNmQ0NWRjOTU3YmYxNDI3ZmEzNjA0MDJiOTg1ZWM2OTlkOTY2MmZjM2Q3Mzg3N2JlNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4273a20a004c429288eac820fb80747f",
+      "statement": "src/utils/agent-fetch-refresh.ts wraps `globalThis.fetch` once (idempotently, no-op where fetch is unavailable) so that a 401 on the agent run route triggers silentRefresh() followed by a single retry with the fresh cookie; the wrapper is installed by the assistant polyfill loader — the first import in app/_layout.tsx — before CopilotKit issues any run, and CopilotKit resolves fetch at call time.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/_layout.tsx#L6-L9",
+          "version": "repo-lines-v1:sha256:332d56df92902cdfbb2e97b8f98ddc802f68e04e452551c80e155dc14b8205ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUyMjEyYjg5N2VhYjliMTEyMmE5YzU1YTE1MjA1NDY3MTUzNjAxMjQ3YTdmODljNzNmODQ3NzVkNjE1OTY4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEzZjMyMjM4MDM5YzQ4OTBmOTc4ZTZlMWVmZDU5NjkwYmE3OTgxOGJlZDZhOGUyN2M3OTQwMjY1YWQ4ZGU4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDY2ZmNjNzc4OWNlODNhMTM2ZDhhNjRiZDlhNzU3ZjA1ODBjMDY5YWUyMzEzODE3YzcwN2NiZDE2ZmY5NzhhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjM0YTgxZjViZTI4OGM2NDNhYWM3NmM0ODBmZmQ2NDFjYTE4NDZmNDQzYTBjNTBmNmIzMDhkZWI5NGZhNGQ1OSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/assistant-polyfills.ts#L18-L22",
+          "version": "repo-lines-v1:sha256:e2a4396bc75a9839223407818e71389a442fb0d55ba69e234bd3f08081594c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDZmMDA3Y2YzYTkyNjk5MjhjMmFiM2MzYTk3YTUxZWQzZjNjNDMxNmE1NzU4YWRjZGY2ZTNiM2QyMGE0ZTFmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI0ZTEyZTQyNjRiNmNiNThmYTVjZDAyYzg1YjhhMWIwYmQ3NGQ3YWJhNzYzMjYxNWFmMGEwMDZkOWU0Y2RiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5MTViZDBiMzE0YjM4MGVkMjIzNDNkMTQxZjI4NmEyNjgyZmMxNjA2MmZlOWJkNmZlMjZiNjk2MzM2YjhhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L90-L107",
+          "version": "repo-lines-v1:sha256:b60c758451c7a0749ec01afd48408cbf666b396013d195ce0e18bc8c3a5c47c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZGJjMWM2NTU2MWU4ZGZjMDM1ZGNlZTYzMGNjMWI2MTdlMWVkNGUwMzE3N2UzMDZhMWE0ZTg0NDNmMDAyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_00cd02e0628e4a34ac75a7fe99bc2bd8",
+      "statement": "A second, distinct recovery in the same wrapper handles a THROWN transport error on the agent route only: it waits RUN_RETRY_DELAY_MS (250 ms) for a reset tunnel to re-establish and retries exactly once, which is safe because a dropped connection aborts the upstream gateway turn via @expo/server's AbortController, making the cut turn idempotent-on-failure; non-agent throws propagate unchanged and a genuine 4xx returns a Response so it is never retried.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L38-L88",
+          "version": "repo-lines-v1:sha256:b45e0d873fad5ba64a377c51eff88bc94ab64098f3715357b681e94b1de1d232:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDA5ZTM5MDBiMGIxNTA2OTk1ZmU5YzVhMjA3OGMzOGFmZGQ5MTcwMzA3ZWVlMDUxNTk1YWJkY2U2YjJiNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YTgyZmU5MWE3NWZmYjRkNGVmN2IyOTkwZjQ3MWEzN2E3NDgzMGU0M2FmYmQ2MTAxZDYxYjRjYzE5YTI2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts#L83-L138",
+          "version": "repo-lines-v1:sha256:d8bd222177561c249ab258df5e24c2633d6562f655999ef8ae2cf0ea08c79bb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1bbbcd0202044baaf2881096d81c857",
+      "statement": "Neither recovery loops: a still-401 response after a successful refresh is returned as-is, a failed refresh returns the original 401 with no retry, and a second consecutive throw is propagated — so the 401 path and the transport-drop path are each capped at one retry, and createRefreshingFetch is a pure factory taking an injected baseFetch + refresh so both paths are unit-tested without any global.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L51-L88",
+          "version": "repo-lines-v1:sha256:4d3e662a3f57dfcadc9a25f88cf95f6d164482af3664ca2e146a0b0b4f84b816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkOTRhYWMwYzVjNzFlMjcyNGI4NDVkNDAyNTgwOTFiYzg4YTY1YjljMWE5NGY1OTFlNTFjMzdkOTI5NTAyNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts#L16-L81",
+          "version": "repo-lines-v1:sha256:24356cd9c8b3b6bb608a02c4919ca9cb3095eb53e1399f19da35751850b40448:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMWQyZTEwMWM1OGQ5Njg0ZjAxYjljZTExYzU1MzkwNGI3Mjc1MWQzMTQ4NmEyNzc0YmE2M2JhMjM1NWFjNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljYmNjZTdmN2UyM2UxZWY2ZTdjZTg1OTM2MTRhNzE2YzVlNDczZTZlYmNlMWE1MmM1YTY0ZmMxMzhhNTRkODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNDM2Mzc3NzRiNzdkMWU3NDQ0M2FkYWYzNmZiMDZkNjI3NDA3ODU5ZGEwNzZkZGZmMDEzMzM3NThjZjRiM2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f80c85bc54947e884df44caf53e4018",
+      "statement": "assistant-polyfills.native.ts is ordered so the refresh wrapper is installed after the CopilotKit crypto and streaming polyfills and before any CopilotKit run — the crypto polyfill, then @copilotkit/react-native/polyfills, then installAgentFetchRefresh() — and its `require` calls are deliberately inline rather than hoisted imports so the LogBox ignore for the crypto polyfill's import-time warning is registered first; the order must not be changed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/_layout.tsx#L35-L47",
+          "version": "repo-lines-v1:sha256:f8567b1fe34cec5ad98c2c3ebad8d6409a6ffd221645763b5b368585bb78a001:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyYWZmMDg3ZjE4MDU2YmM4MThjNjUwOWQ0OGIwY2I1YmNmOGVjNjZjNzJkNzA3YzRiOTYwNTE0YmVmMjljZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZjQ1NzQ3MGM3YzFkZjU1YWNhNWFmNzc0Y2RhM2M1ZDEzMzZhN2FiYmJjNWY4NGEzNjBjYzZiYTE0OTRkYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxZjQyZmRlYmQ3NjJlNGQ3MzU0ZjNjYWYxNWNmOGVhNjAwMmM2ZjBhNDA1NDY3MTBhMmU2Yzc5OTQ5YWE5YzgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/assistant-polyfills.native.ts#L1-L35",
+          "version": "repo-lines-v1:sha256:2f4db08003d84d5a590cb0e5e50ed4979fdcbefb09028bbca905085ed8878a97:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYzZmOGZjMTMyMDA0Y2M0ZDYxZGM3MjJkNTM1NjRlNjViNmQyOTEwODI5MDZhYWQ4NDc2NjBmYjA0YmRhYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69498a208ed54f6f92ad5dec6d60c2cf",
+      "statement": "The web and native assistant-polyfill loaders are deliberately split at the platform boundary for bundle size: the unsuffixed assistant-polyfills.ts is the web variant and installs ONLY the refresh wrapper (the crypto/streaming globals are native on web), while assistant-polyfills.native.ts loads the polyfill libraries — whose static requires otherwise put text-encoding (535 KB) and web-streams-polyfill (61 KB) in the entry chunk for every web user even though they can never execute there.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/assistant-polyfills.native.ts#L1-L23",
+          "version": "repo-lines-v1:sha256:e0fe3c6713180a78ef03e8417c69f52e16fc8fdd5bb2c1cc3b8b64955d8e2161:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYzZmOGZjMTMyMDA0Y2M0ZDYxZGM3MjJkNTM1NjRlNjViNmQyOTEwODI5MDZhYWQ4NDc2NjBmYjA0YmRhYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxZDhmNzBiZjBlNjYxNjg5N2QyMTVjN2JkZmEyNzQ0ZWI0MWUzYTIwMDhhZWY5ODhkYTIzNmNhOWI2MzM5NjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2MmZjYjBkNWJhY2Q2NTU2MDhiOTUyMjMzZjlmNTYwNGZlODNlZWNkMTFiN2Y5NzQxZjIzZjI1MzhlZDE4YmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/assistant-polyfills.ts#L1-L22",
+          "version": "repo-lines-v1:sha256:c35b90d085747d27b1d44771802642dc3c9e1fe0ff531bf4e954cee602629d48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYWE3OGFlYzkyYjZkZDA5Yjk4ZTkwZDFhZWRkNmQyN2JjYTgyNWI3Yzg5NmNkNGRhMTkyNWMzMzJkYzFkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e886d163b4e34de78742c0773b4ababa",
+      "statement": "Verification of the refresh-retry chain is split by tier: the client-side orchestration over a real mid-session expiry rests on the Android harness, while the server half is proven by the web E2E tests/e2e/web/agent-session-refresh.spec.ts, which drops only the access cookie, observes the `no_token` 401 the agent route sees, and shows POST /bff-api/auth/refresh rotating the cookie so the retry succeeds.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L12-L20",
+          "version": "repo-lines-v1:sha256:ac0ba996ae29a11c3c9d562718788cf50a4dfd7cb007570a6f0c6614a007a803:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg3N2UyMDY4OGFhYTE2ZGY2NzYxMjc1MTE5ZTM3YTIyYzFlMzJlOWZlNGRiODBjMTk5ZTlhMzRiNDAzNzRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlNDkyYTc0NDQ1ZWYxOTQ5YWNjNTZlMmQ2YmY4NzIxMzBiNWI0NzQ4YzI5NTgwZjE0YjdkODRkMjA0MWZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2QzMTZmNzQ1MWE5MTMyYjllYzBjOTUyNjMxYWE3NTI2NzY1OTA0NzQwNDg3Yzk5YTQ1MTc1ZDk2NmZkOWQzMyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L1-L77",
+          "version": "repo-lines-v1:sha256:cde931256e1141520e8ce25c152e74989f6f1ef068c390d5295f0d79e4dee2f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-19T12:20:46.129Z"
+  }
+}

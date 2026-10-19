@@ -1,9 +1,10 @@
 ---
 type: Gotcha
 title: Expo Router server export and agent-transport traps
-description: Two related but distinct runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
+description: Three related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving changes in server.js, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
 resource: frontend/mcm-app/server.js
-tags: [expo-router, react-native, copilotkit, transport, frontend]
+tags: [expo-router, react-native, copilotkit, express, transport, frontend]
+timestamp: 2026-10-19T12:00:00Z
 sources:
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
@@ -34,14 +35,24 @@ sources:
   - id: openwiki-source-471820815aded91734143333
     resource: repo://specs/013-post-agent-enhancements/diagnosis-mobile-agent-no-token.md
 generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-19T12:20:46.129Z
 ---
 
 # Expo Router server export and agent-transport traps
 
-Two separate runtime traps live at the boundary between [the Expo/React Native
-app](../projects/expo-app.md)'s build tooling and its agent transport. Both were discovered
-the hard way (a crash and a silent auth failure, respectively) and both have narrow, load-bearing
-fixes that look removable if you don't know why they're there.
+`frontend/mcm-app/server.js` is the BFF's production entrypoint and the seam this page is about: a
+small CommonJS Express adapter that `require`s `@expo/server/adapter/express`, hands the exported
+`dist/server` bundle to `createRequestHandler`, and serves `dist/client` as static assets. It runs
+*outside* the Metro bundle, so it cannot import anything from `src/` — every trap below follows from
+that boundary.
+
+Three of them live here, discovered the hard way (a hang, a silent 404 regression, and a silent auth
+failure) and each with a narrow, load-bearing fix that looks removable if you don't know why it is
+there: the exported bundle's missing `import.meta.url` registry, the express 5 behaviours that
+changed under the hosting layer, and the CopilotKit React Native streaming-fetch path that bypasses
+the app's token-refresh interceptor.
 
 ## `import.meta.url` crashes the exported server bundle
 
@@ -78,6 +89,48 @@ shared registry object for every module, so pointing it at the server module its
   `@expo/server` version populates the registry itself, this becomes a harmless no-op rather than
   clobbering the real value.
 
+## express 5 hosting traps in the same `server.js`
+
+The express 4 → 5 major bump (path-to-regexp v8, serve-static 2, router 2) changed exactly the
+behaviours `server.js` depends on, and none of the three is visible from the code alone — each
+reads like a stylistic choice rather than a compatibility fix.
+
+- **The catch-all must be the named, braced `'/{*splat}'`, not `'*'`.** path-to-regexp v8 rejects a
+  bare wildcard at BOOT: `app.all('*', …)` throws `Missing parameter name at index 1: *` while the
+  routes are being registered, so the process never reaches `app.listen` and the container will not
+  start. The wildcard is therefore NAMED, and the braces make it optional so `/` itself still
+  matches the Expo handler.
+
+- **`app.all` rather than `app.use` is load-bearing, and so is the route form.** A route decodes its
+  params, so a malformed percent-encoded path (`/bff-api/%E0%A4%A`) is answered `400` by express
+  before the Expo handler ever sees it; a `app.use` mount would forward the raw path through. The
+  same registration forwards every method (GET/POST/PUT/DELETE/PATCH) and the raw query string —
+  bracket syntax included — which is what the `/bff-api/*` API surface and the SSR pages both need
+  from one catch-all.
+
+- **serve-static 2 changed the `dotfiles` default, and the fix is two `express.static` instances.**
+  `expo export` writes every asset a dependency ships — the Outfit brand fonts, expo-router's icons,
+  45 files — under `dist/client/assets/node_modules/.pnpm/…`, which is a DOT-DIRECTORY. express 4
+  (serve-static 1) ignored only a path whose LAST segment is a dotfile and served files inside
+  dot-directories; express 5 (serve-static 2) ignores both, which silently 404s all 45 assets. So
+  `server.js` selects between a default (`ignore`) instance and an `allow` one on the last DECODED
+  segment of the request path — decoded, because `/%2Eenv` must count as a dotfile (send decodes
+  before it checks), and an undecodable path falls to the strict instance, which rejects it exactly
+  as express 4 did. The regression is silent in the worst way: the page still renders, just in the
+  fallback font.
+
+- **`tests/unit/bff-server-adapter.test.ts` is the pin for all three, and the only test that
+  exercises this layer at all.** It copies the real `server.js` and `web-security-headers.js` into a
+  temp directory next to a fixture `dist/client`, then boots it in a child process with only
+  `@expo/server/adapter/express` replaced by a `node -r` preload
+  (`tests/unit/fixtures/expo-adapter-stub.cjs`) that echoes what express delivered to the handler.
+  express itself resolves from the package's own `node_modules` via `NODE_PATH`, so the version
+  under test is the declared one. The unit tier imports TS modules and the integration tier calls
+  route handlers, and both bypass `server.js` — which is why the font case needs this test. No other
+  test would catch it either: `tests/e2e/web/font-fallback.spec.ts` aborts every font request on
+  purpose and asserts the app still renders on the system fallback, so it passes whether or not the
+  real fonts are servable.
+
 ## CopilotKit's RN streaming-fetch bypasses the axios refresh interceptor
 
 The agent chat's client-side network layer normally goes through an axios instance with a
@@ -94,6 +147,21 @@ assistant polyfill loader, the very first import in `app/_layout.tsx` — on nat
 `assistant-polyfills.ts`, which installs only the wrapper — and before CopilotKit issues any run) to
 detect a 401 on the agent run route specifically, call `silentRefresh()`, and retry the run once. The
 401 retry is immediate; the 250 ms settle delay applies only to a *thrown* transport error.
+
+```mermaid
+flowchart TD
+    Call["wrapped fetch(input, init)"] --> IsAgent{"URL contains /bff-api/agent/run?"}
+    IsAgent -->|no| Plain["baseFetch once, errors propagate unchanged"]
+    IsAgent -->|yes| Attempt["baseFetch"]
+    Attempt -->|throws| Drop["wait RUN_RETRY_DELAY_MS, retry exactly once"]
+    Attempt -->|401| Refresh["silentRefresh()"]
+    Attempt -->|any other status| Pass["return the response unchanged"]
+    Refresh -->|refreshed| Retry["retry exactly once"]
+    Refresh -->|not refreshed| Original["return the original 401"]
+```
+
+*The two bounded recoveries in `createRefreshingFetch` — a status-code path and a thrown-transport
+path — both scoped to the agent route and both capped at one retry.*
 
 - **The cookie is carried by RN's *default* behavior, not an explicit flag.** CopilotKit's polyfill
   itself does not set `init.credentials`; if a future React Native or CopilotKit upgrade changes
@@ -142,9 +210,12 @@ detect a 401 on the agent run route specifically, call `silentRefresh()`, and re
   [Expo/React Native app](../projects/expo-app.md) for the surrounding app shape.
 
 See [Expo/React Native app](../projects/expo-app.md) for the broader client-side app shape
-this hosting/transport layer sits in, and [BFF](../projects/bff.md) for the server-side
-`server.js` entrypoint these fixes live in. This page is about the *build and transport* surfaces;
+this hosting/transport layer sits in, [BFF](../projects/bff.md) for the server-side surface
+`server.js` serves, and [AI Agents layer architecture](../architecture/agent-layer.md) for the
+call chain the agent transport feeds. This page is about the *build and transport* surfaces;
 for the router-shape gotcha (`collections/[collectionId]/` as a directory route rather than a file
 route) see [Directory-based collection routing in Expo Router](expo-router-collection-routing.md),
 and for the auth chain the cookie on this transport ultimately satisfies see
-[Authentication and authorization chain](../invariants/auth-chain.md).
+[Authentication and authorization chain](../invariants/auth-chain.md). The harnesses the
+verification split above rests on are described in the
+[E2E testing runbook](../../docs/runbooks/e2e-testing.md).

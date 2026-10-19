@@ -44,7 +44,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
+    at: 2026-10-19T12:20:46.129Z
 ---
 
 # Infra-image CVE scanning
@@ -64,7 +64,12 @@ exists only for fast feedback, not as the source of truth. The Friday run is ord
 of the Renovate window on purpose (see [Renovate](./renovate.md)), and that ordering is pinned rather
 than commented: `renovate-workflow.guard.test.mjs` asserts the latest sweep cron fires **strictly
 earlier** than the earliest window cron, with at least a two-hour gap, and that both are UTC-fixed
-5-field expressions (item #487). The same test also fails if the workflow stops recording *why* its
+5-field expressions (item #487). The guard picks the window cron **structurally rather than by name**:
+it keeps only the `renovate.yml` crons that fire exactly one hour-of-week slot, so the nightly
+`0 3 * * *` — seven slots, the schedule-exempt security channel — drops out and the single-slot Friday
+window cron is what the sweep is ordered against. Adding another single-slot cron to `renovate.yml`
+therefore changes what the ordering is asserted against, and a sweep cron that lands later than it
+fails the build. The same test also fails if the workflow stops recording *why* its
 cron sits where it does — the file must still carry the `item #487` reference — because an
 unexplained time is the one a later reader tidies. The Tuesday run (item #642) means an advisory published early in the
 week is visible with three days in hand instead of surfacing at the moment the window's PRs already
@@ -410,7 +415,7 @@ what matters here is that four of its lessons are about the *shape*, not about t
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
 | `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |
