@@ -321,9 +321,10 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   (expected at SDK 58); babel → "babel-preset-expo peers @babel/runtime ^8"; typescript → "typescript-eslint
   parser peer admits 7"; async-storage → "expo bundledNativeModules lists 3.x".
   **Verify GREEN**: same command as T035, 0 failures.
-- [ ] T037 [US5] File one backlog item per hold (`node scripts/backlog.mjs`, per the `forgejo-issues`
+- [x] T037 [US5] File one backlog item per hold (`node scripts/backlog.mjs`, per the `forgejo-issues`
   skill) carrying the measured reason and re-check rule; reference "item #254" in each. **Done when**: item
-  numbers recorded in research.md and PR 5a; PR 5a merged.
+  numbers recorded in research.md and PR 5a; PR 5a merged. **Done**: items #792 (jest 30), #793 (babel 8),
+  #794 (typescript 7), #795 (async-storage 3).
 
 **PR 5b — eslint 8 → 10**
 
@@ -340,8 +341,11 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 
 - [x] T041 [US5] **Verify RED (upgrade)**: bump to ^14 (+ `test-renderer` ^1 peer) in both packages;
   `pnpm nx run-many -t test -p mcm-app design-system --skip-nx-cache` — record failures.
-- [ ] T042 [US5] Migrate API changes until GREEN. **Verify GREEN**: same command, 0 failures, coverage ≥70%.
-  **Done when**: PR 5c merged; next dashboard read (T003) shows SC-004.
+- [x] T042 [US5] Migrate API changes until GREEN. **Verify GREEN**: same command, 0 failures, coverage ≥70%.
+  **Done when**: PR 5c merged; next dashboard read (T003) shows SC-004. **Done**: PR #798 merged 2026-10-19
+  (`469d205c`), with the accepted 5-statement/5-branch coverage drop (double-submit guards unreachable under
+  RNTL 14's `disabled` handling); test-renderer held below 1.3 by PR #800. The SC-004 dashboard read is still
+  owed after the Fri 2026-10-23 Renovate window.
 
 ---
 
