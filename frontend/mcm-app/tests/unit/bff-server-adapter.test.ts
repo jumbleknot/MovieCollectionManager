@@ -25,9 +25,12 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname as dirnameOf, join, resolve } from 'node:path';
 
 const APP_ROOT = resolve(__dirname, '..', '..');
+// The shape `expo export` really writes (measured in the built mcm-bff image: 45 such files).
+const PNPM_ASSET_PATH =
+  '/assets/node_modules/.pnpm/@expo-google-fonts+outfit@0.4.3/node_modules/@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf';
 const STUB = join(__dirname, 'fixtures', 'expo-adapter-stub.cjs');
 const PORT = 31000 + Math.floor(Math.random() * 2000);
 
@@ -76,6 +79,9 @@ beforeAll(async () => {
   writeFileSync(join(dir, 'dist', 'client', 'assets', 'app.js'), 'console.log("static");');
   writeFileSync(join(dir, 'dist', 'client', '.env'), 'SECRET=never-served');
   writeFileSync(join(dir, 'dist', 'client', '.hidden', 'file.txt'), 'inside a dot-directory');
+  writeFileSync(join(dir, 'dist', 'client', '.hidden', '.secret'), 'never-served either');
+  mkdirSync(join(dir, 'dist', 'client', dirnameOf(PNPM_ASSET_PATH)), { recursive: true });
+  writeFileSync(join(dir, 'dist', 'client', PNPM_ASSET_PATH), 'font-bytes');
 
   child = spawn(process.execPath, ['-r', STUB, join(dir, 'server.js')], {
     cwd: dir,
@@ -142,15 +148,30 @@ describe('server.js — static serving from dist/client', () => {
     expect(r.headers['x-test-reached-handler']).toBe('1');
   });
 
-  // UPDATED AT ITS CAUSE by the express 5 upgrade (081 T046). Written against express 4 /
-  // serve-static 1, whose dotfiles default ignored a dotfile but SERVED a file inside a
-  // dot-directory; this asserted that and went RED on the bump. serve-static 2 ignores dot-
-  // directories too — a tightening, and harmless here: `expo export` writes no dot-directory into
-  // `dist/client` (measured on the export) and the app has no `public/`. It now pins the stricter
-  // behaviour, so a regression back to serving dot-directories fails here.
-  it('never serves a file inside a dot-directory from disk', async () => {
+  // Express 4 / serve-static 1's dotfiles default: ignore a path whose LAST segment is a dotfile,
+  // SERVE files inside a dot-directory. This went RED on the express 5 bump (serve-static 2
+  // ignores both), and it is LOAD-BEARING: `expo export` puts every dependency-shipped asset —
+  // the Outfit brand fonts, expo-router's icons — under `assets/node_modules/.pnpm/…`.
+  it('serves a file inside a dot-directory', async () => {
     const r = await send('GET', '/.hidden/file.txt');
-    expect(r.body).not.toContain('inside a dot-directory');
+    expect(r.status).toBe(200);
+    expect(r.body).toBe('inside a dot-directory');
+  });
+
+  it('serves a dependency asset from the export’s .pnpm directory with cache headers', async () => {
+    const r = await send('GET', PNPM_ASSET_PATH);
+    expect(r.status).toBe(200);
+    expect(r.body).toBe('font-bytes');
+    expect(r.headers['x-test-reached-handler']).toBeUndefined();
+    expect(r.headers['cache-control']).toBe('public, max-age=31536000, immutable');
+  });
+
+  it.each([
+    ['a dotfile inside a dot-directory', '/.hidden/.secret'],
+    ['a percent-encoded root dotfile', '/%2Eenv'],
+  ])('never serves %s from disk', async (_, path) => {
+    const r = await send('GET', path);
+    expect(r.body).not.toContain('never-served');
     expect(r.headers['x-test-reached-handler']).toBe('1');
   });
 });
