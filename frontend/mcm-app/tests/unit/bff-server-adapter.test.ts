@@ -142,12 +142,16 @@ describe('server.js — static serving from dist/client', () => {
     expect(r.headers['x-test-reached-handler']).toBe('1');
   });
 
-  // CHARACTERISATION of express 4 / serve-static 1: its dotfiles default IGNORES a dotfile but
-  // SERVES a file inside a dot-directory. `dist/client` has no dot-directory today.
-  it('serves a file inside a dot-directory', async () => {
+  // UPDATED AT ITS CAUSE by the express 5 upgrade (081 T046). Written against express 4 /
+  // serve-static 1, whose dotfiles default ignored a dotfile but SERVED a file inside a
+  // dot-directory; this asserted that and went RED on the bump. serve-static 2 ignores dot-
+  // directories too — a tightening, and harmless here: `expo export` writes no dot-directory into
+  // `dist/client` (measured on the export) and the app has no `public/`. It now pins the stricter
+  // behaviour, so a regression back to serving dot-directories fails here.
+  it('never serves a file inside a dot-directory from disk', async () => {
     const r = await send('GET', '/.hidden/file.txt');
-    expect(r.status).toBe(200);
-    expect(r.body).toBe('inside a dot-directory');
+    expect(r.body).not.toContain('inside a dot-directory');
+    expect(r.headers['x-test-reached-handler']).toBe('1');
   });
 });
 

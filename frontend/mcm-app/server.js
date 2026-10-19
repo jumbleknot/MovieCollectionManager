@@ -81,7 +81,13 @@ app.use(
 // Expo Router handles all remaining requests:
 //   /bff-api/*  → API route handlers (BFF)
 //   /*          → SSR pages (web frontend)
-app.all('*', createRequestHandler({ build: DIST_SERVER, mode: process.env.NODE_ENV ?? 'production' }));
+//
+// Feature 081 (US6): express 5 routes through path-to-regexp v8, which rejects a bare `'*'` at
+// boot (`Missing parameter name at index 1`) — the wildcard must be NAMED, and the braces make it
+// optional so `/` itself still matches. `app.all` (not `app.use`) is deliberate: a route decodes
+// its params, so a malformed percent-encoded path is still answered 400 here and never reaches
+// the Expo handler (pinned by tests/unit/bff-server-adapter.test.ts).
+app.all('/{*splat}', createRequestHandler({ build: DIST_SERVER, mode: process.env.NODE_ENV ?? 'production' }));
 
 // ─── Feature 073 (T059): the scheduling clock ────────────────────────────────
 //
