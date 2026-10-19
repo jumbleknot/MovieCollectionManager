@@ -79,71 +79,71 @@ const ALL_HIDDEN: ColumnVisibility = {
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('MovieListItem', () => {
-  it('always renders the movie title', () => {
-    const { getByTestId } = render(
+  it('always renders the movie title', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-title')).toBeTruthy();
   });
 
-  it('title cell displays the movie title text', () => {
-    const { getByTestId } = render(
+  it('title cell displays the movie title text', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-title').props.children).toBe('The Matrix');
   });
 
-  it('renders year cell when year is visible', () => {
-    const { getByTestId } = render(
+  it('renders year cell when year is visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, year: true }} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-year')).toBeTruthy();
   });
 
-  it('does not render year cell when year is hidden', () => {
-    const { queryByTestId } = render(
+  it('does not render year cell when year is hidden', async () => {
+    const { queryByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(queryByTestId('movie-list-item-year')).toBeNull();
   });
 
-  it('renders contentType cell when contentType is visible', () => {
-    const { getByTestId } = render(
+  it('renders contentType cell when contentType is visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, contentType: true }} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-contentType')).toBeTruthy();
   });
 
-  it('renders owned cell when owned is visible', () => {
-    const { getByTestId } = render(
+  it('renders owned cell when owned is visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, owned: true }} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-owned')).toBeTruthy();
   });
 
-  it('renders ripped cell when ripped is visible', () => {
-    const { getByTestId } = render(
+  it('renders ripped cell when ripped is visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, ripped: true }} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-ripped')).toBeTruthy();
   });
 
-  it('renders runtime cell when runtime is visible', () => {
-    const { getByTestId } = render(
+  it('renders runtime cell when runtime is visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, runtime: true }} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-runtime')).toBeTruthy();
   });
 
-  it('does not render runtime cell when runtime is hidden', () => {
-    const { queryByTestId } = render(
+  it('does not render runtime cell when runtime is hidden', async () => {
+    const { queryByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(queryByTestId('movie-list-item-runtime')).toBeNull();
   });
 
-  it('renders all cells when all columns are visible', () => {
-    const { getByTestId } = render(
+  it('renders all cells when all columns are visible', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_VISIBLE} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-title')).toBeTruthy();
@@ -155,8 +155,8 @@ describe('MovieListItem', () => {
     expect(getByTestId('movie-list-item-runtime')).toBeTruthy();
   });
 
-  it('renders a neutral language placeholder when language is absent — 014 US1', () => {
-    const { getByTestId } = render(
+  it('renders a neutral language placeholder when language is absent — 014 US1', async () => {
+    const { getByTestId } = await render(
       <MovieListItem
         movie={{ ...MOCK_MOVIE, language: null }}
         visibleColumns={ALL_VISIBLE}
@@ -166,17 +166,17 @@ describe('MovieListItem', () => {
     expect(getByTestId('movie-list-item-language').props.children).toBe('—');
   });
 
-  it('calls onPress with movieId when row is pressed', () => {
+  it('calls onPress with movieId when row is pressed', async () => {
     const onPress = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={onPress} />,
     );
     getByTestId('movie-list-item-row').props.onClick?.();
     // For React Native: use fireEvent
   });
 
-  it('row has testID movie-list-item-row', () => {
-    const { getByTestId } = render(
+  it('row has testID movie-list-item-row', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-row')).toBeTruthy();
@@ -190,8 +190,8 @@ describe('MovieListItem', () => {
   // (RNW expands it to `flex: 1 1 0%`); Tamagui's `flex` prop only sets flex-grow and leaves
   // `flex-basis: auto`, which leaked content widths into the layout and drifted the columns
   // out of alignment — so both are now set explicitly (header cells match in movie-list.tsx).
-  it('flex cells are proportional (flexBasis:0 + minWidth:0) so columns align with the header', () => {
-    const { getByTestId } = render(
+  it('flex cells are proportional (flexBasis:0 + minWidth:0) so columns align with the header', async () => {
+    const { getByTestId } = await render(
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_VISIBLE} onPress={() => {}} />,
     );
     const cells = [

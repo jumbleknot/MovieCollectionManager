@@ -14,29 +14,29 @@ import { Platform } from 'react-native';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 
 describe('NoAutoFillInput', () => {
-  it('renders without errors', () => {
-    const { getByTestId } = render(
+  it('renders without errors', async () => {
+    const { getByTestId } = await render(
       <NoAutoFillInput testID="test-input" placeholder="Enter text" />,
     );
     expect(getByTestId('test-input')).toBeTruthy();
   });
 
-  it('forwards testID prop', () => {
-    const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+  it('forwards testID prop', async () => {
+    const { getByTestId } = await render(<NoAutoFillInput testID="my-input" />);
     expect(getByTestId('my-input')).toBeTruthy();
   });
 
-  it('forwards value and onChangeText props', () => {
+  it('forwards value and onChangeText props', async () => {
     const onChange = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <NoAutoFillInput testID="my-input" value="hello" onChangeText={onChange} />,
     );
     const input = getByTestId('my-input');
     expect(input.props.value).toBe('hello');
   });
 
-  it('forwards placeholder prop', () => {
-    const { getByTestId } = render(
+  it('forwards placeholder prop', async () => {
+    const { getByTestId } = await render(
       <NoAutoFillInput testID="my-input" placeholder="Search…" />,
     );
     const input = getByTestId('my-input');
@@ -49,25 +49,25 @@ describe('NoAutoFillInput', () => {
       Object.defineProperty(Platform, 'OS', { value: originalOS, writable: true });
     });
 
-    it('injects autoComplete=off on web', () => {
+    it('injects autoComplete=off on web', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="my-input" />);
       const input = getByTestId('my-input');
       expect(input.props.autoComplete).toBe('off');
     });
 
-    it('uses autoComplete=new-password for a secureTextEntry field on web (Chrome ignores "off" on password fields)', () => {
+    it('uses autoComplete=new-password for a secureTextEntry field on web (Chrome ignores "off" on password fields)', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
       const input = getByTestId('secret-input');
       // <input type="password"> only respects autocomplete="new-password" to block the
       // browser's built-in password manager; "off" is ignored on password fields (FR-006/NFR-Sec).
       expect(input.props.autoComplete).toBe('new-password');
     });
 
-    it('still injects the third-party password-manager ignore attrs on a secureTextEntry field', () => {
+    it('still injects the third-party password-manager ignore attrs on a secureTextEntry field', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
       const input = getByTestId('secret-input');
       expect(input.props['data-lpignore']).toBe('true');
       expect(input.props['data-1p-ignore']).toBe('');
@@ -75,49 +75,49 @@ describe('NoAutoFillInput', () => {
       expect(input.props['data-form-type']).toBe('other');
     });
 
-    it('lets the caller override the autoComplete value explicitly', () => {
+    it('lets the caller override the autoComplete value explicitly', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(
+      const { getByTestId } = await render(
         <NoAutoFillInput testID="secret-input" secureTextEntry autoComplete="one-time-code" />,
       );
       const input = getByTestId('secret-input');
       expect(input.props.autoComplete).toBe('one-time-code');
     });
 
-    it('does NOT inject autoComplete override on android', () => {
+    it('does NOT inject autoComplete override on android', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="my-input" />);
       const input = getByTestId('my-input');
       // autoComplete should not be 'off' unless we explicitly passed it
       expect(input.props.autoComplete).not.toBe('off');
     });
 
-    it('does NOT inject autoComplete override on ios', () => {
+    it('does NOT inject autoComplete override on ios', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'ios', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="my-input" />);
       const input = getByTestId('my-input');
       expect(input.props.autoComplete).not.toBe('off');
     });
 
-    it('sets HTML name attribute via webName on web to suppress Chrome name-field heuristic', () => {
+    it('sets HTML name attribute via webName on web to suppress Chrome name-field heuristic', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(
+      const { getByTestId } = await render(
         <NoAutoFillInput testID="my-input" webName="director-entry" />,
       );
       const input = getByTestId('my-input');
       expect(input.props.name).toBe('director-entry');
     });
 
-    it('does NOT set name attribute when webName is omitted', () => {
+    it('does NOT set name attribute when webName is omitted', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+      const { getByTestId } = await render(<NoAutoFillInput testID="my-input" />);
       const input = getByTestId('my-input');
       expect(input.props.name).toBeUndefined();
     });
 
-    it('does NOT set name attribute from webName on native (android)', () => {
+    it('does NOT set name attribute from webName on native (android)', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
-      const { getByTestId } = render(
+      const { getByTestId } = await render(
         <NoAutoFillInput testID="my-input" webName="director-entry" />,
       );
       const input = getByTestId('my-input');

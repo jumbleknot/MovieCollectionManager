@@ -16,11 +16,11 @@ import { render, fireEvent, waitFor } from '@/test-support/render';
 import { Platform } from 'react-native';
 import { CollectionForm } from '@/components/collection-form';
 
-function renderCreateForm(overrides = {}) {
+async function renderCreateForm(overrides = {}) {
   const onSubmit = jest.fn().mockResolvedValue(undefined);
   const onCancel = jest.fn();
 
-  const utils = render(
+  const utils = await render(
     <CollectionForm
       mode="create"
       onSubmit={onSubmit}
@@ -31,14 +31,14 @@ function renderCreateForm(overrides = {}) {
   return { ...utils, onSubmit, onCancel };
 }
 
-function renderEditForm(
+async function renderEditForm(
   initial = { name: 'Existing Collection', description: 'Some desc' },
   overrides = {}
 ) {
   const onSubmit = jest.fn().mockResolvedValue(undefined);
   const onCancel = jest.fn();
 
-  const utils = render(
+  const utils = await render(
     <CollectionForm
       mode="edit"
       initialValues={initial}
@@ -51,24 +51,24 @@ function renderEditForm(
 }
 
 describe('CollectionForm — create mode', () => {
-  it('renders empty name input', () => {
-    const { getByTestId } = renderCreateForm();
+  it('renders empty name input', async () => {
+    const { getByTestId } = await renderCreateForm();
     const nameInput = getByTestId('collection-form-name-input');
     expect(nameInput.props.value ?? '').toBe('');
   });
 
-  it('renders empty description input', () => {
-    const { getByTestId } = renderCreateForm();
+  it('renders empty description input', async () => {
+    const { getByTestId } = await renderCreateForm();
     const descInput = getByTestId('collection-form-description-input');
     expect(descInput.props.value ?? '').toBe('');
   });
 
   it('calls onSubmit with name and description on valid submit', async () => {
-    const { getByTestId, onSubmit } = renderCreateForm();
+    const { getByTestId, onSubmit } = await renderCreateForm();
 
-    fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
-    fireEvent.changeText(getByTestId('collection-form-description-input'), 'Some description');
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    await fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
+    await fireEvent.changeText(getByTestId('collection-form-description-input'), 'Some description');
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
@@ -79,10 +79,10 @@ describe('CollectionForm — create mode', () => {
   });
 
   it('calls onSubmit with null description when description is empty', async () => {
-    const { getByTestId, onSubmit } = renderCreateForm();
+    const { getByTestId, onSubmit } = await renderCreateForm();
 
-    fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    await fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
@@ -93,15 +93,15 @@ describe('CollectionForm — create mode', () => {
   });
 
   it('shows validation error when name is empty on submit', async () => {
-    const { getByTestId, findByText } = renderCreateForm();
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    const { getByTestId, findByText } = await renderCreateForm();
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     expect(await findByText(/name is required/i)).toBeTruthy();
   });
 
   it('does not call onSubmit when name is empty', async () => {
-    const { getByTestId, onSubmit } = renderCreateForm();
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    const { getByTestId, onSubmit } = await renderCreateForm();
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
       expect(onSubmit).not.toHaveBeenCalled();
@@ -109,34 +109,34 @@ describe('CollectionForm — create mode', () => {
   });
 
   it('shows validation error when name exceeds 50 chars', async () => {
-    const { getByTestId, findByText } = renderCreateForm();
-    fireEvent.changeText(
+    const { getByTestId, findByText } = await renderCreateForm();
+    await fireEvent.changeText(
       getByTestId('collection-form-name-input'),
       'a'.repeat(51)
     );
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     expect(await findByText(/50 characters/i)).toBeTruthy();
   });
 
   it('does not call onSubmit when name exceeds 50 chars', async () => {
-    const { getByTestId, onSubmit } = renderCreateForm();
-    fireEvent.changeText(getByTestId('collection-form-name-input'), 'a'.repeat(51));
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    const { getByTestId, onSubmit } = await renderCreateForm();
+    await fireEvent.changeText(getByTestId('collection-form-name-input'), 'a'.repeat(51));
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
       expect(onSubmit).not.toHaveBeenCalled();
     });
   });
 
-  it('calls onCancel when cancel button is pressed', () => {
-    const { getByTestId, onCancel } = renderCreateForm();
-    fireEvent.press(getByTestId('collection-form-cancel-button'));
+  it('calls onCancel when cancel button is pressed', async () => {
+    const { getByTestId, onCancel } = await renderCreateForm();
+    await fireEvent.press(getByTestId('collection-form-cancel-button'));
     expect(onCancel).toHaveBeenCalled();
   });
 
-  it('disables submit button when isLoading is true', () => {
-    const { getByTestId } = renderCreateForm({ isLoading: true });
+  it('disables submit button when isLoading is true', async () => {
+    const { getByTestId } = await renderCreateForm({ isLoading: true });
     const btn = getByTestId('collection-form-submit-button');
     expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBe(true);
   });
@@ -148,44 +148,44 @@ describe('CollectionForm — autofill suppression (TR27)', () => {
     Object.defineProperty(Platform, 'OS', { value: originalOS, writable: true });
   });
 
-  it('collection name placeholder does not contain the word "name" (prevents Chrome heuristic match)', () => {
-    const { getByTestId } = renderCreateForm();
+  it('collection name placeholder does not contain the word "name" (prevents Chrome heuristic match)', async () => {
+    const { getByTestId } = await renderCreateForm();
     const input = getByTestId('collection-form-name-input');
     expect(input.props.placeholder?.toLowerCase()).not.toMatch(/\bname\b/);
   });
 
-  it('collection name input has webName="collection-name-entry" rendered as name prop on web', () => {
+  it('collection name input has webName="collection-name-entry" rendered as name prop on web', async () => {
     Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-    const { getByTestId } = renderCreateForm();
+    const { getByTestId } = await renderCreateForm();
     const input = getByTestId('collection-form-name-input');
     expect(input.props.name).toBe('collection-name-entry');
   });
 
-  it('collection name accessibilityLabel does not contain the word "name" (prevents Chrome aria-label heuristic match)', () => {
-    const { getByTestId } = renderCreateForm();
+  it('collection name accessibilityLabel does not contain the word "name" (prevents Chrome aria-label heuristic match)', async () => {
+    const { getByTestId } = await renderCreateForm();
     const input = getByTestId('collection-form-name-input');
     expect(input.props.accessibilityLabel?.toLowerCase()).not.toMatch(/\bname\b/);
   });
 });
 
 describe('CollectionForm — edit mode', () => {
-  it('pre-fills name input with initialValues.name', () => {
-    const { getByTestId } = renderEditForm();
+  it('pre-fills name input with initialValues.name', async () => {
+    const { getByTestId } = await renderEditForm();
     const nameInput = getByTestId('collection-form-name-input');
     expect(nameInput.props.value).toBe('Existing Collection');
   });
 
-  it('pre-fills description input with initialValues.description', () => {
-    const { getByTestId } = renderEditForm();
+  it('pre-fills description input with initialValues.description', async () => {
+    const { getByTestId } = await renderEditForm();
     const descInput = getByTestId('collection-form-description-input');
     expect(descInput.props.value).toBe('Some desc');
   });
 
   it('calls onSubmit with updated values', async () => {
-    const { getByTestId, onSubmit } = renderEditForm();
+    const { getByTestId, onSubmit } = await renderEditForm();
 
-    fireEvent.changeText(getByTestId('collection-form-name-input'), 'Renamed');
-    fireEvent.press(getByTestId('collection-form-submit-button'));
+    await fireEvent.changeText(getByTestId('collection-form-name-input'), 'Renamed');
+    await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({

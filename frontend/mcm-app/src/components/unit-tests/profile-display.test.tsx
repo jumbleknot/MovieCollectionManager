@@ -20,8 +20,8 @@ const mockUser: UserProfile = {
 };
 
 describe('ProfileDisplay', () => {
-  it('renders all user fields', () => {
-    const { getByText } = render(
+  it('renders all user fields', async () => {
+    const { getByText } = await render(
       <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
     );
 
@@ -32,38 +32,38 @@ describe('ProfileDisplay', () => {
     expect(getByText('mc-user')).toBeTruthy();
   });
 
-  it('shows email verification status', () => {
-    const { getByTestId } = render(
+  it('shows email verification status', async () => {
+    const { getByTestId } = await render(
       <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
     );
     const emailVerified = getByTestId('profile-email-verified');
     expect(emailVerified).toBeTruthy();
   });
 
-  it('shows logout button', () => {
-    const { getByTestId } = render(
+  it('shows logout button', async () => {
+    const { getByTestId } = await render(
       <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
     );
     expect(getByTestId('btn-logout')).toBeTruthy();
   });
 
-  it('opens logout confirmation dialog on logout press', () => {
-    const { getByTestId } = render(
+  it('opens logout confirmation dialog on logout press', async () => {
+    const { getByTestId } = await render(
       <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
     );
 
-    fireEvent.press(getByTestId('btn-logout'));
+    await fireEvent.press(getByTestId('btn-logout'));
     expect(getByTestId('logout-dialog')).toBeTruthy();
   });
 
   it('calls onLogout when dialog confirmed', async () => {
     const onLogout = jest.fn().mockResolvedValue(undefined);
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ProfileDisplay user={mockUser} onLogout={onLogout} />,
     );
 
-    fireEvent.press(getByTestId('btn-logout'));
-    fireEvent.press(getByTestId('btn-logout-confirm'));
+    await fireEvent.press(getByTestId('btn-logout'));
+    await fireEvent.press(getByTestId('btn-logout-confirm'));
 
     await new Promise((r) => setTimeout(r, 0));
     expect(onLogout).toHaveBeenCalled();

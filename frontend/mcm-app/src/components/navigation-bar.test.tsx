@@ -25,8 +25,8 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
-function renderNavBar() {
-  return render(
+async function renderNavBar() {
+  return await render(
     <ThemeProvider>
       <NavigationBar />
     </ThemeProvider>,
@@ -34,8 +34,8 @@ function renderNavBar() {
 }
 
 describe('NavigationBar theme toggle', () => {
-  it('renders a theme-toggle control with an accessibility label', () => {
-    const { getByTestId } = renderNavBar();
+  it('renders a theme-toggle control with an accessibility label', async () => {
+    const { getByTestId } = await renderNavBar();
     const toggle = getByTestId('theme-toggle');
     expect(toggle).toBeTruthy();
     expect(toggle.props.accessibilityRole).toBe('button');
@@ -43,19 +43,19 @@ describe('NavigationBar theme toggle', () => {
   });
 
   it('flips and persists the theme to light when pressed (dark default)', async () => {
-    const { getByTestId } = renderNavBar();
+    const { getByTestId } = await renderNavBar();
     // Let the dark default settle from the initial AsyncStorage read.
     await waitFor(() => expect(getByTestId('theme-toggle')).toBeTruthy());
 
-    fireEvent.press(getByTestId('theme-toggle'));
+    await fireEvent.press(getByTestId('theme-toggle'));
 
     await waitFor(async () =>
       expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'),
     );
   });
 
-  it('preserves the existing navigation-bar selectors', () => {
-    const { getByTestId } = renderNavBar();
+  it('preserves the existing navigation-bar selectors', async () => {
+    const { getByTestId } = await renderNavBar();
     expect(getByTestId('navigation-bar')).toBeTruthy();
     expect(getByTestId('nav-home')).toBeTruthy();
   });
@@ -66,19 +66,19 @@ describe('NavigationBar theme toggle', () => {
  * negative assertion is half the requirement: no destination may still be labelled Profile.
  */
 describe('NavigationBar settings destination', () => {
-  it('offers a Settings destination labelled "Settings"', () => {
-    const { getByTestId, getByText } = renderNavBar();
+  it('offers a Settings destination labelled "Settings"', async () => {
+    const { getByTestId, getByText } = await renderNavBar();
     expect(getByTestId('nav-settings')).toBeTruthy();
     expect(getByText('Settings')).toBeTruthy();
   });
 
-  it('targets the settings group', () => {
-    const { getByTestId } = renderNavBar();
+  it('targets the settings group', async () => {
+    const { getByTestId } = await renderNavBar();
     expect(getByTestId('nav-settings').props.accessibilityLabel).toBe('Navigate to Settings');
   });
 
-  it('no longer offers a Profile destination', () => {
-    const { queryByTestId, queryByText } = renderNavBar();
+  it('no longer offers a Profile destination', async () => {
+    const { queryByTestId, queryByText } = await renderNavBar();
     expect(queryByTestId('nav-profile')).toBeNull();
     expect(queryByText('Profile')).toBeNull();
   });

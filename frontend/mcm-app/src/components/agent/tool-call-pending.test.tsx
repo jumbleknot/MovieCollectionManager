@@ -8,8 +8,8 @@ import { render } from '@/test-support/render';
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
 
 describe('ToolCallPending', () => {
-  it('renders its label under a stable testID', () => {
-    const { getByTestId } = render(<ToolCallPending label="Loading the movie…" />);
+  it('renders its label under a stable testID', async () => {
+    const { getByTestId } = await render(<ToolCallPending label="Loading the movie…" />);
 
     expect(getByTestId('tool-call-pending')).toBeTruthy();
     expect(getByTestId('tool-call-pending-label')).toHaveTextContent('Loading the movie…');

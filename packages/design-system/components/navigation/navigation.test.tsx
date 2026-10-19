@@ -22,8 +22,8 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-function renderDS(ui: React.ReactElement) {
-  return render(
+async function renderDS(ui: React.ReactElement) {
+  return await render(
     <TamaguiProvider config={config} defaultTheme="dark">
       <SafeAreaProvider initialMetrics={metrics}>{ui}</SafeAreaProvider>
     </TamaguiProvider>,
@@ -31,13 +31,13 @@ function renderDS(ui: React.ReactElement) {
 }
 
 describe('AppBar', () => {
-  it('renders the title', () => {
-    const { getByText } = renderDS(<AppBar title="My Movies" />);
+  it('renders the title', async () => {
+    const { getByText } = await renderDS(<AppBar title="My Movies" />);
     expect(getByText('My Movies')).toBeTruthy();
   });
 
-  it('renders the subtitle in the large variant', () => {
-    const { getByText } = renderDS(
+  it('renders the subtitle in the large variant', async () => {
+    const { getByText } = await renderDS(
       <AppBar title="My Movies" subtitle="42 films" variant="large" />,
     );
     expect(getByText('42 films')).toBeTruthy();
@@ -47,21 +47,21 @@ describe('AppBar', () => {
 describe('IconButton', () => {
   const icon = <Text>+</Text>;
 
-  it('forwards testID, exposes the accessibility label/role, and fires onPress', () => {
+  it('forwards testID, exposes the accessibility label/role, and fires onPress', async () => {
     const onPress = jest.fn();
-    const { getByTestId, getByLabelText } = renderDS(
+    const { getByTestId, getByLabelText } = await renderDS(
       <IconButton icon={icon} label="Add" testID="icon-add" onPress={onPress} />,
     );
     const node = getByLabelText('Add');
     expect(node.props.accessibilityRole).toBe('button');
-    fireEvent.press(getByTestId('icon-add'));
+    await fireEvent.press(getByTestId('icon-add'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('exposes the disabled accessibility state', () => {
+  it('exposes the disabled accessibility state', async () => {
     // The disabled press guard is web-only (jest-expo's fireEvent ignores it); assert
     // the observable a11y contract instead.
-    const { getByTestId } = renderDS(
+    const { getByTestId } = await renderDS(
       <IconButton icon={icon} label="Add" testID="icon-add" disabled onPress={() => {}} />,
     );
     expect(getByTestId('icon-add').props.accessibilityState).toEqual({ disabled: true, selected: false });
@@ -74,24 +74,24 @@ describe('NavigationBar', () => {
     { key: 'search', label: 'Search', icon: <Text>S</Text>, badge: 150, onPress: jest.fn() },
   ];
 
-  it('renders destination labels and fires the pressed destination callback', () => {
-    const { getByLabelText } = renderDS(
+  it('renders destination labels and fires the pressed destination callback', async () => {
+    const { getByLabelText } = await renderDS(
       <NavigationBar destinations={destinations} activeKey="home" />,
     );
-    fireEvent.press(getByLabelText('Search'));
+    await fireEvent.press(getByLabelText('Search'));
     expect(destinations[1].onPress).toHaveBeenCalledTimes(1);
     expect(destinations[0].onPress).not.toHaveBeenCalled();
   });
 
-  it('clamps a badge count above 99 to "99+"', () => {
-    const { getByText } = renderDS(
+  it('clamps a badge count above 99 to "99+"', async () => {
+    const { getByText } = await renderDS(
       <NavigationBar destinations={destinations} activeKey="home" />,
     );
     expect(getByText('99+')).toBeTruthy();
   });
 
-  it('marks the active destination as selected', () => {
-    const { getByLabelText } = renderDS(
+  it('marks the active destination as selected', async () => {
+    const { getByLabelText } = await renderDS(
       <NavigationBar destinations={destinations} activeKey="home" />,
     );
     expect(getByLabelText('Home').props.accessibilityState).toEqual({ selected: true });
@@ -104,20 +104,20 @@ describe('Tabs', () => {
     { key: 'assistant', label: 'Movie Assistant', testID: 'settings-nav-assistant' },
   ];
 
-  it('renders a per-tab testID and fires onTabChange for the pressed tab', () => {
+  it('renders a per-tab testID and fires onTabChange for the pressed tab', async () => {
     const onTabChange = jest.fn();
-    const { getByTestId } = renderDS(
+    const { getByTestId } = await renderDS(
       <Tabs tabs={tabs} activeKey="index" onTabChange={onTabChange} />,
     );
 
-    fireEvent.press(getByTestId('settings-nav-assistant'));
+    await fireEvent.press(getByTestId('settings-nav-assistant'));
 
     expect(onTabChange).toHaveBeenCalledTimes(1);
     expect(onTabChange).toHaveBeenCalledWith('assistant');
   });
 
-  it('keeps the testID node the accessible tab, carrying its selected state', () => {
-    const { getByTestId } = renderDS(
+  it('keeps the testID node the accessible tab, carrying its selected state', async () => {
+    const { getByTestId } = await renderDS(
       <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} />,
     );
 
@@ -134,15 +134,15 @@ describe('Tabs', () => {
     // see it. It is asserted in a real browser, in settings.spec.ts. Same division as the testID.
   });
 
-  it('colours the active label for CONTRAST against the secondary variant\'s filled pill', () => {
+  it('colours the active label for CONTRAST against the secondary variant\'s filled pill', async () => {
     // The secondary indicator is a filled `secondaryContainer` pill drawn BEHIND the label, so
     // the active label must be `onSecondaryContainer`. It was `primary` — the same colour the
     // pill itself used to be — which rendered the active tab's text invisible inside it. This
     // path had no consumer before feature 062, so nothing had ever rendered it.
-    const { getByText: getSecondary } = renderDS(
+    const { getByText: getSecondary } = await renderDS(
       <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} type="secondary" />,
     );
-    const { getByText: getPrimary } = renderDS(
+    const { getByText: getPrimary } = await renderDS(
       <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} type="primary" />,
     );
 
@@ -171,7 +171,7 @@ describe('Tabs', () => {
     expect(mergeTabLayout(state, 'index', { ...rect, width: 120 })['index'].width).toBe(120);
   });
 
-  it('does not restart the indicator animation when a DIFFERENT tab re-measures', () => {
+  it('does not restart the indicator animation when a DIFFERENT tab re-measures', async () => {
     // The effect depends on the ACTIVE tab's x/width, not on the whole `layouts` map. Widening it
     // back to the map makes any other tab's re-measure restart the spring — a second contributor
     // to the render loop that killed the app process on a device (feature 062, CI run 2043).
@@ -181,17 +181,17 @@ describe('Tabs', () => {
     // mergeTabLayout bail-out above, so a test built on one could never fail.
     const springSpy = jest.spyOn(Animated, 'spring');
     try {
-      const { getByTestId } = renderDS(
+      const { getByTestId } = await renderDS(
         <Tabs tabs={tabs} activeKey="index" onTabChange={() => {}} />,
       );
-      fireEvent(getByTestId('settings-nav-profile'), 'layout', {
+      await fireEvent(getByTestId('settings-nav-profile'), 'layout', {
         nativeEvent: { layout: { x: 0, y: 0, width: 90, height: 40 } },
       });
       const afterActive = springSpy.mock.calls.length;
       expect(afterActive).toBeGreaterThan(0); // the ACTIVE tab's own layout does animate
 
       // A different tab, a genuinely different rect: the active indicator has not moved.
-      fireEvent(getByTestId('settings-nav-assistant'), 'layout', {
+      await fireEvent(getByTestId('settings-nav-assistant'), 'layout', {
         nativeEvent: { layout: { x: 90, y: 0, width: 154, height: 40 } },
       });
       expect(springSpy.mock.calls.length).toBe(afterActive);
@@ -200,8 +200,8 @@ describe('Tabs', () => {
     }
   });
 
-  it('renders tabs without a testID unchanged, so existing callers are unaffected', () => {
-    const { getByText, queryByTestId } = renderDS(
+  it('renders tabs without a testID unchanged, so existing callers are unaffected', async () => {
+    const { getByText, queryByTestId } = await renderDS(
       <Tabs
         tabs={[{ key: 'a', label: 'Alpha' }, { key: 'b', label: 'Beta' }]}
         activeKey="a"
@@ -228,22 +228,22 @@ describe('NavList', () => {
     { key: 'admin', label: 'Admin', testID: 'nav-admin' },
   ];
 
-  it('renders a row per item with its label', () => {
-    const { getByText } = renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+  it('renders a row per item with its label', async () => {
+    const { getByText } = await renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
     expect(getByText('Profile')).toBeTruthy();
     expect(getByText('Movie Assistant')).toBeTruthy();
     expect(getByText('Admin')).toBeTruthy();
   });
 
-  it('puts each testID on a host node so automation can locate the row', () => {
+  it('puts each testID on a host node so automation can locate the row', async () => {
     // A testID on the Tamagui View inside would be dropped on React Native Web and be
     // unreachable from Playwright — the trap Tabs and Card both document.
-    const { getByTestId } = renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+    const { getByTestId } = await renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
     for (const item of ITEMS) expect(getByTestId(item.testID!)).toBeTruthy();
   });
 
-  it('marks only the active row as selected and current', () => {
-    const { getByTestId } = renderDS(
+  it('marks only the active row as selected and current', async () => {
+    const { getByTestId } = await renderDS(
       <NavList items={ITEMS} activeKey="assistant" onSelect={() => {}} />,
     );
     expect(getByTestId('nav-assistant').props.accessibilityState).toEqual({ selected: true });
@@ -252,24 +252,24 @@ describe('NavList', () => {
     expect(getByTestId('nav-index').props['aria-current']).toBeUndefined();
   });
 
-  it('reports the selected key, not the index, so reordering the registry cannot misroute', () => {
+  it('reports the selected key, not the index, so reordering the registry cannot misroute', async () => {
     const onSelect = jest.fn();
-    const { getByTestId } = renderDS(
+    const { getByTestId } = await renderDS(
       <NavList items={ITEMS} activeKey="index" onSelect={onSelect} />,
     );
-    fireEvent.press(getByTestId('nav-admin'));
+    await fireEvent.press(getByTestId('nav-admin'));
     expect(onSelect).toHaveBeenCalledWith('admin');
   });
 
-  it('announces itself as a named menu', () => {
-    const { getByLabelText } = renderDS(
+  it('announces itself as a named menu', async () => {
+    const { getByLabelText } = await renderDS(
       <NavList items={ITEMS} activeKey="index" onSelect={() => {}} accessibilityLabel="Settings sections" />,
     );
     expect(getByLabelText('Settings sections')).toBeTruthy();
   });
 
-  it('renders every row in compact mode too — compact changes size, never the item set', () => {
-    const { getByTestId } = renderDS(
+  it('renders every row in compact mode too — compact changes size, never the item set', async () => {
+    const { getByTestId } = await renderDS(
       <NavList items={ITEMS} activeKey="index" onSelect={() => {}} compact />,
     );
     for (const item of ITEMS) expect(getByTestId(item.testID!)).toBeTruthy();

@@ -24,38 +24,38 @@ const mockedUseAuth = useAuth as jest.Mock;
 describe('AuthGuard', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('shows loading indicator while auth is loading', () => {
+  it('shows loading indicator while auth is loading', async () => {
     mockedUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: true, user: null });
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <AuthGuard><Text testID="protected">Content</Text></AuthGuard>,
     );
 
     expect(getByTestId('auth-guard-loading')).toBeTruthy();
   });
 
-  it('renders children for authenticated mc-user', () => {
+  it('renders children for authenticated mc-user', async () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
       user: { roles: ['mc-user'] },
     });
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <AuthGuard><Text testID="protected">Content</Text></AuthGuard>,
     );
 
     expect(getByTestId('protected')).toBeTruthy();
   });
 
-  it('renders children for mc-admin (implicit mc-user)', () => {
+  it('renders children for mc-admin (implicit mc-user)', async () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
       user: { roles: ['mc-admin'] },
     });
 
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <AuthGuard><Text testID="protected">Admin Content</Text></AuthGuard>,
     );
 
@@ -65,7 +65,7 @@ describe('AuthGuard', () => {
   it('redirects unauthenticated users to login', async () => {
     mockedUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false, user: null });
 
-    render(<AuthGuard><Text>Protected</Text></AuthGuard>);
+    await render(<AuthGuard><Text>Protected</Text></AuthGuard>);
 
     // useEffect fires after render — check that replace was called
     await new Promise((r) => setTimeout(r, 0));

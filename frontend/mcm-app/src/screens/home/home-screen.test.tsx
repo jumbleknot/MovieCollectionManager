@@ -105,7 +105,7 @@ describe('HomeScreen', () => {
   });
 
   describe('loading state', () => {
-    it('shows loading indicator while collections are loading', () => {
+    it('shows loading indicator while collections are loading', async () => {
       mockUseCollections.mockReturnValueOnce({
         collections: [],
         isLoading: true,
@@ -117,13 +117,13 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      const { getByTestId } = render(<HomeScreen />);
+      const { getByTestId } = await render(<HomeScreen />);
       expect(getByTestId('home-screen-loading')).toBeTruthy();
     });
   });
 
   describe('empty state', () => {
-    it('shows empty state when user has no collections', () => {
+    it('shows empty state when user has no collections', async () => {
       // Use mockImplementation (not ReturnValueOnce) so ALL renders during the test —
       // including the re-render triggered by isFr009Checked becoming true — see empty
       // collections. beforeEach restores the default implementation before the next test.
@@ -138,53 +138,53 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       }));
 
-      const { getByTestId } = render(<HomeScreen />);
+      const { getByTestId } = await render(<HomeScreen />);
       expect(getByTestId('collection-list-empty-state')).toBeTruthy();
     });
   });
 
   describe('collection list', () => {
-    it('renders the CollectionList when collections exist', () => {
-      const { getByTestId } = render(<HomeScreen />);
+    it('renders the CollectionList when collections exist', async () => {
+      const { getByTestId } = await render(<HomeScreen />);
       expect(getByTestId('collection-card')).toBeTruthy();
     });
 
-    it('renders collection names', () => {
-      const { getByText } = render(<HomeScreen />);
+    it('renders collection names', async () => {
+      const { getByText } = await render(<HomeScreen />);
       expect(getByText('My Movies')).toBeTruthy();
     });
   });
 
   describe('create collection button', () => {
-    it('renders a "Create Collection" button', () => {
-      const { getByTestId } = render(<HomeScreen />);
+    it('renders a "Create Collection" button', async () => {
+      const { getByTestId } = await render(<HomeScreen />);
       expect(getByTestId('home-screen-create-button')).toBeTruthy();
     });
 
-    it('opens the collection form when Create Collection is pressed', () => {
-      const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    it('opens the collection form when Create Collection is pressed', async () => {
+      const { getByTestId, queryByTestId } = await render(<HomeScreen />);
       expect(queryByTestId('collection-form-name-input')).toBeNull();
 
-      fireEvent.press(getByTestId('home-screen-create-button'));
+      await fireEvent.press(getByTestId('home-screen-create-button'));
       expect(getByTestId('collection-form-name-input')).toBeTruthy();
     });
   });
 
   describe('navigation', () => {
-    it('navigates to /collections/[collectionId] when a card is tapped', () => {
-      const { getByTestId } = render(<HomeScreen />);
-      fireEvent.press(getByTestId('collection-card'));
+    it('navigates to /collections/[collectionId] when a card is tapped', async () => {
+      const { getByTestId } = await render(<HomeScreen />);
+      await fireEvent.press(getByTestId('collection-card'));
       expect(mockPush).toHaveBeenCalledWith('/collections/col-1');
     });
   });
 
   describe('create form submission', () => {
     it('calls createCollection on form submit', async () => {
-      const { getByTestId } = render(<HomeScreen />);
+      const { getByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getByTestId('home-screen-create-button'));
-      fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
-      fireEvent.press(getByTestId('collection-form-submit-button'));
+      await fireEvent.press(getByTestId('home-screen-create-button'));
+      await fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
+      await fireEvent.press(getByTestId('collection-form-submit-button'));
 
       await waitFor(() => {
         expect(mockCreateCollection).toHaveBeenCalledWith({
@@ -196,22 +196,22 @@ describe('HomeScreen', () => {
   });
 
   describe('edit collection', () => {
-    it('opens edit modal pre-filled when Edit action is pressed', () => {
-      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+    it('opens edit modal pre-filled when Edit action is pressed', async () => {
+      const { getByTestId, getAllByTestId } = await render(<HomeScreen />);
 
       // Press the edit action on the first card
-      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+      await fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
 
       // Edit modal opens with the collection name pre-filled
       expect(getByTestId('collection-form-name-input').props.value).toBe('My Movies');
     });
 
     it('calls updateCollection on edit form submit', async () => {
-      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+      const { getByTestId, getAllByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
-      fireEvent.changeText(getByTestId('collection-form-name-input'), 'Renamed');
-      fireEvent.press(getByTestId('collection-form-submit-button'));
+      await fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+      await fireEvent.changeText(getByTestId('collection-form-name-input'), 'Renamed');
+      await fireEvent.press(getByTestId('collection-form-submit-button'));
 
       await waitFor(() => {
         expect(mockUpdateCollection).toHaveBeenCalledWith(
@@ -221,45 +221,45 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('closes edit modal on cancel without calling updateCollection', () => {
-      const { getByTestId, getAllByTestId, queryByTestId } = render(<HomeScreen />);
+    it('closes edit modal on cancel without calling updateCollection', async () => {
+      const { getByTestId, getAllByTestId, queryByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+      await fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
       expect(getByTestId('collection-form-name-input')).toBeTruthy();
 
-      fireEvent.press(getByTestId('collection-form-cancel-button'));
+      await fireEvent.press(getByTestId('collection-form-cancel-button'));
       expect(queryByTestId('collection-form-name-input')).toBeNull();
       expect(mockUpdateCollection).not.toHaveBeenCalled();
     });
   });
 
   describe('delete collection', () => {
-    it('shows delete confirmation dialog when Delete action is pressed', () => {
-      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+    it('shows delete confirmation dialog when Delete action is pressed', async () => {
+      const { getByTestId, getAllByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+      await fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
 
       expect(getByTestId('delete-dialog')).toBeTruthy();
     });
 
     it('calls deleteCollection when confirm button is pressed', async () => {
-      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+      const { getByTestId, getAllByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
-      fireEvent.press(getByTestId('delete-dialog-confirm-button'));
+      await fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+      await fireEvent.press(getByTestId('delete-dialog-confirm-button'));
 
       await waitFor(() => {
         expect(mockDeleteCollection).toHaveBeenCalledWith('col-1');
       });
     });
 
-    it('closes dialog without deleting when cancel button is pressed', () => {
-      const { getByTestId, getAllByTestId, queryByTestId } = render(<HomeScreen />);
+    it('closes dialog without deleting when cancel button is pressed', async () => {
+      const { getByTestId, getAllByTestId, queryByTestId } = await render(<HomeScreen />);
 
-      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+      await fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
       expect(getByTestId('delete-dialog')).toBeTruthy();
 
-      fireEvent.press(getByTestId('delete-dialog-cancel-button'));
+      await fireEvent.press(getByTestId('delete-dialog-cancel-button'));
       expect(queryByTestId('delete-dialog')).toBeNull();
       expect(mockDeleteCollection).not.toHaveBeenCalled();
     });
@@ -267,7 +267,7 @@ describe('HomeScreen', () => {
 
   describe('collections refresh on focus', () => {
     it('calls refresh when the screen gains focus (useFocusEffect)', async () => {
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
       await waitFor(() => {
         expect(mockRefresh).toHaveBeenCalledTimes(1);
       });
@@ -287,7 +287,7 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
 
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith('/collections/col-1');
@@ -306,14 +306,14 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
 
       // Give effects time to run
       await waitFor(() => {});
       expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    it('does not navigate while collections are still loading', () => {
+    it('does not navigate while collections are still loading', async () => {
       mockUseCollections.mockReturnValueOnce({
         collections: [],
         isLoading: true,
@@ -325,7 +325,7 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
 
       expect(mockReplace).not.toHaveBeenCalled();
     });
@@ -342,7 +342,7 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
 
       await waitFor(() => {});
       expect(mockReplace).not.toHaveBeenCalled();
@@ -361,16 +361,16 @@ describe('HomeScreen', () => {
         refresh: mockRefresh,
       });
 
-      const { unmount } = render(<HomeScreen />);
+      const { unmount } = await render(<HomeScreen />);
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledTimes(1);
       });
-      unmount();
+      await unmount();
       mockReplace.mockClear();
 
       // Second mount (simulates user clicking "Home" in the nav bar):
       // The module-level flag is set, so the redirect must NOT fire again.
-      render(<HomeScreen />);
+      await render(<HomeScreen />);
       await waitFor(() => {});
       expect(mockReplace).not.toHaveBeenCalled();
     });

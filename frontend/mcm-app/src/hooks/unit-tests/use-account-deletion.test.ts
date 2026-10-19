@@ -66,7 +66,7 @@ describe('web', () => {
   it('asks the BFF for the URL and navigates the browser to it', async () => {
     mockPost.mockResolvedValue({ data: { authorizationUrl: 'http://kc/auth?max_age=0' } });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -78,7 +78,7 @@ describe('web', () => {
   it('never constructs a device auth request', async () => {
     mockPost.mockResolvedValue({ data: { authorizationUrl: 'http://kc/auth' } });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -105,7 +105,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -119,7 +119,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -134,7 +134,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -146,7 +146,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });
@@ -160,7 +160,7 @@ describe('native', () => {
       .mockResolvedValueOnce({ data: { deleted: true } });
     mockPromptAsync.mockResolvedValue({ type: 'success', params: { code: 'the-code' } });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     let outcome;
     await act(async () => {
       outcome = await result.current.start();
@@ -179,7 +179,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     let outcome;
     await act(async () => {
       outcome = await result.current.start();
@@ -194,7 +194,7 @@ describe('native', () => {
     mockPost.mockResolvedValueOnce(challenge);
     mockPromptAsync.mockResolvedValue({ type: 'cancel', params: {} });
 
-    const { result } = renderHook(() => useAccountDeletion());
+    const { result } = await renderHook(() => useAccountDeletion());
     await act(async () => {
       await result.current.start();
     });

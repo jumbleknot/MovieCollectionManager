@@ -29,8 +29,8 @@ describe('the design-system Text inside the provider', () => {
   it.each([
     ['dark', darkColors.onBackground],
     ['light', lightColors.onBackground],
-  ] as const)('renders in the body font and the %s theme onBackground colour', (theme, colour) => {
-    const { getByTestId } = render(
+  ] as const)('renders in the body font and the %s theme onBackground colour', async (theme, colour) => {
+    const { getByTestId } = await render(
       <TamaguiProvider config={config} defaultTheme={theme}>
         <Text testID="bare">hello</Text>
       </TamaguiProvider>,
@@ -40,8 +40,8 @@ describe('the design-system Text inside the provider', () => {
     expect(String(style.color).toLowerCase()).toBe(colour.toLowerCase());
   });
 
-  it('keeps an explicitly set colour and font', () => {
-    const { getByTestId } = render(
+  it('keeps an explicitly set colour and font', async () => {
+    const { getByTestId } = await render(
       <TamaguiProvider config={config} defaultTheme="dark">
         <Text testID="set" color="#123456" fontFamily="heading">hello</Text>
       </TamaguiProvider>,

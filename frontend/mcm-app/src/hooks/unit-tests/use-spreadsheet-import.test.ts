@@ -19,15 +19,15 @@ function makeFile(name = 'movies.xlsx'): File {
 
 beforeEach(() => jest.clearAllMocks());
 
-it('starts idle', () => {
-  const { result } = renderHook(() => useSpreadsheetImport());
+it('starts idle', async () => {
+  const { result } = await renderHook(() => useSpreadsheetImport());
   expect(result.current.status).toBe('idle');
   expect(result.current.filename).toBeNull();
 });
 
 it('uploads a file and transitions idle → uploaded with the server filename', async () => {
   mockedPost.mockResolvedValueOnce({ data: { filename: 'movies.xlsx' } } as never);
-  const { result } = renderHook(() => useSpreadsheetImport());
+  const { result } = await renderHook(() => useSpreadsheetImport());
 
   let ok = false;
   await act(async () => {
@@ -50,7 +50,7 @@ it('uploads a file and transitions idle → uploaded with the server filename', 
 
 it('falls back to the local filename when the response omits one', async () => {
   mockedPost.mockResolvedValueOnce({ data: {} } as never);
-  const { result } = renderHook(() => useSpreadsheetImport());
+  const { result } = await renderHook(() => useSpreadsheetImport());
   await act(async () => {
     await result.current.uploadFile(makeFile('local.csv'));
   });
@@ -59,7 +59,7 @@ it('falls back to the local filename when the response omits one', async () => {
 
 it('sets an error and returns false on a failed upload', async () => {
   mockedPost.mockRejectedValueOnce({ response: { data: { detail: 'File is empty or too large' } } });
-  const { result } = renderHook(() => useSpreadsheetImport());
+  const { result } = await renderHook(() => useSpreadsheetImport());
 
   let ok = true;
   await act(async () => {
@@ -73,11 +73,11 @@ it('sets an error and returns false on a failed upload', async () => {
 
 it('reset returns to idle', async () => {
   mockedPost.mockResolvedValueOnce({ data: { filename: 'x.xlsx' } } as never);
-  const { result } = renderHook(() => useSpreadsheetImport());
+  const { result } = await renderHook(() => useSpreadsheetImport());
   await act(async () => {
     await result.current.uploadFile(makeFile());
   });
-  act(() => result.current.reset());
+  await act(() => result.current.reset());
   expect(result.current.status).toBe('idle');
   expect(result.current.filename).toBeNull();
   expect(result.current.error).toBeNull();

@@ -17,19 +17,19 @@ const FAILED = [
 ];
 
 describe('RenderImportReport', () => {
-  it('shows a concise count and hides the detail until expanded', () => {
-    const { getByTestId, queryByTestId } = render(
+  it('shows a concise count and hides the detail until expanded', async () => {
+    const { getByTestId, queryByTestId } = await render(
       <RenderImportReport imported={200} skipped={SKIPPED} failed={FAILED} />,
     );
     expect(getByTestId('import-report-summary')).toHaveTextContent('Imported 200. 2 skipped, 1 failed.');
     expect(queryByTestId('import-report-detail')).toBeNull(); // collapsed by default
   });
 
-  it('lists every skipped and failed row with its reason when expanded', () => {
-    const { getByTestId } = render(
+  it('lists every skipped and failed row with its reason when expanded', async () => {
+    const { getByTestId } = await render(
       <RenderImportReport imported={200} skipped={SKIPPED} failed={FAILED} />,
     );
-    fireEvent.press(getByTestId('import-report-toggle'));
+    await fireEvent.press(getByTestId('import-report-toggle'));
     const skipped = getByTestId('import-report-skipped');
     expect(skipped).toHaveTextContent(/Expected Import Failure 2 — invalid Year/);
     expect(skipped).toHaveTextContent(/Expected Import Failure 3 — missing Year/);
@@ -37,11 +37,11 @@ describe('RenderImportReport', () => {
     expect(failed).toHaveTextContent(/Expected Import Failure 1 — Owned must be true or false/);
   });
 
-  it('omits a section that has no rows', () => {
-    const { getByTestId, queryByTestId } = render(
+  it('omits a section that has no rows', async () => {
+    const { getByTestId, queryByTestId } = await render(
       <RenderImportReport imported={5} skipped={[]} failed={FAILED} />,
     );
-    fireEvent.press(getByTestId('import-report-toggle'));
+    await fireEvent.press(getByTestId('import-report-toggle'));
     expect(queryByTestId('import-report-skipped')).toBeNull();
     expect(getByTestId('import-report-failed')).toBeTruthy();
   });

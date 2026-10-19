@@ -8,8 +8,8 @@ import { TamaguiProvider } from '@tamagui/core';
 import config from '../../tamagui.config';
 import { Button } from './Button';
 
-function renderDS(ui: React.ReactElement) {
-  return render(
+async function renderDS(ui: React.ReactElement) {
+  return await render(
     <TamaguiProvider config={config} defaultTheme="dark">
       {ui}
     </TamaguiProvider>,
@@ -17,13 +17,13 @@ function renderDS(ui: React.ReactElement) {
 }
 
 describe('design-system harness', () => {
-  it('renders a Button label inside the Tamagui provider', () => {
-    const { getByText } = renderDS(<Button label="Add movie" onPress={() => {}} />);
+  it('renders a Button label inside the Tamagui provider', async () => {
+    const { getByText } = await renderDS(<Button label="Add movie" onPress={() => {}} />);
     expect(getByText('Add movie')).toBeTruthy();
   });
 
-  it('forwards testID and accessibilityLabel to the underlying node', () => {
-    const { getByTestId } = renderDS(
+  it('forwards testID and accessibilityLabel to the underlying node', async () => {
+    const { getByTestId } = await renderDS(
       <Button label="Add" testID="add-movie" accessibilityLabel="Add movie" onPress={() => {}} />,
     );
     expect(getByTestId('add-movie')).toBeTruthy();

@@ -29,8 +29,8 @@ const TWO_TABS: ImportPreviewPayload = {
 };
 
 describe('ImportPreviewCard', () => {
-  it('renders a per-tab summary with counts instead of listing every movie', () => {
-    const { getByTestId } = render(
+  it('renders a per-tab summary with counts instead of listing every movie', async () => {
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={() => {}} onReject={() => {}} />,
     );
     expect(getByTestId('import-preview')).toBeTruthy();
@@ -40,36 +40,36 @@ describe('ImportPreviewCard', () => {
     expect(getByTestId('import-preview-total')).toHaveTextContent(/205 to add, 2 to update/);
   });
 
-  it('approves the whole import (no exclusions) by default', () => {
+  it('approves the whole import (no exclusions) by default', async () => {
     const onApprove = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('import-preview-approve'));
+    await fireEvent.press(getByTestId('import-preview-approve'));
     expect(onApprove).toHaveBeenCalledWith([]);
   });
 
-  it('excludes an unchecked tab and reports it in excludedTabs (FR-020a)', () => {
+  it('excludes an unchecked tab and reports it in excludedTabs (FR-020a)', async () => {
     const onApprove = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('import-preview-tab-Horror')); // uncheck Horror
+    await fireEvent.press(getByTestId('import-preview-tab-Horror')); // uncheck Horror
     expect(getByTestId('import-preview-total')).toHaveTextContent(/200 to add, 0 to update/);
-    fireEvent.press(getByTestId('import-preview-approve'));
+    await fireEvent.press(getByTestId('import-preview-approve'));
     expect(onApprove).toHaveBeenCalledWith(['Horror']);
   });
 
-  it('cancels without writing anything (SC-009)', () => {
+  it('cancels without writing anything (SC-009)', async () => {
     const onReject = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={() => {}} onReject={onReject} />,
     );
-    fireEvent.press(getByTestId('import-preview-cancel'));
+    await fireEvent.press(getByTestId('import-preview-cancel'));
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
-  it('disables Approve once every tab is excluded (nothing left to import)', () => {
+  it('disables Approve once every tab is excluded (nothing left to import)', async () => {
     const onApprove = jest.fn();
     const single: ImportPreviewPayload = {
       type: 'import_preview',
@@ -80,26 +80,26 @@ describe('ImportPreviewCard', () => {
         totalUpdate: 0,
       },
     };
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={single} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('import-preview-tab-Sci-Fi')); // exclude the only tab
-    fireEvent.press(getByTestId('import-preview-approve'));
+    await fireEvent.press(getByTestId('import-preview-tab-Sci-Fi')); // exclude the only tab
+    await fireEvent.press(getByTestId('import-preview-approve'));
     expect(onApprove).not.toHaveBeenCalled();
   });
 
-  it('does not double-submit once a decision is made', () => {
+  it('does not double-submit once a decision is made', async () => {
     const onApprove = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={onApprove} onReject={() => {}} />,
     );
-    fireEvent.press(getByTestId('import-preview-approve'));
-    fireEvent.press(getByTestId('import-preview-approve'));
+    await fireEvent.press(getByTestId('import-preview-approve'));
+    await fireEvent.press(getByTestId('import-preview-approve'));
     expect(onApprove).toHaveBeenCalledTimes(1);
   });
 
-  it('explains the required fields when a tab is ignored (enhancement 2)', () => {
-    const { getByTestId } = render(
+  it('explains the required fields when a tab is ignored (enhancement 2)', async () => {
+    const { getByTestId } = await render(
       <ImportPreviewCard payload={TWO_TABS} onApprove={() => {}} onReject={() => {}} />,
     );
     expect(getByTestId('import-preview-ignored-hint')).toHaveTextContent(
@@ -107,7 +107,7 @@ describe('ImportPreviewCard', () => {
     );
   });
 
-  it('shows a sample field-mapping (header → field = value) when expanded (enhancement 1)', () => {
+  it('shows a sample field-mapping (header → field = value) when expanded (enhancement 1)', async () => {
     const withMapping: ImportPreviewPayload = {
       type: 'import_preview',
       proposalId: 'import:m1',
@@ -132,12 +132,12 @@ describe('ImportPreviewCard', () => {
         ],
       },
     };
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = await render(
       <ImportPreviewCard payload={withMapping} onApprove={() => {}} onReject={() => {}} />,
     );
     // The mapping is collapsed by default (it would otherwise crowd the summary).
     expect(queryByTestId('import-preview-mapping-Sample')).toBeNull();
-    fireEvent.press(getByTestId('import-preview-mapping-toggle-Sample'));
+    await fireEvent.press(getByTestId('import-preview-mapping-toggle-Sample'));
     const mapping = getByTestId('import-preview-mapping-Sample');
     expect(mapping).toHaveTextContent(/Title → title/);
     expect(mapping).toHaveTextContent(/The Matrix/);

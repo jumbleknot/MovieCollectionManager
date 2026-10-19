@@ -260,6 +260,53 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   arrives. 14 snapshots re-key from the `eslint@8.57.1` peer to `eslint@10.12.0`. Every override resolves as before,
   and the pnpm-audit findings are identical (12 on both).
 
+**Measured at US5c (PR 5c), 2026-10-19.** REPO = `origin/main` `8ea70cab`; NPM = the packuments of
+`@testing-library/react-native`, `test-renderer`, `react-reconciler`, `react`; DOCS = RNTL 14.1.0's own
+`docs/guides/migration-v14.md` (shipped in the tarball).
+
+- **Version: `^14.1.0`** (2026-10-08, past the 3-day cooldown; 14.0.0 was 2026-06-05). Peers `jest >=29.0.0`
+  (jest 29 stays — the jest 30 hold, item #792, is untouched), `react >=19.0.0`, `react-native >=0.78`,
+  `test-renderer ^1.0.0`; node `^22.13 || >=24`. Deps `pretty-format`/`jest-matcher-utils ^30.4.1` were already
+  in the lock.
+- **`test-renderer ~1.2.0`, not `^1`.** `^1` resolves 1.3.1, which depends on `react-reconciler ~0.34.0`; 0.34.0
+  peers **`react ^19.3.0`** and we run React 19.2.3 (SDK 57). The migration guide's own table maps React 19.2 →
+  `test-renderer@1.2` (→ `react-reconciler 0.33.0`, peer `react ^19.2.0`). **Re-check:** move to the 1.3 line
+  with React 19.3 (an Expo SDK bump). `react-test-renderer` stays in the lock — `jest-expo` 57 depends on it —
+  but nothing in our tests imports it.
+- **Upgrade RED (T041):** design-system 98/131 failed (11/14 suites), mcm-app 525/1578 failed (62/154 suites):
+  `getByTestId is not a function`, `Cannot read properties of undefined (reading 'current')`,
+  `` `render` function has not been called ``, `rerender is not a function`, `UNSAFE_getByType is not a function`.
+- **Migration (T042), per the guide's "Async APIs by Default" and "Removed APIs":** `render`/`renderHook`/
+  `fireEvent(.*)`/`act`/`rerender`/`unmount` awaited, and every local helper wrapping them made async (75 files,
+  AST rewrite). Four hand fixes: two `expect(() => render(…)).not.toThrow()` → `await expect(render(…)).resolves`
+  (the sync form would pass vacuously); `UNSAFE_getByType(Modal|ScrollView)` → `container.queryAll` on the host
+  types `Modal`/`RCTScrollView`; one "initial `isLoading` true" test holds its fetch open (async `renderHook`
+  flushes a resolved one — the guide's "transient states" note). No test deleted or skipped.
+- **Result:** 131/131 and 1578/1578, 0 skipped; `act(...)` warnings in the mcm-app run 143 → 0; lint 0/43 and 0/0
+  (unchanged); typecheck 0.
+- **Coverage (mcm-app, same command both sides):** lines 61.34% = 61.34% (3279/5345), functions unchanged,
+  statements 3603 → 3598, branches 1852 → 1847. The 5 are five double-submit latches
+  (`if (decided|confirmed|actioned) return`) in `approval-request`, `import-preview`, `multi-select-options`,
+  `render-movie-card`. v13 delivered a second `fireEvent.press` to a button already `disabled`; v14 honours the
+  responder/`disabled` contract, so the second press stops at the button — the tests' "second press ignored"
+  assertions still hold, now for the reason their titles give. Overlapping presses (`Promise.all`) do not reach
+  the latches either (both read the stale `false`). design-system unchanged (90.55% lines). The ≥70% target
+  stays with item #779.
+- **Lock:** RNTL family only — `@testing-library/react-native` 13.3.3 → 14.1.0, `test-renderer` 1.2.0,
+  `react-reconciler` 0.33.0, `@types/react-reconciler` 0.33.1 added. Every override resolves as before; pnpm
+  audit identical (9 on both).
+- **CI flake on PR #798 (first run): not caused by RNTL 14.** `app-ci / affected` failed one test,
+  `movie-detail-screen.test.tsx` › "renders MovieDetail when movie is loaded": `Exceeded timeout of 5000 ms`, suite
+  23.3 s, jest at default workers under `nx affected`. It is the first test in the file to render `MovieDetail`, so
+  it pays that module graph's cold transform. This is the known flake from feature 015 (`c236106f`), and it has no backlog
+  item. Measured locally, one at a time:
+  - **`--maxWorkers=1`, warm cache, 6 runs each:** branch 144–175 ms, `main` 139–143 ms. 12/12 every run.
+  - **`--no-cache` (cold, the CI shape), 3 runs each:** branch 1229–1288 ms, `main` 1267–1313 ms. RNTL 14 is not slower.
+  - **Full suite, `--maxWorkers=2 --no-cache`:** branch 25 ms (1578/1578, 19.9 s), `main` 24 ms (1578/1578, 23.1 s).
+
+  The test body is a single `await render` plus one synchronous `getByTestId`, with no `waitFor`/`findBy`, so it has
+  no async misuse to fix. Its cost is the cold first render, multiplied by CI contention. Re-run, not changed.
+
 ## R7. Stage 6 is copilotkit + AG-UI first, then openai / ai-sdk — and the latter are not on the model path
 
 - `@copilotkit/runtime` and `@copilotkit/react-native` pin `@ag-ui/client` **exactly**: 1.70.1 → `0.0.59`

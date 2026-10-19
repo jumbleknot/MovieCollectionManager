@@ -61,20 +61,20 @@ beforeEach(() => {
 });
 
 describe('SettingsNav', () => {
-  it('renders the sub-navigation container', () => {
-    const { getByTestId } = render(<SettingsNav />);
+  it('renders the sub-navigation container', async () => {
+    const { getByTestId } = await render(<SettingsNav />);
     expect(getByTestId('settings-nav')).toBeTruthy();
   });
 
-  it('renders one locatable entry per settings area available to the user', () => {
-    const { getByTestId } = render(<SettingsNav />);
+  it('renders one locatable entry per settings area available to the user', async () => {
+    const { getByTestId } = await render(<SettingsNav />);
     expect(getByTestId('settings-nav-profile')).toBeTruthy();
     expect(getByTestId('settings-nav-assistant')).toBeTruthy();
   });
 
-  it('marks the entry matching the current path as selected and the others as not', () => {
+  it('marks the entry matching the current path as selected and the others as not', async () => {
     mockPathname = '/(app)/settings/assistant';
-    const { getByTestId } = render(<SettingsNav />);
+    const { getByTestId } = await render(<SettingsNav />);
     expect(getByTestId('settings-nav-assistant').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true }),
     );
@@ -83,25 +83,25 @@ describe('SettingsNav', () => {
     );
   });
 
-  it('activates the Profile entry only on the exact group path, never on a child path', () => {
+  it('activates the Profile entry only on the exact group path, never on a child path', async () => {
     mockPathname = '/(app)/settings';
-    const onGroup = render(<SettingsNav />);
+    const onGroup = await render(<SettingsNav />);
     expect(onGroup.getByTestId('settings-nav-profile').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true }),
     );
-    onGroup.unmount();
+    await onGroup.unmount();
 
     // A `startsWith` match — the shape NavigationBar uses — would wrongly light this up.
     mockPathname = '/(app)/settings/backups';
-    const onChild = render(<SettingsNav />);
+    const onChild = await render(<SettingsNav />);
     expect(onChild.getByTestId('settings-nav-profile').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: false }),
     );
   });
 
-  it('replaces rather than pushes when an entry is pressed, so tabs build no back-stack', () => {
-    const { getByTestId } = render(<SettingsNav />);
-    fireEvent.press(getByTestId('settings-nav-assistant'));
+  it('replaces rather than pushes when an entry is pressed, so tabs build no back-stack', async () => {
+    const { getByTestId } = await render(<SettingsNav />);
+    await fireEvent.press(getByTestId('settings-nav-assistant'));
     expect(mockReplace).toHaveBeenCalledWith('/(app)/settings/assistant');
     // Measured on expo-router 56: navigate/push mounts a SECOND copy of an area revisited, so two
     // nodes end up sharing one settings testID. Asserting the absence of a push is what keeps a
@@ -110,9 +110,9 @@ describe('SettingsNav', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('omits the Admin entry from the tree entirely for a non-admin', () => {
+  it('omits the Admin entry from the tree entirely for a non-admin', async () => {
     setUser(['mc-user']);
-    const { queryByTestId } = render(<SettingsNav />);
+    const { queryByTestId } = await render(<SettingsNav />);
     // Absent, not hidden. Presentation only — ProtectedRoute is the enforcement.
     expect(queryByTestId('settings-nav-admin')).toBeNull();
   });
@@ -122,16 +122,16 @@ describe('SettingsNav', () => {
   // and its absence for a non-admin proves the filter runs. Neither is access control — that is
   // ProtectedRoute on settings/admin.tsx, asserted separately in admin-settings-access.spec.ts.
 
-  it('shows the Admin entry to an mc-admin', () => {
+  it('shows the Admin entry to an mc-admin', async () => {
     setUser(['mc-user', 'mc-admin']);
-    const { getByTestId } = render(<SettingsNav />);
+    const { getByTestId } = await render(<SettingsNav />);
     expect(getByTestId('settings-nav-admin')).toBeTruthy();
   });
 
-  it('marks the Admin entry selected on the admin area path', () => {
+  it('marks the Admin entry selected on the admin area path', async () => {
     setUser(['mc-user', 'mc-admin']);
     mockPathname = '/(app)/settings/admin';
-    const { getByTestId } = render(<SettingsNav />);
+    const { getByTestId } = await render(<SettingsNav />);
     expect(getByTestId('settings-nav-admin').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true }),
     );
@@ -140,10 +140,10 @@ describe('SettingsNav', () => {
     );
   });
 
-  it('navigates to the admin area when the Admin entry is pressed', () => {
+  it('navigates to the admin area when the Admin entry is pressed', async () => {
     setUser(['mc-user', 'mc-admin']);
-    const { getByTestId } = render(<SettingsNav />);
-    fireEvent.press(getByTestId('settings-nav-admin'));
+    const { getByTestId } = await render(<SettingsNav />);
+    await fireEvent.press(getByTestId('settings-nav-admin'));
     expect(mockReplace).toHaveBeenCalledWith('/(app)/settings/admin');
   });
 });

@@ -127,49 +127,49 @@ describe('MovieDetailScreen', () => {
   });
 
   describe('loading state', () => {
-    it('shows loading indicator when isLoading is true', () => {
+    it('shows loading indicator when isLoading is true', async () => {
       mockUseMovies.mockReturnValueOnce(makeMoviesMock({ isLoading: true }));
 
-      const { getByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId } = await render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-screen-loading')).toBeTruthy();
     });
   });
 
   describe('detail view', () => {
-    it('renders MovieDetail when movie is loaded', () => {
+    it('renders MovieDetail when movie is loaded', async () => {
       mockUseMovies.mockReturnValueOnce(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId } = await render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
 
-    it('shows the movie title in detail view', () => {
+    it('shows the movie title in detail view', async () => {
       mockUseMovies.mockReturnValueOnce(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId } = await render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-title').props.children).toBe('The Matrix');
     });
   });
 
   describe('edit flow', () => {
-    it('switches to MovieForm when Edit is pressed', () => {
+    it('switches to MovieForm when Edit is pressed', async () => {
       mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-edit-button'));
+      const { getByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-edit-button'));
       expect(getByTestId('movie-form-title-input')).toBeTruthy();
     });
 
     it('calls updateMovie on MovieForm submit', async () => {
       mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId } = await render(<MovieDetailScreen />);
 
       // Switch to edit mode
-      fireEvent.press(getByTestId('movie-detail-edit-button'));
+      await fireEvent.press(getByTestId('movie-detail-edit-button'));
 
       // Submit the form (title is pre-filled, year and content type also)
-      fireEvent.press(getByTestId('movie-form-submit-button'));
+      await fireEvent.press(getByTestId('movie-form-submit-button'));
 
       await waitFor(() => {
         expect(mockUpdateMovie).toHaveBeenCalledWith(
@@ -182,9 +182,9 @@ describe('MovieDetailScreen', () => {
     it('returns to detail view after successful update', async () => {
       mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId, queryByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId, queryByTestId } = await render(<MovieDetailScreen />);
 
-      fireEvent.press(getByTestId('movie-detail-edit-button'));
+      await fireEvent.press(getByTestId('movie-detail-edit-button'));
       expect(getByTestId('movie-form-title-input')).toBeTruthy();
 
       // handleSubmit is async (setIsSaving → await updateMovie → setIsEditing(false)); wrap the
@@ -192,22 +192,22 @@ describe('MovieDetailScreen', () => {
       // assert. Without this the isEditing→false re-render lands outside act and waitFor can miss
       // it, so the test times out under load (React 19 + RNTL v13 act-timing flake).
       await act(async () => {
-        fireEvent.press(getByTestId('movie-form-submit-button'));
+        await fireEvent.press(getByTestId('movie-form-submit-button'));
       });
 
       expect(queryByTestId('movie-form-title-input')).toBeNull();
       expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
 
-    it('returns to detail view when Cancel is pressed in edit mode', () => {
+    it('returns to detail view when Cancel is pressed in edit mode', async () => {
       mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
-      const { getByTestId, queryByTestId } = render(<MovieDetailScreen />);
+      const { getByTestId, queryByTestId } = await render(<MovieDetailScreen />);
 
-      fireEvent.press(getByTestId('movie-detail-edit-button'));
+      await fireEvent.press(getByTestId('movie-detail-edit-button'));
       expect(getByTestId('movie-form-cancel-button')).toBeTruthy();
 
-      fireEvent.press(getByTestId('movie-form-cancel-button'));
+      await fireEvent.press(getByTestId('movie-form-cancel-button'));
       expect(queryByTestId('movie-form-title-input')).toBeNull();
       expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
@@ -220,16 +220,16 @@ describe('MovieDetailScreen', () => {
       mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
     });
 
-    it('pressing delete button opens DeleteConfirmationDialog', () => {
-      const { getByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-delete-button'));
+    it('pressing delete button opens DeleteConfirmationDialog', async () => {
+      const { getByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-delete-button'));
       expect(getByTestId('delete-dialog')).toBeTruthy();
     });
 
     it('confirming delete calls deleteMovie with the movie id', async () => {
-      const { getByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-delete-button'));
-      fireEvent.press(getByTestId('delete-dialog-confirm-button'));
+      const { getByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-delete-button'));
+      await fireEvent.press(getByTestId('delete-dialog-confirm-button'));
 
       await waitFor(() => {
         expect(mockDeleteMovie).toHaveBeenCalledWith('mov-1');
@@ -238,30 +238,30 @@ describe('MovieDetailScreen', () => {
 
     it('navigates back after successful delete', async () => {
       mockDeleteMovie.mockResolvedValue(undefined);
-      const { getByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-delete-button'));
-      fireEvent.press(getByTestId('delete-dialog-confirm-button'));
+      const { getByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-delete-button'));
+      await fireEvent.press(getByTestId('delete-dialog-confirm-button'));
 
       await waitFor(() => {
         expect(mockBack).toHaveBeenCalled();
       });
     });
 
-    it('cancelling delete closes dialog without calling deleteMovie', () => {
-      const { getByTestId, queryByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-delete-button'));
+    it('cancelling delete closes dialog without calling deleteMovie', async () => {
+      const { getByTestId, queryByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-delete-button'));
       expect(getByTestId('delete-dialog')).toBeTruthy();
 
-      fireEvent.press(getByTestId('delete-dialog-cancel-button'));
+      await fireEvent.press(getByTestId('delete-dialog-cancel-button'));
 
       expect(queryByTestId('delete-dialog')).toBeNull();
       expect(mockDeleteMovie).not.toHaveBeenCalled();
     });
 
-    it('movie detail remains visible after cancel', () => {
-      const { getByTestId } = render(<MovieDetailScreen />);
-      fireEvent.press(getByTestId('movie-detail-delete-button'));
-      fireEvent.press(getByTestId('delete-dialog-cancel-button'));
+    it('movie detail remains visible after cancel', async () => {
+      const { getByTestId } = await render(<MovieDetailScreen />);
+      await fireEvent.press(getByTestId('movie-detail-delete-button'));
+      await fireEvent.press(getByTestId('delete-dialog-cancel-button'));
       expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
   });

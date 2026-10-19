@@ -7,37 +7,37 @@ import { render, fireEvent } from '@/test-support/render';
 import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
 
 describe('LogoutConfirmationDialog', () => {
-  it('does not render when visible=false', () => {
-    const { queryByTestId } = render(
+  it('does not render when visible=false', async () => {
+    const { queryByTestId } = await render(
       <LogoutConfirmationDialog visible={false} onConfirm={jest.fn()} onCancel={jest.fn()} />,
     );
     // Modal children are not rendered when visible=false (RNTL behavior)
     expect(queryByTestId('btn-logout-confirm')).toBeFalsy();
   });
 
-  it('renders confirm and cancel buttons when visible', () => {
-    const { getByTestId } = render(
+  it('renders confirm and cancel buttons when visible', async () => {
+    const { getByTestId } = await render(
       <LogoutConfirmationDialog visible onConfirm={jest.fn()} onCancel={jest.fn()} />,
     );
     expect(getByTestId('btn-logout-confirm')).toBeTruthy();
     expect(getByTestId('btn-logout-cancel')).toBeTruthy();
   });
 
-  it('calls onConfirm when confirm button pressed', () => {
+  it('calls onConfirm when confirm button pressed', async () => {
     const onConfirm = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <LogoutConfirmationDialog visible onConfirm={onConfirm} onCancel={jest.fn()} />,
     );
-    fireEvent.press(getByTestId('btn-logout-confirm'));
+    await fireEvent.press(getByTestId('btn-logout-confirm'));
     expect(onConfirm).toHaveBeenCalled();
   });
 
-  it('calls onCancel when cancel button pressed', () => {
+  it('calls onCancel when cancel button pressed', async () => {
     const onCancel = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <LogoutConfirmationDialog visible onConfirm={jest.fn()} onCancel={onCancel} />,
     );
-    fireEvent.press(getByTestId('btn-logout-cancel'));
+    await fireEvent.press(getByTestId('btn-logout-cancel'));
     expect(onCancel).toHaveBeenCalled();
   });
 });

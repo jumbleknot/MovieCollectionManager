@@ -45,7 +45,7 @@ describe('useKeycloakAuth', () => {
       promptAsync,
     ]);
 
-    renderHook(() => useKeycloakAuth({ onCode }));
+    await renderHook(() => useKeycloakAuth({ onCode }));
 
     // Allow useEffect to run
     await act(async () => {});
@@ -65,7 +65,7 @@ describe('useKeycloakAuth', () => {
       jest.fn(),
     ]);
 
-    renderHook(() => useKeycloakAuth({ onCode, onCancel }));
+    await renderHook(() => useKeycloakAuth({ onCode, onCancel }));
     await act(async () => {});
 
     expect(onCancel).toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe('useKeycloakAuth', () => {
       jest.fn(),
     ]);
 
-    renderHook(() => useKeycloakAuth({ onCode, onError }));
+    await renderHook(() => useKeycloakAuth({ onCode, onError }));
     await act(async () => {});
 
     expect(onError).toHaveBeenCalledWith('access_denied');
@@ -99,17 +99,17 @@ describe('useKeycloakAuth', () => {
       jest.fn(),
     ]);
 
-    renderHook(() => useKeycloakAuth({ onCode, onError }));
+    await renderHook(() => useKeycloakAuth({ onCode, onError }));
     await act(async () => {});
 
     expect(onError).toHaveBeenCalled();
     expect(onCode).not.toHaveBeenCalled();
   });
 
-  it('isLoading is false when request and discovery are ready', () => {
+  it('isLoading is false when request and discovery are ready', async () => {
     mockedUseAuthRequest.mockReturnValueOnce([makeRequest(), null, jest.fn()]);
 
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useKeycloakAuth({ onCode: jest.fn() }),
     );
 

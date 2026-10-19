@@ -55,24 +55,24 @@ beforeEach(() => {
 });
 
 describe('MultiSelectOptions', () => {
-  it('sends nothing until confirm (US4-AC2)', () => {
-    const { getByTestId } = renderList();
+  it('sends nothing until confirm (US4-AC2)', async () => {
+    const { getByTestId } = await renderList();
 
-    fireEvent.press(getByTestId('multi-select-option-0'));
-    fireEvent.press(getByTestId('multi-select-option-1'));
+    await fireEvent.press(getByTestId('multi-select-option-0'));
+    await fireEvent.press(getByTestId('multi-select-option-1'));
 
     expect(addMessage).not.toHaveBeenCalled();
     expect(runAgent).not.toHaveBeenCalled();
   });
 
-  it('posts exactly the still-selected values on confirm (US4-AC3)', () => {
-    const { getByTestId } = renderList();
+  it('posts exactly the still-selected values on confirm (US4-AC3)', async () => {
+    const { getByTestId } = await renderList();
 
-    fireEvent.press(getByTestId('multi-select-option-0')); // DVD on
-    fireEvent.press(getByTestId('multi-select-option-1')); // Blu-Ray on
-    fireEvent.press(getByTestId('multi-select-option-2')); // Blu-Ray 3D on
-    fireEvent.press(getByTestId('multi-select-option-2')); // …and back off
-    fireEvent.press(getByTestId('multi-select-confirm'));
+    await fireEvent.press(getByTestId('multi-select-option-0')); // DVD on
+    await fireEvent.press(getByTestId('multi-select-option-1')); // Blu-Ray on
+    await fireEvent.press(getByTestId('multi-select-option-2')); // Blu-Ray 3D on
+    await fireEvent.press(getByTestId('multi-select-option-2')); // …and back off
+    await fireEvent.press(getByTestId('multi-select-confirm'));
 
     expect(addMessage).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'user', content: 'Selected: DVD, Blu-Ray' }),
@@ -80,22 +80,22 @@ describe('MultiSelectOptions', () => {
     expect(runAgent).toHaveBeenCalled();
   });
 
-  it('posts in the offered order regardless of tap order', () => {
-    const { getByTestId } = renderList();
+  it('posts in the offered order regardless of tap order', async () => {
+    const { getByTestId } = await renderList();
 
-    fireEvent.press(getByTestId('multi-select-option-3')); // UHD first
-    fireEvent.press(getByTestId('multi-select-option-0')); // DVD second
-    fireEvent.press(getByTestId('multi-select-confirm'));
+    await fireEvent.press(getByTestId('multi-select-option-3')); // UHD first
+    await fireEvent.press(getByTestId('multi-select-option-0')); // DVD second
+    await fireEvent.press(getByTestId('multi-select-confirm'));
 
     expect(addMessage).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'Selected: DVD, UHD Blu-Ray' }),
     );
   });
 
-  it('confirming zero selections posts "Selected: none" (US4-AC8 / FR-028)', () => {
-    const { getByTestId } = renderList();
+  it('confirming zero selections posts "Selected: none" (US4-AC8 / FR-028)', async () => {
+    const { getByTestId } = await renderList();
 
-    fireEvent.press(getByTestId('multi-select-confirm'));
+    await fireEvent.press(getByTestId('multi-select-confirm'));
 
     expect(addMessage).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'Selected: none' }),
@@ -103,17 +103,17 @@ describe('MultiSelectOptions', () => {
     expect(runAgent).toHaveBeenCalled();
   });
 
-  it('shows the current selection before confirming (FR-020a)', () => {
-    const { getByTestId } = renderList();
+  it('shows the current selection before confirming (FR-020a)', async () => {
+    const { getByTestId } = await renderList();
 
     expect(getByTestId('multi-select-summary').props.children).toBe('Nothing selected');
 
-    fireEvent.press(getByTestId('multi-select-option-1'));
+    await fireEvent.press(getByTestId('multi-select-option-1'));
     expect(getByTestId('multi-select-summary').props.children).toBe('Selected: Blu-Ray');
   });
 
-  it('honours the initial selected flags so a re-ask shows what was already chosen', () => {
-    const { getByTestId } = renderList({
+  it('honours the initial selected flags so a re-ask shows what was already chosen', async () => {
+    const { getByTestId } = await renderList({
       options: [
         { label: 'DVD', value: 'DVD', selected: true },
         { label: 'Blu-Ray', value: 'Blu-Ray' },
@@ -125,43 +125,43 @@ describe('MultiSelectOptions', () => {
     expect(getByTestId('multi-select-option-1').props.accessibilityState.checked).toBe(false);
   });
 
-  it('exposes each toggle state to assistive technology, not by colour alone', () => {
-    const { getByTestId } = renderList();
+  it('exposes each toggle state to assistive technology, not by colour alone', async () => {
+    const { getByTestId } = await renderList();
 
     const before = getByTestId('multi-select-option-0');
     expect(before.props.accessibilityRole).toBe('checkbox');
     expect(before.props.accessibilityState.checked).toBe(false);
 
-    fireEvent.press(before);
+    await fireEvent.press(before);
     expect(getByTestId('multi-select-option-0').props.accessibilityState.checked).toBe(true);
   });
 
-  it('disables the list and confirm after confirming, so it cannot be answered twice', () => {
-    const { getByTestId } = renderList();
+  it('disables the list and confirm after confirming, so it cannot be answered twice', async () => {
+    const { getByTestId } = await renderList();
 
-    fireEvent.press(getByTestId('multi-select-option-0'));
-    fireEvent.press(getByTestId('multi-select-confirm'));
+    await fireEvent.press(getByTestId('multi-select-option-0'));
+    await fireEvent.press(getByTestId('multi-select-confirm'));
     expect(addMessage).toHaveBeenCalledTimes(1);
 
     expect(getByTestId('multi-select-confirm').props.accessibilityState.disabled).toBe(true);
     expect(getByTestId('multi-select-option-0').props.accessibilityState.disabled).toBe(true);
 
     // A second confirm must post nothing more.
-    fireEvent.press(getByTestId('multi-select-confirm'));
+    await fireEvent.press(getByTestId('multi-select-confirm'));
     expect(addMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the supplied confirm label', () => {
-    const { getByTestId } = renderList({ confirmLabel: 'Save' });
+  it('uses the supplied confirm label', async () => {
+    const { getByTestId } = await renderList({ confirmLabel: 'Save' });
     expect(getByTestId('multi-select-confirm').props.children).toBeDefined();
     expect(getByTestId('multi-select-confirm').props.accessibilityLabel).toContain('Save');
   });
 
-  it('contains no hardcoded domain values — the options come from the agent', () => {
+  it('contains no hardcoded domain values — the options come from the agent', async () => {
     // The published media formats are mc-service's, fetched at question time. If this component
     // ever grows a fallback list, it renders values the service may not accept — the exact
     // failure RQ-4 exists to prevent. Rendering an arbitrary option set proves it has none.
-    const { getByTestId, queryByTestId } = renderList({
+    const { getByTestId, queryByTestId } = await renderList({
       options: [{ label: 'Betamax', value: 'Betamax' }],
     });
 

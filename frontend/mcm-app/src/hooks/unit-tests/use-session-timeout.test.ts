@@ -16,9 +16,9 @@ afterEach(() => {
 });
 
 describe('useSessionTimeout', () => {
-  it('calls onTimeout after idle timeout', () => {
+  it('calls onTimeout after idle timeout', async () => {
     const onTimeout = jest.fn();
-    renderHook(() =>
+    await renderHook(() =>
       useSessionTimeout({
         onTimeout,
         idleTimeoutMs: 5000,
@@ -27,16 +27,16 @@ describe('useSessionTimeout', () => {
       }),
     );
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(5001);
     });
 
     expect(onTimeout).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onTimeout after absolute timeout', () => {
+  it('calls onTimeout after absolute timeout', async () => {
     const onTimeout = jest.fn();
-    renderHook(() =>
+    await renderHook(() =>
       useSessionTimeout({
         onTimeout,
         idleTimeoutMs: 86400000,    // Long idle - won't trigger first
@@ -45,16 +45,16 @@ describe('useSessionTimeout', () => {
       }),
     );
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10001);
     });
 
     expect(onTimeout).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call onTimeout when disabled', () => {
+  it('does not call onTimeout when disabled', async () => {
     const onTimeout = jest.fn();
-    renderHook(() =>
+    await renderHook(() =>
       useSessionTimeout({
         onTimeout,
         idleTimeoutMs: 5000,
@@ -63,16 +63,16 @@ describe('useSessionTimeout', () => {
       }),
     );
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(20000);
     });
 
     expect(onTimeout).not.toHaveBeenCalled();
   });
 
-  it('cleans up timers on unmount', () => {
+  it('cleans up timers on unmount', async () => {
     const onTimeout = jest.fn();
-    const { unmount } = renderHook(() =>
+    const { unmount } = await renderHook(() =>
       useSessionTimeout({
         onTimeout,
         idleTimeoutMs: 5000,
@@ -81,9 +81,9 @@ describe('useSessionTimeout', () => {
       }),
     );
 
-    unmount();
+    await unmount();
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10000);
     });
 

@@ -89,8 +89,8 @@ describe('useMovies', () => {
   beforeEach(() => jest.clearAllMocks());
 
   describe('initial state', () => {
-    it('starts with null movie, not loading, no error', () => {
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    it('starts with null movie, not loading, no error', async () => {
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       expect(result.current.movie).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -102,7 +102,7 @@ describe('useMovies', () => {
     it('fetches movie from GET /bff-api/collections/:id/movies/:movieId', async () => {
       mockedGet.mockResolvedValueOnce({ data: MOCK_MOVIE } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.getMovie(MOVIE_ID);
@@ -116,7 +116,7 @@ describe('useMovies', () => {
     it('sets movie state after successful GET', async () => {
       mockedGet.mockResolvedValueOnce({ data: MOCK_MOVIE } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.getMovie(MOVIE_ID);
@@ -133,9 +133,9 @@ describe('useMovies', () => {
         new Promise((res) => { resolveGet = res; }) as never,
       );
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-      act(() => { void result.current.getMovie(MOVIE_ID); });
+      await act(() => { void result.current.getMovie(MOVIE_ID); });
 
       expect(result.current.isLoading).toBe(true);
 
@@ -149,7 +149,7 @@ describe('useMovies', () => {
     it('sets error state when GET fails', async () => {
       mockedGet.mockRejectedValueOnce(new Error('Network error'));
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.getMovie(MOVIE_ID);
@@ -165,7 +165,7 @@ describe('useMovies', () => {
     it('sends POST to /bff-api/collections/:id/movies with the movie body', async () => {
       mockedPost.mockResolvedValueOnce({ data: MOCK_MOVIE } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST);
@@ -180,7 +180,7 @@ describe('useMovies', () => {
     it('sets movie state after successful POST', async () => {
       mockedPost.mockResolvedValueOnce({ data: MOCK_MOVIE } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST);
@@ -202,7 +202,7 @@ describe('useMovies', () => {
         },
       });
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         // Hook re-throws after setting error state — caller must catch.
@@ -226,7 +226,7 @@ describe('useMovies', () => {
         },
       });
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
@@ -248,7 +248,7 @@ describe('useMovies', () => {
         },
       });
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
@@ -260,7 +260,7 @@ describe('useMovies', () => {
     it('falls back to generic message when not an Axios error', async () => {
       mockedPost.mockRejectedValueOnce(new Error('Network failure'));
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
@@ -280,7 +280,7 @@ describe('useMovies', () => {
       };
       mockedPut.mockResolvedValueOnce({ data: updatedMovie } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.updateMovie(MOVIE_ID, updateRequest);
@@ -296,7 +296,7 @@ describe('useMovies', () => {
       const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['Blu-Ray'] as Movie['ripQuality'] };
       mockedPut.mockResolvedValueOnce({ data: updatedMovie } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.updateMovie(MOVIE_ID, { ...CREATE_MOVIE_REQUEST, ripped: true, ripQuality: ['Blu-Ray'] });
@@ -319,7 +319,7 @@ describe('useMovies', () => {
         },
       });
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         // Hook re-throws after setting error state — caller must catch.
@@ -341,7 +341,7 @@ describe('useMovies', () => {
         },
       });
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.updateMovie(MOVIE_ID, CREATE_MOVIE_REQUEST).catch(() => {});
@@ -354,7 +354,7 @@ describe('useMovies', () => {
   describe('error clearing', () => {
     it('clears error on a subsequent successful operation', async () => {
       mockedGet.mockRejectedValueOnce(new Error('fail'));
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.getMovie(MOVIE_ID);
@@ -414,7 +414,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   // ── Initial load ─────────────────────────────────────────────────────────────
 
   it('listMovies() calls BFF GET /bff-api/collections/:id/movies', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.listMovies();
@@ -427,7 +427,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   });
 
   it('populates movies state after listMovies()', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.listMovies();
@@ -443,7 +443,7 @@ describe('useMovies — list/search/filter (T123)', () => {
       Promise.resolve({ data: { items: [MOCK_MOVIE], nextCursor: 'cursor-page-2' } }),
     );
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.listMovies();
@@ -463,7 +463,7 @@ describe('useMovies — list/search/filter (T123)', () => {
         Promise.resolve({ data: { items: [MOCK_MOVIE_2], nextCursor: null } }),
       );
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => { await result.current.listMovies(); });
     await act(async () => { await result.current.loadMore(); });
@@ -478,7 +478,7 @@ describe('useMovies — list/search/filter (T123)', () => {
       Promise.resolve({ data: { items: [MOCK_MOVIE], nextCursor: 'cursor-abc' } }),
     );
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => { await result.current.listMovies(); });
 
@@ -498,7 +498,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   });
 
   it('loadMore() does nothing when hasMore is false', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => { await result.current.listMovies(); });
 
@@ -518,11 +518,11 @@ describe('useMovies — list/search/filter (T123)', () => {
   // ── Search ───────────────────────────────────────────────────────────────────
 
   it('setSearch() forwards search param to BFF GET after debounce', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => { await result.current.listMovies(); });
 
-    act(() => { result.current.setSearch('batman'); });
+    await act(() => { result.current.setSearch('batman'); });
 
     // Advance past debounce delay (300ms)
     await act(async () => { jest.advanceTimersByTime(350); });
@@ -543,11 +543,11 @@ describe('useMovies — list/search/filter (T123)', () => {
       Promise.resolve({ data: { items: [MOCK_MOVIE], nextCursor: 'old-cursor' } }),
     );
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => { await result.current.listMovies(); });
     expect(result.current.hasMore).toBe(true);
 
-    act(() => { result.current.setSearch('batman'); });
+    await act(() => { result.current.setSearch('batman'); });
     await act(async () => { jest.advanceTimersByTime(350); });
     await act(async () => {});
 
@@ -560,7 +560,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   // ── Filters ──────────────────────────────────────────────────────────────────
 
   it('setFilter() forwards filter param to BFF GET immediately', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => { await result.current.listMovies(); });
 
     await act(async () => {
@@ -582,7 +582,7 @@ describe('useMovies — list/search/filter (T123)', () => {
       Promise.resolve({ data: { items: [MOCK_MOVIE], nextCursor: 'old-cursor' } }),
     );
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => { await result.current.listMovies(); });
     expect(result.current.hasMore).toBe(true);
 
@@ -597,7 +597,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   });
 
   it('clearFilters() reloads without filter params', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => { await result.current.listMovies(); });
 
     await act(async () => {
@@ -619,7 +619,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   // ── Filter options ────────────────────────────────────────────────────────────
 
   it('fetchFilterOptions() calls BFF GET /bff-api/collections/:id/movies/filter-options', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.fetchFilterOptions();
@@ -631,7 +631,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   });
 
   it('populates filterOptions state after fetchFilterOptions()', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.fetchFilterOptions();
@@ -645,7 +645,7 @@ describe('useMovies — list/search/filter (T123)', () => {
   it('sets listError when listMovies() fails', async () => {
     mockedGet.mockImplementationOnce(() => Promise.reject(new Error('Network error')));
 
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
     await act(async () => {
       await result.current.listMovies();
@@ -663,7 +663,7 @@ describe('useMovies — list/search/filter (T123)', () => {
     });
 
     it('calls BFF DELETE /bff-api/collections/:id/movies/:movieId', async () => {
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.deleteMovie(MOVIE_ID);
@@ -680,7 +680,7 @@ describe('useMovies — list/search/filter (T123)', () => {
         data: { items: [MOCK_MOVIE], nextCursor: null },
       } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.listMovies();
@@ -698,7 +698,7 @@ describe('useMovies — list/search/filter (T123)', () => {
     it('clears the single movie state when the deleted movie matches the current movie', async () => {
       mockedGet.mockResolvedValueOnce({ data: MOCK_MOVIE } as never);
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         await result.current.getMovie(MOVIE_ID);
@@ -716,7 +716,7 @@ describe('useMovies — list/search/filter (T123)', () => {
     it('propagates error and re-throws when DELETE fails — falls back to generic message for non-Axios error', async () => {
       mockedDelete.mockRejectedValueOnce(new Error('Server error'));
 
-      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+      const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
         // Hook re-throws after setting error state — caller must catch.
@@ -748,14 +748,14 @@ describe('useMovies — sort (013 US1)', () => {
     return ((last?.[1] as { params?: Record<string, unknown> })?.params) ?? {};
   }
 
-  it('defaults to title ascending on a fresh mount (session-scoped — US1-AC5)', () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+  it('defaults to title ascending on a fresh mount (session-scoped — US1-AC5)', async () => {
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     expect(result.current.sortBy).toBe('title');
     expect(result.current.sortDir).toBe('asc');
   });
 
   it('threads the default sort into the list request', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => {
       await result.current.listMovies();
     });
@@ -765,7 +765,7 @@ describe('useMovies — sort (013 US1)', () => {
   });
 
   it('setSort updates state and forwards the new sort (US1-AC2)', async () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => {
       await result.current.setSort('year', 'desc');
     });
@@ -786,7 +786,7 @@ describe('useMovies — sort (013 US1)', () => {
         data: { items: [MOCK_MOVIE], nextCursor: 'cursor-abc' },
       } as never);
     });
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    const { result } = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => {
       await result.current.listMovies();
     });
@@ -800,13 +800,13 @@ describe('useMovies — sort (013 US1)', () => {
   });
 
   it('a fresh hook instance re-initializes to the default sort (not persisted — US1-AC5)', async () => {
-    const first = renderHook(() => useMovies(COLLECTION_ID));
+    const first = await renderHook(() => useMovies(COLLECTION_ID));
     await act(async () => {
       await first.result.current.setSort('year', 'desc');
     });
     expect(first.result.current.sortBy).toBe('year');
     // A new mount (re-opening the collection) starts at the default again.
-    const second = renderHook(() => useMovies(COLLECTION_ID));
+    const second = await renderHook(() => useMovies(COLLECTION_ID));
     expect(second.result.current.sortBy).toBe('title');
     expect(second.result.current.sortDir).toBe('asc');
   });

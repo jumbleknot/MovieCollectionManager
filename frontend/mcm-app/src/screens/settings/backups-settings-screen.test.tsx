@@ -24,12 +24,12 @@ jest.mock('@/utils/api-client', () => ({
 
 describe('BackupsSettingsScreen', () => {
   it('renders the backups area under its unchanged testID', async () => {
-    const { getByTestId } = render(<BackupsSettingsScreen />);
+    const { getByTestId } = await render(<BackupsSettingsScreen />);
     await waitFor(() => expect(getByTestId('settings-backups-screen')).toBeTruthy());
   });
 
   it('identifies the area and offers a destination to be added', async () => {
-    const { getByText, getByTestId } = render(<BackupsSettingsScreen />);
+    const { getByText, getByTestId } = await render(<BackupsSettingsScreen />);
     // Exact, not /backups/i — the area names itself in the heading AND the body copy, and a
     // loose match would resolve both and fail on ambiguity rather than on the requirement.
     // The jobs card below is titled "Backup jobs" precisely so this stays unambiguous: two
@@ -40,7 +40,7 @@ describe('BackupsSettingsScreen', () => {
   });
 
   it('says there are no destinations yet rather than showing an empty area', async () => {
-    const { getByTestId } = render(<BackupsSettingsScreen />);
+    const { getByTestId } = await render(<BackupsSettingsScreen />);
     await waitFor(() => expect(getByTestId('backup-destination-list-empty')).toBeTruthy());
   });
 });

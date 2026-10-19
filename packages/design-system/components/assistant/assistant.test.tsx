@@ -10,8 +10,8 @@ import config from '../../tamagui.config';
 import { AssistantAvatar } from './AssistantAvatar';
 import { ChatBubble, ApprovalBubble } from './ChatBubble';
 
-function renderDS(ui: React.ReactElement) {
-  return render(
+async function renderDS(ui: React.ReactElement) {
+  return await render(
     <TamaguiProvider config={config} defaultTheme="dark">
       {ui}
     </TamaguiProvider>,
@@ -19,50 +19,50 @@ function renderDS(ui: React.ReactElement) {
 }
 
 describe('AssistantAvatar', () => {
-  it('renders the SVG robot with its accessibility label', () => {
-    const { getByLabelText } = renderDS(<AssistantAvatar />);
+  it('renders the SVG robot with its accessibility label', async () => {
+    const { getByLabelText } = await renderDS(<AssistantAvatar />);
     expect(getByLabelText('Movie Assistant')).toBeTruthy();
   });
 
-  it('fires onPress when pressed', () => {
+  it('fires onPress when pressed', async () => {
     const onPress = jest.fn();
-    const { getByLabelText } = renderDS(<AssistantAvatar onPress={onPress} />);
-    fireEvent.press(getByLabelText('Movie Assistant'));
+    const { getByLabelText } = await renderDS(<AssistantAvatar onPress={onPress} />);
+    await fireEvent.press(getByLabelText('Movie Assistant'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the thinking state without throwing', () => {
-    const { getByLabelText } = renderDS(<AssistantAvatar thinking />);
+  it('renders the thinking state without throwing', async () => {
+    const { getByLabelText } = await renderDS(<AssistantAvatar thinking />);
     expect(getByLabelText('Movie Assistant')).toBeTruthy();
   });
 });
 
 describe('ChatBubble', () => {
-  it('renders a user message', () => {
-    const { getByText } = renderDS(<ChatBubble sender="user" message="Hello" />);
+  it('renders a user message', async () => {
+    const { getByText } = await renderDS(<ChatBubble sender="user" message="Hello" />);
     expect(getByText('Hello')).toBeTruthy();
   });
 
-  it('renders an assistant message with the avatar', () => {
-    const { getByText, getByLabelText } = renderDS(
+  it('renders an assistant message with the avatar', async () => {
+    const { getByText, getByLabelText } = await renderDS(
       <ChatBubble sender="assistant" message="Hi there" />,
     );
     expect(getByText('Hi there')).toBeTruthy();
     expect(getByLabelText('Movie Assistant')).toBeTruthy();
   });
 
-  it('renders a system message', () => {
-    const { getByText } = renderDS(<ChatBubble sender="system" message="Session expired" />);
+  it('renders a system message', async () => {
+    const { getByText } = await renderDS(<ChatBubble sender="system" message="Session expired" />);
     expect(getByText('Session expired')).toBeTruthy();
   });
 
-  it('shows the thinking indicator (no message text) for a thinking assistant turn', () => {
-    const { queryByText } = renderDS(<ChatBubble sender="assistant" thinking />);
+  it('shows the thinking indicator (no message text) for a thinking assistant turn', async () => {
+    const { queryByText } = await renderDS(<ChatBubble sender="assistant" thinking />);
     expect(queryByText('Hi there')).toBeNull();
   });
 
-  it('renders generative children inside the bubble', () => {
-    const { getByText } = renderDS(
+  it('renders generative children inside the bubble', async () => {
+    const { getByText } = await renderDS(
       <ChatBubble sender="assistant" message="Found one">
         <ChatBubble sender="system" message="Inception (2010)" />
       </ChatBubble>,
@@ -80,37 +80,37 @@ describe('ApprovalBubble', () => {
     onReject: jest.fn(),
   };
 
-  it('renders title, description, and the approve/reject actions', () => {
-    const { getByText } = renderDS(<ApprovalBubble {...baseProps} />);
+  it('renders title, description, and the approve/reject actions', async () => {
+    const { getByText } = await renderDS(<ApprovalBubble {...baseProps} />);
     expect(getByText('Add 3 movies?')).toBeTruthy();
     expect(getByText('These will be added to Favourites.')).toBeTruthy();
     expect(getByText('Approve')).toBeTruthy();
     expect(getByText('Reject')).toBeTruthy();
   });
 
-  it('fires onApprove and onReject', () => {
+  it('fires onApprove and onReject', async () => {
     const onApprove = jest.fn();
     const onReject = jest.fn();
-    const { getByText } = renderDS(
+    const { getByText } = await renderDS(
       <ApprovalBubble {...baseProps} onApprove={onApprove} onReject={onReject} />,
     );
-    fireEvent.press(getByText('Approve'));
+    await fireEvent.press(getByText('Approve'));
     expect(onApprove).toHaveBeenCalledTimes(1);
-    fireEvent.press(getByText('Reject'));
+    await fireEvent.press(getByText('Reject'));
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
-  it('does not fire onApprove while loading', () => {
+  it('does not fire onApprove while loading', async () => {
     const onApprove = jest.fn();
-    const { getByText } = renderDS(
+    const { getByText } = await renderDS(
       <ApprovalBubble {...baseProps} onApprove={onApprove} loading />,
     );
-    fireEvent.press(getByText(/Applying/));
+    await fireEvent.press(getByText(/Applying/));
     expect(onApprove).not.toHaveBeenCalled();
   });
 
-  it('shows the approved status and hides the actions once approved', () => {
-    const { getByText, queryByText } = renderDS(
+  it('shows the approved status and hides the actions once approved', async () => {
+    const { getByText, queryByText } = await renderDS(
       <ApprovalBubble {...baseProps} approved />,
     );
     expect(getByText(/Approved/)).toBeTruthy();

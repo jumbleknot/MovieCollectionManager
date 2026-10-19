@@ -20,8 +20,8 @@ const request = { code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm
 describe('useLogin', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('starts with default state', () => {
-    const { result } = renderHook(() => useLogin());
+  it('starts with default state', async () => {
+    const { result } = await renderHook(() => useLogin());
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
   });
@@ -32,7 +32,7 @@ describe('useLogin', () => {
       headers: { 'x-session-id': 'session-abc' },
     } as never);
 
-    const { result } = renderHook(() => useLogin());
+    const { result } = await renderHook(() => useLogin());
     let loginResult!: boolean;
 
     await act(async () => {
@@ -52,7 +52,7 @@ describe('useLogin', () => {
       },
     });
 
-    const { result } = renderHook(() => useLogin());
+    const { result } = await renderHook(() => useLogin());
     let loginResult!: boolean;
 
     await act(async () => {
@@ -66,13 +66,13 @@ describe('useLogin', () => {
   it('clears error via clearError', async () => {
     mockedPost.mockRejectedValueOnce(new Error('fail'));
 
-    const { result } = renderHook(() => useLogin());
+    const { result } = await renderHook(() => useLogin());
 
     await act(async () => {
       await result.current.login(request);
     });
 
-    act(() => { result.current.clearError(); });
+    await act(() => { result.current.clearError(); });
 
     expect(result.current.error).toBeNull();
   });

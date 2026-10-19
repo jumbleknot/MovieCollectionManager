@@ -103,7 +103,7 @@ const AppLayout = require('@/app/(app)/_layout').default;
 describe('(app) layout — AssistantConfigProvider placement', () => {
   it('resolves the assistant config from a descendant of the Stack AND of the dock gate', async () => {
     // ThemeProvider is supplied by the ROOT layout above (app); this test mounts (app) alone.
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ThemeProvider>
         <AppLayout />
       </ThemeProvider>,
@@ -139,7 +139,7 @@ describe('(app) layout — AssistantConfigProvider placement', () => {
       data: { ...mockRunnableConfig, hasTmdbKey: false },
     });
 
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = await render(
       <ThemeProvider>
         <AppLayout />
       </ThemeProvider>,

@@ -33,13 +33,13 @@ const DEFAULT_COLLECTION: CollectionSummary = {
   isDefault: true,
 };
 
-function renderCard(collection: CollectionSummary, overrides = {}) {
+async function renderCard(collection: CollectionSummary, overrides = {}) {
   const onOpen = jest.fn();
   const onEdit = jest.fn();
   const onSetDefault = jest.fn();
   const onDelete = jest.fn();
 
-  const utils = render(
+  const utils = await render(
     <CollectionCard
       collection={collection}
       onOpen={onOpen}
@@ -53,68 +53,68 @@ function renderCard(collection: CollectionSummary, overrides = {}) {
 }
 
 describe('CollectionCard', () => {
-  it('renders collection name', () => {
-    const { getByText } = renderCard(BASE_COLLECTION);
+  it('renders collection name', async () => {
+    const { getByText } = await renderCard(BASE_COLLECTION);
     expect(getByText('My Movies')).toBeTruthy();
   });
 
-  it('renders description when present', () => {
-    const { getByText } = renderCard(BASE_COLLECTION);
+  it('renders description when present', async () => {
+    const { getByText } = await renderCard(BASE_COLLECTION);
     expect(getByText('A great collection')).toBeTruthy();
   });
 
-  it('does not render description when null', () => {
-    const { queryByTestId } = renderCard({ ...BASE_COLLECTION, description: null });
+  it('does not render description when null', async () => {
+    const { queryByTestId } = await renderCard({ ...BASE_COLLECTION, description: null });
     expect(queryByTestId('collection-card-description')).toBeNull();
   });
 
-  it('shows movie count', () => {
-    const { getByText } = renderCard(BASE_COLLECTION);
+  it('shows movie count', async () => {
+    const { getByText } = await renderCard(BASE_COLLECTION);
     expect(getByText(/5/)).toBeTruthy();
   });
 
-  it('shows default badge when isDefault is true', () => {
-    const { getByTestId } = renderCard(DEFAULT_COLLECTION);
+  it('shows default badge when isDefault is true', async () => {
+    const { getByTestId } = await renderCard(DEFAULT_COLLECTION);
     expect(getByTestId('collection-card-default-badge')).toBeTruthy();
   });
 
-  it('does not show default badge when isDefault is false', () => {
-    const { queryByTestId } = renderCard(BASE_COLLECTION);
+  it('does not show default badge when isDefault is false', async () => {
+    const { queryByTestId } = await renderCard(BASE_COLLECTION);
     expect(queryByTestId('collection-card-default-badge')).toBeNull();
   });
 
-  it('calls onOpen when Open action is pressed', () => {
-    const { getByTestId, onOpen } = renderCard(BASE_COLLECTION);
-    fireEvent.press(getByTestId('collection-card-action-open'));
+  it('calls onOpen when Open action is pressed', async () => {
+    const { getByTestId, onOpen } = await renderCard(BASE_COLLECTION);
+    await fireEvent.press(getByTestId('collection-card-action-open'));
     expect(onOpen).toHaveBeenCalledWith('col-1');
   });
 
-  it('calls onEdit when Edit action is pressed', () => {
-    const { getByTestId, onEdit } = renderCard(BASE_COLLECTION);
-    fireEvent.press(getByTestId('collection-card-action-edit'));
+  it('calls onEdit when Edit action is pressed', async () => {
+    const { getByTestId, onEdit } = await renderCard(BASE_COLLECTION);
+    await fireEvent.press(getByTestId('collection-card-action-edit'));
     expect(onEdit).toHaveBeenCalledWith(BASE_COLLECTION);
   });
 
-  it('calls onSetDefault when Set as Default action is pressed', () => {
-    const { getByTestId, onSetDefault } = renderCard(BASE_COLLECTION);
-    fireEvent.press(getByTestId('collection-card-action-set-default'));
+  it('calls onSetDefault when Set as Default action is pressed', async () => {
+    const { getByTestId, onSetDefault } = await renderCard(BASE_COLLECTION);
+    await fireEvent.press(getByTestId('collection-card-action-set-default'));
     expect(onSetDefault).toHaveBeenCalledWith('col-1');
   });
 
-  it('does not show Set as Default action when already default', () => {
-    const { queryByTestId } = renderCard(DEFAULT_COLLECTION);
+  it('does not show Set as Default action when already default', async () => {
+    const { queryByTestId } = await renderCard(DEFAULT_COLLECTION);
     expect(queryByTestId('collection-card-action-set-default')).toBeNull();
   });
 
-  it('calls onDelete when Delete action is pressed', () => {
-    const { getByTestId, onDelete } = renderCard(BASE_COLLECTION);
-    fireEvent.press(getByTestId('collection-card-action-delete'));
+  it('calls onDelete when Delete action is pressed', async () => {
+    const { getByTestId, onDelete } = await renderCard(BASE_COLLECTION);
+    await fireEvent.press(getByTestId('collection-card-action-delete'));
     expect(onDelete).toHaveBeenCalledWith('col-1');
   });
 
-  it('calls onOpen when card is tapped directly', () => {
-    const { getByTestId, onOpen } = renderCard(BASE_COLLECTION);
-    fireEvent.press(getByTestId('collection-card'));
+  it('calls onOpen when card is tapped directly', async () => {
+    const { getByTestId, onOpen } = await renderCard(BASE_COLLECTION);
+    await fireEvent.press(getByTestId('collection-card'));
     expect(onOpen).toHaveBeenCalledWith('col-1');
   });
 });

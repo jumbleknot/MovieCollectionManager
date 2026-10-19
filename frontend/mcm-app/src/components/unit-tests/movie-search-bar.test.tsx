@@ -15,64 +15,64 @@ import { MovieSearchBar } from '@/components/movie-search-bar';
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('MovieSearchBar', () => {
-  it('renders a text input with testID movie-search-input', () => {
-    const { getByTestId } = render(
+  it('renders a text input with testID movie-search-input', async () => {
+    const { getByTestId } = await render(
       <MovieSearchBar value="" onSearch={() => {}} />,
     );
     expect(getByTestId('movie-search-input')).toBeTruthy();
   });
 
-  it('displays the current value in the input', () => {
-    const { getByTestId } = render(
+  it('displays the current value in the input', async () => {
+    const { getByTestId } = await render(
       <MovieSearchBar value="batman" onSearch={() => {}} />,
     );
     const input = getByTestId('movie-search-input');
     expect(input.props.value).toBe('batman');
   });
 
-  it('calls onSearch with the new value when text changes', () => {
+  it('calls onSearch with the new value when text changes', async () => {
     const onSearch = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieSearchBar value="" onSearch={onSearch} />,
     );
-    fireEvent.changeText(getByTestId('movie-search-input'), 'batman');
+    await fireEvent.changeText(getByTestId('movie-search-input'), 'batman');
     expect(onSearch).toHaveBeenCalledWith('batman');
   });
 
-  it('calls onSearch with empty string when input is cleared', () => {
+  it('calls onSearch with empty string when input is cleared', async () => {
     const onSearch = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieSearchBar value="batman" onSearch={onSearch} />,
     );
-    fireEvent.changeText(getByTestId('movie-search-input'), '');
+    await fireEvent.changeText(getByTestId('movie-search-input'), '');
     expect(onSearch).toHaveBeenCalledWith('');
   });
 
-  it('renders a clear button when value is non-empty', () => {
-    const { getByTestId } = render(
+  it('renders a clear button when value is non-empty', async () => {
+    const { getByTestId } = await render(
       <MovieSearchBar value="batman" onSearch={() => {}} />,
     );
     expect(getByTestId('movie-search-clear')).toBeTruthy();
   });
 
-  it('does not render a clear button when value is empty', () => {
-    const { queryByTestId } = render(
+  it('does not render a clear button when value is empty', async () => {
+    const { queryByTestId } = await render(
       <MovieSearchBar value="" onSearch={() => {}} />,
     );
     expect(queryByTestId('movie-search-clear')).toBeNull();
   });
 
-  it('pressing clear button calls onSearch with empty string', () => {
+  it('pressing clear button calls onSearch with empty string', async () => {
     const onSearch = jest.fn();
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <MovieSearchBar value="batman" onSearch={onSearch} />,
     );
-    fireEvent.press(getByTestId('movie-search-clear'));
+    await fireEvent.press(getByTestId('movie-search-clear'));
     expect(onSearch).toHaveBeenCalledWith('');
   });
 
-  it('clear button displays a visible × icon character when value is non-empty (TR35)', () => {
-    const { getByText } = render(
+  it('clear button displays a visible × icon character when value is non-empty (TR35)', async () => {
+    const { getByText } = await render(
       <MovieSearchBar value="batman" onSearch={() => {}} />,
     );
     expect(getByText('×')).toBeTruthy();

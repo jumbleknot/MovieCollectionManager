@@ -22,8 +22,8 @@ jest.mock('@/components/agent/movie-assistant-config', () => {
 });
 
 describe('AssistantSettingsScreen', () => {
-  it('renders the assistant area containing the assistant configuration', () => {
-    const { getByTestId } = render(<AssistantSettingsScreen />);
+  it('renders the assistant area containing the assistant configuration', async () => {
+    const { getByTestId } = await render(<AssistantSettingsScreen />);
     expect(getByTestId('settings-assistant-screen')).toBeTruthy();
     expect(getByTestId('assistant-config')).toBeTruthy();
   });
