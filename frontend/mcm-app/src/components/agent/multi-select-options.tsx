@@ -25,7 +25,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@mcm/design-system';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -162,7 +162,7 @@ export const renderMultiSelectParameters = z.object({
  * ownership toggle lists inline. Mount once inside the dock (alongside the other render tools).
  */
 export function useRenderMultiSelectTool(): void {
-  useRenderTool<MultiSelectOptionsProps>({
+  useFrontendTool<MultiSelectOptionsProps>({
     name: RENDER_MULTI_SELECT_TOOL,
     description:
       'Display a multi-select toggle list with a confirm action — e.g. which media formats a movie is owned on, or at which qualities it is ripped. Several options can be turned on before confirming.',

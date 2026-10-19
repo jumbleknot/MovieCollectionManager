@@ -15,7 +15,7 @@ import React, { useCallback, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button } from '@mcm/design-system';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { useAssistantRun } from '@/hooks/use-assistant';
@@ -97,7 +97,7 @@ export function RequestImportFile({ prompt }: { prompt?: string }) {
  * dock (alongside the other render tools).
  */
 export function useRequestImportFileTool(): void {
-  useRenderTool<{ prompt?: string }>({
+  useFrontendTool<{ prompt?: string }>({
     name: REQUEST_IMPORT_FILE_TOOL,
     description: 'Prompt the user to choose a spreadsheet file to import.',
     parameters: z.object({ prompt: z.string().optional() }),

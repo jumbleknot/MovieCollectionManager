@@ -4,7 +4,7 @@
  *
  * Contract: specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md. The organizer
  * emits a `render_collection_summary` AG-UI tool call carrying read-only collection metadata
- * (name, movie count, the caller's role — no token, no write). CopilotKit's `useRenderTool`
+ * (name, movie count, the caller's role — no token, no write). CopilotKit's `useFrontendTool`
  * maps the args to this presentational component, rendered inline in the assistant dock. A
  * "wishlist" renders here too — it is just a user-named collection (no distinct entity).
  *
@@ -14,7 +14,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { ToolCallPending } from '@/components/agent/tool-call-pending';
@@ -73,7 +73,7 @@ export const renderCollectionSummaryParameters = z.object({
  * inside the dock.
  */
 export function useRenderCollectionSummaryTool(): void {
-  useRenderTool<RenderCollectionSummaryProps>({
+  useFrontendTool<RenderCollectionSummaryProps>({
     name: RENDER_COLLECTION_SUMMARY_TOOL,
     description:
       'Display a read-only summary of a movie collection (name, movie count, your role). Does not modify anything.',

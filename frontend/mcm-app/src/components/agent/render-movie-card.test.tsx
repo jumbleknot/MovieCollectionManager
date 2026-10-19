@@ -2,7 +2,7 @@
  * RenderMovieCard unit tests (T040).
  *
  * The curator emits a `render_movie_card` AG-UI tool call whose args are the contract props
- * (generative-ui-and-actions.md). CopilotKit's `useRenderTool` maps those args to this
+ * (generative-ui-and-actions.md). CopilotKit's `useFrontendTool` maps those args to this
  * presentational component, rendered inline in the assistant dock. These tests pin the
  * presentational contract deterministically (no agent/gateway); the live tool-call → render
  * round-trip is covered by the web E2E (T037).
@@ -21,7 +21,7 @@ jest.mock('expo-router', () => ({
 jest.mock('@copilotkit/react-native', () => ({
   useAgent: jest.fn(),
   useCopilotKit: jest.fn(),
-  useRenderTool: jest.fn(),
+  useFrontendTool: jest.fn(),
 }));
 
 const addMessage = jest.fn();

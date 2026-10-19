@@ -2,7 +2,9 @@
  * UI-action tools (T059, US3) — client dispatch for the agent's `navigate_*` / `prefill_*`
  * tool calls.
  *
- * `@copilotkit/react-native` exposes only `useRenderTool` (render-only; no handler hook), so a
+ * Each tool is registered with `useFrontendTool` and NO `handler` (render-only: the display IS the
+ * effect). Up to CopilotKit 1.70 this was React Native's own `useRenderTool`, a wrapper over the same
+ * hook, which 1.79 removed (feature 081 US7). So a
  * UI action rides on the render callback: the registered tool renders a tiny effect component
  * that, on mount, (1) asks the BFF `ui-action-authorizer` to authorize the structural target
  * (default-deny; an unauthorized action is discarded at the boundary — FR-011/FR-012, SC-003),
@@ -23,7 +25,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { router } from 'expo-router';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useFrontendTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
 import { BFF_BASE_URL } from '@/config/bff-url';
@@ -248,7 +250,7 @@ function prefillPath(collectionId: string, movie: unknown): string {
 // bug). `status` is deliberately not consulted: it is pinned at `inProgress` here — see
 // specs/066-copilotkit-170-migration/spec.md.
 export function useUiActionTools(): void {
-  useRenderTool<{ collectionId: string }>({
+  useFrontendTool<{ collectionId: string }>({
     name: NAVIGATE_TO_COLLECTION_TOOL,
     description: 'Navigate the user to one of their collection screens.',
     parameters: navigateToCollectionParameters,
@@ -267,7 +269,7 @@ export function useUiActionTools(): void {
     },
   });
 
-  useRenderTool<{ collectionId: string; movieId: string }>({
+  useFrontendTool<{ collectionId: string; movieId: string }>({
     name: NAVIGATE_TO_MOVIE_TOOL,
     description: "Navigate the user to a movie's detail screen.",
     parameters: navigateToMovieParameters,
@@ -290,7 +292,7 @@ export function useUiActionTools(): void {
     },
   });
 
-  useRenderTool<{ collectionId: string; movie?: unknown }>({
+  useFrontendTool<{ collectionId: string; movie?: unknown }>({
     name: PREFILL_ADD_MOVIE_TOOL,
     description: 'Open the add-movie form on a collection, pre-filled (the user still confirms).',
     parameters: prefillAddMovieParameters,
@@ -311,7 +313,7 @@ export function useUiActionTools(): void {
     },
   });
 
-  useRenderTool<{ handle: string; filename?: string }>({
+  useFrontendTool<{ handle: string; filename?: string }>({
     name: DOWNLOAD_EXPORT_TOOL,
     description: "Download the user's exported collections spreadsheet.",
     parameters: downloadExportParameters,

@@ -4,7 +4,7 @@
  * The curator emits a `render_movie_card` AG-UI tool call; the dock must map it to the
  * RenderMovieCard component via the CopilotKit render-tool registry and show it inline in the
  * message list. Only the agent data source (useAgent/useCopilotKit) is mocked — the render
- * registry, the `useRenderTool` registration, and the dock's tool-call mapping are real code
+ * registry, the `useFrontendTool` registration, and the dock's tool-call mapping are real code
  * under test. The live tool-call round-trip against the gateway is covered by the web E2E (T037).
  */
 import React from 'react';
