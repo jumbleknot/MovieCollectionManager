@@ -1,12 +1,9 @@
 ---
 type: Service
 title: BFF (Backend-for-Frontend)
-description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract, its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, and the server.js and web security-header boundary the image ships with.
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract, its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
 resource: frontend/mcm-app/README.md
-tags: [bff, expo-router, auth, proxy, nodejs, mongodb, backups, account-deletion]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-17T13:24:33.842Z
+tags: [bff, expo-router, auth, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
@@ -14,12 +11,20 @@ sources:
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
     resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-6a3e5dbad8bc4145f0341cf9
+    resource: repo://frontend/mcm-app/src/app/_layout.tsx
   - id: openwiki-source-93d7280d04da25edff0be402
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts
   - id: openwiki-source-2335f107cbd84a8f7aed9777
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
   - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-dc9c673c8dc973e1e621fa45
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
+  - id: openwiki-source-3962f527ba083cef06c1e6a6
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
@@ -30,18 +35,30 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/account-step-up.ts
   - id: openwiki-source-e6a53b75d3e6241fef647e04
     resource: repo://frontend/mcm-app/src/bff-server/agent-config-ssrf.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
+  - id: openwiki-source-f3703151c1ce1fae30ed6c7b
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-db07bf09c075124e1a098dd1
+    resource: repo://frontend/mcm-app/src/bff-server/backup-driver-s3.ts
   - id: openwiki-source-e37e5da5fa7401fdb7992219
     resource: repo://frontend/mcm-app/src/bff-server/backup-job-store.ts
   - id: openwiki-source-28b3de7a863c75f0b1b6b62c
     resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
+  - id: openwiki-source-8bb25265914a7a45958ce98d
+    resource: repo://frontend/mcm-app/src/bff-server/backup-request-signer.ts
   - id: openwiki-source-0476c5058778e33745a9b2c2
     resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
   - id: openwiki-source-284b2b399a6eebffc24d3e93
     resource: repo://frontend/mcm-app/src/bff-server/backup-runner.ts
   - id: openwiki-source-ac55e963094bcd7298e35e63
     resource: repo://frontend/mcm-app/src/bff-server/cache-service.ts
+  - id: openwiki-source-4f96850edb77312043c68c9f
+    resource: repo://frontend/mcm-app/src/bff-server/error-handler.ts
+  - id: openwiki-source-d58b64a5afcc9df80ea92152
+    resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
     resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
   - id: openwiki-source-6129cd750694ad94a5d9cb3f
@@ -58,11 +75,26 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts
   - id: openwiki-source-78eeb348d704a1098ef44480
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts
+  - id: openwiki-source-c5a2ed751f38e7e326a9bb90
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-fe13721a7608b6a93a9e93f2
+    resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
+  - id: openwiki-source-a772a7e2a660182428f932f2
+    resource: repo://frontend/mcm-app/tests/integration/backup-tick.integration.test.ts
+  - id: openwiki-source-53aa23c014c1f05d94e82617
+    resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
+  - id: openwiki-source-ba4838cabca395ce4675ba30
+    resource: repo://frontend/mcm-app/tests/integration/route-coverage-map.ts
+  - id: openwiki-source-b2d2e0a4e2082278dc56a992
+    resource: repo://frontend/mcm-app/tests/integration/route-coverage.integration.test.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-18T20:44:33.459Z
 ---
 
 # BFF (Backend-for-Frontend)
@@ -75,22 +107,76 @@ logic in `frontend/mcm-app/src/bff-server/`, HTTP surface as Expo Router `+api.t
 credential — see [Auth chain](../invariants/auth-chain.md), which the BFF is the primary
 enforcement point for.
 
-Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email verification),
-`bff-api/collections/*` and `.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
+Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email verification,
+the public registration-status read, and `init` — the once-per-app-mount route that reconciles
+the Keycloak client's redirect-URI list, described below), `bff-api/collections/*` and
+`.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
 `bff-api/agent/*` (forwards agent turns to the [Agent Gateway](./agent-gateway.md) over AG-UI,
 plus `agent/config` for the user's own provider/TMDB credentials), `bff-api/backups/*`
-(destinations, jobs, and the internal scheduling tick), `bff-api/account/*` (the account-deletion
-challenge and its step-up callback), `bff-api/admin/settings`. Every proxy
+(destinations, jobs, the consent callback, and the internal scheduling tick),
+`bff-api/account/*` (the account-deletion challenge and its step-up callback),
+`bff-api/admin/settings`. Every proxy
 route follows the same shape: `requireAuth()` → `requireMcUser()`/`requireMcAdmin()` RBAC check
 → a per-request `mc-service-client.ts` Axios instance carrying the caller's JWT as
 `Authorization: Bearer` → `handleMcApiError()` translates mc-service's RFC 9457 problem+json on
-failure. The client never calls mc-service directly.
+failure (see [mc-service errors are RFC 9457](../gotchas/rfc-9457-problem-details.md)). The client
+never calls mc-service directly.
+
+Two structural gates keep that surface honest rather than conventionally consistent. The
+backups routes do not hand-write the four-step prologue at all: `withBackupRoute()` in
+`backup-route-support.ts` performs the context, auth, RBAC and error translation once and hands
+the handler body an already-authenticated `{ userId, jwt }` — a handler cannot express itself
+without them, which is a stronger property than "every handler remembers to". And
+`tests/integration/route-coverage-map.ts` plus `route-coverage.integration.test.ts` glob the live
+`src/app/bff-api/**/+api.ts` inventory and fail CI for any route file with neither an integration
+test nor a written exclusion — the login code-exchange endpoint is the single permitted
+exclusion, and the gate asserts that it is the only one.
 
 Agent-requested UI actions are authorized here too, not by the client: `ui-action-authorizer.ts`
 holds a default-deny target→role allowlist (`NAVIGABLE_TARGETS` / `PREFILL_TARGETS`), so the
 assistant can never drive the UI somewhere the user themselves could not go. A new agent-navigable
 screen must be added to that map or it is refused — the allowlist is the single source of truth for
 what the agent may drive.
+
+## The auth surface, and what `init` is for
+
+The client performs the PKCE exchange against Keycloak itself and hands the BFF the code, so the
+BFF is the only party that ever holds a token — the full login-to-request-validation sequence is on
+[Auth chain](../invariants/auth-chain.md). Four properties of this surface are load-bearing enough
+to know before changing a handler:
+
+- **Three cookies cross the wire and nothing else.** The access token and the session id are
+  scoped to `Path=/`; the refresh token is scoped to `Path=/bff-api/auth/refresh` **only**, which is
+  what makes it unreachable from an ordinary API request. All three are `HttpOnly`,
+  `SameSite=Strict`, and `Secure` outside development. The clear-cookie set mirrors those
+  attributes exactly, because a browser may decline a clear whose attributes do not match the
+  cookie it is meant to remove.
+- **`GET /bff-api/auth/init` is the redirect-URI reconciliation, and it is unauthenticated by
+  design.** The client root layout calls it once on app mount, best-effort. It passes
+  `ensureClientRedirectUris()` the *complete* list this client needs — the web PKCE callback, the
+  verified-email redirect, the native login scheme URI, the backup-consent callback, the
+  account-deletion step-up callback and its own native scheme URI — and the write is **additive**
+  (`[...existing, ...missing]`) and one-shot per process. That makes the list the contract rather
+  than a convenience: a URI left out of it is never registered by this path, and on a fresh realm
+  nothing fails at deploy time — the app keeps working until someone hits the flow whose URI went
+  missing. The mechanism, and the test that asserts the pre-existing URIs survive a call, are on
+  [Keycloak](./keycloak.md).
+- **Registration is gated by an application-level toggle, not the realm flag.** Users are created
+  through the Keycloak Admin API rather than Keycloak's self-service page, so `allowSelfRegistration`
+  read server-side *before any user creation* is the effective control; it fails closed on a store
+  error, so registration is refused rather than silently allowed. `/register` is rate-limited per
+  email **and** per source IP — varying the email must not buy unlimited registrations from one
+  source — and `/resend-verification` answers success for an unknown email so the endpoint is not a
+  user-enumeration oracle.
+- **Logout terminates only the caller's own session.** The handler authenticates first and acts on
+  the session id only when it belongs to that authenticated user; an unauthenticated request
+  carrying someone else's session id must not be able to force-logout them. Token revocation and
+  IAM-level SSO termination run only for that authenticated owner.
+
+`error-handler.ts` (`handleBffError`) is the older Express-shaped error mapper and is now reachable
+only from its own unit test; the live route handlers answer with `securityHeaders()` plus either
+`handleMcApiError()` or the RFC 9457-shaped `problemResponse()` / `problem()` helpers. It is worth
+knowing so a change there is not mistaken for a change to the live error path.
 
 ## The BFF's own state: MongoDB and Redis
 
@@ -138,6 +224,65 @@ feature. Full operating detail: the [backups runbook](../../docs/runbooks/backup
 README's "Two standing constraints" section ([`frontend/mcm-app/README.md`](../../frontend/mcm-app/README.md));
 both of its constraints — this one, and `server.js` running outside the Metro bundle — are
 load-bearing for any future BFF work and are covered below.
+
+### What happens to that state on deletion
+
+Deletion is the one operation that removes both stores' worth of BFF state, and it does so in a
+fixed order that is described below. The division of labour is worth stating once: **the Mongo
+documents go with the account, and the Redis keys go with the account, but the user's artifacts at
+their own destination never do.** Redis entries keyed by the user are cleared explicitly; the agent
+thread-owner claims are deliberately *not*, because they are keyed by client-supplied `thread_id`
+rather than by user, so they are not enumerable from a user id — they carry the session's absolute
+TTL, expire on their own, and hold an opaque user id rather than personal data. The agent-config
+document is deleted outright (`remove`, not `clear`, which would keep non-secret settings), and it
+must go *after* the backup teardown because the offline-token grant lives inside that same document.
+
+## The backup driver boundary and the hand-written S3 signer
+
+The two destination protocols are behind one interface, `BackupDestinationDriver` in
+`backup-destination-driver.ts`: `put`, `get`, `list`, `delete`, `testConnection`, and nothing
+S3-shaped — no bucket, no ETag, no multipart, no storage class. That is deliberate containment
+rather than tidy abstraction, and it is why a driver never receives a URL. It receives a
+`PinnedTransport` that the **factory** built by running the resolving SSRF guard and pinning the
+socket to the vetted address set, so there is no path from a destination document to an open socket
+that skips the check. `createBackupDriver()` is the only place a destination's `type` is switched on.
+
+- **SigV4 is implemented in-repo, not taken from the AWS SDK** (`backup-request-signer.ts`, ratified
+  by the operator on supply-chain grounds: `@aws-sdk/client-s3` would pull roughly fifty transitive
+  packages for four operations). It covers SigV4 only — no chunked/streaming payloads and no
+  presigning — and it is verified against **two independent external oracles** because a signing
+  implementation checked only against its own expectations passes while producing a consistently
+  wrong signature: AWS's published test vectors, vendored under
+  `src/bff-server/unit-tests/fixtures/aws-sigv4/` with the license alongside, assert the canonical
+  request, the string-to-sign and the authorization header at all three intermediate stages; and
+  `backup-driver-s3.integration.test.ts` runs the real driver against a real S3-compatible object
+  store, proving a server accepts what the algorithm produces. The vectors are GET/POST only, so
+  PUT, DELETE and a non-empty payload hash are the integration tier's half of the coverage.
+- **The subtle rules are the ones that fail as an opaque signature mismatch.** RFC 3986 encoding
+  (which, unlike `encodeURIComponent`, escapes `!*'()`); each path segment encoded with separators
+  left alone; the query sorted by *encoded* key then encoded value; and `x-amz-date` /
+  `x-amz-content-sha256` added by the signer and therefore *inside* `SignedHeaders` rather than at
+  the transport layer afterwards.
+- **The driver sends exactly the headers it signed**, because adding one at the transport layer
+  produces a request whose signature covers a different header set than the one on the wire. It
+  lists with continuation-token paging rather than reading one page — a driver that read only the
+  first page would silently under-report past the page limit while retention reported success — and
+  it never echoes an upstream S3 error document or a credential into a failure reason.
+- **`testConnection` separates three failures that have three different fixes**: unreachable,
+  credentials rejected, and authenticated-but-not-permitted. It also performs a write probe and
+  removes it, because a read-only key that passes a read-only probe and then fails every backup is
+  precisely the outcome the probe exists to prevent.
+- **Retention is "list, sort, delete the tail"**, which is only correct because artifact keys end in
+  an ISO-8601 timestamp and therefore sort lexicographically in chronological order. A failed or
+  `partial` run prunes nothing, and a prune failure never fails the run (it is recorded separately
+  in `pruneFailureReason`).
+
+**The backup integration suites are only as good as their skip behaviour, so they make it loud.**
+They run against real targets from their own compose file, and `tests/integration/helpers/backup-targets.ts`
+escalates rather than skipping quietly: with `MCM_REQUIRE_BACKUP_TARGETS=1` set and the targets
+absent, the suite fails at a named assertion instead of N connection errors. The rule for reading a
+result is therefore *watch the skip count, not the exit code* — a skipped test reads as a pass. The
+same helper convention is what the tick, deletion and driver suites all share.
 
 ## The account-deletion pipeline (feature 076)
 
@@ -342,6 +487,28 @@ open — but the reason it exists is this constraint.
   removing it reintroduces a silent production-only hang — the mechanism is owned by
   [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md).
 
+### What the tick route does with the call
+
+The route is the whole of the BFF's scheduled work, and its contract is deliberately narrow — no
+session, no cookie, one caller. Four properties of it are easy to break by "tidying":
+
+- **The time override is deny-by-default.** `?now=` is rejected with a 400 unless
+  `BACKUP_TICK_ALLOW_TIME_OVERRIDE=1`, which is a dev/CI-only flag: with the tick secret alone, "it
+  is 03:00" would otherwise be something any caller could assert, making every schedule runnable on
+  demand. Without an override the route ticks on the real clock, which is the production path.
+- **Due jobs run sequentially, not concurrently.** Each run holds its whole artifact in memory, so
+  running every due job at once would turn a busy tick into the memory spike the size ceiling exists
+  to prevent, arriving by a different route.
+- **`nextRunAt` is computed forward from *now*, and the claim is released in a `finally`.** A job
+  whose time passed during downtime runs **once** on recovery rather than once per missed occurrence
+  — enumerating them would fire repeatedly and, with keep-last retention, prune away the real history
+  the downtime was supposed to preserve. A job left claimed does not run again until the reclaim
+  ceiling expires, and one left on its old `nextRunAt` runs again on the very next tick.
+- **The due-filter's `$type` check is load-bearing, not defensive noise.** MongoDB's cross-type
+  ordering sorts null *before* every string, so a bare `nextRunAt: { $lte: … }` also matches a job
+  whose field is null or absent — which is every on-demand-only job, all of which would then read as
+  permanently due and run on every tick.
+
 ## Web security headers
 
 `frontend/mcm-app/web-security-headers.js` is a pure plain-CommonJS module for the same reason as the
@@ -410,15 +577,18 @@ The client-side view of the same layer, and the header contract's tests, are on 
   `SameSite=Strict` cookies (access token, refresh token — scoped to the refresh path only — and
   session id); client code never sees a raw JWT. The client Axios instance sends no `Authorization`
   header at all and relies on `withCredentials: true`.
-- **The shipped image carries only 76 of 1513 production packages — and the build gate enforces it.**
+- **The shipped image carries a runtime closure of ~81 packages out of the ~1600 production ones — and the build gate enforces it.**
   `pnpm deploy --prod` materializes ~1600 packages because they are genuine `dependencies` of
   `mcm-app`, but they are dependencies of the web bundle, which Metro already compiled into `dist/`
   at build time. `scripts/prune-bff-runtime-modules.mjs` walks the pnpm symlink graph from two
   static roots (`express`, `@expo/server`) plus one dynamic root (`openai`, reachable only by a
   string in the bundle) and deletes everything outside that closure, shrinking
-  the image from 1.73 GB to 335 MB (measured 2026-09-07). The 76 packages retained are exactly what
-  a traced full-E2E run plus a route-sweep ever touched. **Do not delete the script or remove it from
-  the Dockerfile deps stage** — removing it silently re-bloats the image without any failing check.
+  the image from 1.73 GB to 335 MB (measured 2026-09-07). The reason the closure is trustworthy is
+  that it was *traced*: a preload inside the running container recorded every module resolution and
+  file read while the full web E2E suite plus a route sweep drove it, and only 76 packages were ever
+  touched — every one of them inside the closure the roots produce. **Do not delete the script or
+  remove it from the Dockerfile deps stage** — removing it silently re-bloats the image without any
+  failing check.
 - **A bare-specifier build failure means a CopilotKit/LangChain upgrade added a lazy provider.**
   The builder stage also runs `prune-bff-runtime-modules.mjs --check-bundle dist/server` to detect
   packages the exported bundle names by string (e.g., `@copilotkit/runtime` reaches its adapters via

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1c65d1bc51704fab1c1e0eb54ae712d877cfd96d69adecde177cdc6b5330fda9",
+  "pageVersion": "sha256:03bd5a817658e6a69406ff08e098e6c056254c52eb3279a6346b8df959b6e7ef",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -350,7 +350,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer.md",
-          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+          "version": "repo-file-v1:sha256:d7ba046b8d2630a29708790d81da973621d7e29df8026a27c40fe628466ef9c0"
         }
       ]
     },
@@ -360,11 +360,11 @@
       "evidence": [
         {
           "resource": "repo://.devcontainer/devcontainer.json",
-          "version": "repo-file-v1:sha256:69133df14a122e24a61d2684f568d60b2a8bada422a1f7917a0ac6e2b70d67bb"
+          "version": "repo-file-v1:sha256:f291d883da5fd338b918c1380d56fc0b07cd4b0a178514df21c940f4b6c6d84e"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer.md",
-          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+          "version": "repo-file-v1:sha256:d7ba046b8d2630a29708790d81da973621d7e29df8026a27c40fe628466ef9c0"
         }
       ]
     },
@@ -374,7 +374,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer.md",
-          "version": "repo-file-v1:sha256:97f20a3a8ae9a621f72c9150dbb95af4ea8a2a4022419db2e01ef27b1db901a6"
+          "version": "repo-file-v1:sha256:d7ba046b8d2630a29708790d81da973621d7e29df8026a27c40fe628466ef9c0"
         }
       ]
     },
@@ -411,10 +411,66 @@
           "version": "repo-lines-v1:sha256:be74213e0746c631d3159d9559848e3df3290fbac036881b3b9350f863ce052f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWE5NDM3MDIwMDE4MmM4MDA2YzQ3ODZlY2M5NjZiZmNlMThhMDFiYTYzNzRhNWRkNmRkZmZlYTNkN2E5N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTI1NGExNGRkMTY4YWRkNmU1Y2U5YjI0MjIzZDJlOWY5NTMxMzBlNjljY2Y5YTNkODUyZDYyMWFkOGQ4MjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2Y2MzZWVmN2U5NTQ2MDUwYjVjMWJiZWM1MTQ4NzNiZTI3MmVmZDcxMTM2ZmRiYjg3ZDhiN2M5MjhmMzQxOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNDA4ZjllNDQzMTUxZjA1MTMwNjBhMzI2ZDQyNDYyNjQ4ZmNjNWFhYmU0YTc2MDljMWNjNDA4NmI4Y2U1YzgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9899cccdb9d44c75a4fa1e96830d74f4",
+      "statement": "The `coder` UID renumber belongs in `toolchain.Dockerfile` at user-creation time, not in a layer on top of the prebuilt image: the toolchain image creates `coder` at 1000:1000 and moves the base image's `node` aside to 1100 first, so the container user matches the uid that owns the workspace on the sandbox side, and the overlay copy-up cost is zero because those files do not exist yet. The ownership-repair helper `.devcontainer/fix-workspace-ownership.sh` — which fixes only mismatched entries rather than `chown -R`-ing a large tree on every start — is wired into the sandbox config's lifecycle hooks; the retained Docker Desktop path instead uses the inline `chown` list in its own `onCreateCommand`.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer.json#L257-L280",
+          "version": "repo-lines-v1:sha256:a83aa9f22660689c049386b29bc34b43930a2b009eaeb726470c04bd0e50124e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMjA3MmM2NmNhMjZmODlhNjdlOTU1YTMyZTE0NmVmZTg1YmI1MzQ0OGVkMGZhNDdjNGJkZjljMTFmZGY5NzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDliODliODQ0MjY4NzdjYWRkYTRhODQzMWVkYTZjMGVjNDljZTI5N2QwNzY5NWFlODhiMTlmZjZhZjcyNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiODlhZDA5ZDQwYzNkZTQwMWY3Yjg3ZGNmNjk0ODQ3Njc0OWE5MmMzYjIxNmRhMDA2OTQwMDJmZWNmNGEwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNzQ5ZTQ2NTcyNDgxNDA4N2Y1ZjQ5YjJmYTZiZTQ1ZWQxMDQ4YzI0MDJjMzI1MDRhM2JlZGZhN2UzZTg2M2IifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/fix-workspace-ownership.sh#L29-L40",
+          "version": "repo-lines-v1:sha256:99a6bed14e08ded81366c5c9b589917374f3360ebc54996b0910291e27e439cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MDljMmU2ZTFiYmZmNTExYjFjYWQxYmVhNDY4YzNkMmVmYjMxM2Y2Nzc3MTMwZjNkODE1NWFiOTg4YjNmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTFlYzU2Mjc1YzEzMWEyNjQ4ZjU5MDdmZjliOTRhMjdjMWNhMThiYWUwYWY3YzVhNjVjNGRhNzU0YjBlYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzMzkyZDcxNTQzN2U0ODEyOTViYWYzNmM1ZTYxMjQ1NmIzZmMxN2IwMDc5YjI5ZDYzMDUwNGE1MjRjNjZkZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiY2YyYzc4MjY5MTI0YmRmZjJmN2EzYzU0YTliN2JiYjdmYjM0ODNkMjgzOWRjYTU3ZGM1YTQ1NjgzOWFmMTgifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L394-L440",
+          "version": "repo-lines-v1:sha256:c887ca054195e4acd35d7517c6bbbc2e83406bb99e2ceab27bb109e760259bfd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5OTZkMWZhZmY1NjhkNTEzYTlhZDY0NDIxNmNhZTlhNzI3M2MwZjU1ODA0NmNiNjVlMzE5MzMwMDkwN2Y5NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MDIzYWNhZTg4MDI2MTI3OTViMDc0NGU2MGQxMTYyMzZlMjI3ZWZmNDQ4MGNmZTNjZTY4YTRkMWNhOTUyNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlM2E3NDkxOGMzZDJiZTYyNjBlNDQ5NjEyZDhhYmY5YTlmMzVjNGZlOWI0YTkwMWM5MjBiNDExZTZlNDA5NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/toolchain.Dockerfile#L100-L140",
+          "version": "repo-lines-v1:sha256:2e6c3e0b0e6bcb3c68e9b2fe4f919057444945212e06250e0405d51772d17cc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZWJmMTQ1ZmNiNGNjYWJmY2VmOGRkYTdhYjkzNDQwNzk2ZDkwMmY1NTFhNGMxYmYzNjFjMjA3MmEyNjBjN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NjFkNjE5ZTljZjMzYmUyMzRlY2Q1ZDk5MTk5ZmNlMDZlMDJmZTRhMmZjZjYwZTY5N2I2ZWIyNTRlNTc5NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhNzA3Y2MyMzNhODAxNDE1ZmRlNGU1MzJhMDYyZmU5M2U3YWI5MzljYjdkNmU2M2JlZjhkM2YzYzBjYTI5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMWYzYzk1NDUxZjg3NzJiMjM2MWQyYzE5MjQzNWJiMTA2ZDc4ODE0OTEyNDg4MzRiN2QyYzdhOWQ0OWE5NjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d022b9e8bd2248cc9ca995e449a2a553",
+      "statement": "`init-firewall.sh` exposes one deliberate, off-by-default widening lever: `FIREWALL_ALLOW_CDN_RANGES=1` additionally allowlists the published AWS-CloudFront and Cloudflare CIDR ranges (from ip-ranges.amazonaws.com and cloudflare.com/ips-v4) for the case where a CDN round-robins to an address the per-domain A-record snapshot missed. It is off by default precisely because it opens egress to both providers' whole edge networks, so the tight per-domain list remains the default posture and re-applying the script is the first remedy for a stalled pull.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/init-firewall.sh#L188-L217",
+          "version": "repo-lines-v1:sha256:485886196dd8fb908f7c8f793903b6ae387fedede6ad383d5f14c9e23fd3fa8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNjEwNDdjZDhmOTQyYTVjMDg3MThkZTViMTA1YmJmNWJkZTEyZmE3ZTY4MTAzZGIwNWU2OTcwM2MyM2Q1NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUyMTczNTE2ZjU4MjEyZTU4NDU0M2MyOTdlZTlhN2JhZDRjZTZjZmZlZjVlYjRkMzIzZDQ2NThmYjdkNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyOTk1ZDk2NmVkYWU0M2MzZDIwZWE5YWRmOGFiMjI5MTJkMjA1OTVhNjMyMDdjNDdiM2ZiNTcyNjIxZGZmMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNThjMTJiOTU2MTUwYjU3YjU5YTQ1MTZhNjJjMjZjZDU4YmIzZmY5OTA0NmJiNjJmMzdkYzUyOTc0NmJmYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce5747c820e24b9098704631372e97bf",
+      "statement": "`scripts/gen-egress-policy.mjs` never writes a file: both enforcement forms (`--format sbx-policy` for the host-side sandbox policy and `--format ipset-domains` for `init-firewall.sh`) are piped by their consumer, so there is no generated artifact that can go stale in git and silently disagree with `.devcontainer/egress-allowlist.json`. The forge registry host is never stored in the canonical list — it is injected at runtime via `--forge-host`, and an absent value omits the entry cleanly rather than erroring.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/egress-allowlist.json#L1-L22",
+          "version": "repo-lines-v1:sha256:2e1cc25ede9e64719c06e90cc453828e05fb3fb5a3e18794a79ba72fac7279bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L1-L37",
+          "version": "repo-lines-v1:sha256:5a8a41835575c3f5e88711341619b04d49c0f2dd78fe3fbe81fc0199a3958ed7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhOTZjZWY3NzFmNGJlOTY3YjZjOTE1ZDlhYzhjZjQ1ZDg0YTEzNGUzMzg0NDYwOGI2MGM1Zjc0MWZlNGQ3NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMGE2MTFkYTA0ZmJjYTFmOGMzMWY4YThkZWM5ZTNmOWI4ZmIxODk0Nzc4Y2IzNTEyNGEzYTEyYzdiMmQ3NWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7dbe25c632274b548b292b1b130bd3c2",
+      "statement": "`.devcontainer/verify/verify-firewall-allowlist.sh` does not carry its own copy of the expected destinations — a check holding its own expectation cannot detect drift in the thing it checks. It resolves each canonical domain through `scripts/gen-egress-policy.mjs` and asserts that at least one of its addresses is present in the live `allowed-domains` ipset, which also makes the `cdnRotating: true` class visible as the documented re-apply reflex rather than as a missing rule.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh#L49-L70",
+          "version": "repo-lines-v1:sha256:175ee65d025d3f6e10667d03f04a2da2fe8a53d7c13f8463e01851b9631c1744:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MTMzOGZjNzQ5NTA5MTQzNjhlZjM0ZmQ2ZDJjNTFhNTNhMzNmNWEwMTNjM2E3ZDU1M2I2MmY3ZDFjYWUzYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MWI3ZjE4MzY4NDMwNmNjYzJiZmYyMGVjYzdiY2E1ZWExMzc5MTY0N2YyY2U2YmY3M2RhOWEzNTkzNWJmODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZWQxZGU2ZTgwMTllZjU3NWQyMzUwNGVjYjIwMDFmMzY4MDcwNDJkMzExNjE2MmU1ZGIyYTQ1OTg1ZWQzZTYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-18T17:22:52.674Z"
   }
 }

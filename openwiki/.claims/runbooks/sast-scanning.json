@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba043ef6f0e1646e6d79f6e591e660b919b811ed95e92cec4ac238fcf23ebc22",
+  "pageVersion": "sha256:46c3fbb9fa3310acbe5ba9e62db0e86bb314a0cba6585d8daa198703321c327c",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -314,19 +314,19 @@
       "evidence": [
         {
           "resource": "repo://pnpm-workspace.yaml#L81-L109",
-          "version": "repo-lines-v1:sha256:203c8bafea65ac2142ead84eb73f53fbe42d3c1435573f434a20bd3078c58035:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+          "version": "repo-lines-v1:sha256:36b54ebf3df7c9286afed257801bae29ea77713d57df64789b299c02781d01ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
         },
         {
           "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L60-L63",
           "version": "repo-lines-v1:sha256:bd2596b8565705e2f1eec76fb285e7d1665d97c73fb99873173fe988fe0c82fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjYTI3MzE0ZDhiOTFmM2IzMzlmNDIwMmU4MWEyYTU3NDdjMjg5Mzg3ZTZmOTZhMDI3OWIzNTViNDYyOTAzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFlNzEzNDIwMGFlNDA5MjQyN2VlZWZmZTFiZjhjMTIwM2JlNTUzOGE3ZWU1MjA3MzVmNjZjMGI2YzdlOTE3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZjZGVlMjc4ZTAxM2IxNjlmNWMxMGU2NmUzNGUxOWI2NjM0Nzg0MDI5ZDlhMDk2M2JjMTY0MTY2MmZiMmI2ZSJ9"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L110-L147",
-          "version": "repo-lines-v1:sha256:7be0129d56ed9d62820f311a06162bba77bd5f42abd14d01b5ca1983f6ef9578:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZDUwNjRkMTA1YTFiNWY5M2FlZTNkNWZhZGU4NDZiZDQxMmNiNDMwMWM2NjY0ZWViNzBlYWE3OWNlODcyNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTBkZWM5MzY5ZGQxYzI0M2JkNjU4NjdlYmYzNDNhMWI3ZDlmZmFkYzhhMDNhODM1NDY4NWM0MTI1N2ZmN2EifQ"
+          "resource": "repo://scripts/check-override-consistency.mjs#L143-L178",
+          "version": "repo-lines-v1:sha256:0dddfcb1769e70c2174a3ec453be18cf9f690386961d34d98233dba2d7603c01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmI3YTA0ZmQwMGVmZDU1Y2M4YWVkNWVhZThmOGE0ZmJhY2U4MmVmMGJmM2QxODEwNDM2MjVhNzJlMDI4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0Y2Y4YjBiODJkNmRmMzEyZjEwMDVmMmRlMWNkYzc0NmRhZmYxYjQ2YTA2ODAxZjhjODJhOGIxNmM1MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTdlMGQ3YWE4OWYzY2M2NWE5OWVhMmMxNTgxZTAwMzUyZmQyNDI5ZjJjMDU0Y2I4NWMyYmMxZDc2NjgwOTIifQ"
         },
         {
           "resource": "repo://scripts/check-override-consistency.mjs#L24-L38",
-          "version": "repo-lines-v1:sha256:5e9634eeb8ee2650d347171c868d2652495eb4ef895816626f1966f1b176c858:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ODg2YWZjOWRjMzc5MmI4ZmJlZTFjMTE5MTIyY2ViZTk3Njc5NDc5NDExMDgxYTNlZWZiZDE0OWE2YTZmZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMWVhZDkzNmEyMjgxZDUzZGNjMDY0YjdlMmEyYWIwZDUzYjkyZWYzZWY3YjM0YjY2ODY3MzAwNzg5NWM4NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MmM0NTM3NjJlNjRjZmY5ZTk2NmY4ZDJmM2FjODY4MTM1MjMyNWFkYzUzODJlMDM3OTA3YjBmMjk4Nzc1NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwZGRiZDdiOTNkMWQ5YmI5ZmUyNzc5NzQ5ODgxZmQ5OTE1NGJiNzU5ZjM3MjQxMzdmZTBmYmVlMzk1MTZiZjQifQ"
+          "version": "repo-lines-v1:sha256:5e9634eeb8ee2650d347171c868d2652495eb4ef895816626f1966f1b176c858:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ODg2YWZjOWRjMzc5MmI4ZmJlZTFjMTE5MTIyY2ViZTk3Njc5NDc5NDExMDgxYTNlZWZiZDE0OWE2YTZmZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMWVhZDkzNmEyMjgxZDUzZGNjMDY0YjdlMmEyYWIwZDUzYjkyZWYzZWY3YjM0YjY2ODY3MzAwNzg5NWM4NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MmM0NTM3NjJlNjRjZmY5ZTk2NmY4ZDJmM2FjODY4MTM1MjMyNWFkYzUzODJlMDM3OTA3YjBmMjk4Nzc1NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4NTk1Yzc4Yjk3ZjU4ZjU4OTNhZGY3MDQ5YjVlMzNlNjIyMGJmYzFjYTNkODJkM2JiODFmMjRiNjJkMmRhYjgifQ"
         }
       ]
     },
@@ -659,7 +659,7 @@
           "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L526-L532",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L776-L782",
           "version": "repo-lines-v1:sha256:79dcc7355f709be994d0674cdb5bceef97aaac7a7b14c6c1a56b4a9580d4e75a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NTdjOTg3NjQ4ZjIyNzRjMWUwYWVjN2E5NTIyNDA1NGI2OWI1MmUxMDUzODg4MjE5NTQ5MjMxZTU2Nzc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhMWY0NWY0ZGEyMzFjNmJhZmY5MDZhZWU4NjBjNDMwNDZiMjM2MGMwZjc4YzkzODFmNDJjOWVkZWRmMTNjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMzMjk5NjgyMTU3YTA2OTg1MzBiODg2NjkyNWQ3OWM3MmUyMzc1YjM0ZGRlMTI3MDg1MTAwNzhlMTUwYTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3Y2RmMmQ3NDc0NzQzYjgzMWI1YzNmMjZkNTAyNWRjODczZTE4ZWE2MzJiNGUyNTFhMjVjNzcxMGMwOTI4YSJ9"
         }
       ]
@@ -764,19 +764,23 @@
     },
     {
       "id": "claim_2991b09e789c459ab133852d7ad1f2ef",
-      "statement": "A keyed override floor whose halves cannot be parsed — a vulnerable-range key with no `<` bound, or a patched-floor value with no `>=` bound — is refused out loud with exit 2 rather than skipped, because silently passing over the entry it cannot read leaves the control unguarded.",
+      "statement": "A keyed override floor whose halves cannot be read is refused out loud with exit 2 rather than skipped, in all three cases the gate cannot compare: a vulnerable-range key with no `<` upper bound, a patched-floor value with no `>=` lower bound, and a value not written as `>=A` or `>=A <B` (a `<=` cap, a `||` union, a caret), because silently passing over an entry it cannot read leaves the control unguarded.",
       "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L165-L170",
+          "version": "repo-lines-v1:sha256:bedff2194a09f76ab55875600ea7d5d90a698ae6460b1bcd3d6679e9a4c8bb1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdmMjBjNGZjYTRkYTlmNDMyMTJjODBmNDhlNDA5ZGJjZjk0OWE4NjU0ODRhMDhjYTA5NjAzNjcxMDI2M2FjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWZlYzQxY2JlNTliYzczZjA3OTU1ZWI2YWFmZDRmMzRkZDk3MDM0ZjljZWU3NWM0ZDczZTkwMzAyMTYzNDFkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
         {
           "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L82-L87",
           "version": "repo-lines-v1:sha256:0003ecddc67d686173065e91df0dfc473f63309a3208864a6186d7ed2d414f0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM3NmJkY2Y3ZmRlYjk4MDk1MGUyMzk4MDUxYTEzZDZiZjRhYTFjY2ZjYWQ0NGJlNDk2NGE3MjZlMWYxNzdlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY1ZTlkMDdhZjI0ODkwMmRkYjQxNDE5MTA5NTFjOGNhNjdlYzI4ZWYzNWRjZGZmNjcwNWVmYzFkMDI3M2RiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFhNDZlYjY2OWZhOWMyYzY0NTRkYzM2MTdjOWQyZDYwNDJkOWRlZDJkMmI4ZjVkYTM1YWU4Zjc4NDc1M2Y0YyJ9"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L131-L138",
-          "version": "repo-lines-v1:sha256:2c96d85ccd9145383d74bcea2bc782fa20e7657562e0a1069c9290aa62952a50:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNhNmRmODMxNTNhOWYwNzlkMGJmMTBlNzVkMDk4MTdhMzM2YmU1ZjFjN2IzMWQ1NTk4MWUzNjE1NDQzN2U5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdiODc3OTk5NWMwYjhiMjhiNTgxNTI4Zjc0NGMzYWRmODNhMzAwY2I3ZGQyOTg3MjE3NmNjZTZhNGQ5NTJkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2IwNmRmNjhjYjE3N2QxZGJlYTMyNjc0NDk1MDAyNjA1ZTlkYWMxNDhjNmEzM2IwMmIyNzBlNjQxZjExMDU5ZSJ9"
+          "resource": "repo://scripts/check-override-consistency.mjs#L161-L173",
+          "version": "repo-lines-v1:sha256:13104e047f832e1b592a2d7a024bf3767caf7a34f4527b1112518f10a19c21e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYTZkZjgzMTUzYTlmMDc5ZDBiZjEwZTc1ZDA5ODE3YTMzNmJlNWYxYzdiMzFkNTU5ODFlMzYxNTQ0MzdlOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3Yjg3Nzk5OTVjMGI4YjI4YjU4MTUyOGY3NDRjM2FkZjgzYTMwMGNiN2RkMjk4NzIxNzZjY2U2YTRkOTUyZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMDZkZjY4Y2IxNzdkMWRiZWEzMjY3NDQ5NTAwMjYwNWU5ZGFjMTQ4YzZhMzNiMDJiMjcwZTY0MWYxMTA1OWUifQ"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L186-L193",
-          "version": "repo-lines-v1:sha256:2e735f7587dfcc2a5d83df2c07c3409c22181ef0bfea5810ae8eb8a768a0af82:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFjMmFhMWQ4MjY4ZjQxOWZkMjI5ZTFlODYzMTc3MDk4ZDcwMGViOTY0ZDg1ZmY2YTBhMzg5OWJhNjI5ZWNhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM5YTkxNjEzNTA4ZTQ2OTY4MjhhODVmYzkwY2I1MWU5NjY4N2FjMWMzZDM1MmYzODMxNjJjN2M0YTEwOWQ4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYwOTdhODg1Y2Y2YTc3NDkwMjFhNTQxMDA2MGJlNjJjZDc4ZmJmNTJiODZiN2IxZjQ2N2ZiYzdjMTMwOTgwNCJ9"
+          "resource": "repo://scripts/check-override-consistency.mjs#L246-L251",
+          "version": "repo-lines-v1:sha256:13ffccd33bae6018b4dbbc466a9f7f3db3416ec37a9369237079fbf067040ee3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMzMjBjNTU0YjI0OWJlOWRjMDE2YWM4ZjEwY2QwZDNhZjFjYzYzNzJmMzNjZmZlYTZhMmU1YmVjZWM3MTJlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZlZTVkZGNmYjlmYzViYjllNWE3ZDQ5NDg0NmQ0N2ZhMjUyNmMzMTA3NGY2YmFmZDlhOWMzZTg2MDg2NDNlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U5OWM2NmQwMGNhODIzODc1YTUyZWRkZjg1MmRmOTdkMzEwMGUzMWY3MTNhOTQwN2Q4M2M3YTQyY2FhOWUwOCJ9"
         }
       ]
     },
@@ -789,14 +793,78 @@
           "version": "repo-lines-v1:sha256:3334be56e27c9a1c8989ff068699d908514539d178bb7b4739db6a0e936f3a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY5OWZkNDM4YmRiNDAzM2VhMWQ1M2VmM2UwZWY3OGRkM2UxNTFjOTA0MTMwNDBlZmM3YmIzYTdkMTBmYzJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJjMTViY2I3MDBjNTRiY2IxZjcxMTM3YmM0MDYyNzdiZDA2ODhmMDcxY2NiYThiM2JhNzZjNjkwM2YwZTc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L666-L678",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L916-L928",
           "version": "repo-lines-v1:sha256:ff8e44efed90c30ebbef312a7ff8b86e361a6e9318c281be288ed54e3313422b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDhjYjljNWY3NDZiNTI5NDYxODBkYTIzZjM2MjgyNGM1MzBlNTE1ZmIwZjI2MjlkNmJhMDkzYjNkMmM2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODQ0YmVkM2VmZjQwOGIyZjhmZDYwNTgxZDQ3ODM2NTI5MmVkM2FiNjEyNjIzYTRlM2M5MTM0Y2JlMTYxMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YzNhOTI2ODFjMmUwOTY0ZGI1ZDlmYTNhMzU2YjYyNDI3NTMwYTcwYWFmMTUzMjJjNjYxMTU1NzRlNTBkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODIxYjA2YzA3NDZhY2JkNmY1YzJmYzRiNGM5NWNmMmJmZTIxMDAwMDBhN2Q3ZDg0OGVjZGQ2YTIxMTM5NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b37e98bfc8e14c14a62cfc8b7400b398",
+      "statement": "The override-consistency guard is a step of the `naming` job in the guardrails workflow (`--selftest` then the scan), not a step of the `sast` job, so a half-bumped override floor reddens `guardrails / naming` and no `sast` output names it; it is placed there deliberately because it must run on pull requests, and every job in that file is a required context by construction.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L146-L158",
+          "version": "repo-lines-v1:sha256:8998d3f263c30c40625c9d028f796adc64d805e408c26f8f3d6173b0114cf6fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNmVjMzUwYmRiZjI2MWM1YTM2NWY3NjM4NTkxMGVkMWM3N2Y4YmEyZjM3OTZiYTJlYmFiNzIzZmFmNjUxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNjZiMWI0OGIzYmY1ZWNjYzU1NDc3ODY0YjM5ZGY3N2Q2Mzk2NGJiNjVjMzgyNTQwMmIyZjM1NjJkMzE1NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOTZlYjk1NzkyOGI2NGY1MDQ3MDJkMWI3NWM1YzYyYTcwM2Q5YjJiNGU4NjI1YTQ4ZmY5Y2UwNjhmYzY2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBmNjA1NzIxNjVkMjA5NzNjM2Q5YTI1ODY5Mjk1ZWI5NjY0N2ZhYTlmNTE4MjYzY2MyNGE3Mzg2NjZhNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f87278089dbb4b36b41c290a9e5aa9f8",
+      "statement": "A keyed override floor's VALUE has a second invariant besides its floor: its exclusive upper bound (the cap) must be at most the key's major + 1, because Renovate's npm manager reads the value as a plain range and widens the cap to the newest major — closing no advisory while handing a dependent that resolved into the vulnerable span a major it never declared. A cap tighter than the next major passes, a genuine floor raise that moves both halves and keeps the cap passes so the security stream stays open, a value with NO cap is out of scope but is NAMED on every run rather than passed in silence, and a cap the gate cannot read exits 2.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L104-L170",
+          "version": "repo-lines-v1:sha256:ccc74aa924f0e5cae841a4459806faca9405d7d7e81b78ac69d7829154ee2cb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YWMxNGZhNTY2NTVjODE5YmYwZmU5ZDg2NDRlYzA5ODUxMzNmNGMyN2RhMWU4YWFlNjkzZGJmMmZlMzBiNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjOWViZDJjNDk0MGZhOWI1NzJjNzEzNWUzYjgzMTQ1ZGIwMjgwNTllYWRkZjFiOWI1YThkY2JhYWQxZDRkYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L180-L189",
+          "version": "repo-lines-v1:sha256:218893b3b0024b14749e2ba281f0e0e08d83db9661564270a653e450766ae48d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNTM2NDMyMzIyMjg3NDM4MjcwYTA0MjdjNjY2M2YzODY4MDNiZjViZjU3ZWNmOWM1NzNkMmU4NjA0ZmEwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkYjg5OTE2OTMzNzRkN2NjOWQ2MWZmYjgzNzdjYmI5Mzk1ZmMyYjA2MWZkOWViMjZlMjZjMTQ3MjIxNGExNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNWRiZDBmZGIyNDZlMDE2YzI2ZTJkNzM2NjVkN2RmNDhiYTUxZTQ1YzgyNGZkMTE2ZWYwMzkwNzllYmZhNGUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L265-L271",
+          "version": "repo-lines-v1:sha256:cbe8678c59cda480d18b2152d554c663f4e352b3a0f89e72a90ab44ba2d8a1ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdkNWZmYWE1NGQwNWJjYWE2ODc3MmM3ZTUyYTFiNWNlNWZlMzFhNGFiZmIzNWEwOGEyNDAxNzgwMDg4ZmMyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc2NmNjMWIwMzRhMjk2ZjUwY2ZhZDk2ODgxNzA4MDVhMDBmODBlZjVhMTAzNzg0YWExMTExNDU0M2ZjYWNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI1MjkyODU1YmNlNTE5NzMyMjBkMTA4MzE3YzhiZWYzNWZhYTM5NmFlNzkwMjhjMmI5YzdlN2QzNjRmMWYzNyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L39-L54",
+          "version": "repo-lines-v1:sha256:a89eae916fdfda3331c753c45c94ac76c1214f696aa9666af8df4e406dc14340:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViY2MyMzZlMDQyOTI2MzcyMmRlMDBjODBlODIyNzA0N2U2ZGNlMWVjOTZmMDRhMTBlNGEzNDJiMWExNzYwNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NDliOTljZTBiOTAxZDczM2YxNmExNzlmODI2MDc5YmRhNmZkMzJkODk1NzQyZjEyYjA2ODMxZGI4ODAzOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYTdhZjk1NWVlN2MzY2FhYjVhY2Y2ZTBhMzE1ODJjMjQ2ZDBlMjI1MDgxODY0M2U4MmYzMWNiZDY2ZGJhYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNDg1OGVjNGFlNTk4MzRkMWM4OGNmZGRmMjljMjgwZTViMjIxZjRhY2MyNzI1ZGY3ZTU4MTM3ZTk2NDZjMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f96d5515f98b4b7db9fc627eb332c556",
+      "statement": "The cap rule was added because six Renovate major-widening proposals for this file were pending on 2026-10-18, and the structural answer chosen was to disable `major` updates for `pnpm-workspace.yaml` in `renovate.json` outright (patch/minor stay enabled and ungated, since a genuine floor raise arrives on that track), with the cap rule as the second line of defence if a widening arrives by another route.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L832-L842",
+          "version": "repo-lines-v1:sha256:4f2d3c19d9b9068f97482ffde511698a37a2fbfa753040b51c398fc75a68ab40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjNmMmIzZDQ2MzdmMWEyNjg0ZmM4MTJlZDY3YjdmYzdkMTJlZDIxMWM2MTcwN2VmOGVhYzZhMWY4NjVmNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkODJlYThmMmU0ZjhiNDM3NWJhNThhOWJmMzc3ZGU1YmEyNTRlNmM2ZGZlZDQzZjI5N2VkNmQxNDE5YWY3YTcifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L862-L882",
+          "version": "repo-lines-v1:sha256:3cfe4094b0f19f47c00f49050b209c62200c79da25102d0a4cb2b96dbe69c389:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViYjdlNzM5NGU3YmIwYzE1ZjBlZTMzNWVkMTdmZjEyZmM0YTc4NTkyYjNjMGNkMjFjNzIyNjg3YjUxYmJhZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_154172768ce5495cb648436928e71ec2",
+      "statement": "`scripts/check-override-consistency.mjs` exports its parsers (`parseOverrideKey`, `exclusiveUpperBound`, `inclusiveLowerBound`, `compareVersions`) so `scripts/override-lever.mjs` can ask whether an override's permitted range already admits a published fix, keeping ONE definition of how a version is parsed and ordered; the CLI body is guarded to run only when the file is invoked directly, because a top-level body made importing it for those parsers run the whole scan and `process.exit` out of the importing process.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L113-L132",
+          "version": "repo-lines-v1:sha256:08288f1d813c87a662b0af4afc467f587e6824b32149fa69716a4e1c2ecde58a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjZDU0NjZkNzFmODhiMWQ5ODJhZGZkNWFmNzc5ZWY4OGIyYzJjNjBlYjlmMTBjOTY1MTAyMThkNjYxOTAxNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzI1NmFiMTYzMmUzOTY2YzMzODc0YzViYjBhOGU3ODVkMTQyNGNkZDkyZDk3OWYxMmE0NmFmMDg2NWZjYmEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L354-L365",
+          "version": "repo-lines-v1:sha256:d6d26c38027a1f5c69f42b66b9b011d150ca2fd0a51888cedfdb969a6e257d03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NjI3N2QzZTI3YTA3NDdjZGExODA4MWFjYWI1M2Q2YzZjNDE2ZTZmYzQ2MzU1MDU0ZWRhMzY1ZTg5ZjNlOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4M2FjMjliYjRkZjBjNzNmNTI2ZjdhYmU1NGJkZjgyYjc0NzRjYjY1ZDNiZTQ4MDA0ZmM3ZmJmOTM3YWE4YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1OWI4Y2JiNDA3MDBkMDY5Y2M1ZDdlNWNmMGFiYTRiOTU5MTRkOGUyNDNkYTgyYTQ0MGNiMGRmYTMwNTA2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/override-lever.mjs#L31-L33",
+          "version": "repo-lines-v1:sha256:a85675321b21a8d8e0a82d66dcd371ee749c23514bc74ae9aaa46357714b2f1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyZjQxNTRiN2I3NzYxMmIyYTUxODk2NjA2MDJmZmU5YjAyZDkwYjg2ZjM4NTg1ZjczMTQyZjNhMWM5NTIwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzAyMTA2NjNhYTczYjEwZDI3ZjRiMmI2NDY0NGI5NTgzYTE2NGE2ZjJhYzUxMzY1NmIyM2QzZjA4ZDkxZWI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QxMzgxMTVkMmFiMGM3OWY0M2UxZTRmMDkyYWM5ZWUyZDhlYmMzOTdmY2FjZjhhMjU1Yzk3NGM1M2IyNjgwOSJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

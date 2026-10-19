@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:86a0b344fcb972af71239a2a005fff074844fb8be6e7501a50c44af28bcf791b",
+  "pageVersion": "sha256:bd50a2d2bf196b5bca6860426d781cda6993ff7f560d860fed0207806cc5926b",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -438,11 +438,11 @@
     },
     {
       "id": "claim_c4aba1e35f254ca083a6032c0c5f41fd",
-      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run), and a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch.",
+      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run); a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch; and Renovate's silence is not idleness — routine branch work only happens inside the Friday window (`* 2-4 * * 5`), the nightly cron runs outside it and carries only schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a single dashboard line while producing nothing, every run.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L13-L14",
-          "version": "repo-lines-v1:sha256:b524c6568a6bd1e695d53d3fbf592144f610ae0486e6f7ac4be07c536a32d7c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjYTNiMzc1MjZiNjYwNjU2ODYxOWU1NTI5Yzc3YmQxNDg2ZTZjMDM5YjA0OWJlMWFiY2ZlMDBhOWQyZGQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VkYzI1ZGUyMmQxY2RmNzliZmE4ZDkyN2Y1OTYxYWVjMjQzNDJiMDc0MGE2NTZmOWY1NWQ3MmYxOGZlNTliYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVlOTE2M2EzYWQ0N2IxYjlkMTBhNGE4OGVmNDZlZGNmZjdmYTI4ODFlNTI5MGQ3ZmFlMDg0ODY2ZTk2N2RiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY0ZTYyODI0NWU5NjYxZWRhOTIyOTYxNGIyYzBiZWI2YmU5M2JmYTg1NDY2ZWI0YTI1Mjc3ZWQ2NDczZGMyOCJ9"
+          "resource": "repo://CLAUDE.md#L13-L15",
+          "version": "repo-lines-v1:sha256:a8edb336d741089b59b26446165087d4e2d50ba29790de5799e134297c1b1c49:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjYTNiMzc1MjZiNjYwNjU2ODYxOWU1NTI5Yzc3YmQxNDg2ZTZjMDM5YjA0OWJlMWFiY2ZlMDBhOWQyZGQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJhZjJkOTQ2ZmE2ZTYxMDE5Mzk5ZmI4MDc4ZjY5YTkyNWQ2YWQwY2Q3NDhlYmU2ZGViMzE4NTc1ZDZiZTNmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVlOTE2M2EzYWQ0N2IxYjlkMTBhNGE4OGVmNDZlZGNmZjdmYTI4ODFlNTI5MGQ3ZmFlMDg0ODY2ZTk2N2RiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMwMjZmOTc5OGI0NmU3ZTgxZGNmNjY5MjYwNTQzNjM1YTc4MmFkYzhjMmI3NjM3M2Y3NmMzNjhhMGYzOWU2ZSJ9"
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
@@ -453,8 +453,8 @@
           "version": "repo-file-v1:sha256:92333b985d6cb2b08ed3ef4afad8c49009f2a71c607d4f969b979f3e9770a89a"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:df0bb8c736fc089079c7e6c74e91bf117f67230bdcfdf63272ddf90ca0ade30f"
+          "resource": "repo://docs/runbooks/renovate.md#L13-L49",
+          "version": "repo-lines-v1:sha256:1f8827877034219358f796824fcd02e8735448ceb4d97d2c4134782854d20e25:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZDQxMGI1ZDNlYTFmM2VjMjJmZWQ0NTFkNTBmOTU3ODhiYTNkMmM5YzVhZmIzZGU0ODQ1ZmJhM2FiYzNiZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTE4OWYxNTc1OThlYjFlMDQwMmRkZDFiNjU1MjgxOWRiMDZhNTZjYjdhNDk0YWM0YThhYjIzNTIzMTJiYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4OTgzNmRhNzk1ZTJkNWQ0ZDNlMmYzMjcxNzFmMTAyNGYyZmViOWVkNzJiNDdhYzZiZWEyM2Y1Y2Q2NDU2MzMifQ"
         }
       ]
     },
@@ -585,10 +585,92 @@
           "version": "repo-lines-v1:sha256:9a69b19018d5d1f75dbb3a6fc9761b39dca81663d143e55e65c0db41d701629f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTdkYmJhMTUyZDc1MWQzMWNiNjAxMWU3ZGNlNGE3YWNjYmI5MTZjNzBiMzliMjRkMmJkNjRiMmE5MzBiOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwZDEyODNiYmU3MzVhNWZhOWI0YmQyNDFkMTc1NDVlZWQ5ZjVkOTg1MzZjMmVkNjE5ODgzMWEzMjQwOGNmZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlODBmNTgyZjViNThhNWNkMTlmY2VjY2VmZDg0NmYxY2YyZGJmYzUzOTQwMmU0ODRiOWFhZDE4ZGRiNzE1Y2YifQ"
         }
       ]
+    },
+    {
+      "id": "claim_996b57ba588341e3bf235461c5684f8e",
+      "statement": "The package manager and task runner are pinned exactly and single-sourced: pnpm 12 via the root manifest's `packageManager` field and Nx 23.3.0 with its plugins at the same version, while the repository's Node floor stays at `engines.node >= 22.13` even though pnpm 12 declares only `>=18`. `scripts/check-toolchain-consistency.mjs` enforces the floor across every workflow and Dockerfile Node pin, requires any other named pnpm version to match `packageManager`, and rejects a second `packageManager` field outside the root manifest because corepack resolves that field from the nearest manifest and a duplicate silently wins in its directory.",
+      "evidence": [
+        {
+          "resource": "repo://nx.json#L1-L5",
+          "version": "repo-lines-v1:sha256:0c66d6ced8cf77d07f7b4cb8569475f9a7fbe0ed78a3f93190e73049bd0e9605:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGJhODNiZTZlMTQ0Y2JiMzIyZDA0MTI3Y2EyZmRiYmNjNjc4NmY3MjI4N2Y5MmVmNTQ2NmUwNzEwYWYzNGI4NyJ9"
+        },
+        {
+          "resource": "repo://package.json#L5-L9",
+          "version": "repo-lines-v1:sha256:93ab8df84b361baf232d1935f1601b151d6d1ca94845907bd05ff003a1ca4b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzg4MzkwOGZmZGRjNTZlMzg0OTI5ZWFkYzdjYmIzNTIwYWY1ZWZlYTFiMTViMzkyNjViOTJmYTQwNGY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L21-L38",
+          "version": "repo-lines-v1:sha256:710a798a647ea76e201febd6d08e12ab0d2142d7317655c8591715cdff76f9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYjc1ZjhiNzFhNTE1MzVjZDAwNTlkNDUzNDhhNWJiMGM1NmFiMDE0ZTJjODViNTBhNzdlM2Y2ZDZlMmJmYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTMxZmU5OGJjNDFiYzllOTBjMjQ2YWIyZDQ4NDdjYzBhZmJmNGViZTQyYTQzY2NlYTVjNjczYzY0NGFjN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NGJiYTA0NzIwYTNhZDk5ZmYzY2E4Nzg3YzEwM2UwMmE4OWUzNmM5YjkwMmI2YTdlZmQyZjRjZTUxNTI1ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhMjk0OThiYzRhYTNjY2Y1ZTYzNTc4ZjlhMzA2MzkxNzViYWZiMmIwOGZlN2I5YzcxZGQ2ZDFlNDljYzU0ZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52271c02e5924b56be90106672243820",
+      "statement": "ESLint 10's flat config replaced the legacy eslintrc format in both linted projects: `frontend/mcm-app/.eslintrc.json` and `packages/design-system/.eslintrc.json` are gone, replaced by an `eslint.config.js` in each, and the app's lint target now runs `eslint src` with no `--ext`. The flat configs globally ignore the JS/MJS/CJS extensions (flat config lints them by default and cannot narrow extensions from the CLI, so the old linted TypeScript set is preserved), wrap the Expo flat preset in `fixupConfigRules` from `@eslint/compat` because `eslint-config-expo`'s bundled react and import plugins still peer ESLint ≤ 9 and call context methods ESLint 10 removed, and pin four rules to the ESLint 8 resolved behaviour for parity. `nx.json`'s lint target inputs accept both `.eslintrc*` and `eslint.config*`, so lint cache keying survived the rename.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L1-L45",
+          "version": "repo-lines-v1:sha256:4cfcb994e3514f835908c04791a297f2ab625cc29b198389f14b15619b46aef1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L33-L43",
+          "version": "repo-lines-v1:sha256:124ef8789fef4958140aa5caa15d7042e4b1327029a3328943d239778c3b817e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmY4NjMxMDc2ODE4NTA4MWZjOTYxMzQ2Njc1M2VhOGIyYzNmZmMwMjU2MzhlYWYzYzUyZGM0Y2QwYTU0MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyYTNhZjAyOWQ3YjhmZWVmMzQyZDRmMzVlMDRhNDBjNmI4MzliZGFiYmI3NzVhNWFhNTM2NmRiYTc4NmVlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMmJkNDgzOGEyYmFkNDMzOWFhNTdjNzU5NDZkYzA3YTI4ZGViNTFhZTNmZDA2OTAxNGFhNDMwZjIxYTdhMGEifQ"
+        },
+        {
+          "resource": "repo://nx.json#L62-L69",
+          "version": "repo-lines-v1:sha256:08a83b1aae36b79736ebe58d02452defb3a13104446132d21acf0829430887a7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmZjg2MzEwNzY4MTg1MDgxZmM5NjEzNDY2NzUzZWE4YjJjM2ZmYzAyNTYzOGVhZjNjNTJkYzRjZDBhNTQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2EwOTFlYjQ3ZWUyZTRkMGU5M2Y1ZjMwZjY5NGU1MTlhYzVkNjI2OTE1Zjk1Mzg5MGQ0ZGU4NzQ0NTkzODViMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTdkNjJlNzQ3MjEyNjNlMTc5MjcyMTgxMWNiNDM2NzhjNjRmYWFiZjY2Mzk5YTY4OTgwNWM2ZDI2MzE4MWIyYyJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L1-L21",
+          "version": "repo-lines-v1:sha256:3b180f90f158c19d82f0b1e22462e76af4db0bf89a0a100d5b633ee7ee3a9216:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MmRmNjE2MDMxN2ExY2JjYTUzOWFhZGRkZmVkMjFjM2ZhZTJlNDM4MjI5NDg4NjJiYzZmNmU5ZjVhZDQyNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NDdjYWVkYWE3YWJhMmQ1M2ZmNjg0MTBkZDZiNzI2NmI1YjY1ZjBmODExYzU4Y2ZhNTI4MDVmOTdjN2JmOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8e3b969893342f7b22e93dbe8fb0151",
+      "statement": "The design system's UI styling library (Tamagui) is on v3 at one exact version in both workspace manifests with no compiler plugin, and `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` pins that shut: every `tamagui`/`@tamagui/*` specifier must be an exact version and both manifests must agree, the lock must hold a single `@tamagui/core` and `@tamagui/web`, the removed v2 Babel compiler plugin must be named nowhere, and every such update must resolve into one Renovate group so the bot cannot propose half the set. The guard exists because a lockfile refresh had already dragged a v3 core in beside the v2 packages through an open `>=` devDependency with no Renovate PR and no review.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/package.json#L20-L26",
+          "version": "repo-lines-v1:sha256:45afb4bf560c4ba9b67baff89f3e611152823ad9338d1f31fbfa221d34fdc91c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjQ2OWQ5ZTA5NzU3MjI0NjY2NzM0YzllZjdiMjU0ZDg4NTM0ZjVkNWJiNzA5ODk2MDgwNWM1NTNkYzMwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJhZjExOTYwYjliZWY1MWE2MGE1NDQ0ZGYyZDcwNmZkZTJkMzY3ZDdhM2FiZmQwMjQxOTY0ODkxMWViYTU4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzRiMDA1OTNmYmVkY2I3ODA3Mjk0MGRiMzY4MjczY2VkMDFhNmM3M2UyM2JmNzg5MTg2M2RlMTEyMWRmZTNjNiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L1-L21",
+          "version": "repo-lines-v1:sha256:867f988a8feacf67fa54d3c78605f3d1d7ec8c19456ae67fd41f6de9da1c574e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YmJkMjczNzg3ZWIzYWQ2ZTI1MGYwZTRiN2M4NTRjNzI5NjhhODc5Y2RiYmJhNWRhNjdiY2U1ODllNjZhMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd5a5e1563d345beb2cec5d5e25ababc",
+      "statement": "Feature 081 takes every major dependency the bot proposes to a decided end state — upgraded, or held with a measured reason and a re-check rule — one stage per pull request in a fixed order. Majors that cannot land are stopped in `renovate.json` rather than left to propose weekly: keyed security overrides in `pnpm-workspace.yaml` have `major` updates disabled because the npm manager reads the override value as a direct range and would widen its cap to the newest major, and each SDK- or lint-pinned held toolchain major gets its own group behind a `dependencyDashboardApproval` tick, since renovate@44 sets a branch's approval flag from `upgrades.some(...)` and one tick would otherwise release every held js major at once.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L832-L854",
+          "version": "repo-lines-v1:sha256:74eeb7d5d84230360c2ae4fe77db6a965c25fc2f74cb49b5012954dc87fdc23a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODQxMDk0ZGMzZDRjN2UyMTEyYjBlMzQwOTc0ZGMwYTlhOTI3OTgyMzEwYzVmZmZjMjIyN2Q3MmZhYzk4OWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjMwY2Q2YzE1NzIzMWMwMDNmMzFjY2QwNzE4ZjQzYmRmOGYyODJkZTUyYTZlNWJlOTM1YzdmZmRmZDlkZGEifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/spec.md#L20-L65",
+          "version": "repo-lines-v1:sha256:25046f7773e3f434972783917822b344db8c891ab7e6ecce4217cfc000bc4c05:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzNiYjY0ZDViYjk4NzRlYmY5N2NiZDZiYWM2Mjc0OTU2ZGUyNzNmZDE4Y2Y2OTdmZjBlMDcwMjhkOTI2OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmMwMzViMTE5OThkNTU1YzAwMzY0ZDI5MGE0MDk4NmZkOGVhMjA5MTY5MmIzYjgwZGFiOTJjZTZhOWEyYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1OWEzYjkwMDc4MzNiM2RkNThlNmE1MzUwYjVkZDE5YzczNGUyZjY0YThkM2QwZTcxMzRhZDQ0NGY1Nzc4MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZTEyNDM2ZDYzZjA3ZWIzZDI5ZmU1MDFmNjUyNjk3MWNiN2Y0MzRmNWFlNWRkZThjZmFmNWNkNGMyODMxNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d79e5569cac4de2974c890652ddaf93",
+      "statement": "Feature 080 replaced the from-source object-store image with an upstream, digest-pinned `rustfs/rustfs` Docker Hub pull in the observability stack and the backup stack, so the object store is now scanned by the ordinary infra-image CVE sweep like every other third-party server image instead of by a workflow of its own; the data moved onto a new external volume in a one-way migration whose old format is not readable by the new store.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L1-L20",
+          "version": "repo-lines-v1:sha256:e65866acd2d51ce4386987d3356b58123985ed45e70307c256fd76bb45b9fa68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjA2YTUwNWI3OTljYTM4YmI4NWU0MmQwMmUxNDdmMjQ5MTVmMjVjNGJlYjNiOWY0M2UxZWFhYmY1ZDVlMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMjlhNGZkMzhlMWUwOGFkZmZjYTAxYjA4YzliMDA3NjVhOGIyZmE4ZGVjY2M2ZDFmOTEwMDYyNDFkNWUxMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MmRiMTcxNWFkNzk3MTMwYzBmYzkxZjFhNWRkZWE4ODYzNmM2NDFhODA0N2E4MjI2MjdhMjczYTc0ZTJhMjAifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/plan.md#L1-L45",
+          "version": "repo-lines-v1:sha256:02eb0f771702f8b793bc7c8bfdf598885be2418f58d5eafcb625f834fc15e3db:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OTM3NjlkOTUxY2UxZTAxNWI3YTkxYzI0MzUyZmRjMjc2YTA3MDA1MWYzYTg3ODczNzNlNTJhNTE2MzFkZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NWI4Mjc4ZGUwZmIzYmRiMzExZmE2MWU5MTg1Y2Q2YWM3ZGViOTdjM2ZjMmMxYzIyNDdlYWE3MWM3MjA1NmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmMDhjNzI4YzBhM2ZjNmNlOTIzMjk2NzM5ZDAwZDIzOTU0MWNmNTk2MjNiYzVlOTc3MTU1OGY4YTM1MDY3NWIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T07:04:46.529Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

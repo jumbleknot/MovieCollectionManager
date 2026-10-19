@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7261eb4c24e6f56bb88b3303aad8b708a57d7f8b2910f64d48c0f281642071f6",
+  "pageVersion": "sha256:ba1214598c5bcd15cfc9bd8af12898f6fb707d5e5b85f7b2e406b7e6c9df0933",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -18,35 +18,37 @@
     },
     {
       "id": "claim_aa72f95432eb470393d32f792801fb0a",
-      "statement": "mcm-app and @mcm/design-system have both migrated from Tamagui v1 to Tamagui v2 (package.json pins tamagui/@tamagui/* to ^2.3.0 in both packages), reversing the earlier v1-only pin.",
+      "statement": "mcm-app and @mcm/design-system both run Tamagui 3 (exact pin 3.0.18, never a range) with NO compiler plugin — runtime-only — after feature 081 US10 moved them from Tamagui 2.7.7 to 3.0.x; mcm-app declares @tamagui/core and @tamagui/stacks and the design system the same two plus @tamagui/shorthands.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L30-L65",
-          "version": "repo-lines-v1:sha256:a94c8d636b34ac1c74fe2a1270d89697d0a0282af899d6c11fbc6795730abaf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OTM5MGM5YTAyNjkyZGE3ODViMTQ2MDg2NDQ1ZGMzYjEyYjFmOGQyNzNhOWY5NWI5NDY5YzdlZmM4NWNiNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YTQ0NGRkZTEyYmIzMjViNmJhYjVjMTlkZjAzNmZkYWQ0NmM2MDg5Njg3OWQzZmU5ZjkzZTc3OWFlNTVhOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0ZjcyMzc2MjhmYzcwNTlhODk5NjUzMDJlZTMzZGI0M2U3MTM3YzU0ZTg2ZjdkYjI3NTg5ZDBkNGM4OGQxNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YzRiN2ZkMzBkYmIyN2JjMDJkYzljZjIxZDIzOTBmMGU2MDE1ZDA4YzUwNDNlMzZiM2VmZmIxMGJhNjUzYTYifQ"
+          "resource": "repo://frontend/mcm-app/README.md#L19-L28",
+          "version": "repo-lines-v1:sha256:1f81355af6a089b7f668617fb24f0214a39316518c96eda0b43934edc716dcdd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTU0MzBlNDcxYTI2NTMyZDU0ZjRiMTlmYzcyY2NkZmFiZmI3MmI1NDc2MTVjOTVhNGJkOWVkMDVhNmEzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NTk0OTUyNzJkMDc3YzczNmJiMTdhOTQ5MmE0MGI5NjVlY2NmYjJjYzVkMjMwNjIwNThiNTRlMTVkNzBlNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMzIxMmRhNGJhZmYzOWNmY2JjMWIxZGQ4M2RlN2M0ZDQwMTdhODRjOWI3ZDU4YWYxZmEwOWE2YzQxMTQ0OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZjA3ZWEwMzk0NjA4MGE4ZjMyNzllZDhhYzBjNzUzMTZlYTYwM2UxZjM0MGNiNTY4NjMxYzQyYWQ3NmUxOTUifQ"
         },
         {
-          "resource": "repo://packages/design-system/package.json#L15-L28",
-          "version": "repo-lines-v1:sha256:1df5bee69e8ac50a5636745c794d20e641dfe217a3eb807f21bd668e5d277971:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYWM4YzQyOGE3MTM4ZTEyZjVkOTc2NTU1YjUyNjg1Zjc3YTMyOWIwODhhZDk3YjM0N2IzOWZmNWEwNTkyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMjk1OTFiYTE5YWU4NmUxMjMwODE5MGRkZjdkNTU5YjViNzJjNDUwYjZiMjMzOTdhZGY3ZjQ5YzNmZTdiOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzMDJhYzJhYWMzY2UxNWRkMjAwNWRkY2RmZjNjOThkMjg2ZDc2YzRiY2FmYmJhNTM3MWM2NGYwMDAyMjMwYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZWM2YTkwOTBjODk3Yzc0NzI2NzY4NDM0N2IzOWIyMDQzMzQ2MWM3YzBjN2M4MzVlMjBmZTE3MzkxMTkwYTgifQ"
+          "resource": "repo://frontend/mcm-app/package.json#L30-L31",
+          "version": "repo-lines-v1:sha256:15436fbd86956a7240f5096ea91925a40872f6fc21d1240c4cd39caa5684bb71:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg5YWVkNjQyNDFlM2JhMDBiYmNhYTc3YjJhYjg4NzU4Zjg4MWFmM2RhY2NhNzJiNjY5ZWUzMzZjN2RkMmI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4ZTg5YmQ4OTY2OTg4MzgyZmEwNTA4MjdjNjQ2YjA5MTNjNzBjZTM2MTA5ODY3NzYxMWQ0YjM2MzRkZTYyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRmNzIzNzYyOGZjNzA1OWE4OTk2NTMwMmVlMzNkYjQzZTcxMzdjNTRlODZmN2RiMjc1ODlkMGQ0Yzg4ZDE1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmNGYyYjNhNDYwZWQwNmEwNmYzYmUyOGViY2QxMmRhOWY4ODc5ODAzNzIyYzM5OWJmNzVlN2IzOGM5ODQxMiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/package.json#L20-L26",
+          "version": "repo-lines-v1:sha256:45afb4bf560c4ba9b67baff89f3e611152823ad9338d1f31fbfa221d34fdc91c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjQ2OWQ5ZTA5NzU3MjI0NjY2NzM0YzllZjdiMjU0ZDg4NTM0ZjVkNWJiNzA5ODk2MDgwNWM1NTNkYzMwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg2NTUyMTgwMDY1MGM3YmM1MjFmOWE0YTE0ODZjMGYxNjIyZGNiMTdiZDYyMzg0NjRjZGNmMmJkMWZjNmQyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRhZmFlY2EwNDA4MmU2Y2E5YjZjOGNjOGViZWZiY2U0Y2Y2ODMwOGEzMzQ3MTM1MTA1OGIwYTE1YTM5YjYzYiJ9"
         }
       ]
     },
     {
       "id": "claim_0ed0dd997c854a3c87b74c38c96140e3",
-      "statement": "babel.config.js now installs the @tamagui/babel-plugin optimizing compiler plugin for every non-test build (excluded only under NODE_ENV=test so Jest still renders Tamagui at runtime), whereas the design system previously ran with only the Tamagui runtime and no compiler plugin.",
+      "statement": "frontend/mcm-app/babel.config.js carries only babel-preset-expo plus react-native-worklets/plugin — the @tamagui/babel-plugin that ran from feature 015 until feature 081 US10 is gone because Tamagui 3 has no 3.x of it — and metro.config.js wires no Tamagui plugin either, so Tamagui renders at runtime through <TamaguiProvider>; the intended replacement @tamagui/metro-plugin 3.0.x was measured and rejected (it lowered web modules to static atomic classNames without emitting their CSS, printed 34,780 resolve warnings per export, and saved no bytes: 1,881,353 B with it vs 1,881,066 B without).",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/babel.config.js#L1-L32",
-          "version": "repo-lines-v1:sha256:a0a4f0b2e4267bb6c8cc577f9889c470ba28a3fede1df05c917902887db9551c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTBkZDc5NjhhOTQ5YzM2M2FiMjI0MWM5ZTA2ZjkxYTM2ODVhZDRjMTdlNDNmZDc3M2VhZmVmM2YzZDJiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_c265fa31059b4cc7b1d1a2d92fcb146e",
-      "statement": "The Tamagui compiler plugin lets Metro tree-shake the @mcm/design-system barrel import, which fixes the earlier problem where importing one design-system component pulled the whole Tamagui library into the web bundle and OOM-crashed Metro's dev bundler.",
-      "evidence": [
+          "resource": "repo://frontend/mcm-app/README.md#L19-L24",
+          "version": "repo-lines-v1:sha256:73848f490f89cb1e08c61c5df6558937d1fb5a2cec84003d6287ffb02d861286:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDllNTQzMGU0NzFhMjY1MzJkNTRmNGIxOWZjNzJjY2RmYWJmYjcyYjU0NzYxNWM5NWE0YmQ5ZWQwNWE2YTMyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I0ZmIxOWI2NzNjNWE3MGEyNmJmYTA2ODMxMWNiMDlhOWZmNTYyN2Q0MDI5MjhiYmYyYmFmNmIyNjEyZDJhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIzMjEyZGE0YmFmZjM5Y2ZjYmMxYjFkZDgzZGU3YzRkNDAxN2E4NGM5YjdkNThhZjFmYTA5YTZjNDExNDQ4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDhjMzMwNmQ2NTEzOTA4YzQwNGIwMzVmMjk5OWQ5Nzc5MzA3NzE4M2RkNDJhMzM1MmQwZWU1N2I4ZjZjYThiYiJ9"
+        },
         {
-          "resource": "repo://frontend/mcm-app/babel.config.js#L5-L11",
-          "version": "repo-lines-v1:sha256:ce68e05204980eedfc7dfe95143d3c77343a6214948a2be14ae80dd556b4b133:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlOWM5N2YxY2Y4MmFmNzllYjkzZWY1NzI0YzllODI3YzczMzk3ZjQxZWQ1ODFmMGQ2ODcxMWM4NDlhYjdmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNjZTkyMzdmNGZlZjlhZWU1MzdhODkzM2M1YmVjM2QyMmFkZTUwYmFkMjE5MGZmOGFiZTNhY2U5N2RhOWI1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVmYjgyMjU0MzY5MThmNjdhNzY2NWNlNmEzNTYyYzI0YzNjY2U3MzRlMmY3MDE3MDc0ZGRiYTdhNDRjMjQ1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGMzMTJlMDEwYmNhNTM1OWE2ZjA5OTJiMjVmYmMzNTZkZTA1ZDc3NmUzYTI4ZDFkOWQ0ZDQ3ZGI4MGYyZmQ4ZiJ9"
+          "resource": "repo://frontend/mcm-app/babel.config.js#L1-L17",
+          "version": "repo-lines-v1:sha256:5ff74527b551f804587b61f91fb36b47a1bf78b1c68f7292ce9dafd1ac319ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTBkZDc5NjhhOTQ5YzM2M2FiMjI0MWM5ZTA2ZjkxYTM2ODVhZDRjMTdlNDNmZDc3M2VhZmVmM2YzZDJiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tamagui.config.ts#L1-L11",
+          "version": "repo-lines-v1:sha256:8e09b821aa37b09c22a7f45fdfbf1c9cea0cdfb467a07d010281a054a30edd29:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MmQzYWMxNDE3ZjE2OWUxOTgxMDk0N2ZiMDExYWVlMzc3MjJiNGZjN2IxMWIzNjgzYmM3OTUwMjI5ZGM1MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -86,19 +88,19 @@
     },
     {
       "id": "claim_a9584ae4998649f6bd6868577545ed7b",
-      "statement": "The client-side Backups settings area (feature 073 / backlog #236, src/screens/settings/backups-settings-screen.tsx) lets a user configure backup destinations, create/edit backup jobs and schedules, view run history and stored versions, and manage the standing consent for unattended scheduled runs, composed from src/components/backups/ and the use-backup-destinations/use-backup-jobs/use-backup-consent hooks.",
+      "statement": "The client-side Backups settings area (feature 073 / backlog #236, src/screens/settings/backups-settings-screen.tsx) lets a user configure backup destinations (create/edit/test/delete), create/edit backup jobs and schedules, run a job on demand, view run history and stored versions, restore a version, and manage the standing consent for unattended scheduled runs, composed from src/components/backups/ (destination-form, destination-list, job-form, schedule-editor, run-history, version-list) and the use-backup-destinations/use-backup-jobs/use-backup-consent hooks, whose calls are all session-scoped server-side so no userId is passed.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L1-L29",
-          "version": "repo-lines-v1:sha256:bc09886a6a44ccf957343af36435fe5bd1d8c13a6f0ff2ca83fea36ce8994cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZDM5NmU3ZmZjNDY5NDgxMGQyYzZiNTdiNWMzN2E3N2ZjMDdjNjQzMTQ5MjAzODU4MDQ5ZjliMDU3ZDUzNGYifQ"
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L21-L29",
+          "version": "repo-lines-v1:sha256:06dc6e1350845a0046731b372ebb76834ca33f6299864503c6a27739a4d50533:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1NzVmOTVlZTA3N2ZjYTJmZGQ1ZWNlOWYyODUwMDAzYzAxMmI2MjA3NDUxYmRlZWMyYjM1MzlhOTkzNTE3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQ1YzI3YzVkMTZjNjBmZDkwYTE1ZmFkODkzYWZhYWU5NjgyMDc1ZDliNWE4NWZlYjJkNjhjNWQ4ZTEyZDA0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBkMzk2ZTdmZmM0Njk0ODEwZDJjNmI1N2I1YzM3YTc3ZmMwN2M2NDMxNDkyMDM4NTgwNDlmOWIwNTdkNTM0ZiJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L42",
-          "version": "repo-lines-v1:sha256:85d047d256e0b7cd11fe4a751b8e8e9a57bb4cc5f6878fd2438c4fba6ade1163:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZGE3MzEzMzRmZWI3NWNmMDVhM2Y0NDhiNTVjNTU4YWU4YjY4MDZkMDQ3YzBjYzcyZjFlNDkxNWYwMDg3ZmEifQ"
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L32-L46",
+          "version": "repo-lines-v1:sha256:d69758e09c462798edb9619e1e223c5176eab957b7cc2d1b2fb9fc4afcd31140:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NzMwYzE3NTgyMzRhMmI4YWQyMDNlYjg3OThmZGQ3N2VlYzg0YTM4NGQ2YjBiZTNjY2ZmZDRiNjZhNzcwMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MzZhZjkyMzkwY2RjYWZmOTI5Zjg2ZjM3ZTM3NjNlNjQwNDAxMWI4NzYzNWJiN2JiZTNmZjE5ZmQ0Yjc4NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1OTlkYjBkMjljOWZkZTM0Y2ZmMjQxOGM5MjM3MTlmNzgzNmRjMmRkMTBhMWNkZjE0OWFhNzE5Zjg3Y2I2OTYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L1-L54",
-          "version": "repo-lines-v1:sha256:2cb9b58144d608aa73efa99b2648399271907851da2a753049220d45297a07b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MzYyZTQwMzdiNTJkMTNlNGVlOGMzMmMwNDY2MzI0ZWNlZjc2NjA4MWEwMWYzODA2MzFmYjQ2YjEyNGIzMzYifQ"
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L15-L48",
+          "version": "repo-lines-v1:sha256:8b32283e03f9aaca79b90891760f252049e0d2689733d20c7245adfc9d7dacf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjlmYjFmOTljMWY4ZGU2MmMwYjlkZDQ5NmUwZTdkNzRkNDg5ZTgwODQxOTBjNjViYzdmMWE3ZGRiNDdhOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWI4OWZkMzY0NTM4N2E0YTMzZGI2NTU1MzRkZjVkZWJhNThjYmI2ODQ0YWViODllMGJmNGFkZTA3OTMwYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNjFkMzFhNjAwOWZmMGVkODdkM2Y1Y2UxYTQ3MDM3YWZkNTkwNjE0MmRiNGMyNTExNDg0NTQ0NjNmZWYwMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5ZDczNGViZmZjMjcyM2EwZDBlNTQ5NDVhYTRiMWI1NDFlYjNhMjRhOGUzMDZlOTg0ZGQ2MjMwYmQ4YWY4MDEifQ"
         }
       ]
     },
@@ -349,18 +351,228 @@
       "statement": "`frontend/mcm-app/plugins/with-dev-cleartext.js` (a config plugin listed in `app.json`, run at `expo prebuild` time because `android/` is gitignored and regenerated) permits Android cleartext HTTP for `localhost`, `127.0.0.1` and the emulator host alias `10.0.2.2` only, via a generated network security config referenced by `android:networkSecurityConfig`; without it the standalone release APK the mobile E2E suite installs cannot reach the dev BFF and the login POST fails with `ERR_NETWORK`, while every other host stays cleartext-blocked so the production HTTPS build is unaffected.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/app.json#L28-L42",
-          "version": "repo-lines-v1:sha256:07e76f4f1465097ee1225d0d2a13378756498840b37261e4a7a459888f9e1ecd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://frontend/mcm-app/app.json#L28-L44",
+          "version": "repo-lines-v1:sha256:839d57eae3ffc1816c5b14ddb702281d6c59f078f156e39478158d36249dae58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzVjMjU4YjY0YjYxZjJkODEwZmY3NzJjNDliYWEwNzhmYjUxNGNmNmZkODMxZDgxZTQ2ZmMxOGIwNzhlYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkY2Y5NDBjYTNmNTlhYTNlZGMwMDRlOTg2Nzc2YWExY2NmMzNiNzVkMzc4NTQ0NzBiMjQwNTYzN2FlMjRlOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/plugins/with-dev-cleartext.js#L1-L56",
           "version": "repo-lines-v1:sha256:a783ddbce62c5a123af3e97d858df041e149f029fc3d52b6e7b3547fc6e4618d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NzI0NTdlMTI4NTYyMTE5YzY0NzkzZWE2ZjRhOGU3OTJkYjViNGM5NTMxOWUyNDgxYjRkZDU3ZjA3Y2NhNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_19ce2f3624b74022b038b90d6418baee",
+      "statement": "The app targets Expo SDK 57 and React Native 0.86 (expo ~57.0.30, expo-router ~57.0.28, react-native 0.86.3, react 19.2.3, babel-preset-expo ~57.0.16), upgraded as part of feature 081's major-dependency story.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L33-L55",
+          "version": "repo-lines-v1:sha256:e2a3b4f39f38bbf4a3d1a0ddb8149e0f374916b2fcceb43a1a9a51f78b200485:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMmIxMTNhNGNkZjUwYTcwM2JiYWZiZDRiNGU5ODEzYjI5NGIyNTA0ZjAxZTAxZWQ1ZGIzYTgyYWFiMWI5NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjNkYjMwZDg0NGFlYmNiMGZlMDBkYzVlYTUyNGNkOTYxMmY0ZjIxMmFlYzhiYTU4NTE1MGU1NTFkOWUxYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTE2MGVhNWQzMGU4NTIxODUyOTk0NTVhMzM1MjM3MGFiMjU0ZGNkNzlmNGM3YTkzZmU0OThiNDEzOWVjOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmMxZDRlNzZmNDAwOWQ0ZDdkZjE1MDIzYjI2ZjZkODQzZjNhNTk0NDQ5YmQ2YTc1NzYzMGZiODBiOTNkMzQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L80-L80",
+          "version": "repo-lines-v1:sha256:ba03ddf5e4dac4061d2a2577ee7a787aa5607789e1461a36d2f9e48e39e47e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUxYmNiMWFlMTEwMTg2NjQ5MDk4MDg0Y2VmOWE5Mzg2YTljZWY4MmY1ODI0OGMwOTJkNTVjODdhYmUyNWJjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRhZjkwYmJlYTExYjg0MDNjY2NhMzhmZGZkMmQ2ZDZjMzg4MjkwYjNkNzhmOTNlNjlhZjNlYmVhY2RhNWZmYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b4b84a8bef644a4b55fbb286e6ab3ee",
+      "statement": "scripts/__tests__/tamagui-version-lockstep.guard.test.mjs enforces that every tamagui/@tamagui/* specifier in the mcm-app and design-system manifests is one exact version shared by both, that pnpm-lock.yaml holds exactly one @tamagui/core and one @tamagui/web, that @tamagui/babel-plugin is named by neither manifest nor babel.config.js (a leftover v2 compiler over v3 sources), and that every Tamagui update resolves to one Renovate `tamagui` group so a partial lock refresh cannot split the set.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L1-L34",
+          "version": "repo-lines-v1:sha256:17dd5a27f1a8f7ecafc60223507bf3d658454a346b90645f6de855a35bd2f356:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxOTAzMWNhNzc3M2ZjOTdhYjRiYjcxMDBkMzdhMmM5ZTg4YzIxZWJiZmQxZjQ1MmZkNDgxOTA4ZDY4YWJiYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzM2NhZDE2MTQxOGJmZjk4ZmQ2ZTg4ZTA1NzAzZmI4MmI3MTQwYmM0N2YxMTQ5YjdkOTE5ZjkwNGQzZjdjNGIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L136-L162",
+          "version": "repo-lines-v1:sha256:27bf49cd774587817edc5f601d261318139427250a330608f9dbbdca12a3c8a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZGQ0YTVjOTJjNjYzMDkwOWQyYmM4M2M5YTYyZGUwZjJhM2RlZDMwZWJjOGU4ODdhNjk3NTIzMzBjYjk4YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMDAwYzIwZTdkYTIyZmY4NzFjZmQwM2YyYjM4Yjc5YmIwM2U3ZDc3MTZjMTA4NDZlNDg3YTU4NTBlYmUxYmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L94-L134",
+          "version": "repo-lines-v1:sha256:e07ae6ee085c49f500e7584e2003d08f06eb875ee7defeb8074980c2316b6e7e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjU2ZTk3NTc5MmFiOGY5MWQzM2Y5NmEzMmJkMTcwMzMxMTUyNjBhOWQxNDBhNGJiNjI5N2M1YTUyMTFkMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzMTFlZjFmZWMxZmQyNjJjMzUxMGI1ZWQ2YWZlNGI0ZTkxZDhhZjc3NDE0ODBkZWZkYjg1NzVkYjY2ZjNjZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NmRjMjViZmMxMGNhOTk5YzJiNjM3ZjI0OWI1NzAxZjRkZTdiYjJlMzA1NjQzOTk0YTVmMDAxZDgyYTZkOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de9d5657fce34c989aee8523e9634e60",
+      "statement": "In Tamagui 3 any state clause, hover included, makes a View attach its own event handlers on native, so the design system passes hover clauses on web only in NavList and Tabs (Platform.OS === 'web' guards); without that, a hover clause inside an RN Pressable swallowed the tap and broke the settings-nav-assistant mobile flow.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/navigation/NavList.tsx#L92-L100",
+          "version": "repo-lines-v1:sha256:74cbf7c1df68d6c4f774cfeab9bdb240c4f7dffc80251d57697fe0502a3442f6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1MmI3YmMyZmY3YmQ5MTJhMmNiYWUzNTVkNzA4Mzk0MWFmNmU3NzZkM2VlMTAxNjMyNTBkZDU0M2QzNjFlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDhjZTVhY2YxZGY4YmFhZWU5NDIxZGJlZTU3OGNiNTc3ZWI4MDkyNWE1MWNiNjIyODJkMzk1Y2FlNDUxZmNjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk0MTk1OGM5Njg3ZjAyZjA4MGFjYmIzNWU0NjgyYjFiZjUxMWU2MmRkYWI5OTE5MWYwZWM1YjZhNjY4ZjlhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWY2NzhlMjU5M2Q1MTQzZGExY2JjZGUxOTAzOTViMmY5YWJhZGQ5MGYxZTRlMGIwYTc3Yzg4YTBmNDgyMmZmMiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/navigation/Tabs.tsx#L175-L185",
+          "version": "repo-lines-v1:sha256:bd47e8c1e22dad9f9e66c95e7410af3fdbf1750c5878eef54949cf8ba7e1b84f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMmE5MjU4NTViZGE4MWJkNDc4MTg0ZjI3NjIxMDQ3MGY4NTlkMWRlMjMwZmVjMDFlMDJhNGIyYTA3OGM4NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYzU0MzQwODFhOWY1ZDg1MTNlNjU3ZjI4OGM5NjY2ZjlkNmQ1N2MwZGQ5OTlkMWExNTM5YjViNTg1MTNmYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyM2JlMDQ4ZjhjOWJjYjYzODExYWJhYjM2NjdkZjVlMjM5OTJhMjQ2ZjdjNjMwZjk2YzE2Y2JjZTAwYTgxOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjOTM0NWEwZjRjNGM4OGU0ZTdiOGJhMWIxYWJhOGFiYmVjNjc3NGUxMjQyODc3M2FjZmI1OGE5ZTU5ZGEzZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f5b5bb0d7184c388f46931d24ee1ff6",
+      "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine; the resolver resolves as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L87-L89",
+          "version": "repo-lines-v1:sha256:922d9a9961f7ced904ff158ad4526748ac18b0ca46db081929ebf3f9e7dfd2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
+          "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d103150903514204af3e1ad38f518e19",
+      "statement": "Tamagui 3 changed the API spelling the app and design system must use: token and theme names carry no `$` (e.g. fontFamily=\"body\"), a numeric lineHeight on a Tamagui component is a ratio so pixels must be written as \"20px\", and hoverStyle/pressStyle/focusVisibleStyle are replaced by state clauses on the property they modify (which are silently ignored if unconverted).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L29-L34",
+          "version": "repo-lines-v1:sha256:d3ef6a3d25cdede98ec8af4bc05717924e9f449afa73669aec066bfb45f21ec3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcwZjBmODJiZmRhNmNhYTlhODM5YmYwNTFjNDcxNTc2ZTUxODQzZWExYWNkZTA3ZWYzMTk1ZjI5NjExZmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ1YjcwYWQzNTU1N2ZkNjc2N2Y3NDcwYmY3NzIzNmUzY2M0MjUzZDM5ZjFhYzM1ZTJiYmE4MmNjMzNhYTQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdkOTMxMWI5ZDJmYzJiZGRlYjQ1Y2ZkN2ZmZDg1NTk1NmRiNmY5ZjhhM2FkMDQzYzJkOGQxMzkwYzgwZmRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQwYzQ3ZWMzYzAyOGZlZDM5NjcyNjQ3YTVkOGUyODMzNmRhZmI3M2ZjZTcwMTE3ZmM1ZjY5MWQ0ZmExMmJjZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts#L1-L30",
+          "version": "repo-lines-v1:sha256:6803f3db6cdc33540f72bfeda6539a592c5fa380335df79f43748535098ee388:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NzUwOTVhZGQwMGI0YjRiMzc1YmQ1ZTc2NzgxZmIwY2JhYmZjZjU1ODBlMDNlMmJhYzI4NGFlNzUxNThhYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZGQ3OTY0ZTY2MTk4NzU4YjkyNzQ1NTdjZGQ0NjE5OGM5NmY1YjYzMWJjYWI3Yjc5ZWIxOGRmNDc3Nzg1ZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a772713424824e439cb163c16c4094d9",
+      "statement": "The Backups settings screen keeps the stable external-contract identifiers from the feature-062 placeholder it replaced: the route reports current_screen 'settings-backups' at nav_depth 1 via useReportUiState and the screen container carries testID 'settings-backups-screen', because the agent gateway's current_screen vocabulary is a contract covered by test_current_screen_contract.py and the web E2E tier selects on those testIDs.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx#L1-L15",
+          "version": "repo-lines-v1:sha256:e5a0f402c583e2d1b53bc36858a1dc380ad9d686460f74d5a1617d45700c21b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L1-L13",
+          "version": "repo-lines-v1:sha256:2158fec7d69e96382b361ca2ba57710ad1c8979f3fe9bc46299e08d61a66a508:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNGRhZTAyMzk1OWQ3Zjc1NDNmM2I3ZWVkNzJjYWQ4NDdhODdhNDY4M2FiZTRlOWI5NGJlZmI4ZDI5OTViZGQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L80-L86",
+          "version": "repo-lines-v1:sha256:3c673466bc23f4762b20916488d3f76eae22a821cf942d2161ac41314f7ce81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTcyMTZlOGU5YzBhMWE2OGQwNmMyZmJhYTVmZDIxMzk0ODJiOGVmZDBhMTkzMTViOTE1ZTZjY2U4NDlkODlkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkwNmM4MTJlZGEwMTdlZTAzNzA2Y2ZmNDQ3Y2YyODZiZjMxOWQ4YzNhMThlMGU3OGU3MjgyYWM2NjczOTgxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQ4NDUyYTQ3NzcwZGJmYzZiNjQzYmRhY2JiZGZjZTVjNjRhZmE2ZTFlMWUxZmQ4MGVlNTk1YWEzNDJlNzEwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDIxZTk3N2U2YjgzZTI2NzE2Yzc5MjQ3NmZlYmE2MzM4ZWIxZTc4YzVjNmQ4MzRlZWU5NWY3ZjRlZmU3ODhhNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b52111c2cd64ee0b189f4c17c65d609",
+      "statement": "Backups run history is rendered in the JOB's time zone rather than the device's (RunHistory receives job.schedule?.timeZone), so a user who scheduled 03:00 in London still reads 03:00 after opening the app in New York.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L288-L295",
+          "version": "repo-lines-v1:sha256:07a2d2c6558c9fbc306a68d1ae33dec0439e0a0bb9fd7cb399332262551c72c5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ2Njc2NjMwNzEzODI3MTRhNmY1MmNkNTdmNzRmNjY1ZTgzYjQ5ODViN2IxZDY4OWIyOWJjZjRhYzhlOWRlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JlYjA1OGUyNjJiNmYwYWRhNjZkZjA3Nzk2M2Q1NGVmNmE4Yjc5NmY1ZTM5Mjc2N2E5OGMzMDhlMDU5NWY4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZlN2NjY2RiMzRiM2IzNzgyYjNmMTcyMzVjOTc5MmY1ZGE2MTc1NWU3YzY0NjJlNGJiZTBkNmI0MDAxZDA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFjNmExZGRhNGI2OTRmOTlkZjI4M2FmODNmNDY0MTBjNmU0NzQ1ODExNmMzZDIyMzY5Y2JmOThhOTZjY2ViOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c7089175114419591dc6dde330bf15e",
+      "statement": "Web E2E runs against the containerized BFF rather than the Metro dev server so the suite exercises production-mode `expo export` output, and a stale image silently tests old code and reports green; the original justification — that Metro's dev web bundler OOMs building the app plus Tamagui locally — is a plugin-era measurement, since feature 081 re-measured the dev web bundle serving without OOM both with and without the Tamagui plugin, while the container rule itself remains in force.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L118-L132",
+          "version": "repo-lines-v1:sha256:69a139b8d8a6a96041dbd39b7e03169c102539b6de3911f74f2d752be9622944:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMTQ5ZGZkM2ZlYTdmYjg4ZGNhOTJhODM4ZjFiNzdkNzI1M2FkMGRiMmI3MWU4ODhmOGEzOWI3OTNiZjU4NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMzIyOWExOWZmNDVjNjgyNGY0ZTU4MjM5M2E5OTM5YTNiOWM5NjNkMjkyYmU2ZGJlN2Q3YTVkNzU4ZWUxNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwM2NlZmNlYWFkZDMzZjdjOWFiNjNjM2E0NzdhMWRmZGU4ZDkzYzFmMTQzOTRkNDYzNTU1ZGQxZGVjZDZmZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyNzI5MGQ2YjFhZmZmYjk3MjRkOTEyMzk3ZTVlYzEzNTY4YTRkNjZkYmZjNDZmOTRlM2I2MDEzYmFiZjc2NzIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/playwright.config.ts#L36-L47",
+          "version": "repo-lines-v1:sha256:5164c5ab04683850717da6eb75f6592ea748490fbf8525de4ea34271a5339db2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDUzNTQ3Y2I5NTYzOTIwNzk2N2RmYmQ5MGYyZGVhMmExMjY0MTUyY2MwMTE1ZGNjZjQ4N2Q4YmEyMzUwMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MDY5OTgxOTFkMTYwZjRkMWM0ZWY5YTdiNTczMWM3NzE0YzZjNzQ1ZmRiZmFmODY5NmZjZWJlMjUzYTk2OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhY2JlYjc2OGE5MGMxMWQ5YjUxNmE5YjZhNjRlZDdlYjg4ZDdkMmEyNDkyZjQ3YmE2M2JmYTAzYzg5ODQ1ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNzYwOTFlNTBiYTI2Y2Y0NDBjMWMyMjFjMTJkYTk2MmY3ZjMxNjhiMjQ4MTEwNDQyNjEwZmJkZmE1ZGY2ZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98dcd34c499c4620b715595066c6dfe2",
+      "statement": "Where prose and the manifests disagree about the Tamagui arrangement, the manifests, `babel.config.js` and `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` are the authority: the design system page and `frontend/mcm-app/README.md`'s design-system section have both been rewritten for the v3/runtime-only arrangement, and the one remaining plugin-era statement is the README's web-E2E note that \"Metro's dev web bundler OOMs building the app + Tamagui locally\".",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L118-L123",
+          "version": "repo-lines-v1:sha256:273b68da07635f3ea12645a6ed21a02edebb8b2bf6c815d4d00ae9f71e821ecd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTExNDlkZmQzZmVhN2ZiODhkY2E5MmE4MzhmMWI3N2Q3MjUzYWQwZGIyYjcxZTg4OGY4YTM5Yjc5M2JmNTg1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkYjZiMjNjOTNlN2ExODMwMmQ2NDg5MDkxZTIxODc4N2E0OGZiOGJjNGI1NGIwODRkYTRkZDI4NTVjNGI0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAzY2VmY2VhYWRkMzNmN2M5YWI2M2MzYTQ3N2ExZGZkZThkOTNjMWYxNDM5NGQ0NjM1NTVkZDFkZWNkNmZlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTk2ZDBjMzJkNjRlNWZkMjg2NWI4NDI5MTk3NWI4Nzg3ZmRiYzY4ZWYyNThjNzliYTE2NGUxM2QzM2M1NWRmZSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L19-L28",
+          "version": "repo-lines-v1:sha256:1f81355af6a089b7f668617fb24f0214a39316518c96eda0b43934edc716dcdd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTU0MzBlNDcxYTI2NTMyZDU0ZjRiMTlmYzcyY2NkZmFiZmI3MmI1NDc2MTVjOTVhNGJkOWVkMDVhNmEzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NTk0OTUyNzJkMDc3YzczNmJiMTdhOTQ5MmE0MGI5NjVlY2NmYjJjYzVkMjMwNjIwNThiNTRlMTVkNzBlNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMzIxMmRhNGJhZmYzOWNmY2JjMWIxZGQ4M2RlN2M0ZDQwMTdhODRjOWI3ZDU4YWYxZmEwOWE2YzQxMTQ0OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZjA3ZWEwMzk0NjA4MGE4ZjMyNzllZDhhYzBjNzUzMTZlYTYwM2UxZjM0MGNiNTY4NjMxYzQyYWQ3NmUxOTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/babel.config.js#L1-L17",
+          "version": "repo-lines-v1:sha256:5ff74527b551f804587b61f91fb36b47a1bf78b1c68f7292ce9dafd1ac319ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTBkZDc5NjhhOTQ5YzM2M2FiMjI0MWM5ZTA2ZjkxYTM2ODVhZDRjMTdlNDNmZDc3M2VhZmVmM2YzZDJiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54f55ba16530497aa0acd6a382cf9690",
+      "statement": "Both `frontend/mcm-app` and `packages/design-system` are linted by ESLint 10 through a flat `eslint.config.js` in each project, replacing the `.eslintrc.json` files ESLint 10 no longer supports; each Nx `lint` target runs the project's own eslint (`eslint src` for mcm-app, `eslint .` for the design system) through `nx:run-commands` with the removed `--ext .ts,.tsx` flag gone, and the previous scope is preserved by globally ignoring `**/*.{js,jsx,mjs,cjs}` because flat config lints those by default and cannot narrow extensions from the CLI.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L1-L15",
+          "version": "repo-lines-v1:sha256:a2e79f191284804a07d14a98b494d85d62f0fc36a04d31dff1191c4ec8a1b928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L66-L85",
+          "version": "repo-lines-v1:sha256:7c9d4128407d0c7f5fb2c083d7624e03bf267658acf2039519c97fce86d455bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjI1ZjY4MWIxOGM5YjYzYmUyNjdiMjM4MTcxZDllOGIzOGFlZGNlYWUzMzg1ODFhYzBkMTE0OGRjODc4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NzZiZGYzMWMzODJjOGY3M2U4NzhhYzllNDE0ZjkzNDljODM0ZWZmNDczZWFhMTY2YzI0M2VhNjk3MDNjNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmQzZTcyNjI5ZjUyNTJiYTg5MzkwN2YwZDZjZmU2Nzc3MjQ4MDNiNWUyYTM4YmQwODI0ZjRjNzg4NGU2MTQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L33-L43",
+          "version": "repo-lines-v1:sha256:124ef8789fef4958140aa5caa15d7042e4b1327029a3328943d239778c3b817e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmY4NjMxMDc2ODE4NTA4MWZjOTYxMzQ2Njc1M2VhOGIyYzNmZmMwMjU2MzhlYWYzYzUyZGM0Y2QwYTU0MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyYTNhZjAyOWQ3YjhmZWVmMzQyZDRmMzVlMDRhNDBjNmI4MzliZGFiYmI3NzVhNWFhNTM2NmRiYTc4NmVlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMmJkNDgzOGEyYmFkNDMzOWFhNTdjNzU5NDZkYzA3YTI4ZGViNTFhZTNmZDA2OTAxNGFhNDMwZjIxYTdhMGEifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L1-L14",
+          "version": "repo-lines-v1:sha256:f498ba3fb507e158786820abede45270230b6065f1b9727b42f7903210d2b22b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/project.json#L18-L26",
+          "version": "repo-lines-v1:sha256:6f281c56c3dba4e321d2e21cd28a0f2f21eb2168f1e570d4dab0bdea2f69e598:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmZjg2MzEwNzY4MTg1MDgxZmM5NjEzNDY2NzUzZWE4YjJjM2ZmYzAyNTYzOGVhZjNjNTJkYzRjZDBhNTQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODBjYWVlNTkwMjEzYzBkYzQ4Y2ExNWJiNTMyNjI5OGVhNTg5NTVhZTZmNDdkMzEyYjAzZGYxOTJmZjQ5NTQ3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGY3MzlhMDZjMWNiYjEyNDRlMzM2M2QzOGJjZjlmYTUwY2U4NGZlZDM5OWMyMTkzYTNjN2YwOGQ1OTkxOGIyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c48f5914636d47498f5f18e1010f598a",
+      "statement": "`eslint-config-expo`'s flat preset is not its legacy preset re-expressed — it adopts `eslint-plugin-react`'s `flat.recommended` (a dozen `react/*` rules move warn → error, plus new errors such as `jsx-key` and `no-unescaped-entities`) and `eslint-plugin-import`'s `flatConfigs.warnings` — so the migration carries four parity settings that hold the result at what the legacy setup resolved: `reportUnusedDisableDirectives: 'off'` (ESLint 9+ defaults it to `warn`) and the rules `react/no-unescaped-entities`, `import/no-duplicates` and `import/no-named-as-default-member`. They are parity rather than new exemptions, since turning them on means fixing what they report (33 findings in mcm-app, 0 in design-system), and the measured result is mcm-app 0 errors / 43 warnings and design-system 0/0 — the same 43 warnings at the same `file:line:rule` as before the migration.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L23-L45",
+          "version": "repo-lines-v1:sha256:956897ebd30948a87b6274bfbdcfca9484dbaf096be0d70d1a6a002cacdbdc9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNzU5ZDRkN2Y0M2ZiOWJjMDA3NTM2OWQzMDY3YmJmNDczZGMzM2I0ZWNhMzEwMTkxZDIzZjQxMDEwYmNhYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzBmMDRmZjg0Y2RmYTk4NTZiYzUyMjM1ZjUxMjE2MGQxOWUyMDEzZTIyMTY1MDk3ZDNlNDE2MDA0NjQwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L22-L44",
+          "version": "repo-lines-v1:sha256:956897ebd30948a87b6274bfbdcfca9484dbaf096be0d70d1a6a002cacdbdc9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNzU5ZDRkN2Y0M2ZiOWJjMDA3NTM2OWQzMDY3YmJmNDczZGMzM2I0ZWNhMzEwMTkxZDIzZjQxMDEwYmNhYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzBmMDRmZjg0Y2RmYTk4NTZiYzUyMjM1ZjUxMjE2MGQxOWUyMDEzZTIyMTY1MDk3ZDNlNDE2MDA0NjQwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L206-L261",
+          "version": "repo-lines-v1:sha256:39f51b924b0750b876e62425a2840c701e8c441c3c6ea30b1ace8e6c4b2e564c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNDUwNDZjMzdhOGJhMjkxZDVjZWRiMWZjMTQ2ODg1YjM5ZGU3MTI4N2ExMmI4ZmNjNTc0ZjkwM2I0MGE4NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGI5MmE4MmU1MGMzZjgwZDE5YWUzNWMwZDVhNjMyZmJjYzYwNGRlODk3Y2VmMjVmNTI0M2Q4ZDNlNzMwNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwODMzM2M2NDhjNjY3OWI2OTgwODA4YTZhOTg5MGFmZWNhYzIyYTNlYjMzN2VjMzc3YjU5ZjMxMTBjNWE0ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMjVkYWNjN2ZhNDRmMThlYjRlODM4OTA2NjI1MTE0YTA5YzA4OGI1NjM0YWIyNzA0ZjA4MzZjYWUxMjU4MzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f3398e09ae64c6b84ac52e7fbca0e90",
+      "statement": "`@eslint/compat`'s `fixupConfigRules` wraps the `eslint-config-expo` flat preset because `eslint-config-expo` 57.0.2 (and 58.0.4) bundles `eslint-plugin-react` 7.37.5 and `eslint-plugin-import` 2.32.0, whose newest releases peer `eslint <=9` and still call context methods ESLint 10 removed; without the bridge every file fails at load with `react/display-name: contextOrFilename.getFilename is not a function`, and it changes no rule or severity. It is to be dropped when both plugins, as `eslint-config-expo` ships them, declare eslint 10 in their peers, at which point the preset goes back in unwrapped.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/eslint.config.js#L16-L22",
+          "version": "repo-lines-v1:sha256:8028ac2ed6819235966852c51ede2320ff78b34b7dd27ee2d162b7b794d33704:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc3MWNhMzNhYTRjZDg4ZjI4YmY1Zjc5YWY1NzhhYmQwOWFjNjBkMThhZmQ4NGJjNzMyNDAyNTg1Yzg1YTM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyZGY2MTYwMzE3YTFjYmNhNTM5YWFkZGRmZWQyMWMzZmFlMmU0MzgyMjk0ODg2MmJjNmY2ZTlmNWFkNDI2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFmZjYzNGVkYzJkYjlmNzYyMTYxNzc3MTc1ODdlMjQ0MTRjNDc0ZTdmMTdjMzNlNGI0MzFhNjdhMmFiYjZjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0N2NhZWRhYTdhYmEyZDUzZmY2ODQxMGRkNmI3MjY2YjViNjVmMGY4MTFjNThjZmE1MjgwNWY5N2M3YmY5NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L70-L70",
+          "version": "repo-lines-v1:sha256:187b3400b195617ed53263c06cc9f59942213733406dd2d9e260a038730b4c73:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY5ZjBhNThhYzI1Yjc3YWIyZTBiZDcwZjc2OGQ3MTZhOWM2ZWRiMjA5ZjYyZDc3MTQzMmQxNjY0NTA2NDBkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY2NzRlZjNjMzE5YWFiZTMxNjc3MzllZmZkMjAwOTgyYzc2M2RkYzk1MDk4MjBjMjc1N2I0YTc0MzUxOGIzYyJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/eslint.config.js#L15-L21",
+          "version": "repo-lines-v1:sha256:8028ac2ed6819235966852c51ede2320ff78b34b7dd27ee2d162b7b794d33704:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc3MWNhMzNhYTRjZDg4ZjI4YmY1Zjc5YWY1NzhhYmQwOWFjNjBkMThhZmQ4NGJjNzMyNDAyNTg1Yzg1YTM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyZGY2MTYwMzE3YTFjYmNhNTM5YWFkZGRmZWQyMWMzZmFlMmU0MzgyMjk0ODg2MmJjNmY2ZTlmNWFkNDI2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWI2ZDc5NWZjMTRlOThiZGZlNzIzMDY0ZjllMmRlOWNiZGE3NzI4NjM5MmU1OTRhMjVmZTBkZDVjYzBmZjFjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0N2NhZWRhYTdhYmEyZDUzZmY2ODQxMGRkNmI3MjY2YjViNjVmMGY4MTFjNThjZmE1MjgwNWY5N2M3YmY5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc7cc08fd4be44259c0dc17d47e176ba",
+      "statement": "Jest must be told not to transform React Native 0.86's renderer: `RendererImplementation` now imports `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render touching `Animated` pulls in the ~725 KB already-compiled `ReactFabric-dev.js`, and `frontend/mcm-app/package.json`'s `transformIgnorePatterns` therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, which is back at the SDK-56 figure and why the per-test 15 s timeout that briefly stood in for this was removed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L94-L98",
+          "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1024-L1067",
+          "version": "repo-lines-v1:sha256:de5c36f62889a0e15afca6423d21af3163bb032b1845dae5579fc61b077bdce4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYjJmNzNkNjBlOTI3YmFjOWMwNWNjNmRmZjAyOTAxYjg1Zjc0ZTU3MTA4NDZlYjQ1M2VhNTM4ZDFhYmUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGU4MGU4NDMwMTA4MmFiNGY3ODBjZmFmNGEzNjZhNDIxOGUxNWE2MWYxMmY4Njg0Y2M0ZjljYzY5NTQ5MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDBhYzM3NmM2YjY3YmVlNTFjOTBiODkyNjAxZTE5YjYxZjFkZTk2NDQxYTM4ZmY1Y2FhYWFkODY2ZjY0M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZDNmNGQwMjFlNWQ3ZGQ4MTFjNmU0YWUzMDIwYmQwOWMwY2YwYWRhOWFmYjg5MWUwZTg1ODJkMzMxNjBjMDUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T13:24:33.842Z"
+    "at": "2026-10-19T00:33:25.175Z"
   }
 }

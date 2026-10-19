@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:542260378f1fd3f13049df2e6f441f016eedea782a645568be99fda5ad44197d",
+  "claims": [
+    {
+      "id": "claim_165a779429c54154b88d58468022d8bc",
+      "statement": "`packages/design-system` is the workspace package `@mcm/design-system`, a Material Design 3 token set plus Tamagui component library shared by the web and native builds of `frontend/mcm-app`. Its package exports are the barrel `.` → `index.ts` and `./tamagui.config` → `tamagui.config.ts`, and `expo`, `react` and `react-native` are declared as peer dependencies so the package never decides the app's framework versions.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/README.md",
+          "version": "repo-file-v1:sha256:816f4cfadaffcebf1c4c385c90df6275db5c463e4f9c8cd4b17ce9c099a33822"
+        },
+        {
+          "resource": "repo://packages/design-system/index.ts",
+          "version": "repo-file-v1:sha256:86816a5c9c2803ed69499249381f1e2aa9371a077fc4885c9ee37584f852db6a"
+        },
+        {
+          "resource": "repo://packages/design-system/package.json",
+          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9442300d09f4435baaedaceb32258ed",
+      "statement": "Every semantic MD3 colour role is theme-split: `lightColors` and `darkColors` each map the tonal palettes to a distinct value per role (primary, secondary, tertiary, success, error, background/surface, surface1–surface5, outline, scrim, …), so one token resolves to an AA-passing colour on both the near-white light surface and the near-black dark surface.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/README.md",
+          "version": "repo-file-v1:sha256:816f4cfadaffcebf1c4c385c90df6275db5c463e4f9c8cd4b17ce9c099a33822"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/colors.ts",
+          "version": "repo-file-v1:sha256:dd7e63dd4a4f6348483aedd6db583114625d60516defaa2ec65f530cfe6171f1"
+        }
+      ]
+    },
+    {
+      "id": "claim_cacddf4a928349108e032d5ad7bfd8e5",
+      "statement": "The semantic colour roles exist only in the Tamagui themes, never also as colour tokens: the config flattens raw palette tones into tokens (`primaryP40`, …) but deliberately omits `...lightColors`, because Tamagui 3 resolves a bare name on a colour property token-first and theme second, so a duplicated light value would win inside the dark theme. Consumers read roles through `useTheme()` as `theme.<role>?.val`, and Tamagui 3 token/theme names carry no `$` sigil.",
+      "evidence": [
+        {
+          "resource": "repo://packages/DESIGN-SYSTEM.md",
+          "version": "repo-file-v1:sha256:3115383cc189d2456bbf1270a0d0a8ba0ba0525aa2b4c41b396aee2c7e144869"
+        },
+        {
+          "resource": "repo://packages/design-system/README.md",
+          "version": "repo-file-v1:sha256:816f4cfadaffcebf1c4c385c90df6275db5c463e4f9c8cd4b17ce9c099a33822"
+        },
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts",
+          "version": "repo-file-v1:sha256:03279708a0e058184da327511ce352032c2ad3048919aa534fbc5caf4228716c"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0abead29b854b0f8dc0474cab0245b2",
+      "statement": "`success` is a first-class semantic colour role rather than an ad-hoc green literal, added so positive/verified state flows through the theme: positive text uses `theme.success?.val`, a filled verified banner uses `successContainer` with `onSuccessContainer`, and no consumer may use a green literal. The role exists in both colour maps and both themes, and the three required WCAG AA pairings are asserted in `components/success-token.test.tsx`.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/README.md",
+          "version": "repo-file-v1:sha256:816f4cfadaffcebf1c4c385c90df6275db5c463e4f9c8cd4b17ce9c099a33822"
+        },
+        {
+          "resource": "repo://packages/design-system/components/success-token.test.tsx",
+          "version": "repo-file-v1:sha256:87511aa398584f35ef2b4ec9d57136a88c04b7ab54f0d16c72ee1c21e41074c4"
+        },
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/success-token.md",
+          "version": "repo-file-v1:sha256:4dc6dbaa859799a20be8ef2282e038bf4f765628134e5573b5ed70dd7381424b"
+        }
+      ]
+    },
+    {
+      "id": "claim_0768052600654f69bbb5967327854a63",
+      "statement": "The type scale is the MD3 step set `{11,12,14,16,18,22,24,28,32,36,45,57}`, with Outfit carrying display/headline/title and Inter carrying body/label. Both fonts declare only the faces 400/500/600/700, which is the rationale behind compliance rule R6: a `fontWeight` above 700 has no real face and is synthesized by the renderer.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/README.md",
+          "version": "repo-file-v1:sha256:816f4cfadaffcebf1c4c385c90df6275db5c463e4f9c8cd4b17ce9c099a33822"
+        },
+        {
+          "resource": "repo://packages/design-system/fonts/index.ts",
+          "version": "repo-file-v1:sha256:4cd7ecccba3a264d5981791e4522d42ece15e6898ba3d8dd8598da371139bd4e"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/typography.ts",
+          "version": "repo-file-v1:sha256:a98085a39304691518e7d1a68a2889cfa2a2a9ab03f17af1bbd10264b029511f"
+        },
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/compliance-rules.md",
+          "version": "repo-file-v1:sha256:481ae6e041ad52af63cb9efd21731eb2fb6aff52ad573f729d4b55948772dfc5"
+        }
+      ]
+    },
+    {
+      "id": "claim_1dd0164be2ba484d93494afcc7fd649d",
+      "statement": "`dark` is the recommended default theme, justified by the product being a movie-collection app where a home-theatre aesthetic is natural. The dark background is deliberately deeper than MD3's standard dark neutral — `#0F1117` instead of `#1A1C1E` — to evoke a cinema and make posters stand out.",
+      "evidence": [
+        {
+          "resource": "repo://packages/DESIGN-SYSTEM.md",
+          "version": "repo-file-v1:sha256:3115383cc189d2456bbf1270a0d0a8ba0ba0525aa2b4c41b396aee2c7e144869"
+        },
+        {
+          "resource": "repo://packages/design-system/theme/dark.ts",
+          "version": "repo-file-v1:sha256:72ca46c21d49a5e4f9ebff604044bba126854522cbe168737e3a9b5224093244"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/colors.ts",
+          "version": "repo-file-v1:sha256:dd7e63dd4a4f6348483aedd6db583114625d60516defaa2ec65f530cfe6171f1"
+        }
+      ]
+    },
+    {
+      "id": "claim_1852877487e94778838351e70be6ade7",
+      "statement": "Tamagui is pinned to one exact version (`3.0.18`) across both the design-system and mcm-app manifests, and `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` enforces that: no range specifiers, both manifests agreeing on the version, exactly one `@tamagui/core` and one `@tamagui/web` in the lock, no remaining `@tamagui/babel-plugin` in either manifest or `babel.config.js`, and every Tamagui update resolving to a single Renovate `tamagui` group so a partial lock refresh cannot split the set.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/package.json",
+          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
+        },
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts",
+          "version": "repo-file-v1:sha256:03279708a0e058184da327511ce352032c2ad3048919aa534fbc5caf4228716c"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
+          "version": "repo-file-v1:sha256:603f7b22dbae2f5e2dacb2c81872a2c24f2f520f430c5f2f04e2ecacfd5ba9ec"
+        }
+      ]
+    },
+    {
+      "id": "claim_37e9b0446e6c4f9985c49b051e89c9b3",
+      "statement": "The app runs Tamagui runtime-only through `<TamaguiProvider>` with no Babel or Metro compiler plugin: Tamagui 3 removed the Babel plugin, and its replacement `@tamagui/metro-plugin` 3.0.x was measured and rejected because it lowered some web modules to static class names without emitting their CSS while saving no bytes. This is a measured decision, not a leftover, and re-adding a compiler incidentally is out of bounds.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tamagui.config.ts",
+          "version": "repo-file-v1:sha256:8e09b821aa37b09c22a7f45fdfbf1c9cea0cdfb467a07d010281a054a30edd29"
+        },
+        {
+          "resource": "repo://packages/DESIGN-SYSTEM.md",
+          "version": "repo-file-v1:sha256:3115383cc189d2456bbf1270a0d0a8ba0ba0525aa2b4c41b396aee2c7e144869"
+        },
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts",
+          "version": "repo-file-v1:sha256:03279708a0e058184da327511ce352032c2ad3048919aa534fbc5caf4228716c"
+        }
+      ]
+    },
+    {
+      "id": "claim_7bab4ff59f01403780d3068d42f414ad",
+      "statement": "Because Tamagui 3 removed config-level `defaultProps`, the body font and the theme's `onBackground` colour live on the design system's own `components/primitives/Text.tsx`. `components/text-defaults.test.tsx` pins that observable behaviour for both themes and fails if any source file outside `primitives/Text.tsx` imports `Text` from `@tamagui/core`, which would bypass the defaults (on native, leaving black text on the dark theme).",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/primitives/Text.tsx",
+          "version": "repo-file-v1:sha256:b9f75c86d5d49b1cc82e42365934ab43e65aff9538bca24cf5315eb0f695cf47"
+        },
+        {
+          "resource": "repo://packages/design-system/components/text-defaults.test.tsx",
+          "version": "repo-file-v1:sha256:366cbeaae51d0c1a3f21564b3c7c6968242cac5afdc1715214c7cb2cc2ee8458"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2d8357c256141fc954a6a702f5a471e",
+      "statement": "The app enforces design-system usage with a static scan run by its Jest unit suite, not a runtime check. The rules live in `frontend/mcm-app/tests/unit/design-system-compliance.test.ts` as one `it()` per rule (R1–R7), each asserting zero violations over `frontend/mcm-app/src/**` while excluding the `bff-server`/`bff-api`/`__mocks__`/`unit-tests` directories and test/spec files.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/design-system-compliance.test.ts",
+          "version": "repo-file-v1:sha256:4eb1a2b98cdbfcca5964b4528dcc18061c409cf31add7149cceba6fa0a0fa400"
+        },
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/compliance-rules.md",
+          "version": "repo-file-v1:sha256:481ae6e041ad52af63cb9efd21731eb2fb6aff52ad573f729d4b55948772dfc5"
+        }
+      ]
+    },
+    {
+      "id": "claim_bbed2f5424934d1287e77569c0cf5de0",
+      "statement": "The scan engine lives in `frontend/mcm-app/tests/unit/ds-compliance-scan.ts`: it reads, neutralizes and brace-parses every source file once into a cached `ScanFile`, and the seven rule predicates iterate that cache. A failure reports `file:line — rule — snippet` per violation so a migration can be driven file by file, and the predicates are unit-tested in isolation on synthetic `ScanFile`s.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/design-system-compliance.test.ts",
+          "version": "repo-file-v1:sha256:4eb1a2b98cdbfcca5964b4528dcc18061c409cf31add7149cceba6fa0a0fa400"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/ds-compliance-scan.test.ts",
+          "version": "repo-file-v1:sha256:2d4d8b77181c68910aaf6f1b1f4a7d2612aa4a1e9bbad3aa38f65fbed7c75fbd"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts",
+          "version": "repo-file-v1:sha256:c823018b86fda66ef88e3aaa7685340df2f5520a32dadb5f3b32651047cbc7cf"
+        }
+      ]
+    },
+    {
+      "id": "claim_83301b518a7f43e79547015757ddebaf",
+      "statement": "A deliberate deviation from a compliance rule requires BOTH a `// ds-exempt(R<n>): <reason>` marker on the flagged line or the immediately-preceding non-blank line (`ds-exempt(all)` exempts every rule) AND an entry in `specs/017-design-system-consistency/contracts/sanctioned-deviations.md`. The scan only sees the marker; the catalogue entry is the review-enforced half of the pair, and that contract file is the single source of truth for approved exceptions.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/design-system-compliance.test.ts",
+          "version": "repo-file-v1:sha256:4eb1a2b98cdbfcca5964b4528dcc18061c409cf31add7149cceba6fa0a0fa400"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts",
+          "version": "repo-file-v1:sha256:c823018b86fda66ef88e3aaa7685340df2f5520a32dadb5f3b32651047cbc7cf"
+        },
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/sanctioned-deviations.md",
+          "version": "repo-file-v1:sha256:7c8f46ad838b26a0dc3b2bef1640bd2e5d126d012f9e56ee4290b886d1c4d5b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_cedeb993287448dfb4197958f36cc1ec",
+      "statement": "A change to the design system's type scale or loaded font weights breaks the compliance scan in the app repository, not in this package: the MD3 scale set and the 700 maximum-weight ceiling are constants declared inside the app's scan engine, so the app's unit suite turns red when those package properties move.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts",
+          "version": "repo-file-v1:sha256:c823018b86fda66ef88e3aaa7685340df2f5520a32dadb5f3b32651047cbc7cf"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/typography.ts",
+          "version": "repo-file-v1:sha256:a98085a39304691518e7d1a68a2889cfa2a2a9ab03f17af1bbd10264b029511f"
+        }
+      ]
+    },
+    {
+      "id": "claim_da52c48a2da44fddb181004b1980ceb5",
+      "statement": "The orange (tertiary) usage cap — at most 3–4 elements per screen, with the Grumpy Robot avatar, rating stars, the single \"Add movie\" call-to-action and attention highlights such as a media/quality mismatch badge as the sanctioned uses — is a convention that the R1–R7 scan does not enforce, so over-using orange is a design regression that will not fail CI.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/design-system-compliance.test.ts",
+          "version": "repo-file-v1:sha256:4eb1a2b98cdbfcca5964b4528dcc18061c409cf31add7149cceba6fa0a0fa400"
+        },
+        {
+          "resource": "repo://packages/DESIGN-SYSTEM.md",
+          "version": "repo-file-v1:sha256:3115383cc189d2456bbf1270a0d0a8ba0ba0525aa2b4c41b396aee2c7e144869"
+        },
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/sanctioned-deviations.md",
+          "version": "repo-file-v1:sha256:7c8f46ad838b26a0dc3b2bef1640bd2e5d126d012f9e56ee4290b886d1c4d5b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_35b9d731a6d34621ae74813a0bda743b",
+      "statement": "The design system's own Jest suite uses the `jest-expo` preset with `jest/tamagui-cjs-resolver.js`, which redirects the two Tamagui 3 subpaths whose `react-native` export condition is ESM-only `.mjs` to their CJS builds — a Jest-only problem, since Metro loads `.mjs` fine. `testMatch` covers the whole package rather than only `components/**`, so a new test directory cannot be silently invisible to the runner.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/jest.config.js",
+          "version": "repo-file-v1:sha256:780d34574b9182f4c3b5dd101f5501ed23aa8ef905cf8b30aa7365da1b1c8fcb"
+        },
+        {
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js",
+          "version": "repo-file-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad08bd0a347940ad97814ce1a5f3f859",
+      "statement": "Beyond the rule table, the sanctioned-deviations contract also carries the R1 colour-utility allowlist and the intentional control conventions — two-tier destructive emphasis by surface density and single-select `Chip type=\"choice\"` versus multi-select `Chip type=\"filter\"` — which are documented deliberate differentiation rather than drift.",
+      "evidence": [
+        {
+          "resource": "repo://specs/017-design-system-consistency/contracts/sanctioned-deviations.md",
+          "version": "repo-file-v1:sha256:7c8f46ad838b26a0dc3b2bef1640bd2e5d126d012f9e56ee4290b886d1c4d5b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_8eb33ac5d4f2402b8080f3f92a953bd7",
+      "statement": "The orange call-to-action is `PillButton`, a dedicated primitive rather than a `Button` variant because its look sits between the MD3 Button sizes and is semantically singular, and the design system's `FAB` defaults to the tertiary colour scheme — together with `MovieCard`'s `FormatBadge` highlight, these are the sanctioned orange surfaces.",
+      "evidence": [
+        {
+          "resource": "repo://packages/DESIGN-SYSTEM.md",
+          "version": "repo-file-v1:sha256:3115383cc189d2456bbf1270a0d0a8ba0ba0525aa2b4c41b396aee2c7e144869"
+        },
+        {
+          "resource": "repo://packages/design-system/components/primitives/FAB.tsx",
+          "version": "repo-file-v1:sha256:1445bab0ef40edc84588945ae01da425811ad8ea358ffc2f46f9b253731667d9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/primitives/PillButton.tsx",
+          "version": "repo-file-v1:sha256:1cd8708935f343da167e23ff98562f85ba40bd5b120d55419b7347017fda390b"
+        }
+      ]
+    },
+    {
+      "id": "claim_29e55fde5f1b46dbb32cc24c8837f460",
+      "statement": "The Tamagui lockstep guard also bounds any Tamagui peer range to the installed major (`>=3.0.0 <4`), requires every `@tamagui/*` entry in the lock to sit at the manifests' one version, and asserts that every Tamagui update resolves to the single `tamagui` Renovate group on patch, minor and major alike. That group rule carries `rangeStrategy: pin` and is deliberately ordered after the broad `js patch/minor` and `js majors` rules, because the last matching `groupName` wins — placed earlier, those pull part of the set back onto its own branch.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L802-L822",
+          "version": "repo-lines-v1:sha256:1ea744bdbdc8ce1b1bd7314534e29d9db9461d1e82d1245c040a86d56e241b00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMGVkZTQ2ZWE3MTkyYWEzNDE4ZTk2MzAyYWEyNDRkYjY0NDIyNjQ2Y2M1ZDBkYzAyNjFlNmQ1YWNiNmIyNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNTZjNDQ3YWRlNDhmNzkwNTBhODhlYTA0YzIyMjg5MzRiYjVkZjgwZWFkYzgxNmFmYWI1ZTFiOWViZjliODUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L69-L162",
+          "version": "repo-lines-v1:sha256:58074d3318f26c1ea2a4834d7a938f699b1b4ca9f335b5772326cb1e5971f9cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkOTA2NGM2ZWMyNTUxY2JlYTk5OTJiYmM0YWRmYzVmYzdhMTljZjEwOGVhMTYxY2EyN2U5YzExNjBjMmNjZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5YTg1YTNmMTMzMWI0Yzg5MDczYTViZDExNDU4YzU2MWI0MjUxZWVkNWIxMGUwOWZjNzY3ODZkYmJhYjAxZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMDAwYzIwZTdkYTIyZmY4NzFjZmQwM2YyYjM4Yjc5YmIwM2U3ZDc3MTZjMTA4NDZlNDg3YTU4NTBlYmUxYmQifQ"
+        },
+        {
+          "resource": "repo://scripts/lib/renovate-package-rules.mjs",
+          "version": "repo-file-v1:sha256:a56f6a554c560cd664837ad93e48a0737e28e01e14fe9c5f85bd5f5502d5061a"
+        }
+      ]
+    },
+    {
+      "id": "claim_b15aa19ddb7c412488f5d0bdf3b8d5d5",
+      "statement": "The design system's `components/primitives/Text.tsx` also restores the **web** default line height (`lineHeight: web:20px`), because Tamagui 2's stylesheet gave every Tamagui text its font's default (`true`) line height while Tamagui 3 only sets the family — measured as the 22px app-bar title growing 20 → 28px and table rows shrinking 37 → 35px. Native never had that rule, so it is left untouched.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/primitives/Text.tsx#L19-L27",
+          "version": "repo-lines-v1:sha256:e650258b6261c70836a904537e59a9cad7ec12301687586d294f5f9ffb7f057b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjNWE3ZjdjMjQ1Mjc5NzQ2MzQ4OTQwOWM0MzJhYThmODU4MzAyYzFlMDFlOTk0OGI4MzNkNTgxZjY3M2JiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU4MGI3NjUxOGRhZTk3OWZhZWJkMDIzNjdhMjkyOTJhNTBkOTc2MDkyMjUxYTM4YTZjZTMwODgwYmE0MjgyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdlNzk3ZGMzY2JjYTA5NDgwZDk5NWM1N2QwNTBiYmUzZmM3OGRhYTU2MWQ0NDcxY2JlMDFjZTZjM2UzMWNmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRjYzA0MmJmZTliOTFlMDNkZmE4YTY0MjEyZTQwNTc0MmJlYzA4Y2E4ZjlkMTU4Nzg5MjA5ZGQzNTI1ODc2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b5fc9ae33e3474eb78783b49ba504b3",
+      "statement": "Under Tamagui 3 a numeric `lineHeight` on a Tamagui component is a **ratio**, not pixels; pixel values must be written as a string such as `\"20px\"`, which is why the design system's `Text` default is a `web:`-scoped string.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L29-L34",
+          "version": "repo-lines-v1:sha256:d3ef6a3d25cdede98ec8af4bc05717924e9f449afa73669aec066bfb45f21ec3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcwZjBmODJiZmRhNmNhYTlhODM5YmYwNTFjNDcxNTc2ZTUxODQzZWExYWNkZTA3ZWYzMTk1ZjI5NjExZmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ1YjcwYWQzNTU1N2ZkNjc2N2Y3NDcwYmY3NzIzNmUzY2M0MjUzZDM5ZjFhYzM1ZTJiYmE4MmNjMzNhYTQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdkOTMxMWI5ZDJmYzJiZGRlYjQ1Y2ZkN2ZmZDg1NTk1NmRiNmY5ZjhhM2FkMDQzYzJkOGQxMzkwYzgwZmRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQwYzQ3ZWMzYzAyOGZlZDM5NjcyNjQ3YTVkOGUyODMzNmRhZmI3M2ZjZTcwMTE3ZmM1ZjY5MWQ0ZmExMmJjZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/primitives/Text.tsx#L22-L26",
+          "version": "repo-lines-v1:sha256:52e42ba3cf1f471b1113e7b9811fe0a52c4c3609812c1ab4ab290f1ecf64f81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JiYjMyM2UyODQyNTBmMzE0MzI5ODBlNDk0NjY1ODU4YjU0YzUxN2UxYjkyNTgzZDI4YzBiOTc1ZjQ0MWZhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExMTQxYWUwMDA0MGFkNzgzMDY0MTIwOTA5MWMzN2MwMmZlMWM1NDQxYjU4NTU0M2M4YzhkOWUwMWE5NDE1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJlMWJmNmE2NDM3ZWZmNWNmY2RlNzk0NDBkNjM2NTgyNTc1NzZkYmJjZmY0NzVlYTdiYmUxMmU4Nzk0NzI4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U0OWE3NTlhNTIwNTEyOThhNDYwNjUwOGU1NWEzOTRiMGMxMDY4YTkwNTcxZDhiN2QzOGIwZTc4NDM5MmQ1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c69d9e234c954a42a244210a14c1f342",
+      "statement": "Tamagui 3 removed the v2 pseudo-state objects (`hoverStyle` / `pressStyle` / `focusVisibleStyle`): a state is now a clause on the property it modifies, written as a string program (`opacity=\"hover:0.92 press:0.88\"`) or as a key of a typed value. A leftover v2 object still typechecks and is forwarded as an unknown prop, so the interaction silently stops happening. The keyboard-only modifier is `focus-visible`; a bare `focus` clause reproduces the feature-015 bug where a mouse click leaves a persistent focus ring. `components/focus-ring.test.ts` and `components/interaction-states.test.ts` statically assert that no v2 object survives, that every ringed control keeps its `focus-visible` clause, and that `Card`/`Button`/`Chip` each declare hover, press and focus-visible.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L29-L34",
+          "version": "repo-lines-v1:sha256:d3ef6a3d25cdede98ec8af4bc05717924e9f449afa73669aec066bfb45f21ec3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcwZjBmODJiZmRhNmNhYTlhODM5YmYwNTFjNDcxNTc2ZTUxODQzZWExYWNkZTA3ZWYzMTk1ZjI5NjExZmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ1YjcwYWQzNTU1N2ZkNjc2N2Y3NDcwYmY3NzIzNmUzY2M0MjUzZDM5ZjFhYzM1ZTJiYmE4MmNjMzNhYTQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdkOTMxMWI5ZDJmYzJiZGRlYjQ1Y2ZkN2ZmZDg1NTk1NmRiNmY5ZjhhM2FkMDQzYzJkOGQxMzkwYzgwZmRkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQwYzQ3ZWMzYzAyOGZlZDM5NjcyNjQ3YTVkOGUyODMzNmRhZmI3M2ZjZTcwMTE3ZmM1ZjY5MWQ0ZmExMmJjZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/focus-ring.test.ts#L1-L39",
+          "version": "repo-lines-v1:sha256:c0f90a4368a5a0861c76b15a657df0b5bbb645781b70a5f4c46225c493746de1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NWRkMDc4ZjQxNGI2Mzc0ZGY5OWQ0MDJmN2E1MzQ1NTNlZDE1NDg1MGJkZTA0MjZlMTk4YzJhMzA4MGVmNWMifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/interaction-states.test.ts#L1-L53",
+          "version": "repo-lines-v1:sha256:51f244fc211db4ba682f8b202249d83b79b8083b14fa16bafcd2d7b8845d2d76:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f60134bdd6c74f88994e8e2bf2be2cfb",
+      "statement": "The only non-palette colour tokens in the Tamagui config are `white` and `black`; `transparent` is deliberately *not* a token because Tamagui 3 rejects a token named after a CSS keyword and the literal resolves correctly anyway.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/tamagui.config.ts#L109-L113",
+          "version": "repo-lines-v1:sha256:1bb5ad146328bb5c8169e6008042ce8c9f9f470f11bde4408f8fe15d3d0fe714:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1N2IzYmU0MWM3MDA4YmRhMTAxMTNlODdiMjhlYzA2YWQxOTY1ZjhjOGFiNjkxMGVmOWQ2MTUwOTMxMWFkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc1ZWQ5NTI0MTk5Y2ZjZGMyMjIzZjg1NzM3ZDY2Y2FiYTI0YzY5ZThjZTc5YTAxNjU1YTZmNWRiZDVkOWU2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJmMjljMjU4OWQwMTQ3YWU0ZjI0ZjE2MGQ3MDU0NTFjYTMxOTMyZTUwODllZjY4MDMyZDliODIyNjY1MGQ4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmE0NTE5MGFlNWY3M2I1Y2YyMTUyZWNmZDNmY2VkNTBmOTNiMzU0NjIzNGIxNDU3NDUxNzRjZTYyNzgwMzk3NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_da6edffcc41b47a39954eff7a1adf2ce",
+      "statement": "The design system's Jest resolver `jest/tamagui-cjs-resolver.js` is wired into the app's own Jest config as well (`frontend/mcm-app/package.json` → `jest.resolver`), so both suites load Tamagui 3 through the same CJS redirect. The package's `testMatch` was widened from `components/**` to the whole package because a `tokens/` test had been written, committed and never executed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L87-L90",
+          "version": "repo-lines-v1:sha256:20e3b8acf4171180108a03e9d91977548d78e2c83bf64ac7a0789d0c7682f8a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiMTYwNTM4MzBjZDgxNGRkNmM1NWNjZDBhNTE0ZDM4ZDNkYzI3NWZiN2Q0N2RiY2VjYmYyMjQxZDA4MTNjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest.config.js#L10-L16",
+          "version": "repo-lines-v1:sha256:24ea10353d2696703b87c707ddc8880e3d8f53a79bb3b41600e0b004404c1795:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY2OTI2NmVlMjZlODJmNzEwNDIyY2YwNDNjMTAzN2ZiODY0NWViNDZlY2EwZWUwNzE3YmVlOTY5MzUwZjQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YmMyMmM1NzJjNTBjNjljMjA2YTFjNTY0MjE1YmRmZWQwNWFmMjU0YjJhOWM4Mzc3MjYzYThmNDM3MDc5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg0OWM0Y2Q4NWI5OWZjNTg4OGYzYTYzMDI2OGY5ODA3NThlMTIyZWY0MmZkYTI1ZDY3ZGFmNGMxMmYwODFmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZiYjZmNWE5ZTMwZTI1ZjNhMzEzOTg4ZTk2MWNiYTYzMjQ3MTYwMDQwYWY1MTU2MWUzYTg1NjZlYzMyOWYxNSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
+          "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-19T00:33:25.175Z"
+  }
+}
