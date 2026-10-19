@@ -363,9 +363,15 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   `pnpm nx typecheck mcm-app && pnpm nx test mcm-app` — record failures.
 - [x] T046 [US6] Migrate until GREEN. **Verify GREEN**: same commands, 0 failures; then
   `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app` — 0 failures, 0 skipped.
-- [ ] T047 [US6] Web E2E incl. session-timeout and concurrent-session specs; `pnpm nx
+- [x] T047 [US6] Web E2E incl. session-timeout and concurrent-session specs; `pnpm nx
   e2e:mobile:session-timeout mcm-app`; `pnpm nx dast infrastructure-as-code`. **Done when**: PR 6 merged
-  (rollback: revert; Redis holds sessions only).
+  (rollback: revert; Redis holds sessions only). **Done**: PR #802 merged 2026-10-19 (`2b5ba71c`).
+  - Web E2E: PR app-e2e green, and locally 153 non-agent specs passed.
+  - Concurrent sessions: covered by the real-Redis `concurrent-session-cap` integration case.
+  - DAST: the full scan passed in CI.
+  - The mobile session-timeout flow was NOT run. It is manual and needs KVM, and express/ioredis run only in the BFF. Treated as not applicable unless the operator asks for a KVM-host run.
+  - main's push run 5618 then failed `app-e2e` on the known item #702 flake ("No caller identity"), so the
+  deploy rides the next main push.
 
 ---
 
