@@ -1432,3 +1432,27 @@ exactly like a client regression:
    *"That address is not allowed (link-local / cloud-metadata range)"*. Fix:
    `E2E_AGENT_OLLAMA_URL=http://172.18.0.1:11434`, the bridge gateway that devcontainer-sandbox.md §6
    names. Both the BFF and the gateway reach Ollama there, and it is a private address the guard allows.
+
+**T050 CI.** PR #803 at `7ef32e82` is **mergeable, with every required context green**; the advisory `dast` is
+green too.
+- `app-e2e` gate tier (run 5628): **failed=0 flaky=0 passed=181 did-not-run=0 skipped=0**, contention
+  0/0.
+- The mobile agent flows run inside that green job.
+
+**T050 model tier (dispatch).** `app-ci` was dispatched on the branch with `provider=anthropic` (run 5634, on
+`7ef32e82`), and compared with `main`'s latest model-tier runs (counts bundles, `ci-failures` package):
+
+| Run | Model tier | Gate tier | Turns (posts / 100 tests) |
+|---|---|---|---|
+| **5634, this branch** | **failed=0 flaky=1 passed=29 skipped=0** | failed=0 flaky=1 passed=180 | 220 / 211 → **104** |
+| 5618, `main` `2b5ba71c` | failed=0 flaky=1 passed=29 skipped=0 | **failed=1** did-not-run=3 passed=177 | 215 / 208 → 103 |
+| 5577, `main` `8ea70cab` | failed=0 flaky=0 passed=30 skipped=0 | — | — |
+
+- **Model-tier failures ⊆ `main`'s: both are empty.**
+- The one model-tier flaky test is the same test on both sides: `assistant-organize.spec.ts:107` (multi-item
+  remove), passing on retry.
+- The gate-tier flaky test, `assistant-add-ambiguous.spec.ts:78`, is the one that FAILED `main` run 5618
+  (item #702). It passed on retry here. It also passed first time in the PR run and in the local Ollama run.
+- The turn rate is unchanged, at 104 vs 103 gateway posts per 100 tests. That fits T049 keeping the
+  frontend-tool registration (and with it any follow-up behaviour) exactly as it was. A behaviour change in
+  either direction would have moved this number.
