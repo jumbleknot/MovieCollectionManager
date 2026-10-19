@@ -1,34 +1,12 @@
 {
-  "coveredCommit": "62556d3befc8e633d4dee805d6a853528cad8bf7",
-  "coveredAt": "2026-10-18T17:47:14.691Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "repository.md",
-        "expo-app.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md"
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "renovate.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/renovate.md"
-    }
-  ],
+  "coveredCommit": "8ea70cab91eb82b31d436cdf72eb2428227fa981",
+  "coveredAt": "2026-10-19T01:15:16.271Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 791,
-    "headCommit": "bd962adebf28632de483fd4d74fe012d0d12ec32",
+    "headCommit": "05581de57a1f9c6cb79d072650e646ca9e6bbdbc",
     "markerBefore": "4d942df6e84df55a14a30bf37a6f5a14a62f6cee",
     "slices": [
       {
@@ -53,66 +31,68 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md"
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "repository.md",
+          "expo-app.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: README.md; source changed: frontend/mcm-app/README.md; source changed: packages/DESIGN-SYSTEM.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/repository.md; openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "renovate.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/renovate.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-18T21:21:09.762Z"
+    "updatedAt": "2026-10-19T01:15:16.781Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2200,
+    "pagesWritten": 8,
+    "elapsedSeconds": 2517,
     "stoppedAtBudget": false
   },
-  "escalations": {
-    "projects/expo-app.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-18T21:21:09.318Z",
-      "failuresAtLow": 0
-    },
-    "projects/repository.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-18T21:21:09.318Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/renovate.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-18T21:21:09.318Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 399,
+    "calls": 345,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3158391,
-    "cached": 38906994,
+    "uncached": 4540630,
+    "cached": 31489844,
     "cacheWrite": 0,
-    "output": 571774,
-    "reasoning": 474309,
-    "ms": 4123224,
-    "estCostUsd": 1.8671,
+    "output": 506262,
+    "reasoning": 412833,
+    "ms": 4619125,
+    "estCostUsd": 2.1586,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
         "projects/repository.md",
-        "projects/bff.md",
         "projects/expo-app.md",
-        "projects/design-system.md",
         "runbooks/renovate.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 1.8671,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 2.1586,
       "rateLimited": null
     }
   ],
