@@ -1410,3 +1410,25 @@ with no `operationName` (core `createSingleRouteRequestInit`, 1.70.1 and 1.79.1 
 default-deny, every handshake POST is classified billable. 1.79 adds two more envelope methods,
 `trajectory/connect` and `resource/request`, used by features this app does not enable. Recorded for the
 coordinator; not in this PR's scope.
+
+**T050 local `@gate` agent E2E (Ollama, no API spend).** The stack was the branch's `mcm-bff:latest`
+(`X-BFF-Source: dev-container`) with the agent-e2e limit override, plus `agent-stack.mjs` with
+`SPECIALIST_MODEL=qwen2.5` (gateway with production nodes on, three MCP servers, all built from the
+branch). Playwright ran in `mcr.microsoft.com/playwright:v1.63.0-noble` from a staged named volume, with
+`E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1 E2E_TIER=gate`, across the 11 agent specs that carry
+`@gate` (agent-card-navigate, assistant-navigate, agent-import-disambiguate, agent-cors,
+agent-session-refresh, assistant-list-refresh, assistant-add, assistant-config, agent-import,
+agent-navigate-collection, assistant-add-ambiguous). Result: **19 passed, 0 failed, 0 flaky, 0 skipped**.
+
+Two runs before that one were INSTRUMENT failures, not results. Both are recorded because each reads
+exactly like a client regression:
+1. **No `TMDB_API_KEY` in the harness.** It lives only in `mcp-servers/web-api-mcp/.env.local`, which
+   `agent-e2e.mjs` reads and a hand-built `docker run` does not. `agentSeedingEnabled()` was false, so
+   global-setup silently skipped the seed. With no runnable config the dock never mounted, and every spec
+   timed out on `assistant-dock-toggle`. Global-setup printed no "seeded" line, and that missing line is
+   the tell.
+2. **Seed rejected by the SSRF guard on the sandbox.** The BFF container resolves the default
+   `http://host.docker.internal:11434` to `fe80::1`, which is link-local. `PUT /bff-api/agent/config` → 422
+   *"That address is not allowed (link-local / cloud-metadata range)"*. Fix:
+   `E2E_AGENT_OLLAMA_URL=http://172.18.0.1:11434`, the bridge gateway that devcontainer-sandbox.md §6
+   names. Both the BFF and the gateway reach Ollama there, and it is a private address the guard allows.
