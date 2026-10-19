@@ -1542,3 +1542,27 @@ satisfier" for `@copilotkit/runtime`. It was never the copy the BFF loads:
   `agent-stack.mjs` would build all four on a disk already over the line. CI's `app-e2e` runs the `@gate`
   agent tier against branch-built images.
 - **NOT run: golden replay.** The Python gateway is untouched, so it would prove nothing about this PR.
+
+**T053 CI.** PR #807 at `3cd2bd49` is **mergeable, with every required context green**. The advisory
+`dast` is green too, and `trigger-cd` is path-gated (skipped).
+- `app-e2e` gate tier (bundle 5649): **failed=0 flaky=1 passed=180 did-not-run=0 skipped=0**, contention 0/0.
+  The flaky test is `agent-import.spec.ts:104` (`@gate`, passed on retry). It was not flaky in `main` run
+  5645 or in this branch's dispatched run below. This flake has not been recorded on these runs before, and
+  it is worth watching beside #702.
+- The mobile agent flows run inside that green job.
+
+**T053 model tier (dispatch).** `app-ci` was dispatched on the branch with `provider=anthropic` (run 5651,
+whose ci-failures bundle is 5652, on `3cd2bd49`). It is compared with `main`'s latest model-tier run, the
+push of `43e92656` (US7a merged):
+
+| Run | Model tier | Gate tier | Turns (posts / 100 tests) |
+|---|---|---|---|
+| **5652, this branch** | **failed=0 flaky=2 passed=28 skipped=0** | failed=0 flaky=0 passed=181 | 220 / 211 → **104** |
+| 5645, `main` `43e92656` | failed=0 flaky=3 passed=27 skipped=0 | failed=0 flaky=0 passed=181 | 222 / 211 → 105 |
+
+- **Model-tier failures ⊆ `main`'s: both are empty.**
+- `assistant-organize.spec.ts:107` was flaky on both sides, as it was in US7a.
+- `agent-disambiguation.spec.ts:66` was flaky here only. On `main`, `agent-import-progress:78` and
+  `agent-navigate-movie:87` were flaky instead. All of these are `@model-decision` and all passed on retry.
+- The turn rate is unchanged, at 104 vs 105. That is expected, because openai is inlined but is not on the
+  run path: the agent route uses `ExperimentalEmptyAdapter` and the LangGraph HTTP agent.

@@ -407,6 +407,9 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   the 7.x one. The override REWRITES openai's undici peer to `>=6.27.0 <7`. See research.md.*
 - [ ] T053 [US7] Fix until GREEN. **Verify GREEN**: same, 0 failures; `@gate` agents suite green; model tier
   on dispatch ⊆ `main`. **Done when**: PR 7b merged.
+  *GREEN 2026-10-19, merge pending: PR #807 at `3cd2bd49` is mergeable. Its `@gate` tier gave failed=0 flaky=1
+  (run 5649). The dispatched model tier gave failed=0 flaky=2 (run 5652); `main` gave failed=0 flaky=3 (run
+  5645). See research.md.*
 
 ---
 
