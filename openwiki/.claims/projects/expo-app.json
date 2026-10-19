@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba1214598c5bcd15cfc9bd8af12898f6fb707d5e5b85f7b2e406b7e6c9df0933",
+  "pageVersion": "sha256:2b24c33733f6c4ef1eff7018a31b9cf7a2a2fecf36773948bccb09dab1a66bcf",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -366,7 +366,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/package.json#L33-L55",
-          "version": "repo-lines-v1:sha256:e2a3b4f39f38bbf4a3d1a0ddb8149e0f374916b2fcceb43a1a9a51f78b200485:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMmIxMTNhNGNkZjUwYTcwM2JiYWZiZDRiNGU5ODEzYjI5NGIyNTA0ZjAxZTAxZWQ1ZGIzYTgyYWFiMWI5NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjNkYjMwZDg0NGFlYmNiMGZlMDBkYzVlYTUyNGNkOTYxMmY0ZjIxMmFlYzhiYTU4NTE1MGU1NTFkOWUxYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTE2MGVhNWQzMGU4NTIxODUyOTk0NTVhMzM1MjM3MGFiMjU0ZGNkNzlmNGM3YTkzZmU0OThiNDEzOWVjOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmMxZDRlNzZmNDAwOWQ0ZDdkZjE1MDIzYjI2ZjZkODQzZjNhNTk0NDQ5YmQ2YTc1NzYzMGZiODBiOTNkMzQifQ"
+          "version": "repo-lines-v1:sha256:b6003e61e845409cfdb097e670594c53ad566c3ba0ac4b82ce07442e775e6bb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMmIxMTNhNGNkZjUwYTcwM2JiYWZiZDRiNGU5ODEzYjI5NGIyNTA0ZjAxZTAxZWQ1ZGIzYTgyYWFiMWI5NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjNkYjMwZDg0NGFlYmNiMGZlMDBkYzVlYTUyNGNkOTYxMmY0ZjIxMmFlYzhiYTU4NTE1MGU1NTFkOWUxYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTE2MGVhNWQzMGU4NTIxODUyOTk0NTVhMzM1MjM3MGFiMjU0ZGNkNzlmNGM3YTkzZmU0OThiNDEzOWVjOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmMxZDRlNzZmNDAwOWQ0ZDdkZjE1MDIzYjI2ZjZkODQzZjNhNTk0NDQ5YmQ2YTc1NzYzMGZiODBiOTNkMzQifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/package.json#L80-L80",
@@ -411,7 +411,7 @@
       "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine; the resolver resolves as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L87-L89",
+          "resource": "repo://frontend/mcm-app/package.json#L88-L90",
           "version": "repo-lines-v1:sha256:922d9a9961f7ced904ff158ad4526748ac18b0ca46db081929ebf3f9e7dfd2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
         },
         {
@@ -503,8 +503,8 @@
           "version": "repo-lines-v1:sha256:a2e79f191284804a07d14a98b494d85d62f0fc36a04d31dff1191c4ec8a1b928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L66-L85",
-          "version": "repo-lines-v1:sha256:7c9d4128407d0c7f5fb2c083d7624e03bf267658acf2039519c97fce86d455bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjI1ZjY4MWIxOGM5YjYzYmUyNjdiMjM4MTcxZDllOGIzOGFlZGNlYWUzMzg1ODFhYzBkMTE0OGRjODc4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NzZiZGYzMWMzODJjOGY3M2U4NzhhYzllNDE0ZjkzNDljODM0ZWZmNDczZWFhMTY2YzI0M2VhNjk3MDNjNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmQzZTcyNjI5ZjUyNTJiYTg5MzkwN2YwZDZjZmU2Nzc3MjQ4MDNiNWUyYTM4YmQwODI0ZjRjNzg4NGU2MTQifQ"
+          "resource": "repo://frontend/mcm-app/package.json#L66-L86",
+          "version": "repo-lines-v1:sha256:c8591aeb3fc6c762ac8496404f76ccbb9e92fdf5ab0aa98889b6ef6faf701f8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjI1ZjY4MWIxOGM5YjYzYmUyNjdiMjM4MTcxZDllOGIzOGFlZGNlYWUzMzg1ODFhYzBkMTE0OGRjODc4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NzZiZGYzMWMzODJjOGY3M2U4NzhhYzllNDE0ZjkzNDljODM0ZWZmNDczZWFhMTY2YzI0M2VhNjk3MDNjNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmQzZTcyNjI5ZjUyNTJiYTg5MzkwN2YwZDZjZmU2Nzc3MjQ4MDNiNWUyYTM4YmQwODI0ZjRjNzg4NGU2MTQifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/project.json#L33-L43",
@@ -561,18 +561,68 @@
       "statement": "Jest must be told not to transform React Native 0.86's renderer: `RendererImplementation` now imports `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render touching `Animated` pulls in the ~725 KB already-compiled `ReactFabric-dev.js`, and `frontend/mcm-app/package.json`'s `transformIgnorePatterns` therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, which is back at the SDK-56 figure and why the per-test 15 s timeout that briefly stood in for this was removed.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L94-L98",
+          "resource": "repo://frontend/mcm-app/package.json#L95-L99",
           "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1024-L1067",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1071-L1114",
           "version": "repo-lines-v1:sha256:de5c36f62889a0e15afca6423d21af3163bb032b1845dae5579fc61b077bdce4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYjJmNzNkNjBlOTI3YmFjOWMwNWNjNmRmZjAyOTAxYjg1Zjc0ZTU3MTA4NDZlYjQ1M2VhNTM4ZDFhYmUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGU4MGU4NDMwMTA4MmFiNGY3ODBjZmFmNGEzNjZhNDIxOGUxNWE2MWYxMmY4Njg0Y2M0ZjljYzY5NTQ5MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDBhYzM3NmM2YjY3YmVlNTFjOTBiODkyNjAxZTE5YjYxZjFkZTk2NDQxYTM4ZmY1Y2FhYWFkODY2ZjY0M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZDNmNGQwMjFlNWQ3ZGQ4MTFjNmU0YWUzMDIwYmQwOWMwY2YwYWRhOWFmYjg5MWUwZTg1ODJkMzMxNjBjMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b898f997aa4449cb0f8ed93859a4f08",
+      "statement": "`@testing-library/react-native` went from 13.3.3 to `^14.1.0` (feature 081 US5c), which made the render/event API async: `render`, `renderHook`, `rerender`, `unmount` and every `fireEvent.*` return a Promise, so an un-awaited call fails with `getByTestId is not a function` or `rerender is not a function` rather than a warning. The app's own themed-render helper `src/test-support/render.tsx` is a plain pass-through that returns the RNTL result without awaiting it, so `await render(...)` is required at every call site in the unit suites, including the many that only query a testID immediately afterwards.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/movie-count-line.test.tsx#L13-L17",
+          "version": "repo-lines-v1:sha256:c647b071642be155b24850287597436a51107bc71b3189911f3551e1fa8384fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU5ODdhYjdiMWMwYzg2MTgxZmFhN2YzZWYxN2RiZDlkOTc1YjI2MThjZjE1YzgxODdiYTgyZjdjMTZkMWNjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWJlOTk5ZDM3OTg3MjVkMzI1MjY3MDVhNmY0NjFlZTRiYjU4ZmNjZDhkN2E2NmE3OTYwMTI3YTE1MTIxNDg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmY0YTI2ZWE1M2E2ZjZiOWU0ODkxNDY4YjkxZjcyY2RiZTE5NWZkN2JjNTg3M2Y3Mzg3MTdmOGUzMjgyN2Y1NCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/test-support/render.tsx#L23-L28",
+          "version": "repo-lines-v1:sha256:9d9a395fbe8564c7f0515e063fecfeebb80046ae611dd7438a27018ae88ccb50:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxZThiMGQwMDZmNzAwZDExZDRjYWVkZTQ5ZDg4MDIwNWUzNjlhNTAwZTdhMWZjNWZlZGRlZjEwNzQ0ZjM1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk0ZmMwYzE3M2QxZWMzZmM1MDFkN2RmYTkyODU1MDFjNTI3Y2ZiNDcxMjU4M2RhM2NjMzYxODA1NjZiNGJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM2M2FhMDU0ZTBiMGMxN2U3YmZkNDM5YTdlYWJjYTYxNzkyZjkzNmM3Zjg2OWUzZWU5NDU1NjgyYWI3YzAyNCJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L276-L284",
+          "version": "repo-lines-v1:sha256:1e2cdcab051ccc5de1c745606ebe712d43f7db0b9c86d7027514ffe061f06eb4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA2MWZhNGFlNWI3NmEyNGQ3NGZkODgyYTMxZGViMDkyOTk4MDUzNjM2Njk2NjllOGU1ZTNiNGQyMGExYmEyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU3NmJkZDE3YzUzNTVkMzJlZGYyZGI3YzdjNzI3ZDVkM2ZhYzcxOWJjNjY5NGY1MDhmNzAxZmQwYmJkMjgxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGExMTJmYjNmOWJjOWYwZGJhZTlkYjIyOTRhNDNjZTY0MzA2YTdjNDFiYjNhMDc1Njc3ODVlNzA0OWUyZjYzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMxNzM5NDU2YTA1NjY5ZmE4YTA4ZWQzYmZkMTQxMWRhYjYwNmYzZTVlZWJjODA5NzA4NDEwN2UwODlkMDgzYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_109b9048783f4c699b9b4496943b8f15",
+      "statement": "Two RNTL 14 behaviour changes reach into how tests are written: `UNSAFE_getByType` no longer exists because Test Renderer renders host elements only, so a test needing the `Modal` or `ScrollView` inside a component queries the host type via `container.queryAll((node) => node.type === 'Modal')` / `node.type === 'RCTScrollView'`; and RNTL 14 honours the responder/`disabled` contract where v13 delivered the event anyway, so a second `fireEvent.press` on a button the first press disabled stops at the button. The double-submit latch tests still pass — now because the press never reaches the handler, which is what their titles claim.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx#L74-L82",
+          "version": "repo-lines-v1:sha256:c888e70993f06614d41d198e602d678afbf763398f96a54debf1702d247683e2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhiNTNjYTU2YzI4N2Y0NTg3M2VhYzljOWQ3OTAzYWIwODE3NzMwMWY3MzZkOTRlMDM0NTQ4MDMxNjBkZTcyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTE2OGY2OWQ0YzdhYTdjZDg5Y2U1MjM0ZTdlZjg1YTNmOGVkOTgyNGQ3MmJkMDk5MTY4NDEwZjU1ZjhmMzExNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/controls.test.tsx#L201-L226",
+          "version": "repo-lines-v1:sha256:878b1602be7289d050c48350bb3a77da5b6052767e47c45042a857dd053cb413:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZTZiZGY3Y2MwYmQ2ZTRkZWRlZjhlZGMxNTI5NGNmN2E1YWIwZmY1N2RhMjkwYzk0ODFhZjEwZTlhMzIzMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhMzA2YTk2MDg3OTQzM2EzOGJkYWQ5YjFkZGQxYmU2N2VlZTQwZGM5YzExZTczMDM0MjM3ZDBiODU5ZWU1MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YTg4M2Y3ODUyZjc3YzNjYjZlOGU2ZmI3ZjQ4ZjhiZTU1NzdmODMwYjY1OTQ3NzI1YzVmZTAyNjI2M2Q2OTMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L285-L292",
+          "version": "repo-lines-v1:sha256:24a9932d5d448f134a403d6cb6416d00b3627c956076270f98d7270e46475883:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGEyYmIzY2Y4MGEyOWU4NGFkNGQzZDc0ZmI5YWRlZTA0MTI2OWU4OGQyY2U1NmE2YjQ2MDMzZGZiYzBkZGE0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZiMDU2MzQ3NTZjOGE0NzA2Mzc2ODNkZDc0OTA3NjExM2M3OGFkMzQ5Y2FlNzc1MjZjOTBkYmE0YTg5MzE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc1ZmE0OGI5YTFlMDc3NTA1ZjhhMzdmY2U0OTQwMzZjZjZkOTRjZDYwZmM0ZTJhMzA0OGVmMGVjYzIxOWU5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM3MzYyNzkxMjFlZDYyYjAxZTMyMTcyNTlkMWFhMTM5MmVjYTRmZDE4MTk3YTA4OWE5NjU1YTQ0NmQzNGU3YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c864c71abc0446af9933ffc7dfa17efb",
+      "statement": "`test-renderer` is held below 1.3 for as long as the app runs React 19.2: RNTL 14 renders through `test-renderer`, and 1.3.x depends on `react-reconciler` 0.34, which peers `react ^19.3.0` while Expo SDK 57 pins React 19.2.3. `frontend/mcm-app/package.json` therefore declares `test-renderer ~1.2.0` and Renovate caps it at `/^1\\.[0-2]\\./` in a group of its own — the separate group is load-bearing, because a held member gates every member batched alongside it, so leaving it in the routine `js patch/minor` group would block unrelated npm bumps. The hold lifts when an Expo SDK move brings React 19.3.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L85-L85",
+          "version": "repo-lines-v1:sha256:030b484e06a54f801c32c6885691b06ac2d3cffaa8eedd144f65a18d98396a48:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFmMzI2YjFiMTFmMzQ1MjI0N2E1NDQ1MTgxNDVmMTYzNTNjNjRiMmI4ZDNjOWExM2ZhNzhjODQxMTFmOGY2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ5NjQ0MjI2ZjU0YWQ2NDlkYjA4NGZhYjNhOTViZmExYzA0OTlkYzE4YTg1ZjM5ODE1ODNmYTAwYzI2ZjAxMCJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L862-L881",
+          "version": "repo-lines-v1:sha256:e5be3db63087af8034a6b8291d89571399c208a38658bfb7953cbb4abe7018c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MWM4MTRlOTlhOWRhN2MwODBlZjNiNjBkYzBhODdiMjE3YmNkYzA5NDgyZTA4MTE1ZDE3M2QxOGZjMTQ4NWMifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T00:33:25.175Z"
+    "at": "2026-10-19T12:20:46.129Z"
   }
 }

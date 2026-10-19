@@ -1,9 +1,9 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, and the client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
-tags: [expo, react-native, tamagui, eslint, frontend, metro, csp]
+tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -92,7 +92,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
+    at: 2026-10-19T12:20:46.129Z
 ---
 
 # Expo/React Native universal app
@@ -420,6 +420,32 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   forms, search bar, and assistant config) instead of plain `TextInput` for form fields, except the
   registration page (`register-form.tsx`), which uses a plain `TextInput` on purpose because
   autofill is wanted there.
+- **React Native Testing Library 14 made the whole render/event API async — an un-awaited `render`
+  fails as `getByTestId is not a function`, not as a warning.** Feature 081 US5c took
+  `@testing-library/react-native` from 13.3.3 to `^14.1.0`, whose `render`, `renderHook`, `rerender`,
+  `unmount` and every `fireEvent.*` now return a Promise; the upgrade went RED with
+  `getByTestId is not a function`, `Cannot read properties of undefined (reading 'current')`,
+  `` `render` function has not been called `` and `rerender is not a function` until every call site
+  awaited them. The app's own helper is the one place this is easy to get wrong: `render` in
+  `src/test-support/render.tsx` wraps RNTL in `<TamaguiProvider>` and re-exports the rest of the API,
+  but it is a plain pass-through rather than an async wrapper, so `await render(...)` is required at
+  *every* call site — including the many tests that only query a testID immediately afterwards, which
+  is exactly where it looks unnecessary. `UNSAFE_getByType` is also gone (Test Renderer renders host
+  elements only), so a test that needs the `Modal` or `ScrollView` inside a component queries the host
+  type through `container.queryAll((node) => node.type === 'Modal')` /
+  `node.type === 'RCTScrollView'` instead. One measured behaviour is worth *not* "fixing": RNTL 14
+  honours the responder/`disabled` contract, where v13 delivered the event anyway, so a second
+  `fireEvent.press` on a button the first press disabled stops at the button instead of reaching the
+  handler. The "second press ignored" assertions still hold — now because the press never arrives,
+  which is what their titles actually claim.
+- **`test-renderer` is held below 1.3 for as long as the app is on React 19.2.** RNTL 14 renders
+  through `test-renderer`, and 1.3.x depends on `react-reconciler` 0.34, which peers `react ^19.3.0`;
+  Expo SDK 57 pins React 19.2.3, so `frontend/mcm-app/package.json` declares `test-renderer ~1.2.0`
+  and Renovate caps it at `/^1\.[0-2]\./`. The hold sits in a group of its own, and that is
+  load-bearing rather than tidiness: a held member gates every member batched alongside it, so leaving
+  it in the routine `js patch/minor` group would block unrelated npm bumps behind a version that
+  cannot install. Lift it when an Expo SDK move brings React 19.3. See the
+  [Renovate runbook](../runbooks/renovate.md) for the hold conventions this follows.
 - **Every `data-testid`-based web E2E selector depends on React Native Web's `testID` →
   `data-testid` rewrite matching Playwright's configured `testIdAttribute`.** See [Playwright
   testID mapping](../gotchas/playwright-testid-mapping.md) for the mechanism and why a mismatch
