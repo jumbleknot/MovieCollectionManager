@@ -4,10 +4,9 @@ title: mc-service errors are RFC 9457 Problem Details, never a stack trace
 description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the exceptions and contract gaps to know before asserting on an error response.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
-timestamp: 2026-10-20T06:13:33Z
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T06:13:33.915Z
+    at: 2026-10-20T11:09:40.455Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace
@@ -49,10 +48,11 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   as a `400 INVALID_INPUT`, so it is the one variant where a constructed message *is* the response
   body. Existing producers keep that safe by constructing a fixed sentence rather than interpolating
   raw input — `"Invalid pagination cursor"` in the keyset decoder and `"Search text is not a valid
-  pattern"` when a search string cannot be escaped into a BSON regex — but the rule for a new one is
-  simple: **a `ValidationError` message is client-visible**, so write it as user-facing text and never
-  interpolate a stored value, a credential or a driver error into it. Note that
-  `validate_sort()` in `api/movies/list.rs` already interpolates the rejected parameter
+  pattern"` when a search string cannot be escaped into a BSON regex, both in the movie repository,
+  and the three fixed sentences in `validate_external_ids()` (`domain/specifications/http_url.rs`) —
+  but the rule for a new one is simple: **a `ValidationError` message is client-visible**, so write it
+  as user-facing text and never interpolate a stored value, a credential or a driver error into it.
+  Note that `validate_sort()` in `api/movies/list.rs` already interpolates the rejected parameter
   (`Invalid sortBy: {sb}`); that is a bounded echo of a query parameter, not a template to copy for
   anything else.
 - **There is no fallback path that serializes a panic or Rust backtrace to the client.** Every
@@ -115,17 +115,23 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   `status` and `detail`, so no response will ever carry `instance`. Reading the schema alone would
   suggest a correlation identifier is available in the body — it is not; correlate through the
   `request_id` span field described in [Logging and audit](../invariants/logging-and-audit.md).
-- **The BFF has two different problem-document producers, and only one of them speaks mc-service's
-  namespace.** `handleMcApiError()` in
+- **The BFF has two producers that serve `application/problem+json`, and only one of them speaks
+  mc-service's namespace — while the `about:blank` shape it emits also appears served as
+  `application/json`.** `handleMcApiError()` in
   [`mc-api-error.ts`](../../frontend/mcm-app/src/bff-server/mc-api-error.ts) propagates an upstream
   mc-service body and status **unchanged**, so a proxied failure keeps the `.example` `type` URI. But
   the BFF's own helper — `problemResponse()` in
   [`account-route-support.ts`](../../frontend/mcm-app/src/bff-server/account-route-support.ts) — emits
-  `{"type": "about:blank", ...}` with `Content-Type: application/problem+json`. A client that keys on
-  the `type` namespace to decide where a failure came from must expect both, and the `about:blank`
-  form means "no more specific type than the status code" by RFC 9457, not "unknown service". The
-  same BFF file's `errorStatus()` deliberately discards a thrown error's message, because one can
-  carry a hostname, a connection string or a Keycloak diagnostic.
+  `{"type": "about:blank", ...}` with `Content-Type: application/problem+json`. The same
+  `about:blank` body is written elsewhere in the BFF through `Response.json()` — `problem()` in
+  `backup-route-support.ts`, and the inline literals in the agent-config and backups-tick routes —
+  which means those refusals are *shaped* like RFC 9457 and served as `application/json`, the same
+  split `require_app_role` has on the mc-service side. A client that keys on the `type` namespace to
+  decide where a failure came from must expect both namespaces, and one that asserts on the media
+  type holds only on the account routes. The `about:blank` form means "no more specific type than the
+  status code" by RFC 9457, not "unknown service". The same BFF file's `errorStatus()` deliberately
+  discards a thrown error's message, because one can carry a hostname, a connection string or a
+  Keycloak diagnostic.
 
 See [mc-service](../projects/mc-service.md) for the Clean Architecture layering that produces
 `DomainError` in the application/domain layers before this API-layer handler ever sees it, and

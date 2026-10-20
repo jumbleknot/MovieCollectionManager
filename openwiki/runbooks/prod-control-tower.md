@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the one-time RustFS object-store cutover, Langfuse 4 + ClickHouse 25 and OpenSearch 2→3 migrations with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the four one-time stateful cutovers they have carried — the RustFS object-store swap, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, and the spec-081 US8b observability Postgres 16→18 move — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, runbook]
+tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, runbook]
 sources:
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
     resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
@@ -44,7 +44,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-20T11:09:40.455Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -58,6 +58,15 @@ of the secrets posture documented in [Secrets management](../invariants/secrets-
 (Vault here is the fail-open, dormant reader described there) and it shares the
 [published-port reservation convention](../invariants/published-port-reservation.md) for its two
 tailnet-reachable operator UIs.
+
+On top of that steady state sit **four one-time stateful cutovers**, each operator-run, each with the
+merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
+object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
+OpenSearch 2 → 3 with the audit history preserved (feature 071), and the observability Postgres 16 → 18
+move (spec 081 US8b). Three of the four — RustFS, OpenSearch 3 and Postgres 18 — put the new state on a
+**new external volume** and leave the old one untouched as the rollback; the Langfuse 4 cutover is the
+one that recreated its volumes in place and deliberately discarded the traces. The policy all four answer
+to is [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
 
@@ -116,7 +125,8 @@ independently up/down-able.
   the init's result, gate on a completion marker rather than on "the container exited":
   `langfuse-rustfs-init` creates the `langfuse` bucket, touches `/tmp/ready`, its healthcheck tests for that
   marker, and `langfuse-worker` depends on `service_healthy` (a never-exiting container can never satisfy
-  `service_completed_successfully`).
+  `service_completed_successfully`). `scripts/__tests__/object-store-service.guard.test.mjs` asserts that
+  prod stay-alive shape and that dev, where nothing depends on a marker, stays a real one-shot.
 - **Non-root image runtimes and bind-mount ownership are the dominant class of prod-only failures here**
   — memlock rlimits, root-owned bind mounts under a non-root image user, and double-loaded entrypoint
   config all passed local `compose config` validation and only broke on the real prod host. The object
@@ -124,10 +134,17 @@ independently up/down-able.
   compose `user:` key, a fresh named volume inherits the image's `/data` with that ownership, and any other
   uid fails at startup. Diagnose from container logs on the prod host itself, not from the compose file;
   see the table below.
+- **A new external volume must exist before the merge, in every cutover that introduces one.** These
+  volumes are `external: true`, so compose never creates them; a deploy that references a missing one
+  aborts *up front* with `external volume "…" not found`, creates zero containers, and leaves the
+  previously deployed containers running and unchanged. That is the safe failure — recover by creating the
+  volume (and seeding it, where there is data to keep) and redeploying.
 - **The two tailnet-reachable operator UIs (LangFuse, Grafana) use the prod-reserved port range**,
   binding broadly but staying tailnet-only via the host firewall — see
   [Published-port reservation](../invariants/published-port-reservation.md) for the collision this
-  convention exists to prevent; do not put these ports back on their old defaults.
+  convention exists to prevent; do not put these ports back on their old defaults. The broad `0.0.0.0`
+  bind (rather than a tailnet-IP prefix) is itself a boot-race fix, not a style choice — see
+  [prod-reboot-resilience](./prod-reboot-resilience.md).
 - **Vault is intentionally left uninitialized and sealed in production.** A health-check override makes
   that state read as healthy; do not run the Vault init/unseal sequence as part of this rollout — it is
   out of scope until the ADR-0001 revisit trigger fires (see
@@ -163,8 +180,11 @@ realities: non-root images, root-owned mounts, one-shot exits, orchestrator heal
 
 **The vault config that finally works needs all of `/vault/file` + `disable_mlock=true` +
 `cap_add: IPC_LOCK` + `command: ["server"]` together** — the cap is not optional even with mlock disabled,
-because without it the entrypoint takes a fallback path that double-starts vault. When iterating a
-container that crash-loops in prod but not locally, reproduce locally with the prod constraints
+because without it the entrypoint takes a fallback path that double-starts vault. Both files carry that
+rationale in place: the mount path and `disable_mlock` in
+`infrastructure-as-code/docker/vault/config/vault.hcl`, the cap and the `command` in
+`infrastructure-as-code/docker/vault/compose.prod.yaml`. When iterating a container that crash-loops in
+prod but not locally, reproduce locally with the prod constraints
 (`--cap-add IPC_LOCK --ulimit memlock=65536 …`) to iterate in seconds instead of 40-minute deploy cycles.
 
 Two smaller prod-only details worth knowing:
@@ -461,6 +481,102 @@ a stale ~327 kb volume behind is far cheaper than an unrecoverable audit trail.
 Full shell script (Deploy A and Deploy B), the `OS()` helper alias, and all verification commands:
 [the runbook's OpenSearch upgrade section](../../docs/runbooks/prod-control-tower.md).
 
+## Observability Postgres 16 → 18, preserving Unleash (spec 081 US8b)
+
+The fourth cutover is a Postgres major for the two *observability* databases. `langfuse-postgres` and
+`unleash-postgres` reference one identical pinned image, so they move together — the shared pin is the
+whole reason this is one cutover and not two, and it is enforced rather than remembered:
+`scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` asserts, against both the dev and the
+prod compose, one identical digest for both services, on the 18 line, mounting `/var/lib/postgresql` and
+never the pre-18 `/var/lib/postgresql/data`, on a volume that is **not** the one holding the 16 data and
+carries the `-v18` marker. A split (one database moved, the other left behind) or an unreviewed move to
+19 — another migration of a store ADR-0002 does not cover — fails the gate instead of arriving as a diff.
+
+**Postgres 18 will not start on a 16 data directory.** Measured 2026-10-20 on a copy of a real 16 Unleash
+volume: it exits 1 with the old volume mounted at `/var/lib/postgresql` and again with it mounted at the
+pre-18 `/var/lib/postgresql/data`, and it also exits 1 on an **empty** volume mounted at `/data` (leaving
+an anonymous volume behind). With `restart: always` that is a crash loop for both databases the moment the
+merge deploys. So the compose mounts the **parent** `/var/lib/postgresql` (postgres 18 keeps its cluster
+under `/var/lib/postgresql/18/docker`) on **new** external volumes
+`observability-{langfuse,unleash}-postgres-v18-data`, and the 16 volumes stay untouched as the rollback —
+the same `-v3-data` shape feature 071 used for OpenSearch.
+
+### Merging the PR IS the deploy — so the timing of the volumes is the whole risk
+
+Komodo reconciles `prod-observability` from `main`; there is no second deploy to sequence against. The
+three possible merge timings are not equally safe:
+
+```mermaid
+flowchart TD
+  Volumes{"do the -v18-data volumes exist?"}
+  Volumes -- no --> Abort["merge aborts up front: external volume not found, the 16 containers keep running"]
+  Volumes -- yes --> Seeded{"has the Unleash dump been restored onto 18?"}
+  Seeded -- no --> Empty["merge succeeds and Unleash is healthy on an EMPTY database, nothing reports it"]
+  Seeded -- yes --> Merge["merge: Komodo redeploys prod-observability onto postgres 18"]
+  Merge --> Verify["verify flags and the Langfuse re-init, keep the 16 volumes as rollback"]
+```
+
+*The three merge timings for the Postgres 18 cutover — only the last one is safe.*
+
+- **Merge before the volumes exist: safe.** The deploy fails up front with
+  `external volume "…-v18-data" not found` and the 16 containers keep running, unchanged. Recover by
+  creating the volumes, seeding Unleash and redeploying.
+- **Merge after creating the volumes but before the dump/restore: the outcome to avoid.** Unleash comes up
+  **healthy on an empty database**. `unleash-seed` recreates only its three default-off flags — every
+  other flag, toggle, strategy and API token is gone — and nothing reports it. This is why the seed step
+  is a precondition of the merge, not a follow-up.
+
+### The data decision: Unleash preserved, Langfuse's Postgres discarded
+
+- **Unleash flag state is preserved** by `pg_dumpall` from the 16 instance and a restore onto 18 in a
+  throwaway container *before* the merge. The restore's stderr is expected to be exactly two lines —
+  `role "unleash" already exists` and `database "unleash" already exists` — and the acceptance is a
+  **table-count diff**, not a health check: `features`, `feature_strategies`, `api_tokens`,
+  `feature_environments` where enabled, and `migrations`, taken before and after, which must print
+  `COUNTS-EQUAL`.
+- **Langfuse's Postgres is deliberately discarded** (ADR-0002 §4 covers the Langfuse trace store) and
+  re-initialised by `LANGFUSE_INIT_*`, which recreates the `mcm` org, the `movie-assistant` project and
+  its keys, so the gateway's tracing keeps working. Anything created by hand in the Langfuse UI — extra
+  users, prompts, extra API keys — is lost. A `pg_dumpall` of the 16 Langfuse instance is still taken
+  first, as the rollback copy.
+- **ClickHouse and RustFS are not touched** by this cutover. The two Postgres containers are recreated on
+  18; the three writers stopped for the dump window (`unleash-service`, `langfuse-web`, `langfuse-worker`)
+  are started again by the deploy. Unleash SDK clients in the gateway and BFF serve their last-fetched
+  flags while `unleash-service` is down.
+
+### Traps
+
+- **Wait on `pg_isready` over TCP, not over the socket.** A socket-only check can pass against the
+  entrypoint's temporary init server, before the real cluster is listening — so the pre-seed wait is
+  `pg_isready -h 127.0.0.1 …`, and the 18 data directory reads `/var/lib/postgresql/18/docker`.
+- **Pull the 18 image before the window, and use container names.** Same Komodo rule as every other
+  cutover here: a hand-run `docker compose` cannot work against a Komodo-managed stack.
+- **This is an operator-run prod data change, like the MongoDB SCRAM cutover in
+  [prod-data-tier-auth](./prod-data-tier-auth.md)** — the difference is that here the *old volumes*, not a
+  backup, are the rollback.
+
+### Rollback
+
+Revert the merge and redeploy: the compose goes back to `postgres:16-alpine` on the ORIGINAL
+`observability-{langfuse,unleash}-postgres-data` volumes, which hold the state exactly as it was when the
+writers were stopped. **Non-lossy for Unleash** — but flag changes made on 18 after the cutover are not
+carried back, and the `pg_dumpall` of the 16 instance is a second way back. Afterwards (and **not** part
+of the procedure): delete the two 16 volumes and the working directory.
+
+### What is verified before the merge, and what it leaves behind
+
+Rehearsed end to end in the dev container on 2026-10-20: 16 up, state created through the Unleash admin
+API, `pg_dumpall` of both instances, the `-v18-data` volumes created and Unleash pre-seeded, then the full
+Langfuse chain up on 18 with every container healthy — Unleash's admin state identical to the 16 snapshot,
+the same client API token returning the same flags, Langfuse healthy on a fresh 18 database, and the
+rollback to the untouched 16 volume verified. **Dev environments follow the same rule**: a developer's
+local 16 volume is simply not mounted any more, so the 18 stack starts empty and `unleash-seed` recreates
+the three default-off flags — anyone with local flag state they care about does the dump → pre-seed steps
+too. The shared pin also left its hard `allowedVersions: "<17"` hold: a Postgres major now rides the
+stateful-datastore `dependencyDashboardApproval` tick like every other database image here (see
+[the Renovate runbook](./renovate.md) for what ticking it means, and
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
+
 ## Capacity
 
 The pre-observability capacity check measured ~48 GiB RAM available on the prod host, actual container
@@ -475,6 +591,8 @@ verification per phase, and the complete prod-only failure-symptom table:
 runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 [prod-reboot-resilience](./prod-reboot-resilience.md) and
 [server-setup](./server-setup.md); the image gates these stacks answer to are
-[infra-image scanning](./infra-image-scanning.md) and [Renovate](./renovate.md), and the stack-level
+[infra-image scanning](./infra-image-scanning.md) and [Renovate](./renovate.md), the US8b cutover's
+rehearsal record is in
+[the spec-081 research](../../specs/081-major-dependency-upgrades/research.md), and the stack-level
 view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

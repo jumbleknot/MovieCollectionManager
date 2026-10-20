@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T20:44:33.459Z
+    at: 2026-10-20T11:09:40.455Z
 ---
 
 # BFF (Backend-for-Frontend)
@@ -111,8 +111,9 @@ Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email veri
 the public registration-status read, and `init` — the once-per-app-mount route that reconciles
 the Keycloak client's redirect-URI list, described below), `bff-api/collections/*` and
 `.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
-`bff-api/agent/*` (forwards agent turns to the [Agent Gateway](./agent-gateway.md) over AG-UI,
-plus `agent/config` for the user's own provider/TMDB credentials), `bff-api/backups/*`
+`bff-api/agent/*` (`run` and `resume` forward turns to the [Agent Gateway](./agent-gateway.md) over
+AG-UI, with `ui-state`, `ui-action`, `import-upload`, `export-download` and `config` around them — the
+section below is what those handlers do beyond proxying), `bff-api/backups/*`
 (destinations, jobs, the consent callback, and the internal scheduling tick),
 `bff-api/account/*` (the account-deletion challenge and its step-up callback),
 `bff-api/admin/settings`. Every proxy
@@ -137,6 +138,98 @@ holds a default-deny target→role allowlist (`NAVIGABLE_TARGETS` / `PREFILL_TAR
 assistant can never drive the UI somewhere the user themselves could not go. A new agent-navigable
 screen must be added to that map or it is refused — the allowlist is the single source of truth for
 what the agent may drive.
+
+## The agent routes: a protocol bridge, and the gates in front of it
+
+`agent/run+api.ts` hosts the CopilotKit **runtime** (`CopilotRuntime` + the AG-UI `HttpAgent` from
+`@ag-ui/client` + `ExperimentalEmptyAdapter`), because the `@copilotkit/react-native` client speaks
+the CopilotKit runtime protocol while the [gateway](./agent-gateway.md) is AG-UI-native. That bridge
+is the framework's standard library adapter, not bespoke per-event translation: no model call and no
+orchestration happen in the BFF, and the gateway's event stream passes through unchanged. The
+binding must be the AG-UI `HttpAgent` — `LangGraphHttpAgent` speaks the LangGraph Platform REST
+protocol and 404s against the AG-UI endpoint. Two details of the handler are easy to "tidy" away and
+are not cosmetic: the runtime defaults to `cors: true`, so the route deletes the
+`Access-Control-Allow-Origin: *` and `Access-Control-Allow-Credentials` headers it stamps (the web
+client is same-origin), and `GET` on the same path is the runtime's `/info` handshake, gated for auth
+and RBAC only — it is a handshake read, so neither the cost gate nor the rate limit applies to it.
+
+```mermaid
+flowchart TD
+    A["POST /bff-api/agent/run"] --> B["requireAuth then requireMcUser"]
+    B --> C{"isBillableAgentRun operationName"}
+    C -->|"handshake read"| H["rate limit and thread ownership only"]
+    C -->|"billable"| D["resolveForRun user config"]
+    D -->|"not runnable"| E["200 assistant_not_configured, no gateway call"]
+    D -->|"runnable"| F["rate limit, cost ceiling, thread ownership, decision audit, accrual"]
+    H --> G["mint subject token, open the runtime"]
+    F --> K["mint subject token, attach UI snapshot and import handle"]
+    G --> I["CopilotKit runtime to AG-UI gateway, stream proxied back"]
+    K --> I
+```
+
+*The `/run` gate chain: cost-related work is confined to a billable turn, while the rate limit and the
+cross-user thread guard apply to every POST.*
+
+The ordering is the contract, and four rules carry it:
+
+- **Billability is decided by default-deny on the GraphQL `operationName`.** Only `availableAgents`
+  (the runtime-info fetch the dock issues on open), `loadAgentState` and `hello` are non-billable
+  reads; a missing, spoofed, non-string or unparseable `operationName` is treated as billable, so the
+  cost ceiling cannot be dodged by relabelling a run. The ceiling and the per-turn accrual apply only
+  to billable turns — gating the handshake would lock a user who is over budget out of even opening
+  the dock — while the rate limit and the thread-ownership guard apply to **every** POST.
+- **An unconfigured user is short-circuited before anything costs money.** A billable run requires a
+  runnable per-user config (enabled + provider credential + TMDB key) resolved *before* any rate-limit
+  accrual or gateway call; otherwise the route answers `{ type: 'assistant_not_configured' }` with
+  HTTP 200 and no model or TMDB call happens. The decrypted credentials ride the `X-Agent-Config`
+  header for that one run — never the body, never persisted, never logged. The store behind it is the
+  per-user agent config in "The BFF's own state: MongoDB and Redis" below.
+- **The per-run bridges are gated on `billable`, not on "this was a POST".** The pending UI snapshot
+  and the single-use import-file handle are consumed only for a billable turn (item #284). Gating them
+  on the POST path instead meant a CopilotKit handshake landing between the upload and the `import`
+  turn silently *ate* the handle, and the import turn then reached the gateway with nothing and no
+  error anywhere. Both bridges share the one condition so they cannot drift apart again; the UI
+  snapshot is pushed by `ui-state+api.ts`, which is the **sole** sanitization point (structural-field
+  allowlist, no values or PII), and the run reads it back out of the per-user cache.
+- **A client-supplied `thread_id` is bound to its owner before any gateway call.** The gateway keys
+  its LangGraph checkpoint solely on that id, so without the binding one user could present another's
+  thread id and see the checkpointed proposal preview. `enforceAgentThreadOwnership` claims the thread
+  for the first user via Redis `SET NX` and throws 403 on a later mismatch; the TTL is the session's
+  absolute window, and a Redis outage surfaces as a typed error rather than a silent bypass.
+
+Because Expo Router has no runtime global middleware, these routes enforce auth per handler like every
+other BFF route, and `agent-route-auth.integration.test.ts` enumerates every `bff-api/agent/*` route
+and asserts 401-without-auth and 403-without-`mc-user` *before* any upstream gateway call — a new agent
+route must be added to that list, and the authorized streaming path is exercised separately.
+
+The subject token is the other half of the boundary: on each run **and** each HITL resume the BFF
+performs its own RFC 8693 exchange to mint a run-scoped, audience-narrowed delegation token (hard TTL
+ceiling 180 s) and hands *that* to the gateway, never the user's session token. It is never logged,
+never checkpointed and never returned to the client. The mint is best-effort — a failure is logged and
+the run proceeds without a token, which is correct only while the supervisor graph is tool-free. A
+resume always mints a **fresh** token, because a paused run holds none; that is what makes pause length
+irrelevant, and if the session has lapsed by approval time the user re-authenticates at the BFF first.
+
+`resume+api.ts` is a distinct approval authorization point, and it is in-session auth — no step-up:
+the decision body is validated deny-by-default (a blank `threadId`/`proposalId` or a decision outside
+`approved`/`rejected` is a typed 400 and never reaches the gateway), the thread is bound to its owner
+before the token mint, and every decision is audited. Note that CopilotKit's `useInterrupt` resumes
+through **`/run`**, not `/resume`, forwarding `forwardedProps.command.resume`; the `/run` handler
+therefore also extracts and audits that decision, best-effort and never blocking the run.
+
+`ui-action+api.ts` is where the allowlist above is enforced at dispatch, because the CopilotKit stream
+is opaque and emission cannot be inspected mid-stream. When `OPA_URL` is set the decision comes from
+OPA's `mcm.agent_ui_action.allow` and fails **closed** on any error or non-`true` result; otherwise the
+TypeScript authorizer runs. The two are kept from drifting by `opa-rego-parity.test.ts`, which asserts
+the Rego sets match the TS maps exactly and fails if an admin-only target is added while the Rego still
+applies its flat `mc-user` check. The route answers 204 when allowed and 403 when denied-and-discarded,
+and audits every decision with the structural target only.
+
+The import/export pair behind the dock is capability-based rather than id-based: the upload stores the
+bytes in the transient store and returns only the filename to the client (the opaque handle stays
+server-side), and the download consumes its single-use handle once, answering 404 for expired,
+consumed and never-existed alike so it cannot be used to probe. Both are audit-logged by filename and
+size only, never contents or tokens.
 
 ## The auth surface, and what `init` is for
 

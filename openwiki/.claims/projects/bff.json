@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cd9fb303b8770c94f299661505735acefe37d06042535dd3b8dbc2c54cf50d0b",
+  "pageVersion": "sha256:c3b7eb1310444d597c7a9506b4d3b2eefb5e8f135fa605c2f6feea764caf5be3",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
-          "version": "repo-file-v1:sha256:e408ef3ed1e567ee177e530a2e1a8bd4f123f9fc5e8e6fdd10c59d8094763581"
+          "version": "repo-file-v1:sha256:bb3af8b549c8f74b23ec1a812e46fbd5f59d146561d8246d784ec7a39df24ecc"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
@@ -119,7 +119,7 @@
           "version": "repo-lines-v1:sha256:644a1f55ac0150e9355f8c6645e916219a587b989d61f48b81b2295af1748eb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OTA4ZTA4OWZjZWQxMmE4NjEyM2YxYmNlZDEyYmM1MjY5NTg3ZjFmOTUxOTFlZGMyYzdjYzZiY2EzOTk0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOWJhYWI5ZWNmZjZjNGU0MzVmNjQ4ZWU2YTNmOTZkZGQ5Y2FmYWFjNmRmN2IxZDY0NTQ2NDY3NGNmYzhhZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMGMwMmIzMGUwMzI4OTMxYzNhMDM0MmY4MTgwZTAzZTk4ZGU1ZTk1NTlmZjNkOGI1NDY4N2E1OGZjNDBjNmIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/server.js#L86-L120",
+          "resource": "repo://frontend/mcm-app/server.js#L116-L150",
           "version": "repo-lines-v1:sha256:d708d07504f8c9d59e9e977e59dd4474286e6001104253d1e040883a549ae674:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2FmMGZiZDg3MjQ4MjBlNTRlMmM3MTIxNTJlNzcyMGQyMTJlYTY3NzIwNzNhOTNlZGE5MDllNTgwMWRiYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOWI3ZDA2ODYzYTUwYzg3ZjQxMjRmMzQ1MGM0OTVmMWNjZDg0Nzc4MjNlNmYyMWY5MDk1NGFjNDRlMTA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ZDU3ODQwNTNlY2ZkNGJhZWJjMTk3OTQ5MDgyZjczN2NhYmMwOTI3Nzg4NTIyMjJhMjlmOGQ2MzlhYzU4ODIifQ"
         }
       ]
@@ -383,7 +383,7 @@
       "statement": "The internal scheduling tick route answers 404 rather than 401 to a wrong secret so it never advertises its own existence, and compares in constant time with the lengths checked first so a length mismatch falls through to the same 404; on the server.js side the interval timer is unref'd, starts after app.listen so the first tick cannot race the port it calls, logs and swallows a failing tick, and is disabled with a single boot-time log line when BACKUP_TICK_SECRET is unset or BACKUP_TICK_INTERVAL_MS is invalid.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/server.js#L86-L155",
+          "resource": "repo://frontend/mcm-app/server.js#L116-L185",
           "version": "repo-lines-v1:sha256:e0aacdfa4feaf2a0b3f345f41b4f910ad4bb15841fe798f18d3d809f0e5eaf05:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2FmMGZiZDg3MjQ4MjBlNTRlMmM3MTIxNTJlNzcyMGQyMTJlYTY3NzIwNzNhOTNlZGE5MDllNTgwMWRiYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOWI3ZDA2ODYzYTUwYzg3ZjQxMjRmMzQ1MGM0OTVmMWNjZDg0Nzc4MjNlNmYyMWY5MDk1NGFjNDRlMTA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -619,10 +619,198 @@
           "version": "repo-lines-v1:sha256:0e0c334a6f7b509b2344c2a0bc3d43f78c152280bf654b7e7daf5571df27edfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxZDk1ZWQ0NTNkM2FkZDg0MGNhNzQ0MTkxOWJiMDQ0MjVkMmEwMmEyZDBkNzQxOWY5MTg4ZTUxZWE5YjBjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2NGNmYTVjZjAzNTYxODE0NDU5NDA1MTliMDVhOTUwZGVmNjM4ODllNGEzOGE4NzUxYzYxYTk3NGEwNDdmMmIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c39eecd5ee5d4a4b9f5046913c7ab10c",
+      "statement": "`bff-api/agent/run+api.ts` hosts the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI `HttpAgent` from `@ag-ui/client` + `ExperimentalEmptyAdapter`) because the `@copilotkit/react-native` client speaks the CopilotKit runtime protocol while the Agent Gateway is AG-UI-native; this is the framework's standard library adapter, so no model inference and no orchestration happen in the BFF and the gateway's event stream passes through unchanged. The binding must be the AG-UI `HttpAgent` — `LangGraphHttpAgent` speaks the LangGraph Platform REST protocol and 404s against the AG-UI endpoint. The handler also strips the `Access-Control-Allow-Origin: *` and `Access-Control-Allow-Credentials` headers the runtime stamps by default, since the web client is same-origin, and answers the runtime's `GET /info` handshake through the same handler with auth and RBAC but without the cost gate or the rate limit.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L1-L23",
+          "version": "repo-lines-v1:sha256:34a1f0b6e6219a3b692776ebde6e27268d478462be3242d0564046bc1a699698:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmOTk1ODNlNTU4Yjg0YjVjZDMwZGY5OTJjZTY5MWFhN2IxOTA0ZDViMjY1MTYyOWE0MTc4OGQ5NTNiODg1ODcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L246-L268",
+          "version": "repo-lines-v1:sha256:460306e04d880504571973686ff7a5c44cf5a6828fb3e17b220b99d104635519:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhM2Y3Y2RkOWZhY2Q0YmU3OWZiNjU5YTk5NWI4YzRmOWZkZWE4OTU2NDVmZmQzZGM5NjdkMjI1ZTY5YTAwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMWViNmM2OTVjMzc1NzI5MzhkZDAxMWM5MTU2MWM3ZmRiYmI3MDRiOGRlMGI2ZGYwZDIzYzc0OWM5M2JhZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ZjZhOGM3YmJmYjQ3MjcyYTQ4NWJlMzJkYmFjYmExZGI1NWM3NTE3ODk1YTg5MjlhM2E1ZTMzN2MxMjRkMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5YTJjMDc4NDEwZWYxZDA3OWI3YzA4ZDRiMTgxZTdkYzk3N2FjNmE0YTUzYzdiZmRmMDljNjQ3MmQwNTcwNjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L274-L282",
+          "version": "repo-lines-v1:sha256:7152ce369a40e003329a4fa371e658256a96dac87504ed07860ec9dc53f4a6b5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxMTc2OGM5YWYxMDY1ZjNmZDUxMTNkODJhNGQ0ZTNhMWViZWY0OTkzZjQ3ZTE5MzExOTY4YjM5Y2IzNWJjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts#L75-L98",
+          "version": "repo-lines-v1:sha256:d3d37b003943b7032b855b150309bd2215ccafcdd8c0dd0c0963457fcad9b519:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxM2Q4M2VjNDdjZDk1NDhlM2U0ODY4M2IyNjY1MzllZDQ2MmJjZjYyNzUxYzY3MzEwODcxNzQ4YTMyMjk1ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3NWY3NmJhOWZkZmM0MzE4OGY3ZjMzODQ3MzdjM2JjNDM4N2E1NzhhNTlmNTIxNTZiMzAyNjg4Y2NlMTZjMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d458a3a91074856bd61add454c09775",
+      "statement": "The agent run route classifies a CopilotKit runtime POST as billable by default-deny on the GraphQL `operationName`: only `availableAgents`, `loadAgentState` and `hello` are non-billable reads, and a missing, spoofed, non-string or unparseable operation name is treated as billable so the cost ceiling cannot be dodged by relabelling a run. The per-user request rate limit and the cross-user thread-ownership guard apply to every POST, while the cost ceiling, the per-turn cost accrual and the runnable-config resolution apply only to a billable turn — gating the handshake instead would lock an over-budget user out of even opening the dock.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L136-L209",
+          "version": "repo-lines-v1:sha256:83dc220941b16debe35af4eb697f9d61d86d11a05cefcae1c1b7e1c8591aa2b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNzBkZTVkYzRhMzAxM2I5YzgxMDQxM2RhZTVlMWUxMjk0ZGVmM2ZmNTk1ZTM4Njc3ZWU0YTBjY2ZlMzIxZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NTRkYThkMTEzNTZjNjZiYmVkYTg2ZTQyNGU3ODlkODliNTNlZDVmNDk5MjBhYjg1NmExZmZlYjE2ZWIwMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYTkwZTNmZmQ0N2YxMGI3ZGRiMGU5ZjZmZGU2ODllY2M3YzJiZTE1ZTU1NjNjMjFlNTdmZGYyMmNjN2YyMDgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts#L32-L62",
+          "version": "repo-lines-v1:sha256:6cf5951d35e59fea16b7b1e17b7100b0e8e2b179b9555bbd2fa9877617fad0c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyYjg3ZDViOWU2NmQwM2ZmNTBjZGNlODA3MTk2MzJhYmY5NDFlNmQwMmU0MDcwZjM4MGMwYWE4MDUyOTE3NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NjA4NTdmN2ZkMTFhYjFmNDQ3YmI5ZDk0YmE4NWI1NWViZjg2NDQ5MDNiMTcwNTQ0ODAwMTNhNGVjMWQyZWEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts#L74-L109",
+          "version": "repo-lines-v1:sha256:3d77c39e8bf4761f66892c8303eae65b8a605c9c3895a9dfb2f8d0b49ce70008:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZDBlM2NlZGEwNzU3YmIzMzUyZWVjN2U2NWVkNDRkNWJmMmExNDJhOGEzYjljM2NlYjc1ZDg3OTBjZmQzYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiZmRjMWE2ZGNhMzZiMWQ1YmQ5ZDVlYTU3YTg3NzlhNjI1MDdjZWNlNGE0ZTljYjhiNmMzYWYxMDYzM2JlNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1ZGQ1NDQzZDNkOWM5NjlkMmNjMjdiMjJmNTJiMjlmZmY0YTc0MzQxYWQxZGYyNTg3YzZhMjI1ZGJlZWQwZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aaf419d2cbd34cb9bd94cf400b828ccf",
+      "statement": "A billable agent run requires a runnable per-user config (enabled + provider credential + TMDB key) resolved via `resolveForRun` BEFORE any rate-limit accrual or gateway call; when none resolves the route answers `{ type: 'assistant_not_configured' }` with HTTP 200 and performs no model or TMDB call, so an un-opted-in user costs nothing. The decrypted credentials then ride the `X-Agent-Config` header for that single run only — never the request body, never persisted, never logged.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L160-L174",
+          "version": "repo-lines-v1:sha256:1a2a90b55a6abdbdb24ea8cc81b98d748b2c116ce76b4c2a1723348626dcbbed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYWRmZTVkOGIxYzY2Yzk4MTgzMzQ1ZjA2YmM1OGNhOTBhM2Q0MzZlOWIxZTdhNzE4NTA4YzY5ZTBhZDg5OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YjQ5YjkzZTEyYjFjYThhZGZlNTVkZTcyZDgxNWZkNWVkZGYzZjY1NDk0N2QwZjg2YjRiYjc2OGQ1MjA4MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODdiNDZkZjVhOTQ2MzdiZjM1MDhlZmVjNDAwNzA3NGM2ZTczOWQ5ZmViZTJhOGE2YWNmNTU5YmRmZjA4MzEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L225-L253",
+          "version": "repo-lines-v1:sha256:35cdbc73a0a38142ada61e4c1e61b73db94941d3c97e05bb8eb8398d22dd6de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NGI4OGNmYTVjOTQwZmVkMGYwYmNmMThhYTU1YmEyNWY4ODY0YzFiZDVjNDBlZmVmZThiMmY2ZGFhYTVjYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDU1NGVkYWNhYjhmOGZlYTRkNTEyNmFmY2QxMTIxNGE3ZjQ3NjM4NzVhOTg1MTY0NmYzODIyNDdhMThkYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMTc3NDBiYjZmY2M3ZDJiM2I3MTBlMGYzNzIwZTQ0YjZmMmExNmIzMTMyODQwZWI1N2ZjMzJmY2M3OTI4Y2YifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts#L88-L96",
+          "version": "repo-lines-v1:sha256:14c944c8ac96ce281ba5aa96baa343ca9597e0bfc84658ce5640594c419e0ce2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQzNmE4YWYyZTBjNWIzNDljM2Q1Y2Q0MjUxNDg3ZDJlZDZiOGZlMmRlMmVhNjljMWJmMjZkNTFhNjIzOGE4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI4Y2RlYTBjZTlkNjE5NGNmMTY4ZmFmYjliNjY5NjUwZmFiZjc5YmNhODA2ZGJhNmVmNjQxYzE1NmExNGU3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc2MTRhZjFlYjgxNGE3NWFmZTlkNDNkZmI1NmZlYzlmNzE5NjZiYWJjZjBkMTYzYmFhNDcyMDQ2YjlkMTBkYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1b11a874bdc4668be8d69298013a95d",
+      "statement": "The per-run context bridges from the run route are gated on `billable`, not on the request being a POST: the pending sanitized UI snapshot and the single-use import-file handle are consumed only for a billable turn. Gating them on the POST path meant a CopilotKit handshake landing between the upload and the `import` turn silently consumed the handle, so the import turn reached the gateway with nothing and no error anywhere; both bridges share the one condition so they cannot drift apart. The UI snapshot is pushed by `ui-state+api.ts`, which is the sole sanitization point (a structural-field allowlist that drops values, PII and unknown keys), and the run reads it back out of the per-user cache.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L210-L224",
+          "version": "repo-lines-v1:sha256:49b4697e1de4e4a6260159e17ed6ee65b8cf5a9720d4b10097baea110e615862:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMjI2ZjE2M2ZjNWE3YTVjNzZlZmQzZDcyNDk0YzQ3YTYwM2VhODdkZjhjYjNkMmUyNGYxMWUwNDY5YmFhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMGQ4ZGUzZDM4ZWFkNDliZGM5ZDA1ZTYzZDBkM2NhN2IyNmI4ZjZhOTM4MWEzNjM1NTIyNjA0N2UzZjU1MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMmI1NmZmNmU1ZjBkMTIyNDhiNzQwOWIwYTc5MDk5OTJlYTNmMWQzNzc2NjY1ZTgxNjUxZGRhNGMyZWE4NjQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/ui-state%2Bapi.ts#L1-L46",
+          "version": "repo-lines-v1:sha256:bfd1ccd1c3c805d36067d98c7c736d676db8ecd10460ebac533b676870153259:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-run-api.test.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:22a4ee3ccb14b66aa3f3be0a50fc78ca4a5c953e2adcb9b15666bf46ed847cc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNTQ2MTQ5YTlkZGFiMmY1MDhhMjc0ZjZmOGYxNjFkZThmYzQ1ZWE0MTFjNDJjODgxOTQyNzI0MDQ3NmYzZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2dc2497c0e104d4e8f5ea7c503bda78d",
+      "statement": "A client-supplied CopilotKit `thread_id` is bound to its owning user before any gateway call, because the gateway keys its LangGraph checkpoint solely on that id and an unbound id would let one user resume another's thread and see the checkpointed proposal preview. `enforceAgentThreadOwnership` claims the thread atomically for the first user via Redis `SET ... NX` and throws 403 on a later mismatch, with the TTL set to the session's absolute window so threads expire with the session; a Redis outage surfaces as a typed 503 error rather than a silent bypass.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L59-L62",
+          "version": "repo-lines-v1:sha256:ea6655c43c02517d106899d83c6ac81a5a0a1bb2db5e55c3de59292edd359f2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjN2Y3YTVjZmY1MTdjZmM0MzVlOWQ5MDkyMWJhOTc5OGNiMTFmOTZiY2JkM2M1NmQ0ZjgzZGRhODRmZTM5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlNjgwOGVkZDcwYjFhMzJkODdmNTE2YjA5NWFkNzc1ZTE1YTRjNjMyMTJmM2ZhMWNjNGQwYTZlMWUwZTYzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDFjMWNmOGFlMzgyZGE3MzRiNjJiNjhlYjhlMTcwNDIxMjgzZGU5YTc5NjI5NmRjZTUxODgxZjRmNzE4NzQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTYwOWE3MGI1NTNkZjgxNDMwZTY5ZjIzNWNjZWNlMzkxMjNlNWVmOTU4YzMwMjYwMWY3ZGU2YTJlMjViZGI0YyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-thread-owner.ts#L1-L41",
+          "version": "repo-lines-v1:sha256:317a462a6e611486a07d765b4a9ba7682560580fd2a56764d53873c8ed1a50b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L378-L403",
+          "version": "repo-lines-v1:sha256:b79f437688154a1a9a9256a27f9afce92776c672fe5d238d54cdb868d393794b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjA0NjQwNTViMTQyYmUzODg4NDQ4MmE1ZjM5NDA5YjQ0NTUxZGNmODM3MjBhYTE0OWUyM2IzMmM5ZmEwZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzNTUyNDM2OGUwNjU5YjI5N2RkYWI5Yjc0OTI2ZjhkZGY1NzA4YWFlYWZhNDk5MjE4OGE4ODRmMmI4ZDQyMmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_68c8c5247af94db5a521838944f9e247",
+      "statement": "On each run and each HITL resume the BFF performs its own RFC 8693 token exchange to mint a run-scoped, audience-narrowed delegation token (a defensive hard TTL ceiling of 180 seconds on top of the reported expiry) and hands that to the gateway instead of the user's session access token; the minted token is never logged, never checkpointed and never returned to the client. The mint is best-effort — an unconfigured exchange, an absent user token or a failed exchange is logged and the run proceeds without a token, which is correct only while the supervisor graph is tool-free. A resume always mints a fresh token because a paused run holds none, which is what makes pause length irrelevant.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L30-L48",
+          "version": "repo-lines-v1:sha256:763cc7766ec3a935ca6223ea50b5415b8837f9f0351a1d04185ff06d35d023ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkOTFmZjVlMTk3NzYzODMwMGEyZmE1OWEzNzdjNmM4MzI2N2ZlMGExN2Q3Y2U2NDkzMzhlNTkxNDY5ZDU2YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYjAzOGE3MzRhMmE0MWE0ZDY1MmEzM2E5MTgzNzlmMGMzOTdlNjBlNTA5ZWY5MmUyYWIyYzFiNzZhNWZmOTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L58-L77",
+          "version": "repo-lines-v1:sha256:4a37bd50e1c1d2b4233e665b71000bfdad6e712b041efec5f33615475ff31b8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOGQwOWViZmJlYmQ4N2RmMTExYzQ1NzE4ZTdjMmNhMzAzYjYzYzY2NDZmMTk3MWZlMTRlNTEwZWFhMWM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYmU5MDgxOTVkNTk4NTA5ZTI2ZDlkMzQ3NzljZDRkMjhmZmQ4YTMwZjFkYTVlZGQ5OTU5MDg5ZjRhMTRkYzYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L1-L32",
+          "version": "repo-lines-v1:sha256:a32bc22dbdec4a24348a212e167b32708110d217580f293ae6c87c29a6940ef1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNzY5ZGI4YTAyMzRkN2VlOWUwNGVjMThmMzljNWM3ODk4YzZhOGRjOTI5N2ZiNjE0Mzg5MTE1YWIxODZmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZDM3ZDRmZjYwNzA5ZDAwMjExMTc1MmJkMGM4MWYwMzU1MjhlNjgwYTE1OTRmOTQyM2YyMTdkNWEzMWFjM2YifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L50-L64",
+          "version": "repo-lines-v1:sha256:19bde6a70608bbcbe73e3a6378de14e8e0fa2ff319a5aa6691fb259884a2537d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlZjJhMGFkNjk0YjYzNTUzOWE3MTZlODFhZWNiYmQwMmYzMDQyMGM5MmUxNjQ0MWJlNDhjZWY4ZGRmMDdmMGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca2f66422361477bb136d1c5e350d1ea",
+      "statement": "`agent/resume+api.ts` is a distinct approval authorization point gated on in-session auth only (no step-up): the decision body is validated deny-by-default so a blank `threadId`/`proposalId` or a decision outside `approved`/`rejected` is a typed 400 that never reaches the gateway, the thread is bound to its owner before the token mint, and every decision is audited. CopilotKit's `useInterrupt` actually resumes through `/run` rather than `/resume`, forwarding `forwardedProps.command.resume`, so the run handler also extracts and audits that decision best-effort without blocking the run.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L50-L76",
+          "version": "repo-lines-v1:sha256:24b1502f2d6b9d4419c033b4ebffcfe2591e3050b69c1cc0c350a03995ec502c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOGIxMTIwNGUzMjBiNmFlMDdhYjZlZjcwNGQxMzk5YzE3ZjE2YWVkNTM0MGEwMDVmOTE0NzJhNzZkMTMzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmY2ZmZDk1ZjI4NzU4MDRmMDc3ZjI1MjVkY2M2NTRkYzVmYTI1OGIzYTk1NzQ2YmU4NjA0ZDM1YzNjNTg1M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L186-L201",
+          "version": "repo-lines-v1:sha256:52e53429c77660ed049a4b9ecf3d866268b92df24faf6010f9a23050f6fa1174:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MDU0ODEzZGJlZWY3MDdjODBlOWQ2ZTMyMDIzMDhhNDNhZGMwOWQ4YjZhOTZjODg2Nzc2N2E2MDUxN2I3Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYzJlMDA3ZTlkMjg2MTVjYThjNDU0OWZhODY0YzM0MmVhNzAwOWQyYzVjYmRiMGZkYjFkNzRiZTdjNDNlODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYzZlMzA2OWVmM2E2YzMzZWFiNTUwMDgxNTJkN2M3OTU5ZTYyNWJmYWU5YzNjMzllNWI5MTk2ZjA5Yzg1YzYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-resume.ts#L27-L62",
+          "version": "repo-lines-v1:sha256:9d9ed9ed4690469d106b857865e44d4be9da20fc59d34fd256c3aa09ab480d39:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNDZkNTk3MmU5MDFjNGM2Njc4NjhjZjY1OTM1ZDg1MTRkYmNkNTNiZTU4MTQ1ZTliZDQ3YjU2ZTQ1NmM0ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzYzgyOGIyZTAzMTY4OWZmNjQ4YTBmYmQ4MDMxMWYwZmNmYjYxODY1ZWJjOGQxMWI1OTA0ZDlmYzYxNjlhMTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-resume.ts#L88-L104",
+          "version": "repo-lines-v1:sha256:8fc707b4f8d24061d2977fb1eecbe57eeb63d1566312e2c9b4d26998874ae9b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZGFkOGZiMTk4NmNkOGYyZDQ2Yjk0ODM2ZTMwMTQ5OTdjNjQ4NGRhMDMwNjMxZWIxMWZjYzYxYWIzZWNiMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODg3MGE4MDQwOWY4YzRjOTk0ODA3YWY4MjU5Y2MwNGJkMGM1Y2EyZTlmMWMzYjEzZGVmMTBiMTYyNzg2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f9adda4a1104f7bb9b48e9c85ea8220",
+      "statement": "Agent-requested UI actions are authorized at dispatch by `agent/ui-action+api.ts` rather than by the client, because the CopilotKit stream is opaque and emission cannot be inspected mid-stream. `ui-action-authorizer.ts` holds a default-deny target-to-role allowlist (`NAVIGABLE_TARGETS` / `PREFILL_TARGETS`) that is the single source of truth for what the agent may drive; when `OPA_URL` is set the decision instead comes from OPA's `mcm.agent_ui_action.allow` and fails closed on any error or non-`true` result, otherwise the TypeScript authorizer runs. `opa-rego-parity.test.ts` asserts the Rego sets match the TS maps exactly and fails if an admin-only target is added while the Rego still applies its flat `mc-user` check. The route answers 204 when allowed and 403 when denied-and-discarded, auditing every decision with the structural target only.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/ui-action%2Bapi.ts#L1-L73",
+          "version": "repo-lines-v1:sha256:b01918b9709db5bd08ce7a27b17fdc04604d4f647a0aa63782e662e7682f504a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/opa-client.ts#L1-L40",
+          "version": "repo-lines-v1:sha256:0583fd9760ce8fbd00cedda94e8d0684c2047f1e897b7176cd99adaea20419c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/ui-action-authorizer.ts#L10-L47",
+          "version": "repo-lines-v1:sha256:7818069704fa5150814774694610ce21529cd4fb7d3d2bc402346eb17d528aac:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzFjMmNiMDQ2Mjc5OGRlOWJmODlmMTExNmY2NDRkOTExODgyNDlhMDVkYWNiZjA3OGZhYmMxM2Y0OTljNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiZWU3MTVhYjE2ZmM1ZGYxM2MzNmIxNGIxYzNhYzcwNzE5ZjFkODE5YmU2NWQ1YjEyNmRmNTNkYzEzM2RlNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhNGZmNmM1ZWZlNTNjOTgxOTY3ZDI2MjFlNjI3MjNjMjk1OWEyZTM5YzU2NGJmNTk2NzgzNjZiODNhOGI0YjgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts#L1-L72",
+          "version": "repo-lines-v1:sha256:9cdad81e357e937ae8eb78a310577e446ed51f4123f1651aa5be9d99943b56fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMmFjMmJlOTRkOTYzYjE2ZTQ1MDMwNzljZTY5YzExMzNlZTQ0MmRkYjBmMGY4ZGM2MTZjY2YwMjFkMzJiOWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3552e05502c4d30b61b3314266c7840",
+      "statement": "The dock's import/export pair is capability-based rather than id-based. `import-upload+api.ts` writes the uploaded bytes to the transient file store and stashes the opaque handle per user, returning only the filename to the client so the handle never leaves the server; `export-download+api.ts` consumes its single-use, short-TTL handle once and answers 404 for expired, already-consumed and never-existed alike so it cannot be used to probe. Both are audit-logged by filename and size only, never contents or tokens.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/export-download%2Bapi.ts#L1-L65",
+          "version": "repo-lines-v1:sha256:162f8beaf718be827076cc66952d2a6806467c379bf98a7199a5d5bbf1de9dee:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/import-upload%2Bapi.ts#L1-L93",
+          "version": "repo-lines-v1:sha256:55ef6f6ae1c97f2358bd8952e92af954f9ead194668dd3fadcb5ba462ed68a00:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74d77406608e489fb4ae841873308974",
+      "statement": "Because Expo Router provides no runtime global middleware, every `bff-api/agent/*` route enforces auth per handler (`requireAuth` then `requireMcUser`), and `agent-route-auth.integration.test.ts` enumerates the agent routes and asserts 401 without auth and 403 without the `mc-user` role BEFORE any upstream gateway call — so a new agent route must be added to that list, and the authorized streaming path is validated separately.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L126-L131",
+          "version": "repo-lines-v1:sha256:64c9cde1084c698324ecab355f4505fa9751e5209e06b0d044af877d84e9238b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUzNmU5MmUzMjg5MTIwMTZjNzQxY2E3YTJjNGEwZTZlODE3ZjdhMTFkNDIxYTUwYzUwNzQ2OTIwN2U2ZDc0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzExN2IyY2Y2ZTVhZTk1MDlhYjE4N2EwOTk0Yzk5NWViNTkwZjdjYzc4YTI2YjJjYjg5Y2Q2ZmY3ZTNlMzIwNSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts#L1-L98",
+          "version": "repo-lines-v1:sha256:4c5079a3113f27c2eb6a2fd14a43f79aaffc10e0652d0b9ec202efe960cf46ce:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T20:44:33.459Z"
+    "at": "2026-10-20T11:09:40.455Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0633124eb03723eb7ba678ab50691c0b6c6fdde28fecb11101e70d229ff7f8f6",
+  "pageVersion": "sha256:37fd344971c67c738feea14e5102f47d7bc2d70d5bd6bbc282df163942e83be6",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -152,7 +152,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:8e36d20ccb8ac22fc71d6788491bcd238a741d674d9cf31b81f5a4bfe8636701"
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
         }
       ]
     },
@@ -172,11 +172,19 @@
     },
     {
       "id": "claim_b11f36d67d2a49d6baa4b2406e4e3bcc",
-      "statement": "The BFF has two problem-document producers with different type namespaces: handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status unchanged, keeping the .example type URI, while the BFF's own problemResponse() in account-route-support.ts emits application/problem+json with type about:blank, which by RFC 9457 means no more specific type than the status code.",
+      "statement": "The BFF produces RFC 9457-shaped bodies from more than one place, and the shapes are not interchangeable. handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status unchanged, so a proxied mc-service failure keeps the mc-service.example type URI. The BFF's own account-route problemResponse() emits Content-Type application/problem+json with type about:blank, while the equivalent about:blank body written through Response.json() by problem() in backup-route-support.ts and by the inline literals in the agent-config and backups-tick routes is served as application/json — so a client must expect both type namespaces, and a media-type assertion holds only on the account routes. about:blank means no more specific type than the status code by RFC 9457, not an unknown service.",
       "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts",
+          "version": "repo-file-v1:sha256:7b5ac7cc339611519edbfbd5a5335df49e03300518b06d56ae83e5937415c862"
+        },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts",
           "version": "repo-file-v1:sha256:a8d9e1c3816b417e62c32c47885b3970e6d6c7d101dfb52900dfa5e40aafcd60"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts",
+          "version": "repo-file-v1:sha256:621a57cc64852d721561585986cbb69b4530c2301e918aa51383237e9b0798c2"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
@@ -187,6 +195,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-20T06:13:33.915Z"
+    "at": "2026-10-20T11:09:40.455Z"
   }
 }
