@@ -21,7 +21,8 @@ VERSION HISTORY:
 - v2.3.0: Frontend Design System — Tamagui + @mcm/design-system mandated as the UI/styling layer; a Design System principle added under Frontend UI & UX (additive; no principle redefined). (2026-06-14)
 - v2.4.0: Test Type Integrity — sanctioned exception recorded for the agent golden tier (`golden`-marked model-decision tests MAY substitute the LLM dimension via the record/replay cassette seam). Scopes an existing prohibition; does not reverse or weaken it, and no other substitution is permitted anywhere. (2026-08-07)
 - v2.5.0: Performance Budgeting — **accepted exception** recorded for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the 2-second figure on a React-Native-Web + Tamagui stack. The exception is bounded by a committed byte budget rather than open-ended, and the 2-second rule stands unchanged for every other page and every other app. Adds a bounded exception; does not redefine the principle. (2026-09-26)
-- v2.6.0: Frontend stack baseline advanced — Expo SDK 56 → 57 (with React Native 0.86 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-10-17) [CURRENT]
+- v2.6.0: Frontend stack baseline advanced — Expo SDK 56 → 57 (with React Native 0.86 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-10-17)
+- v2.7.0: Document database baseline advanced — `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim` (stale: 8.0.8-ubi9 was what actually ran) → `9.0-ubi9` (MongoDB 9.0, Red Hat UBI 9). No principle redefined — stack guidance only. (2026-10-20) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -251,7 +252,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Document Database Access:** mongodb crate is the only approved data access library for document databases
 - **In-memory Database:** Redis is the standard in-memory database for in-memory data store and cache (Docker image `redis:8.6.2-alpine3.23`)
 - **Relational Database:** PostgreSQL is the standard relational database for persistent storage (Docker image `postgres:18.3-alpine3.23`)
-- **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
+- **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:9.0-ubi9`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
 - **Monitoring Stack:** Prometheus is the required metrics backend; Grafana is the required metrics dashboard. Rust services must expose a `/metrics` endpoint compatible with the Prometheus scrape format. Structured log format and correlation ID propagation are governed by Core Logging & Monitoring.
 - **Testing Standards:** All Backend Service test and lint operations must be executed through Nx targets (`pnpm nx test`, `pnpm nx test:integration`, `pnpm nx lint`). The `@monodon/rust` plugin invokes cargo under the hood. Unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts. Cargo arguments may be passed through using the `--` separator.
@@ -1017,4 +1018,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.6.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-10-17
+**Version**: 2.7.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-10-20
