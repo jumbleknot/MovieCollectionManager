@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2b24c33733f6c4ef1eff7018a31b9cf7a2a2fecf36773948bccb09dab1a66bcf",
+  "pageVersion": "sha256:477680af07caa6a5503ac3eab2e23979c43329a54914f53c55a17d3e828ffd8e",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -25,7 +25,7 @@
           "version": "repo-lines-v1:sha256:1f81355af6a089b7f668617fb24f0214a39316518c96eda0b43934edc716dcdd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTU0MzBlNDcxYTI2NTMyZDU0ZjRiMTlmYzcyY2NkZmFiZmI3MmI1NDc2MTVjOTVhNGJkOWVkMDVhNmEzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NTk0OTUyNzJkMDc3YzczNmJiMTdhOTQ5MmE0MGI5NjVlY2NmYjJjYzVkMjMwNjIwNThiNTRlMTVkNzBlNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMzIxMmRhNGJhZmYzOWNmY2JjMWIxZGQ4M2RlN2M0ZDQwMTdhODRjOWI3ZDU4YWYxZmEwOWE2YzQxMTQ0OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZjA3ZWEwMzk0NjA4MGE4ZjMyNzllZDhhYzBjNzUzMTZlYTYwM2UxZjM0MGNiNTY4NjMxYzQyYWQ3NmUxOTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L30-L31",
+          "resource": "repo://frontend/mcm-app/package.json#L29-L30",
           "version": "repo-lines-v1:sha256:15436fbd86956a7240f5096ea91925a40872f6fc21d1240c4cd39caa5684bb71:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg5YWVkNjQyNDFlM2JhMDBiYmNhYTc3YjJhYjg4NzU4Zjg4MWFmM2RhY2NhNzJiNjY5ZWUzMzZjN2RkMmI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4ZTg5YmQ4OTY2OTg4MzgyZmEwNTA4MjdjNjQ2YjA5MTNjNzBjZTM2MTA5ODY3NzYxMWQ0YjM2MzRkZTYyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRmNzIzNzYyOGZjNzA1OWE4OTk2NTMwMmVlMzNkYjQzZTcxMzdjNTRlODZmN2RiMjc1ODlkMGQ0Yzg4ZDE1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmNGYyYjNhNDYwZWQwNmEwNmYzYmUyOGViY2QxMmRhOWY4ODc5ODAzNzIyYzM5OWJmNzVlN2IzOGM5ODQxMiJ9"
         },
         {
@@ -365,12 +365,12 @@
       "statement": "The app targets Expo SDK 57 and React Native 0.86 (expo ~57.0.30, expo-router ~57.0.28, react-native 0.86.3, react 19.2.3, babel-preset-expo ~57.0.16), upgraded as part of feature 081's major-dependency story.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L33-L55",
-          "version": "repo-lines-v1:sha256:b6003e61e845409cfdb097e670594c53ad566c3ba0ac4b82ce07442e775e6bb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMmIxMTNhNGNkZjUwYTcwM2JiYWZiZDRiNGU5ODEzYjI5NGIyNTA0ZjAxZTAxZWQ1ZGIzYTgyYWFiMWI5NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjNkYjMwZDg0NGFlYmNiMGZlMDBkYzVlYTUyNGNkOTYxMmY0ZjIxMmFlYzhiYTU4NTE1MGU1NTFkOWUxYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTE2MGVhNWQzMGU4NTIxODUyOTk0NTVhMzM1MjM3MGFiMjU0ZGNkNzlmNGM3YTkzZmU0OThiNDEzOWVjOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmMxZDRlNzZmNDAwOWQ0ZDdkZjE1MDIzYjI2ZjZkODQzZjNhNTk0NDQ5YmQ2YTc1NzYzMGZiODBiOTNkMzQifQ"
+          "resource": "repo://frontend/mcm-app/package.json#L17-L63",
+          "version": "repo-lines-v1:sha256:183565aba26717482f2df7156c569cc98d0aac578386976c71d0843b7f34e0c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2I0NjlkOWUwOTc1NzIyNDY2NjczNGM5ZWY3YjI1NGQ4ODUzNGY1ZDViYjcwOTg5NjA4MDVjNTUzZGMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNGMwM2Q1MWNkNmRmYjdiMTgwMjRhMmEzM2ZkNWJhNTk2NDUxOGYxOWVmMTNlZDEyMWUwN2QwY2I2MTBkOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiNjU4NTZiZGJhMGI4ZmRlNTE2NjBiYjBiOWQyYjY0ZWExNmM3NGMxNWNiYzZmMzU1MzAzYWExN2U3NGFiZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NDcyY2M2OWJiYzIyMjU3MDI5OGRjM2MxNTM2ZmQwYTQzOGJkNWQ1Nzk1YzNhNzg1ODg4MGYxNWRiZDNmOTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L80-L80",
-          "version": "repo-lines-v1:sha256:ba03ddf5e4dac4061d2a2577ee7a787aa5607789e1461a36d2f9e48e39e47e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUxYmNiMWFlMTEwMTg2NjQ5MDk4MDg0Y2VmOWE5Mzg2YTljZWY4MmY1ODI0OGMwOTJkNTVjODdhYmUyNWJjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRhZjkwYmJlYTExYjg0MDNjY2NhMzhmZGZkMmQ2ZDZjMzg4MjkwYjNkNzhmOTNlNjlhZjNlYmVhY2RhNWZmYiJ9"
+          "resource": "repo://frontend/mcm-app/package.json#L79-L79",
+          "version": "repo-lines-v1:sha256:ba03ddf5e4dac4061d2a2577ee7a787aa5607789e1461a36d2f9e48e39e47e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwM2RkZjVlNGRhYzQwNjFkMmEyNTc3ZWU3YTc4N2FhNTYwNzc4OWUxNDYxYTM2ZDJmOWU0OGUzOWU0N2U4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUxYmNiMWFlMTEwMTg2NjQ5MDk4MDg0Y2VmOWE5Mzg2YTljZWY4MmY1ODI0OGMwOTJkNTVjODdhYmUyNWJjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTRjZmM5MjE1Mzk2ZDU4YjYyYmQ3YTNjYWE1ZTI3NjAyMDM4N2FlYmZmN2Y2YjBmMTcyZDQ1MjYwMTE0MTk2MiJ9"
         }
       ]
     },
@@ -411,7 +411,7 @@
       "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine; the resolver resolves as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L88-L90",
+          "resource": "repo://frontend/mcm-app/package.json#L87-L89",
           "version": "repo-lines-v1:sha256:922d9a9961f7ced904ff158ad4526748ac18b0ca46db081929ebf3f9e7dfd2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
         },
         {
@@ -503,7 +503,7 @@
           "version": "repo-lines-v1:sha256:a2e79f191284804a07d14a98b494d85d62f0fc36a04d31dff1191c4ec8a1b928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjA2YzZlNTQ4OGQ0NGFkZWYzYmMwMmE2YzNlMjkxMTNkMjJlNThkMThlMzJjNTkxNjZiOWY2MTI5M2NhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOGYzMjY2YzljMGM3M2IxMmY4NjRkZTBhZjI5YjQ0MWM5YjEyMTc2YjM5YWQ1MTkzNzllYWEwYzRkYWZkZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNzcyYWYxZmY1ZTQyODhlMDU5Yjg5NDg2MmY2MjU5NTdmZWRjNDdkNmY0MjM0MzgxZWE4ZDEwZjAyOTY3YTIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L66-L86",
+          "resource": "repo://frontend/mcm-app/package.json#L65-L85",
           "version": "repo-lines-v1:sha256:c8591aeb3fc6c762ac8496404f76ccbb9e92fdf5ab0aa98889b6ef6faf701f8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZjI1ZjY4MWIxOGM5YjYzYmUyNjdiMjM4MTcxZDllOGIzOGFlZGNlYWUzMzg1ODFhYzBkMTE0OGRjODc4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NzZiZGYzMWMzODJjOGY3M2U4NzhhYzllNDE0ZjkzNDljODM0ZWZmNDczZWFhMTY2YzI0M2VhNjk3MDNjNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmQzZTcyNjI5ZjUyNTJiYTg5MzkwN2YwZDZjZmU2Nzc3MjQ4MDNiNWUyYTM4YmQwODI0ZjRjNzg4NGU2MTQifQ"
         },
         {
@@ -547,7 +547,7 @@
           "version": "repo-lines-v1:sha256:8028ac2ed6819235966852c51ede2320ff78b34b7dd27ee2d162b7b794d33704:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc3MWNhMzNhYTRjZDg4ZjI4YmY1Zjc5YWY1NzhhYmQwOWFjNjBkMThhZmQ4NGJjNzMyNDAyNTg1Yzg1YTM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyZGY2MTYwMzE3YTFjYmNhNTM5YWFkZGRmZWQyMWMzZmFlMmU0MzgyMjk0ODg2MmJjNmY2ZTlmNWFkNDI2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFmZjYzNGVkYzJkYjlmNzYyMTYxNzc3MTc1ODdlMjQ0MTRjNDc0ZTdmMTdjMzNlNGI0MzFhNjdhMmFiYjZjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0N2NhZWRhYTdhYmEyZDUzZmY2ODQxMGRkNmI3MjY2YjViNjVmMGY4MTFjNThjZmE1MjgwNWY5N2M3YmY5NSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L70-L70",
+          "resource": "repo://frontend/mcm-app/package.json#L69-L69",
           "version": "repo-lines-v1:sha256:187b3400b195617ed53263c06cc9f59942213733406dd2d9e260a038730b4c73:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjM0MDBiMTk1NjE3ZWQ1MzI2M2MwNmNjOWY1OTk0MjIxMzczMzQwNmRkMmQ5ZTI2MGEwMzg3MzBiNGM3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY5ZjBhNThhYzI1Yjc3YWIyZTBiZDcwZjc2OGQ3MTZhOWM2ZWRiMjA5ZjYyZDc3MTQzMmQxNjY0NTA2NDBkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY2NzRlZjNjMzE5YWFiZTMxNjc3MzllZmZkMjAwOTgyYzc2M2RkYzk1MDk4MjBjMjc1N2I0YTc0MzUxOGIzYyJ9"
         },
         {
@@ -561,11 +561,11 @@
       "statement": "Jest must be told not to transform React Native 0.86's renderer: `RendererImplementation` now imports `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render touching `Animated` pulls in the ~725 KB already-compiled `ReactFabric-dev.js`, and `frontend/mcm-app/package.json`'s `transformIgnorePatterns` therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, which is back at the SDK-56 figure and why the per-test 15 s timeout that briefly stood in for this was removed.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L95-L99",
+          "resource": "repo://frontend/mcm-app/package.json#L94-L98",
           "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1071-L1114",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1277-L1320",
           "version": "repo-lines-v1:sha256:de5c36f62889a0e15afca6423d21af3163bb032b1845dae5579fc61b077bdce4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYjJmNzNkNjBlOTI3YmFjOWMwNWNjNmRmZjAyOTAxYjg1Zjc0ZTU3MTA4NDZlYjQ1M2VhNTM4ZDFhYmUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGU4MGU4NDMwMTA4MmFiNGY3ODBjZmFmNGEzNjZhNDIxOGUxNWE2MWYxMmY4Njg0Y2M0ZjljYzY5NTQ5MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDBhYzM3NmM2YjY3YmVlNTFjOTBiODkyNjAxZTE5YjYxZjFkZTk2NDQxYTM4ZmY1Y2FhYWFkODY2ZjY0M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZDNmNGQwMjFlNWQ3ZGQ4MTFjNmU0YWUzMDIwYmQwOWMwY2YwYWRhOWFmYjg5MWUwZTg1ODJkMzMxNjBjMDUifQ"
         }
       ]
@@ -611,7 +611,7 @@
       "statement": "`test-renderer` is held below 1.3 for as long as the app runs React 19.2: RNTL 14 renders through `test-renderer`, and 1.3.x depends on `react-reconciler` 0.34, which peers `react ^19.3.0` while Expo SDK 57 pins React 19.2.3. `frontend/mcm-app/package.json` therefore declares `test-renderer ~1.2.0` and Renovate caps it at `/^1\\.[0-2]\\./` in a group of its own — the separate group is load-bearing, because a held member gates every member batched alongside it, so leaving it in the routine `js patch/minor` group would block unrelated npm bumps. The hold lifts when an Expo SDK move brings React 19.3.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L85-L85",
+          "resource": "repo://frontend/mcm-app/package.json#L84-L84",
           "version": "repo-lines-v1:sha256:030b484e06a54f801c32c6885691b06ac2d3cffaa8eedd144f65a18d98396a48:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFmMzI2YjFiMTFmMzQ1MjI0N2E1NDQ1MTgxNDVmMTYzNTNjNjRiMmI4ZDNjOWExM2ZhNzhjODQxMTFmOGY2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ5NjQ0MjI2ZjU0YWQ2NDlkYjA4NGZhYjNhOTViZmExYzA0OTlkYzE4YTg1ZjM5ODE1ODNmYTAwYzI2ZjAxMCJ9"
         },
         {
@@ -619,10 +619,36 @@
           "version": "repo-lines-v1:sha256:e5be3db63087af8034a6b8291d89571399c208a38658bfb7953cbb4abe7018c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MWM4MTRlOTlhOWRhN2MwODBlZjNiNjBkYzBhODdiMjE3YmNkYzA5NDgyZTA4MTE1ZDE3M2QxOGZjMTQ4NWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fc211cb814644c099a9d5d6cba487e9c",
+      "statement": "The settings screen-label vocabulary is enforced server-side by ALLOWED_SCREENS in frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts (the sole sanitization point for what the agent may be told about the user's screen), which lists only 'settings', 'settings-assistant', 'settings-backups' and 'settings-admin' among settings areas; the Account route reports current_screen 'settings.account', which is not on that list and is therefore silently reduced to 'unknown', the same failure shape as the retired 'admin-settings' label. The client-side union in use-ui-state.tsx ends in `| string` and constrains nothing at runtime, so the allowlist is the real enforcement point and the unit test asserts it label by label.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/settings/account.tsx#L1-L16",
+          "version": "repo-lines-v1:sha256:04cf109daaa8c0f761b75d79fc96adbce38d44558d8fd4a609e35bf441831681:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts#L14-L32",
+          "version": "repo-lines-v1:sha256:ad7d59dd6c4344d2aedc8b077076b01de55daa3ff79e926ca3ff2fafd318f9b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YTk2ZDllZDdmMjIwNWIxZWFlZGQ5ZWU1ZTliNmY0MmFhOTczOTFkNGY1MmRlYmZlM2ZmMGZhMDRiZTk1ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYmZkMGE1Njg4MzZkMTNlNjIzMThiMzFkMGY1MjE5YWFkY2NiZTE4ZjhlMzc0YmJkYTAzY2E4MWY3ZWRiNTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts#L67-L71",
+          "version": "repo-lines-v1:sha256:eb1e683772dd951978aa6801deaece6291b841cc3af297e92e6c64cc2462656d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhODdjN2MyM2FhYTdhODRlOGEzZWYzNDQxYzRmZmYwMGJhMmIzNThiMzQxMDcxYzBhZDliZTgwYWNmZmE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk0NGFjNzE3M2Y1YmU4NzBjNzgyMzIzMjAyYjI1NTEzZmU5YTJjNzRlNThhYjViODI4OWU1ZDk1Y2NkNjFlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODliNWY2NThlM2I0YWJjZDdjNDNmMzdiNzcxM2Q1NWQ2MTY1NjFkNjM1MzJiODU3MzE2ZmM2YzY4OGQyYTBiOCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts#L65-L84",
+          "version": "repo-lines-v1:sha256:25a84988530ff076568e9be23e89d133cc154c763aaaca86be69b77394a6b534:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NjhlZDE1ZWU5Njg2YmRhMjc4MzBhODk3Mjk2ZTViYWZkZjFhOGZmYzBhMTQxZWI1MGM5ZWNkM2ZkMjAxYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZWQ3OGJkNjEwY2UxNTFjZDA3MjRhNTJkNmFiNGQyZmU1YTQ2NjQzYzJlMmYyMzYyMTI2ODNlNzU0ZmIxMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNjA2YjlkMWU5MDkyNjkzN2Y5OTQxYjllZTBiOWQ2YWNjNjU3MTUxNTk1NjEyZTE2OGVjMmZkZjc0ODAyYzcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-ui-state.tsx#L21-L33",
+          "version": "repo-lines-v1:sha256:768d80f90ac84f52da4547d1cd28ccacbbf0f92a91b475df776235e049973200:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjhhMjc3MjUzMTFjZmFhNDFiZTk1N2JmMTY2OTk0NDg2NGQ1NTQ3NWI4ZjM4NTY0ZmE0NGIwYzdmNjk1YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNjI3Y2EyOWIzMTg5YjcxY2QyMGNmNDhjZTRiNDI1NTQxZjNjNGZmZDVkMjFjNDcyMWNlNGI5ODU3NmRkMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMmMwYzUyM2IzNTUzZDY4Mzg4MWEwNDcyY2M1ODcwYTg4ZWZiZmNjZDU4N2YzMmMyY2ExOWRmM2E1MzZjNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZjk3MWI3OTI2NjlmYzAwMDkwYmQ1YzRkZDQwZTQ3NmRmNjZjOTRlYTllNWEyM2ZmZGIyYTJkMjY2M2VhMzAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T12:20:46.129Z"
+    "at": "2026-10-20T06:13:33.915Z"
   }
 }

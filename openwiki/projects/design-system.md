@@ -4,9 +4,6 @@ title: MCM Cinema design system
 description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring, and the R1-R7 compliance scan that keeps the app from drifting off it.
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
 sources:
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
@@ -69,6 +66,9 @@ sources:
   - id: openwiki-source-54da196e9c02e7f7f455cfb8
     resource: repo://specs/017-design-system-consistency/contracts/success-token.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-20T06:13:33.915Z
 ---
 
 # MCM Cinema design system
@@ -91,8 +91,12 @@ does not enumerate component props — go to the source for those.
 The package ships tokens (`tokens/`), the two themes (`theme/`), the `createFont` definitions
 (`fonts/`), the Tamagui config, and the components grouped as primitives, inputs, surfaces, navigation,
 domain and assistant. `package.json` publishes `"."` → `index.ts` and `"./tamagui.config"` →
-`tamagui.config.ts`; `expo`, `react` and `react-native` are peer dependencies, so the package is never
-the thing that decides the app's framework versions.
+`tamagui.config.ts`. `expo`, `react` and `react-native` are **peer dependencies declared as open
+ranges** (`>=52.0.0`, `>=18.0.0`, `>=0.76.0`), and `react`/`react-native` are additionally pinned in
+this package's own `devDependencies` so its Jest suite renders against the same runtime the app uses.
+The package therefore never decides the app's framework versions — `react-native-safe-area-context`
+and `react-native-svg` are ordinary `>=` dependencies for the same reason (they are only needed by
+`NavigationBar` and `AssistantAvatar`, and the app owns the version).
 
 ## Colour roles are theme-split
 
@@ -197,6 +201,16 @@ is a measured decision, not a leftover:
 
 Because the pin is a dependency-level constraint shared by two projects, a bump is a cross-repo change:
 the guard, not prose, is the source of truth for what version is allowed.
+
+The same is true of the framework packages this package declares: `react`, `react-native` and the
+`react-native-*` / `@react-native/*` family are version-locked to the Expo SDK **repo-wide** in
+`renovate.json`, and `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the resolved
+`enabled` for that family in `packages/design-system/package.json` too, not just in the app. That
+second scope is not theoretical: PR #217 bumped `react-native` 0.85.3 → 0.87.0 *here*, where the
+app-scoped rule could not reach it, and RN 0.87 narrowed the press-event type so
+`GestureResponderEvent` stopped satisfying Tamagui's `PressableProps['onPress']` — 15 typecheck errors
+across 14 files. A `react`/`react-native` bump in this package splits React or the RN family between
+two manifests; it goes through `expo install` with the app, never a raw Renovate bump.
 
 ## The compliance scan (R1–R7)
 

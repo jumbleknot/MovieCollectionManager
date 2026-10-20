@@ -4,9 +4,6 @@ title: "ADR-0001: Production secrets-management standard"
 description: The ratified decision record selecting Komodo Variables (not HashiCorp Vault) as the sanctioned production secrets mechanism for all core stacks, with Vault kept dormant and agent-layer-scoped only.
 resource: docs/decisions/ADR-0001-prod-secrets-management.md
 tags: [adr, secrets, komodo, vault, decision-record, security]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-16T13:30:11.885Z
 sources:
   - id: openwiki-source-bff475d8fa855e3592cfedc2
     resource: repo://.specify/memory/constitution.md
@@ -27,6 +24,9 @@ sources:
   - id: openwiki-source-2c24e272c750d36f7963e28d
     resource: repo://specs/026-prod-data-auth-vault/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-20T06:13:33.915Z
 ---
 
 # ADR-0001: Production secrets-management standard
@@ -100,9 +100,14 @@ supplied while the compose still requires it. The full gate set is on the
 [Secrets management posture](../invariants/secrets-management.md) page.
 
 `prod-vault` is the exception that proves the rule: it declares no secret at all. It runs a real,
-non-dev Vault on raft storage, **uninitialized and sealed**, with no root token anywhere in env, and a
-healthcheck override that reports the dormant state as healthy so Komodo keeps it up. Do not run the
-init/unseal sequence as a side effect of an unrelated change.
+non-dev Vault — digest-pinned `hashicorp/vault:2.2@sha256:e0acd3c6…` — on raft storage,
+**uninitialized and sealed**, with no root token anywhere in env, and a healthcheck override that
+reports the dormant state as healthy so Komodo keeps it up. Do not run the init/unseal sequence as a
+side effect of an unrelated change. The dormant posture was re-verified against that pin — uninitialized
+and sealed, one vault process, healthcheck passing, and init → unseal → KV write → restart → re-unseal
+all holding on raft — and the image is not free to drift: a vault **major** now needs an explicit
+dependency-dashboard approval, with the infra-image scan gate covering patch and minor. The `<1.19`
+ceiling that this replaced was a security hold, lifted only once 2.2.0 scanned clean.
 
 ## The one optional reader
 
