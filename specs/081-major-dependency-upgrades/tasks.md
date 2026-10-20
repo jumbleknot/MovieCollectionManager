@@ -438,17 +438,22 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
 
 **PR 8b — observability postgres 16 → 18 (Langfuse + Unleash together)**
 
-- [ ] T060 [US8] Guard RED — change `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` to assert
+- [x] T060 [US8] Guard RED — change `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` to assert
   the new premise: both consumers share ONE pin AND it is the 18 line (update at the cause, never delete).
   **Verify RED**: `node --test scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs`
   **Expected RED**: fails — the pin is still 16.
-- [ ] T061 [US8] Move all four observability `postgres` refs to `18-alpine@<digest>`; remove the `<17`
+- [x] T061 [US8] Move all four observability `postgres` refs to `18-alpine@<digest>`; remove the `<17`
   `allowedVersions` rule in `renovate.json` and update `renovate-workflow.guard.test.mjs` accordingly (the
   approval-on-major rule stays).
   **Verify GREEN**: both guards, 0 failures.
 - [ ] T062 [US8] Data: `pg_dumpall` both instances → restore Unleash (and Langfuse per OQ-3) on 18 → verify
   Unleash flags/API and Langfuse UI (`pnpm nx up-observability infrastructure-as-code`); rehearsed locally,
   then prod. **Done when**: PR 8b merged with the restore evidence.
+  *Local rehearsal done 2026-10-20 (research.md "US8 (PR 8b …)"): Unleash state identical after
+  16 → dump → pre-seeded 18 volume, Langfuse fresh on 18 and healthy, rollback to the untouched 16 volume
+  verified. postgres 18 exits 1 on any 16 data dir and on any `/data` mount, so both services move to NEW
+  `-v18-data` volumes. **Prod is operator-run and must pre-create and pre-seed those volumes BEFORE the
+  merge** (a merge is a Komodo deploy); open until then.*
 
 **PR 8c — vault (scan-gated)**
 

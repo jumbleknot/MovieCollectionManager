@@ -29,7 +29,7 @@ here now bind `0.0.0.0` (rootless-before-tailscaled boot race) and the post-rebo
 
 ```sh
 # 10 external volumes (data survives redeploys)
-docker volume create observability-langfuse-postgres-data
+docker volume create observability-langfuse-postgres-v18-data   # spec 081 US8b: postgres 18 (the pre-18 -data volume is the rollback)
 docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs
 # observability-langfuse-rustfs-data: on a FRESH host with no prior Langfuse data, create it empty
@@ -37,7 +37,7 @@ docker volume create observability-langfuse-clickhouse-logs
 # store's data, NEVER create it by hand — the migration tool's `copy --apply` creates it (and refuses
 # an existing target). See "cut prod Langfuse storage over to RustFS" below.
 docker volume create observability-otel-lgtm-data
-docker volume create observability-unleash-postgres-data
+docker volume create observability-unleash-postgres-v18-data    # spec 081 US8b: postgres 18; restore the Unleash dump into it
 docker volume create agent-audit-opensearch-v3-data
 docker volume create agent-audit-opensearch-snapshots
 docker volume create vault-store-data
@@ -241,7 +241,7 @@ docker volume rm observability-langfuse-postgres-data \
                  observability-langfuse-clickhouse-logs
 
 # ── 3. RE-CREATE them immediately — external volumes are not auto-created ──────────────────────────
-docker volume create observability-langfuse-postgres-data
+docker volume create observability-langfuse-postgres-v18-data   # spec 081 US8b: postgres 18 (the pre-18 -data volume is the rollback)
 docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs
 
@@ -421,6 +421,111 @@ snapshot also still exists, so there are two ways back.
 Only once the restore is verified and has been running for a while: delete `agent-audit-opensearch-data`
 (the 2.x volume) and, if you want, the snapshot. **Neither deletion is part of this procedure** — leaving a
 stale 327 kb volume behind is far cheaper than an unrecoverable audit trail.
+
+## One-time: observability postgres 16 -> 18 for Langfuse + Unleash, PRESERVING Unleash (spec 081 US8b)
+
+Both `langfuse-postgres` and `unleash-postgres` share one pin and move together. Data decision (spec 081
+OQ-3): **Unleash flag state is preserved** by dump/restore; **Langfuse's Postgres is discarded** (ADR-0002
+§4) and re-initialised by `LANGFUSE_INIT_*`, which recreates the `mcm` org, the `movie-assistant` project and
+its keys, so gateway tracing keeps working. ClickHouse and RustFS are not touched. Anything created by hand in
+the Langfuse UI (extra users, prompts, extra API keys) is lost. Restore the Langfuse dump the same way as the
+Unleash one (step 4) if that matters on the day.
+
+### Merging the PR IS the deploy — so the 18 volumes must be seeded BEFORE the merge
+
+postgres 18 **will not start** on a 16 data directory. Measured 2026-10-20: it exits 1 when the old volume is
+mounted at `/var/lib/postgresql` or at `/var/lib/postgresql/data`. It also exits 1 on an EMPTY volume mounted
+at `/data`. With `restart: always` that is a crash loop for both databases. So the new compose mounts
+`/var/lib/postgresql` on **new** external volumes, `observability-{langfuse,unleash}-postgres-v18-data`. The
+16 volumes stay untouched as the rollback.
+
+- **Merge before the volumes exist**: the deploy fails up front with `external volume "…-v18-data" not found`.
+  The 16 containers keep running, unchanged. That outcome is safe. Recover by doing steps 1-5 and
+  redeploying.
+- **Merge after creating the volumes but before step 4**: Unleash comes up healthy on an **empty** database.
+  `unleash-seed` recreates the three flags default-off, every other flag and toggle is gone, and nothing
+  reports it. This is the outcome to avoid.
+
+Rehearsed end to end in the dev container. See specs/081-major-dependency-upgrades/research.md "US8 (PR 8b …)".
+
+```sh
+# Run on the prod host against the PROD rootless daemon. Containers are Komodo-managed, so use
+# container names, never a hand-run `docker compose`.
+IMG='postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873'
+DIR=$HOME/081-us8b-cutover; mkdir -p "$DIR" && chmod 700 "$DIR"
+
+# ── 0. PRE-FLIGHT (read-only) ─────────────────────────────────────────────────────────────────────
+#    The PR is reviewed, CI is green, and it is ready to merge. Steps 1-5 are an Unleash + Langfuse outage.
+docker ps --filter name=postgres --format '{{.Names}}\t{{.Image}}\t{{.Status}}'   # both on postgres:16-alpine
+docker volume ls | grep -E 'observability-(langfuse|unleash)-postgres'           # only the two -data names
+docker exec unleash-postgres psql -U unleash -d unleash -Atc \
+  "select 'features',count(*) from features union all select 'feature_strategies',count(*) from feature_strategies
+   union all select 'api_tokens',count(*) from api_tokens union all select 'env_enabled',count(*) from feature_environments where enabled
+   union all select 'migrations',count(*) from migrations order by 1" | tee "$DIR/counts-16.txt"
+docker pull -q "$IMG"                     # pull now, not mid-outage
+
+# ── 1. FREEZE: stop the writers (the databases keep running for the dump) ─────────────────────────
+#    Unleash SDK clients (gateway/BFF) serve their last-fetched flags while unleash-service is down.
+docker stop unleash-service langfuse-web langfuse-worker
+
+# ── 2. DUMP both 16 instances (the Langfuse one is the rollback copy only) ────────────────────────
+docker exec unleash-postgres  pg_dumpall -U unleash  > "$DIR/unleash-16.sql"
+docker exec langfuse-postgres pg_dumpall -U langfuse > "$DIR/langfuse-16.sql"
+tail -2 "$DIR/unleash-16.sql"              # MUST end with "-- PostgreSQL database cluster dump complete"
+grep -c '^COPY' "$DIR/unleash-16.sql"      # non-zero
+
+# ── 3. CREATE the two NEW external volumes (the 16 volumes are NOT touched, now or later) ─────────
+docker volume create observability-unleash-postgres-v18-data
+docker volume create observability-langfuse-postgres-v18-data      # left empty: Langfuse initialises it
+
+# ── 4. PRE-SEED Unleash on 18 in a throwaway container (no network, volume only) ──────────────────
+read -rs UNLEASH_PG_PASSWORD && export UNLEASH_PG_PASSWORD          # the Komodo Variable's value
+docker run -d --name us8b-unleash-seed18 --network none \
+  -e POSTGRES_USER=unleash -e POSTGRES_PASSWORD -e POSTGRES_DB=unleash \
+  -v observability-unleash-postgres-v18-data:/var/lib/postgresql "$IMG"
+#    Wait on TCP. A socket-only check can pass against the entrypoint's temporary init server.
+until docker exec us8b-unleash-seed18 pg_isready -h 127.0.0.1 -U unleash -d unleash -q; do sleep 2; done
+docker exec us8b-unleash-seed18 psql -U unleash -Atc 'show data_directory'    # /var/lib/postgresql/18/docker
+docker exec -i us8b-unleash-seed18 psql -U unleash -d postgres -q < "$DIR/unleash-16.sql" 2> "$DIR/restore.err"
+cat "$DIR/restore.err"     # EXACTLY: role "unleash" already exists / database "unleash" already exists
+docker exec us8b-unleash-seed18 psql -U unleash -d unleash -Atc \
+  "select 'features',count(*) from features union all select 'feature_strategies',count(*) from feature_strategies
+   union all select 'api_tokens',count(*) from api_tokens union all select 'env_enabled',count(*) from feature_environments where enabled
+   union all select 'migrations',count(*) from migrations order by 1" > "$DIR/counts-18.txt"
+diff "$DIR/counts-16.txt" "$DIR/counts-18.txt" && echo COUNTS-EQUAL                # MUST print COUNTS-EQUAL
+docker stop us8b-unleash-seed18 && docker rm us8b-unleash-seed18                   # frees the volume
+
+# ── 5. MERGE the PR, then redeploy `prod-observability` in Komodo EXPLICITLY ──────────────────────
+#    Do not wait on a webhook. Trigger the redeploy so you choose the moment of cutover. The deploy
+#    recreates both postgres containers on 18 and the new volumes, and starts the three stopped writers.
+
+# ── 6. VERIFY ─────────────────────────────────────────────────────────────────────────────────────
+docker ps --filter name=postgres --format '{{.Names}}\t{{.Image}}\t{{.Status}}'   # both postgres:18-alpine, healthy
+docker inspect unleash-postgres --format '{{range .Mounts}}{{.Name}} -> {{.Destination}} {{end}}'
+#                                     observability-unleash-postgres-v18-data -> /var/lib/postgresql  (nothing else)
+docker exec unleash-postgres psql -U unleash -Atc 'select version()'               # PostgreSQL 18.x
+docker ps --filter name=unleash-service --filter name=langfuse --format '{{.Names}}\t{{.Status}}'   # all healthy
+#    Unleash: open the UI, or use the admin API with UNLEASH_ADMIN_TOKEN. Every flag, its per-environment
+#    on/off and its strategies match what was there before step 1.
+#    Langfuse: the UI on the tailnet (:19030) signs in with the INIT user. A new agent turn produces a trace
+#    under `movie-assistant`.
+#    If langfuse-web/worker show errors from before their database was replaced: docker restart langfuse-web langfuse-worker
+```
+
+### Rollback — non-lossy for Unleash
+
+Revert the merge and redeploy `prod-observability`. The compose goes back to `postgres:16-alpine` on the
+ORIGINAL `-postgres-data` volumes, which hold the state exactly as it was at step 1. Flag changes made on 18
+after the cutover are **not** carried back. `"$DIR/unleash-16.sql"` is a second way back.
+
+```sh
+git revert --no-edit <merge-sha> && git push origin HEAD:main     # then redeploy prod-observability in Komodo
+```
+
+### Afterwards
+
+Once 18 has run for a while: delete `observability-unleash-postgres-data`, `observability-langfuse-postgres-data`
+(the 16 volumes) and `$DIR`. **Neither deletion is part of this procedure.**
 
 ## Capacity check (T013) — result (2026-07-03)
 
