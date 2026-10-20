@@ -452,10 +452,14 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
 
 **PR 8c — vault (scan-gated)**
 
-- [ ] T063 [US8] Scan the newest 1.x and 2.x `hashicorp/vault` tags with `trivy --severity CRITICAL
+- [X] T063 [US8] Scan the newest 1.x and 2.x `hashicorp/vault` tags with `trivy --severity CRITICAL
   --ignore-unfixed` (gate criteria). **Done when**: either (a) a tag clears libcrypto3 + grpc without adding
   pgx → move it, lift `<1.19`, re-key/delete the seed allowlist entries, guard updated; or (b) the hold's
   description is re-dated with the new digests and findings and its backlog item updated (OQ-4).
+  **Outcome (a), 2026-10-20**: 1.21.4 still 4 Criticals (unchanged); **2.2.0 has 0** (libcrypto3 3.5.8,
+  grpc 1.83.2, pgx 5.10.0). Refs → `2.2@sha256:e0acd3c6…`, `<1.19` replaced by a major-approval rule, the
+  three seed entries deleted, guard updated at the cause and mutation-RED'd; local prod-posture start
+  (sealed/healthy) + init/unseal/persist verified. Evidence: research.md R8.
 
 ---
 

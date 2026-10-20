@@ -981,7 +981,8 @@
     },
     {
       "description": [
-        "hashicorp/vault IS HELD BELOW 1.19, and this is a SECURITY decision rather than a currency one.",
+        "hashicorp/vault WAS HELD BELOW 1.19 (2026-08-30 -> 2026-10-20) as a SECURITY decision; the hold is now",
+        "DISCHARGED and replaced by a major-approval gate (OUTCOME at the end). The history, as recorded:",
         "MEASURED 2026-08-30 on PR #289. The `docker base images` group proposed vault 1.18 -> 1.21 and",
         "reddened `infra-image-scan / infra-image-scan`. Scanned with the gate's OWN criteria",
         "(trivy --severity CRITICAL --ignore-unfixed) against the exact digest the PR pinned:",
@@ -1009,12 +1010,28 @@
         "strictly worse image \u2014 the one thing the allowlist must never be used for (its own header says",
         "suppression is gate-only and the baseline stays visible). LIFT THIS RULE when a vault tag ships",
         "that clears libcrypto3 and grpc without adding pgx; re-scan before believing a release note.",
-        "renovate-workflow.guard.test.mjs asserts the RESOLVED ceiling on all three tracks, that no other",
-        "docker image picks it up, and \u2014 as the control \u2014 that vault still rides `docker base images`."
+        "OUTCOME 2026-10-20 \u2014 CEILING LIFTED by feature 081 US8c (T063). Re-scanned with the gate's own",
+        "criteria (aquasec/trivy:0.74.0, --severity CRITICAL --ignore-unfixed, DB 2026-10-19), newest of each line:",
+        "  vault:1.18   sha256:750bb37c\u2026 3 unique fixable Criticals (stdlib, libcrypto3+libssl3, grpc), all seed-allowlisted.",
+        "  vault:1.21.4 sha256:4e33b126\u2026 4 (libcrypto3+libssl3, grpc, pgx CVE-2026-33815/33816) \u2014 unchanged since #289;",
+        "    1.21.4 is the last community 1.x (later 1.21.x are Enterprise-only).",
+        "  vault:2.2.0  sha256:e0acd3c6\u2026 ZERO Criticals of any kind: libcrypto3 3.5.8-r0, grpc v1.83.2, pgx v5.10.0, go1.27.2.",
+        "2.2.0 clears libcrypto3 and grpc WITHOUT adding pgx \u2014 the lift condition above, met by a scan, not a release",
+        "note. Both vault refs moved to 2.2@sha256:e0acd3c6\u2026, and the three `hashicorp/vault:1\\.18` seed allowlist",
+        "entries were DELETED in the same change, so the suppression did not outlive its reason. With no vault entry",
+        "allowlisted, infra-image-scan now blocks ANY fixable Critical in a proposed vault tag \u2014 the gate carries the",
+        "'not into a worse image' half of this hold. The 'not by accident' half is this rule: a vault MAJOR (raft",
+        "storage, a dormant prod stack via Komodo) needs a dependency-dashboard tick, the opensearch/langfuse shape;",
+        "patch and minor stay automatic and scan-gated. Verified locally against 2.2.0 with the prod vault.hcl:",
+        "comes up uninitialized+sealed, the healthcheck passes, and init/unseal/raft-persist/re-unseal all work.",
+        "renovate-workflow.guard.test.mjs asserts no ceiling on any track, the major-approval successor, that it",
+        "does not widen to other images, that the refs are digest-pinned 2.x with no vault allowlist entry, and",
+        "\u2014 as the control \u2014 that vault still rides `docker base images`."
       ],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["hashicorp/vault"],
-      "allowedVersions": "<1.19"
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     },
     {
       "description": [

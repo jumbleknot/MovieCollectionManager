@@ -1051,7 +1051,7 @@ test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// hashicorp/vault is HELD BELOW 1.19 — PR #289 (2026-08-30), and this is a SECURITY decision, not a
+// hashicorp/vault WAS HELD BELOW 1.19 from PR #289 (2026-08-30) until 081 US8c (2026-10-20), and this is a SECURITY decision, not a
 // currency one. Renovate's `docker base images` group proposed 1.18 -> 1.21 and reddened
 // `infra-image-scan / infra-image-scan`. Measured with the gate's own criteria
 // (`trivy --severity CRITICAL --ignore-unfixed`) against the exact digest the PR pinned:
@@ -1082,18 +1082,70 @@ test('a cargo 0.x minor bump is treated as breaking, not as routine', () => {
 // Widening the allowlist to bless 1.21 was rejected — that makes a red gate green by accepting a
 // strictly worse image, which is the one thing an allowlist must never be used for.
 
+// UPDATED AT THE CAUSE 2026-10-20 — feature 081 US8c (T063). THE HOLD IS DISCHARGED, and replaced by
+// an approval gate rather than by nothing (the opensearch/langfuse shape, feature 071/072). Re-scanned
+// with the gate's own criteria (aquasec/trivy:0.74.0, `--severity CRITICAL --ignore-unfixed`, DB
+// 2026-10-19), the newest tag of each line:
+//
+//   vault:1.18    (current)  3 unique fixable Criticals — stdlib, libcrypto3/libssl3, grpc (all seed-allowlisted)
+//   vault:1.21.4  (newest 1.x, community 1.x ends here)  4 — libcrypto3/libssl3, grpc, pgx ×2 (unchanged since #289)
+//   vault:2.2.0   (newest 2.x)  ZERO Criticals of any kind — libcrypto3 3.5.8-r0, grpc v1.83.2, pgx v5.10.0,
+//                 stdlib go1.27.2. It clears libcrypto3 + grpc WITHOUT adding pgx: the lift condition the
+//                 `<1.19` rule's own description named.
+//
+// So the refs moved to 2.2, the three `hashicorp/vault:1\.18` seed allowlist entries were DELETED (they
+// would match nothing — an UNMATCHED entry fails the gate), and the ceiling was lifted. The real
+// requirement was never "never move vault", it was "not by accident into a worse image" — the scan gate
+// now carries the second half (no vault entry is allowlisted, so any new fixable Critical blocks), and a
+// MAJOR (a raft-storage, stateful move) needs a dashboard tick. A hold replaced by nothing and a hold
+// replaced by an approval gate look identical from the absence of `allowedVersions`, so the successor
+// is what is asserted.
 const vaultDep = (updateType) => ({
   manager: 'docker-compose', datasource: 'docker', depName: 'hashicorp/vault', updateType,
 });
 
-test('hashicorp/vault is held below 1.19 on every update track', () => {
+test('(081 US8c) the vault hold is DISCHARGED — replaced by approval on a major, not by nothing', () => {
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(vaultDep(updateType)),
-      '<1.19',
-      `vault ${updateType} is not held — a 1.21 bump un-suppresses 3 allowlisted Criticals and adds 2 new pgx ones.`,
+      null,
+      `vault ${updateType} still carries a version ceiling — the refs are on 2.2 (scan-clean, T063), so a ` +
+        'ceiling now blocks the version actually deployed.',
     );
   }
+  assert.equal(
+    resolvedRuleValue(vaultDep('major'), 'dependencyDashboardApproval'),
+    true,
+    'a vault MAJOR no longer requires dashboard approval. Vault persists raft storage in prod, and the last ' +
+      'unreviewed vault move (PR #289, 1.18 -> 1.21) walked into a strictly worse image.',
+  );
+  for (const updateType of ['patch', 'minor']) {
+    assert.equal(
+      resolvedRuleValue(vaultDep(updateType), 'dependencyDashboardApproval'),
+      undefined,
+      `a vault ${updateType} requires dashboard approval — the within-major stream is the security patch ` +
+        'stream for the running image, and the infra-image-scan gate already blocks a worse one.',
+    );
+  }
+});
+
+test('(081 US8c) the premise of the lift still holds: vault refs are on 2.x, digest-pinned, and nothing allowlists vault', () => {
+  // The lift is justified ONLY by the scan of the 2.x line. If a ref drifts back to 1.x, the ceiling's
+  // reason returns; if a vault allowlist entry reappears, the scan gate no longer carries the hold.
+  for (const file of [
+    'infrastructure-as-code/docker/vault/compose.yaml',
+    'infrastructure-as-code/docker/vault/compose.prod.yaml',
+  ]) {
+    const refs = [...readFileSync(resolve(REPO_ROOT, file), 'utf8').matchAll(/image:\s*(hashicorp\/vault:\S+)/g)].map((m) => m[1]);
+    assert.equal(refs.length, 1, `${file} should carry exactly one hashicorp/vault ref, found ${refs.length}`);
+    assert.match(refs[0], /^hashicorp\/vault:2\.\d+(\.\d+)?@sha256:[0-9a-f]{64}$/,
+      `${file}: ${refs[0]} is not a digest-pinned 2.x ref — the hold was lifted on the 2.x scan alone.`);
+  }
+  const allowlist = parseYaml(readFileSync(resolve(REPO_ROOT, 'security/infra-images/allowlist.yaml'), 'utf8')) ?? [];
+  const vaultEntries = allowlist.filter((e) => /vault/.test(String(e?.image)));
+  assert.deepEqual(vaultEntries, [],
+    'security/infra-images/allowlist.yaml suppresses a vault finding again — with the ceiling lifted, the ' +
+      'scan gate is the ONLY thing stopping a worse vault image, and an allowlist entry switches it off.');
 });
 
 // UPDATED AT THE CAUSE, item #407 (2026-09-10). This control used to name
@@ -1109,6 +1161,15 @@ test('the vault hold does NOT leak onto other docker images — the control', ()
       resolvedAllowedVersions({ manager: 'docker-compose', datasource: 'docker', depName, updateType: 'minor' }),
       null,
       `${depName} picked up vault's version hold — the rule has widened past its own image.`,
+    );
+  }
+  // 081 US8c: the vault rule's successor is a MAJOR approval gate. It must not widen either — caddy and
+  // otel-lgtm are stateless and their majors are deliberately not approval-gated.
+  for (const depName of ['caddy', 'grafana/otel-lgtm']) {
+    assert.equal(
+      resolvedRuleValue({ manager: 'docker-compose', datasource: 'docker', depName, updateType: 'major' }, 'dependencyDashboardApproval'),
+      undefined,
+      `${depName} picked up vault's major-approval gate — the rule has widened past its own image.`,
     );
   }
 });
@@ -1468,8 +1529,9 @@ test('the interpreter pin and every python image move in ONE group, on every ver
 });
 
 test('vault still rides the `docker base images` group, so a digest refresh is not stranded', () => {
-  // The hold blocks a VERSION move, not the image. If this ever resolves to null, vault has fallen
-  // out of the grouped PR and its digest pin would drift alone.
+  // Written for the `<1.19` hold (which blocked a VERSION move, not the image) and kept after its lift
+  // (081 US8c): if this ever resolves to null, vault has fallen out of the grouped PR and its digest pin
+  // would drift alone.
   assert.equal(resolvedGroupName(vaultDep('patch')), 'docker base images');
 });
 
