@@ -39,6 +39,14 @@ dev = [
     "redis>=8.0.0,<9",
 ]
 
+[tool.uv]
+# pillow is transitive only (nemoguardrails -> fastembed -> pillow) and never imported here:
+# src/ never imports nemoguardrails (only tests/unit/test_rails_config.py parses rails.co), so
+# fastembed and its image path never run in the gateway.
+# fastembed 0.9.0 (latest) caps pillow<13, but nine High advisories (CVE-2026-112395..112899)
+# are fixed only in 13.0.0. Remove this override once fastembed lifts the cap.
+override-dependencies = ["pillow>=13.0.0"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py313"
