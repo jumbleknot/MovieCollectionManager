@@ -405,9 +405,10 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   *Done 2026-10-19: `openai` ^7.34.0. Nothing went RED. The prune test passed 17/17 because its fixture is
   version-blind, so that gap was closed first: the new peer-link case fails on the 6.x fixture and passes on
   the 7.x one. The override REWRITES openai's undici peer to `>=6.27.0 <7`. See research.md.*
-- [ ] T053 [US7] Fix until GREEN. **Verify GREEN**: same, 0 failures; `@gate` agents suite green; model tier
+- [x] T053 [US7] Fix until GREEN. **Verify GREEN**: same, 0 failures; `@gate` agents suite green; model tier
   on dispatch ⊆ `main`. **Done when**: PR 7b merged.
-  *GREEN 2026-10-19, merge pending: PR #807 at `3cd2bd49` is mergeable. Its `@gate` tier gave failed=0 flaky=1
+  *Done 2026-10-19: PR #807 merged (`abed3e2d`); main's run passed every required context and cd-deploy promoted
+  it (`f233565f`, promoting tip `185fb849`). GREEN before merge: PR #807 at `3cd2bd49` was mergeable. Its `@gate` tier gave failed=0 flaky=1
   (run 5649). The dispatched model tier gave failed=0 flaky=2 (run 5652); `main` gave failed=0 flaky=3 (run
   5645). See research.md.*
 
