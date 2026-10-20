@@ -84,10 +84,11 @@ test('that shared Postgres pin is on the 18 line — both databases moved togeth
 });
 
 // The 18 image moved PGDATA to the version-specific `/var/lib/postgresql/18/docker` and declares its
-// VOLUME at `/var/lib/postgresql`. A named volume left on the pre-18 `/var/lib/postgresql/data` path is
-// NOT where 18 writes: the cluster lands in an anonymous volume and is silently lost on the next
-// `down` — or, over a 16 data dir, the entrypoint refuses to start. keycloak and agent-db already
-// mount the parent for exactly this reason. The pin and the mount are one change; asserted together.
+// VOLUME at `/var/lib/postgresql`. MEASURED 2026-10-20 on 18-alpine@sha256:77f58511: a mount left on the
+// pre-18 `/var/lib/postgresql/data` path makes the entrypoint exit 1 — even when that volume is EMPTY
+// ("there appears to be PostgreSQL data in: /var/lib/postgresql/data (unused mount/volume)") — and leaves
+// an anonymous volume behind. keycloak and agent-db already mount the parent for exactly this reason.
+// The pin and the mount are one change; asserted together.
 test('both observability postgres services mount the 18 layout (/var/lib/postgresql), not the pre-18 /data path', () => {
   for (const rel of FILES) {
     const svc = load(rel)?.services ?? {};
@@ -97,12 +98,47 @@ test('both observability postgres services mount the 18 layout (/var/lib/postgre
         mounts.includes('/var/lib/postgresql'),
         `${rel}: ${name} does not mount a volume at /var/lib/postgresql (mounts: ${JSON.stringify(mounts)}).\n` +
           '  postgres 18 keeps its cluster under /var/lib/postgresql/18/docker; without the parent mounted the ' +
-          'data goes to an anonymous volume.',
+          'cluster is not on the named volume.',
       );
       assert.ok(
         !mounts.includes('/var/lib/postgresql/data'),
-        `${rel}: ${name} still mounts the pre-18 /var/lib/postgresql/data path — postgres 18 does not write there.`,
+        `${rel}: ${name} still mounts the pre-18 /var/lib/postgresql/data path — the postgres 18 entrypoint exits 1 on it.`,
       );
+    }
+  }
+});
+
+// The 18 cluster must NOT be pointed at the volume that held the 16 one. MEASURED 2026-10-20 (spec 081
+// US8b rehearsal, on a copy of a 16 volume): postgres:18 REFUSES to start over a 16 data dir in BOTH
+// layouts — mounted at the 18 parent ("there appears to be PostgreSQL data in: /var/lib/postgresql")
+// and at the old /data path — exit 1, which `restart: unless-stopped` turns into a crash loop. In prod a
+// merge IS a deploy (Komodo), so reusing the volume name would take Unleash and Langfuse down the moment
+// this file lands. A NEW external volume instead fails the deploy up front ("external volume ... not
+// found") with the 16 containers still running, until the operator pre-creates it and restores the
+// Unleash dump into it. The 16 volumes stay untouched as the rollback (the agent-audit-opensearch-v3-data
+// precedent, feature 071).
+const PRE_18_VOLUME = {
+  'langfuse-postgres': 'observability-langfuse-postgres-data',
+  'unleash-postgres': 'observability-unleash-postgres-data',
+};
+test('the 18 clusters live on NEW volumes — never the volume that holds the 16 data (rollback kept intact)', () => {
+  for (const rel of FILES) {
+    const doc = load(rel) ?? {};
+    for (const [name, pre18] of Object.entries(PRE_18_VOLUME)) {
+      const mount = (doc.services?.[name]?.volumes ?? [])
+        .map((v) => (typeof v === 'string' ? v.split(':') : [v?.source, v?.target]))
+        .find(([, target]) => target === '/var/lib/postgresql');
+      assert.ok(mount, `${rel}: ${name} has no /var/lib/postgresql mount (see the layout test)`);
+      const key = mount[0];
+      const resolved = doc.volumes?.[key]?.name ?? key;
+      assert.notEqual(
+        resolved,
+        pre18,
+        `${rel}: ${name} mounts '${resolved}', the volume holding the postgres 16 cluster.\n` +
+          '  postgres 18 refuses to start on a 16 data dir (exit 1 -> crash loop; a merge is a prod deploy), and ' +
+          'the 16 volume is the rollback. Give 18 its own volume and restore the Unleash dump into it.',
+      );
+      assert.match(resolved, /-v18-data$/, `${rel}: ${name} volume '${resolved}' does not carry the -v18 marker`);
     }
   }
 });

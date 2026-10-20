@@ -69,10 +69,10 @@
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in Go stdlib. Now on 18.6 (PR #362), which is NOT a remediation — that PR measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6 that 18.3 did, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10); feature 036 had separately verified 18.4-alpine3.24 was no better. Internal-only. NARROWED 2026-09-10 (item #406) from the transitional `18\.[36]` span, now that #362 has landed and 18.3 is no longer referenced — see the otel-lgtm entry below for why the span existed for exactly one merge.'
   addedBy: 'seed'
-- image: 'postgres:16-alpine'
+- image: 'postgres:18-alpine'
   id: 'CVE-2025-68121'
-  justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 16-alpine — feature 036 verified the newest 16.14-alpine3.24 STILL bundles a pre-fix Go 1.24.6 binary (< fix 1.24.13; Trivy), so pinning/bumping does NOT clear this Critical. Internal-only.'
-  addedBy: 'seed'
+  justification: 'Carried over from the postgres:16-alpine baseline entry (035), which this replaces: spec 081 US8b moved the shared Langfuse/Unleash observability postgres 16-alpine -> 18-alpine. Trivy 0.74.0 (2026-10-20, gate criteria --severity CRITICAL --ignore-unfixed) on 18-alpine@sha256:77f58511 reports exactly the finding 16-alpine@sha256:cf78e766 did and nothing else: usr/local/bin/gosu stdlib v1.24.6 (< fix 1.24.13) — the move neither clears nor adds a Critical. Internal-only (backend-network, no published port).'
+  addedBy: 'claude (spec 081 US8b)'
 # CVE-2025-14813 (bcprov-jdk18on 1.82→1.84) remediated by bumping Keycloak 26.5.5→26.7.0 (feature 036).
 # Entry removed: the 26.5.5 ref no longer exists.
 #
