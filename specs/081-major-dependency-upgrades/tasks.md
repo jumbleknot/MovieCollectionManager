@@ -478,14 +478,19 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
 
 **PR 9a — bson 2 → 3**
 
-- [ ] T064 [US9] **Verify RED (upgrade)**: in `backend/mc-service/Cargo.toml` set `mongodb = { version = "3",
+- [x] T064 [US9] **Verify RED (upgrade)**: in `backend/mc-service/Cargo.toml` set `mongodb = { version = "3",
   default-features = false, features = ["compat-3-3-0", "bson-3", "rustls-tls", "dns-resolver"] }` and
   `bson = { version = "3", features = [<bson-3 equivalents of chrono/uuid>] }`;
   `pnpm nx test:unit mc-service --skip-nx-cache` — record compile/test failures.
+  **RED recorded 2026-10-20**: 8 compile errors (`from_document` renamed ×2, `Regex` fields now `CString` ×4,
+  regex test ×2) plus one silent break (serde_json `preserve_order` lost) — research.md "R9 evidence — PR 9a".
 - [ ] T065 [US9] Migrate until GREEN. **Verify GREEN**: same command, 0 failures; then
   `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mc-service` (every stored shape round-trips, keyset
   cursor decode, collation uniqueness), `pnpm nx lint mc-service`, the `rust:alpine` musl Docker build,
   `pnpm nx e2e mcm-app`. **Done when**: PR 9a merged; `cargo tree -d` shows no bson duplicate.
+  **GREEN locally 2026-10-20** (unticked until merge): unit 160/0, integration 187/0/0 ignored, lint clean,
+  musl build green, no bson duplicate; web E2E 149 passed / 3 assistant-dock env failures identical on the
+  pre-081 image — research.md "R9 evidence — PR 9a".
 
 **PR 9b — base64 0.23 + reqwest 0.13 (approval-gated)**
 

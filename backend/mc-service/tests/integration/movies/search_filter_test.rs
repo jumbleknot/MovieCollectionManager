@@ -391,6 +391,45 @@ async fn search_with_regex_special_chars_does_not_error() {
     assert_eq!(list.items[0].title, "Star Wars (1977)");
 }
 
+/// 081 US9 PR 9a: a BSON regex pattern is a cstring, which cannot hold a NUL byte. bson 3 rejects
+/// one at construction (bson 2 failed the whole query at serialization), so a NUL in search text is
+/// escaped to the PCRE `\x00`. This proves the live server accepts that escape AND that it still
+/// means "the literal NUL character": the stored title carries one, and only it matches.
+#[tokio::test]
+async fn search_with_nul_character_matches_literally_and_does_not_error() {
+    let (_, movie_repo, coll_id, db) = setup().await;
+    movie_repo
+        .create(&coll_id, "sf-owner", movie("Ma\0trix", 1999, "Sci-Fi"))
+        .await
+        .expect("create NUL-titled movie failed");
+    movie_repo
+        // A different year: the unique index's `strength: 2` collation treats NUL as ignorable,
+        // so "Ma\0trix" and "Matrix" in the same year are the SAME movie to it (E11000).
+        .create(&coll_id, "sf-owner", movie("Matrix", 2003, "Series"))
+        .await
+        .expect("create Matrix failed");
+
+    let params = ListMoviesParams {
+        search: Some("a\0t".to_string()),
+        ..Default::default()
+    };
+    let listed = movie_repo.list(&coll_id, "sf-owner", params.clone()).await;
+    let counted = movie_repo.count(&coll_id, "sf-owner", params).await;
+    crate::common::cleanup_db(&db).await;
+
+    let list = listed.expect("search containing NUL must not error");
+    assert_eq!(
+        list.items.len(),
+        1,
+        "only the title holding a literal NUL matches"
+    );
+    assert_eq!(
+        list.items[0].title, "Ma\0trix",
+        "a NUL in a stored string round-trips"
+    );
+    assert_eq!(counted.expect("count with NUL search must not error"), 1);
+}
+
 // ─── T138: Filter by ownedMedia and ripQuality ────────────────────────────────
 
 /// ownedMedia filter returns only movies with that media format.

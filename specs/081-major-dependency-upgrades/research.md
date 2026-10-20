@@ -539,6 +539,57 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   thing that keeps them off the weekly budget. That is item #254's acceptance shape (landed, or its own item
   with a recorded reason) — not a silent deferral.
 
+### R9 evidence — PR 9a (bson 2 → 3), measured 2026-10-20
+
+- **Manifest.** `mongodb = { version = "3", default-features = false, features = ["compat-3-3-0", "bson-3",
+  "rustls-tls", "dns-resolver"] }` — feature names read from the `mongodb-3.9.1` `Cargo.toml` (`default =
+  ["compat-3-0-0", "rustls-tls", "dns-resolver"]`, `compat-3-0-0 = ["compat-3-3-0", "bson-2"]`), so this is
+  exactly the default set with `bson-2` swapped for `bson-3`. `bson = { version = "3", features = ["serde",
+  "chrono-0_4", "uuid-1"] }` — bson 3.1.0 keeps the `chrono-0_4`/`uuid-1` names but makes **`serde` an optional
+  feature** (mongodb's own `bson3` dependency enables it; named here so mc-service does not lean on that).
+- **Verify RED (T064)**: `pnpm nx test:unit mc-service --skip-nx-cache` → **8 compile errors** in the lib test
+  build: `bson::from_document` gone (2 — renamed `deserialize_from_document`), `bson::Regex { pattern, options }`
+  now `CString`, not `String` (4), and the regex test's `CString == &str` / `.contains` (2).
+- **A hidden second break the compiler did not report: serde_json `preserve_order`.** bson 2 enabled
+  `serde_json/preserve_order`; bson 3 does not. With the bump alone, `Cargo.lock` dropped `indexmap`+`foldhash`
+  from serde_json and every `json!` object went **alphabetical** — the RFC 9457 problem body would have changed
+  from `type,title,status,detail` to `detail,status,title,type` on the wire, with all tests green. mc-service now
+  names `serde_json = { features = ["preserve_order"] }`; `problem_body_keeps_rfc_9457_member_order_on_the_wire`
+  pins the exact bytes (**mutation RED**: dropping the feature fails it, 157/1).
+- **NUL in search text.** A BSON regex pattern is a cstring. bson 2 failed the whole query at serialization
+  (`InvalidCString` → 500); bson 3 rejects it at `CString` construction. `escape_for_regex` now emits the PCRE
+  escape `\x00` (the same literal match), and `ci_contains_regex` maps an (unreachable) conversion failure to a
+  400 `ValidationError`, not a panic. Live proof: `search_with_nul_character_matches_literally_and_does_not_error`
+  — the server accepts `\x00` and it matches only the stored NUL title (**mutation RED**: no escape →
+  `ValidationError("Search text is not a valid pattern")`). Found on the way: the unique index's `strength: 2`
+  collation treats NUL as **ignorable**, so `"Ma\0trix"` and `"Matrix"` (same year/contentType) collide (E11000).
+- **Stored-document compatibility.** The stored shapes use only ObjectId, DateTime, string, i32, bool, null,
+  arrays and nested documents — no `serde_helpers`, no uuid/chrono-typed fields, no Decimal/i64. Golden
+  fixtures: the exact bytes **bson 2.15.0** wrote for a fully-populated `MovieDao` and a `CollectionDao` (generated
+  once from a scratch crate pinned to `bson =2.15.0` with the same struct definitions) decode through the
+  driver's raw path (`deserialize_from_slice`) and re-serialize **byte-identical** via both `serialize_to_vec` and
+  `serialize_to_raw_document_buf` (**mutation RED**: a field reorder / a `skip_serializing_if` on a null field
+  fail both). Live: every document in the local dev `mc_db` (20 movies, 6 collections, written by earlier bson-2
+  builds) decoded 20/20 + 6/6 and re-serialized byte-identical 20/20 + 6/6 (throwaway example, not committed).
+- **Keyset cursor**: serde_json over a struct, no bson type in it — byte-identical by construction; pinned by
+  `page_cursor_wire_bytes_are_stable_across_builds` (a literal base64 cursor must still decode, and an encode
+  must reproduce it). **Errors**: no `bson::de`/`ser::Error` is matched anywhere; `mongodb::error::ErrorKind::Write`
+  (duplicate-key → `DuplicateCollectionName`/`DuplicateMovie`) is unchanged and its integration tests pass.
+- **Lockfile**: one `[[package]]` changes — `bson 2.15.0 → 3.1.0`; its dependency list drops `getrandom 0.2.17`,
+  `once_cell`, `serde_json` and gains `simdutf8`, `thiserror 2.0.21` (both already in the lock). No package is added
+  or removed. `cargo tree -d` shows **no bson duplicate** (`cargo tree -i bson@2.15.0` → no match). The musl
+  normal-graph `cargo tree -e features` diff vs `main` is bson/mongodb feature names only, plus `time/large-dates`
+  dropping (bson 2 enabled it; it governs years beyond ±9999 in formatting, unused here) — **no TLS change**.
+- **Verify GREEN (T065)**: `test:unit` **160 passed / 0 failed** (155 on `main` + 5 new);
+  `MCM_REQUIRE_LIVE_STACK=1 test:integration` **187 passed / 0 failed / 0 ignored**, 4 binaries (186 + 1 new);
+  `cargo build --tests` all targets; `nx lint` (clippy `--all-targets -D warnings`) clean; `rust:alpine` musl
+  Docker build green; web E2E (Playwright v1.63.0 image, dev-container BFF, bson-3 mc-service image) **149 passed,
+  3 failed, 56 skipped, 3 did not run** — the 3 are assistant-dock specs (`assistant.spec.ts:62/78`,
+  `responsive.spec.ts:73`) with no agent stack up; the same specs on the **pre-081** mc-service image gave the
+  identical 2-failed/7-passed split (`:62` is intermittent on both), so they are environment, not bson. Skips are
+  the agent specs (no `E2E_AGENT_PRODUCTION`) and the backup specs (backup credentials deliberately withheld from
+  the shared backup containers); CI's `app-e2e` runs the full gate tier.
+
 ## R10. pnpm 12 — a lockfile-wholesale stage with a hard-fail settings check
 
 From the v12.0.0 release notes (GitHub API, `pnpm/pnpm` tag `v12.0.0`):

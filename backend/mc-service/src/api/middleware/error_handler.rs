@@ -95,3 +95,23 @@ pub fn domain_error_to_response(err: DomainError) -> Response {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 081 US9 PR 9a: the problem body's key ORDER is part of the bytes on the wire. It was
+    /// insertion order only because bson 2 switched on serde_json's `preserve_order`; bson 3 does
+    /// not, so without this crate naming the feature the body silently went alphabetical.
+    #[tokio::test]
+    async fn problem_body_keeps_rfc_9457_member_order_on_the_wire() {
+        let resp = problem_response(StatusCode::NOT_FOUND, "not-found", "Not Found", "gone");
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        assert_eq!(
+            std::str::from_utf8(&bytes).expect("utf8"),
+            r#"{"type":"https://mc-service.example/errors/not-found","title":"Not Found","status":404,"detail":"gone"}"#
+        );
+    }
+}

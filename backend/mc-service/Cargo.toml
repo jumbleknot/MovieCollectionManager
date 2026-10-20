@@ -22,12 +22,21 @@ tower-http = { version = "0.7", features = ["trace", "cors"] }
 axum-keycloak-auth = "0.8"
 
 # Database
-mongodb = "3"
-bson = { version = "2", features = ["chrono-0_4", "uuid-1"] }
+# bson 3 (081 US9 PR 9a): mongodb 3.x defaults to `compat-3-0-0` = `compat-3-3-0` + `bson-2`, so the
+# default feature set would keep bson 2 in the graph beside ours. Opting out of defaults and naming
+# `bson-3` makes mongodb's re-exported `mongodb::bson` and this crate's `bson` the same crate; the
+# remaining two features are mongodb's other defaults, restated. bson 3 makes `serde` an optional
+# feature (mongodb enables it too — named here so this crate does not depend on that).
+mongodb = { version = "3", default-features = false, features = ["compat-3-3-0", "bson-3", "rustls-tls", "dns-resolver"] }
+bson = { version = "3", features = ["serde", "chrono-0_4", "uuid-1"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# `preserve_order` was enabled implicitly by bson 2 (its serde_json dependency names it); bson 3
+# does not, which would silently re-order every `json!` object this service emits — e.g. RFC 9457
+# problem bodies from type,title,status,detail to alphabetical. Named here so the wire bytes stay
+# what they were (081 US9 PR 9a).
+serde_json = { version = "1", features = ["preserve_order"] }
 
 # Logging / Tracing
 tracing = "0.1"
