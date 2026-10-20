@@ -1151,27 +1151,6 @@
     },
     {
       "description": [
-        "THE OBSERVABILITY POSTGRES IS HELD ON 16 — the shared Langfuse/Unleash pin (spec FR-005,",
-        "scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs). ONE digest backs both",
-        "langfuse-postgres and unleash-postgres, and ADR-0002 §4 covers only the Langfuse data, so a",
-        "major on this pin migrates Unleash as a side effect.",
-        "MEASURED 2026-10-09, PR #698: `docker base images (major)` moved all four observability refs",
-        "16-alpine -> 18-alpine, and the guard red-lined `guardrails / naming`. The guard was right and",
-        "the bot had no way to know: nothing here told it. This is the vault/python `allowedVersions`",
-        "pattern, scoped by FILE so keycloak/agent-db (already on 18) keep their own major stream; a",
-        "digest refresh and any 16.x patch still flow through `docker base images`.",
-        "RAISE ONLY through the spec that moves both databases, and update the guard in the same change."
-      ],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["postgres"],
-      "matchFileNames": [
-        "infrastructure-as-code/docker/observability/compose.yaml",
-        "infrastructure-as-code/docker/observability/compose.prod.yaml"
-      ],
-      "allowedVersions": "<17"
-    },
-    {
-      "description": [
         "STATEFUL DATASTORE MAJORS NEED AN EXPLICIT DASHBOARD TICK — the opensearch (rule above) and langfuse",
         "approval gate, extended to every database image this repository runs.",
         "MEASURED 2026-10-09, PR #698: `docker base images (major)` carried clickhouse 25.12 -> 26.6 and redis",
@@ -1181,8 +1160,8 @@
         "gated opensearch and langfuse applies to every image below, and nothing listed them.",
         "Approval, not `allowedVersions`: the requirement is not-by-accident, not never. Patches, minors and",
         "digest refreshes stay automatic — that is the security patch stream for the running images. The",
-        "observability postgres stays HARD-held below 17 by the rule above; this rule only adds the tick for",
-        "the postgres majors that ARE allowed to move (keycloak, agent-db).",
+        "observability postgres (the shared Langfuse/Unleash pin) was HARD-held below 17 until spec 081 US8b moved",
+        "both databases to 18 together; it now rides this tick like every other postgres (keycloak, agent-db).",
         "renovate-workflow.guard.test.mjs asserts every name here requires approval on major and not on patch."
       ],
       "matchDatasources": ["docker"],

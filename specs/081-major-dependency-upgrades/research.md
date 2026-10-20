@@ -1786,3 +1786,80 @@ push of `43e92656` (US7a merged):
   `agent-navigate-movie:87` were flaky instead. All of these are `@model-decision` and all passed on retry.
 - The turn rate is unchanged, at 104 vs 105. That is expected, because openai is inlined but is not on the
   run path: the agent route uses `ExperimentalEmptyAdapter` and the LangGraph HTTP agent.
+
+### US8 (PR 8b, observability postgres 16 → 18, Langfuse + Unleash together) — 2026-10-20
+
+**Data decision (OQ-3, recorded default).** Unleash flag state is **preserved** (dump/restore); Langfuse's
+Postgres is **discarded** per ADR-0002 §4 and re-initialised by `LANGFUSE_INIT_*` (same org/project id
+`movie-assistant`, same project keys — the gateway's tracing keys keep working). ClickHouse/RustFS are not
+touched by this PR. A `pg_dumpall` of Langfuse is still taken first, as the rollback copy.
+
+**The pin.** `postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873`
+(index digest, `docker buildx imagetools inspect postgres:18-alpine`, 2026-10-20; reports `PostgreSQL 18.6`).
+All four refs move together; the shared-pin guard still asserts ONE image for both consumers.
+
+**Scan (gate criteria, `trivy 0.74.0 --severity CRITICAL --ignore-unfixed`).** 18-alpine@77f58511 and the old
+16-alpine@cf78e766 report the **identical single** finding: `usr/local/bin/gosu` stdlib v1.24.6,
+CVE-2025-68121 (fix 1.24.13). The move neither clears nor adds a Critical, so the `postgres:16-alpine`
+allowlist entry is **replaced** by a `postgres:18-alpine` one (not added beside it).
+
+**The 18 data-directory layout — measured, and it changes the volume plan.** postgres 18 moved PGDATA to
+`/var/lib/postgresql/18/docker` and its VOLUME to `/var/lib/postgresql`. On a copy of a real 16 Unleash volume:
+- 18 mounted at the parent `/var/lib/postgresql` over the 16 volume → **exit 1** ("there appears to be
+  PostgreSQL data in: /var/lib/postgresql").
+- 18 mounted at the old `/var/lib/postgresql/data` over the 16 volume → **exit 1**, same message.
+- 18 mounted at `/var/lib/postgresql/data` on an **empty** volume → **exit 1** ("… (unused mount/volume)"),
+  and an anonymous volume is left behind.
+
+So neither keeping the volume name nor keeping the mount path is viable: with `restart: always` both become a
+crash loop of Unleash's and Langfuse's databases the moment Komodo deploys the merge. The change therefore
+(a) mounts the parent `/var/lib/postgresql`, and (b) moves both services onto **new** volumes
+`observability-{langfuse,unleash}-postgres-v18-data` (the feature-071 `-v3-data` precedent), leaving the 16
+volumes untouched as the rollback. In prod those are `external: true`: a deploy before the operator creates
+them fails **up front** — measured here with a scratch project: `external volume "…-v18-data" not found`,
+and the running 16 containers were left running and unchanged (`postgres:16-alpine`, healthy). That matches
+the feature-080 RustFS measurement in `docs/runbooks/prod-control-tower.md`.
+
+**Local rehearsal (T062).** Run against the real compose files — `main`'s 16 `compose.yaml` and this branch's
+18 one — under a separate project (`-p us8b-rh`) with an override mapping every named volume to a `us8b-rh-*`
+name, so the dev stack's own volumes were never touched (`pnpm nx up-observability` is the same compose file
+but would have bound the real `observability-*` volumes). `--project-directory` pointed at the main checkout
+for the two read-only bind mounts (clickhouse config, OPA policies), which are unchanged by this PR.
+1. **16 up** (`langfuse-postgres`, `unleash-postgres`, `unleash-service`, `unleash-seed`): PostgreSQL 16.15.
+2. **State created** through the Unleash admin API: new flag `us8b.rehearsal` (release, description, a
+   `flexibleRollout` 37% strategy, ON in `development`); `mcm.agent.kill-switch` ON in `development`; a new
+   client API token `us8b-rehearsal-client`. Snapshot: 4 features, 2 strategies, 3 API tokens, 2
+   env-enabled rows, 15 events, 397 migrations; the client API (new token) listed 4 features, 2 enabled.
+3. **`pg_dumpall`** of both instances (unleash 225 KB / 108 `COPY` blocks; langfuse 3.5 KB), then
+   `compose down` **without** `-v`.
+4. **Pre-seed, exactly as prod will:** `docker volume create` both `-v18-data` volumes; a throwaway
+   `postgres:18-alpine@77f58511` container on the Unleash one (`POSTGRES_USER/DB=unleash`) — data directory
+   `/var/lib/postgresql/18/docker`, PostgreSQL 18.6; `psql -d postgres < unleash dump`. stderr was exactly the
+   two expected lines, `role "unleash" already exists` and `database "unleash" already exists`. Row counts
+   after restore **equal** the snapshot (all six). Throwaway container removed.
+5. **18 up** on the pre-seeded volumes — the full Langfuse chain too (`langfuse-web`, `-worker`,
+   `-clickhouse`, `-redis`, `-rustfs`): every container healthy. `docker inspect` mounts:
+   `us8b-rh-unleash-postgres-v18-data -> /var/lib/postgresql` (no anonymous volume).
+6. **Verify:** Unleash admin state (features, environments, strategy parameters, API-token list) **identical**
+   to step 2 (`diff` empty); the client API with the token minted on 16 returns the same 4 features / 2 enabled
+   on 18; `unleash-seed` re-ran idempotently. `/health` 200. Langfuse `/api/public/health` 200
+   (`{"status":"OK","version":"4.56.0"}`), UI `/auth/sign-in` 200, `GET /api/public/projects` with the INIT
+   keys → `movie-assistant`; 449 Prisma migrations applied on the fresh 18 database.
+7. **Rollback:** 18 down; 16 compose up on the untouched 16 volumes → PostgreSQL 16.15, Unleash state
+   identical to step 2.
+
+All rehearsal containers, volumes (including two anonymous ones) and the seven images pulled for it were
+removed afterwards; the dumps were deleted from the scratchpad.
+
+**Guards.** `langfuse-postgres-shared-pin.guard.test.mjs` updated at the cause: one shared pin (unchanged
+test), on the **18 line and digest-pinned**, mounting `/var/lib/postgresql` and never `/data`, on a volume
+that is **not** the 16 one. RED against `main`'s compose, GREEN after. Mutation REDs,
+each restored after: both prod refs back to 16; dev `unleash-postgres` alone back to 16 (split); digest
+dropped; prod Unleash mount back to `/data`; prod Unleash volume back to the 16 name; the `<17` rule restored;
+`postgres` removed from the approval-on-major rule; the pin moved to 19 — **every one red**.
+`renovate-workflow.guard.test.mjs` asserts the successor (no ceiling on patch/minor/major in either
+observability file, approval on major, none on patch, same resolution as keycloak's postgres).
+
+**Dev environments.** A developer's local `observability-unleash-postgres-data` (16) is simply not mounted any
+more; the 18 stack starts on a new empty volume and `unleash-seed` recreates the three default-off flags.
+Anyone with local flag state they care about follows the same dump → pre-seed steps.

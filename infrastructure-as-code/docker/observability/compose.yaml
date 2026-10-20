@@ -104,7 +104,7 @@ services:
     logging: *obs-logging
 
   langfuse-postgres:
-    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     container_name: langfuse-postgres
     profiles: [observability]
     restart: unless-stopped
@@ -113,7 +113,9 @@ services:
       POSTGRES_PASSWORD: "${LANGFUSE_PG_PASSWORD:?set in stacks/observability.env}"
       POSTGRES_DB: langfuse
     volumes:
-      - langfuse-pg-data:/var/lib/postgresql/data
+      # postgres 18 moved PGDATA to /var/lib/postgresql/18/docker → mount the PARENT. A mount at the pre-18
+      # /data path makes the 18 entrypoint exit 1, even on an EMPTY volume (measured, spec 081 US8b).
+      - langfuse-pg-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:
@@ -289,7 +291,7 @@ services:
     logging: *obs-logging
 
   unleash-postgres:
-    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     container_name: unleash-postgres
     profiles: [observability]
     restart: unless-stopped
@@ -298,7 +300,9 @@ services:
       POSTGRES_PASSWORD: "${UNLEASH_PG_PASSWORD:?set in stacks/observability.env}"
       POSTGRES_DB: unleash
     volumes:
-      - unleash-pg-data:/var/lib/postgresql/data
+      # postgres 18 moved PGDATA to /var/lib/postgresql/18/docker → mount the PARENT. A mount at the pre-18
+      # /data path makes the 18 entrypoint exit 1, even on an EMPTY volume (measured, spec 081 US8b).
+      - unleash-pg-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:
@@ -332,7 +336,7 @@ services:
 
 volumes:
   langfuse-pg-data:
-    name: observability-langfuse-postgres-data
+    name: observability-langfuse-postgres-v18-data
   langfuse-clickhouse-data:
     name: observability-langfuse-clickhouse-data
   langfuse-clickhouse-logs:
@@ -342,7 +346,7 @@ volumes:
   otel-lgtm-data:
     name: observability-otel-lgtm-data
   unleash-pg-data:
-    name: observability-unleash-postgres-data
+    name: observability-unleash-postgres-v18-data
 
 networks:
   backend-network:

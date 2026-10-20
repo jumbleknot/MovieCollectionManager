@@ -3178,24 +3178,47 @@ test('(2026-10-09) every stateful datastore MAJOR requires dashboard approval; i
   }
 });
 
-test('(2026-10-09) the shared observability postgres is HARD-held below 17; other postgres pins are not', () => {
-  // langfuse-postgres-shared-pin.guard (FR-005) rejects any move off 16 here; PR #698 proposed 18 because
-  // nothing told Renovate. The ceiling must stay scoped by FILE — keycloak and agent-db are already on 18.
+// UPDATED AT THE CAUSE — spec 081 US8b. This test asserted the `<17` HARD hold on the shared
+// Langfuse/Unleash postgres. US8b moved both databases to 18 together (Unleash restored, Langfuse traces
+// discarded per ADR-0002 §4) and lifted the hold in the same change. A hold deliberately discharged and
+// a hold someone deleted look identical from the absence of `allowedVersions`, so — exactly as for
+// opensearch (071) and langfuse (072) — what is asserted now is the SUCCESSOR: no ceiling (a `<17` left
+// behind would block the 18 actually deployed) AND the next major still needs a dashboard tick.
+// langfuse-postgres-shared-pin.guard is the second lock: it reds a 19 that arrives without its own spec.
+test('(081 US8b) the shared observability postgres hold is DISCHARGED — replaced by approval, not by nothing', () => {
   for (const packageFile of [
     'infrastructure-as-code/docker/observability/compose.yaml',
     'infrastructure-as-code/docker/observability/compose.prod.yaml',
   ]) {
+    for (const updateType of ['patch', 'minor', 'major']) {
+      assert.equal(
+        resolvedAllowedVersions({ ...heldImage('postgres', updateType), packageFile }),
+        null,
+        `${packageFile}: postgres ${updateType} still carries a version ceiling — spec 081 US8b moved the ` +
+          'shared Langfuse/Unleash pin to 18, so a ceiling below 18 now blocks the version actually deployed.',
+      );
+    }
     assert.equal(
-      resolvedAllowedVersions({ ...heldImage('postgres', 'major'), packageFile }),
-      '<17',
-      `${packageFile}: the shared Langfuse/Unleash postgres lost its <17 ceiling`,
+      resolvedRuleValue({ ...heldImage('postgres', 'major'), packageFile }, 'dependencyDashboardApproval'),
+      true,
+      `${packageFile}: a postgres MAJOR on the shared Langfuse/Unleash pin no longer requires dashboard ` +
+        'approval. Moving it is a data migration of the Unleash store (dump/restore), never a Friday-window merge.',
+    );
+    assert.equal(
+      resolvedRuleValue({ ...heldImage('postgres', 'patch'), packageFile }, 'dependencyDashboardApproval'),
+      undefined,
+      `${packageFile}: a postgres PATCH requires dashboard approval — the within-major patch stream is the ` +
+        'security patch stream for the running image and must stay automatic.',
     );
   }
-  assert.equal(
-    resolvedAllowedVersions({ ...heldImage('postgres', 'major'), packageFile: 'infrastructure-as-code/docker/keycloak/compose.yaml' }),
-    null,
-    'the observability postgres ceiling leaked onto keycloak, which is already on 18 — scope it by matchFileNames',
-  );
+  // And it resolves exactly like the other postgres pins: the observability files are no longer special.
+  for (const key of ['allowedVersions', 'dependencyDashboardApproval']) {
+    assert.equal(
+      resolvedRuleValue({ ...heldImage('postgres', 'major'), packageFile: 'infrastructure-as-code/docker/observability/compose.prod.yaml' }, key),
+      resolvedRuleValue({ ...heldImage('postgres', 'major'), packageFile: 'infrastructure-as-code/docker/keycloak/compose.yaml' }, key),
+      `the observability postgres and keycloak postgres resolve to DIFFERENT ${key} — a file-scoped rule survived.`,
+    );
+  }
 });
 
 // ── the OpenWiki generator's locked tree moves as ONE unit (item #704) ───────────────────────────────

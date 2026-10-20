@@ -111,7 +111,7 @@ services:
     logging: *obs-logging
 
   langfuse-postgres:
-    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     container_name: langfuse-postgres
     restart: always
     environment:
@@ -119,7 +119,9 @@ services:
       POSTGRES_PASSWORD: "${LANGFUSE_PG_PASSWORD:?set in .env.prod}"
       POSTGRES_DB: langfuse
     volumes:
-      - langfuse-pg-data:/var/lib/postgresql/data
+      # postgres 18 moved PGDATA to /var/lib/postgresql/18/docker → mount the PARENT. A mount at the pre-18
+      # /data path makes the 18 entrypoint exit 1, even on an EMPTY volume (measured, spec 081 US8b).
+      - langfuse-pg-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:
@@ -323,7 +325,7 @@ services:
     logging: *obs-logging
 
   unleash-postgres:
-    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     container_name: unleash-postgres
     restart: always
     environment:
@@ -331,7 +333,9 @@ services:
       POSTGRES_PASSWORD: "${UNLEASH_PG_PASSWORD:?set in .env.prod}"
       POSTGRES_DB: unleash
     volumes:
-      - unleash-pg-data:/var/lib/postgresql/data
+      # postgres 18 moved PGDATA to /var/lib/postgresql/18/docker → mount the PARENT. A mount at the pre-18
+      # /data path makes the 18 entrypoint exit 1, even on an EMPTY volume (measured, spec 081 US8b).
+      - unleash-pg-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:
@@ -373,9 +377,13 @@ services:
     logging: *obs-logging
 
 volumes:
+  # Spec 081 US8b — the two postgres-18 volumes are NEW external volumes (`-v18-data`); the operator
+  # creates them and restores the Unleash dump into its one BEFORE the merge that deploys this file
+  # (docs/runbooks/prod-control-tower.md). The pre-18 `-postgres-data` volumes are left untouched as the
+  # rollback. A missing external volume fails the deploy before any container is recreated.
   langfuse-pg-data:
     external: true
-    name: observability-langfuse-postgres-data
+    name: observability-langfuse-postgres-v18-data
   langfuse-clickhouse-data:
     external: true
     name: observability-langfuse-clickhouse-data
@@ -390,7 +398,7 @@ volumes:
     name: observability-otel-lgtm-data
   unleash-pg-data:
     external: true
-    name: observability-unleash-postgres-data
+    name: observability-unleash-postgres-v18-data
 
 networks:
   backend-network:
