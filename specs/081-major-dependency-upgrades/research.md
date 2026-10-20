@@ -347,6 +347,124 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   `renovate.json` already requires a dashboard tick for this major (PR #705).
   The constitution's stack line (line 253) names `mongodb-community-server:8.2.6-ubuntu2204-slim`, which is
   already stale against the 8.0.8-ubi9 actually run; the Mongo PR amends it.
+- **MongoDB — T054 (M8) + T055 outcome, measured 2026-10-20: SUPPORTED, no blocker; target `9.0.4-ubi9`.**
+  `www.mongodb.com` does not resolve in the sandbox, so every upstream citation below is the docs **source**
+  in `github.com/mongodb/docs` at commit `b5c8fd24bcd2476778067bb0798fa5dfa45e9ff0` (branch `main`, which
+  builds the current manual — it carries the 9.0 release notes); paths are relative to
+  `content/manual/manual/source/` unless stated. Line 349's "constitution line 253" is now **line 254**.
+
+  **Upgrade path — a direct 8.0 → 9.0 binary move is supported; no pass through 8.1/8.2/8.3.**
+  - `includes/9.0-upgrade-guidance-checklists.rst` (rendered with `includes/9.0-upgrade-from-8.0-replacements.rst`,
+    oldversion=8.0, olderversion=8.3): *"To upgrade an existing MongoDB deployment to 9.0, you must be running
+    a 8.0 or 8.3 release."* 9.0 has a dedicated page `release-notes/9.0-upgrade-from-8.0.txt` ("Upgrade 8.0 to
+    9.0") beside the 8.3 → 9.0 one. No minimum 8.0 **patch** is stated for the upgrade (only for downgrade,
+    below), so 8.0.8 qualifies.
+  - **Because 8.0 → 9.0 skips the rapid releases, their compatibility notes apply too** — read
+    `release-notes/8.2-compatibility.txt` (which embeds 8.1's) and `8.3-compatibility.txt` as well as
+    `9.0-compatibility.txt`; see "codebase impact" below.
+  - **Prerequisite: FCV must be `"8.0"`** (`9.0-upgrade-from-8.0.txt`: *"the 8.0 deployment must have
+    featureCompatibilityVersion set to 8.0"*). Check on each store with
+    `db.adminCommand({ getParameter: 1, featureCompatibilityVersion: 1 })`. **Not yet measured on our stores**:
+    a volume first created on an older major and carried forward could still be at `"7.0"` — T056/T059 must
+    read it first, and if it is not `"8.0"`, run `setFeatureCompatibilityVersion: "8.0", confirm: true` on
+    8.0.8 before any image move.
+
+  **FCV steps and order** (`release-notes/9.0-upgrade-from-8.0-replica-set.txt`, `…-standalone.txt`):
+  1. On 8.0.8: confirm FCV `"8.0"` (above). Replica set: `replSetGetStatus` shows no member in ROLLBACK/RECOVERING.
+  2. **Binary swap first**: `db.adminCommand({ shutdown: 1 })` → replace the binary (here: the image digest) →
+     restart. For a replica set the documented rolling order is secondaries one at a time → `rs.stepDown()` the
+     primary → upgrade it. **The movie store is a single-member set (`rs0`)**, so there is no secondary and no
+     step-down: shut the one member down, start it on 9.0.4, and it re-elects itself primary (same as the
+     standalone procedure, plus `rs.status()` showing PRIMARY before step 3). The BFF store is standalone
+     (`mongod --auth --bind_ip_all`, `bff/compose.prod.yaml`) — the standalone page applies verbatim.
+  3. **FCV raise last, after a burn-in**: on the primary/standalone,
+     `db.adminCommand({ setFeatureCompatibilityVersion: "9.0", confirm: true })` — *"If you omit the confirm
+     parameter or set confirm to a value other than true, the command fails"*; idempotent, safe to retry. On a
+     replica set it *"implicitly performs a replSetReconfig to add the term field to the configuration
+     document"*. `includes/featureCompatibility-caveat.rst`: *"It is recommended that after upgrading, you
+     allow your deployment to run without enabling these features for a burn-in period … When you are
+     confident that the likelihood of downgrade is minimal, enable these features."* — this is plan.md's
+     "FCV raise only after soak".
+  - **Rollback consequence (load-bearing for T056)**: `release-notes/9.0-downgrade-to-8.0.txt` +
+    `includes/downgrade/latest-patch-release.rst`: *"If you need to downgrade from 9.0, downgrade to the latest
+    patch release of 8.0."* So a **binary** downgrade onto the same volume is supported only to the newest
+    8.0.x (8.0.34 on Docker Hub today), **not to 8.0.8**, and only after FCV is set back to `"8.0"`. Rollback
+    to 8.0.8 is therefore **restore-from-backup onto a fresh 8.0.8 volume**, never "point the old image at the
+    upgraded volume" — which is exactly T056's restore rehearsal; it must not be shortened to an image revert.
+
+  **Driver support — both ✓ (full support) for server 9.0.** Source: `content/drivers/source/includes/compatibility/`
+  `rust/mongodb-compat.rst` and `nodejs/mongodb-compat.rst` (legend `mongodb-compat-legend.rst`: ✓ = *"All
+  features are supported"*; ⊛ = *"will work … but not all new MongoDB features are supported"*).
+
+  | Driver | Locked (REPO) | Table row | MongoDB 9.0 |
+  |---|---|---|---|
+  | Rust `mongodb` (mc-service) | **3.9.1** (`Cargo.lock`; `Cargo.toml` `mongodb = "3"`, `bson` 2.15.0) | `3.9` | **✓** (footnote: no OCSP — unused here). 3.6–3.8 are only ⊛ |
+  | Node `mongodb` (BFF) | **7.7.0** (`pnpm-lock.yaml`; `frontend/mcm-app/package.json` `^7.3.0`) | `7.6 to 7.7` | **✓**. 7.3–7.5 are only ⊛ |
+
+  Note the specifier `^7.3.0` still admits ⊛ versions: the lockfile, not the range, is what gives full support.
+
+  **Image — `mongodb/mongodb-community-server:9.0.4-ubi9`** (same family as today's `8.0.8-ubi9`: Red Hat UBI 9,
+  `-ubi9`, not `-slim`/`-ubuntu2204`). Resolved from Docker Hub's tag API
+  (`hub.docker.com/v2/repositories/mongodb/mongodb-community-server/tags/<tag>`), never constructed:
+
+  | Tag | Index digest | linux/amd64 manifest | OS | last_updated |
+  |---|---|---|---|---|
+  | `8.0.8-ubi9` (current) | `sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81` | `sha256:c030553a…` | RHEL 9.6 | 2025-08-01 |
+  | `9.0.4-ubi9` = `9.0-ubi9` | `sha256:35497f8379df6f6f57f2498784f6ed6cdf9893d81a7fb0e02d1498a0b63c6e44` | `sha256:1ace2d8d84ca3a034a3b3950fcbceb41a64a8baf0f00a1752955b07782662a71` | RHEL 9.8 | 2026-10-19 |
+
+  9.0.4 (2026-10-13, `release-notes/9.0.txt`) is the newest 9.0 GA and fixes SERVER-133518 (a sharded-only
+  step-up hang in 9.0.0–9.0.2). In-image check: `mongod --version` → `v9.0.4`, `mongosh` 2.6.0 present (the
+  compose healthchecks and the `mc-service-store-init` entrypoint call `mongosh`), runs as uid 1000 `mongod`,
+  same `docker-entrypoint.py` entrypoint as 8.0.8. **New fact for T057/Renovate**: unlike `8.0.8-ubi9` (static
+  since 2025-08-01), `9.0.4-ubi9` is **rebuilt daily** — each build also gets an immutable dated tag
+  (`9.0.4-ubi9-20261019T064506Z` = the digest above; 10-18's was `sha256:3165ae24…`). A `tag@digest` pin is
+  still correct (the digest is what pulls), but expect Renovate digest-refresh PRs at that cadence.
+
+  **Codebase impact of 8.1 → 9.0 compatibility notes (REPO grep of `backend/`, `frontend/mcm-app/src/bff-server/`,
+  `agents/`, `mcp-servers/`) — nothing breaks; one item to exercise in T056/T058.**
+  - **SERVER-89953 (9.0 Known Issues, open)**: *"At FCV 9.0, listIndexes reports `collation: { locale: "simple" }`
+    for indexes that use simple collation"*, which makes ODMs (Mongoose `syncIndexes()`) drop and rebuild
+    unchanged indexes. This repo uses no ODM and never calls `listIndexes`/`syncIndexes`: mc-service's
+    `adapters/mongodb/indexes.rs` re-issues `createIndexes` with explicit names at every start (two collation
+    indexes `en`/strength 2, the rest simple) and drops only the two retired names (`movie_text_search` — the
+    old `$text` index — and `sort_title_year`); the BFF's `mongo-client.ts` does `createIndex` once per process.
+    `createIndexes` with an identical spec is a server-side no-op, so this should not bite — but it is the one
+    path that touches index metadata, so **T056 must restart mc-service and the BFF against the upgraded volume
+    after the FCV raise** and confirm both index passes succeed with the index list unchanged (a fresh-volume
+    integration run alone would not exercise "pre-existing index at FCV 9.0").
+  - Not used here, so no impact: server-side JS (`$where`/`$function`/`$accumulator`/`mapReduce` — 9.0 moves it to
+    WASM/UTC dates), empty-field-name `$group` accumulators (only `$lookup`/`$match`/`$count` in `main.rs`'s orphan
+    check), `$map`/`$filter`/`$reduce` array-index access (8.3), wildcard indexes (8.3), `$$CLUSTER_TIME` on a
+    standalone (8.2), hedged reads (removed 8.1), change streams/read-preference changes, views, Queryable
+    Encryption, cross-database `renameCollection`, sharding. The 8.1 driver incompatibility is JVM ≤3.x / .NET
+    ≤2.14.1 only. `net.wireObjectCheck`/`--objcheck` are deprecated in 9.0 — neither compose passes them.
+  - Absorbed without change: the cascade-delete transaction (`collection_repository.rs` `start_transaction`) is
+    far under 9.0's new `maxConcurrentMultiDocumentTransactions` default (10000); the new per-operation memory cap
+    (≥ 1 GB) is irrelevant at this data size; the case-insensitive `$regex` search and compound keyset cursors
+    use only long-standing operators.
+
+  **T055 — the scan: 9.0.4-ubi9 has 0 blocking findings vs 8.0.8-ubi9's 8. Premise holds.** Instrument checked
+  against the gate: `.forgejo/workflows/infra-image-scan.yml` installs `TRIVY_VERSION=v0.74.0`;
+  `scripts/infra-image-scan.mjs` `scanImage()` runs `trivy image --format json --no-progress --scanners vuln
+  <ref>` and `normalizeTrivy()` marks a finding **blocking** iff Critical **and** a FixedVersion exists — i.e.
+  exactly `--severity CRITICAL --ignore-unfixed`. Ran locally with `aquasec/trivy:0.74.0`,
+  `--image-src remote --platform linux/amd64`, both the gate's full invocation **and** the
+  `--severity CRITICAL --ignore-unfixed` form, then fed the full JSON through the gate's own
+  `loadSeverityMap()` + `normalizeTrivy()` (imported from the script, not re-implemented). DB:
+  `ghcr.io/aquasecurity/trivy-db:2`, UpdatedAt **2026-10-20 01:16 UTC** (`mirror.gcr.io` does not resolve here).
+
+  | Image | Blocking (gate) | Unique advisory | Fixable High | All findings (H/M/L) |
+  |---|---|---|---|---|
+  | `8.0.8-ubi9@sha256:784dd73b…` | **8** | CVE-2025-68121 Go stdlib v1.23.8 (fix 1.24.13/1.25.7) in the 8 bundled database-tools binaries (`bsondump`, `mongodump`, …) — the seed allowlist entry | 431 | 457 / 1022 / 391 |
+  | `9.0.4-ubi9@sha256:35497f83…` | **0** | — (0 Critical of any kind; Go stdlib v1.26.8) | 32 | 197 / 4280 / 2310 |
+
+  The two forms agreed (8 vs 0). **Consequence for T057**: the seed entry `mongodb/mongodb-community-server:8\.0\.8-ubi9`
+  / `CVE-2025-68121` in `security/infra-images/allowlist.yaml` is **discharged** and must be **deleted** in the
+  same PR (re-keyed it would match nothing and fail UNMATCHED ENTRIES). **CI evidence**: the workflow has **no
+  `workflow_dispatch`** (triggers: Tue/Fri cron, path-filtered push, every PR), so there is no dispatch that
+  scans a not-yet-referenced image; the authoritative CI scan of this digest is the `infra-image-scan` job on
+  T057's own PR, which runs Trivy because the compose refs change. This entry is a local scan with the gate's
+  pinned version, flags and normalizer — not a CI run.
 - **Observability postgres 16** is held by `allowedVersions: "<17"` because one pin backs both
   `langfuse-postgres` and `unleash-postgres`, and `langfuse-postgres-shared-pin.guard.test.mjs` asserts it.
   It stays in scope as its own PR, moving **both** databases together, updating the guard **at its cause**

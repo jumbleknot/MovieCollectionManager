@@ -420,11 +420,22 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
 
 **PR 8a — MongoDB 8.0 → 9.0, data preserved**
 
-- [ ] T054 [US8] M8: record in research.md the supported upgrade path 8.0 → 9.0 and FCV steps; server-9
+- [X] T054 [US8] M8: record in research.md the supported upgrade path 8.0 → 9.0 and FCV steps; server-9
   support of the Rust driver (`mongodb` 3.9.x) and Node driver (`mongodb` 7.7.x); 9.0-ubi9 digest.
   **Done when**: each has a cited source; any "unsupported" stops the story.
-- [ ] T055 [US8] Premise: CI infra-image scan of the 9.0 digest with the gate's criteria (ADR-0002 §3).
+  **Outcome, 2026-10-20 — nothing unsupported**: direct 8.0 → 9.0 is supported (*"must be running a 8.0 or 8.3
+  release"*), prerequisite FCV `"8.0"` (not yet read on our stores — T056/T059 read it first); binary swap,
+  then `setFeatureCompatibilityVersion: "9.0", confirm: true` after burn-in. Rust 3.9.1 and Node 7.7.0 are
+  both ✓ for 9.0. Target `9.0.4-ubi9@sha256:35497f83…` (rebuilt daily upstream). Binary downgrade is only to
+  the *latest* 8.0 patch, so rollback to 8.0.8 = restore onto a fresh volume. Sources: `mongodb/docs`
+  @`b5c8fd24`. Evidence: research.md R8.
+- [X] T055 [US8] Premise: CI infra-image scan of the 9.0 digest with the gate's criteria (ADR-0002 §3).
   **Done when**: findings ≤ 8.0.8's; else stop and record.
+  **Outcome, 2026-10-20**: blocking **0** (9.0.4-ubi9) vs **8** (8.0.8-ubi9, CVE-2025-68121 ×8, the seed
+  entry); fixable High 431 → 32. Local scan, `aquasec/trivy:0.74.0` (the gate's pin), the gate's flags and its
+  own `normalizeTrivy()`, DB 2026-10-20 — not a CI run: the workflow has no `workflow_dispatch`, so the CI
+  scan of this digest is T057's own PR. T057 deletes the discharged 8.0.8 allowlist entry. Evidence:
+  research.md R8.
 - [ ] T056 [US8] Local rehearsal on a copy of real-shaped data: backup → per-collection `countDocuments`
   (movie store + BFF store) → FCV per T054 → image move → counts → restore onto 8.0.8 (rollback rehearsal) →
   counts. **Done when**: all counts identical at every step (SC-005).
