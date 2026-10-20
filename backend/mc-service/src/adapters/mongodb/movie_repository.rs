@@ -18,12 +18,32 @@ use crate::domain::movie::{ContentType, MediaFormat, UsaRating};
 fn escape_for_regex(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 8);
     for ch in s.chars() {
+        if ch == '\0' {
+            // A BSON regex pattern is a cstring and cannot carry a NUL byte (bson 3 rejects one at
+            // construction; bson 2 failed the whole query at serialization). The PCRE escape
+            // matches the same literal character, so the pattern stays a total function of `s`.
+            out.push_str(r"\x00");
+            continue;
+        }
         if r"\^$.|?*+()[]{}".contains(ch) {
             out.push('\\');
         }
         out.push(ch);
     }
     out
+}
+
+/// A case-insensitive "contains" regex over `text`, escaped for literal matching. bson 3 types the
+/// pattern as a NUL-free `CString`; `escape_for_regex` never emits NUL, so the conversion cannot
+/// fail — but it is still checked, and a failure is a 400 rather than a panic.
+fn ci_contains_regex(text: &str) -> Result<bson::Regex, DomainError> {
+    let pattern = bson::raw::CString::try_from(escape_for_regex(text)).map_err(|_| {
+        DomainError::ValidationError("Search text is not a valid pattern".to_string())
+    })?;
+    Ok(bson::Regex {
+        pattern,
+        options: bson::cstr!("i").to_owned(),
+    })
 }
 
 pub struct MongoMovieRepository {
@@ -289,16 +309,17 @@ fn keyset_boundary(c: &PageCursor) -> bson::Document {
 /// Build the Mongo filter for a movie query from `ListMoviesParams` — the structural filter
 /// shared by `list` and `count` so they ALWAYS agree (US4 / FR-023). Excludes the pagination
 /// `cursor` (list-only). Mirrors the on-screen filter dimensions.
-fn build_movie_filter(coll_oid: ObjectId, owner_id: &str, params: &ListMoviesParams) -> bson::Document {
+fn build_movie_filter(
+    coll_oid: ObjectId,
+    owner_id: &str,
+    params: &ListMoviesParams,
+) -> Result<bson::Document, DomainError> {
     let mut filter = doc! { "collectionId": coll_oid, "ownerId": owner_id };
 
     // Substring search (case-insensitive $regex, not $text — partial-word matches as users expect).
     if let Some(ref search) = params.search {
-        let pattern = escape_for_regex(search);
-        let make_re = || bson::Regex {
-            pattern: pattern.clone(),
-            options: "i".to_string(),
-        };
+        let re = ci_contains_regex(search)?;
+        let make_re = || re.clone();
         filter.insert(
             "$or",
             bson::Bson::Array(vec![
@@ -324,11 +345,8 @@ fn build_movie_filter(coll_oid: ObjectId, owner_id: &str, params: &ListMoviesPar
         let patterns: Vec<bson::Regex> = params
             .genres
             .iter()
-            .map(|g| bson::Regex {
-                pattern: escape_for_regex(g),
-                options: "i".to_string(),
-            })
-            .collect();
+            .map(|g| ci_contains_regex(g))
+            .collect::<Result<_, _>>()?;
         filter.insert("genres", doc! { "$in": patterns });
     }
     if let Some(childrens) = params.childrens {
@@ -356,7 +374,7 @@ fn build_movie_filter(coll_oid: ObjectId, owner_id: &str, params: &ListMoviesPar
         filter.insert("ripQuality", doc! { "$in": &params.rip_quality });
     }
 
-    filter
+    Ok(filter)
 }
 
 #[async_trait]
@@ -582,7 +600,7 @@ impl MovieRepository for MongoMovieRepository {
         let dir_str = if dir < 0 { "desc" } else { "asc" };
 
         // Structural filter, shared with `count` so they always agree (US4 / FR-023).
-        let base = build_movie_filter(coll_oid, owner_id, &params);
+        let base = build_movie_filter(coll_oid, owner_id, &params)?;
 
         // Compound keyset pagination (013): the cursor follows the sort order. A malformed cursor —
         // or one minted under a different sort — is rejected with a 400 rather than silently
@@ -662,7 +680,7 @@ impl MovieRepository for MongoMovieRepository {
         // Same filter as `list` (the shared `build_movie_filter`), counted server-side via
         // `count_documents` — no document fetch, index-backed (US4 / FR-023).
         let coll_oid = parse_coll_oid(collection_id)?;
-        let filter = build_movie_filter(coll_oid, owner_id, &params);
+        let filter = build_movie_filter(coll_oid, owner_id, &params)?;
         self.collection
             .count_documents(filter)
             .await
@@ -825,6 +843,55 @@ mod tests {
         assert_eq!(decoded.i, oid);
     }
 
+    /// 081 US9 PR 9a: the cursor is opaque to clients but held by them across a deploy, so its
+    /// bytes are a compatibility surface. It is serde_json over a struct (field order fixed by the
+    /// struct, independent of bson and of `preserve_order`); this pins the exact encoding so a
+    /// cursor minted by the previous build still decodes, and a new one is byte-identical.
+    #[test]
+    fn page_cursor_wire_bytes_are_stable_across_builds() {
+        let c = PageCursor {
+            b: "titleSort".to_string(),
+            d: "asc".to_string(),
+            v: json!("matrix"),
+            y: Some(1999),
+            i: "65f0c0ffee0000000000abcd".to_string(),
+        };
+        let minted = "eyJiIjoidGl0bGVTb3J0IiwiZCI6ImFzYyIsInYiOiJtYXRyaXgiLCJ5IjoxOTk5LCJpIjoiNjVmMGMwZmZlZTAwMDAwMDAwMDBhYmNkIn0=";
+        assert_eq!(encode_page_cursor(&c), minted);
+        let decoded = decode_page_cursor(minted).expect("a previously minted cursor decodes");
+        assert_eq!(decoded.b, "titleSort");
+        assert_eq!(decoded.v, json!("matrix"));
+        assert_eq!(decoded.y, Some(1999));
+        assert_eq!(decoded.i, "65f0c0ffee0000000000abcd");
+    }
+
+    /// 081 US9 PR 9a: bson 3 types a regex pattern as a NUL-free cstring. A NUL in user search
+    /// text is escaped to the PCRE `\x00` (same literal match), so the filter still builds.
+    #[test]
+    fn search_text_with_nul_still_builds_a_filter() {
+        assert_eq!(escape_for_regex("a\0b"), r"a\x00b");
+        let params = ListMoviesParams {
+            search: Some("Ma\0trix".to_string()),
+            genres: vec!["dra\0ma".to_string()],
+            ..Default::default()
+        };
+        let f = build_movie_filter(ObjectId::new(), "owner", &params)
+            .expect("NUL is escaped, not fatal");
+        let or = f.get_array("$or").expect("search $or");
+        match or[0]
+            .as_document()
+            .unwrap()
+            .get_document("title")
+            .unwrap()
+            .get("$regex")
+        {
+            Some(bson::Bson::RegularExpression(re)) => {
+                assert_eq!(re.pattern.as_str(), r"Ma\x00trix")
+            }
+            other => panic!("expected a regex, got {other:?}"),
+        }
+    }
+
     #[test]
     fn decode_rejects_garbage() {
         assert!(decode_page_cursor("not-base64-or-json!!").is_none());
@@ -901,14 +968,18 @@ mod tests {
             genres: vec!["drama".to_string()],
             ..Default::default()
         };
-        let f = build_movie_filter(ObjectId::new(), "owner", &params);
+        let f = build_movie_filter(ObjectId::new(), "owner", &params).expect("filter builds");
         let genres = f.get_document("genres").expect("genres clause present");
         let arr = genres.get_array("$in").expect("$in array of regexes");
         assert_eq!(arr.len(), 1);
         match &arr[0] {
             bson::Bson::RegularExpression(re) => {
-                assert_eq!(re.pattern, "drama", "pattern is the (escaped) genre, unanchored = contains");
-                assert!(re.options.contains('i'), "case-insensitive");
+                assert_eq!(
+                    re.pattern.as_str(),
+                    "drama",
+                    "pattern is the (escaped) genre, unanchored = contains"
+                );
+                assert!(re.options.as_str().contains('i'), "case-insensitive");
             }
             other => panic!("expected a case-insensitive regex, got {other:?}"),
         }
