@@ -127,11 +127,21 @@ The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` pre
 ```bash
 # Start (or replace an existing standalone container)
 docker run -d --name mc-db-test -p 27017:27017 \
-  mongodb/mongodb-community-server:8.0.8-ubi9 mongod --replSet rs0 --bind_ip_all
+  mongodb/mongodb-community-server:9.0-ubi9 mongod --replSet rs0 --bind_ip_all
 # Initiate the replica set (once after first start)
 docker exec mc-db-test mongosh --quiet \
   --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
 ```
+
+**MongoDB 9.0 runs mongod as uid 1000, not 998 (feature 081 US8a)** — a volume first written by the
+old `8.0.8-ubi9` image is owned by uid 998, and 9.0 refuses it at start with `Unable to read the storage
+engine metadata file ... storage.bson` (`FileNotOpen`). The compose files handle this: both Mongo
+services start as root only to re-own `/data/db` once (log line `mongo-data-owner: re-owning /data/db`)
+and then drop to `mongod` with `setpriv`. A bare `docker run` like the one above does not — on an old
+volume, re-own it first: `docker run --rm -u 0 -v <volume>:/data/db --entrypoint chown
+mongodb/mongodb-community-server:9.0-ubi9 -R mongod:mongod /data/db`. Going back to 8.0.8 on a volume 9.0
+has run on is **not** supported (binary downgrade is only to the latest 8.0 patch); restore a dump onto a
+fresh volume instead — [prod-data-tier-auth.md](prod-data-tier-auth.md) §6.
 
 **MongoDB replica set hostname — always bring the mcm stack up**: The `mc-service-store-mongo-rs-init` service initialises the replica set with `host: 'localhost:27017'`. This hostname works from the host (via Docker port binding) and from mc-service in Docker (which uses `directConnection=true` to bypass rs-member discovery). Never start `mc-service-store-mongo` with a bare `docker run` command — doing so can result in the rs being initialised with `mc-service-store-mongo:27017` (Docker-internal only), causing host-side integration tests to fail with "No such host is known".
 
