@@ -357,6 +357,43 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   pgx). In scope as a **scan-gated** task: scan the current 1.x/2.x tag with the gate's criteria; move only
   if it clears libcrypto3 + grpc without adding pgx; otherwise the hold is re-recorded with the new scan
   date and digest. Vault is dormant (ADR-0001), so its value is lowest and it goes last.
+- **Vault — T063 outcome (a), measured 2026-10-20: the hold is LIFTED, the refs move to 2.2.** Tags and
+  digests resolved from Docker Hub's tag API (multi-arch index digests; scanned `--platform linux/amd64`).
+  Scanner: `aquasec/trivy:0.74.0` (the gate's pinned `TRIVY_VERSION=v0.74.0`), `trivy image --severity
+  CRITICAL --ignore-unfixed --scanners vuln`, DB from `ghcr.io/aquasecurity/trivy-db:2` (UpdatedAt
+  2026-10-19 19:08 UTC — `mirror.gcr.io` does not resolve in the sandbox). Fixable Critical = the gate's
+  `blocking` (`normalizeTrivy`: Critical with a FixedVersion).
+
+  | Tag | Digest (index) | OS | Fixable Criticals (unique advisory — package installed → fix) |
+  |---|---|---|---|
+  | `1.18` (current = 1.18.5) | `sha256:750bb37c1638fa194ab37053a81618c61bb0491ddec6fccac87c07a8e6cd8166` | alpine 3.21.3 | **3**: CVE-2025-68121 stdlib v1.23.6; CVE-2026-31789 libcrypto3+libssl3 3.3.3-r0 → 3.3.7-r0; CVE-2026-33186 grpc v1.69.4 → 1.79.3 (all seed-allowlisted) |
+  | `1.21.4` (newest community 1.x; 1.21.5+ are Enterprise-only) | `sha256:4e33b126a59c0c333b76fb4e894722462659a6bec7c48c9ee8cea56fccfd2569` | alpine 3.23.3 | **4**: CVE-2026-31789 libcrypto3+libssl3 3.5.5-r0 → 3.5.6-r0; CVE-2026-33186 grpc v1.75.1; CVE-2026-33815 + CVE-2026-33816 pgx/v5 v5.7.6 → 5.9.0 — unchanged since PR #289 |
+  | `2.2.0` = `2.2` = `latest` (newest 2.x, 2026-10-15) | `sha256:e0acd3c681bdf57f002d7214e5d050b876e1704678005c6b0406dd96a65be919` | alpine 3.24.2 | **0** — and 0 High of any kind (full scan: 1 Medium, 1 Unknown). libcrypto3/libssl3 3.5.8-r0, grpc v1.83.2, pgx/v5 v5.10.0, Go 1.27.2 |
+
+  2.2.0 clears libcrypto3 + grpc without adding pgx, so FR-013's condition is met by a scan. Changes:
+  both refs (`vault/compose.yaml`, `vault/compose.prod.yaml`) → `hashicorp/vault:2.2@sha256:e0acd3c6…`; the
+  three `hashicorp/vault:1\.18` seed entries in `security/infra-images/allowlist.yaml` **deleted** (a
+  re-keyed entry would match nothing → UNMATCHED fails the gate); `renovate.json`'s `<1.19` ceiling replaced
+  by a vault **major-approval** rule (the opensearch/langfuse shape — patch/minor stay automatic and
+  scan-gated, and with no vault allowlist entry `infra-image-scan` blocks any worse tag);
+  `renovate-workflow.guard.test.mjs` updated at the cause (no ceiling on any track; the approval successor;
+  no widening onto caddy/otel-lgtm; refs digest-pinned 2.x and no vault allowlist entry), mutation-RED on
+  seven mutations (ceiling restored, approval removed, rule widened to all docker, approval on every track,
+  a vault allowlist entry added, prod ref back to 1.18, digest dropped) before GREEN (152/152, 0 skipped).
+  **Upgrade notes read** (`CHANGELOG.md` 1.19.0 → 2.2.0; developer.hashicorp.com does not resolve here):
+  nothing breaks this config. 1.20.0 makes `disable_mlock` mandatory for raft — `vault.hcl` already sets
+  it; 2.0.4 rejects duplicate HCL attributes — none; 2.0.0 authenticates `sys/rekey`/`generate-root` by
+  default — not used by a dormant Vault; 2.2.0 changes the container's `cap_ipc_lock` handling (its notes
+  carry both a remove and a set line) — the compose keeps `cap_add: IPC_LOCK` and `disable_mlock = true`,
+  which is correct either way. **Verified locally** on 2.2.0 with the prod `vault.hcl` (throwaway
+  container + volume, removed): comes up uninitialized + sealed, the compose healthcheck's `wget` passes,
+  one vault process, 0 errors; init (1/1) → unseal → kv-v2 write → restart → sealed → re-unseal → read back
+  held on raft. Also without `IPC_LOCK`: single process, no double-start. Dev posture (`server -dev`,
+  `VAULT_DEV_ROOT_TOKEN_ID`, as `vault/compose.yaml`): healthy, kv write/read OK.
+  **The prod cutover shape, rehearsed**: a raft volume first opened by 1.18.5 (uninitialized, as prod's
+  `vault-store-data` is) → 2.2.0 on the same volume: uninitialized + sealed, healthy, 0 errors, one
+  process → **rollback** to 1.18.5 on that volume: same. A dormant, never-initialized Vault holds no data,
+  so the move and its rollback are both a plain image swap.
 - **Already landed (discharged)**: OpenSearch 3, Langfuse 4, ClickHouse 26.x, Redis 8, Keycloak/agent-db
   postgres 18.
 

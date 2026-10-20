@@ -13,7 +13,7 @@
 name: prod-vault
 services:
   vault-service:
-    image: hashicorp/vault:1.18@sha256:750bb37c1638fa194ab37053a81618c61bb0491ddec6fccac87c07a8e6cd8166
+    image: hashicorp/vault:2.2@sha256:e0acd3c681bdf57f002d7214e5d050b876e1704678005c6b0406dd96a65be919
     container_name: vault-service
     restart: always
     # #PROD BOTH are required together (do not remove IPC_LOCK):
@@ -30,7 +30,11 @@ services:
     # on :8200 (crash loop). NOT `server -dev` (ephemeral, fixed root token, data loss on restart) — the
     # entrypoint's -dev-* flags are inert without -dev, so this stays a real, sealed server.
     # (Verified locally against hashicorp/vault:1.18 with IPC_LOCK + a constrained memlock: comes up
-    # uninitialized+sealed, 0 errors.)
+    # uninitialized+sealed, 0 errors. RE-VERIFIED 2026-10-20 against 2.2.0 (feature 081 US8c) with this
+    # vault.hcl + IPC_LOCK: uninitialized+sealed, healthcheck passes, ONE vault process, 0 errors; init,
+    # unseal, a kv write, restart and re-unseal all held on raft. 2.2.0 also no longer double-starts
+    # WITHOUT the cap (its changelog drops the build-time cap_ipc_lock) — kept anyway: harmless, and the
+    # line still matters if the image is ever rolled back to 1.x.)
     command: ["server"]
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
