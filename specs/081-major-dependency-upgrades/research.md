@@ -539,6 +539,20 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   thing that keeps them off the weekly budget. That is item #254's acceptance shape (landed, or its own item
   with a recorded reason) — not a silent deferral.
 
+### R9 re-check (M9, T066), measured 2026-10-20
+
+crates.io dependency endpoints (`/api/v1/crates/<c>/<max_stable_version>/dependencies`), after PR #812 landed bson 3:
+
+| Crate (latest) | `base64` | `reqwest` |
+|---|---|---|
+| `bson` 3.1.0 | `^0.22.1` (normal) | — |
+| `mongodb` 3.9.1 | `^0.22` (normal) | `^0.12.12` (normal, optional); `^0.12.2` (dev) |
+| `axum-keycloak-auth` 0.8.3 | — | `^0.12.12` (normal) |
+
+Both blockers stand: base64 0.23 would only duplicate the crate, and reqwest 0.13 would add a second reqwest.
+Per OQ-2 each is held with its own item — item #815 (base64) and item #816 (reqwest) — and the dashboard
+approval gate stays. T068 does not run.
+
 ### R9 evidence — PR 9a (bson 2 → 3), measured 2026-10-20
 
 - **Manifest.** `mongodb = { version = "3", default-features = false, features = ["compat-3-3-0", "bson-3",

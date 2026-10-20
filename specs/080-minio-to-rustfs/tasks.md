@@ -781,8 +781,14 @@ evidence; it never runs these.
   edit it** — after the next Renovate run: `rustfs/rustfs` is listed under each compose file that pins
   it, and nothing lists `infrastructure-as-code/docker/minio/Dockerfile` (SC-007).
 
-- [ ] T043 [US3] After the next **scheduled** Friday `infra-image-scan` run (not a dispatch): its
+- [x] T043 [US3] After the next **scheduled** Friday `infra-image-scan` run (not a dispatch): its
   digest shows `rustfs/rustfs` scanned and `expiry_step=success` (SC-005).
+  *Done 2026-10-20 on the Tuesday sweep (cron `0 4 * * 2`, item #642; the operator accepted it as the next
+  scheduled run). Run 5693 (event `schedule`, 04:33 UTC, `cefd7ace`) posted `infra-image-scan/expiry`
+  `event_name=schedule gate=success expiry_step=success` and `infra-image-scan/weekly` `scan=success`. The
+  sweep's own `enumerateImages()` at `cefd7ace` yields 21 images including
+  `rustfs/rustfs:1.0.1@sha256:1803faef…` (observability + backups compose). The job log is not readable
+  through the forge API, so the rustfs line is shown by the enumerator, not quoted from the log.*
 
 ---
 
