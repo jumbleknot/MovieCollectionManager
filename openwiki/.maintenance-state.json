@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "8d0202dbf8488afa7a16fa1c9f73ae5f53668ca2",
-  "coveredAt": "2026-10-20T08:35:15.940Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "44817a42231c80e98b46fce4b1d0eac50d09d4dc",
+  "coveredAt": "2026-10-20T12:01:16.963Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 813,
-    "headCommit": "c979d08007d015d6a792d748b26511ee04c1626e",
+    "headCommit": "a7f10f82f1e13cc78fca6a44a5c39e32b3301f9b",
     "markerBefore": "9a4a28fa399d072e0e460c9270f085f14d11b673",
     "slices": [
       {
@@ -20,29 +20,40 @@
         "areaExists": true,
         "reason": "drift: backend/mc-service/src/api/middleware/error_handler.rs changed after the page's stamp",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/rfc-9457-problem-details.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "prod-control-tower.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/prod-control-tower.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-20T06:50:11.609Z"
+    "updatedAt": "2026-10-20T12:01:17.399Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 4,
+    "elapsedSeconds": 3102,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 429,
+    "calls": 493,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2610430,
-    "cached": 32235012,
+    "uncached": 5083780,
+    "cached": 45061372,
     "cacheWrite": 0,
-    "output": 662513,
-    "reasoning": 568387,
-    "ms": 5992156,
-    "estCostUsd": 1.7716,
+    "output": 923013,
+    "reasoning": 798130,
+    "ms": 9265702,
+    "estCostUsd": 2.9031,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -52,11 +63,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "gotchas/rfc-9457-problem-details.md"
+        "runbooks/prod-control-tower.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 1.7716,
+      "estCostUsd": 2.9031,
       "rateLimited": null
     }
   ],
