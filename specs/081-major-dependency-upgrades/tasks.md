@@ -465,6 +465,8 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   mcm-app integration 401/401, 0 skipped (after `gen-dev-env.mjs` fixed a stale pre-080 env file); gate-tier
   E2E incl. agent specs 181 passed / 0 skipped / 0 flaky; infra-scan of the 9.0 digest 0 blocking, gate
   passed. CI on the PR is the full sweep and the fresh-volume (FCV 9.0) run.
+  **CI (PR #817): red on `app-e2e` only — mongod 9.0.4 refuses host kernels 6.19.0–7.0.13 (SERVER-121912);
+  the shared CI/prod host is in that range. T059 is BLOCKED on a host kernel ≥ 7.0.14** (research.md R8).
 - [ ] T059 [US8] Production cutover (operator-run, per `docs/runbooks/prod-data-tier-auth.md` +
   T056's procedure): counts before/after recorded in the PR. **Done when**: equal counts; PR 8a merged.
 
