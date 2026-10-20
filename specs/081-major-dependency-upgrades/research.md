@@ -561,6 +561,18 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
     scripts/check-infra-image-findings.mjs`: **0 blocking**, gate passed with the 8.0.8 entry deleted; fixable
     High 32, Medium 108, Low 8 (same as T055). The full sweep is CI's `infra-image-scan` job on this PR.
 
+  **CI on PR #817 (head `fd4f99fc`) — BLOCKER #2, a host precondition, found by app-e2e (run 5723).** Every
+  required context passed except `app-ci / app-e2e`: `mc-service-store-mongo` crash-looped with `"s":"F" …
+  "id":12257600 … "MongoDB cannot start: Linux kernel versions 6.19.0 through 7.0.13 have a known
+  incompatibility with this version of MongoDB. See https://jira.mongodb.org/browse/SERVER-121912"`. The string
+  is compiled into 9.0.4's `mongod`; `strings` shows no override parameter. This sandbox runs kernel **7.0.14**
+  — one patch above the range — which is why every local tier passed: the local result was true for this
+  kernel and said nothing about the runner's. The CI and prod daemons share one physical host
+  (Server-Setup-Runbook), so **prod's kernel is in the range too: merging today would crash-loop both prod
+  stores.** Not fixable in this repository; the remedy is a host kernel ≥ 7.0.14 (or a later MongoDB build
+  that lifts the check). Runbook §6.0/P0 now checks `uname -r` first and blocks. `infra-image-scan` (full
+  sweep) passed; `app-ci / dast` (advisory) failed in the same bring-up.
+
   **Renovate note (not changed):** `9.0-ubi9` is rebuilt daily, so a digest refresh of it ages against a tag
   pushed every day — the same treadmill `renovate.json` describes for Langfuse `:4`. The constitution's
   approved tag is `9.0-ubi9`; if digest refreshes never arrive, the remedy is the immutable dated tag
