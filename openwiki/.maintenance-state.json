@@ -1,28 +1,48 @@
 {
-  "coveredCommit": "9a4a28fa399d072e0e460c9270f085f14d11b673",
-  "coveredAt": "2026-10-20T04:33:13.017Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "cc29febe52b1a0254756236bfc12d157604a78f5",
+  "coveredAt": "2026-10-20T06:50:11.215Z",
+  "lastOutcome": "completed",
   "backlog": [],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 813,
+    "headCommit": "c979d08007d015d6a792d748b26511ee04c1626e",
+    "markerBefore": "9a4a28fa399d072e0e460c9270f085f14d11b673",
+    "slices": [
+      {
+        "area": "gotchas",
+        "pages": [
+          "rfc-9457-problem-details.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: backend/mc-service/src/api/middleware/error_handler.rs changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/rfc-9457-problem-details.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-20T06:50:11.609Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 4,
+    "elapsedSeconds": 2202,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 333,
+    "calls": 429,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 7745974,
-    "cached": 24413376,
+    "uncached": 2610430,
+    "cached": 32235012,
     "cacheWrite": 0,
-    "output": 672012,
-    "reasoning": 589434,
-    "ms": 6135375,
-    "estCostUsd": 3.2767,
+    "output": 662513,
+    "reasoning": 568387,
+    "ms": 5992156,
+    "estCostUsd": 1.7716,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -32,11 +52,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "gotchas/expo-router-and-transport-traps.md"
+        "gotchas/rfc-9457-problem-details.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 3.2767,
+      "estCostUsd": 1.7716,
       "rateLimited": null
     }
   ],
