@@ -484,20 +484,25 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   `pnpm nx test:unit mc-service --skip-nx-cache` — record compile/test failures.
   **RED recorded 2026-10-20**: 8 compile errors (`from_document` renamed ×2, `Regex` fields now `CString` ×4,
   regex test ×2) plus one silent break (serde_json `preserve_order` lost) — research.md "R9 evidence — PR 9a".
-- [ ] T065 [US9] Migrate until GREEN. **Verify GREEN**: same command, 0 failures; then
+- [x] T065 [US9] Migrate until GREEN. **Verify GREEN**: same command, 0 failures; then
   `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mc-service` (every stored shape round-trips, keyset
   cursor decode, collation uniqueness), `pnpm nx lint mc-service`, the `rust:alpine` musl Docker build,
   `pnpm nx e2e mcm-app`. **Done when**: PR 9a merged; `cargo tree -d` shows no bson duplicate.
-  **GREEN locally 2026-10-20** (unticked until merge): unit 160/0, integration 187/0/0 ignored, lint clean,
+  **Done 2026-10-20**: PR #812 merged (`cc29febe`); main's run green on every context; cd-deploy promoted the
+  tip (`c9ae9454`, promoting `c8af474b`). Cargo.lock: bson 2.15.0 -> 3.1.0 only. **GREEN locally 2026-10-20**: unit 160/0, integration 187/0/0 ignored, lint clean,
   musl build green, no bson duplicate; web E2E 149 passed / 3 assistant-dock env failures identical on the
   pre-081 image — research.md "R9 evidence — PR 9a".
 
 **PR 9b — base64 0.23 + reqwest 0.13 (approval-gated)**
 
-- [ ] T066 [US9] M9: re-read crates.io — does `bson`/`mongodb` still require `base64 ^0.22`? does
+- [x] T066 [US9] M9: re-read crates.io — does `bson`/`mongodb` still require `base64 ^0.22`? does
   `axum-keycloak-auth` still require `reqwest ^0.12`? **Done when**: recorded in research.md R9.
-- [ ] T067 [US9] If still blocked: file one backlog item each (reason + re-check rule), keep the dashboard
+  *Done 2026-10-20: **both still blocked** — see research.md "R9 re-check (M9)".*
+- [x] T067 [US9] If still blocked: file one backlog item each (reason + re-check rule), keep the dashboard
   approval gate. **Done when**: items filed; no PR needed (OQ-2).
+  *Done 2026-10-20: item #815 (base64) and item #816 (reqwest), each with the measured reason, a re-check
+  command and acceptance criteria; the dashboard approval gate is unchanged.*
+- T068 not applicable while items #815/#816 stand (its precondition "if unblocked" is false).
 - [ ] T068 [US9] If unblocked: **Verify RED (upgrade)**: bump; `cargo build --tests` for EVERY integration
   target (the targets `mc-service-checks` does not build — PR #216) — record failures; add the `form` feature
   explicitly; **Verify GREEN**: all targets build and `test:integration` passes; `cargo tree -e features
