@@ -448,6 +448,26 @@ at `/data`. With `restart: always` that is a crash loop for both databases. So t
 
 Rehearsed end to end in the dev container. See specs/081-major-dependency-upgrades/research.md "US8 (PR 8b …)".
 
+**Done in prod 2026-10-20** (PR #809, `44817a42`): Unleash counts identical 16 → seeded 18 → live 18
+(`api_tokens 2 · env_enabled 0 · feature_strategies 1 · features 3 · migrations 397`), both databases on 18.6
+on the `-v18-data` volumes, Langfuse fresh and healthy. The real run hit three faults in the first version of
+these steps; the commands below are the corrected ones:
+
+- **The dump check.** `pg_dumpall` ends with the marker line, then `--`, then a blank line, so `tail -2`
+  never shows the marker. Grep for it instead.
+- **The password never reached the container.** A `read -rs` inside a pasted block consumes the NEXT pasted
+  line as its input, so the variable came out empty. And even when it was set (length 32), the bare
+  `-e POSTGRES_PASSWORD` form passed nothing through this host's `docker` CLI: the 18 entrypoint exited with
+  `Database is uninitialized and superuser password is not specified`. Take the value from the RUNNING 16
+  container (`printenv`, nothing typed) and pass it explicitly.
+- **The wait loop spun forever** on a container that had already exited (`cannot exec in a stopped
+  container`, once every 2 s). The loop is now bounded, detects the exit and prints the logs; and the
+  `docker rm` is in a later block, so a failed start leaves its logs readable.
+
+Paste each block on its own and check its stated output before the next one. If a block opens a new shell,
+set `IMG` and `DIR` again first: an empty `$DIR` writes to `/` (`/counts-live18.txt: Permission denied`).
+Until step 5, `docker start unleash-service langfuse-web langfuse-worker` returns you to 16 unchanged.
+
 ```sh
 # Run on the prod host against the PROD rootless daemon. Containers are Komodo-managed, so use
 # container names, never a hand-run `docker compose`.
@@ -471,20 +491,29 @@ docker stop unleash-service langfuse-web langfuse-worker
 # ── 2. DUMP both 16 instances (the Langfuse one is the rollback copy only) ────────────────────────
 docker exec unleash-postgres  pg_dumpall -U unleash  > "$DIR/unleash-16.sql"
 docker exec langfuse-postgres pg_dumpall -U langfuse > "$DIR/langfuse-16.sql"
-tail -2 "$DIR/unleash-16.sql"              # MUST end with "-- PostgreSQL database cluster dump complete"
-grep -c '^COPY' "$DIR/unleash-16.sql"      # non-zero
+grep -c 'PostgreSQL database cluster dump complete' "$DIR/unleash-16.sql" "$DIR/langfuse-16.sql"   # 1 each
+grep -c '^COPY' "$DIR/unleash-16.sql"      # non-zero (108 on the 2026-10-20 run)
 
 # ── 3. CREATE the two NEW external volumes (the 16 volumes are NOT touched, now or later) ─────────
 docker volume create observability-unleash-postgres-v18-data
 docker volume create observability-langfuse-postgres-v18-data      # left empty: Langfuse initialises it
 
 # ── 4. PRE-SEED Unleash on 18 in a throwaway container (no network, volume only) ──────────────────
-read -rs UNLEASH_PG_PASSWORD && export UNLEASH_PG_PASSWORD          # the Komodo Variable's value
+#  4a. The password, from the RUNNING 16 container — never typed, never a `read` inside a pasted block.
+UNLEASH_PG_PASSWORD=$(docker exec unleash-postgres printenv POSTGRES_PASSWORD)
+echo "password length: ${#UNLEASH_PG_PASSWORD}"                                    # non-zero (32)
+#  4b. Start, passing the value EXPLICITLY (bare `-e VAR` passed nothing on this host). Wait on TCP — a
+#      socket-only check can pass against the entrypoint's temporary init server — bounded, and print the
+#      logs if the container exits. Expect READY. On EXITED: stop here, read the logs, `docker rm` it.
 docker run -d --name us8b-unleash-seed18 --network none \
-  -e POSTGRES_USER=unleash -e POSTGRES_PASSWORD -e POSTGRES_DB=unleash \
+  -e POSTGRES_USER=unleash -e POSTGRES_PASSWORD="$UNLEASH_PG_PASSWORD" -e POSTGRES_DB=unleash \
   -v observability-unleash-postgres-v18-data:/var/lib/postgresql "$IMG"
-#    Wait on TCP. A socket-only check can pass against the entrypoint's temporary init server.
-until docker exec us8b-unleash-seed18 pg_isready -h 127.0.0.1 -U unleash -d unleash -q; do sleep 2; done
+for i in $(seq 1 60); do
+  docker exec us8b-unleash-seed18 pg_isready -h 127.0.0.1 -U unleash -d unleash -q 2>/dev/null && { echo READY; break; }
+  [ "$(docker inspect -f '{{.State.Running}}' us8b-unleash-seed18)" = true ] || { echo EXITED; docker logs us8b-unleash-seed18 2>&1 | tail -30; break; }
+  sleep 2
+done
+#  4c. Only after READY. psql prints set_config/setval result rows while replaying — that is normal.
 docker exec us8b-unleash-seed18 psql -U unleash -Atc 'show data_directory'    # /var/lib/postgresql/18/docker
 docker exec -i us8b-unleash-seed18 psql -U unleash -d postgres -q < "$DIR/unleash-16.sql" 2> "$DIR/restore.err"
 cat "$DIR/restore.err"     # EXACTLY: role "unleash" already exists / database "unleash" already exists
@@ -510,6 +539,12 @@ docker ps --filter name=unleash-service --filter name=langfuse --format '{{.Name
 #    Langfuse: the UI on the tailnet (:19030) signs in with the INIT user. A new agent turn produces a trace
 #    under `movie-assistant`.
 #    If langfuse-web/worker show errors from before their database was replaced: docker restart langfuse-web langfuse-worker
+DIR=$HOME/081-us8b-cutover                 # again — this usually runs in a NEW shell after the Komodo redeploy
+docker exec unleash-postgres psql -U unleash -d unleash -Atc \
+  "select 'features',count(*) from features union all select 'feature_strategies',count(*) from feature_strategies
+   union all select 'api_tokens',count(*) from api_tokens union all select 'env_enabled',count(*) from feature_environments where enabled
+   union all select 'migrations',count(*) from migrations order by 1" > "$DIR/counts-live18.txt"
+diff "$DIR/counts-16.txt" "$DIR/counts-live18.txt" && echo LIVE-COUNTS-EQUAL     # MUST print LIVE-COUNTS-EQUAL
 ```
 
 ### Rollback — non-lossy for Unleash
@@ -518,8 +553,12 @@ Revert the merge and redeploy `prod-observability`. The compose goes back to `po
 ORIGINAL `-postgres-data` volumes, which hold the state exactly as it was at step 1. Flag changes made on 18
 after the cutover are **not** carried back. `"$DIR/unleash-16.sql"` is a second way back.
 
+`main` is protected, so the revert goes through a pull request like any other change:
+
 ```sh
-git revert --no-edit <merge-sha> && git push origin HEAD:main     # then redeploy prod-observability in Komodo
+# on a workstation, in a fresh worktree off origin/main
+git revert --no-edit -m 1 44817a42 && git push origin HEAD:revert-081-us8b
+# open the PR from that branch, merge it once green, then redeploy prod-observability in Komodo
 ```
 
 ### Afterwards
