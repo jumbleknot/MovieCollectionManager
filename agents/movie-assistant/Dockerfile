@@ -11,11 +11,27 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY agents/movie-assistant/pyproject.toml agents/movie-assistant/uv.lock ./
-RUN uv sync --frozen --no-dev
+# `--no-install-package pip` — the SECOND pip (GHSA-6q48-6c7w-9gw2, see the runtime stage). guardrails-ai
+# declares pip as a dependency for its `guardrails hub install` CLI, so the lock puts pip 26.2.1, with
+# its vendored certifi 2026.6.17, into /app/.venv. src/ never imports guardrails-ai (src/guardrails is
+# our own package) and nothing here runs the hub CLI, so pip is skipped rather than shipped. The lock is
+# untouched: --frozen still verifies it, and every other package installs exactly as locked.
+RUN uv sync --frozen --no-dev --no-install-package pip
 COPY agents/movie-assistant/src ./src
 COPY agents/movie-assistant/langgraph.json ./
 
 FROM python:3.14-slim@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS runtime
+
+# No pip in the runtime image (GHSA-6q48-6c7w-9gw2, cd-deploy run 5745). The python base ships pip,
+# and pip VENDORS its own certifi (pip/_vendor/certifi) — 2026.6.17 in this digest, a fixable Critical
+# that Trivy reports against the image even though the app's own .venv already carries the fixed
+# certifi. Nothing at runtime uses pip: dependencies are resolved by `uv sync` in the build stage and
+# copied in as /app/.venv (a uv venv has no pip of its own, and the build stage keeps guardrails-ai's
+# transitive pip out of it), and the healthcheck is plain `python -c`.
+# Uninstalling it removes the whole class of "pip's vendored copy is stale" findings, rather than
+# chasing each one with an allowlist entry or a base bump. `pip uninstall` removes the vendored tree
+# and the pip/pip3 entry points with it (measured: no pip/_vendor tree left in system site-packages).
+RUN python -m pip uninstall --yes --root-user-action=ignore pip
 
 # Non-root user (defense-in-depth; feature 034). The .venv on PATH and the source
 # are read-only at runtime — uvicorn binds a port and reads code, no writable state.
