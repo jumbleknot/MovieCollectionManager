@@ -1,54 +1,12 @@
 {
-  "coveredCommit": "7cc3c304976a942d10ad9f30cf8708c79818e958",
-  "coveredAt": "2026-10-21T03:00:57.415Z",
-  "lastOutcome": "completed",
+  "coveredCommit": "7525fcd574164fefa873b1958cfa9f8a61bb2de4",
+  "coveredAt": "2026-10-21T09:24:48.428Z",
+  "lastOutcome": "nothing-to-do",
   "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 813,
-    "headCommit": "41509e8ae52076cfc9477a4876baffb0a7ef2e83",
-    "markerBefore": "9a4a28fa399d072e0e460c9270f085f14d11b673",
-    "slices": [
-      {
-        "area": "gotchas",
-        "pages": [
-          "rfc-9457-problem-details.md"
-        ],
-        "kind": "refresh",
-        "drift": true,
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: backend/mc-service/src/api/middleware/error_handler.rs changed after the page's stamp",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/rfc-9457-problem-details.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "prod-control-tower.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-control-tower.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "prod-control-tower.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-control-tower.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-10-21T03:00:57.838Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 2204,
+    "pagesWritten": 0,
+    "elapsedSeconds": 0,
     "stoppedAtBudget": false
   },
   "escalations": {},
