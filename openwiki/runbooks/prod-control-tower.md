@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the four one-time stateful cutovers they have carried — the RustFS object-store swap, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, and the spec-081 US8b observability Postgres 16→18 move — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the four one-time stateful cutovers they have carried — the RustFS object-store swap, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, and the spec-081 US8b observability Postgres 16→18 move, now completed in production — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, runbook]
+tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, cutover, runbook]
 sources:
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
     resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
@@ -44,7 +44,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T11:09:40.455Z
+    at: 2026-10-21T02:24:18.205Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -63,10 +63,11 @@ On top of that steady state sit **four one-time stateful cutovers**, each operat
 merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
 object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
 OpenSearch 2 → 3 with the audit history preserved (feature 071), and the observability Postgres 16 → 18
-move (spec 081 US8b). Three of the four — RustFS, OpenSearch 3 and Postgres 18 — put the new state on a
-**new external volume** and leave the old one untouched as the rollback; the Langfuse 4 cutover is the
-one that recreated its volumes in place and deliberately discarded the traces. The policy all four answer
-to is [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
+move (spec 081 US8b), which completed in production on 2026-10-20. Three of the four — RustFS, OpenSearch 3
+and Postgres 18 — put the new state on a **new external volume** and leave the old one untouched as the
+rollback; the Langfuse 4 cutover is the one that recreated its volumes in place and deliberately discarded
+the traces. The policy all four answer to is
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
 
@@ -216,7 +217,8 @@ Two smaller prod-only details worth knowing:
   (`If 'engine' is specified for system table, TTL parameters should be specified directly inside
   'engine'`) — measured on the 25.12 image before the file shipped.
 
-Full failure-symptom table and the reproduction recipe: `docs/runbooks/prod-control-tower.md`.
+Full failure-symptom table and the reproduction recipe:
+[the runbook](../../docs/runbooks/prod-control-tower.md).
 
 ## Object-store cutover to RustFS (feature 080, item #560)
 
@@ -481,7 +483,7 @@ a stale ~327 kb volume behind is far cheaper than an unrecoverable audit trail.
 Full shell script (Deploy A and Deploy B), the `OS()` helper alias, and all verification commands:
 [the runbook's OpenSearch upgrade section](../../docs/runbooks/prod-control-tower.md).
 
-## Observability Postgres 16 → 18, preserving Unleash (spec 081 US8b)
+## Observability Postgres 16 → 18, preserving Unleash (spec 081 US8b — done in production)
 
 The fourth cutover is a Postgres major for the two *observability* databases. `langfuse-postgres` and
 `unleash-postgres` reference one identical pinned image, so they move together — the shared pin is the
@@ -516,7 +518,8 @@ flowchart TD
   Merge --> Verify["verify flags and the Langfuse re-init, keep the 16 volumes as rollback"]
 ```
 
-*The three merge timings for the Postgres 18 cutover — only the last one is safe.*
+*The three merge timings for the Postgres 18 cutover — only the last one is safe, and it is the one that ran
+on 2026-10-20.*
 
 - **Merge before the volumes exist: safe.** The deploy fails up front with
   `external volume "…-v18-data" not found` and the 16 containers keep running, unchanged. Recover by
@@ -533,7 +536,7 @@ flowchart TD
   `role "unleash" already exists` and `database "unleash" already exists` — and the acceptance is a
   **table-count diff**, not a health check: `features`, `feature_strategies`, `api_tokens`,
   `feature_environments` where enabled, and `migrations`, taken before and after, which must print
-  `COUNTS-EQUAL`.
+  `COUNTS-EQUAL` — and, after the deploy, `LIVE-COUNTS-EQUAL` against the same 16 baseline.
 - **Langfuse's Postgres is deliberately discarded** (ADR-0002 §4 covers the Langfuse trace store) and
   re-initialised by `LANGFUSE_INIT_*`, which recreates the `mcm` org, the `movie-assistant` project and
   its keys, so the gateway's tracing keeps working. Anything created by hand in the Langfuse UI — extra
@@ -551,6 +554,9 @@ flowchart TD
   `pg_isready -h 127.0.0.1 …`, and the 18 data directory reads `/var/lib/postgresql/18/docker`.
 - **Pull the 18 image before the window, and use container names.** Same Komodo rule as every other
   cutover here: a hand-run `docker compose` cannot work against a Komodo-managed stack.
+- **The window can be abandoned losslessly until the merge.** The 16 databases keep running throughout —
+  only the three writers are stopped — so restarting them returns the stack to 16 exactly as it was. That
+  is what makes the pre-seed step safe to attempt early rather than under time pressure.
 - **This is an operator-run prod data change, like the MongoDB SCRAM cutover in
   [prod-data-tier-auth](./prod-data-tier-auth.md)** — the difference is that here the *old volumes*, not a
   backup, are the rollback.
@@ -560,28 +566,50 @@ flowchart TD
 Revert the merge and redeploy: the compose goes back to `postgres:16-alpine` on the ORIGINAL
 `observability-{langfuse,unleash}-postgres-data` volumes, which hold the state exactly as it was when the
 writers were stopped. **Non-lossy for Unleash** — but flag changes made on 18 after the cutover are not
-carried back, and the `pg_dumpall` of the 16 instance is a second way back. Afterwards (and **not** part
-of the procedure): delete the two 16 volumes and the working directory.
+carried back, and the `pg_dumpall` of the 16 instance is a second way back. `main` is protected, so the
+revert is itself a pull request (`git revert -m 1 <merge-sha>`) that has to merge before the redeploy.
+Afterwards (and **not** part of the procedure): delete the two 16 volumes and the working directory.
 
-### What is verified before the merge, and what it leaves behind
+### Done in production 2026-10-20 — and the three faults the first version of the steps hit
 
-Rehearsed end to end in the dev container on 2026-10-20: 16 up, state created through the Unleash admin
-API, `pg_dumpall` of both instances, the `-v18-data` volumes created and Unleash pre-seeded, then the full
-Langfuse chain up on 18 with every container healthy — Unleash's admin state identical to the 16 snapshot,
-the same client API token returning the same flags, Langfuse healthy on a fresh 18 database, and the
-rollback to the untouched 16 volume verified. **Dev environments follow the same rule**: a developer's
-local 16 volume is simply not mounted any more, so the 18 stack starts empty and `unleash-seed` recreates
-the three default-off flags — anyone with local flag state they care about does the dump → pre-seed steps
-too. The shared pin also left its hard `allowedVersions: "<17"` hold: a Postgres major now rides the
-stateful-datastore `dependencyDashboardApproval` tick like every other database image here (see
+**This cutover is no longer a rehearsal: it ran in production on 2026-10-20** (PR #809, `44817a42`).
+Unleash's counts came out identical at all three readings — 16 → seeded 18 → live 18 (`api_tokens 2 ·
+env_enabled 0 · feature_strategies 1 · features 3 · migrations 397`) — both databases came up on 18.6 on
+the `-v18-data` volumes, and Langfuse was fresh and healthy on its re-initialised database. The step list
+itself was built on the dev-container rehearsal earlier the same day: 16 up, state created through the
+Unleash admin API, `pg_dumpall` of both instances, the `-v18-data` volumes created and Unleash pre-seeded,
+then the full Langfuse chain up on 18 with every container healthy — Unleash's admin state identical to
+the 16 snapshot, the same client API token returning the same flags, and the rollback to the untouched 16
+volume verified.
+
+**The real run hit three faults in the first version of those steps. The commands in
+[the runbook](../../docs/runbooks/prod-control-tower.md) are the corrected ones, and these are why they
+are shaped that way:**
+
+- **The dump check.** `pg_dumpall` ends with the marker line, then `--`, then a blank line, so `tail -2`
+  never shows the marker. Grep for it instead.
+- **The password never reached the container.** A `read -rs` inside a pasted block consumes the NEXT pasted
+  line as its input, so the variable came out empty — and even when it was set (length 32), the bare
+  `-e POSTGRES_PASSWORD` form passed nothing through this host's `docker` CLI, so the 18 entrypoint exited
+  with `Database is uninitialized and superuser password is not specified`. The value is now read from the
+  RUNNING 16 container with `printenv` (nothing typed) and passed explicitly.
+- **The wait loop spun forever** on a container that had already exited (`cannot exec in a stopped
+  container`, once every 2 s). The loop is now bounded, detects the exit and prints the logs, and the
+  `docker rm` sits in a later block so a failed start leaves its logs readable.
+
+**Dev environments follow the same rule**: a developer's local 16 volume is simply not mounted any more, so
+the 18 stack starts empty and `unleash-seed` recreates the three default-off flags — anyone with local flag
+state they care about does the dump → pre-seed steps too. The shared pin also left its hard
+`allowedVersions: "<17"` hold: a Postgres major now rides the stateful-datastore
+`dependencyDashboardApproval` tick like every other database image here (see
 [the Renovate runbook](./renovate.md) for what ticking it means, and
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
 
 ## Capacity
 
-The pre-observability capacity check measured ~48 GiB RAM available on the prod host, actual container
-RSS of ~2.2 GiB, and a projected ~8 GiB for observability plus the audit sink — comfortably inside
-headroom, so the decision was **always-on, no opt-in fallback**, with ClickHouse's `mem_limit: 4g`
+The pre-observability capacity check (2026-07-03) measured ~48 GiB RAM available on the prod host, actual
+container RSS of ~2.2 GiB, and a projected ~8 GiB for observability plus the audit sink — comfortably
+inside headroom, so the decision was **always-on, no opt-in fallback**, with ClickHouse's `mem_limit: 4g`
 retained. Re-run the check (`free -h` + `docker stats --no-stream`) before any future footprint
 increase rather than assuming the headroom persists.
 
@@ -592,7 +620,8 @@ runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 [prod-reboot-resilience](./prod-reboot-resilience.md) and
 [server-setup](./server-setup.md); the image gates these stacks answer to are
 [infra-image scanning](./infra-image-scanning.md) and [Renovate](./renovate.md), the US8b cutover's
-rehearsal record is in
-[the spec-081 research](../../specs/081-major-dependency-upgrades/research.md), and the stack-level
+rehearsal record and completion note are in
+[the spec-081 research](../../specs/081-major-dependency-upgrades/research.md) and
+[its task list](../../specs/081-major-dependency-upgrades/tasks.md), and the stack-level
 view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).
