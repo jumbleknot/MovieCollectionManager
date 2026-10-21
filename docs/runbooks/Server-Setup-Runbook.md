@@ -759,21 +759,23 @@ Read the old store's service name and network with `docker ps` / `docker network
 host state, not in git): confirm the volume by ownership **and** contents (feature 070 trap 1). Then
 run one CI build twice and look for `Nx read the output from the remote cache` (SC-010). Rollback:
 `systemctl --user stop nx-cache`, `docker compose up -d` in `/home/prod/minio/`, restore the old
-credential lines, start `nx-cache`. `backup.sh` captures the store's **config directory** (not its
-data volume) in its `restic backup` path list, so add `"$HOME/rustfs"` beside `"$HOME/minio"` there:
-`"$HOME/forgejo" "$HOME/komodo" "$HOME/minio" "$HOME/rustfs" "$HOME/nx-cache"`. `$HOME/minio` stays on
-the list until the deferred cleanup (spec 080 T047) deletes the directory; drop it from the list in the
-same step.
+credential lines, start `nx-cache`. `backup.sh` captures each store's **config directory** (never its
+data volume) in its `restic backup` path list, so add `"$HOME/rustfs"` to that list. The previous store's
+directory, `/home/prod/minio/`, stays on the list until the deferred cleanup (spec 080 T047) deletes it;
+take it off the list in that same step. Take each store's secret from its own `.env` with `sed -n
+'s/^<KEY>=//p' <file>` rather than typing it into a `read -rs` inside a pasted block, which consumes the
+next pasted line as its input; and list env-file keys with `^[A-Z0-9_]+=`, not `^[A-Z_]+=`, which silently
+skips every `S3_…` line.
 
-**Done on prod 2026-10-21** (spec 080 T044): copy, not recreate; `verify` pass 1360 → 1360 objects.
-Host facts that are not in git, recorded for the next operator: the old store was the compose project
-`minio` (container `minio-minio-1`, network `minio_default`, service `minio`, S3 on `0.0.0.0:9000`, console
-on `0.0.0.0:9001`) on the volume `minio_minio-data`; `~/nx-cache/nx-cache.env` already carried
-`S3_ENDPOINT_URL=http://127.0.0.1:9000` and `S3_BUCKET_NAME=nx-cache`, so only the two `AWS_*` credential
-lines changed. Take each store's secret from its own `.env` (`sed -n 's/^MINIO_ROOT_PASSWORD=//p'
-/home/prod/minio/.env`, `sed -n 's/^RUSTFS_SECRET_KEY=//p' ~/rustfs/.env`) rather than typing it into a
-`read -rs` inside a pasted block, which consumes the next pasted line as its input. And list env-file keys
-with `^[A-Z0-9_]+=`, not `^[A-Z_]+=`, which silently skips every `S3_…` line.
+<!-- history:begin -->
+**Done on prod 2026-10-21** (spec 080 T044): copy, not recreate; `verify` pass 1360 → 1360 objects. Host
+facts that are not in git: the old store was the compose project `minio` (container `minio-minio-1`,
+network `minio_default`, service `minio`, S3 on `0.0.0.0:9000`, console on `0.0.0.0:9001`) on the volume
+`minio_minio-data`, its secret `MINIO_ROOT_PASSWORD` in `/home/prod/minio/.env`, access key `nxcache`.
+`~/nx-cache/nx-cache.env` already carried `S3_ENDPOINT_URL=http://127.0.0.1:9000` and
+`S3_BUCKET_NAME=nx-cache`, so only the two `AWS_*` credential lines changed. `backup.sh` line 47 became
+`"$HOME/forgejo" "$HOME/komodo" "$HOME/minio" "$HOME/rustfs" "$HOME/nx-cache"`.
+<!-- history:end -->
 
 **Stage 2 — the cache server** (binary + systemd-user, like the runner):
 
@@ -1062,7 +1064,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 > - **Keycloak** Postgres (`pg_dump -d keycloak`) and **agent-db** Postgres (`pg_dump -d agent_db`) — `docker exec … pg_dump` over the container's local socket.
 > - **mc-service Mongo** (`mongodump` of `mc_db`, the movie data) and **BFF Mongo** (`bff_db`) — `docker exec … mongodump` inside each Mongo container. The Mongo connection URIs (which carry creds) are read **live from the running app containers** at backup time via a `cenv()` helper, so **no secret is stored in the script** (host rewritten to `127.0.0.1`).
 > - Each app-DB dump is best-effort and drops a `DUMP-FAILED-<name>` marker in the snapshot on error, so an incomplete backup is visible instead of silent.
-> - **Config directories, not data:** the `restic backup` line also takes `$HOME/forgejo`, `$HOME/komodo`, `$HOME/minio`, `$HOME/rustfs` and `$HOME/nx-cache` — compose files, `.env`s and the cache server's env file, enough to stand each service back up. `$HOME/rustfs` was added 2026-10-21 with the Nx-cache store move (spec 080 T044); `$HOME/minio` leaves the list when T047 deletes the old store.
+> - **Config directories, not data:** the `restic backup` line also takes `$HOME/forgejo`, `$HOME/komodo`, `$HOME/rustfs` and `$HOME/nx-cache` — compose files, `.env`s and the cache server's env file, enough to stand each service back up. `$HOME/rustfs` was added 2026-10-21 with the Nx-cache store move (spec 080 T044); until T047 the list also carries the previous store's directory, `/home/prod/minio/`, as the rollback.
 > - **Intentionally NOT dumped:** langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** (`nx-cache-rustfs-data`) — all rebuildable.
 > - ⚠️ **Gotcha that bit us:** the *original* `backup.sh` dumped only Forgejo + Komodo + the object-store/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`.**
 >
