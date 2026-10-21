@@ -809,8 +809,16 @@ evidence; it never runs these.
   remote cache was down for ~5 minutes. `minio_minio-data` and `/home/prod/minio/` are kept as the
   rollback until T047.*
 
-- [ ] T045 [US5] Two CI runs of the same cacheable target: the second reports a remote-cache hit
+- [x] T045 [US5] Two CI runs of the same cacheable target: the second reports a remote-cache hit
   (`Nx read the output from the remote cache`) (SC-010).
+  *Done 2026-10-21 on PR #824, after T044's cutover to RustFS. Same mc-service inputs across runs 5770
+  (`582fb26c`), 5773 (`68a29d1e`) and 5776 (`dd917089`). Run 5776's `app-ci / mc-service-checks` printed
+  `🔁 > nx run mc-service:lint  [remote cache]` and `🔁 > nx run mc-service:"test:unit"  [remote cache]`,
+  each with `Nx read the output from the cache instead of running the command for 1 out of 1 tasks` and
+  `Cache: 1/1 hit (100%)`; run durations were 12 ms and 13 ms, against ~33 s and ~48 s of compile in the
+  replayed output. This Nx version marks a remote hit with the `[remote cache]` task tag rather than the
+  literal sentence in this task; the meaning (output served by the remote cache, now RustFS) is the same.
+  Read by the operator from the Forgejo job log, since the forge API exposes no job logs.*
 
 ---
 
