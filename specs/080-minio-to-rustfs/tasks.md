@@ -794,10 +794,20 @@ evidence; it never runs these.
 
 ## Phase 10: User Story 5 — the Nx remote cache (Priority: P3) **[OPERATOR]**
 
-- [ ] T044 [US5] **[OPERATOR]** contracts/migration-procedure.md M8 on the prod host using the
+- [x] T044 [US5] **[OPERATOR]** contracts/migration-procedure.md M8 on the prod host using the
   Phase 8 runbook text shipped in T031: stop `nx-cache`, `manifest`, stop MinIO, `inventory`, `copy
   --apply`, start RustFS from `/home/prod/rustfs/compose.yaml`, update `nx-cache.env` credential
   lines, start `nx-cache`, `verify`. (Or, per Open Question 1, recreate empty.)
+  *Done 2026-10-21 23:04–23:10 UTC (copy, not recreate). Old store: `minio-minio-1` (project `minio`,
+  network `minio_default`) on `minio_minio-data`. `manifest`: 1360 objects, 1052205412 bytes, 0
+  versioned buckets. `inventory`: `xl-single`, 0 SSE, 0 tiered, `migratable`. `copy`: pass,
+  `targetPreexisted: false`, uid 10001, `entriesNotOwnedByRuntimeUid: 0`, source digest unchanged
+  (`72179400…`). RustFS healthy, `bucket ready`. Only the two `AWS_*` key lines in `nx-cache.env`
+  changed (`S3_ENDPOINT_URL=http://127.0.0.1:9000` and the bucket were already right); `/health` OK.
+  `verify`: pass — 1360 → 1360, missing 0, unexpected 0, size 0, etag 0, checksum 0 of 50, written
+  after manifest 0. Evidence: `/home/prod/080-nx-cache/{manifest,inventory,copy,parity}.json`. The
+  remote cache was down for ~5 minutes. `minio_minio-data` and `/home/prod/minio/` are kept as the
+  rollback until T047.*
 
 - [ ] T045 [US5] Two CI runs of the same cacheable target: the second reports a remote-cache hit
   (`Nx read the output from the remote cache`) (SC-010).
