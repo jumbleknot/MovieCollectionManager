@@ -1,12 +1,9 @@
 ---
 type: Service
 title: MCM Cinema design system
-description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring, and the R1-R7 compliance scan that keeps the app from drifting off it.
+description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring, the R1-R7 compliance scan that keeps the app from drifting off it, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
 sources:
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
@@ -69,6 +66,9 @@ sources:
   - id: openwiki-source-54da196e9c02e7f7f455cfb8
     resource: repo://specs/017-design-system-consistency/contracts/success-token.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-20T11:09:40.455Z
 ---
 
 # MCM Cinema design system
@@ -91,8 +91,13 @@ does not enumerate component props — go to the source for those.
 The package ships tokens (`tokens/`), the two themes (`theme/`), the `createFont` definitions
 (`fonts/`), the Tamagui config, and the components grouped as primitives, inputs, surfaces, navigation,
 domain and assistant. `package.json` publishes `"."` → `index.ts` and `"./tamagui.config"` →
-`tamagui.config.ts`; `expo`, `react` and `react-native` are peer dependencies, so the package is never
-the thing that decides the app's framework versions.
+`tamagui.config.ts`. `expo`, `react` and `react-native` are **peer dependencies declared as open
+ranges** (`>=52.0.0`, `>=18.0.0`, `>=0.76.0`), and `react`/`react-native` are additionally pinned in
+this package's own `devDependencies` so its Jest suite renders against the same runtime the app uses.
+The package therefore never decides the app's framework versions — `react-native-safe-area-context`
+and `react-native-svg` are ordinary `>=` dependencies for the same reason (they are only needed by
+`NavigationBar` and `AssistantAvatar`, and the Expo SDK's version matrix owns the version, which is why
+the Renovate lock below covers them too).
 
 ## Colour roles are theme-split
 
@@ -198,6 +203,67 @@ is a measured decision, not a leftover:
 Because the pin is a dependency-level constraint shared by two projects, a bump is a cross-repo change:
 the guard, not prose, is the source of truth for what version is allowed.
 
+## Framework versions belong to the Expo SDK, not to Renovate
+
+The same cross-project reasoning applies to the framework packages this package declares, with one
+extra twist: the lock has to be **repo-wide**, not per manifest. Three `packageRules` in
+`renovate.json` carry `enabled: false` and **no `matchFileNames` scope**, so each one resolves for
+every workspace manifest rather than only the app:
+
+| Locked family | Patterns disabled repo-wide | Why the scope matters |
+|---|---|---|
+| React | `react`, `react-dom`, `react-test-renderer` | React also lives in the root manifest and here; a split React is two physical copies and an `invalid-hook-call` at runtime. This is the oldest of the three rules and the only one with no per-manifest assertion behind it. |
+| React Native | `react-native`, `/^react-native-/`, `/^@react-native//`, `/^@react-native-community//` | The `/^react-native-/` half is not redundant: it is the only thing covering `react-native-reanimated`, `react-native-worklets`, gesture-handler, screens and safe-area-context — all SDK-matrix pins, none of them matched by the app-scoped rule's `react-native` / `/^@react-native//` patterns. |
+| Expo SDK companions | `expo`, `/^expo-/`, `/^@expo//`, `/-expo$/` | `babel-preset-expo`, `jest-expo` and `eslint-config-expo` carry no `expo` prefix, so the app-scoped patterns miss all three, and `@expo/dom-webview` is declared in `pnpm-workspace.yaml`, which a `matchFileNames` rule cannot reach. |
+
+The React Native scope is load-bearing rather than theoretical: PR #217 bumped `react-native`
+0.85.3 → 0.87.0 *through this package's manifest*, where the older app-scoped rule could not reach
+it, and RN 0.87 narrowed the press-event type so `GestureResponderEvent` stopped satisfying Tamagui's
+`PressableProps['onPress']` — 15 typecheck errors across 14 files. The Expo-companion lock records the
+same defect a third time, measured 2026-08-27 from the Dependency Dashboard (item #29): `babel-preset-expo`,
+`jest-expo`, `eslint-config-expo` and `@expo/dom-webview` were all queued in `js majors` for 56 → 57
+while `expo` itself sat at `^56.0.8` and `react-native` was correctly disabled — an SDK-56 runtime
+against SDK-57 transform and test tooling, which fails as unexplained transform errors rather than as
+typecheck errors pointing at a dependency. Both this package's devDependencies (`jest-expo ~57.0.6`,
+`eslint-config-expo ~57.0.2`, `react 19.2.3`, `react-native 0.86.3`) and the app's are exactly why the
+lock cannot be app-scoped. `@expo-google-fonts/*` is deliberately **not** matched — `/^@expo//`
+requires a slash after `@expo` while the font packages separate with a hyphen — so it stays updatable.
+
+The guard asserts the **resolved** value, not the presence of a rule:
+`scripts/__tests__/renovate-workflow.guard.test.mjs` resolves `enabled` through the repository's own
+`packageRules` (last matching rule wins, modelled in
+[`scripts/lib/renovate-package-rules.mjs`](../../scripts/lib/renovate-package-rules.mjs)) for every
+member of the RN family and the Expo-companion family, in each of `package.json`,
+`frontend/mcm-app/package.json`, `packages/design-system/package.json` and `pnpm-workspace.yaml` — the
+property being asserted is "what does this dependency resolve to in each package file", because the
+broken configuration would have passed a check for "does a rule mentioning `react-native` exist".
+A control test asserts `@expo-google-fonts/inter` and `@expo-google-fonts/outfit` still resolve
+enabled, so widening the Expo lock past the SDK matrix fails the suite. That guard is not an
+app-repo gate: it is a plain `node:test` file picked up by the `naming` job's
+`node --test scripts/__tests__/*.test.mjs` step in `.forgejo/workflows/guardrails.yml`, which is why
+`pnpm nx test design-system` does **not** run it — a green package suite says nothing about the lock.
+
+```mermaid
+flowchart TD
+    A["renovate.json: three repo-wide lock rules, no matchFileNames"] --> B["guard replays packageRules in order - last matching rule wins"]
+    B --> C["per manifest: package.json, frontend/mcm-app, packages/design-system, pnpm-workspace.yaml"]
+    C --> D{"dependency in the RN or Expo-companion family"}
+    D -- yes --> E["resolved enabled must be false"]
+    D -- no --> F["@expo-google-fonts control must resolve enabled true"]
+    E --> G["node:test file in the guardrails naming job"]
+    F --> G
+```
+
+How the framework lock is asserted: the guard replays the repository's own `packageRules` per manifest and per dependency rather than searching for a rule that mentions the package.
+
+Operationally: a `react`, `react-native` or Expo-companion bump in this package is never a raw
+Renovate change — it goes through `expo install` / the expo upgrade skill together with the app, so
+the two manifests move as one. Separately, the **toolchain majors** this package shares with the app
+(`jest` with `@types/jest`, and `typescript`) are held behind an explicit dependency-dashboard tick
+rather than a version ceiling, each in its own group so one tick releases one blocker, while patch and
+minor updates stay ungated in `js patch/minor`; the babel and async-storage holds cover only the app
+manifest. See [the Renovate runbook](../runbooks/renovate.md) for the bot's cadence and channels.
+
 ## The compliance scan (R1–R7)
 
 The app enforces design-system usage with a **static scan run by its Jest suite**, not a runtime check.
@@ -283,6 +349,15 @@ style, AA contrast) rather than the implementation.
 - **Never import `Text` from `@tamagui/core`** — use the design system's `Text`, which carries the body
   font, `onBackground` colour and web default line height that Tamagui 3 no longer supplies from config.
   `components/text-defaults.test.tsx` fails on a core `Text` import anywhere in the package or the app.
+- **Don't bump `react`, `react-native` or an Expo SDK companion in this package's manifest by hand.**
+  The Renovate locks are repo-wide precisely because this manifest is where PR #217's RN bump escaped;
+  moving one of them here splits React or the RN family between two manifests. The guards assert the
+  lock *rules* resolve to disabled, not what this manifest declares, so a hand edit is the one route
+  that gets no warning at all. Framework moves go with the app, through `expo install`.
+- **Don't add a `matchFileNames` scope to the RN or Expo lock rules.** The scope is the fix, not an
+  implementation detail: the app-scoped rule that predates them is what let `react-native` (and later
+  the three unprefixed Expo companions) move alone. The guards resolve `enabled` per workspace
+  manifest, including `pnpm-workspace.yaml`.
 
 ## Where to look next
 
@@ -291,4 +366,7 @@ re-export, provider, font loading, theme preference), `packages/DESIGN-SYSTEM.md
 token/component reference, and `frontend/mcm-app/README.md`'s "Design-system compliance & sanctioned
 deviations" section for the app-side rule table and deviation catalogue. Test wiring for the app tiers
 lives in [Testing tiers](../invariants/testing-tiers.md), and stable selectors for anything you re-skin
-are covered by [Playwright testID mapping](../gotchas/playwright-testid-mapping.md).
+are covered by [Playwright testID mapping](../gotchas/playwright-testid-mapping.md). The dependency
+locks that keep this package's framework versions aligned with the Expo SDK — and the guard that
+asserts them — are described in [the Renovate runbook](../runbooks/renovate.md) and
+[the CI/CD pipeline](./ci-cd-pipeline.md).

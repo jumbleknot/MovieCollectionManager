@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:579ed15ec766f540a6f3e74ae886978b184c1f89b80dd076d1bc865476753a88",
+  "pageVersion": "sha256:fe7d5186d8d4dffd59560908476f55093ef6a5c8f498b6955b5907e9aeeacc13",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -21,7 +21,7 @@
       "statement": "A deployed support stack does not by itself change application behavior: the consumer composes reference every Control-Tower variable as plain ${VAR}, never ${VAR:?}, and each capability is gated in the consumer's own source (audit_sink on OPENSEARCH_URL, observability on LANGFUSE_*/OTEL_*, opa on OPA_URL, flags on UNLEASH_URL), so unset means a silent no-op. Rollback is therefore removing the consumer env and/or deleting the support [[stack]] block, with no app redeploy needed to disable a capability.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L474-L482",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L618-L626",
           "version": "repo-lines-v1:sha256:83b799765026fbf9bf09cd4cd00a2a0325f067d0f3d9aabdcf54fe3434926af4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NGM1M2JlNmViYjg3ZjU1OWI5ZjdiOGU0Yjg2M2YzNmY5YmRhMjk0NTFjNmY0Njg2YmU4ZWZlZjQ2MTc4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY4YWVmN2Y1NGRiNGNlMmVlM2Y3NTYwY2RhZDIzZmIyYWJjYzVjNzNlYjI1MWE3NWVhNGEwMWZmNDA2ZjU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlhMjcyY2RmNzE2MDgyZTRhZmViMTc2NzdmZTQyMzBkYmIxM2IzMGFkZWZhYjkzMGJjZGU2MDZmMjk1MTFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ5YjYzMzY0Mzg3N2UwM2RmNDQzNjdiNGE1MDM3OGU4Y2UxOTZiNzdjYTJiOGYzZjA3OWQwOGFiZjhiMGZlMyJ9"
         },
         {
@@ -40,7 +40,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -68,7 +68,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -82,19 +82,19 @@
     },
     {
       "id": "claim_a84bb658be8d439d838af8809f9eb65c",
-      "statement": "Komodo counts any exited container as unhealthy, so every one-shot init container in this stack set must provision and then idle (`… && exec sleep infinity`) behind a trivial passing healthcheck; where a downstream service needs the init's result the dependency gates on a completion marker instead — langfuse-rustfs-init creates the bucket then touches /tmp/ready, its healthcheck tests for that marker, and langfuse-worker depends on service_healthy because a never-exiting container can never satisfy service_completed_successfully.",
+      "statement": "Komodo counts any exited container as unhealthy, so every one-shot init container in this stack set must provision and then idle (`… && exec sleep infinity`) behind a trivial passing healthcheck; where a downstream service needs the init's result the dependency gates on a completion marker instead — langfuse-rustfs-init creates the bucket then touches /tmp/ready, its healthcheck tests for that marker, and langfuse-worker depends on service_healthy because a never-exiting container can never satisfy service_completed_successfully. The prod stay-alive shape versus the dev true one-shot is asserted by a guard test rather than left to memory.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
-        },
-        {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
           "version": "repo-file-v1:sha256:b16518b8f60611f2ea5ddfaf3286b5a041b4f8d01ed0f07d2dcc0e9d20efe4be"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs",
+          "version": "repo-file-v1:sha256:0abfa8036002b090a30745946bbffb4fdf969c4d50c85dc1e6439b1a22549237"
         }
       ]
     },
@@ -104,25 +104,33 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4872f1f01fee081c83099b185dd5488d676b3c9ad974c8654a73c54b37d53751"
+          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/config/vault.hcl",
+          "version": "repo-file-v1:sha256:ab37e20560b81625b14a0d59f7dda2a1fb74e46da8b2aa2e1a6e32ac14995d3b"
         }
       ]
     },
     {
       "id": "claim_3174f5fb03ed4f64927a4bbc9c0738be",
-      "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault), disable_mlock = true, cap_add: IPC_LOCK, and command: [\"server\"] together: without the cap the entrypoint takes a fallback path that double-starts vault, and passing -config explicitly loads the listener twice because the entrypoint already appends -config=/vault/config.",
+      "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault), disable_mlock = true, cap_add: IPC_LOCK, and command: [\"server\"] together: without the cap the entrypoint takes a fallback path that double-starts vault, and passing -config explicitly loads the listener twice because the entrypoint already appends -config=/vault/config. The rationale is stated in place in vault.hcl (mount path, disable_mlock) and in the vault compose (the cap, the command), and is repeated in the runbook's prod-only gotchas table.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L469-L472",
-          "version": "repo-lines-v1:sha256:e8810f88b42b64805bd4d2a41d54dd2be0878a7cd1ef8bf3b188e869f0546a6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGM1OTI4ZjhlMTVjZGUxYmVkZTQ2OTYxYzM2YWU3YjAwNmE2ZWQ0OTc0MWY0YzY1ZmYyODNhYWNmY2NmNjgxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M1MDNmZjg1ZGU1NzczOTM2MjUxYTE3MDcwNGZlZjBjMzBmYmM0ZDkwYjJjM2EwZTJkODIyMGNhMDQ1MzA4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNiOWYwMGJlYWQwNTJjN2IzNzcyNzJlZTMxM2QyMjEzYjc2NmYzZGQ0MmI2ZWM1M2M5MjUxODVlZTZlOWIwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2FkM2YyMDQ3NmRkMjhmYTEyNDU1NDBkOGFiZWRjZGMwMDJjYTMxNmU2YWMyZjg4NWVkODk2NTQ2ODg1NzgwZCJ9"
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L19-L53",
-          "version": "repo-lines-v1:sha256:f81ac39ae5214140e6ab4c8987dd0dc03f25cd506fa115c420d5ed8363ffca4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMGUxMGNkYTU5YjJjNWVmMzcwMTFlZTZhZjEzMDg2MjVlNTNhY2E4YzA1YmQwNDEwNWYyYWY3MTk3ZjI0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2VmNmE0ZWEwZTU2MzdjMjNkZGJmMWU0YzdhMTUyYTYyNGZjOTQwNjIxZGU5YjEwOGJkNDNjODc4ZjU1N2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzRhZjYwMzBiZGQwMGEwYTczYTI5MWE1N2IzYTdjM2VlZDkwZmEwMmNmYjRjNGMwM2QyYjI3N2Q2MDdkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/config/vault.hcl",
+          "version": "repo-file-v1:sha256:ab37e20560b81625b14a0d59f7dda2a1fb74e46da8b2aa2e1a6e32ac14995d3b"
         }
       ]
     },
@@ -131,26 +139,34 @@
       "statement": "prod-vault is deployed uninitialized and sealed on purpose, and its healthcheck overrides ?uninitcode=200&sealedcode=200&standbycode=200 so that dormant state reads as healthy to Komodo; running `vault operator init`/unseal is explicitly out of scope for this rollout, and the overridden codes resume their real meaning once an operator does init and unseal.",
       "evidence": [
         {
+          "resource": "repo://docs/decisions/ADR-0001-prod-secrets-management.md",
+          "version": "repo-file-v1:sha256:be5f3cd8c71881abca4e0e3cb0d7ed08a399d2ae941f0b21d6c97e5b9ac133d9"
+        },
+        {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4872f1f01fee081c83099b185dd5488d676b3c9ad974c8654a73c54b37d53751"
+          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
         }
       ]
     },
     {
       "id": "claim_0dc05f92fcf44ca2abae30aaed71d5ef",
-      "statement": "The only tailnet-reachable operator UIs in this stack set are langfuse-web and the Grafana UI inside otel-lgtm, both published as plain 0.0.0.0 HOST:CONTAINER binds in the prod-reserved 19000–19099 range and kept tailnet-only by the host firewall; the OTLP ports stay unpublished because the gateway reaches otel-lgtm by internal DNS, and the broad bind (rather than a tailnet-IP prefix) exists because the rootless daemon starts before tailscaled at boot.",
+      "statement": "The only tailnet-reachable operator UIs in this stack set are langfuse-web and the Grafana UI inside otel-lgtm, both published as plain 0.0.0.0 HOST:CONTAINER binds in the prod-reserved 19000–19099 range and kept tailnet-only by the host firewall; the OTLP ports stay unpublished because the gateway reaches otel-lgtm by internal DNS, and the broad bind (rather than a tailnet-IP prefix) exists because the rootless daemon starts before tailscaled at boot — the boot race documented in the prod-reboot-resilience runbook, with the range's collision gate in scripts/check-prod-ci-port-collision.mjs.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
+          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
+          "version": "repo-file-v1:sha256:40006e27eec40864087b5343050b4435f0fd4aa857d3aac8663e2cbcd853c771"
         }
       ]
     },
@@ -178,7 +194,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         }
       ]
     },
@@ -188,7 +204,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         }
       ]
     },
@@ -281,7 +297,7 @@
           "version": "repo-lines-v1:sha256:765a7b4f4900916e44678e6c531643839388e95ad8cf5b85297576a1439407f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZTdiZGM5MDdkNjE5N2ZlMTY3Yzc1MmIxMWQzNDFhMTEyNmVmNmNkNDMzODBlOGJlMzQ1YjdhODQ2NDEwZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L132-L166",
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L134-L168",
           "version": "repo-lines-v1:sha256:5c35efc7ac207f1308a2c956637aabd7c025070238a0340c0edae1267ce7b5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzJkMTZjZGFlNTM0MzMwYWM3NTNkMTEyMzk2M2U1NjlmMzRhYjhiMmVlM2IwNDk1NTAzNjU5MzIyMWVhYmMifQ"
         }
       ]
@@ -291,7 +307,7 @@
       "statement": "The prod-only failure table's two smaller traps are still load-bearing: the audit-init container must use an image shipping both bash and curl (init-audit-user.sh is #!/usr/bin/env bash, so curlimages/curl cannot run it) and its entrypoint pre-creates the sibling stacks dir the script cd's into before its guard, or set -euo pipefail aborts everything; and the BFF's audit POST needs OPENSEARCH_INSECURE_TLS=true because OpenSearch serves a self-signed cert and the sink sets rejectUnauthorized:false only when that flag is truthy, while the gateway's httpx sink needs no flag.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L433-L451",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L577-L595",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -310,11 +326,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
         }
       ]
     },
@@ -323,7 +339,7 @@
       "statement": "Enabling prod-observability followed a capacity check on the shared prod host rather than an assumption of headroom: ~48 GiB RAM was available against ~2.2 GiB of actual container RSS, and observability (~6-7 GiB) plus the audit sink (~1.5 GiB) left ~40 GiB free, so the decision was always-on with no opt-in fallback and ClickHouse's mem_limit retained; the check is to be re-run before any future footprint increase.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L425-L431",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L569-L575",
           "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwMzg1NzE1NDVjOTYzNTNlY2JjODQ0MzgwMTk2NDk4OTU5ZWM4Y2NlZGZkYjFkNmI5YzRiNjI2OTgyYzQ4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
         }
       ]
@@ -347,7 +363,7 @@
       "statement": "init-audit-user.sh no longer echoes the credentials it provisions. It used to print both passwords in full, and once agent-audit-init began running it in production that output went to container stdout, leaving both live credentials in docker logs agent-audit-init, in Komodo's log view and in anything shipping those logs — a direct violation of the stack's never-log list. It now prints where the credentials live (dev: the gitignored stacks/audit.env; prod: Komodo Variables), never what they are.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L433-L451",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L577-L595",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -361,8 +377,12 @@
       "statement": "The prod Langfuse event/media object store is no longer built in-repo: feature 080 replaced every instance with the digest-pinned upstream rustfs/rustfs image, which runs as its own uid (10001 for the pinned 1.0.1) with no compose `user:` key — a fresh named volume inherits the image's /data with that ownership and any other uid fails at startup. The bucket-init one-shot langfuse-rustfs-init reuses that same pinned image, all instances pin the same digest and Renovate moves them together, so a split between the server and its init cannot arise from a hand edit.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs",
+          "version": "repo-file-v1:sha256:0abfa8036002b090a30745946bbffb4fdf969c4d50c85dc1e6439b1a22549237"
         },
         {
           "resource": "repo://specs/080-minio-to-rustfs/contracts/object-store-service.md",
@@ -376,7 +396,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
@@ -449,10 +469,142 @@
           "version": "repo-file-v1:sha256:282b8c0e9d9a1186f42a47251c09b32425b58e96a3124b1e3747ad7751f4c431"
         }
       ]
+    },
+    {
+      "id": "claim_62c64aa6b1f744c6bb283cca3885b859",
+      "statement": "Three of the four one-time stateful cutovers on the production support stacks — the feature-080 RustFS object-store swap, the feature-071 OpenSearch 2→3 upgrade, and the spec-081 US8b Postgres 16→18 move — put the new state on a NEW external volume and leave the previous volume untouched as the rollback, so their rollback is a revert-and-redeploy rather than a data restore. The Langfuse 4 + ClickHouse 25 cutover (feature 072) is the one that recreated its volumes in place and deliberately discarded the production trace store, a trade ratified by ADR-0002 §4 at that cutover only.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md",
+          "version": "repo-file-v1:sha256:37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md",
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2d8405d7cdd4117908ae6aafe6449f0",
+      "statement": "Postgres 18 will not start on a pre-18 data directory: measured 2026-10-20 on a copy of a real 16 Unleash volume it exits 1 with the old volume mounted at the 18 parent /var/lib/postgresql and again at the pre-18 /var/lib/postgresql/data, and it also exits 1 on an EMPTY volume mounted at /data while leaving an anonymous volume behind. With `restart: always` that is a crash loop for both observability databases the moment the merge deploys, so the compose mounts the PARENT /var/lib/postgresql (18 keeps its cluster under /var/lib/postgresql/18/docker) on new external volumes observability-{langfuse,unleash}-postgres-v18-data, leaving the 16 volumes untouched as the rollback — the same -v3-data shape feature 071 used for OpenSearch.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
+          "version": "repo-file-v1:sha256:8f5bbb072ea59d5897260c8009a876f71ce5d28745f33bbc199b392fa387411b"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md",
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_17f7ce0a277f4208b97c85fe3d5a6115",
+      "statement": "For the spec-081 US8b cutover a merge to main IS the deploy, so the timing of the -v18-data volumes is the whole risk: merging before the volumes exist is safe because the deploy fails up front with `external volume \"…-v18-data\" not found` and the 16 containers keep running unchanged, whereas merging after creating the volumes but before the Unleash dump/restore is the outcome to avoid because Unleash comes up healthy on an EMPTY database, unleash-seed recreates only its three default-off flags, every other flag, strategy and API token is gone, and nothing reports it. The same mechanism leaves a developer's local 18 stack on an empty volume, where unleash-seed likewise recreates only the three default-off flags.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md",
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_6cc6a1a4430d4e498d8bfbf1b01e6a82",
+      "statement": "The US8b data decision is asymmetric: Unleash flag state is preserved by pg_dumpall from the 16 instance and a restore onto 18 in a throwaway container before the merge, verified by a pre/post table-count diff over features, feature_strategies, api_tokens, feature_environments-where-enabled and migrations that must print COUNTS-EQUAL (the restore's stderr being exactly the two 'already exists' lines) and, after the deploy, LIVE-COUNTS-EQUAL against the same 16 baseline; while Langfuse's Postgres is deliberately discarded per ADR-0002 §4 and re-initialised by LANGFUSE_INIT_*, which recreates the mcm org, the movie-assistant project and its keys so gateway tracing keeps working, at the cost of anything created by hand in the Langfuse UI. ClickHouse and RustFS are not touched by this cutover, and only the three writers (unleash-service, langfuse-web, langfuse-worker) are stopped for the dump window.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md",
+          "version": "repo-file-v1:sha256:37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md",
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c4ba3204fc047aaaf78775c0007fee6",
+      "statement": "langfuse-postgres and unleash-postgres share one identical pinned Postgres image, which is why they can only move together, and that is enforced rather than remembered: scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs asserts against both the dev and the prod compose one identical digest for both services, on the 18 line, mounting /var/lib/postgresql and never the pre-18 /var/lib/postgresql/data, on a volume that is not the one holding the 16 data and whose name carries the -v18 marker. The spec-081 change also replaced the observability-only `allowedVersions: \"<17\"` hard hold with the stateful-datastore major approval tick that now governs every database image here.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
+          "version": "repo-file-v1:sha256:8f5bbb072ea59d5897260c8009a876f71ce5d28745f33bbc199b392fa387411b"
+        }
+      ]
+    },
+    {
+      "id": "claim_bce190340ed847ff8d75af3f0662dc8c",
+      "statement": "The US8b rollback is non-lossy for Unleash — reverting the merge puts the compose back on postgres:16-alpine and the ORIGINAL observability-{langfuse,unleash}-postgres-data volumes, which hold the state exactly as it was when the writers were stopped — but flag changes made on 18 after the cutover are not carried back, and the pg_dumpall of the 16 instance is a second way back; because main is protected that revert is itself a pull request (git revert -m 1 <merge-sha>) which must merge before the prod-observability redeploy. Until the merge lands the window can be abandoned losslessly, since the 16 databases keep running throughout and only the three writers are stopped. The pre-seed wait must use pg_isready over TCP rather than the socket, because a socket-only check can pass against the entrypoint's temporary init server, and containers must be addressed by name because a hand-run docker compose cannot work against a Komodo-managed stack.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md",
+          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_4148440d592447cbb81a6b3629be3dcd",
+      "statement": "The spec-081 US8b observability Postgres 16→18 cutover is no longer merely rehearsed: it ran in production on 2026-10-20 (PR #809, commit 44817a42), with Unleash's table counts identical at all three readings — the 16 instance, the pre-seeded 18 volume and the live 18 database (api_tokens 2, env_enabled 0, feature_strategies 1, features 3, migrations 397) — both databases running 18.6 on the observability-{langfuse,unleash}-postgres-v18-data volumes and Langfuse fresh and healthy on its re-initialised database, while the step list itself had been built on a dev-container rehearsal earlier the same day that also verified the rollback to the untouched 16 volume.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
+          "version": "repo-file-v1:sha256:84ee5b56ee91bd454a75b297aacf495acd889b19059b89876f7e96b2758ecab1"
+        }
+      ]
+    },
+    {
+      "id": "claim_50d7f5fb2b0f4ca5a302117e38c94fef",
+      "statement": "Three faults in the first version of the US8b steps are why the shipped commands are shaped as they are: pg_dumpall ends with the completion marker, then '--', then a blank line, so tail -2 never shows the marker and the check greps for it instead; a read -rs inside a pasted block consumes the next pasted line as its input and the bare `-e POSTGRES_PASSWORD` form passed nothing through this host's docker CLI, so the password is read from the RUNNING 16 container with printenv and passed explicitly (otherwise the 18 entrypoint exits with `Database is uninitialized and superuser password is not specified`); and the pre-seed wait loop otherwise spun forever on an already-exited container (`cannot exec in a stopped container`, once every 2 s), so it is now bounded, detects the exit and prints the logs, with the docker rm moved to a later block so a failed start leaves its logs readable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
+          "version": "repo-file-v1:sha256:84ee5b56ee91bd454a75b297aacf495acd889b19059b89876f7e96b2758ecab1"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-21T02:24:18.205Z"
   }
 }

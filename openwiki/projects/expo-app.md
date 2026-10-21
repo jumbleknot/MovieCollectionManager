@@ -92,7 +92,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T12:20:46.129Z
+    at: 2026-10-20T06:13:33.915Z
 ---
 
 # Expo/React Native universal app
@@ -199,6 +199,17 @@ labels:
 
 Adding a settings area is meant to be one registry row in `settings-nav.tsx` plus a route and a
 screen — no other area's code should need to change.
+
+Reporting a label is not the same as that label being usable, and one area shows the gap. The
+Account route reports `current_screen: settings.account`, but `ALLOWED_SCREENS` in
+`src/bff-server/ui-state-sanitizer.ts` — the BFF's *sole* sanitization point for what the assistant
+may be told about the screen the user is on — lists only `settings`, `settings-assistant`,
+`settings-backups` and `settings-admin`, so the Account label is silently reduced to `unknown`
+before it ever reaches the agent. That is the same failure shape as the retired `admin-settings`
+label (reported by a route but never allowlisted), which is why
+`src/bff-server/unit-tests/ui-state-sanitizer.test.ts` asserts the allowlist entry by entry instead
+of trusting the client-side union in `use-ui-state.tsx` (which ends in `| string` and therefore
+constrains nothing at runtime).
 
 ```mermaid
 sequenceDiagram

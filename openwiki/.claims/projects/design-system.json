@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:542260378f1fd3f13049df2e6f441f016eedea782a645568be99fda5ad44197d",
+  "pageVersion": "sha256:84aae1562434871166d8d5494a827e0a79356ae80dd9efc094d8e5d932ddd8f7",
   "claims": [
     {
       "id": "claim_165a779429c54154b88d58468022d8bc",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
+          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
         }
       ]
     },
@@ -62,7 +62,7 @@
         },
         {
           "resource": "repo://packages/design-system/components/success-token.test.tsx",
-          "version": "repo-file-v1:sha256:87511aa398584f35ef2b4ec9d57136a88c04b7ab54f0d16c72ee1c21e41074c4"
+          "version": "repo-file-v1:sha256:a6c9683e0c352316b2ce4a16580a14e021fdb5ce5b87f92b3889d31f8ddcf857"
         },
         {
           "resource": "repo://specs/017-design-system-consistency/contracts/success-token.md",
@@ -116,7 +116,7 @@
       "evidence": [
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:18374e41e051573878906a740979ca51d7104a8c34567c48fad0291fc9376d02"
+          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
         },
         {
           "resource": "repo://packages/design-system/tamagui.config.ts",
@@ -156,7 +156,7 @@
         },
         {
           "resource": "repo://packages/design-system/components/text-defaults.test.tsx",
-          "version": "repo-file-v1:sha256:366cbeaae51d0c1a3f21564b3c7c6968242cac5afdc1715214c7cb2cc2ee8458"
+          "version": "repo-file-v1:sha256:a0157450229c9ec6b2808ab8ec51e1898c7c0c1fc4e57e62ea153799cd9eda20"
         }
       ]
     },
@@ -371,10 +371,82 @@
           "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fdb67dabb2944bfaa263ff3f1b894b1c",
+      "statement": "The framework packages this package declares are version-locked to the Expo SDK **repo-wide**, and the lock is asserted against `packages/design-system/package.json` itself, not only the app. The React Native rule disables `react-native`, `/^react-native-/`, `/^@react-native//` and `/^@react-native-community//` with no `matchFileNames` scope, and `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the resolved `enabled` per dependency in each of `package.json`, `frontend/mcm-app/package.json`, `packages/design-system/package.json` and `pnpm-workspace.yaml` rather than that a rule mentioning the package exists. The second scope is load-bearing: PR #217 bumped `react-native` 0.85.3 → 0.87.0 through this package's manifest, which the older app-scoped rule could not reach, and RN 0.87 narrowed the press-event type so `GestureResponderEvent` no longer satisfied Tamagui's `PressableProps['onPress']` — 15 typecheck errors across 14 files. The `/^react-native-/` pattern is a second, independent half: it is the only thing covering `react-native-reanimated`, `react-native-worklets`, gesture-handler, screens and safe-area-context, none of which the app-scoped rule matched anywhere. A framework bump in this package therefore goes through `expo install` together with the app, never a raw Renovate bump.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/package.json",
+          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
+        },
+        {
+          "resource": "repo://renovate.json#L498-L521",
+          "version": "repo-lines-v1:sha256:3f818a71d375a37ac96b660a348d783fa08e6876edf84e32e669215e53c1f663:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkMzI0NTIwMDIzZTUyYjFiMGZmMWQ1ZDQ1ODFhYzU5OTA4NmZjZmU2MjhkYWQ3YzUwODRlMTZiMDkwNWJlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1YTZhYzhhYjQ4NTBjMzVkYzA4ODBjMjc3NWNhZjA3ZDcxNmI0YTAwYzlhOTc3MmE4YzJjOTMxMDg2NGE0YTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L608-L693",
+          "version": "repo-lines-v1:sha256:4d1ec44ef63023d7cda2ba60f57f8f36d76a75349b106722eb54caee3d85a3f6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjA0OWUzNTI0NDFkNjg4ZmE3NTczZTk5NjJhY2U5NGMyZTVlZjQzMGZhNWY1YjVmZGIyZTFjNWY5YWU5NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYzQwNDFmNDI2NmUzMTY4NWE1MjY4NTJlNjM4YTUyYzQ1OTE5MjA4MDQ3NGI1MzI2NTkxZmY5ZTUxOTY2YWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0cf9378390a94591a7dadeeb337de7c0",
+      "statement": "The Expo SDK companion packages are also version-locked repo-wide, by a rule disabling `expo`, `/^expo-/`, `/^@expo//` and `/-expo$/` with no `matchFileNames` scope. This is the third instance of the same scope defect, and the widest: `babel-preset-expo`, `jest-expo` and `eslint-config-expo` carry no `expo` prefix so every pattern in the app-scoped rule missed all three, while `@expo/dom-webview` is declared in `pnpm-workspace.yaml`, which a `matchFileNames` rule cannot reach. Measured 2026-08-27 from the Dependency Dashboard (item #29): all four were queued in `js majors` for 56 → 57 while `expo` itself sat at `^56.0.8` and `react-native` was correctly disabled — an SDK-56 runtime against SDK-57 transform and test tooling, which fails as unexplained transform errors rather than as typecheck errors naming a dependency. `@expo-google-fonts/*` is deliberately not matched (`/^@expo//` requires a slash after `@expo`; the font packages separate with a hyphen) and a guard control asserts both font packages still resolve enabled.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L522-L563",
+          "version": "repo-lines-v1:sha256:bf7ddef4a8943d6be7efe6edc1560585b749300e1a5d2399ac47b15d9ffdf67c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0MGU3ZTVmYTVmNWU4NDhjMmRhOWY2YTBlNGU3Y2FmZmZjNzNkZWNjNmE5NWI2MzliODg0Y2UwZWU5ZGE0ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYjdkYThkMmZmMTE4ODQ5Y2E5NGI0NWE5NGZhNzZmMGU5ZjUyOTA0NDgxMmJkZDM2Njk4MzAzZjhlYmFlZGQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L695-L731",
+          "version": "repo-lines-v1:sha256:63c872e1829879882cd7a30dec39b357d99c6711cda8ce0e45fadfa85e505dfd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZjZhODA1YmMyNzBhODU3OWYyOTQzMTdlNTU5OTJlMjliN2FmYWFjZWJhZTU1NzUzNWFkNTdmMzk3ZWIxZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2YTExMjBjY2QxMTBjMzU4NDE2Nzc1NmE0YjFmZjdlYzIxOGE4YjVmMWRlNWYxN2EyYjRjNThkYTlkMWY2ODQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d6ba86da6e2498bb28e06bebce55825",
+      "statement": "The repo-wide version-lock guard is a plain `node:test` file, not part of either Jest suite: `scripts/__tests__/renovate-workflow.guard.test.mjs` is executed by the `naming` job's `node --test scripts/__tests__/*.test.mjs` step in `.forgejo/workflows/guardrails.yml`. It resolves `enabled` by replaying the repository's own `packageRules` in order (last matching rule wins, modelled in `scripts/lib/renovate-package-rules.mjs`) and fails loudly on any `match*` form that model does not know. Consequently `pnpm nx test design-system` passing says nothing about the locks, and the `react`/`react-dom`/`react-test-renderer` rule is the one locked family with no per-manifest assertion behind it at all — the guard loops the RN and Expo-companion families only.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L175-L176",
+          "version": "repo-lines-v1:sha256:db0527b2c9038092cdeb59f5a9ba84c012207fe46f160b5a1a5123e285d891d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzEzNGUyZDVlMjc1NWE4MzIyYTg4OWE3ZTU5NzcyMzkwZmE2ZjU4NGFhMjE3NmUyMmVlZGIxNzY2OGJkMGRlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg3ZjNiZGRiZGJiNzY1OGM2YjdhMWY3NTE2MmE4NzMxZmYwMDFhNjExYmY2MWMyN2QwMTRiNTNjYjE1Y2Q5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L24-L31",
+          "version": "repo-lines-v1:sha256:93a5abf2e5e49e346f9cfa669310074c460bd0e4fdc0adffba5292291c23f295:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE5NjViNzc2NTZmNWYyZGVkNzg1MDA3MTI4ZTg1ZmQzYTQ4OWQ1MTc0MWIyYjI3ZmM5NzM5MWM5MmEyOGQ2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjllYTJmM2I5NjUwOTE2ZWFlMTljODk3M2ZiNDdkYzA5NWYwMTlmYmEzMDVhZmE0NWFjNTk1MWU4OTVhMzRkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTRiZGQxNWQzNDYzNjcxMGMzNGY5Y2M5ODRkZjRiZWM2NjhiYWIwYjBiMGE3NGM2ZDUyNGE3ZGQxNzA3NWRlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWVlZTViZGY4MzczZmVhZTBhZWM0MzY4OWJlNjA2N2Y1Nzg3MzY2MWU2MTZmODZmYzBlZDNlZDExNzc4OGEzMSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L661-L693",
+          "version": "repo-lines-v1:sha256:4c4e4a7aaad43a17c3d775c8ba8c1b600aa2036c3aab708d47937906be7a2b41:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNjEyZjdiNzMxMjQ2ODA1YzgwZGZiZWMyMTEzN2UyMWIzMjE5NDE4MWI2YWJlMzRlNTk4ZTgxOWU2NzcyYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MzlkNGM3OTA2ZTU0ZmRhZjEyNjA0YWRkZTk2MGRmNzMxNTA5NjFjMjZkZjI3NjQ4MTVhOTgzYjJlNjk5NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYzQwNDFmNDI2NmUzMTY4NWE1MjY4NTJlNjM4YTUyYzQ1OTE5MjA4MDQ3NGI1MzI2NTkxZmY5ZTUxOTY2YWEifQ"
+        },
+        {
+          "resource": "repo://scripts/lib/renovate-package-rules.mjs#L11-L53",
+          "version": "repo-lines-v1:sha256:ef0cd584bbc495d9cee3a0b197d20639cf9092b0faa72f474b2e263a639ef018:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYjQxZjdkODA2ZWUwZmQwMTU1YjNhOThiYmRlOTM0Yzc0NDk3ODZkZmU5NzAzMjgwOGFiOWU3NDZjZDk5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4MGI5NjhjN2UwYzI2ODkxZjIzNGY1NWIyNzYxYTYzYWVhNzBlMzM3NjMwZmY1OTg5OWJiYjBhMjU1NmRjYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_09f8333a5fba48ff8301b97a61abc121",
+      "statement": "The toolchain majors this package shares with the app are held by `dependencyDashboardApproval` rather than by a version ceiling, each in its own group so one dashboard tick releases one blocker: `jest` with `@types/jest` (pinned by jest-expo's jest-29 family at SDK 57, possible at SDK 58) and `typescript` (pinned by typescript-eslint's compiler peer range), both of which name `packages/design-system/package.json` as a declaring manifest. Patch and minor updates are deliberately not matched, so they stay ungated in `js patch/minor`; the `@babel/core`/`@babel/runtime` and `@react-native-async-storage/async-storage` holds cover only the app manifest.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L903-L927",
+          "version": "repo-lines-v1:sha256:f172070f11ccd667d7ad6e331d457440d0eb385fb983980f13e54843ee7fea70:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MjIzNTRlNzBjMWZjOTMyMDZhZGY5OTUyYTEyNDI4NmZkMTdjOTQ2ZGEyYWU3ZDFmYjUyM2FiNThkODY3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZTYzMGUzNjk2ZDRkOWI3NDYxMDcwMjZmYWFhYjk2NWU0N2QxODg4NzNhNjllODcxYWY1ODU4N2U3MzA2YTMifQ"
+        },
+        {
+          "resource": "repo://renovate.json#L947-L964",
+          "version": "repo-lines-v1:sha256:5f5e577020fab524e19cf0b3a67f60784c5630685271fd0dc23fb197ef58b7c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOGUxZjc0NGIyZDg0NWQ4Yjg0ZTViZjdjN2NkOTBlZmE0ZWEyNTU4ZDgyNjI2YjI5ZGYyMTEwOWRjMGU4OTkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3505-L3580",
+          "version": "repo-lines-v1:sha256:e04b436bf199df7f60ebec41d849ef54de587e71c20c28d2dc57c1828808f1c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZDJjNjg0ZjQ4ZmNkZmNiMjJmNDhlYzQ5ZWUyMjI0YmU5NjUxMjFhMDkyNTNlYzY4MzRkYTIwZmVmYWYxZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWI2MGQwYmZjOWQ4NDBhNWQ2ODFjZDBlMTJiZDFmOWNlY2IxY2NiMmYxYjc0OGI0MzU0MjU5NDBmZjg0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3MTNmNjZiYzAxYjk5MTg2ZTQwZGEzNDQ0Y2M3NDYzMzUwYTA2NDE1Y2MwZjEyNDdhZWUxOGM1ZjMyYzMyMTcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T00:33:25.175Z"
+    "at": "2026-10-20T11:09:40.455Z"
   }
 }
