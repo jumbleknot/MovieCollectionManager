@@ -457,9 +457,13 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   `allowedVersions` rule in `renovate.json` and update `renovate-workflow.guard.test.mjs` accordingly (the
   approval-on-major rule stays).
   **Verify GREEN**: both guards, 0 failures.
-- [ ] T062 [US8] Data: `pg_dumpall` both instances → restore Unleash (and Langfuse per OQ-3) on 18 → verify
+- [x] T062 [US8] Data: `pg_dumpall` both instances → restore Unleash (and Langfuse per OQ-3) on 18 → verify
   Unleash flags/API and Langfuse UI (`pnpm nx up-observability infrastructure-as-code`); rehearsed locally,
   then prod. **Done when**: PR 8b merged with the restore evidence.
+  *Done in prod 2026-10-20: PR #809 merged (`44817a42`) after the operator pre-seeded the 18 volume; Unleash
+  counts identical 16 → seeded 18 → live 18 (`api_tokens 2 · env_enabled 0 · feature_strategies 1 · features 3
+  · migrations 397`); both databases on 18.6 on the `-v18-data` volumes, Langfuse fresh and healthy. The
+  runbook's steps were corrected for the three faults the real run hit (docs/runbooks/prod-control-tower.md).*
   *Local rehearsal done 2026-10-20 (research.md "US8 (PR 8b …)"): Unleash state identical after
   16 → dump → pre-seeded 18 volume, Langfuse fresh on 18 and healthy, rollback to the untouched 16 volume
   verified. postgres 18 exits 1 on any 16 data dir and on any `/data` mount, so both services move to NEW
