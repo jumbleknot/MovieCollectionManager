@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "0c002897002a03aff7ea5d93e2b4278a37832fc1",
-  "coveredAt": "2026-10-21T00:49:12.316Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "7cc3c304976a942d10ad9f30cf8708c79818e958",
+  "coveredAt": "2026-10-21T03:00:57.415Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 813,
-    "headCommit": "a7f10f82f1e13cc78fca6a44a5c39e32b3301f9b",
+    "headCommit": "41509e8ae52076cfc9477a4876baffb0a7ef2e83",
     "markerBefore": "9a4a28fa399d072e0e460c9270f085f14d11b673",
     "slices": [
       {
@@ -31,29 +31,40 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/prod-control-tower.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "prod-control-tower.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/prod-control-tower.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-20T12:01:17.399Z"
+    "updatedAt": "2026-10-21T03:00:57.838Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 2204,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 493,
+    "calls": 201,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 5083780,
-    "cached": 45061372,
+    "uncached": 2571470,
+    "cached": 17577278,
     "cacheWrite": 0,
-    "output": 923013,
-    "reasoning": 798130,
-    "ms": 9265702,
-    "estCostUsd": 2.9031,
+    "output": 420515,
+    "reasoning": 374272,
+    "ms": 5444419,
+    "estCostUsd": 1.3815,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -67,7 +78,7 @@
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 2.9031,
+      "estCostUsd": 1.3815,
       "rateLimited": null
     }
   ],
