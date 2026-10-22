@@ -130,7 +130,7 @@ docker run --rm \
   -e KEYCLOAK_CLIENT_SECRET=x -e KEYCLOAK_SERVICE_CLIENT_SECRET=x \
   -e AGENT_SUBJECT_TOKEN_CLIENT_SECRET=x -e E2E_TEST_PASSWORD=x -e MCM_BFF_TEST_CLIENT_SECRET=x \
   -v /tmp/kcimport:/opt/keycloak/data/import:ro \
-  quay.io/keycloak/keycloak:26.7.0 import --dir /opt/keycloak/data/import
+  quay.io/keycloak/keycloak:26.8.1 import --dir /opt/keycloak/data/import
 # want: "Realm 'grumpyrobot' imported"
 ```
 

@@ -26,13 +26,16 @@ graph LR
     B --> G[Agent Gateway<br/>LangGraph + AG-UI]
     S --> M[(MongoDB)]
     K --> P[(PostgreSQL)]
-    G --> MCP[MCP servers<br/>movie / web-api / spreadsheet]
-    MCP --> S
-    MCP --> T[TMDB]
+    G --> MM[movie-mcp]
+    G --> WM[web-api-mcp]
+    G --> SM[spreadsheet-mcp]
+    MM --> S
+    WM --> T[TMDB]
+    SM --> SR[(Redis<br/>scratch store)]
 ```
 
 - **BFF pattern** — the client authenticates only with an opaque, `HttpOnly SameSite=Strict` session cookie; the BFF holds and refreshes all tokens and proxies every backend call.
-- **mc-service** — Rust/Axum microservice in strict 4-layer Clean Architecture (Domain / Application / Adapters / API) with CQRS via `medi-rs` and MongoDB persistence.
+- **mc-service** — Rust/Axum microservice in strict 4-layer Clean Architecture (Domain / Application / Adapters / API) with command/query handlers wired directly into Axum state and MongoDB persistence.
 - **Agent layer** — a LangGraph supervisor served over AG-UI (reachable only through the BFF) drives three scoped MCP tool servers; models are environment-scoped (Ollama for dev/test, Claude for production).
 
 See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full description and C4 diagrams.
@@ -41,16 +44,16 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 
 | Area | Technology |
 |---|---|
-| Frontend | React Native 0.86, React 19.2, Expo SDK 57, Expo Router, Tamagui 2.3 (`@mcm/design-system`), CopilotKit 1.70 + AG-UI, TypeScript |
+| Frontend | React Native 0.86, React 19.2, Expo SDK 57, Expo Router, Tamagui 3 (`@mcm/design-system`), CopilotKit 1.79 + AG-UI, TypeScript |
 | BFF | Expo Router API routes (Node 24 container), Redis 8 sessions, Axios |
-| Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, `medi-rs` (CQRS), MongoDB 8 |
+| Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 8 |
 | AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
-| Identity | Keycloak 26.7 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
+| Identity | Keycloak 26.8 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
 | Secrets | Komodo Variables in production ([ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)); Vault is deployed but dormant and agent-layer-scoped |
 | Observability & audit | Langfuse 4 + ClickHouse 25 + RustFS (upstream, digest-pinned), Grafana `otel-lgtm`, OpenSearch 3 audit sink, OPA, Unleash |
 | Monorepo & build | pnpm 12 workspaces + Nx 23 (JS/TS, Rust, and Python orchestrated through one task runner) |
 | Testing | Jest, Playwright (web E2E), Maestro (mobile E2E), cargo test, pytest |
-| CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (weekly image CVE sweep), secret-scanning gates |
+| CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (twice-weekly image CVE sweep), secret-scanning gates |
 
 ## Repository Structure
 
@@ -226,7 +229,7 @@ Supply-chain and code-quality helpers used across the workflow: `cargo-audit`, `
 - ≥70% line coverage enforced on new code (Jest / tarpaulin)
 - Unit, integration (real dependencies — no mocks), and E2E suites repeated across web and mobile clients
 - **The agent E2E suite is split by tier.** Tests tagged `@gate` block a merge; tests tagged `@model-decision` — whose assertions turn on what the model chose to do — run non-blocking on `main` and on dispatch, publishing their own counts. The selection is `E2E_TIER` in `playwright.config.ts` (deliberately in the config, not a CLI flag), and a separate guard — `scripts/__tests__/agent-test-classification.test.mjs` — fails on any agent test carrying neither tag, so an unclassified test is a failure rather than a silent default and nothing leaves the gate without a tier that runs it.
-- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, and DAST — plus a weekly third-party image CVE sweep whose risk-allowlist entries carry expiry dates and are re-triaged on schedule.
+- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, and DAST — plus a twice-weekly (Tue/Fri) third-party image CVE sweep whose risk-allowlist entries can carry expiry dates and are re-triaged on schedule.
 
 ## Security
 
