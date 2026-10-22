@@ -863,7 +863,7 @@ intended, and `--fingerprint <concept> "<anchor>"` prints the new value.
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
 pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
-pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G1–G12
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12
 node --test scripts/__tests__/wiki-maintain*.test.mjs
 node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
 ```

@@ -75,13 +75,13 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 | Layer | Directory | Responsibility |
 |-------|-----------|----------------|
 | **Domain** | `backend/mc-service/src/domain/` | Entities (`Collection`, `Movie`), value objects, domain errors, `Specification<T>` pattern for business rule validation |
-| **Application** | `backend/mc-service/src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
+| **Application** | `backend/mc-service/src/application/` | CQRS command/query handlers, DTOs, repository trait interfaces (ports) |
 | **Adapters** | `backend/mc-service/src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
 | **API** | `backend/mc-service/src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
 
 ### Key Design Decisions
 
-- **CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
+- **CQRS without a mediator**: State-changing operations are command handlers; reads are query handlers. Handlers live in `application/commands/` and `application/queries/`. There is no mediator crate in the request path: `router::build()` constructs one handler per operation over `Arc<dyn Trait>` repositories, packs them into `AppState`, and Axum handlers call the matching handler's `handle()` directly. (The constitution still names `medi-rs` as the mediator library; that divergence is tracked as a backlog item.)
 - **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
 - **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
 - **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
