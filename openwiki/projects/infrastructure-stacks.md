@@ -4,6 +4,9 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-21T23:48:47.665Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
@@ -29,6 +32,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
@@ -87,10 +92,9 @@ sources:
     resource: repo://scripts/preflight.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+  - id: openwiki-source-c5e086204a303667bdcd03f5
+    resource: repo://specs/025-observability-audit-vault-prod/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -225,6 +229,26 @@ host. Nothing host-shaped or secret-shaped is committed: the git host lives in a
 bootstrapped Komodo `Repo` resource referenced by name, and the production domain, tailnet host and
 registry host are Variables.
 
+A production stack also never creates its own infrastructure. Every named volume a `compose.prod.yaml`
+mounts is `external: true` with an explicit `name:`, and so is every `networks:` entry except one,
+because the networks and volumes are created by hand on the prod host as part of the one-time setup
+([prod control tower](../runbooks/prod-control-tower.md)). Compose never creates an external resource, so
+a deploy that references a missing one aborts up front — `external volume "…" not found` — creates
+**zero** containers, and leaves the previously deployed containers running and unchanged; recovering means
+creating the resource (seeding it, where there is data to keep) and redeploying. That makes the resource
+list, like the `environment` list, part of the stack definition's contract with the host.
+
+The exception is `prod-auth`'s `keycloak-network`, declared `keycloak-network: {}` in
+`keycloak/compose.prod.yaml` and therefore **compose-managed** rather than external — deliberately, since
+feature 029. It carries only the intra-stack DB link `keycloak-service` ↔ `keycloak-store-postgres`
+(the BFF reaches Keycloak over `backend-network`), and letting Compose own it means the network is created
+and *both* services attached to it atomically on every `up`/recreate, so Keycloak can always resolve its
+Postgres even when the shared external networks hit the rootless re-attach race that stranded
+`keycloak-service` in the 2026-07-06 outage. Compose consequently names it `prod-auth_keycloak-network`,
+and the one-time cutover on a host still carrying the pre-029 external net is
+`docker network rm keycloak-network` after a `prod-auth` destroy. See
+[prod reboot resilience](../runbooks/prod-reboot-resilience.md).
+
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
 are declared:
 
@@ -308,7 +332,11 @@ the background merges of those parts saturated the shared host. The file removes
 `text_log` outright and gives every *other* system-log table a 3-day TTL — only tables that already
 exist, because in ClickHouse *declaring* a `<*_log>` section enables that table and listing a disabled
 one would add a new writer. `opentelemetry_span_log` is deliberately left at its default: its section
-defines a full `<engine>`, and ClickHouse refuses a separate `<ttl>` there and fails to start.
+defines a full `<engine>`, and ClickHouse refuses a separate `<ttl>` there and fails to start. The prod
+compose additionally caps the service itself — `mem_limit: 4g`, `memswap_limit: 4g` and `cpus: 2`, none
+of which the dev file carries — because the 2026-10-02 incident ran this container at ~725% CPU with swap
+full and slowed every CI job on the shared host 2–3×: observability may run slow, it may not starve the
+host.
 
 **OPA policies** — `infrastructure-as-code/opa/policies/` is bind-mounted read-only into `opa-service`
 with `--watch /policies` in both observability compose files, so the policy bundle is part of the stack
@@ -426,9 +454,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   worse than a diff: Komodo sets the Compose project name from the Komodo **Stack** name, overriding the
   compose `name:` field, so `prod-app → prod-mcm-bff` needed a manual down-then-deploy cutover rather
   than an edit. The three feature-025 support stacks (`prod-audit`, `prod-observability`, `prod-vault`)
-  are the opposite case — the sync created them, so their first apply was a from-scratch deploy. See
+  are the opposite case — they arrive as **new** `[[stack]]` blocks rather than pre-existing Komodo
+  Stacks, so the sync's first apply of each is a *create*, a from-scratch deploy. When adding a block,
+  preview the diff first so the operation is a known ADOPT-or-CREATE rather than a surprise. See
   [Phase 15 operator checklist](../runbooks/phase-15-operator-checklist.md) for the manual
-  consolidation that got the core stacks to this ResourceSync-managed state.
+  consolidation that got the core stacks to this ResourceSync-managed state, and
+  [Prod control tower](../runbooks/prod-control-tower.md) for the support stacks' own bring-up.
 - **Every prod admin/UI port lives in the reserved range `19000–19099`, and moving one requires updating
   its own self-referencing URL variable too.** `scripts/check-prod-ci-port-collision.mjs` compares the
   fixed host ports of every `compose.prod.yaml` (classified by basename) against every other compose file

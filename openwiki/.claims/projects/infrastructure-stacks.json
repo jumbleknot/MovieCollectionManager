@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e4c2005fbb5d25955a255f5d54bb0ed6cc908c9b17d11c298dd4e14ee9d58fca",
+  "pageVersion": "sha256:c249e74ab21d6cd15c006e5bf5b1d38dc834dd30b571aaa5d4dcc144f5e74f1a",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
+          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -44,7 +44,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.yaml",
-          "version": "repo-file-v1:sha256:a4e793e68d6d2826bff95926244d759fab0b9380ab5d90c63c7205f54d0618f6"
+          "version": "repo-file-v1:sha256:3e8e9f19daebebd5584799f1528f362f28d188675b1589e594b73310199cd443"
         }
       ]
     },
@@ -176,7 +176,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4872f1f01fee081c83099b185dd5488d676b3c9ad974c8654a73c54b37d53751"
+          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -218,11 +218,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
         }
       ]
     },
@@ -288,11 +288,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
+          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
         }
       ]
     },
@@ -302,11 +302,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:bbad0398978cd083af0b1d248e3edb13f8a088d19f7034b3dbe0d52004958de8"
+          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:3e55279cea0edfb87ad721278ce2f0debcca612f7dd3a132d271654181c2ed94"
+          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -438,15 +438,23 @@
     },
     {
       "id": "claim_c5921ef164a64939b9f33d758a8ed6dd",
-      "statement": "The three feature-025 Control-Tower support stacks (prod-audit, prod-observability, prod-vault) are the opposite of the four core stacks on the adopt-versus-create axis: the ResourceSync created them, so their first apply was a from-scratch deploy, whereas prod-auth, prod-mc-service, prod-mcm-bff and prod-movie-assistant already existed as hand-created Komodo Stacks carrying the canonical names and were adopted in place.",
+      "statement": "The three feature-025 Control-Tower support stacks (prod-audit, prod-observability, prod-vault) are the opposite of the four core stacks on the adopt-versus-create axis: the core stacks already existed as hand-created Komodo Stacks carrying the canonical names and were adopted in place, whereas the support stacks arrive as new [[stack]] blocks with no pre-existing Komodo Stack, so the ResourceSync's first apply of each is a create — a from-scratch deploy. Because the same sync can do either, a new block's diff is previewed so the operation is a known ADOPT-or-CREATE rather than a surprise.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:18213c93f0bbb7a763514717d64b72b3f7bd9c1fb6cb26ffb75af173732dd69b"
+          "resource": "repo://docs/runbooks/Phase-15-Operator-Checklist.md#L196-L232",
+          "version": "repo-lines-v1:sha256:528b019fadb5e35e7e13ef7ae7cd568421458ef0b2e67114787191082a9b689b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZWEyNzE4ZWNhMWRlZTBlNmY5Nzc1NjJjODc5ZjM4Nzk2ODFhZjk1MzI3MzFjZGU4MzhiODNhNmNjNGMyYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNTk3NTVlZTViYmNkMGUwMDRlNWUxYmRkZjUxMjRmZjZlYmZmNjRjZWM2NmNjYjcxOTE4MzdhYjI1NWFiYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyMGY1ODg1OGM1OWEzMzdkNGE1OTUwZWFiMzcxNTM0MWMxNDZlMWY1YWMwZTU4NDM5MjA5NzA1NzE1NTYxNzcifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L1-L6",
+          "version": "repo-lines-v1:sha256:f90810f4fb8b5bfd4ab480dbba9e15fc21c4babb23535c2fcd53454d8c451c37:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM2NzJlYjhlYTk4NjUyYTJhNTVlZjQzZjM4NzBhMDFmOWY1NzU5MDViNDA0ZDE5NTk0ZTU3ZTAwMWEwMWVlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdjNWQxNjVlODI5MGM4YjRlMmFjM2JlNTg4Y2UzZGVjMDI0MGFjNWM1MWE0MDg4MmU4N2I4M2IwZjFlYWI4MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDliODQwZWE0ODVlMDkzYTg5NWVlODg5MzMxYmNjOTM2NWUwOWMwOWJjZjI5NDM1NzMyNDc5YTUyZmVhZjAzOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L121-L127",
+          "version": "repo-lines-v1:sha256:d02fce837e798d6974245a8b1c67b9174a445ef48a23c1c7ab9e94e17fcf25ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdhYjI0Mjg0ZmI1YTY0NmJmYmZjMjBjOWMyMmQ4NjMyYjAwMTE2MGRlOTE2NDZiYjEyNmUxYjdkNTU5ODQzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRiN2MxZGY0M2RiYWYyNzgxY2Y3OWU1NTMxZDA1ZWYyZmQ2MGE0NDA4OWYxYmI1Zjc3OGZjMjM2NDU2NzMwNCJ9"
+        },
+        {
+          "resource": "repo://specs/025-observability-audit-vault-prod/tasks.md#L44-L44",
+          "version": "repo-lines-v1:sha256:948da811ce3d3248e9aac583731a557e796ee6220d73d4eae9cff3bcab5537c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ4ZGE4MTFjZTNkMzI0OGU5YWFjNTgzNzMxYTU1N2U3OTZlZTYyMjBkNzNkNGVhZTljZmYzYmNhYjU1MzdjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ4ZGE4MTFjZTNkMzI0OGU5YWFjNTgzNzMxYTU1N2U3OTZlZTYyMjBkNzNkNGVhZTljZmYzYmNhYjU1MzdjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc5ODMzZGJkNmRiMmQ2MzMzNmIyMjQxNjVjYjljZWUwYWE1ODZiNDY0OTdlMjdjYTRiNGQzZDcwZmVhMTgwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTM2Y2E3MmY0Mjk5NDc4ZWE3YjM0MDEwZTMxNmYwZGU0ODRjM2EyOTY4NGU0ZDlkNjNjZDRhMTQ3MzUyMzE2MSJ9"
         }
       ]
     },
@@ -477,7 +485,7 @@
           "version": "repo-lines-v1:sha256:94d0943e23f6d27ca1fc4bf0ab8d36dba2a75f52300a9493b884ca50336abbde:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwZDQ5YWU0OTBmZjBiYmI2MmJlYTY4NjRmY2I2NjAzMDA0OTcyMTQ1NzU4ZGI1YjYyY2YwYmNiNDZlNTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZjYxZDljMGFiODgzNWZkMmRiYTBjMTM0Njk0NmI3ZmJmMjQ5OTJkYjE0ZGM4MTA1OTAwY2E3OGYwODk4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM2YWM0ZWVkNTZlMjBjNmE5ZDY3NmJlOTY2ZWEwY2EwNmM1YmVlZTIzZjRjMzlmODZmYmI0OWEyOTg5NDdmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzU5MzhjY2U0MjlhZmI5MmZiZDU0Yjk3NGFmNTVmYjQzY2E5NDIwMmFlYjRhYjQzY2Y1NjNkNjg0ZTRmZDAyNSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L182-L192",
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L184-L194",
           "version": "repo-lines-v1:sha256:0063984c1f31c1a1cdca36a9257a199ac8be314ba2e78b7c25786f9d756bf0d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
         },
         {
@@ -557,10 +565,38 @@
           "version": "repo-lines-v1:sha256:06bb9fdc35aa0708a013f087c47405036ed33a6ad522fb4d3bb0033e2c20d2e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDc4MTM4OGQ0NzEzYmNjOWQ2NzgzY2VmZjkxN2QwY2M5ZDQ1NTc2ZDEzNzBhNDUyMWNhODQ2NTQ0ODVmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzVhODNiYmE4OWNjMmI3OThiNGYzNThhODFiMDM0YTEwZjBmYWQwNDk4ZTU3OWU1ZDIxY2JjYjZlMWI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2U0NDYxYTRmZWE0NGY3MzFjOGZmYjk5NDUzZjE0YWU0MDYzZjI1ZDJlMGE4M2U3ZDhkMmZjMGUzN2U3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGU2ZmFlNWUwY2Y1ODJjYmYzZmY1MjU5ZjU5ZjA3MmZkZTA5MzBlYjg4MjAxMmExZWZhY2NmYjdiN2VmNzAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3643c611037144f0925a131cce5434d0",
+      "statement": "prod-auth's keycloak-network is the one production network that is NOT external: keycloak/compose.prod.yaml declares it as an empty `keycloak-network: {}` map so Compose manages it, deliberately since feature 029, because it carries only the intra-stack keycloak-service to keycloak-store-postgres DB link (the BFF reaches Keycloak over backend-network) and a Compose-managed network is created with both services attached atomically on every up/recreate — so Keycloak can always resolve its Postgres even when the shared external networks hit the rootless re-attach race that stranded keycloak-service in the 2026-07-06 outage. The consequences a reader must know: Compose therefore names it prod-auth_keycloak-network (do not add a `name:` — adopting the old unlabeled external net errors with an incorrect label), and the one-time cutover on a host still carrying the pre-029 external net is `docker network rm keycloak-network` after a prod-auth destroy.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L114-L118",
+          "version": "repo-lines-v1:sha256:5057cb8742a8b69661148f2bbf1f3802930eb7bada00b71341f6cba8c2326f4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFhZGRjOWRiZGZhYzEwNWNiZTM2NmQ0MzdiZDg5ZmE0OGEyMWQ3YjZkNWE1MDk5NjBlOGEyYjhjNzQ5ZDYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYwZjc4NTA0YzIyNzlmM2ZjZmMyMDI1MTA2NWM0ZTc5OGNkOGVmZTY1NjFmODI0ZDQyNGNhMTBiZTc4Zjc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWIwYzBkYjJkM2MzY2U5NjQ0MTY5Nzc0N2ZjYzg0NzU1ZGNhYTk2NjY4NTY0ODRkYzU5NTRmNGQ3ZDI3YjM3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNjVlMzZlMjhjNThhZDIwMTg3MGNjMDIzMzgzMmNmMDY0NGRiMDQzOThjMmUxNjE0MDYyZWNjMzc5YTBkNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L111-L126",
+          "version": "repo-lines-v1:sha256:bd817041c2efc393190cad01dc37a845c24bcafa65289e1428399d4d5481d4d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYWViNjkzYzRlODcwZmM4OGJkZGI3YWY3YzIwOWFhODliOWE4MzdjZTVkMjkzNDllMzQxMjllYTUwYzE0YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmOTY1MjAzMTgxOGNkMTViOWI0NjFjYWEzZDU1NDM2NTYwODcwMzQyZjM5Y2ZkNzMxN2YwYjg3ZTAxYWUwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNTkxOTY0M2VjNmM4NjYyMTdiZTRmYzliZGNlOWZlM2EzMDA2ZTNjYTI1YTczOWM3NmE3ODNjYzAyNjFhNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8faf45f261ef42c28f059ae5a54d068b",
+      "statement": "The prod observability compose caps langfuse-clickhouse where the dev file does not — mem_limit: 4g, memswap_limit: 4g (no swap beyond the cap, since Docker's default memswap is 2x mem_limit) and cpus: 2 — because prod observability shares the physical host with the CI runner and on 2026-10-02 this container ran at ~725% CPU with swap full and slowed every CI job 2-3x; the ClickHouse image is cgroup-aware, so the container limit also bounds its internal max_server_memory_usage. The capacity check recorded in the prod control-tower runbook retained that 4g cap deliberately rather than lowering it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L569-L575",
+          "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY1N2U1MTRhNWU4ODg2NDA4ZGNkOTJiMzQ5YTRlOTA3NDg0ZTliYTdiYzBiZGM2YzYwYzNjNDA1M2UwZGJmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L134-L145",
+          "version": "repo-lines-v1:sha256:0e9dd25a9b4de5d048c0f0f6b1c4e0a686bd2b24df18de36f324b6f1b1239b10:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Yjk4N2M5ZTY3OGExM2U0NjQ3MmE3NjNhOGIyZGU3MDdmYjZlYTU1NDc3MWFkOTY0ZDcyYzExOTY3MjUzODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjZDA2OWE3NTVjYzY3NTQwMzk2NjNiMWFmN2QzYjllNGNlYjg2Zjk2M2JmMzljODY4ZjkyMWUwZGE5OTZjNzcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T03:12:52.160Z"
+    "at": "2026-10-21T23:48:47.665Z"
   }
 }

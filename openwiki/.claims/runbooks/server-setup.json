@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:dd92ca5cac018a1c7b16d93077dd9edeafc986adc07b4cfdf2ff841662f062fc",
+  "pageVersion": "sha256:aa033de807edd03c445daebbacb3c600403dc1561e77d7c3042b810fc7b47488",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -29,7 +29,7 @@
       "statement": "The host runs two unprivileged service users (`ci` and `prod`), each with its own rootless dockerd at its own socket and its own data root under its home, and the rootful docker.service is disabled — this is the isolation boundary that keeps a CI breakout from reaching prod or the host as root. The prod daemon hosts the long-lived services (Forgejo, Komodo, the RustFS-backed Nx cache, monitoring), while the CI daemon runs build/test jobs.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1147-L1149",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1163-L1165",
           "version": "repo-lines-v1:sha256:d3e14c490f0560db8b733f4bd55bcbae2f2f21e4a6b5c5f121e6b2d00b65bd60:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZiYzk4YmEwOWViYjEyZTdkZTlkMmZmZThjNjZiMzkyNDc0MGEzNzY2ZTM3ZTcxZjNiMGI1YTY1ZGFmZmExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY2YWNlNzYzMGY0NTM0N2Y3NjIxOTlhMTU0YzliYmFiM2Y4MGYwYmYyYTk2ODg0OTA0YmQ0NWU0OTYzZDcyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQ4YTE4YjUyZDZjNTYyY2VjNTA5MTkxYTRhYWIzMzE3YTk2ODRmODcxNDQzZjE3ZTQ1Njg4YTA1NWVkMmNhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNkNWQxMThjZTdkNTA4NTdjZWU3YmFiNGU5YmE5MWM3Mzc3MmEyYjEyYjdhZTI4NWEwOWI1ZmRjZGE3YTdjYSJ9"
         },
         {
@@ -87,7 +87,7 @@
           "version": "repo-lines-v1:sha256:49300fa417b7df7ce2cd75b1827dab2ab49080e246a916957b9824fc6b11ae0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWQzMWIwZmJlYTg5ZjMxZTk1MTYyNzhlNjczNTAwODVkZmY1MzdmODFiN2RlOWUyZmRjNjY0MGFkYTU0NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDNjMzU0NTliNWM3ZTFjMmE3MmY1MjhiYzJhMzkzOTQ4ZTA0YjJiYWRkNWZlYmQ0MWJiMzNiZTNkNmM2OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzE4YzYxZjU0NjgwNzQ1NTFkZTgzMDc3NmQyMDUyNmI4NWM2NTllOGQ2ODhiN2QwMGZkZmI3ZjliNDY5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlZDExNDg0NTRhMTg3NjQzODFjM2FlMWY0YTViOWZlMTEwMzNjNjhmNzQ2YmRlMjI2YmRhZGFiZTE5YThhMTEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1005-L1005",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1020-L1020",
           "version": "repo-lines-v1:sha256:a5838d175388a98e78c9263d4420dc182eb785d0e7b2bfa3bb23019931b92ba7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU4MzhkMTc1Mzg4YTk4ZTc4YzkyNjNkNDQyMGRjMTgyZWI3ODVkMGU3YjJiZmEzYmIyMzAxOTkzMWI5MmJhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU4MzhkMTc1Mzg4YTk4ZTc4YzkyNjNkNDQyMGRjMTgyZWI3ODVkMGU3YjJiZmEzYmIyMzAxOTkzMWI5MmJhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmRkNzAwODkxODNjYmY0ZDZjZTA3YjQxYzJkMDY1MDQ4MWEwZDQ2OTI0YjE0NWRhZWViN2VkOThhYWZhYTgwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3NDA0MjgyMDgwNjYyY2ZiYTE5ZmU5MTEyNTZhMjQ0YzM0MGZkZjM5OWQzZDA1ZTU2ODQ3YzIyY2JkZWIwNCJ9"
         }
       ]
@@ -115,7 +115,7 @@
       "statement": "This forge build (15.0.3+gitea-1.22.0) exposes no Actions-artifact API — `GET /api/v1/repos/.../actions/artifacts` is a missing route (404), not an empty result — so an `upload-artifact` APK is retrievable only by a human through the run page and only until it expires. `cd-deploy`'s `prod-apk` job therefore publishes every release APK to the generic package registry as package `mcm-app-android`, version `<expo.version>-<sha7>`, alongside a `.apk.sha256` sidecar in `sha256sum -c` format, using the existing `write:package` CI push token (no new token, no widened scope); retrieval uses a `read:package` token against `/api/packages` (not `/api/v1`).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L506-L522",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L507-L523",
           "version": "repo-lines-v1:sha256:e5659d28375ed002f1363b6a10d6ad8c2e19804cbbdb4759c5385f6b9e5052ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
@@ -163,7 +163,7 @@
       "statement": "`prod-apk` is deliberately non-blocking: no job `needs:` it, the publish step is `continue-on-error`, and `publish-apk.mjs` always exits 0 while printing `::error::` on every failure path, so a registry hiccup is visible in the job log without turning a deploy red. A re-upload of an already-published version is a 409 treated as \"already published\" rather than a failure, because the bytes are the same build of the same source.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L512-L522",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L513-L523",
           "version": "repo-lines-v1:sha256:698ad5fdf5eba5d0260f14a7a0a50301f5fcd6c49f519827124b2e46ee483aa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTQ1YWMzNmVmYWMyYmRjMGE2NGNlNDcyMTNhYWY2OTQ0ZWIwNDkwNWZhYTc2YTZiMTU0YTAwMTFhNzcyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMDE1NGI1MDE3MGJkNDJhMzQzYjkwNmFlMzNjNWY0YzYzZTdhYThjMzcyNGY1ODYzZDNjMjkyMDMyZWRjOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
@@ -243,7 +243,7 @@
       "statement": "Forgejo runs on the prod daemon (a long-lived service, with Postgres behind it) as the source-of-truth forge, with Actions and the OCI/generic package registry enabled by env; GitHub is a downstream push mirror rather than the source. Every automated consumer authenticates with its own minimally-scoped named personal access token — registry push and pull are split, CD's git write uses a whitelisted-user PAT rather than the runner's auto token (which the pre-receive hook declines on protected `main`), and the debug dispatch token is revoked when idle.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1065-L1085",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1081-L1101",
           "version": "repo-lines-v1:sha256:cdfaa8642899c280dfe2e99349bf87845caadc1110fe63562d25e421e99ac24b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYTA1NmMyMmE1NzNjYWI4M2JlMDEyZDE1ZmJkMTczYTMxOGZiZDRmOTM2NDhiMTU5MzdjM2Q1MGRlZTc1OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNTdlYjc5ODMwMDhiNjllMmU4NjMyNWY5YWI1MjU2MDY3ZTFmMGU3OGE4OGZjNjU0MjljN2IyOTYwZjEwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGVlNzRmNzNmMTRiODIzNmZiNGY5MTRmN2JjNjQyMTgzMWZjMjU3OWIzNmE5MjMwMWQ3ODBlNjkwMzEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGUwMWZmMjVhMGYwOWQ3ZTA4OTIwYjIwMmViOWIxMTNhMDhhNmQ1MjdkNDFhNjZjOGRlZWM2NDI5NGZjMGUifQ"
         },
         {
@@ -265,15 +265,15 @@
       "statement": "Komodo provides CD to the prod daemon as Core + a Periphery agent + a database, using FerretDB rather than MongoDB (the unpinned Mongo image crash-loops on this new-kernel + rootless combination) and with Periphery repointed at the prod rootless socket. Its webhook is a git-style branch redeploy validated by HMAC with the global webhook secret — it will not consume a posted image digest — so promotion is digest-by-git: CI resolves the immutable digest, commits it to a tracked env file, pushes, then fires the signed webhook, and there is no rollback endpoint (rollback = redeploy the prior digest).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L818-L828",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L833-L843",
           "version": "repo-lines-v1:sha256:03bb67680af722f671db97db541f3e688a2845c0ed06048f550b4817fbaf5805:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWY1OTk5NjE3YWIwODQ4NTQ2MmVjYWVkYjFlYTU2YWZlMWExZDA3NzQ3MzM2YzI3MWM5YzQwNGI3ZGVlZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDFkMDFkMzM1MGExNzU2NGYyOTA4ZTI1ZWRkZjY1ZTlhYWU3MTZiMjE0MGNkYjgyNzY5ZmQ1MjkzY2YyMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxMzFkMGI5ZDU5OTU4YTQzZjhkNjIzOGNkM2I2N2U0ZDZiMWQ0NWExYTExYWNjNzUwMzgxZGNkNDI0ODc3OWMifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L855-L866",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L870-L881",
           "version": "repo-lines-v1:sha256:2d4c99f4747fe1b344653b78a52b5228f9f2ef95ced21a3fae053caa90ee6eb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OTdjMmUxMWY3NTc0NTA2NmM2NmQ2MmQ4Njg0YTk5Y2M0OGU4N2UxNmJjNDFlNzNjYjM5MDg4ZGYzMDMwYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MjVmOTViZjIwNmE5NTNiYTE4Y2I3YzhmM2YwZTI3NWI2NDYzMGQyNTBkNmI3Mzc3Y2FmOTRlMjNmYWY3NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyY2NmNDgxZWI1ODk1N2M4YzNkN2RkNjVkMDBiNWNiNGJlZDAwNmQxYjYzM2RkNDNiNDcyNjA3NGNmZGRiYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYTIyNDgyOTE3YmFiNWYwY2QyZGU2ZDg0N2ZlMDY5YzlkMzEwNmYzOTVkMmNhOWRkOTBlMjAwZDhjNjQyYjMifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L868-L885",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L883-L900",
           "version": "repo-lines-v1:sha256:8c0896a9c8e1add3ff5cce85c0cde3c78e9664531f9b0b18bddcf438cfc37b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwYWRhMTVjODcxMzMwMDE3M2IyMTQ1NjIyYjJkNDA0ZWQwMTE2MTYwNTIxOTQ4NmViYTllM2MzNmYzNmI4OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZTQ1YTUxMWE1ZGFmMzhhMmM1ODdmZTM2ZWNhZTZkOWM1NGE4ZTA1MGM3MjExNDYzNGNlZjcxYTMwMzRkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYzVmYzIwYTk3ZDQ3MDk4ZTJlYjkzNGEwOGE4YThiZDdmY2IzNDMwNzA3ODE1ODMyMGRlNWEyNGU2MmYyZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2NjMDc2ZTVhODU1ZTU2ZmI1NTgxZTYzZTBjNDQzMzIxNzM1OTE0NjQzODQ0NTU3OTg2OGQ0ODM3Yjc1M2IifQ"
         },
         {
@@ -299,7 +299,7 @@
           "version": "repo-lines-v1:sha256:c19a89e87444f6c5627c0c40ee952005cffeb48a3847290aff8bb59fb4932d93:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMxOTYyOTNmYjhkMTIzMWVjNDZiYTQ5NGFlMmE5NTNjZWRjOGM1MzNjMDUyMjkxZmNhMWZhYjdlZDc0MTQ3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1024-L1042",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1039-L1057",
           "version": "repo-lines-v1:sha256:04abbd07d1158978c91373f47542bf49f39b085fd219df51fd0473f7ec36a38d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMWVmZmUxNGNkZmFkZDY3NjQxZDg1ODg5MWRkNDdhNGE0M2U3ZTY0ZTIwYzc0NDBjY2FlZThmZGM2MTQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MTc4OWNlMGQ0OGZhMzI1NDE4MjdjMGY1NTZlMDE0NTA5YTZmZTBjMmEyNTU5NDVmNDAyZDc0YmVmNzE5ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYWQzNTlhNDBlMTZmMGMyZGNmMTc5ODU5NjMwNTIxYTg4ZjdmZmZmZjM0YzI2ZGM0NGMyMzk0ZjMzNGJiNDUifQ"
         },
         {
@@ -379,7 +379,7 @@
       "statement": "The Android-emulator job and the Docker-image-building jobs reach `/dev/kvm` by executing directly on the ci host through a host-type Forgejo runner label defined as `kvm:host` (`runs-on: kvm` uses the label *name*), not by passing the device into a job container — that was the setup only until commit `235f2f4c`. What must therefore hold is host state: KVM enabled on the host, the `ci` user in the `kvm` group, and the runner still advertising the label. On this host `/dev/kvm` is mode 666 (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option, and the group membership is what keeps the job working if it is applied. A host job must also provision its own Docker CLI and prove it reaches the `ci` rootless daemon at the job's `DOCKER_HOST` with no fallback socket, and a missing `/dev/kvm` fails the job loudly rather than skipping the mobile suite.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L496-L507",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L521-L532",
           "version": "repo-lines-v1:sha256:0d8a876cec77767185c38231e422045b49751fcfab70e72f0164bcf29ff94670:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZDAzMDRlZjM1MjRjMDI1MjU2ZGJiZWE0YTFiMWJhZmMzZjdmMzZhZGNkYjU3ZWY5ZTM2YjBlM2NjZTIyMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYjFmYjlkY2U4NWIxY2IyMjI3NzQ3N2NmZmFjNTY2NDk1NDQzMTlhYWU2ZjBiZWJlY2RiMTk0ZGFlMjU0MTgifQ"
         },
         {
@@ -401,7 +401,7 @@
       "statement": "Phase 9 of the server-setup runbook bootstraps `PERIPHERY_ROOT_DIRECTORY` onto persistent disk (a directory under the `prod` user's home) instead of Komodo's stock `/etc/komodo` default, because under rootless Docker `/etc` is copy-up'd to a per-daemon tmpfs: a default Periphery root is wiped on every reboot along with the cloned repo checkout that every stack's relative bind-mounts resolve against, after which Docker auto-creates each missing bind-mount source *file* as a directory and the Mongo and Vault containers fail with `not a directory` (exit 127). Bootstrapping the persistent value at install time is what keeps a rebuild from reintroducing the tmpfs default.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L836-L853",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L851-L868",
           "version": "repo-lines-v1:sha256:bc2ba736c47c667af19f64d590ad708eef9b655949aa3bb83fe285e165132a71:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGU3ZDNkZjgwY2RkYmFhYjkyYTlkZWVjY2EyMzM3MmY4OTk1OGYwZGU0NDBiMDAxMTc2MDQ3OGU5NWEzYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzgyYmI1NDg5ODRjMTA2ODVlZTcyMGRkZTU0MTY1YmFhMmM4MWVjYWYzZWE5MDBiOTc4YTc1MTdjZTM2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzNjNmI3MjBlMzU3MWQwMjRjZmE5NjkyNGYwMzU1YzNhZTMxMGViMmZkOTFmMTI4Y2Y2NjQ1NDMzMGY0NDUifQ"
         },
         {
@@ -412,23 +412,11 @@
     },
     {
       "id": "claim_bd94769c3d924d9092ea77806c8cbaaf",
-      "statement": "Phase 8's self-hosted Nx remote cache is the open-source Rust `nx-cache-server` binary run as a `prod`-user systemd-user service (like the Actions runner), implementing Nx's built-in custom remote-cache-server API (Nx ≥ 20.8) because the first-party `@nx/s3-cache` / `@nx/shared-fs-cache` packages were deprecated over an unpatchable CVE and must not be used. Its backing S3 object store is RustFS (feature 080), deployed from a host-managed compose under the `prod` user's home on the same pinned image the git-tracked observability stack uses, with the image's own uid, logging to stdout, the console disabled and only the S3 port published, plus a one-shot init container that PUTs the cache bucket. Client wiring is entirely env-driven (a Forgejo variable for the server URL and a Forgejo secret for the access token, no `nx.json` literal), so local runs without the token fall back to the local cache and no remote-cache config leaks into the repo.",
+      "statement": "Phase 8's self-hosted Nx remote cache is the open-source Rust `nx-cache-server` binary run as a `prod`-user systemd-user service (like the Actions runner), implementing Nx's built-in custom remote-cache-server API (Nx ≥ 20.8) because the first-party `@nx/s3-cache` / `@nx/shared-fs-cache` packages were deprecated over an unpatchable CVE and must not be used. Its backing S3 object store is RustFS (feature 080), deployed from a host-managed compose under the `prod` user's home on the same pinned image the git-tracked observability stack uses — a pin that must be copied by hand because Renovate never sees the host-managed file — running as the image's own uid, logging to stdout, with the console disabled and only the S3 port published, plus a one-shot init container that PUTs the cache bucket. Client wiring is entirely env-driven (a Forgejo variable for the server URL and a Forgejo secret for the access token, no `nx.json` literal), so local runs without the token fall back to the local cache and no remote-cache config leaks into the repo.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L664-L681",
-          "version": "repo-lines-v1:sha256:e0aabf355fb069ec0b681985125588a6fc1b4fd5c2ae784816fe90a8949a136d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2N2U3YmIwMmQ5MDE2ZGJlMzEzYzA4MjE0NDY2ODM1YWQyMjllMjBmMDRmNGZiNjY0MDc3MWE4OTMzZThmNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmYmZlNzU0YWRkMGM3YzBhMDkzNGRjZWQ3ODE1MDlmN2VjNTI0ZmE2Yzg1YTZkOTdhMjAxYzcxMWEwNWQ4MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4MDhmNjNmYTZlYmI0MjRhZTczNTc1NmRkZGRmZDY4Yjk1NTcwZTliZDNlNmI1YjgxNGY2NWVmYTFlYjI0ZGEifQ"
-        },
-        {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L683-L733",
-          "version": "repo-lines-v1:sha256:73e909ae9b107b6e2cf35ce065a88760c1e5eb5d683fa0a7527ddbd986c6b258:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZTJmNTMyOGVlNmU4MDUwZThhYWZkOGRjODY5YTA2OWNkOTU4NGVkYWFmNTRmZTU4OWQ3M2MzYjdkY2Q3OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExNjA4YTE1MTU4OTQ1NmQ5YzM5MzM5ZmUzZWVmNWQxM2RkZTM2MjIyZjI1MTRkODllMTU2Y2I2NjdmM2U4MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOWMxYTk4OTRiNTEwN2YzZDk2MzkwODA2YjU5Njc1NmRkMDhiMmZjNDM5M2FiOWRjZDlhODI4YmQxNzgwYmEifQ"
-        },
-        {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L765-L814",
-          "version": "repo-lines-v1:sha256:986c038a7a6744f4cf8c3d7579445ee0c5f3ab52c272d9bfa13e61b2430e1dfa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZTcyOTgzNDk1NjgyODcwM2U5ZWVjMmRkYTFjMDdkMTgxNmYxMmFlNTdkNDM2MTI0ZjRiMjI5OWI0NTRkOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZmI1YmMxZGM1ODcwNDg3ODliMGNlZmYyN2YyMTNjYzNjNWRjY2FmNWUwNGM4Y2VhZWEwMDViZDQ0MGRmZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYWE5Y2QzNjIzMmQ5ZTI5ZmZlYjQzNDFkN2Y4YjA0YzQ5M2U5MDMyYTdkMWQyMWRkNWM1MzIyZGEwODc3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
-        },
-        {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L186-L232",
-          "version": "repo-lines-v1:sha256:6c1eaadb8be3d7714d0e41ccf4069a97fe197ddaf154eb37d38faae4a0712b0a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOWFiNzliYTNkZjk0MTQ4OGJhMmM3ZTI0Y2Q5MzBlMWExOTE1YmY1NzFmMGYwOWY2OWUxMjFjZTE3MTkxMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYmM3OTJiZmJhYjEyYmRhYWFmYWMxOTRmMDU1YTM1YmQyMWQ2YmRkZmEzNzMzOGI1MzZlNjI4YzAwOGVlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2OGQzZGQ3YWNhZTVhNzEzMDQ1OGM0OWFjYmM1ZWI1ZjMxNGQxMDUwNjBiYTA2OWZkZDE5NzczY2ExZDg0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmYzIwMmFhMjk2ZDNjMTRjMDlhOGRmNjA1MzZmOGM1NWVkZDczOWNhZTRjODVlMDFlMmEyMDUwYTI0YzBhOWQifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         }
       ]
     },
@@ -437,8 +425,8 @@
       "statement": "Moving an existing Nx-cache store to RustFS is an in-place, verified copy driven by `scripts/object-store-migration.sh` in ordered stages (`manifest` against the old store's endpoint → `inventory` → `copy --apply` from the old volume to the new → `verify` for parity), with the cache server stopped as the only writer, a one-line rollback (stop the new service, bring the old store up, restore its credentials), and recreating the cache empty accepted as an alternative because the data is rebuildable — a cold cache costs time, not correctness.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L735-L763",
-          "version": "repo-lines-v1:sha256:1d9e9652fb3715b2e392f3c54da2cbdb525492d7eef6b4d8a3ba6c7092ea0c3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MTNkZTAxZjU0NzRkZWI3YWQ2NGNiZDcyYWVkYzBhZGM3MjI5YzMyYWE0MTVjNWY0ODMzZTQ3MDVkNzUwNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYTI3MmEzMzNiNDI1NzY1YjEzN2U2Y2IxOGM4NzkxNDg3YTA5MTYwZDFkZGVmNTcxZTY5MjkxYTkwOTczMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmNGUzZDZiNjllMjRkODdjMjA0MzNjMjMxOWU1YTkyZGI2MTI0NmI3YmQyNzM2YjU0ODY4Y2M1NmFhNzk3ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMjNjNGMzMjIzMDRlZjE2MDhkYTczYWUxYjFiYjA5MzIzMDNhNGE5OGJiMTQ1MGQ2Njg1Y2E2YTYwYWU1NTEifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         },
         {
           "resource": "repo://scripts/object-store-migration.sh",
@@ -448,25 +436,75 @@
     },
     {
       "id": "claim_82336d0a0dce4364a869ae74943cd308",
-      "statement": "The RustFS Nx-cache store is host-managed state, so it has a Renovate blind spot and a host-state trap: its compose lives under the `prod` user's home (like Forgejo, Komodo, cloudflared, beszel, dozzle and uptime-kuma), which Renovate does not see, so its image pin must be copied by hand from the git-tracked RustFS instance in the observability stack whenever that moves; the volume and network names are likewise host state that must be confirmed by ownership *and* contents before the migration copy; and if the backup script captures the previous store's directory it must be pointed at the new one too.",
+      "statement": "The RustFS Nx-cache store is host-managed state, so it has a Renovate blind spot and a host-state trap: its compose lives under the `prod` user's home (like Forgejo, Komodo, cloudflared, beszel, dozzle and uptime-kuma), which Renovate does not see, so its image pin must be copied by hand from the git-tracked RustFS instance in the observability stack whenever that moves; the volume and network names are likewise host state that must be confirmed by ownership *and* contents before the migration copy; and the host backup script captures each store's config directory (never its data volume), so the new store's directory had to be added to that path list too.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L675-L681",
-          "version": "repo-lines-v1:sha256:e3572ead7ae138b12fa35e3135af254f690d4a241c85603a6a759bbbd6ccdf6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjZTc2YTc2N2NjNjAxNzI4Nzc1NzI4NjVmZjAwOWFmZDBhNGRiNjFjYmRlNzY4MjU4ZTNlOTQ5YTFjZjJhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZiZmU3NTRhZGQwYzdjMGEwOTM0ZGNlZDc4MTUwOWY3ZWM1MjRmYTZjODVhNmQ5N2EyMDFjNzExYTA1ZDgwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTJlMGEzYTg5NmJjNzRlMzA0N2MxOWM0NWU5NTU0MTYwOTg2YTE3OGZmZmQxZTA0ZDA0OGUwN2MxZmViZDJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTgwOGY2M2ZhNmViYjQyNGFlNzM1NzU2ZGRkZGZkNjhiOTU1NzBlOWJkM2U2YjViODE0ZjY1ZWZhMWViMjRkYSJ9"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L756-L763",
-          "version": "repo-lines-v1:sha256:765b6a9e51e7837771e9dcec1e1daea3cd9ec559cb2100a3de19591458816894:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNhMjcyYTMzM2I0MjU3NjViMTM3ZTZjYjE4Yzg3OTE0ODdhMDkxNjBkMWRkZWY1NzFlNjkyOTFhOTA5NzMzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWRhNWI2NzNlYWE0NGMwY2JhNzMwMDEwM2E2MDZhMWNhNzk5NmVhMDE2OTg3YjUxNGM1ZjAzNWU3OWM3OThmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGIyM2M0YzMyMjMwNGVmMTYwOGRhNzNhZTFiMWJiMDkzMjMwM2E0YTk4YmIxNDUwZDY2ODVjYTZhNjBhZTU1MSJ9"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
+          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
+        }
+      ]
+    },
+    {
+      "id": "claim_91ca7b2d8ec3429b9ad7a05ebaed1abb",
+      "statement": "The Nx-cache store cutover was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a recreate, and the tool's `verify` stage reported 1360 → 1360 objects. The host facts the runbook records alongside it — the previous store's compose project, service, network and volume names, its access key, and the env-file key its secret lived under — are host state that exists nowhere in git.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+        }
+      ]
+    },
+    {
+      "id": "claim_0eb13a2a04474d12b73c2c96ed3ce433",
+      "statement": "The host backup script's `restic backup` path list now carries the new Nx-cache store's config directory alongside the previous store's directory, and the previous store's directory stays on that list only until the deferred cleanup (spec 080 T047) removes it — taken off in that same step, because until then it is the rollback. The store's data volume is deliberately never captured: it is rebuildable, and only the config directory is needed to stand the service back up.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+        }
+      ]
+    },
+    {
+      "id": "claim_885f1bb3b22b4cccad6be2b887ffcdb0",
+      "statement": "The Nx-cache store's access/secret pair lives in two files that must change together: the store's own `.env`, and the cache server's env file, which carries the same pair as its `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. On this host that env file's endpoint and bucket name were already correct, so the cutover changed only those two credential lines — leaving them behind yields a cache server that starts healthy and cannot read the store.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+        }
+      ]
+    },
+    {
+      "id": "claim_5afd8c86e27f4bf08c73c815a18ec77c",
+      "statement": "The Nx-cache store's volume is declared `external: true`, so compose never creates it: only the migration tool's `copy --apply` brings it into existence, with an explicit `docker volume create` on a new host that holds no prior data as the alternative. Referencing the volume before it exists aborts the compose up with an external-volume-not-found error and creates zero containers, so the copy must precede anything that mounts the volume — a deploy fails rather than starting on an empty store.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         },
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L174-L183",
-          "version": "repo-lines-v1:sha256:a18f75c6d60194b47316b03005a0d49239af1e691e6f2ba6466a8478492875d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNTM2ZmQxYmVhYWI5MDE3YzVhYTBkNGViMDcxYzk0M2Y0NDViODI1MjE1M2Q3OGI2ZTNmZGY1YTIzOWFkYzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1YjU3NjhkNDc0ZTliZGIwMzQzMjFhZjVhYWY0NGQwYWRhZjRlMTUzZTc3OTEwYTc5Y2UxNzMxOGY5OGJlYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+        }
+      ]
+    },
+    {
+      "id": "claim_e1781a9618124e72989c29b953462307",
+      "statement": "Two env-file reading traps apply to the store cutover: each store's secret must be extracted from its own env file with a `sed -n` extraction rather than typed into a `read -rs` inside a pasted block, which consumes the next pasted line as its input; and env-file keys must be listed with a pattern that admits digits, because a letters-only pattern silently skips every `S3_…` line.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-21T23:48:47.665Z"
   }
 }

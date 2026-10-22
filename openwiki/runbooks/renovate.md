@@ -4,9 +4,6 @@ title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
 sources:
   - id: openwiki-source-6186a866b56089a82cce5c62
     resource: repo://.forgejo/workflows/devcontainer-image.yml
@@ -24,6 +21,10 @@ sources:
     resource: repo://agents/movie-assistant/.python-version
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-3b86829117dd0577834407fc
+    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
@@ -44,7 +45,10 @@ sources:
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-21T23:48:47.665Z
 ---
 
 # Renovate dependency bot
@@ -282,8 +286,11 @@ untenanted, and assert the resulting body differs by exactly the number of chara
 2026-10-09 (PR #698), and `app-e2e` never starts the observability stack — so green said nothing about
 either, and the four database images have required a tick on a MAJOR ever since. Before ticking, name
 the stack the image runs in and how its data survives the move; the within-major patch stream stays
-automatic, so only the major is gated. The observability postgres is held below 17 outright because one
-pin backs both Langfuse and Unleash, so it never reaches this list — see
+automatic, so only the major is gated. The observability postgres — one digest backing both Langfuse
+and Unleash — used to be the exception: it was hard-held below 17 so a postgres major could not migrate
+Unleash as a side effect, which kept it off this list entirely. Spec 081 US8b moved both databases to 18
+together, discharged that hold, and left that pin resolving exactly like keycloak's and agent-db's
+postgres, so no postgres is special any more — see
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md).
 
 **Which credential does what (measured 2026-10-09).** Ticking edits item #29, which needs the
@@ -355,17 +362,26 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 
 | dep | hold | why |
 | --- | --- | --- |
-| `hashicorp/vault` | `<1.19` | 1.21 un-suppresses three allowlisted Criticals (the allowlist regex is keyed to `vault:1\.18`) and adds two new pgx ones, measured on PR #289 |
-| `postgres` in the observability files only | `<17` | one digest backs both Langfuse and Unleash, so a major migrates Unleash as a side effect — scoped by `matchFileNames` so keycloak/agent-db (already on 18) keep their own major stream |
+| `hashicorp/vault` | **none** — a major now takes `dependencyDashboardApproval` | the `<1.19` ceiling ran 2026-08-30 → 2026-10-20 and is discharged: the refs moved to `2.2`, which scans with zero fixable Criticals (1.21 added two pgx ones on top of the libcrypto3/grpc pair), and the three `vault:1\.18` allowlist entries were deleted in the same change, so the scan gate alone now blocks a worse image |
 | `python` | `<3.15`, derived from `agents/movie-assistant/.python-version` | the interpreter minor is a toolchain decision, not a base-image sweep; the guard derives the ceiling from the pin for **both** managers and fails when they disagree, so raise them together |
 | `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
-| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. Patches, minors and digest refreshes stay automatic |
+| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's. Patches, minors and digest refreshes stay automatic |
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
 | `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
 | majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
 | `actions/upload-artifact` | `<4` | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
 | `java-jdk` (from `actions/setup-java`) | `/^17\./` | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
+| `test-renderer` | `/^1\.[0-2]\./` | feature 081 US5c: 1.3.x pulls `react-reconciler` 0.34, which peers on `react ^19.3`, and the workspace runs 19.2.3 (Expo-pinned); in its own group so the held member does not gate every routine npm bump batched with it |
 | `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
+
+**A hold can be discharged, and a discharged hold is replaced rather than deleted.** Four ceilings have
+now gone this way — vault (`<1.19`), opensearch (`<3`), langfuse (`<4`) and the `matchFileNames`-scoped
+observability postgres (`<17`) — and in each case the successor is a `matchUpdateTypes: ["major"]` +
+`dependencyDashboardApproval` rule, because the real requirement was "not by accident", not "never". A
+hold someone deleted and a hold deliberately discharged look identical from the absence of
+`allowedVersions`, which is exactly why the guard test asserts the successor gate and the reasoning, not
+just the missing ceiling. A discharged ceiling left behind is worse than a missing one: a stale `<17`
+blocks the version actually deployed.
 
 **The `java-jdk` ceiling is a regex on purpose, and that is the one hold shape worth copying.** This dep
 uses `semver-partial` versioning, and Renovate tries the dep's own versioning before npm semver:

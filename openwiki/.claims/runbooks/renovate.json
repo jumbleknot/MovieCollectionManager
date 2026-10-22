@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:990472dedf8016de57867d5a26a96dbe22dbe78f84911d3e22f074ce60ac4979",
+  "pageVersion": "sha256:0dee608f8258b7f5ff02c68135f0e1ff5c6ee847050675bee3fb426d5548e60f",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -22,11 +22,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -36,11 +36,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -50,11 +50,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -68,7 +68,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -108,7 +108,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -160,7 +160,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -174,7 +174,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -218,7 +218,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -234,29 +234,33 @@
     },
     {
       "id": "claim_6d266c3eb5774c1586671a280f5ccb06",
-      "statement": "A database MAJOR of postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch or langfuse/* waits in Pending Approval and ticking it is the migration decision, because app-e2e never starts the observability stack and a green CI therefore said nothing about the PR #698 clickhouse and redis majors; the within-major patch stream stays automatic and a guard test asserts approval on major but not on patch.",
+      "statement": "A database MAJOR of postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch or langfuse/* waits in Pending Approval and ticking it is the migration decision, because app-e2e never starts the observability stack and a green CI therefore said nothing about the PR #698 clickhouse and redis majors; the within-major patch stream stays automatic and a guard test asserts approval on major but not on patch. The observability postgres, once hard-held below 17 so a postgres major could not migrate Unleash as a side effect, is no longer an exception and rides this tick like keycloak's and agent-db's postgres.",
       "evidence": [
         {
-          "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "resource": "repo://renovate.json#L1152-L1176",
+          "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3158-L3222",
+          "version": "repo-lines-v1:sha256:6927e43e2bee286de1c2dd52d78f5c67ef6325be592dbd0c7d02aed64ba0062f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxN2VkOTg0MzQ4NGY0NTYwMjMyMzExOTdjNmFhZmZiMDRkODM1ZTRhMjA2MmIxZmNmM2IwYmZkYTY1NGNjYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDEwNzQzOWQ1YTVmNjY2MzY1N2U1ZjA2MWI3OTY0YjJmNWNhMGIyMTA2NWQ3YTc1NzhkN2EzYWE4NmE0YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
     },
     {
       "id": "claim_7f1b7dd557b944c48ada73104702a6ad",
-      "statement": "The observability postgres is held below 17 outright by an allowedVersions rule scoped with matchFileNames to the two observability compose files, because one digest backs both Langfuse and Unleash; the ceiling must not leak onto keycloak or agent-db, which are already on 18, and a guard test asserts both halves.",
+      "statement": "The observability postgres hold is discharged: the `<17` allowedVersions rule scoped by matchFileNames to the two observability compose files is gone, because spec 081 US8b moved the shared Langfuse/Unleash pin to 18 in one change and a stale ceiling would now block the version actually deployed; what replaced it is the stateful-datastore major approval gate, and a guard test asserts no ceiling on any track plus that the observability pin resolves identically to keycloak's postgres for both allowedVersions and dependencyDashboardApproval.",
       "evidence": [
         {
-          "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L113-L124",
+          "version": "repo-lines-v1:sha256:efd76fa7593e1ac8cd9ab171f36f3f96a8e504e9fc8a62e43c04e82221b543ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOTEzYTY2MjlmODE4MDhiZDg0MWFiNjc3MDZiYzcxZjUyNjYwM2Q2ZmJhZGU2Y2ZhNmM5NGQzNjU3MzQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMGNjYzQwZGI0NTBkODNiZDQyYzc3MzU1MDNlZTBmMmUyMTczMjZiNTZmNDJjZjk0NmI0OTg2Y2JiZWI0ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNzM1YjdmYTM5ZTliMjQ5MDVmZmE5YTZjZjk2NWEyYWM2NGRiNWQxOThkMDNkNjNkM2Q2NGVmY2MyM2IxYjQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "resource": "repo://renovate.json#L1152-L1176",
+          "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3222",
+          "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
     },
@@ -288,7 +292,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://rust-toolchain.toml",
@@ -310,7 +314,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -324,7 +328,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://rust-toolchain.toml",
@@ -338,11 +342,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -352,11 +356,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -366,7 +370,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -376,11 +380,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -390,11 +394,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -404,7 +408,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/check-override-consistency.mjs",
@@ -418,7 +422,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -428,7 +432,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
@@ -470,7 +474,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -480,7 +484,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/check-toolchain-consistency.mjs",
@@ -494,11 +498,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -508,11 +512,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -522,7 +526,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -532,7 +536,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -546,7 +550,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -556,7 +560,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -566,7 +570,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -576,11 +580,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -608,7 +612,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:417516f1ec00d077357961bb96e528e50c3452ac2f48d524419eeb8ccaf9a3a7"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -622,7 +626,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         }
       ]
     },
@@ -632,17 +636,67 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:50bdcf6784d4b475230f55f861a683b532e432d66b0933e2a907ab25bf6db460"
+          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
         },
         {
           "resource": "repo://scripts/renovate-health.mjs",
           "version": "repo-file-v1:sha256:6d82b4609b1aae09a7fc9580fa9256e295d28c4f47d52bb9d83d8025b65b5cee"
         }
       ]
+    },
+    {
+      "id": "claim_cdebd51dc1ec4963b98f1d48bed12100",
+      "statement": "The vault hold is discharged and replaced by a major approval gate: the `<1.19` ceiling ran 2026-08-30 to 2026-10-20 and ended when both refs moved to hashicorp/vault:2.2, which scans with zero fixable Criticals while 1.21.4 still carried the libcrypto3/grpc pair plus two new pgx ones; the three vault:1.18 seed allowlist entries were deleted in the same change, so infra-image-scan now blocks any fixable Critical in a proposed vault tag, and the guard asserts no ceiling on any track, the major-approval successor, digest-pinned 2.x refs and that the rule did not widen onto other images.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L16-L16",
+          "version": "repo-lines-v1:sha256:6b389c85cd305fed735104e41dbf545709e2a885078d40d7469c8747472a2faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTRmNTc0OWQxZDg3MzdmODk3MTczMjA1YjVmNDFkZmEzZDM3NWMyYzNjOTMwYTJiZDEwNGM5OWU2M2U3M2I4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc5NWY0ZWRhNTI1NzBhN2VkNGVkMGM0ZTY3OWNiYWE1ZDQ2M2ViOGM3ZWY2MzRhYjM0Mzk3ZmU0Zjc4NDQyNSJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L982-L1035",
+          "version": "repo-lines-v1:sha256:24feedb02faf31d49642906afd3e082189f2c770a18a6ea6f3d6f559a0224f87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2ZDc5ODVkMTI1ZmY4OTNmMDExNGNhOGJlNDEwZGM2ZDMwMDFlNTQ5N2E3ZGU0ZjA0ODYyNmJmMzgzZmQ4MGIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1085-L1175",
+          "version": "repo-lines-v1:sha256:735a0ac3a44b67ddeb4145cf9e1e8a5f88b389cf1269859afa9291efe32040d8:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MGFlNGFlZDY1NzBlYjk3MTI5OGY2NWQyZDBjZTlkYjg5YTAwYzRjMzg0ZDRjYmVjNDYyMDM1ODBmMzE0MjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZWI4ZWZiY2U4Y2YzMGQwNmZiNzI3YWU2MThiNjI4NDQxZjBkMDFjNjA1MzAyNDUxNmMxZWU2Yzc4ODA4OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZTVkODM3M2FmNzYxOTg2Nzc0NzI4NWY4YjEwYmU1M2JjMDZiMTFmYzA1ZGE1Njg3NzkzMjE0MTU0OWNmYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_08f91b29298d46bcae49c39188e94d9c",
+      "statement": "A discharged hold is replaced rather than deleted, because a hold someone deleted and a hold deliberately discharged are indistinguishable from the absence of allowedVersions: vault (<1.19), opensearch (<3), langfuse (<4) and the file-scoped observability postgres (<17) each ended as a matchUpdateTypes [major] plus dependencyDashboardApproval rule, and the guard test asserts the successor gate and the ordering rather than merely the missing ceiling — a stale ceiling left behind blocks the version actually deployed.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1104-L1176",
+          "version": "repo-lines-v1:sha256:9a95827b1cce64c039be35c1f0588183a3ef2416c4c2308a10050c4ab0ecee89:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjODQ5M2I3NTJiMDkxODgyOWNhM2ZmZWFjZjNhYzFhZjhhZGU2ZGUwZDI0NGYxNzJkYjFhOGZiMmM5MTgzZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMGMxMzBkZjU2NzMzMzhkMmU4YTAzMjVlOGFiZTcxYTkxNTNjMWIyOTk3MDY0ZjkyZDdkOWRjNDk0OGIxNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1085-L1267",
+          "version": "repo-lines-v1:sha256:d243f8f5fed2d2625c69debb90863b524f128145e8e2d4f2c4b894063fba0205:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNzBhZTRhZWQ2NTcwZWI5NzEyOThmNjVkMmQwY2U5ZGI4OWEwMGM0YzM4NGQ0Y2JlYzQ2MjAzNTgwZjMxNDIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YmViOGVmYmNlOGNmMzBkMDZmYjcyN2FlNjE4YjYyODQ0MWYwZDAxYzYwNTMwMjQ1MTZjMWVlNmM3ODgwODk4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYjViMDU2NzgyYzkzZjRkYjcxZDhjMGY2NTczN2IzNjc1ZGRmNDQzZGFkZjJkOThkZWFiMjNkNzE3Y2ZiY2QyIn0"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3222",
+          "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c482a1403d240639793877a2f668ff1",
+      "statement": "test-renderer is held below 1.3 by the regex ceiling /^1\\.[0-2]\\./ in a group of its own: 1.3.x pulls react-reconciler 0.34, which peers on react ^19.3 while the workspace runs the Expo-pinned 19.2.3, and a held member left inside js patch/minor would gate every routine npm bump batched alongside it; the guard asserts the ceiling on every track, the group, and the ordering after the broad npm rules.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L862-L881",
+          "version": "repo-lines-v1:sha256:e5be3db63087af8034a6b8291d89571399c208a38658bfb7953cbb4abe7018c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MWM4MTRlOTlhOWRhN2MwODBlZjNiNjBkYzBhODdiMjE3YmNkYzA5NDgyZTA4MTE1ZDE3M2QxOGZjMTQ4NWMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L962-L1003",
+          "version": "repo-lines-v1:sha256:672a85085dd558ad9ac21ad37ba1c81e06ff033fd181e2ad8640794ad2b0a78a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjA0OWUzNTI0NDFkNjg4ZmE3NTczZTk5NjJhY2U5NGMyZTVlZjQzMGZhNWY1YjVmZGIyZTFjNWY5YWU5NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMjg2YmI1ZTc2YjM3MmQwNTYyMWNiYWMxMDNjYmFiODdlOTczMmFlZjk0ZDMzMGY3NjA4OTliNDEwNzUwMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MzgxYmRiMzUzYTFlMTU5YzRhNmNiMTRjNTA0ZmQxYzkyM2Q0NmFmN2FmYzhiY2M0MThmMzAzMGM3Mzg1MDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T00:33:25.175Z"
+    "at": "2026-10-21T23:48:47.665Z"
   }
 }

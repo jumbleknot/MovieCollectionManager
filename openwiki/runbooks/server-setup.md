@@ -4,9 +4,6 @@ title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -14,12 +11,12 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-23175e1d10427daa3344d3ec
+    resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
@@ -34,6 +31,10 @@ sources:
     resource: repo://scripts/check-topology-scrub.mjs
   - id: openwiki-source-8d48276c31ac9a4e5887d2ca
     resource: repo://scripts/object-store-migration.sh
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-21T23:48:47.665Z
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -112,8 +113,10 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   with its console disabled and only the S3 port published. Moving an existing cache is an in-place,
   verified copy driven by `scripts/object-store-migration.sh` (`manifest` → `inventory` → `copy` →
   `verify`); recreating it empty is an accepted alternative, because the cache is rebuildable — a cold
-  cache costs time, not correctness. Client wiring is entirely env-driven, so local runs without the
-  token fall back to the local cache and no remote-cache config leaks into the repo.
+  cache costs time, not correctness. That cutover was performed on prod on 2026-10-21 (spec 080 T044)
+  as a copy rather than a recreate, and `verify` reported 1360 → 1360 objects. Client wiring is
+  entirely env-driven, so local runs without the token fall back to the local cache and no
+  remote-cache config leaks into the repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
@@ -146,7 +149,9 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   slices via host cgroup caps — rootless daemons isolate security, not CPU/memory contention.
 - **13 — Monitoring and alerting.** A lean infra profile on the prod daemon. As built, one probe
   service is the pager, and disk SMART runs as host-level `smartd` rather than in a container (raw
-  NVMe SMART needs root device access a rootless container cannot get).
+  NVMe SMART needs root device access a rootless container cannot get). The observability and audit
+  stacks themselves — and the one-time stateful cutovers they have carried, each with its own ordering
+  and rollback window — are [Prod control tower](./prod-control-tower.md).
 - **14 — Backups, disaster recovery and UPS.** An encrypted, offsite, scheduled snapshot of every
   stateful service on a timer, a *proven* restore procedure, a graceful-shutdown drain unit that stops
   containers cleanly before the runtime is killed, and UPS + NUT for power loss. The runbook warns
@@ -227,6 +232,46 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   in the observability stack whenever that moves. The store's volume and network names are host state
   too, so confirm them by ownership *and* contents before running the migration copy — and if the
   backup script captures the previous store's directory, it has to be pointed at the new one as well.
+  The guard that fails on any *live* reference to the retired object store — with a closed list of
+  reasoned exemptions, and the history blocks under `docs/runbooks/` that may keep a case study —
+  belongs to [Infra-image CVE scanning](./infra-image-scanning.md).
+  - **The cutover landed as a copy, and the previous store's config directory is still in the backup
+    list.** The move was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a
+    recreate, with `verify` reporting 1360 → 1360 objects. The host backup script's `restic backup`
+    path list therefore carries the new store's config directory beside the previous store's, and the
+    old directory stays on that list only until the deferred cleanup (spec 080 T047) removes it —
+    taken off the list in that same step, because until then it is the rollback.
+  - **The store's credentials live in two files and both must change together.** The cache server's
+    own env file carries the store's access/secret pair as its `AWS_ACCESS_KEY_ID` /
+    `AWS_SECRET_ACCESS_KEY`, while the store's compose reads the same pair from the store's own `.env`.
+    On this host that env file's endpoint and bucket name were already correct, so the cutover changed
+    only those two credential lines — the failure mode of leaving them behind is a cache server that
+    starts healthy and cannot read the store.
+  - **The store's volume is an external volume that nothing but the migration tool creates.** Its
+    compose declares the volume `external: true`, so compose never creates it: `copy --apply` brings it
+    into existence (a new host with no prior data creates it empty instead). Referencing it before it
+    exists aborts the compose up with an `external volume … not found` error and creates **no**
+    containers — the deploy fails instead of starting on an empty store, so the copy must precede
+    anything that mounts the volume. [Prod control tower](./prod-control-tower.md) owns the ordering
+    for the observability stack's identical cutover.
+
+    ```mermaid
+    flowchart TD
+      Quiesce["stop the cache server, the only writer"] --> Manifest["manifest against the old store"]
+      Manifest --> Inventory["stop the old store, inventory its volume"]
+      Inventory --> Copy["copy --apply creates the new external volume"]
+      Copy --> Up["up the RustFS compose on the copy"]
+      Up --> Creds["repoint the cache server's two AWS credential lines"]
+      Creds --> Verify["verify for parity against the manifest"]
+      Copy -.->|"skipped"| Fail["compose aborts: external volume not found, zero containers created"]
+    ```
+
+    *The cutover's ordering: the copy is what brings the external volume into existence, so it must
+    run before anything that mounts it.*
+  - **Two env-file reading traps cost a re-run each.** Take each store's secret from its own env file
+    with a `sed -n` extraction rather than typing it into a `read -rs` inside a pasted block, which
+    consumes the next pasted line as its input; and list env-file keys with a pattern that admits
+    digits, since a letters-only pattern silently skips every `S3_…` line.
 - **The forge's Actions-artifact API is a missing route, not an empty result.** `GET
   /api/v1/repos/.../actions/artifacts` answers `404 page not found` on this build
   (15.0.3+gitea-1.22.0), so `upload-artifact` APKs are reachable only by a human clicking through the

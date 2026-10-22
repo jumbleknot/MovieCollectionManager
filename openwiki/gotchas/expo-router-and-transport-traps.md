@@ -6,6 +6,8 @@ resource: frontend/mcm-app/server.js
 tags: [expo-router, react-native, copilotkit, express, transport, frontend]
 timestamp: 2026-10-19T12:00:00Z
 sources:
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -24,16 +26,16 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/token-refresh.ts
   - id: openwiki-source-19609c73bc9a3a34e47ab18d
     resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
-  - id: openwiki-source-a731aae9de44717e94595aed
-    resource: repo://frontend/mcm-app/tests/e2e/mobile/agent-navigate-movie.yaml
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
+  - id: openwiki-source-d61b9a5c48e21c0856d75a2d
+    resource: repo://frontend/mcm-app/tests/e2e/web/font-fallback.spec.ts
+  - id: openwiki-source-5ee35374d6ab0e61934498cd
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
+  - id: openwiki-source-0df6a785e730381b7aee77a1
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
-  - id: openwiki-source-35c70deaea135103268df2d8
-    resource: repo://specs/012-multi-agent-mvp/HANDOFF.md
-  - id: openwiki-source-471820815aded91734143333
-    resource: repo://specs/013-post-agent-enhancements/diagnosis-mobile-agent-no-token.md
 generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
 verified:
   - by: openwiki/0.7.1

@@ -7,6 +7,39 @@ tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-20T11:09:40.455Z
+sources:
+  - id: openwiki-source-bff475d8fa855e3592cfedc2
+    resource: repo://.specify/memory/constitution.md
+  - id: openwiki-source-e2e0cc10343e1c15759e3667
+    resource: repo://api-specs/mc-service-api.yaml
+  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
+    resource: repo://backend/mc-service/Cargo.toml
+  - id: openwiki-source-b6252ff5a95766690893a6aa
+    resource: repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs
+  - id: openwiki-source-b5925b87f787aa6f7bfee515
+    resource: repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs
+  - id: openwiki-source-4cc090993970bb2253a628ba
+    resource: repo://backend/mc-service/src/api/middleware/auth.rs
+  - id: openwiki-source-ab390bc7debabac317c9e258
+    resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
+  - id: openwiki-source-c24ab349f92ee5be03f5048a
+    resource: repo://backend/mc-service/src/application/access_control.rs
+  - id: openwiki-source-e7c775a958bbcf3eef93d65c
+    resource: repo://backend/mc-service/src/domain/errors.rs
+  - id: openwiki-source-d37d3bb410b631422ca1e9c9
+    resource: repo://backend/mc-service/tests/integration/collections/http_authz_test.rs
+  - id: openwiki-source-805a41325e924fb1df7abf14
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts
+  - id: openwiki-source-74f39153b978241c50c7addd
+    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
+  - id: openwiki-source-0476c5058778e33745a9b2c2
+    resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
+  - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
+    resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
+  - id: openwiki-source-8d4741ebc7bb90623f915acc
+    resource: repo://specs/046-authenticated-authz-tests/contracts/authenticated-http-authorization.md
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace

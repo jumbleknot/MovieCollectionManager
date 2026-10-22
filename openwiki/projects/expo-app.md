@@ -41,6 +41,14 @@ sources:
     resource: repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx
   - id: openwiki-source-c80309c52a299fc12aeafd42
     resource: repo://frontend/mcm-app/src/app/(app)/settings/index.tsx
+  - id: openwiki-source-a5c6a4d72986b97be03d6e9d
+    resource: repo://frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts
+  - id: openwiki-source-0657d2ae17def9d557f75db7
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts
+  - id: openwiki-source-8407640b2cb0f7b864657883
+    resource: repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx
+  - id: openwiki-source-d53ec28679ddaca47c22d5ba
+    resource: repo://frontend/mcm-app/src/components/movie-count-line.test.tsx
   - id: openwiki-source-edbbf2f1de81041ebb56adf3
     resource: repo://frontend/mcm-app/src/components/no-autofill-input.tsx
   - id: openwiki-source-38f4558bc6918770e5be2fc2
@@ -55,8 +63,12 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts
   - id: openwiki-source-efdc9f208512d58f170a0e44
     resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
+  - id: openwiki-source-f2f814b694fbf226c91ce910
+    resource: repo://frontend/mcm-app/src/hooks/use-ui-state.tsx
   - id: openwiki-source-a2cf9da271335518572da652
     resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
+  - id: openwiki-source-9542968841d15eaafd16ac7b
+    resource: repo://frontend/mcm-app/src/test-support/render.tsx
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
   - id: openwiki-source-d67eac1e98649691c637d9c0
@@ -65,6 +77,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
+  - id: openwiki-source-6230a2d05eadba772d30d66a
+    resource: repo://packages/design-system/components/controls.test.tsx
   - id: openwiki-source-a9f8640b2ea19387ecec6be5
     resource: repo://packages/design-system/components/navigation/NavList.tsx
   - id: openwiki-source-e3cf144619c81072e7ba6980
@@ -79,6 +93,8 @@ sources:
     resource: repo://packages/design-system/project.json
   - id: openwiki-source-7c01a8501da7bfee76f8ed12
     resource: repo://packages/design-system/tamagui.config.ts
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4

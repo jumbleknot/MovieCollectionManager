@@ -17,10 +17,18 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-3b86829117dd0577834407fc
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-8ada931f45dbc32482cecf9f
+    resource: repo://infrastructure-as-code/docker/vault/config/vault.hcl
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-a6996cae4bd83db81e823602
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-2c24e272c750d36f7963e28d
     resource: repo://specs/026-prod-data-auth-vault/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }

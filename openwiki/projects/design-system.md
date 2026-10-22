@@ -5,6 +5,8 @@ description: The Material Design 3 token set and Tamagui 3 component library (@m
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
 sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
@@ -55,6 +57,8 @@ sources:
     resource: repo://packages/design-system/tokens/typography.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-e1a7063386de1c5b8a2e79a9
