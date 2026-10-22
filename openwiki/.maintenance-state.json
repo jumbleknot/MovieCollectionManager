@@ -1,28 +1,47 @@
 {
-  "coveredCommit": "7525fcd574164fefa873b1958cfa9f8a61bb2de4",
-  "coveredAt": "2026-10-21T09:24:48.428Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "240c58bcb394cfafdc5b9dd4e214f0822f24ed6a",
+  "coveredAt": "2026-10-22T00:38:01.853Z",
+  "lastOutcome": "completed",
   "backlog": [],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 827,
+    "headCommit": "ccbb391a5b56d9185ddd38550f9059174b80ad09",
+    "markerBefore": "7525fcd574164fefa873b1958cfa9f8a61bb2de4",
+    "slices": [
+      {
+        "area": "runbooks",
+        "pages": [
+          "server-setup.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-22T00:38:02.301Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 12,
+    "elapsedSeconds": 2958,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 201,
+    "calls": 361,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2571470,
-    "cached": 17577278,
+    "uncached": 2057952,
+    "cached": 39345704,
     "cacheWrite": 0,
-    "output": 420515,
-    "reasoning": 374272,
-    "ms": 5444419,
-    "estCostUsd": 1.3815,
+    "output": 850668,
+    "reasoning": 742470,
+    "ms": 6147316,
+    "estCostUsd": 1.8743,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -32,11 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/prod-control-tower.md"
+        "runbooks/server-setup.md"
       ],
       "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 1.3815,
+      "deadlineStop": false,
+      "estCostUsd": 1.8743,
       "rateLimited": null
     }
   ],
