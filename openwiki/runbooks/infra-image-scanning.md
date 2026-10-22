@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules, the bounded retry, and the publish-versus-promote split.
+description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules with version- or digest-keyed entries, the bounded retry, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
@@ -9,10 +9,20 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
     resource: repo://.forgejo/workflows/infra-image-scan.yml
+  - id: openwiki-source-6e3646982d72c64cb5e2486d
+    resource: repo://.forgejo/workflows/renovate.yml
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-0ff61f596da1302e58282fa2
+    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
+  - id: openwiki-source-7ad99116ef3a9756b7c06307
+    resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
+  - id: openwiki-source-3b86829117dd0577834407fc
+    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
+    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
   - id: openwiki-source-9569e077273f937a713aad61
@@ -41,10 +51,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T12:20:46.129Z
+    at: 2026-10-21T23:48:47.665Z
 ---
 
 # Infra-image CVE scanning
@@ -209,12 +219,21 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   a stale entry hides a regression rather than tracking a real accepted risk. Every entry needs
   `image`/`id`/`justification`/`addedBy`; a blank field or invalid regex is a gate error, and a past
   `expiry` stops suppressing. The policy is stated in `security/infra-images/allowlist.yaml` itself.
-- **Key a suppression to a VERSION, so an upgrade can discharge it.** `image` is matched as an
-  **unanchored** regex against the full scanned reference, and that one property decides whether a
-  suppression can ever end: `hashicorp/vault:1\.18` still matches `1.18@sha256:…` but stops matching
-  `1.21`, whereas a bare repository name (no tag) matches every tag that image will ever have — it
-  suppresses the advisory it was written for *and every future one in the same image*, silently and
-  permanently. That is not an accepted risk with a review date, it is a permanent hole.
+- **Key a suppression to a VERSION — or, where the version cannot carry it, to the DIGEST — so an
+  upgrade can discharge it.** `image` is matched as an **unanchored** regex against the full scanned
+  reference, and that one property decides whether a suppression can ever end. A version-anchored key
+  survives a digest being appended and stops matching the next version: `hashicorp/vault:1\.18`
+  matched `1.18@sha256:…` and stopped matching `1.21`, which is how PR #289's bump surfaced the
+  Criticals that key was written for — a dischargeable key doing its job, loudly. A bare repository name
+  (no tag) instead matches every tag that image will ever have — it suppresses the advisory it was
+  written for *and every future one in the same image*, silently and permanently. That is not an
+  accepted risk with a review date, it is a permanent hole.
+  Where the reference is a floating major, or the advisory survives a version move, the **digest** is
+  the dischargeable half: the OpenSearch entry is keyed to `opensearchproject/opensearch:3@sha256:bcc17975…`
+  rather than to `opensearch:3`, so an upstream rebuild — not a tag move — ends it, and it was
+  re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did **not** clear the
+  advisory. The Unleash entry names both (`^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a`),
+  so any image change re-blocks.
   `scripts/__tests__/infra-image-scan.test.mjs` asserts both directions for every formerly-floating
   repository: the key still matches today's pin **and** stops matching a later version derived by
   incrementing the pin's last number (a hand-written "next version" literal silently stopped meaning
@@ -241,6 +260,28 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   enumeration left to grow one version at a time becomes the wildcard by instalments. Do this only when
   the bump is **not** the remediation — where the new version actually clears the advisory, delete the
   entry when the bump lands.
+- **A hold can outlive its entries — once a clean tag ships, the GATE is the hold.** `hashicorp/vault`
+  was held below 1.19 by a renovate.json `allowedVersions` ceiling from 2026-08-30 until 2026-10-20,
+  precisely because the `vault:1\.18` entries could not match `1.21` and that bump added two new pgx
+  Criticals. Feature 081 US8c re-measured `vault:2.2.0@sha256:e0acd3c6…` at **zero** Criticals of any
+  kind, moved both refs to `2.2`, **deleted** the three seed entries rather than re-keying them (a
+  re-keyed entry would match nothing and fail the expiry check), and lifted the ceiling. There is
+  therefore no vault entry in the allowlist today, which is what makes `infra-image-scan` itself the
+  hold: it now blocks any fixable Critical in a proposed vault tag. What replaced the ceiling is a
+  major-approval gate — a vault MAJOR needs a dashboard tick (raft storage on a dormant prod stack),
+  while patch and minor stay automatic and scan-gated.
+- **What the allowlist actually holds today, and how to read the cohorts.** Five entries in two
+  shapes. Three are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
+  `mongodb/mongodb-community-server:8\.0\.8-ubi9`, `postgres:18\.6-alpine3\.23` and
+  `postgres:18-alpine` (on the postgres pins the shipped binary carrying it is `usr/local/bin/gosu`) —
+  kept because no reachable tag clears it, with the measurement recorded per entry rather than assumed.
+  Two are **time-boxed** to `2026-12-01` and are the ones that will red the weekly expiry check first:
+  `opensearchproject/opensearch:3@sha256:bcc17975…` (CVE-2026-75595, netty) and
+  `^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a` (CVE-2026-90711, proxy-addr). Both were
+  re-measured, not re-dated, when renewed, and both are deliberately keyed so that a rebuild or an
+  upgrade discharges them. A comment block above an absent entry is the file's history, not a live
+  suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio) were
+  deleted once a scan showed the fix had landed, and their prose was kept.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count

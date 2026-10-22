@@ -17,8 +17,18 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts
   - id: openwiki-source-2335f107cbd84a8f7aed9777
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
+  - id: openwiki-source-149046440376c9eed5cb9bdf
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/export-download%2Bapi.ts
+  - id: openwiki-source-cdd043572d44406324d3885e
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/import-upload%2Bapi.ts
+  - id: openwiki-source-7df7f43c44fa89f0d6fae431
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts
   - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-ea67320bfcec79bc86e30d07
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/ui-action%2Bapi.ts
+  - id: openwiki-source-bdf60922a5ea315e46b211b0
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/ui-state%2Bapi.ts
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
   - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
@@ -35,6 +45,16 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/account-step-up.ts
   - id: openwiki-source-e6a53b75d3e6241fef647e04
     resource: repo://frontend/mcm-app/src/bff-server/agent-config-ssrf.ts
+  - id: openwiki-source-c4ea756edd0b8ee900bc61df
+    resource: repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts
+  - id: openwiki-source-5af82e72acd9c41bb4da6a00
+    resource: repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts
+  - id: openwiki-source-5dc4f2e9cc8c10f415d0e543
+    resource: repo://frontend/mcm-app/src/bff-server/agent-resume.ts
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
+  - id: openwiki-source-8e04aa30eb8b3df34b4d8b7f
+    resource: repo://frontend/mcm-app/src/bff-server/agent-thread-owner.ts
   - id: openwiki-source-653746d934ac6813d4981084
     resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-f3703151c1ce1fae30ed6c7b
@@ -65,20 +85,30 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/mc-service-client.ts
   - id: openwiki-source-1c2acc0a72ab64fd663510a9
     resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-3e629dec4d46144effde38c8
+    resource: repo://frontend/mcm-app/src/bff-server/opa-client.ts
   - id: openwiki-source-a0956a8d887958011704f33b
     resource: repo://frontend/mcm-app/src/bff-server/pinned-agent.ts
   - id: openwiki-source-abe552d5bae5c5ce75a9c776
     resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
   - id: openwiki-source-3bf0ad96857ee228607b018c
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-71f189661b44f999afe30995
+    resource: repo://frontend/mcm-app/src/bff-server/ui-action-authorizer.ts
   - id: openwiki-source-c4cad089b604b08d2164b7c8
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts
   - id: openwiki-source-78eeb348d704a1098ef44480
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts
+  - id: openwiki-source-719cd734e5ed87032a5fd55b
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-run-api.test.ts
   - id: openwiki-source-c5a2ed751f38e7e326a9bb90
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
+  - id: openwiki-source-badb43d18671bffd37053c83
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-11fb40898d5d9eecbab09373
+    resource: repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts
   - id: openwiki-source-fe13721a7608b6a93a9e93f2
     resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
   - id: openwiki-source-a772a7e2a660182428f932f2

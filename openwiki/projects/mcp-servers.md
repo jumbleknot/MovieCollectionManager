@@ -7,6 +7,8 @@ tags: [mcp, agents, python, scoped-capability, security]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-3f4dad889fae278d8fd6fa45
     resource: repo://agents/movie-assistant/src/eval/token_leak_scan.py
   - id: openwiki-source-0bc082213ea2b05aafac8afe
@@ -79,14 +81,18 @@ sources:
     resource: repo://mcp-servers/web-api-mcp/tests/unit/test_tmdb_key.py
   - id: openwiki-source-f2582bdc10152799f095180e
     resource: repo://scripts/__tests__/mcp-tool-annotations.guard.test.mjs
+  - id: openwiki-source-8525eda15070fe5759684378
+    resource: repo://scripts/__tests__/python-base-perl-patch.guard.test.mjs
+  - id: openwiki-source-06281909fdd71098be6c65ec
+    resource: repo://scripts/__tests__/python-runtime-no-pip.guard.test.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-d253edfea28a71c8a87b78e7
     resource: repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-11T15:19:14.150Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-11T15:19:14.150Z
+    at: 2026-10-21T23:48:47.665Z
 ---
 
 # The three scoped MCP servers
@@ -183,13 +189,26 @@ All three are built the same way in `src/server.py`:
   The parser is structural rather than regex because a regex over `@mcp.tool()` + `def` was measured
   matching only 7 of 9 movie-mcp tools, and because a middleware-wrapped app is exactly the case that
   slipped through the 1.x→2.x migration (see the gotchas).
-- The images build from the repository root as context (`docker build -f mcp-servers/<server>/Dockerfile .`),
-  in two stages on a digest-pinned `python:3.14-slim` base: a `build` stage that copies in only the
-  committed `pyproject.toml` + `uv.lock` and runs `uv sync --frozen --no-dev` (with `uv` copied from a
-  digest-pinned `ghcr.io/astral-sh/uv:0.12.10` image), and a `runtime` stage that copies the resulting
-  `/app` — virtualenv plus `src` — owned by the non-root `app` user and enters via `python -m src.server`.
-  All three entries bind `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing
-  to disk.
+- The images build from the repository root as context (`docker build -f mcp-servers/<server>/Dockerfile .`,
+  the `build` Nx target), in two stages on a digest-pinned `python:3.14-slim` base: a `build` stage that
+  copies in only the committed `pyproject.toml` + `uv.lock` and runs `uv sync --frozen --no-dev` (with `uv`
+  copied from a digest-pinned `ghcr.io/astral-sh/uv:0.12.10` image), so the dependency layer is independent
+  of source edits; then a `runtime` stage on the same pinned base that uninstalls the base's system `pip`,
+  creates the non-root `app` user, copies the resulting `/app` — virtualenv plus `src` — owned by that user,
+  prefixes `PATH` with `/app/.venv/bin`, and enters via `python -m src.server`. All three entries bind
+  `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing to disk. Nothing in the
+  Dockerfiles, the per-server compose files or the agent stack actually mounts the virtualenv or source
+  read-only — only the Dockerfile comment says so.
+- Two of those image details are held by their own guard tests, and both exist because cd-deploy's Trivy
+  gate fails fast in a fixed order and names one image while several are affected.
+  `scripts/__tests__/python-runtime-no-pip.guard.test.mjs` fails any Python image whose final stage keeps
+  the base's `pip`, which vendors its own stale `certifi` and was flagged as a fixable Critical
+  (GHSA-6q48-6c7w-9gw2); it also fails a `uv sync` that would install a lock-carried `pip` into the venv.
+  `scripts/__tests__/python-base-perl-patch.guard.test.mjs` fails any Dockerfile pinning the older
+  `python:3.14-slim` digest that carried three fixable `perl-base` CRITICALs — the reason the base is
+  pinned by digest rather than by tag. Both run in the `guardrails` job's
+  `node --test scripts/__tests__/*.test.mjs` step, which is what keeps a gate script's own guard from
+  sitting unexecuted.
 
 ## movie-mcp — the identity-carrying proxy
 

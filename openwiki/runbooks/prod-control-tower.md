@@ -5,10 +5,14 @@ description: The three independently up/down-able production support stacks — 
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, cutover, runbook]
 sources:
+  - id: openwiki-source-c1146bc275906084150591a5
+    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
     resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
   - id: openwiki-source-23175e1d10427daa3344d3ec
     resource: repo://docs/runbooks/prod-control-tower.md
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
@@ -25,10 +29,20 @@ sources:
     resource: repo://infrastructure-as-code/docker/opensearch/init-audit-user.sh
   - id: openwiki-source-3b86829117dd0577834407fc
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-8ada931f45dbc32482cecf9f
+    resource: repo://infrastructure-as-code/docker/vault/config/vault.hcl
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
+    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
   - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
+  - id: openwiki-source-482173336861a06249bf1372
+    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-bf15c8e3067ce028059a1350
@@ -41,6 +55,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-2e26935bed37e1316dc175a0
+    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1

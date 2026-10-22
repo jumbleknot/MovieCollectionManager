@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:28c3c8a98c549dc81655b9e0f91399b3891491f1a67341d730b88b581217680b",
+  "pageVersion": "sha256:77073af43ad7d2da0ed785caf5fd9c578decd3d1d126677a2f172d26a57f7865",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -132,7 +132,7 @@
         },
         {
           "resource": "repo://security/infra-images/allowlist.yaml",
-          "version": "repo-file-v1:sha256:5c5879c4ee637821d10b79763b4d3bc6321ab87b45d5f6db3df1577c50f74acd"
+          "version": "repo-file-v1:sha256:10f92688774e03a46c9a50b8d0df9fc7c47ce3c3ccb298e6af1dbfd650ad2b87"
         }
       ]
     },
@@ -254,7 +254,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:0e2996ee4a2b10681f21019ce3911a8696ad8f11a2ef0a42497912f9f792a6a1"
+          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
         }
       ]
     },
@@ -399,7 +399,7 @@
           "version": "repo-lines-v1:sha256:d079d27720c510a500ed8da13a8c269118f57891ae4f280170641ac65a793e17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZGIwNDc0NWU2YjZiZmNlZjM5MGMzYWNlN2QwMTgzYTA5Yzk2NjFhYjYzZTM1YWZlNzFlMGMzNzkyNGQ1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNWFmNzBhZGJjZjBjNmI1ZjYxYzM5YzA3ZWYxOTFkMzNmNmUwZGVkMWVmZTZjYmU4ZWQ2ZTllYTE0NTA4OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3Y2FiYjFiODkwODE2ZDlkMTdlOTE5NTYxMjU0YWQwMDQ3NWE5ZDUyOWJkNWI0ZTk3YjkyNTlkMGIwOTllNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YTczNzVmZDkyNjhjMzdiNzg5MmIxNzIxMTc2ZTc4ZDk4MDViODE1ZDg3MDU4YzUwNGUwZGQwYmIyNTUzMDcifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3004-L3023",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3066-L3085",
           "version": "repo-lines-v1:sha256:889f7601e243e2a296a541df7fcefd9dd2c2a5568625bca203a34d31adb1f3fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGEyMDkzM2Q3N2Y5NWQ0Y2I4MDZiMTAwOTk4OWFkNjQxYTkzNWZjMzg3MmVmZDE0NjkwN2Y4YzhmYjAxMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMDgyMWQyYmExNGM5NTc0ZTMwMjkxOWMxODI2NDU5OTZlZDY1YzlmOGQwZGNkOTE5NDg3MzZlYTg1ZTkzNTAifQ"
         }
       ]
@@ -421,7 +421,7 @@
           "version": "repo-lines-v1:sha256:037a461b6365490b63d7a3f6420ebd929f8042038c776102d6a95098b32cb6df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDIxMWI5YzM4MDRkYTYxOGUzNWQ0OWExYTQwZDQ2NTc5NWE5MGQwYjgzMjAwNTU2ZjliMjU1YjdhZTQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNDExM2IwYWRlYzM5NmZkMjk2NWYyYjQzMDZmOGM1NjZmMzA0ODgwNmJkZTJhOTIyMjJjYWY1NDJkMTUzNjUifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1937-L2043",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1999-L2105",
           "version": "repo-lines-v1:sha256:a14e389fa285a5d4f4910fa07060ef1f0292312e489a89ebcdbe5f4a9262e1f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNDgyN2E1OWJkMmRkZTc1NjJmOWMxN2VlYWE2YjdlZjVkYTRjYmUyYTE4NmU5ZTk2NDc1ZGIyOWU0MTRjZWEyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmUzMTRkZTM3ODI3MzAxMjA4NWYyMTg0OTE4MDgwYWFhOGRkMGI5OTRiZjg2NmYwZTc5YjAxMmI1MGM5OTI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTE0ZTM0ZDE2Yjg4ZDI1ZDAzNWIxYmVjOTMwM2JiNTYzOTFjMDJjNDhiNmZjZGI2YjgyZTU1NDliNzRlNTZhIn0"
         }
       ]
@@ -439,7 +439,7 @@
           "version": "repo-lines-v1:sha256:436b5e7d22a9c01ca52d6bd60400d5452ea643cec05d4ecb95b5be9f62031ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQ5NDg0ZjlhNjhjNDY1YTFhOTQ0MWFhYmIxZjc5MDhlMTg4ZmM1MGIxYzQyM2U2NWI3ZmFiYmE0MGQ5NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1893-L1911",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1955-L1973",
           "version": "repo-lines-v1:sha256:14ae677fc6d57d3038ac26ef27b85aaa5be3dd9f0d53d2e3ff24afc8ddb0e241:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMzFkZWM5YTViZTA2ZTg1NjJiOGUxYTdmOTYzNDI3YWU3NWY4NmQwYmNjOWY4OTc4YzBjZmM3MGMyM2QyYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlYzhmOTJhMDFjYjA3ZTlhMjQwZjk4YWE0MzUwNTE2NjRiY2YxMmUyMWFkYjJhYmNlZDQ1NTg3MTU4MzU3ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxYjQwNjRmMDY2MmRmNzQ5NTgyZGE3MTU1YjA0NWFlN2Y2YWQ0NDRmOGE4Y2JlNjVhNmZhNDk1MjUzODgyYjMifQ"
         }
       ]
@@ -457,14 +457,92 @@
           "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2967-L3002",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3029-L3064",
           "version": "repo-lines-v1:sha256:872d8a7bc8479c65ea8d274dc40f56ed2a9f39e53000559b04d5968a6a402c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjM3Y2JlOWIyODQ4YmIzZTNjNGZhZDA5MGFjYWJlOGYyMTY5NTdjZTg5MGQ5OTdlZjNjZjI5MTA4MjllMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZTQwMjUzNmNjN2VkYWU3ZDVjYzBjMWQ1MTdiOTA5YThiZWIxNjMxZDQ5M2FiZGVjMDkxYmI1M2Y2OTQwMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMWUxYWQ1ZWY1ODE0ZWI4ZjIyNzRiN2M1NGY2YzNiODkwYTdmYzhlOWM5ZDBmNjdjNDI3ZWM4YzE3MGMwYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_460c80ee07764e488b930024a0b4f7f9",
+      "statement": "Where a reference is a floating major, or the advisory survives a version move, the allowlist entry is keyed to the DIGEST so that an upstream rebuild — not a tag move — is what discharges it: the OpenSearch entry is `opensearchproject/opensearch:3@sha256:bcc17975…` rather than `opensearch:3` and was re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did NOT clear CVE-2026-75595, and the Unleash entry names version AND digest (`^unleashorg/unleash-server:8\\.2\\.0@sha256:5020013b7a9a`) so any image change re-blocks.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L270-L270",
+          "version": "repo-lines-v1:sha256:9fabcfb38f1d57afdf071e05bcdb546f3b53831281b54bd59e6b8bcd0270ad6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZhYmNmYjM4ZjFkNTdhZmRmMDcxZTA1YmNkYjU0NmYzYjUzODMxMjgxYjU0YmQ1OWU2YjhiY2QwMjcwYWQ2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZhYmNmYjM4ZjFkNTdhZmRmMDcxZTA1YmNkYjU0NmYzYjUzODMxMjgxYjU0YmQ1OWU2YjhiY2QwMjcwYWQ2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDUzNGY3YmVkY2JmODAyYjU4NDlhMjdmYTNhY2E2OWMyMmIwZmU0NzNmNGY5NGJkOTIyZDVlMzNiMDRjMTJkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTU0N2VjODRkZjQ1NDQzNzZkNjBkN2U1YWRiZDNmZjczNDRmMzhjZDk3OThlNGJhZDU5YWQ0NDJjMDBiOTZjMCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.yaml#L30-L30",
+          "version": "repo-lines-v1:sha256:4708a77a4738e8acb195235e2f614e9cce0ef8dea42904df0394949006da4c49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDcwOGE3N2E0NzM4ZThhY2IxOTUyMzVlMmY2MTRlOWNjZTBlZjhkZWE0MjkwNGRmMDM5NDk0OTAwNmRhNGM0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDcwOGE3N2E0NzM4ZThhY2IxOTUyMzVlMmY2MTRlOWNjZTBlZjhkZWE0MjkwNGRmMDM5NDk0OTAwNmRhNGM0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRhMjI3YTk4MmZjY2RhZDc5MjY2M2YzMWZmZDFjNjRhNjBiMGJiYTE3OTFkMzZkMDA1MmM4YTFlMWU1NTM5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlYzJmYTFlMmJkMjYyYjllZDU0ZjQ1ZWE1OGExZjgzZGY5MTE3NzI3NjZmZTExZDMwNmE3NTI5MmMyMjc5MSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L428-L556",
+          "version": "repo-lines-v1:sha256:c20bdd8bacd22729d1efdc8df546bc4e7bd27c9b96b956fb779b7733fc2ee6af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MWYwNDllMzUyNDQxZDY4OGZhNzU3M2U5OTYyYWNlOTRjMmU1ZWY0MzBmYTVmNWI1ZmRiMmUxYzVmOWFlOTYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlY2RkZTlhMTE2NWZiYjBhOGYwMDJmMDBiY2ZiYzMxYzk5YTQzNzE4OWRjMTg1YjNlNjljMGY1ZWYwNjJlYTI4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NDU2ZmJkYzRlNmNhNmE4ODg5MGZmZWFhNDk4Y2I0Y2JkYWZhOTdjZTM3MzgyMzMwM2NmYjlmZTkxYWNhMmM2In0"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L231-L235",
+          "version": "repo-lines-v1:sha256:d9eaa6bd5e43fefe10303fbd38dd205864f204181213a412449328d92d425a5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg2MzBjZGI2MDRmNTQwYTMyN2VkYzgwZDQ2MWQ4ZjNjNDE1YmZmOGVmN2E5OTQ4MTdkNDE2YmI0MzYzNmViMiJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L329-L333",
+          "version": "repo-lines-v1:sha256:1d172caea457314360a773a68376ef8e543fed6b055f9a8621c2417edfa9194b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxMjdlNjg2NGRiNTk3ODQyOGFjZjQ4NzVkNzI0Njc0MGZmMzBlMWM4ODE1ZmVmYjhiNTc1MjI0M2Y1NTc3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f30fbf7ab004400bca33969eabc0062",
+      "statement": "The `hashicorp/vault` security hold is discharged and replaced by an approval gate: the renovate.json `allowedVersions` ceiling below 1.19 stood from 2026-08-30 to 2026-10-20, was lifted by feature 081 US8c after `vault:2.2.0@sha256:e0acd3c6…` measured ZERO Criticals of any kind, both vault refs moved to the digest-pinned 2.x line, and the three `hashicorp/vault:1\\.18` seed entries were DELETED rather than re-keyed (a re-keyed entry would match nothing and fail the expiry check). With no vault entry allowlisted, the infra-image scan itself is now the hold — it blocks any fixable Critical in a proposed vault tag — while a vault MAJOR (raft storage on a dormant prod stack) requires a dependency-dashboard tick and patch/minor stay automatic and scan-gated.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L16-L16",
+          "version": "repo-lines-v1:sha256:6b389c85cd305fed735104e41dbf545709e2a885078d40d7469c8747472a2faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTRmNTc0OWQxZDg3MzdmODk3MTczMjA1YjVmNDFkZmEzZDM3NWMyYzNjOTMwYTJiZDEwNGM5OWU2M2U3M2I4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc5NWY0ZWRhNTI1NzBhN2VkNGVkMGM0ZTY3OWNiYWE1ZDQ2M2ViOGM3ZWY2MzRhYjM0Mzk3ZmU0Zjc4NDQyNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.yaml#L14-L14",
+          "version": "repo-lines-v1:sha256:6b389c85cd305fed735104e41dbf545709e2a885078d40d7469c8747472a2faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTUyODVlNWYzY2ZhM2E0MzNmMDhhNTQ2NzQyNjQ2YzgzYmQyZjljNjlmMzQ0ZDVjYjBhOGViMTY5Y2YzMTA3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhlZjdlMDk5MmVmMDZhNzQ5ZWRlZGZkYzIyYzhlZGVmMGNkOGM5MTdjNDRjMTgxYjBkYzYzODgxZTU3M2ZhYiJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L982-L1035",
+          "version": "repo-lines-v1:sha256:24feedb02faf31d49642906afd3e082189f2c770a18a6ea6f3d6f559a0224f87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2ZDc5ODVkMTI1ZmY4OTNmMDExNGNhOGJlNDEwZGM2ZDMwMDFlNTQ5N2E3ZGU0ZjA0ODYyNmJmMzgzZmQ4MGIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1107-L1149",
+          "version": "repo-lines-v1:sha256:ebdaa3d8859b913a142e605788866b31adb8e6c1c27f192bc4baba8615e3ffb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OWIxMGIxY2M4MjAwM2Q0MDQ2NDMwMTBhN2QyZDU4NDAyY2UwZmVjNjEzYzZiMmQ1MDRhZjhkYjQzY2FmZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyZDBlYzI3ZjdlNzM3ZjY4YjM1ZjliZWU5YjAxODhmYjI3ZTgxMjk5ZTBkNmQzODc0MzU3YWM2NjI3MmRjZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3YmU2MDVmODk3MzY3OTRmZjAyZTk1ZjhjZmI3NWVmNmYzY2M3OWRhOWI5NjYzYzM0NjZmOWQ3ZGUxNTljOTIifQ"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L56-L63",
+          "version": "repo-lines-v1:sha256:688f53e51576dda30dce0830569a3d870a20a43a397e93567524506fc3ffb9a0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjk4NzZlMjk3OTlkYjRjNDkxNGZlZWI4MDZmMmFjMWE3ZTM2OTk1NDdiMGJjNGRlNWE0OWM2OWU2OTExZmNmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE1OWQ1MTQ2Y2ZkM2NlYjk0NjIwMjQwZGJkNDNiNDVmYzBjZjdkNzVhZWQyZDVlNTQ4ZGQxNjdhYWI1OGZjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTYzZjUxMDNjNzM0MGRjNjk2YmE4YzhhMmZhNGJjYzMyM2FjNmNiNDNjMTBiZDlkMzQ0N2RkZTk1MDk5YmFlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWM5NTEyZTM5ZDRiYTllZTkwZWQ0ZWUwZmY2ODY4ZjI3OTIyOWNjNjk3YmFjMjI2Y2M2ZDQyYTNkZTJiOGRjOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8bc042116284749ab175a0ca0ee1e7a",
+      "statement": "The infra-image allowlist holds five live entries in two shapes: three un-expiring BASELINE entries covering the same Go-stdlib Critical CVE-2025-68121 on `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`, `postgres:18\\.6-alpine3\\.23` and `postgres:18-alpine`, each recording its own measurement because no reachable tag clears it; and two entries time-boxed to `2026-12-01` — the OpenSearch netty CVE-2026-75595 and the Unleash proxy-addr CVE-2026-90711 — which are the cohorts that will red the weekly expiry check first. Comment blocks describing absent entries (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio) are the file's history, not live suppressions.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1132-L1149",
+          "version": "repo-lines-v1:sha256:09d37abcfd097999189d4bd1a5010b4bd917bc99dd533853e9d20cb439a127a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MDliNDQwODAyOThmYzkxNzY5YmMyZTY3MDgzOGNlMTFkYWM3YmJkZjNmZWU5ZDUwZmViNmVmYTZhYWFiNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3YmU2MDVmODk3MzY3OTRmZjAyZTk1ZjhjZmI3NWVmNmYzY2M3OWRhOWI5NjYzYzM0NjZmOWQ3ZGUxNTljOTIifQ"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L231-L235",
+          "version": "repo-lines-v1:sha256:d9eaa6bd5e43fefe10303fbd38dd205864f204181213a412449328d92d425a5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg2MzBjZGI2MDRmNTQwYTMyN2VkYzgwZDQ2MWQ4ZjNjNDE1YmZmOGVmN2E5OTQ4MTdkNDE2YmI0MzYzNmViMiJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L329-L333",
+          "version": "repo-lines-v1:sha256:1d172caea457314360a773a68376ef8e543fed6b055f9a8621c2417edfa9194b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxMjdlNjg2NGRiNTk3ODQyOGFjZjQ4NzVkNzI0Njc0MGZmMzBlMWM4ODE1ZmVmYjhiNTc1MjI0M2Y1NTc3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L336-L342",
+          "version": "repo-lines-v1:sha256:3c887db0dc11e009dd71f56c2759326ba0a481719f7e3092ecfda89b6435185a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBjZWU5MTM4ZTAzMWUwM2Y4NjhhZjI1YzA1MDgxYTg2MGI0Yjc2N2ZlZjNjYjQxOWFmNjllNzI3MGQxNTgxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZmMzA3ZDJlNzJjMjdiMzcyNzUzMDU3MGJkM2Q1NDYzNDI3ODM4MDM2N2VkZmI1M2Y2ZjRmYzcwODM2MTQ1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjI4N2E0M2JiY2ExNzNlZjIyODdkMGZhOTdlMzViYTcwOGY1NzNhZTdjYmU5NTc5NWY4ZmY2MjA0OGQ5ZDY4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L64-L75",
+          "version": "repo-lines-v1:sha256:6a41bbdc5e555bc0614685977c9a8f7e1b0ad10aea39e640e2e6e512b163b2f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYjI2NjVjNDM0ZWExN2RlNWY3YTVmZjM1ZGE5ODBiMjZmYjJlNWNjYTQ0YWU5NWI4MjY2M2VjODE5ZDIyNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOGNmZTlhY2RhZjA3MmE4ZjJkZmRkNDc1ZWJhOGY1ZmZlMGUwZDI4Y2FhODE4ZmUzODcwOTQ2Mzg2NGMzY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkYmQ4Y2Y1OGMyMjlhYTFhZmRmZDVmZWI2MDBjMzk2OTM2NzI5NGJjMTRlZGFlMmI0YmY0MjhlZTFjZDU2OGEifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T12:20:46.129Z"
+    "at": "2026-10-21T23:48:47.665Z"
   }
 }
