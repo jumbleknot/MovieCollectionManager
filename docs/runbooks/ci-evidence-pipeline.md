@@ -18,8 +18,8 @@ evidence is or is not in a bundle. This file was split out of `ci-diagnostics.md
 ## The digest
 
 Published per failing job, `if: always()` + `continue-on-error: true` in **every job of all nine
-workflows** — 21 jobs, 21 digest steps, counted 2026-10-22 after `minio-image.yml` was retired by
-feature 080 (16 jobs in six workflows when this was first written). Channel depends on the event:
+workflows** — 21 jobs, 21 digest steps, counted 2026-10-22 after feature 080 retired the object-store
+image workflow (16 jobs in six workflows when this was first written). Channel depends on the event:
 
 | Event | Channel | Identity |
 |---|---|---|
