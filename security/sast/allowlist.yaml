@@ -260,6 +260,14 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-12-01"
 
+# ── zod 3.x GHSA-mrhx-c7xc-m3w5 (published 2026-10-23, operator-approved the same day) ─────────────
+- scanner: "pnpm-audit"
+  id: "GHSA-mrhx-c7xc-m3w5"
+  locationPattern: "^zod@3\\.25\\.7[56]$"
+  justification: "Memory exhaustion while validating oversized constrained collections. Fixed ONLY in zod 4.6.6+ (OSV: introduced 0, fixed 4.6.6); no 3.x release carries the fix. zod 3.25.76/3.25.75 are pinned by the BFF agent stack, not first-party code: @ag-ui/core/client/proto 1.0.2, @a2ui/web_core 0.10.4, @ai-sdk/* 2.x/3.x (anthropic, gateway, google, google-vertex, mcp, openai-compatible) and @microsoft/agents-activity/-hosting 1.9.1 (lockfile re-measured 2026-10-23); the app itself is on zod 4.6.7. Forcing zod 4 onto libraries written against the zod 3 API would break the agent runtime, so remediation is upstream (CopilotKit / ag-ui / ai-sdk moving to zod 4). The agent endpoints sit behind BFF session auth. Time-boxed: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20 — re-check the dependents' zod ranges then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+
 # ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
 # Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
 # `^braces@` and so, correctly, does not reach this workspace's findings (`<workspace>:pkg@version`).
