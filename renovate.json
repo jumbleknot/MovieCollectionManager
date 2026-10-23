@@ -1176,6 +1176,23 @@
     },
     {
       "description": [
+        "MONGODB IS HARD-HELD BELOW 9 (item #819, PR #817) — a ceiling, not just the approval tick above.",
+        "MEASURED 2026-10-23: the Dependency Dashboard listed `mongodb/mongodb-community-server` v9 under",
+        "\"Pending Status Checks\", i.e. already past the approval gate and waiting only on release age, so a",
+        "bare tag-bump PR would have opened. That bump is fatal here: mongod 9.0.4 refuses to start on Linux",
+        "6.19.0-7.0.13 (log id 12257600, SERVER-121912) and the CI+prod host runs 7.0.0-27 with no Ubuntu 26.04",
+        "kernel package outside that range; and 9.0 runs mongod as uid 1000 (8.0.8: 998), so it cannot open an",
+        "8.0 volume without PR #817's re-own wrapper. Merging it would crash-loop both prod Mongo stores.",
+        "LIFT THIS RULE ONLY IN PR #817 (rebased), which carries the wrapper, the constitution line and the T059",
+        "operator runbook — never on its own. renovate-workflow.guard.test.mjs asserts the ceiling on all three",
+        "tracks, that it admits 8.x and nothing from 9, and that it catches no other datastore."
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mongodb/mongodb-community-server"],
+      "allowedVersions": "<9"
+    },
+    {
+      "description": [
         "LANGFUSE IS PINNED BY VERSION, NOT BY `:4` \u2014 the floating-tag cooldown treadmill (2026-10-02, item #642).",
         "On `:4@sha256` Renovate can only offer the CURRENT digest of `:4`, aged against `:4`'s own",
         "tag_last_pushed. Langfuse re-pushed `:4` on 2026-09-23, 09-24, 09-25, 09-29, 09-30 and 10-01, so the",
