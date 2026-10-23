@@ -1,47 +1,105 @@
 {
   "coveredCommit": "1cb5db486ed074773c54843c14f2267ce5caba65",
   "coveredAt": "2026-10-22T01:22:16.161Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "repository.md",
+        "mc-service.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "ci-evidence-pipeline.md",
+        "wiki-maintenance.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/wiki-maintenance.md"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 827,
-    "headCommit": "ccbb391a5b56d9185ddd38550f9059174b80ad09",
-    "markerBefore": "7525fcd574164fefa873b1958cfa9f8a61bb2de4",
+    "number": 831,
+    "headCommit": "c958364ae08ec00e4959f2b3f5508ca218dabff2",
+    "markerBefore": "1cb5db486ed074773c54843c14f2267ce5caba65",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "architecture",
         "pages": [
-          "server-setup.md"
+          "system-overview.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/MCM-Architecture.md"
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "mcp-servers.md",
+          "keycloak.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md"
       }
     ],
-    "updatedAt": "2026-10-22T00:38:02.301Z"
+    "updatedAt": "2026-10-23T00:07:41.877Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 3,
+    "elapsedSeconds": 3102,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "projects/repository.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-23T00:07:41.502Z",
+      "failuresAtLow": 0
+    },
+    "projects/mc-service.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-23T00:07:41.502Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/ci-evidence-pipeline.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-23T00:07:41.502Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/wiki-maintenance.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-23T00:07:41.502Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 361,
+    "calls": 621,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2057952,
-    "cached": 39345704,
+    "uncached": 2996719,
+    "cached": 64166260,
     "cacheWrite": 0,
-    "output": 850668,
-    "reasoning": 742470,
-    "ms": 6147316,
-    "estCostUsd": 1.8743,
+    "output": 1535988,
+    "reasoning": 1401952,
+    "ms": 10083303,
+    "estCostUsd": 3.1272,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +109,17 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/server-setup.md"
+        "architecture/system-overview.md",
+        "projects/repository.md",
+        "projects/mc-service.md",
+        "projects/mcp-servers.md",
+        "projects/keycloak.md",
+        "runbooks/ci-evidence-pipeline.md",
+        "runbooks/wiki-maintenance.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 1.8743,
+      "deadlineStop": true,
+      "estCostUsd": 3.1272,
       "rateLimited": null
     }
   ],
