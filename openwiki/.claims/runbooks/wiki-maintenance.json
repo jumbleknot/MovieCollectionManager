@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0a5befaa710dc2c9885fb1b5344d09c5e753b7e389f110b084611ad0fe6b4687",
+  "pageVersion": "sha256:c0079f5506ce532c88158ac14fdf277933bf31cdbcff007ba8eac35716e7e097",
   "claims": [
     {
       "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -94,7 +94,7 @@
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -194,7 +194,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -208,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -222,7 +222,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -240,7 +240,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -356,7 +356,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -366,15 +366,15 @@
     },
     {
       "id": "claim_c38a5e5e824a4de6a29ca7ebabefc17b",
-      "statement": "When the run record and the forge disagree about an open proposal the forge wins: the record's `proposal` pointer is a cache, so a run asks the forge which proposal is open for the branch before creating one, adopts it if found, and treats a 409 from `forge POST /pulls` as 'someone beat me to it — adopt and update' rather than a fatal error, which makes a run that lost its record self-healing.",
+      "statement": "When the run record and the forge disagree about an open proposal the forge wins: the record's `proposal` pointer is a cache, so a run asks the forge which proposal is open for the branch before creating one, adopts it if found, and treats a 409 from `forge POST /pulls` as 'someone beat me to it — adopt and update' rather than a fatal error, which makes a run that lost its record self-healing. The adoption happens at reconcile, BEFORE planning, including when the record's own pointer has just been reconciled as merged or closed: run 5229's record pointed at a proposal merged in the same second as the merge that started it while another run had already opened a different one, so the run generated onto a fresh branch and the publish step correctly refused to push — after about $1.35 had been spent on four pages.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
-          "resource": "repo://scripts/wiki-maintain.mjs",
-          "version": "repo-file-v1:sha256:f696ea312697e1a411741734bad65ef57f89aaf2284cbca9cb4ee922861d51bd"
+          "resource": "repo://scripts/wiki-maintain.mjs#L2726-L2748",
+          "version": "repo-lines-v1:sha256:1fee0d31cfbbcdb45fc6f30301d2ccb8bedc9b7463d273a8a50c7261789129f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNDNjMzFjMjBlNTA3MjJiYTIzN2YyYTQzOWYyNThhNDhiYTRlNWI2NGJjMzFiYWU0YTdiOTA3NWEyOTk4ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMzMwYzY2ZjgxYjMwNGNhZDdmNmMyNWY5ZDgyYjE1MjI3YWRkZDk1MTgzNmI3ZGM4MDE2N2UyNjhlNTA0NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMGFjY2Y4ZTJiYTQ0MjFkMTU4ZTlhMWY1MjVlNWQ4NGM2MjYyZDk3MGI5NGQyZjQzNjhjNmMxZWM5ZDIxM2QifQ"
         }
       ]
     },
@@ -402,7 +402,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -420,7 +420,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -470,7 +470,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -488,7 +488,7 @@
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs",
@@ -590,7 +590,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -628,11 +628,11 @@
     },
     {
       "id": "claim_a835a68180a246a592cfd9cebabd9305",
-      "statement": "The `--selftest` mode proves the planner and verifier offline and keyless against fixtures plus a deliberately sabotaged generator that exits 0 having written nothing, and the verifier must fail that zero-page slice, return it to the backlog, hold the marker, and still pass a slice that genuinely wrote its page — so a clean verdict there means the zero-page detector is broken.",
+      "statement": "The `--selftest` mode proves the planner and the verifier offline and keyless against fixtures plus a deliberately sabotaged generator that exits 0 having written nothing — the exact false green feature 043 measured — and the verifier must fail that zero-page slice, return it to the backlog, hold the marker, and still pass a slice that genuinely wrote its page, so a clean verdict there means the zero-page detector is broken. It is documented on the page under the 'Verifying the machinery itself' section, alongside the lint and governance gates (`pnpm nx okf-lint infrastructure-as-code`, `pnpm nx okf-governance infrastructure-as-code`) and the wiki-maintain and openwiki-links test files.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L861-L873",
-          "version": "repo-lines-v1:sha256:28ebbb051444a3fc1d6f27d9003e2fd3fbd4a7319ea121c129eff3818df97009:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzY2VkNWRjNmEwNzFmNjhkZDkwOGU0ODVhMDE3NGVhM2QzMTU1YzAzMjFjMDM4M2RhNWUzNmY2OWM0ZWEyM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MDIyOWRiNzQ2NzljNWFiYjk0NzA3NzhkYWYzMzAwMTY3MjE2YzM5NmNiNjZlNzg2ZDhjNmQ1MDU3MTVkMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs#L2518-L2575",
@@ -696,7 +696,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -808,7 +808,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-escalation.mjs#L62-L88",
@@ -862,7 +862,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -876,7 +876,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs#L1175-L1238",
@@ -916,7 +916,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-claims-audit.mjs",
@@ -934,7 +934,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -952,7 +952,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -970,7 +970,7 @@
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs",
@@ -988,7 +988,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L217-L235",
@@ -1006,7 +1006,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -1028,7 +1028,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-drift-plan.test.mjs",
@@ -1050,7 +1050,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-drift-plan.test.mjs",
@@ -1068,7 +1068,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -1082,7 +1082,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs",
@@ -1104,7 +1104,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-maintain.test.mjs",
@@ -1126,7 +1126,7 @@
         },
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/openwiki-ignore-claims.guard.test.mjs",
@@ -1144,7 +1144,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/wiki-maintain.mjs",
@@ -1158,7 +1158,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/openwiki-drift.mjs",
@@ -1194,7 +1194,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d57561a86895b18b6e53144dd6190cf05abdf4cb38d9e2b9645d1aabea60f308"
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
         },
         {
           "resource": "repo://scripts/__tests__/wiki-drift-plan.test.mjs",
@@ -1205,10 +1205,20 @@
           "version": "repo-file-v1:sha256:f696ea312697e1a411741734bad65ef57f89aaf2284cbca9cb4ee922861d51bd"
         }
       ]
+    },
+    {
+      "id": "claim_4204dbff03674db3b74ed502d667dd06",
+      "statement": "The page states the canonical-home rule only as a summary with a pointer, not as a restatement of the brief: a durable learning goes to the canonical home of its subject — into the cited source when the covering concept carries a `resource` (a derived summary), and into the concept itself when it carries none (authoritative) — and the page defers to `openwiki/INSTRUCTIONS.md` §7 and to the process page's 'Where a new learning goes' for the full rule, the rejected grow-then-trim alternative and the G11/G12 enforcement.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L784-L810",
+          "version": "repo-lines-v1:sha256:f402b8e4b3bae06ae42404e6d36fc77908583f9736c4846297d5c439558deea5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OWJjNTIwNzEyZjIxN2VlNjI4NGVlZjUyZjQzNzA2MDU1NGMzYmM0YjY1ZGZjZTdhNThjMDcwZjUwMzQyMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZjMzYWFjMmJiMjM1NTNkYWNkYWMyMWQwODdmMjQ2ZTZkNzIwMzI4MzI3OTgwY2U3ZGJlYjMyMDgwNDE5MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZTlhNGUxMTI2NjBkNmM1NTBlN2E2NWJjNWZlNWZiNmFmNDY4NDQ3YjRiZWI2ZGJmMjVhM2FkN2IwOWQ0ZmMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T03:12:52.160Z"
+    "at": "2026-10-23T11:13:11.115Z"
   }
 }

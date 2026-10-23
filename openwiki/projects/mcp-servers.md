@@ -11,12 +11,16 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-3f4dad889fae278d8fd6fa45
     resource: repo://agents/movie-assistant/src/eval/token_leak_scan.py
+  - id: openwiki-source-f6c222b8d4581ebb02aff7cb
+    resource: repo://agents/movie-assistant/src/runtime_nodes.py
   - id: openwiki-source-0bc082213ea2b05aafac8afe
     resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
   - id: openwiki-source-6f3ef98dd73ebeed1b8d0fd0
     resource: repo://agents/movie-assistant/src/tools/spreadsheet_tools.py
   - id: openwiki-source-52bc45450413efa644b4dbbc
     resource: repo://agents/movie-assistant/tests/unit/test_token_leak_scan.py
+  - id: openwiki-source-e201e686a785f09b6d899f0b
+    resource: repo://compose.yaml
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
@@ -53,6 +57,8 @@ sources:
     resource: repo://mcp-servers/movie-mcp/tests/unit/test_context.py
   - id: openwiki-source-bfd8d5ff5bfb26834a65cefb
     resource: repo://mcp-servers/spreadsheet-mcp/Dockerfile
+  - id: openwiki-source-56c7bd832a242dfd7a39468e
+    resource: repo://mcp-servers/spreadsheet-mcp/project.json
   - id: openwiki-source-de48752a0f1d2d2061611818
     resource: repo://mcp-servers/spreadsheet-mcp/src/builder.py
   - id: openwiki-source-5c17d774e857a6a759a60dd6

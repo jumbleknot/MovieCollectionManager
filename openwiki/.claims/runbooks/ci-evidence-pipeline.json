@@ -1,18 +1,22 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b50a95ddc8c33459f2bc6b49e1b5c6f8de78096168a89ad030e80d5b971796dc",
+  "pageVersion": "sha256:c87e377a92194f658f8e26c8f84f58354da6db388939a70db51ba9ad778b65a6",
   "claims": [
     {
       "id": "claim_95cb33eaf9164a0bb4732cc9977a5b54",
-      "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Measured 2026-10-10: 22 such steps, one per job, across the ten `.forgejo/workflows/*.yml` files.",
+      "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Counted 2026-10-22: 21 such steps, one per job, across the nine `.forgejo/workflows/*.yml` files — the same figure `check-ci-digest-coverage.mjs`'s header states, so header and tree agree today. The count is not monotonic: it was 22 across ten files before feature 080 retired `minio-image.yml` and its `build-publish` job, and the `16 jobs` figure in the gate's test file is prose from an earlier, much smaller tree rather than an assertion, so it fails nothing.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L71-L89",
           "version": "repo-lines-v1:sha256:e88fc56f2495ea8a5ff489ecd30077aa0c0e017b223372d2cd18c9b098415514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTU0OWNlNTFiMTEwZGFlYjEzMzkwZDdmZDYxYThkZDQ5YTdiM2RhZTdmODkyZDUxYWU5ZDQ4MzQ1NDdjZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMWI1ODI1YmJkNWEyODM0NmRiNTY4NDRkY2Y2ODVkNzRmNDkzODA2OWU5OWZkMmUwMmU4YWNkY2MyYjFhOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMTA2YWY0NDlkMTkyNGJlYjE3NDViMDdlMTgwYzY2MTIwOWI5NmUzN2MwNjFiNDBiNjQyNzRjNWJhMzlkYmQifQ"
         },
         {
-          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L12-L27",
-          "version": "repo-lines-v1:sha256:9add8a0b382768944aea6da492c16657cab738389f8887d963439df0dd76d299:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkODRkYWI0MzQ5ZThlNDkwNzAzNjIwZTMyOTQ3ZjJhYzJkMGUyNGNjZTc0MDZhZDllNjk5NzRkN2QyNTMxZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NGQ3ZmYxZmZhN2Q1ZDlhNmYwNWFkYWZiYmM0NmZlNTFlNGU3MjI3NGExMDE5MmVjMDJmZWFmYjYwY2M5MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiY2NiYWZmMTliNWUwMzExNDExYzk2ZmUxNjc3MjlhMGY2NjgyNmRmZWQyNWIyNWJhZTVmZGYwYTk0NmJjM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYTJmN2U4OGM1MzIxOGYzNzg4MzgxZDk4NDZjODE0ODk3YmU0ODQxNTk0MGE3NGI1NGNjMWVlNzExZTRhY2EifQ"
+          "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L1-L5",
+          "version": "repo-lines-v1:sha256:cc877f8a4ac66a95910fea5243dc799b5ed5e8fec9451678d5a6530e10911f9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk0Nzk0NTdhMDMwOTFhNDQ4NmU5NDU0MGQ3M2M2ZmZhOWNiMGFlYmQ1NTgwMTM5MDdmOGFjNzgwZWZjNjk3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY3ZGExNTRjNTZmNDM0NDc2ZjhhNTkyMTUwZDdkNGRjMjUxN2U5ZTc5ZjhkYjNkMWI5NjMzNjcxNGQxMjMwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThiZmE3MjhmYWY5Y2QyZDVkNWM0OTU0YWVlNWRiNTY0YWE5OGJiMjM2NmVhYjIzYWUxMjQ0ZGEzMWFhOTZhNyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-ci-digest-coverage.mjs#L1-L27",
+          "version": "repo-lines-v1:sha256:add71635e4fe0449e65e77f42e5e9db7dfb76d3cc2922f3b5aad54246af424a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NGQ3ZmYxZmZhN2Q1ZDlhNmYwNWFkYWZiYmM0NmZlNTFlNGU3MjI3NGExMDE5MmVjMDJmZWFmYjYwY2M5MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYTJmN2U4OGM1MzIxOGYzNzg4MzgxZDk4NDZjODE0ODk3YmU0ODQxNTk0MGE3NGI1NGNjMWVlNzExZTRhY2EifQ"
         },
         {
           "resource": "repo://scripts/ci-failure-digest.mjs#L9-L26",
@@ -190,7 +194,7 @@
     },
     {
       "id": "claim_45484406a9be4caa8b1dd66bd6bff950",
-      "statement": "The ceiling table is kept honest by three guards that each check a different thing — #338k re-checks the below-the-job-ceiling arithmetic for *every* row (leaving at least 15 minutes of the job ceiling for the digest step), #338m fails a row whose basis does not state its sample count, observed maximum and run range, and #338n fails if a wrapped `app-e2e` step is neither calibrated nor recorded as deliberately on the backstop — and item #480 added the guard those three were missing: #480a recomputes every row's ceiling from the `max=<n>s` in its own basis and fails a mismatch, because between \"the basis is absent\" and \"the value is too large\" sat every value that was neither, and nothing looked at whether a ceiling matched the sample printed beside it. It calls the exported `ceilingForMax` rather than restating the arithmetic, since a guard holding its own copy keeps asserting the old rule after the rule changes and waves through a table generated under the new one — item #338's original drift one level up. The hole was real: `web-e2e  60  n=40 max=280s x3=840s -> 840s`, a 60 s bound advertising the 840 s answer, passed all 37 prior guards. #480b exempts the commented backstop rows (which carry `-` where a ceiling would be) so a deliberate record is not \"fixed\" by deleting it.",
+      "statement": "The ceiling table is kept honest by four guards in `scripts/__tests__/ci-log-step.test.mjs` that each check a different thing — #338k re-checks the below-the-job-ceiling arithmetic for *every* row (leaving at least 15 minutes of the job ceiling for the digest step), #338m fails a row whose basis does not state its sample count, observed maximum and run range, #338n fails if a wrapped `app-e2e` step is neither calibrated nor recorded as deliberately on the backstop, and #338o fails if the `CI_STEP_TIMEOUT_SECONDS` backstop disappears or stops saying what it is for (it is no longer the ceiling, and a comment that still reads as one sends the next reader to tune the wrong number). Item #480 added the guard those four were missing: #480a recomputes every row's ceiling from the `max=<n>s` in its own basis and fails a mismatch, because between \"the basis is absent\" and \"the value is too large\" sat every value that was neither, and nothing looked at whether a ceiling matched the sample printed beside it. It calls the exported `ceilingForMax` rather than restating the arithmetic, since a guard holding its own copy keeps asserting the old rule after the rule changes and waves through a table generated under the new one — item #338's original drift one level up. The hole was real: `web-e2e  60  n=40 max=280s x3=840s -> 840s`, a 60 s bound advertising the 840 s answer, passed all 37 prior guards. #480b exempts the commented backstop rows (which carry `-` where a ceiling would be) so a deliberate record is not \"fixed\" by deleting it.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L295-L302",
@@ -258,8 +262,16 @@
     },
     {
       "id": "claim_e21055f54b37493cbfd8b6325287c954",
-      "statement": "Coverage is enforced per STEP as well as per job: \"at least one wrapped step per job\" was insufficient because `guardrails / naming` passed with 2 of 16 `run:` steps wrapped, neither of them a gate, so a naming-gate failure published the logs of two unrelated steps. Every `run:` step must now be wrapped or carry its own justified `# ci-log-step-exempt:` marker, and the two markers are not interchangeable — `ci-digest-exempt` is job-scoped and `ci-log-step-exempt` step-scoped, each with its own blank-reason check.",
+      "statement": "Coverage is enforced per STEP as well as per job: \"at least one wrapped step per job\" was insufficient because `guardrails / naming` passed with 2 of 16 `run:` steps wrapped, neither of them a gate, so a naming-gate failure published the logs of two unrelated steps. Every `run:` step must now be wrapped or carry its own justified `# ci-log-step-exempt:` marker, and the two markers are not interchangeable — `ci-digest-exempt` is job-scoped (this job publishes no digest) and `ci-log-step-exempt` is step-scoped (nothing worth capturing), each with its own blank-reason check. The scopes are asymmetric on purpose: a job-level `ci-log-step-exempt` covers every step in that job, which is how a `dorny/paths-filter`-only job opts out, while a step-level marker covers only its own step — an exemption that leaked to the following steps would rebuild the very defect the per-step rule closes inside the escape hatch itself.",
       "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L297-L320",
+          "version": "repo-lines-v1:sha256:58d01f0f431864b9a7bfeee1248ebf123a8cb4d638bf7ff315625c8be65de11d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MTE3YTIwNzdkYjQ5NTU0YWU5MjZmZjE0YzhhNTU5NGVlNmYxOTE1ZmEwZDc2MDJjM2U5OGZjMjgyNjQwOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwYTZlZTMyN2JhZjdiYmYzN2RiMjEzYmI1ZGZkZGY1NTUxZDAyNWIwM2M2NDY3MTQxZWJjMWMxNDU2NmVhOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0YTdmMmU0MWFmMDAzOWExZWY2M2U4YmIwNjRmMGVlMzI2MDUzMTI4NjA5NDA4YWZlMjY2YTA2ZjhkOWYwODMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L334-L359",
+          "version": "repo-lines-v1:sha256:03ec8675bbeb288b2d2d6b3c4e466fff077ed2fb3bb44a453b8b560b5f9027b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMjhjYTRmY2NmNmYzMGQ2NmRlOGZmZDFhMzFkZmJiZjQxOWU0YzVlNGMyN2YxOTdjMTljNjA2MjA4OTM4ZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwYTZlZTMyN2JhZjdiYmYzN2RiMjEzYmI1ZGZkZGY1NTUxZDAyNWIwM2M2NDY3MTQxZWJjMWMxNDU2NmVhOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5NTE5YmM0ODU3ZWM5NWE3Njc5ZjFiMGQ4NWJhYWJiZWM1ZTUyYmIzNWFiZDZiZDJjNWMyYjhiZjQ4NWYyZjEifQ"
+        },
         {
           "resource": "repo://scripts/check-ci-digest-coverage.mjs#L280-L310",
           "version": "repo-lines-v1:sha256:1a2caf832a3a81156555633f65f4324be5ec48099f0c303e8dc1036628fc03e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNjRlZTliYjM5ZGI2ZTU0OThjZjg5NDdmMzVhNDAwOTQxMGIxMTQwZWJkNTIyZTk0MDM2OTE4OTIwMWRhNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNWU2N2MxYmI4MmVhYmUzYzNlZGQ1Zjc3YTVjZmJhZDBlMmRhYzk1M2EyNzRjZTQ3YjcyMzNhMWUwZWMzYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MzFhMmYzNzY2ZjY3ZTYxMTk1M2Y0ZjZhYjlkMGM1OWExM2Y4MTNkMTk1ZDk4MTAzMjgwNzQ2NmY4NTlkOGIifQ"
@@ -388,15 +400,19 @@
     },
     {
       "id": "claim_26e7a188801b4f14b020cd0de482f55d",
-      "statement": "`.gitattributes` is a second layer rather than a substitute for tolerant parsing: it declares `eol=lf` for the file types whose content is read and split by code — shell scripts, workflow YAML, markdown, and the JS/TS family — but it governs future checkouts only, so an existing Windows clone must be re-normalized once, and a fix must be proven by feeding the parser both the LF string and a derived CRLF variant rather than by writing a fixture file and reading it back.",
+      "statement": "`.gitattributes` is a second layer rather than a substitute for tolerant parsing: it declares `eol=lf` for the file types whose content is read and split by code — shell scripts, workflow YAML, markdown, and the JS/TS family — but it governs future checkouts only, so an existing Windows clone must be re-normalized once. It also carries a deliberate carve-out, `scripts/__tests__/fixtures/** -text`, because one fixture exists to prove a gate normalizes line endings and its CRLF is the subject under test: normalizing it would leave the test passing while no longer testing CRLF at all. A fix must be proven by feeding the parser both the LF string and a derived CRLF variant rather than by writing a fixture file and reading it back — and the strongest form runs the real gate against a CRLF copy of every `.forgejo/workflows/*.yml`, checking the LF baseline is clean first so the case cannot pass vacuously.",
       "evidence": [
         {
-          "resource": "repo://.gitattributes#L7-L40",
-          "version": "repo-lines-v1:sha256:a945d1f98ab5af9c84ef39fcc9d41ab087a46875392663d1c9dedc849c796da1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZjM4NGY5MDE5NzE1ZGQwMTc3ZjAwZWY2M2Q4OGNkNDlhNWVjNzQyNmQ3OGQ4NDgwYzU2MjFiOTdjNzFhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDhkZWQ3YzU4ZTlkNWU2OTc5ODFmNWI3MDZlZTRlNDkzNDQ3ZDYzODg0MDQ1MTg3MGRlMTIyNDhkMmMxMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MWJiOTNhYzhmZWI2NWMyZDhjNjFkNjI0YzRjODcxYjQxODQxNmMwMzM3NzAwZTg4Njg5NzI0OTI5MmFlOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MDY5YTg4MDZiMDEwN2I5M2FmYmFjZDdhMzVjMjg1YTIxNDgwMjVmNDQ1YmNmNDYyMzcxNzNlNTBiNzczNjkifQ"
+          "resource": "repo://.gitattributes#L7-L52",
+          "version": "repo-lines-v1:sha256:2e38e9b7fa1d2709acde7ff253a029bf9e13f4758a04fc936e9383d079f6a9d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZjM4NGY5MDE5NzE1ZGQwMTc3ZjAwZWY2M2Q4OGNkNDlhNWVjNzQyNmQ3OGQ4NDgwYzU2MjFiOTdjNzFhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ODRlOTdmNzg3MTU1YzFhYTQxYjgzYTk5OTQxM2ZlYjQyZGQ2NjhmNjJlYTBhZjdiZjgzOWU2OTA0OTAwM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MWJiOTNhYzhmZWI2NWMyZDhjNjFkNjI0YzRjODcxYjQxODQxNmMwMzM3NzAwZTg4Njg5NzI0OTI5MmFlOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L580-L599",
           "version": "repo-lines-v1:sha256:916f7a3fca060340a88d730070b2c4952873508226c52c710bf4c227bac928b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZjhjZmZlMTM5M2RjYzk5OGJmM2IwMGQxZDdkZjdiOTk3M2E1NmFkMDY5ZWZkMDExM2Y3M2Q2YTYyMDE4NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzRlNzU1YWRiOTIwMGJlZjQ5NTI2M2JlMjg1OTlkNjExMjMzNDFmOWQzMWY0YWMyZmU4YjU3MzY2NzBlOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMjRkMTk5ZDM0ZTU1MGE2Y2NiNmQ1NzM2NmVlODkzNmMxNDA5ZWQ0NTVjMWQ4Y2RkYjI4Y2Y5YjZlZGFmMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTlhYTAyM2MyODRiZGZkZWMwNDM5ZTMzMzU2Zjk3MTgxMDZlZWE1NTZkMzI1YTk0Njk3YzY2OGJkOTdhNTMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L225-L253",
+          "version": "repo-lines-v1:sha256:299cfd6a0dc6a7ebfabd5a62952bc8505f0bed4c165d2b21a05b46e32ae43ee5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMzkwZDlkNDNmZWU0NWUxOTcyOTZiYzRmMWM2NDNmM2JlNDVlODYxMDQ2YWZhMWQ0NzIzZmI0ZmNlOThjOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1Y2VlNWU4OWY0NzkzOTFkZjk2NTlmMDc4MWY5ZjBmZjZhNDNlN2MzN2U2NGNjYmIxYTYzZmU0MWZiMTI3YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNjZmMGQ2ZmNiYWUxNDBmMjZjNjk4MzYwY2FlN2Y3MzAxN2U2ZWU1NjJiNDBjYmU3MTJlNmI1NDQzM2JiZDEifQ"
         }
       ]
     },
@@ -523,10 +539,24 @@
           "version": "repo-lines-v1:sha256:49cc3ac6adb430c70c3add1955e28381ba02a9b04a47e6ab8337a119533ae4c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYmY2ZDQ1MDQxNzFhN2UzZmUzOWVhYTg5OWE4OWM0NjU3OTg2YjY4YWI4NDVkMDEwOTg2NGM5MTZkOTc0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_22197949fd50421fac2cc99c5a3334cb",
+      "statement": "The `CI_STEP_TIMEOUT_SECONDS` backstop is itself guarded: #338o fails the build if the value disappears from `app-e2e` (an uncalibrated step would then run unbounded, restoring the defect where a hang kills the job and `always()` never publishes) or if the surrounding comment stops pointing at `ci-step-ceilings.tsv` and stops reading as a backstop/fallback rather than as the ceiling.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L431-L431",
+          "version": "repo-lines-v1:sha256:82dc2e17f68abd745c79bc4205d4bf4bbb662044069074824682136ae4bf5e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmYzE2MDI3YWM1YzU0NWM2ZGViMDA5NTViNzg5NWNhMDM5MTk1NjE3MzRkNzdjMmIyYTAwNzE1NzBkMWVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAzODAzNTFjNzg5ZjY3MDNlOThhNzRmNjgxNDRiOGZiZDFjMmI4NTE4ZTk1ZTk2ZThmOTZhMWQ1ODQ1ZThiOSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L594-L605",
+          "version": "repo-lines-v1:sha256:a5bf3305af6ea390d784556dff52245546b126703d781d7da1c1a3f3f9aca2fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZmI3YWY5ZTAyZmNkN2I3NDhiNWRhZmU5MjUwYWI0YjU0MjRjMWMwMTA5MzdlNjg3NWUwNTAyOGU5MDQ3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZmMyZGVjZjEyYWFhMTJiODAwN2M3ZTgwMjRjN2M5MTFiNTk1YTZjYjFhMWRkYjk0MTg5ZWNmY2I4ZTU4MTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-23T11:13:11.115Z"
   }
 }

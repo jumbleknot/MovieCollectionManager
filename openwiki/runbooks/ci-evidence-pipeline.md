@@ -43,10 +43,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T03:00:26.889Z
+    at: 2026-10-23T11:13:11.115Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -87,13 +87,13 @@ that never touches a comment.
 ## The digest
 
 One `if: always()` + `continue-on-error: true` step per job — `Publish failure digest`, running
-`scripts/ci-failure-digest.mjs`. Counted 2026-10-10: **22 such steps across ten
-`.forgejo/workflows/*.yml` files**, one per job in every workflow that has jobs. That count is not
-monotonic, which matters if you are counting to check coverage: feature 080 retired `minio-image.yml`
-together with its `build-publish` job, so the tree today holds **21 digest steps across nine workflow
-files**. Only the *rule* is invariant. `check-ci-digest-coverage.mjs`'s header (`22 jobs in 10
-workflows`, 2026-10-11) is a dated snapshot already one job ahead of the tree, and the `16 jobs` figure
-in its test file is a snapshot from when the machinery was built.
+`scripts/ci-failure-digest.mjs`. Counted 2026-10-22: **21 such steps across the nine
+`.forgejo/workflows/*.yml` files**, one per job in every workflow that has jobs — the same figure the
+gate's own header states, so header and tree agree today. The count is not monotonic, which matters if
+you are counting to check coverage: it was 22 across ten files before feature 080 retired
+`minio-image.yml` together with its `build-publish` job. Only the *rule* is invariant. The `16 jobs`
+figure in `check-ci-digest-coverage.mjs`'s test file is a snapshot from an earlier, much smaller tree,
+and it is prose rather than an assertion, so it does not fail anything.
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -310,12 +310,14 @@ step another's bound), skips comment rows (a `# web-e2e` parsed as a ceiling of 
 — the guard removed by its own data file), locates the table relative to *itself* rather than `$PWD`, and
 falls through to the backstop on an unreadable table rather than failing the step.
 
-Three guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#338k** re-checks the
+Four guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#338k** re-checks the
 below-the-job-ceiling arithmetic for *every* row, **#338m** fails a row whose basis does not state its
-sample, and **#338n** fails if a wrapped `app-e2e` step is neither calibrated nor recorded as
-deliberately on the backstop.
+sample, **#338n** fails if a wrapped `app-e2e` step is neither calibrated nor recorded as
+deliberately on the backstop, and **#338o** fails if the `CI_STEP_TIMEOUT_SECONDS` backstop disappears
+or stops saying what it is for — it is no longer the ceiling, and a comment that still reads as one
+would send the next reader to tune the wrong number.
 
-**Item #480 added the guard those three were missing.** #338m checks that a basis is *present* and
+**Item #480 added the guard those four were missing.** #338m checks that a basis is *present* and
 well-shaped, #338k that the value clears the job ceiling — between them sat every value that is neither
 absent nor too large, and nothing looked at whether a ceiling matched the sample printed beside it.
 Measured on `main` at `b8166037`: `web-e2e  60  n=40 max=280s x3=840s -> 840s` — a 60 s bound
@@ -430,7 +432,10 @@ a real failure.
 The two markers are **not interchangeable**: `ci-digest-exempt` is job-scoped (this job publishes no
 digest), `ci-log-step-exempt` is step-scoped (nothing worth capturing), each with its own blank-reason
 check. A step-level `ci-digest-exempt` must not satisfy the capture rule, and a job-level
-`ci-log-step-exempt` must not silently cover every later step in the job.
+`ci-log-step-exempt` must not satisfy the digest rule. The scopes are asymmetric on purpose: a
+job-level `ci-log-step-exempt` covers every step in that job (which is how a `dorny/paths-filter`-only
+job opts out), while a step-level marker covers **only its own step** — an exemption that leaked to the
+following steps would rebuild, in the escape hatch, the very defect the per-step rule closes.
 
 ### The gate checks PRESENCE, not REACHABILITY
 
@@ -572,10 +577,16 @@ The two rules that follow:
 *content* is read and split by code — shell scripts, workflow YAML, markdown, and (after a later Windows
 measurement found the same defect in a guard that reads TypeScript source) the JS/TS family. That stops
 the condition being produced, but it governs **future checkouts only**, so an existing Windows clone must
-be re-normalized once by hand. And prove a fix by feeding the parser directly: build the LF string,
+be re-normalized once by hand. It also carries a deliberate carve-out: `scripts/__tests__/fixtures/**` is
+marked `-text`, because one of those fixtures exists to prove a gate *normalizes* line endings and its
+CRLF **is the subject under test** — normalizing it would leave the test passing while no longer testing
+CRLF at all. And prove a fix by feeding the parser directly: build the LF string,
 derive the CRLF variant from it, and assert both reach the same verdict — asserting the LF side finds
 something *first*, or a regression to "finds nothing either way" passes as a fix. Both cases are red on
-Linux against the unfixed code; no Windows host is needed.
+Linux against the unfixed code; no Windows host is needed. The real-workflow case is stronger still: the
+test rewrites *every* `.forgejo/workflows/*.yml` to CRLF in memory, runs the gate against the LF baseline
+first (and fails loudly if that baseline is not clean), then asserts the same exit code on the CRLF copy —
+so a regression is caught end to end through the gate rather than through one exported function.
 
 **And name the platform.** Both of these were misread because a result measured on one operating system
 was reported as a general one. A pass claim that does not say where it was observed is not yet a pass

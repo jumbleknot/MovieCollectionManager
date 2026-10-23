@@ -9,6 +9,8 @@ sources:
     resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-4cc090993970bb2253a628ba
+    resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
     resource: repo://backend/mc-service/src/api/router.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
@@ -17,6 +19,10 @@ sources:
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-7c76000f237dd683a4fb0536
+    resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
+    resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-318b395038e1943bc8a10f72
     resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
@@ -29,6 +35,10 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-4bb9aed3e8acb9d5ea822f53
+    resource: repo://frontend/mcm-app/src/config/keycloak.ts
+  - id: openwiki-source-632789ffafe5c334f1dbdfba
+    resource: repo://frontend/mcm-app/src/hooks/use-keycloak-auth.ts
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
