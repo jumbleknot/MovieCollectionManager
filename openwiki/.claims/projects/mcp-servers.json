@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2322b217bb83910e588f9912f629bcc823c78c46e3df4a86fb234dfd64966b5f",
+  "pageVersion": "sha256:0c4fb714aff0f233668663ac45406d8efafe485809fdeb562e9088dadcdee195",
   "claims": [
     {
       "id": "claim_bb4afd7234e2497fbeb2f2c50daca580",
@@ -72,7 +72,7 @@
     },
     {
       "id": "claim_c18a42d5caaf452092c893883d07510f",
-      "statement": "web-api-mcp authenticates to TMDB with the requesting user's own v3 key, forwarded per request as the `X-TMDB-Key` header; that header is the sole source of the key (no shared env/Vault fallback by design), a call arriving without one raises a clear configuration error instead of issuing an unauthenticated request, and a pure-ASGI middleware binds and resets the value per request so it never leaks across calls.",
+      "statement": "web-api-mcp authenticates to TMDB with the requesting user's own v3 key, forwarded per request as the `X-TMDB-Key` header; that header is the sole source of the key (no shared env/Vault fallback by design, and a stray `TMDB_API_KEY` in the process environment is never consulted — asserted by a unit test that sets one and expects it to be ignored), a call arriving without one raises a clear configuration error instead of issuing an unauthenticated request, and a pure-ASGI middleware binds and resets the value per request so it never leaks across calls.",
       "evidence": [
         {
           "resource": "repo://mcp-servers/web-api-mcp/src/server.py#L1-L9",
@@ -557,10 +557,46 @@
           "version": "repo-lines-v1:sha256:b8b68c6b5cbbe1ed29de3e8e8b009ec5020003322d2b4f336c7cbbcd98aecef7:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGEzYzFjZDAzYjJjOTE0MmIxZGY5N2VmMmFmMmU1Y2ZmODExNzZkM2EzNDYwNGQ0NGIxNmY0OTg3ODdjMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6a755fc511c44ea2a8be180a194cc136",
+      "statement": "`get_movie_metadata` is granted to the organizer alone: it is held in a separate `_METADATA_TOOLS` set rather than folded into the shared `_READ_TOOLS` grant, because `_READ_TOOLS` is literally the grant handed to curator, navigator, query and search, so widening it would give the tool to four agents that have no use for it (only the organizer builds the ownership multi-selects from those published option values).",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py#L382-L408",
+          "version": "repo-lines-v1:sha256:e41a27dc51c2af4f30a4dd08404cfb663fe68d5c65744e762917cdc6f7ed63ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMjM2MjNiMmM0ZjNiNTRmYTMwY2M0ZmEzYjFhMTc1ODA0Zjc1YzYxZTVmYWNmYTJiMGIwYTIyZjJkZDdkZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZjQ0OGM4ZGE0MzYzYTE4NDQ5NTkyM2E3Y2NjYzFlNjkzYzhiNjFlYTcyNjU0MzY5YTk0ZWJkNzdiMGRhZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOTQyNDNkMzYyY2U0NjAwY2IwMGU4NmFjMzdmOWM4Mjk2MTVjNzZmNzI4NDQ0ZjQ1ZDAyZjUwYTAyMTEyYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwZDZlMjkwNWNmNDNmOGNkODk5M2I4ODE3NjM5N2I5YTgxODcxZmEyZTg0MzgzN2MxYTAzYjdmNTMzMDEwZWEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L110-L148",
+          "version": "repo-lines-v1:sha256:f5fd51263071293e9daf98a7e69b9148a3d40640df721d10e81a64e413e4d8cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NTU3Zjc5YjQxODlhNTI1MjVhMGNmNDM1NzUxMjE3YTI1NGMwYzk3MzY4YmZmNTY5YmJkYzlhODdhYjYzYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjZjA3OTc5NWU3MzJiZDI5NTBhODUwYmI2Y2QwNjRiMjIyZjg4MjM0MmNiYTI4MDNmOTIyODY4NWE5NjRhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNjZiMDcxMDg2ZWU1NWJhMTViNTE4OWMxOWRhMTU5ODBjYjM2YjFiMmIyMDFlMjYwMmQwYzhkOTU5MmZmNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51c40de7f40e4c8f8e83fa5d0136411b",
+      "statement": "Each MCP server's `project.json` declares a `deploy` Nx target that still shells out to the retired root `compose.yaml` (`docker compose --profile agents up -d <server>`) and names a service that does not exist there — the compose services are named `movie-assistant-mcp-movie` / `-webapi` / `-spreadsheet` — so a server must be brought up through the `mcm` stack's `--profile agents` rather than via `nx deploy <server>`.",
+      "evidence": [
+        {
+          "resource": "repo://compose.yaml#L1-L3",
+          "version": "repo-lines-v1:sha256:18c1335ee62b8a4e5908458c91d7d638fb43fe66deb6bc7ab57d2cedb8f7e5e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc2ZmEwYjU2YTI3MDRjMzk1MGUwN2FiNzVjZWIwNzM0ODQ5N2ViMjVjYjA4ODYxY2MyMjYzYWFjYzZjNTcwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRjZDAyZmEyMDM4MjBlMmExYTJmODQwM2E0ZDQxOThkMzNkZjI2ZDIyODBlYzkyMTlkNWFkNGZlMzVkOTUzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U4YTVhNDMxZjc3Mjc3NDQ5NzNiZWYyZjNjYjA1ODk5MWY2YjE2NzFkMjAyZTkwMGFlYmQ4ZGU0M2IyM2U5ZCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/movie-mcp/compose.yaml#L1-L10",
+          "version": "repo-lines-v1:sha256:e68230e7233aa2d9b81ee48b4fb6d63c5cbea2d7cda103a6715304eeddb62f12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNzI0NzNlMTljN2Y2YzI2Nzg5ZGRlZGRmZjNjM2JkMDQ1NWVjYzA2ZWI4YjFlNGU2Njk3OWQzOGM0M2FlMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MmZjMmEzMDYyNGEwMjBiMDcwYTZjYTNlMTEzNTc4NjNiOTM2ZTBkNmFhZTNhOGRhZDgzZDUwZmQ1NzJjYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhN2MyMDVmZDZjYThlZmQ4NmFlZmY3ZTlhZTE3MTM4N2UyYmVlMTMyNmZiZjdlMTMzNjgzYmQ2YjMyNjk0NzEifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/movie-mcp/project.json#L27-L30",
+          "version": "repo-lines-v1:sha256:75578fb314512b12de811ecde56e68adab580925e610cc2a4332ae51d6a05026:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI1ZWNiZmE2N2M2ZTI5YWRlNTNlNTUxMDRkMzM3Yzc1YTE2MGEwYTRmM2QzNTg5NTU1ODE4Njk2ODM3NDY5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU3MjRkOGUxZTA4OWZkNjdkNGVjYmZiNWU5NWIzNjllMjE1MWU4OTJiZWFkZjllM2I4NTM3OGFhZTcyYjczZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyY2UyODc3Njc3NDAwMTg1ZDIyMGMwNzlkZGIwOThhZGJlZDAxMGU0NGI1Yzk0YjRhM2NjMTQ1NDU1MWQ1YSJ9"
+        },
+        {
+          "resource": "repo://mcp-servers/spreadsheet-mcp/project.json#L27-L30",
+          "version": "repo-lines-v1:sha256:59614f4c3a89a7fb2a1192901aa8cee9e30f7ade87c133d571585d37f37cec94:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI1ZWNiZmE2N2M2ZTI5YWRlNTNlNTUxMDRkMzM3Yzc1YTE2MGEwYTRmM2QzNTg5NTU1ODE4Njk2ODM3NDY5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTUzNGFlMzAxMDk1ODhkYTZlZjMyYjc5M2I0YmRhZDcwYmY1YzUyM2YyMjkyMTIxNzY1MzUxMWVhMjY1ZDUxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyY2UyODc3Njc3NDAwMTg1ZDIyMGMwNzlkZGIwOThhZGJlZDAxMGU0NGI1Yzk0YjRhM2NjMTQ1NDU1MWQ1YSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-21T23:48:47.665Z"
+    "at": "2026-10-22T23:16:03.781Z"
   }
 }

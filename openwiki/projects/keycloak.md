@@ -92,7 +92,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T16:45:16.789Z
+    at: 2026-10-22T23:16:03.781Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -111,6 +111,24 @@ carrying only that authenticates and then fails with `login_role_denied`. The sa
 up one level up: the realm's built-in default role is still `default-roles-jumbleknot`, so a
 `default-roles-*` name that does not match the realm is expected, not drift.
 
+Both enforcement points read those roles the same way and neither trusts the other: the BFF reads
+them off the decoded JWT, and mc-service deserializes `Role` out of
+`resource_access.movie-collection-manager.roles` for its `KeycloakAuthLayer<Role>`, with a separate
+`require_app_role` middleware applying the `mc-user` **or** `mc-admin` rule that the layer's own
+`required_roles` cannot express (it requires every role listed). A valid token whose roles are empty
+or unknown is therefore authenticated and then refused with 403 — the same shape as the BFF's
+`login_role_denied`, one layer over.
+
+The realm is consumed from two directions, and only one of them fetches its endpoints. Server-side
+components reach Keycloak over the Docker network and validate tokens locally against a JWKS fetched
+once at startup. The app runs the authorization-code-with-PKCE flow itself but *derives* its
+discovery document — authorize, token, revoke, logout, userinfo — from the configured issuer instead
+of fetching the realm's `.well-known/openid-configuration`, because a client-side discovery fetch
+fails with a CORS "failed to fetch" in the browser and Keycloak's endpoint structure is standardized.
+A wrong issuer therefore breaks the login URL directly rather than surfacing as a discovery error.
+See [Authentication and authorization chain](../invariants/auth-chain.md) and
+[The Expo app](./expo-app.md).
+
 ## The service head
 
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
@@ -119,7 +137,10 @@ carries four facts worth reading directly, because none of them is visible in a 
 - **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:79c623a2…`, the
   identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
   drift apart. The digest matters separately from the tag: an infra-image allowlist entry is keyed to
-  version **and** digest, so a bumped image re-blocks instead of inheriting the previous suppression.
+  version **and** digest, so a bumped image re-blocks instead of inheriting the previous suppression —
+  which is how the Keycloak allowlist entries were discharged rather than renewed. The bump is the
+  remediation and the exemption is deleted, so a later regression re-blocks instead of matching a
+  stale entry forever.
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
@@ -298,12 +319,20 @@ fails on any `_`-prefixed key at any depth. **Document realm settings in the REA
 the guard catches `_`-prefixed keys, but only Keycloak can tell you the realm truly deserializes.
 Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the `${VAR}` placeholders
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
-command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md). Treat a
-green run as a schema/deserialisation check, **not** a version-parity check: the README's one-minute
-proof pins a Keycloak image a minor version behind the deployed one (`26.7.0` in the command against the
-`26.8.1` compose pin), so a realm can import under the proof image and still meet a stricter schema on
-the deployed pin. That is the same class of change that made 26.6+ enforce the realm password policy
-against imported credentials.
+command is in the keycloak README's realm-import proof section
+([`infrastructure-as-code/docker/keycloak/README.md`](../../infrastructure-as-code/docker/keycloak/README.md)).
+That proof now runs the *same* `26.8.1` image the compose files pin, so it is a genuine
+version-parity check as well as a schema/deserialisation one — but it stays a check of the realm
+against the image, not of the image's own behaviour: the same class of change that made Keycloak 26.6+
+enforce the realm password policy against imported user credentials was a *server* behaviour change
+that no realm edit would have revealed. Keep the proof image and the compose pins in step
+deliberately; a proof image a minor version behind the deployed pin silently downgrades the proof to
+schema-only. Read the env-var names in the command against the realm rather than trusting them:
+placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
+intact rather than failing the import (that is why the realm's own `${role_*}` / `${client_*}` i18n
+keys survive an import), so a name that no longer matches the realm can still import "successfully"
+while leaving the literal placeholder where a secret belongs. The ROPC client's placeholder is
+`${E2E_ROPC_CLIENT_SECRET}`.
 
 **The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
 means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks

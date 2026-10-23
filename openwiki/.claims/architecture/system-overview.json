@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:74e3f7fc8467735ac94387f5aa84d9678c7b2e568df4e5ebc16cafdceb7f2511",
+  "pageVersion": "sha256:cfe9248fb51f95ab243cbb64f943dc1f546528139ef1f0eb1a099a09458513e5",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -125,7 +125,7 @@
       "statement": "Feature 073's backup destination containers live in their own compose file (`infrastructure-as-code/docker/backups/compose.yaml`) rather than a profile inside the `mcm` stack, because the `mcm` stack is one Compose project whose `include:` pulls in every component file and Compose interpolates every service of an included file at parse time regardless of which profiles are selected — so a required `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole stack, including CI's app-e2e bring-up which wants none of those services. Feature 080 removed the offending from-source object-store image (the S3 oracle is now upstream RustFS pinned by digest), so the variable is gone and CI's bring-up step passes no registry input, but the separate file remains because a profile is not isolation from interpolation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L691-L699",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L717-L725",
           "version": "repo-lines-v1:sha256:fd7a0c9dee943bac2239db249fd587f8e2de59ca47b2e5a7210db7140c8aa586:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMxMmIxMGM1ODE3NGViNGU2NWY3MzYyNmI5YzA0OTc1YWJiMDIyZTlhMWNiYTQ2ZGEyNzc1ZDk5MWVlNGIwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MTZjMzk5MDI5ZDJiM2FlMWJmYTA0ZGVmODNlOTEyMjg0MWEzYTcyM2E1YzIyY2RmZGFjNzk1MTk4NzA1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE3NTc1ZDYzNjg1ZjZmOTBhNzUwOTQwNTA0YzUwOGIwODdlMmRhYjE4M2YxZDVmMmFlMTQyMWRjN2JjNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFlMjU0YjI1MDIwZDQ2M2Y5NjZhMjI5NTI3MGFmODE5M2U1YzgzMGQ1NzFhNWFmMWJiZDY4ODkzYmE3N2YwNiJ9"
         },
         {
@@ -147,7 +147,7 @@
           "version": "repo-lines-v1:sha256:8917a10db42c8abca3b843fdd33ddd398802a2c27c64dc732bd8341c161a13ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYzViZGU1MGJkMjU1NmUyYjIyYjdhN2JhNjkxMjYyNzA3YzY1NjJmYTQxZDA2ZmI4MTc3NTU2MTUzYzcyZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1Yjk3ZDhlYWM1MGZhMDcxODY4NjMwNmRjYmNhY2ViMjliYmRhM2U5ZDM4NjFiMDNmZjBkZjBiM2NlYjgxYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjOTNiYzhkMzM5MTVjYTcwMGNmOWQxYzg5NTdkYTVlMTQ4MjA3NmQ2NzM1NDYyMmIwMzRiNWVlMTEyNjc3OTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/server.js#L100-L148",
+          "resource": "repo://frontend/mcm-app/server.js#L130-L178",
           "version": "repo-lines-v1:sha256:d31a305ef5d0371e89a3818a38e3a6e6a951e9343224a0dee19ceb3b197e881c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2Njg1ZDA3ODc2NmRlNWZjNWViMWY4MTdmYmM1Njk5M2I1MTNiNjcyMzEwMmNlMDk1MDg2Zjc4YTg2ZGE3MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OWZjM2EzZjhlYmU0MjAyODg0M2JjYzFjYTJmNTI2MzhiZGJlYWI2MDM1ZjZhNDZjYmM0ODg1NDdhMmYwZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MWM2MzFiMDg2N2E5Y2MxOTcwNDM2OWEzZmI3NzAzZjc0NWQ2YTlmZWJmNDZkOWFjNjkzYWU3ZDBlNzRmZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1Y2FkZTc3YThiM2MwMDQ2MTJmNjkxMjEyZjZkYmE2OGQyZjRjNThlYTlmZWQ3MGYxNGE1ZDE2ZDc1OWY4N2YifQ"
         }
       ]
@@ -175,7 +175,7 @@
       "statement": "The backup-destinations compose file is standalone: it attaches to the `mcm` stack's `mcm-bff-network` as an `external` network (so `up` fails when the `mcm` stack is not already running, which is the correct answer since the BFF is what writes there), and because it is a separate file in the same Compose project the stack's own `down` does not reach it — teardown requires a second `docker compose -f infrastructure-as-code/docker/backups/compose.yaml down`, or the persistent CI runner silently reuses the previous run's destinations.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1376-L1384",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1450-L1458",
           "version": "repo-lines-v1:sha256:1a559e893f61f3704e3974dc518c681cd41bcff6b8b9d336e0cf0cda04ed597b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTUwOWU3MzdhZmY0OGI0NjliODExYzg0YjM0YTk5MzRhYWJkM2VkOGZjM2UwMmZiNDI5YjBlYzE0NjJkYmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIwZDdmMTc5NTAxMGY4OTUzMjQxYmY0OWYxMDE1NTE2YWZkZWVlN2Q3ZjljZmE3Njk1Yjk0NDQwZjI5NjUwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ0ODhjZTJjZGM5OTBkMmU0OGJmMWU1OGY2Nzg2MzI5Yjc4MDZjMmM0ZjYxZmU2NDU1NTMwNjI0OGEyNjg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNWVhMjU0NjBmM2NhNTZhMjQ4OGFhMTVhMTE3ZThhNGZiNTJlNGIyNzUwNDkzYjZiODQzZWZmOGZkZGI5MCJ9"
         },
         {
@@ -227,10 +227,92 @@
           "version": "repo-lines-v1:sha256:bea9274a052b54c71070aa82023f02bc26211cfa1d6359080d560fbd10aa7640:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdlODY4NTA0ZTJlY2FkOGY4MGMzNTYyNWY3ODE4MmQwNmIwMzQwNDc2YTFkZDA0OTgwZGVkMmNiMGM0YTc2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU0YjBhZTlmZDAyYzJjNmI4OTBjM2ViYWIyNzJkZGJjM2UzODhjZmZhMzRlMDM4MzAwOTA1OTUyNzhhNTJhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE0YWMwMjBlYjhiMGZkYWNjMmMzMmNjNzM1M2FiN2I5MmQwMWZjYWY0NmRmYzdkOTY5Y2MzZDAzMjlhN2FiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWRlNzhkYmU5NzBmMjczY2IxYzJkOTYxZTlhNTRlZmIxMjczYjhlNzIzYTNlN2JiZjVkZmMxYjg4YmM0ZmU2NiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_67e7178b6ba2462fa93a44dcf69d48c9",
+      "statement": "Local dev/test infrastructure is four independently operable named Compose projects (auth, mcm, audit, observability) under infrastructure-as-code/docker/stacks/, each a thin include:-only aggregator over that stack's component compose files; the former single root aggregator compose.yaml is retired to a pointer that names the four, and because Compose has no cross-project depends_on the auth stack must be brought up before the mcm app profile (pnpm nx up-auth then pnpm nx up-mcm, or pnpm nx up-all, which serialises auth then mcm).",
+      "evidence": [
+        {
+          "resource": "repo://compose.yaml#L1-L25",
+          "version": "repo-lines-v1:sha256:2a2639564267b11b03a3f642345f20c59dcf62e070727a9dba9d6967499a4ec8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NmZhMGI1NmEyNzA0YzM5NTBlMDdhYjc1Y2ViMDczNDg0OTdlYjI1Y2IwODg2MWNjMjI2M2FhY2M2YzU3MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjUyOGEzOThiNmVjZDBkNGEzMmIyZTMwMzg0YTIxMzI2MzcyYmZhYTIzYmM4MzVhZjlmODhiZWNhOGMzN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L557-L582",
+          "version": "repo-lines-v1:sha256:d484d3ac1470800e4d59dd856291523487473d4ecb8baba1edcedd6681bc3265:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YWUxNzBhZWI2MTE2NDg5YTk4NDRiZTFkYWQyNTVhY2QzM2E1MDFiYThlNWQyZWZlNTNjY2FhNTRhZDdhYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZWYwYWQzNTYxNGRiOTFmMDkxODg5NGRmNjY5NWQ4ODFjMDA1NTExMTU3ZjY5MzJhYTM2MWNjYzA5ODNkZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhZGVjYmM3Y2I3ZTc3ZTNlM2Y5M2Q5NWEyYTU0MjJhNGNmMTAzYmY3N2E3YzkyMTI4ZDYwMjRhZTVhNmU5M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNGQyMDJhZjMxYzk0YTU4MDhlNjFiMjI5MmRhMzZmZWJiYWVhNmY0N2QzZTk4ODI5YjAzZDhjMjIwNWFkMjQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L1-L47",
+          "version": "repo-lines-v1:sha256:29b8ce061d560bfcca4dd9972f3ff37c1a2498d77144970fd3382b7e757becc7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMmNjM2VkMjhhODViYmIzYjdjM2MwZmM1ZGI3ZmZiYjcxY2NhNTY3ZTIwODZkNWJhYTE3YjNjYzk0MTgxNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_670daceba43d4f8ea012fd37f8578cc8",
+      "statement": "Within the mcm stack, the no-profile default services are the test infrastructure (mc-service-store-mongo plus its rs-init, mcm-bff-cache-redis, mcm-bff-store-mongo); the app profile adds mc-service, bff-nonsecure and bff-secure add the BFF variants, and agents / agents-metro add the agent layer — and an end-to-end agent flow needs every hop up at once, since movie-mcp calls mc-service with the user's JWT.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L561-L566",
+          "version": "repo-lines-v1:sha256:4ba85718bcee70d4638cfaa323c1f119acdb90c0a8f02dd2397e62cd74ca282d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE1NzI3NWUyZjFhMWM0YzBiOGQ3ZDYyMjNlMTY4NDFkNWIwODExNzY2YzYxMTQ2ZmQ4NzM2YTQxN2E4ZDMzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTg5NDBjNDA0MjQ3Yjg1YWQ2MjA4ODI4YzEzZDgyMDdhZDAyYjVhM2Q3ODJlZjlhZTdmZmI2YzEzOWJhYTUxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODk0MzBhMGFjMTY0ODAwZjY3ZTU0MTQ2NjdhMDA4M2E4N2QwNGVjOWJiNjZmNzA3MGNmYjFkMTA3MDRhNzcyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI4MDBiMzFkYjgwODZiMDhjYTNiMzI1Y2RmODNjMWVjMTRiMTUyZTg1NWViN2I3YWVmODNhYWFlNzdjNTNiMyJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L597-L597",
+          "version": "repo-lines-v1:sha256:717d33f2f3bb23941f8f1bc5d29030ff68e5fba2d71221c314a8138e1bb2c136:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3ZDMzZjJmM2JiMjM5NDFmOGYxYmM1ZDI5MDMwZmY2OGU1ZmJhMmQ3MTIyMWMzMTRhODEzOGUxYmIyYzEzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3ZDMzZjJmM2JiMjM5NDFmOGYxYmM1ZDI5MDMwZmY2OGU1ZmJhMmQ3MTIyMWMzMTRhODEzOGUxYmIyYzEzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMwZjdmZmIyOTEyMTc2ZWNlNTZmNDBmZWQ5MTc5MzkyNWM4NmY1MGZiM2NmOGRmYzQ1M2U4NTRhMzNiMDhjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L7-L13",
+          "version": "repo-lines-v1:sha256:d03ccf4e8ddfe5617ac17465f9fbd0626eee09734aa511310a75151f3aa22b6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFlNjRjYzFjOTU1YmJlMjc1YzU1ODU2MjQ3Y2QxN2Q5YTg4ZTUxMTllNjAzNzRhMWE2Y2JiYzU4YWJiMTE2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMwMjM4ZmUwNWJjZTg1NmM1NDUwYjM0NzQ3ODBiYzg4YzllOGRmOTc4MjVlYjQ1MGJiZGZlY2ZkODE1NjYxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q5MTc3ODgyZmQ3ZWU2ODJmOWFmNGU4Y2MzOWRmZjIwYzM1NGUyYTk5NTM1ZWU4MWY2ZTc2YTM4MGY2YjNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzEzN2M5NmI1NWFjYzMxOTYyM2ZhMmZkYjg1M2E4YTZjODY5MjNkYzU0ZTdlMTE5MDQ1MWM3Y2JmY2RlZjhkYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d20760cbc610468ab45106e73467fa82",
+      "statement": "mc-service centralizes RBAC rather than checking it per handler: a KeycloakAuthLayer<Role> tower layer plus a require_app_role middleware are applied to the whole protected /api/v1 sub-router, so every business route is protected by default and individual handlers only read claims from KeycloakToken<Role>; /health and /metrics are deliberately merged outside that sub-router and stay unauthenticated.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L152-L202",
+          "version": "repo-lines-v1:sha256:c57588472a2326a8877853aeaa44d23f188a7dd0cd4ff4590c0453e934612dd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OTIwZWZlYThkNGEzNDk2MDU5NWEwMzJlMzNhOWYwMzQ4MzgxZGMyNDY1N2NjYWFhOTIxZDhiOTYzODE2MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYWJmMmVhNzM3Nzg5M2NkMDg4MDY0MDgyZmE5YjBlMjQzYmE3ZTIzZjI4NGM2YWEzYWEyNzdmMzZmNmNjNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDI0NWZlOWVkYTNjZGVkZTllMGM3OWVjMWU5YjcyNzIzMGRmMDkwMGNhZWVkNDZkOTk4M2VlMjAwZDhkNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNDgxNDg1ODE0YzliZTZhZGVlODk5ZGNlYmJiMmFkMWViNjgzODA3MjcxZDVlMTZlNjgzMzc1YzRlNjEyNTYifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L87-L94",
+          "version": "repo-lines-v1:sha256:42ce6071ed3d55a71d89b2986b983369ab004f81c5f92c474ac756b3a390626c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFkNDJhZTU4ZTljNzBiMjhhN2ZiODg5MzYzMjczZDQ1YjE3MmQ1NmIyOWY3YmViZDAyOGIxNWNhY2RjZjhlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQ2ODliNWU3OTFkZGEwMzE5ZGQ5ZDAwMjkzYTgwODgwN2MzMzc1YjAzNjk0NjNmYjNmM2M2ZGQ0NjZhZDQzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA4ZmQzMjg1NWUxYzI5YzNkYzQ4YmMyMWQ3OWIwZTMzNzFhOTk2MWRmZjhiZGJmOWE1ZmJmYzhhMWVmZTNlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY0ZWYxN2VmNTBjYjY5NmJhZjNkOTQ2NjYxNTlhYTFiZmE1MWIwMmZhOTQ2ZDk4OWQxMjlhNTE3MWEwZDEzZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f8bbf94df094e449532ee540025b998",
+      "statement": "mc-service's per-collection DAC is enforced through one shared application-layer helper (authorize_collection_access) that every movie command and query calls before reading or writing, so per-collection authorization is uniform and hard to omit; it is deny-by-default and reports a missing collection and an unauthorized caller identically as CollectionNotFound (404) so collection existence does not leak.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/access_control.rs#L1-L30",
+          "version": "repo-lines-v1:sha256:8fa3038c8579b639a76c5f84132d4421e16031e67f9295dd199e62375e8cede7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2OGU4ZTllNjI5NDhkODI5NzM4Zjc0NTY3NmIzMzA5MWU1ODgyMjcxNzkwOGMwYmZjNzNlMWEzMmZiNDgwMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L92-L92",
+          "version": "repo-lines-v1:sha256:6b97456b4bf394af62a226fc485f0b71c2e67d90dffa8d8f41f8f4d172b41b68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI5NzQ1NmI0YmYzOTRhZjYyYTIyNmZjNDg1ZjBiNzFjMmU2N2Q5MGRmZmE4ZDhmNDFmOGY0ZDE3MmI0MWI2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGI0OTZjMzRiYmQyZmI3NTVhNzBjOTQyYjYzM2ZjMTAwMzM2N2Q1NDQxZjJhYWY1MWVjZTBhN2RiMDJiYmZjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQ4ZDI0YTViODFlYjIwMTM1OWJiYjZmM2ZmM2Y3MTg5YTI1YjQzYmQyMGRiZmJlMzgzNzAwZGUxNDg1MjkxNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f76b2015858f4295a322386fe247cf43",
+      "statement": "The agent-layer Control Tower (LangFuse + OpenTelemetry/Grafana observability, the OpenSearch append-only audit sink, and OPA + Unleash policy/kill-switch) is config-gated and additive: every piece is a no-op with a safe in-code fallback when unconfigured, the observability and policy services are opt-in behind the observability profile, and the audit sink is deployable on its own audit profile — so the app and agent layer run without the Control Tower in dev.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L128-L128",
+          "version": "repo-lines-v1:sha256:e06be06b97db81e88be7528a610496240130397a7fa3591d312326b71fcc33f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA2YmUwNmI5N2RiODFlODhiZTc1MjhhNjEwNDk2MjQwMTMwMzk3YTdmYTM1OTFkMzEyMzI2YjcxZmNjMzNmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA2YmUwNmI5N2RiODFlODhiZTc1MjhhNjEwNDk2MjQwMTMwMzk3YTdmYTM1OTFkMzEyMzI2YjcxZmNjMzNmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk0ZmQxY2VhNGRiMDgwMWQyNTBiNWEzNDk1ZGQzOWI5NDkwMTRjMDk1NDRjNzM2ZTQ2OGUzOTc3MmI1NDExOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTFhMzdiYzg1YjJiM2M1MWViODI0NjlhNThkNmVmMjI1N2E3MTY2N2UyMGI0NDY2MDk4ZTAzOWJiMGQwMTRmZSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/audit.compose.yaml#L1-L14",
+          "version": "repo-lines-v1:sha256:7660be9b48d9b98850eda5a9aa9e3be3c11c66c3a45210bb51446f304fe4638c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYjBhYTNmZjFlOWU1MjdiNjJjNjcyNjk4NDE0MDdjNTIzZWRiNTk3YmNmODU2MDRjNmExOWNkNWI2MTdiNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNTQ4ZTU2NGM3YTdlNDRkNDhhOTU5M2U1ZjEzNTE5NWExOTE1YjNiZGIxODU4NmNjMWZhYWVmYWMwNjIxZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/observability.compose.yaml#L1-L15",
+          "version": "repo-lines-v1:sha256:dc3e9038ae5033637d7577bae5bfefdb214fd38e5f50eb71fa4527299df5b399:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMzI1ZjM2NmZhZDc5NjcxZDcwMTkxMGI4NTI1YWEwYWFiMjJmMTZiOWExNzg1ZjViZWIwNTZkOTM4N2M2OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjU3ZmZjMWQ2MDY0NWYzM2VkZGRiNmY0NzIyODhmNmMyMzgxNTI5NjA5MWQwOTc5NjMwMDk3ZWU3YmU2ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T13:30:11.885Z"
+    "at": "2026-10-22T23:16:03.781Z"
   }
 }

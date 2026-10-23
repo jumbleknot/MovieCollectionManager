@@ -92,7 +92,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
+    at: 2026-10-22T23:16:03.781Z
 ---
 
 # The three scoped MCP servers
@@ -216,11 +216,12 @@ movie-mcp registers nine tools. Reads are `list_collections`, `get_collection`, 
 pagination), `count_movies` (server-side count), and `get_movie_metadata` (the option values
 mc-service accepts for a movie — the organizer derives its media-format and rip-quality toggles from
 this rather than holding a copy of domain data; that response is not collection-scoped and carries no
-user data, so it is safe for the gateway to cache process-wide). Writes are `create_collection`,
-`add_movie`, `update_movie` (full-replacement) and `delete_movie`; each carries an `idempotencyKey`,
-forwarded as a standard `Idempotency-Key` header that mc-service ignores today — at-most-once comes
-from mc-service's own uniqueness constraints, and the header keeps the contract forward-compatible.
-Writes execute only on the agent's approved-resume path.
+user data, so it is safe for the gateway to cache process-wide, and the organizer is its **only**
+holder — folding it into the shared read set would hand it to four agents that have no use for it).
+Writes are `create_collection`, `add_movie`, `update_movie` (full-replacement) and `delete_movie`;
+each carries an `idempotencyKey`, forwarded as a standard `Idempotency-Key` header that mc-service
+ignores today — at-most-once comes from mc-service's own uniqueness constraints, and the header keeps
+the contract forward-compatible. Writes execute only on the agent's approved-resume path.
 
 The wrappers add no domain logic: mc-service's response shapes pass through verbatim. The four
 **write** wrappers additionally catch `httpx.HTTPStatusError` and re-raise it as a
@@ -243,17 +244,19 @@ re-exchange result, so mc-service's existing RBAC and DAC are enforced unchanged
 web-api-mcp registers exactly two tools. `search_title` returns a typed `matchConfidence`
 (`none` | `exact` | `ambiguous`) plus result references, and `get_movie_details` returns an enriched
 candidate shaped for the mc-service add payload (year derived from `release_date`, poster URL built
-from the TMDB image CDN base, language resolved to the original language's English name rather than
-the raw ISO code). The two labels are derived, not asserted: zero results is `none`, exactly one is
-`exact`, more than one is `ambiguous`. The curator fetches details only on an `exact` match and
-offers options on `ambiguous`. TMDB failures surface as MCP tool errors rather than exceptions.
+from the TMDB image CDN base, language resolved to the original language's English name, falling back
+to the raw code rather than fabricating one). The two labels are derived, not asserted: zero results is
+`none`, exactly one is `exact`, more than one is `ambiguous`. The curator fetches details only on an
+`exact` match and offers options on `ambiguous`. TMDB failures surface as MCP tool errors rather than
+exceptions.
 
 The credential path is the distinctive part. The per-request `X-TMDB-Key` header is the **sole** source
-of the TMDB key — there is no shared env/Vault fallback by design — and a call arriving without one
-raises a clear configuration error rather than issuing an unauthenticated request that would surface as
-a confusing "couldn't find it". A second pure-ASGI middleware binds the header into a request-local
-variable and resets it afterwards. The production compose confirms the posture from the other side: it
-sets **no** TMDB key for this container at all.
+of the TMDB key — there is no shared env/Vault fallback by design, and a stray `TMDB_API_KEY` in the
+process environment is never consulted (a unit test sets one and asserts it is ignored) — and a call
+arriving without one raises a clear configuration error rather than issuing an unauthenticated request
+that would surface as a confusing "couldn't find it". A second pure-ASGI middleware binds the header
+into a request-local variable and resets it afterwards. The production compose confirms the posture
+from the other side: it sets **no** TMDB key for this container at all.
 
 Because TMDB v3 authenticates with an `api_key` **query parameter**, the secret is embedded in every
 request URL, so anything that stringifies that URL into a log leaks the user's key. `build_app()`
@@ -309,7 +312,10 @@ begins with `=`, `+`, `-`, `@`, tab, or CR by prefixing an apostrophe, and `pars
 guard, so an export→import round trip is symmetric while a legitimate leading apostrophe is preserved.
 Sheet names are made Excel-safe and de-duplicated at the builder. The store client is a lazily created
 process-shared instance — building a fresh client (and connection pool) per tool call leaks pools and
-sockets over the long-lived server.
+sockets over the long-lived server. That memoisation is right for the server and wrong for a test
+suite: `pytest-asyncio` gives every test its own event loop and a `redis.asyncio` client binds to the
+loop that created it, so the integration suite resets the shared client per test rather than changing
+`src/store.py`.
 
 ## Lifecycle, operations and tests
 
@@ -319,7 +325,10 @@ after any source change — see the gotchas.
 
 - **Nx targets** exist per server: `pnpm nx test <server>` (unit), `pnpm nx test:integration <server>`,
   `pnpm nx lint <server>` (ruff + mypy strict), `pnpm nx build <server>` (Docker build tagged
-  `<server>:latest`), `pnpm nx lock <server>`.
+  `<server>:latest`), `pnpm nx lock <server>`. Each project also declares a `deploy` target, but it
+  still shells out to the retired root `compose.yaml` and names a service that does not exist there
+  (the compose services are `movie-assistant-mcp-movie` and its siblings) — bring a server up through
+  the `mcm` stack's `--profile agents` instead.
 - **Compose**: each server has its own compose file under `infrastructure-as-code/docker/<server>/`
   with `profiles: [agents]` and no published host port; the `mcm` stack `include`s all three, and the
   production agent stack pins each image by digest. `scripts/agent-stack.mjs` builds all three images
