@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:397b4cfce20ed932ee588492d522603214d0b3d2d5a2fe2cc19bf2fe643b8a95",
+  "pageVersion": "sha256:cf7e1b15cf66f1e54f08c5cc405ca885243c9bbcfab9a63378d08f701811d06f",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -309,10 +309,70 @@
           "version": "repo-lines-v1:sha256:dc3e9038ae5033637d7577bae5bfefdb214fd38e5f50eb71fa4527299df5b399:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMzI1ZjM2NmZhZDc5NjcxZDcwMTkxMGI4NTI1YWEwYWFiMjJmMTZiOWExNzg1ZjViZWIwNTZkOTM4N2M2OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjU3ZmZjMWQ2MDY0NWYzM2VkZGRiNmY0NzIyODhmNmMyMzgxNTI5NjA5MWQwOTc5NjMwMDk3ZWU3YmU2ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_4fec63f355df43e5a978489f4d16ad08",
+      "statement": "Production shared *infrastructure* secrets — among them the Agent Gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key — are held in Komodo Variables and injected at deploy into each stack's gitignored env file, and no user, model-provider or TMDB credential is ever stored there because those are per-user by design; HashiCorp Vault is deployed in production dormant (uninitialized and sealed) and is not a secret source for any core stack.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L129-L129",
+          "version": "repo-lines-v1:sha256:1c498dc6b4c83bb658a94e0d2419085b0c0a3fc0a836533bbfabd6c38bcb252a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM0OThkYzZiNGM4M2JiNjU4YTk0ZTBkMjQxOTA4NWIwYzBhM2ZjMGE4MzY1MzNiYmZhYmQ2YzM4YmNiMjUyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM0OThkYzZiNGM4M2JiNjU4YTk0ZTBkMjQxOTA4NWIwYzBhM2ZjMGE4MzY1MzNiYmZhYmQ2YzM4YmNiMjUyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJkMDI3MjhiYTZmZWE0OWY0ZGI0YWFlMmNjNTgzNTc4NTNlZjQxZTQzMGYxNzk1M2ViNzgyYTI2YmViYzA3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY3MjI2MzMyODJiODA4YjgzNjRkMmU1ODllNzJlODU2ZWFhMDZkMmRiOGJiNTA3NDFhM2YzNDhjNDA4ZWU4MSJ9"
+        },
+        {
+          "resource": "repo://docs/decisions/ADR-0001-prod-secrets-management.md#L18-L18",
+          "version": "repo-lines-v1:sha256:0b01d7ab3b02ca9919c464a00fb4684334b80faacab6c6215eb68b4db31779e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwMWQ3YWIzYjAyY2E5OTE5YzQ2NGEwMGZiNDY4NDMzNGI4MGZhYWNhYjZjNjIxNWViNjhiNGRiMzE3NzllMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwMWQ3YWIzYjAyY2E5OTE5YzQ2NGEwMGZiNDY4NDMzNGI4MGZhYWNhYjZjNjIxNWViNjhiNGRiMzE3NzllMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNmYmRhMWNiZWZhNDRiMmNmODI3YjcxMjA0MDcyOWVmYjhhZjQ5MDc4MDRiZGI3ZDdlNGViNmQ3YzM4NmZlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZkNTg0ZjFlYTU1ZGZjNDgyNTE2OGFiM2EwNDJlZWI3MjFjZGIxZWY0ODRiNTY5MTQxYzBkZGY0OWIwMTEwNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7d8f9223c5842e3b814502b3c162fbf",
+      "statement": "Because the BFF's own MongoDB (`mcm-bff-db`) is a standalone instance with no multi-document transactions available, feature 073's exactly-once backup scheduling rests on a single-document atomic claim rather than a transaction, and the Redis leader lock beside it is an optimisation with a TTL guess in it rather than the guarantee.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L29-L31",
+          "version": "repo-lines-v1:sha256:ba1a087011c0dc90dc1cebbd84d69ee13e3cc6a866f1894fecbb7c3ae430e52e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNmNjM4NmMwNGNmZmY5ZjkyYzBlYzJkOWRlYWRhNjc2MjdmZmUyMjVjMjNjMzMyYTk1MzZjNmU2ZGExZWVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E5MWNiMWNhM2YzYWQ3ZDYyMTJlNjY3N2RlOWVlNzYwOGUxZjY0Y2Q4Y2QwMGMwNmY0NTEyMDUzOTkxZDNkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRjNDA0M2I3ZTM1OWFkMzBhMTAyOGE0NzczNjc3YWE1MDkyODE2OWE0MGYxMDA1NzJmM2VkN2RmMGUyMTg2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L84-L90",
+          "version": "repo-lines-v1:sha256:d2b23e1162252909030c2ddefcb996fb34ce571c6e1504805c859fe016544d8a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRhY2M1MzE4OWNjZDNkNjE3NmFkNWIwYWQ0ZTA3MDY1YzY2MmUwNjJkZDUzNTllYjA0MDYyOGQzZjc1YWZjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJiNTFiNTMzMzUzMGM0NTAxZTZiZWVkMWExNjdlOTY4NjQ3MmUxYTAwZDliM2I2OTNkMjcxODg0MTgxMDQ1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDdjZWI0MTg1Zjc5NGQyMTAwNmM0NTBlMDQ0ZGY3YmI1OWRhNmFiZWM0OThjZTRjMGE4NjRhNDExYjE2NWRkYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f69e6be1a114e3f89c547edd150bec0",
+      "statement": "No Compose stack is profile-gated as a whole: the `auth` and `mcm` stacks each start services with no profile at all, and the per-service `profiles:` assignments live in the included component compose files rather than being re-declared in the stack aggregator (which also removes the include-override merge and lets the stack parse on any conformant Compose).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/README.md#L14-L25",
+          "version": "repo-lines-v1:sha256:5c7dd50d96a085b20e2464a9c75b3bbae30a1f2774496e063c6d6cb669144965:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjBhY2Y1MjJiNGI1MTAxZmUwYWFkYmIxZWFkODNjZGViN2U2ZDljN2EzMjUzM2I0NGI2YWY3YzZkMmIwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNTYxYTUxMjE1YTQ1MjVkMTY1ZDRiMGMwNjEwMjFjZjc1MDdjNzdlZjRhYmFiZjdjNTRlOTQ3Y2M4OTllNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzhkNzA2NmE1NjA5N2VhZjE1NGYyMThmMjdkM2UzZWY4OThiNDMxMmNiMjk1M2FlMmFkZmU4YWNhNzY4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWQxOTBkZWUwYzkwNDE1MmMwMmNlNWViMDUxOTk0ZjJkMTc0M2ExNmE3ZTZlMTMzYTE3NzM2MGI5YjUzZDAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L28-L33",
+          "version": "repo-lines-v1:sha256:c68dff6b0aee817abd8595e0269929dad45d93cb2b43b0fdeb5be74257c00579:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzEwMjdlNTdmOGEyZGE3MjQ0MjExMTBlYTQwNjBhY2VmMGQ0ZjFiZTBiY2I0NzA3M2M0ZTRjZGZhYmQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2OGJhOWEzOGQ2YWYzYzc0MDE1NzNiOTJjOWY1MDdkNDg3NDg3NGNkZmFjMGY3ZmRiNjIzZmM3ZTA5NzEwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM0M2Y5MWFkMWZiNWZkMDNkMzdiOTM3NDVhNWU3MDk0NGFmOWQyNzk5MjU5ZTMxOWE3ZTRiOGUzMTFiZjY5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM1ZjgwYjI2NDE2MzUwYzc2ZWI5MzFiMzIxYzA4NTAwYjEyNjcxMjI1OWZkZjVhNDUxMGJmNTY0ZWRiOTRkYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_68c8b49149324b1aad1179c1f29e1616",
+      "statement": "The BFF's own MongoDB store carries three families of data rather than the per-user agent config alone: the `user_agent_config` collection (per-user encrypted assistant credentials), a single-document global `app_settings` collection, and feature 073's backup state in its own `backup_destinations`, `backup_jobs` and `backup_runs` collections.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mongo-client.ts#L102-L128",
+          "version": "repo-lines-v1:sha256:8e3b463cacd4c90aa78de18125ac6e3c3fb00a7a5fb2805d1b0f148f33ac3f5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiNjMwYzVjYjA5NWJiMWQ0ODZlZDkyYjM0NmQwZDNhMjVjZWIzMDFmZjhlNTI5YjFkNGQ3YWRhNmYyMWZlNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNTkwMGQzMzAzZGUxNjE3MzQ0MThkZjZiM2IwMjBkNmY1MWE0MTNhOTI2OWMyY2E4ZDYzZGI0ZGIxM2UxNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZDI4ZmQyOTYyNzcwMWE5YTJhYWI4ZWExYmY2MDcwMjYzNzYwY2I2NTZhZmE2YWY4Zjg3MmM4MDMxZTA5MWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYjc0ODg2ZWYyY2EwZjg0MjM4MmQyYmViM2M4Mjg0ZGMxNTIwZGU4MjM0ZDA0ZWY5Yjg2NWFiZDcyYTJiMDEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L142-L145",
+          "version": "repo-lines-v1:sha256:b6c73927f58a9e7f5d5cd55732efecc987326a3ef4d0b0e4f3996616947e0806:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1MzYzMDk4Y2E1ZjJlOGRiMjZkNmIyNzFjZTQ1MmJkNDllYWEzMjI5N2U0MjVkNGI0MGYyNWI3N2JjMTliNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdiYjI3ZmQ0OTBkMWQxMjdjNzIyZWQwMmVkM2YwM2ExNDA2YmYxYTY0ZTM2YTY2Nzc2MjE2OWZkOGJlMmYzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE5ZjYzOWVjZTlmY2IzZmNlODA0NTJiNGFiNDkxYTU0OThmMzA2YjhhMGVkMTkzNjgxNWY1ZDIyMTNmMmJkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQxM2JjM2Y1ZDlmZGJiNmMxY2Y1MDE4ZTBjOGVjMDY0ZjNjY2FhNmI1MjllMjQ3MWZjNzdlMGFlNTMwZTA1MiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L94-L95",
+          "version": "repo-lines-v1:sha256:ac4a3d9bf61c38c38d9ea0676eaee91b445c42df8dd0b5bab167d03cef3be6ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiZDVlOThjYzYxMDhjYjExNTI2N2ZhN2I3YTYwNjVjNGNjODAyMjVmNjVhNDk4ZGIwZjA0NmJhZDc4ZDY2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODkzZDlmOWRjYzZjMmQwNzRjMzJkMDZlMzcxMTg4OTMxNjQ1NzgzYjQ4MDllZDM5MmRiZWJlYTJmNWJkZjc4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmEyYzg4NWVlNGUzYWQyOWZhMGRiOWE2ODAwNmQxMjVlYjZlMzhjNTdlYjk3MDdmOTgzZDBiNDU0ZjEzN2ViZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWRhMzRmYWQ5Zjc5ZDMwNWU4MzM4ZDNjODExMTkwN2Y5M2NlM2Q5MDgwNWRiNWFmNDVlMzRmZjk2MWE4Yzc2NyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-22T23:16:03.781Z"
+    "at": "2026-10-23T12:47:39.117Z"
   }
 }

@@ -6,7 +6,7 @@ resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-22T23:16:03.781Z
+    at: 2026-10-23T12:47:39.117Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -86,6 +86,13 @@ restate them; the *Core Components* section is the canonical list):
   a safe in-code default when unconfigured**, so the app and the agent layer run without them and
   each control is switched on by configuration in the environments that need it (the architecture
   document's *AI Agents Layer* section).
+- **Production secrets (Komodo Variables)** — shared *infrastructure* secrets (among them the
+  gateway's Keycloak OAuth client secret and the BFF's master encryption key) live in Komodo's masked
+  variable store and are injected at deploy into each stack's gitignored env file; **no** user,
+  model-provider or TMDB credential is ever stored there, because those are per-user by design.
+  HashiCorp Vault is deployed in production **dormant** (uninitialized and sealed) and is not a
+  secret source for any core stack — see
+  [ADR-0001](../decisions/adr-0001-prod-secrets-management.md).
 - **Per-user scheduled backups (feature 073)** — the BFF runs an in-process scheduler that copies a
   user's own collections to an S3-compatible or WebDAV destination *the user owns and supplies*,
   keeping the last N versions and offering a restore that only ever creates new collections (never
@@ -102,7 +109,7 @@ flowchart LR
   bff -->|"forwards JWT; RBAC: mc-admin OR mc-user"| mc["mc-service"]
   mc -->|"validates JWT locally against cached JWKS"| kc
   mc -->|"DAC: checks caller against acl[]"| db[("mc-db: movie_collections, movies")]
-  bff -->|"reads/writes encrypted per-user agent config"| bffdb[("mcm-bff-db: user_agent_config")]
+  bff -->|"reads/writes its own store"| bffdb[("mcm-bff-db: agent config, app settings, backup state")]
   bff -->|"run-scoped delegation token, server-side only"| gw["Agent Gateway (LangGraph, private network)"]
   gw -->|"checkpoints"| adb[("agent-db: LangGraph checkpoints")]
   gw -->|"MCP tools, per-call downscoped token"| mmcp["movie-mcp"]
@@ -121,11 +128,14 @@ Gateway and the backup scheduler reach mc-service through that same RBAC/DAC pat
 
 Local dev/test infrastructure is four independently operable named Compose projects under
 `infrastructure-as-code/docker/stacks/` (the architecture document's *Docker Infrastructure*
-section) — `auth`, `mcm`, `audit`, `observability` — each a thin `include:`-only aggregator whose
-services are gated behind profiles, each with its own lifecycle. The root `compose.yaml` is retired
-to a pointer that names the four. [Infrastructure stacks](../projects/infrastructure-stacks.md) has
-the per-stack profile table and the production Komodo half; [Dev stack env files](../projects/stacks.md)
-covers how each stack's secrets reach Compose.
+section) — `auth`, `mcm`, `audit`, `observability` — each a thin `include:`-only aggregator over that
+stack's component compose files, each with its own lifecycle. No stack is profile-gated as a whole:
+`auth` and `mcm` each start services with no profile at all, and the per-service `profiles:`
+assignments live **in the included component files**, not re-declared in the aggregator. The root
+`compose.yaml` is retired to a pointer that names the four.
+[Infrastructure stacks](../projects/infrastructure-stacks.md) has the per-stack profile table and
+the production Komodo half; [Dev stack env files](../projects/stacks.md) covers how each stack's
+secrets reach Compose.
 
 The `mcm` stack is the one holding the application. Its no-profile services are the test infra
 (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds
@@ -189,7 +199,11 @@ common source of confusion when reasoning about "why can't this user do X":
   consistency bug — see [mc-service](../projects/mc-service.md) for the full measured
   diagnosis (item #468). **The BFF's own store is the opposite case:** `mcm-bff-db` is a plain
   standalone `mongod` with no replica set, because the BFF does single-document upserts only — do not
-  "fix" it to match `mc-db`, and never point one service at the other's database.
+  "fix" it to match `mc-db`, and never point one service at the other's database. That standalone
+  posture has a second consequence feature 073 leans on: with no multi-document transactions
+  available, exactly-once backup scheduling rests on a **single-document atomic claim**, and the
+  Redis leader lock beside it is an optimisation with a TTL guess in it rather than the guarantee —
+  see the [backups runbook](../runbooks/backups.md).
 - **mc-service does not wait for Keycloak, so a Keycloak outage looks like an auth bug, not a
   startup failure.** OIDC discovery and the JWKS fetch run in a background task, so the service binds
   and serves immediately; with Keycloak unreachable it still answers `/health` but rejects *every*
