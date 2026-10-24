@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "554c28f1eeb60d8f5e39679196a5141fa00c2144",
-  "coveredAt": "2026-10-24T18:10:38.235Z",
+  "coveredCommit": "42524608f221462ef724f93f394823fc163feb8a",
+  "coveredAt": "2026-10-24T21:11:49.925Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 846,
-    "headCommit": "4676070b0d4d58dc58a404e9fa4c44fe3cd60213",
+    "headCommit": "ed6dc765f2462bcac45386c023f0d92f95c2b89f",
     "markerBefore": "ac74233138ed2ec03d79108b4175e84809686194",
     "slices": [
       {
@@ -53,29 +53,53 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "local-dev.md",
+          "prod-data-tier-auth.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-data-tier-auth.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md; openwiki/runbooks/prod-data-tier-auth.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "process",
+        "pages": [
+          "constitution.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: .specify/memory/constitution.md changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/constitution.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-24T18:10:38.673Z"
+    "updatedAt": "2026-10-24T21:11:50.412Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 4,
-    "elapsedSeconds": 2205,
+    "pagesWritten": 8,
+    "elapsedSeconds": 2204,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 352,
+    "calls": 504,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2105409,
-    "cached": 35365626,
+    "uncached": 1920355,
+    "cached": 45108134,
     "cacheWrite": 0,
-    "output": 831567,
-    "reasoning": 744911,
-    "ms": 5553479,
-    "estCostUsd": 1.8417,
+    "output": 967809,
+    "reasoning": 836110,
+    "ms": 5885548,
+    "estCostUsd": 2.0081,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -85,12 +109,13 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "invariants/published-port-reservation.md",
-        "runbooks/prod-reboot-resilience.md"
+        "runbooks/local-dev.md",
+        "runbooks/prod-data-tier-auth.md",
+        "process/constitution.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 1.8417,
+      "estCostUsd": 2.0081,
       "rateLimited": null
     }
   ],
