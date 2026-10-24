@@ -82,11 +82,6 @@
   justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse-worker 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
-  id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream mongodb-community-server 8.0.34-ubi9 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
 - image: 'langfuse/langfuse:4\.56\.0'
   id: 'GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr'
   justification: 'next 16.3.8 bundled in langfuse 4.56.0 (fix 16.4.1). A clean image EXISTS — langfuse/langfuse and langfuse-worker 4.68.0 (next 16.4.2, Trivy-verified 2026-10-23) — but 4.57-4.68 add ClickHouse and Postgres schema (billing ledger 4.60, audit-event relay 4.59/4.61), so the bump is a stateful migration taken as its own ADR-0002 PR, web and worker together. Delete these entries in that PR. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
@@ -102,10 +97,18 @@
   justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 8.0.8 — feature 036 tried 8.0.26 but it (a) still bundles a pre-fix Go 1.25.5 binary (< fix 1.25.7; Trivy-verified) so it does NOT clear this Critical, and (b) came up UNHEALTHY on the CI rootless runner, breaking bring-up. No net benefit → stay on the long-stable 8.0.8. Internal-only; re-triage when a Go≥1.25.7 mongo image ships.'
-  addedBy: 'seed'
+- image: 'mongodb/mongodb-community-server:9\.0-ubi9'
+  id: 'CVE-2026-114406'
+  justification: 'Base-image CA bundle (ca-certificates 2025.2.80_v9.0.305-91.el9), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). RE-KEYED 8.0.8-ubi9 -> 9.0-ubi9 with PR #817 (2026-10-24), exactly as otel-lgtm was re-keyed with its bump: same CVE, same justification, same expiry — the operator-approved 2026-10-23 acceptance covered this advisory on the mongo store, and #817 deletes the 8.0.8 entry it replaces (which would otherwise fail UNMATCHED). Trivy 0.74.0 on the newest 9.0-ubi9 (9.0.4-ubi9-20261023T064549Z, index sha256:2cb58a8d…): this is its ONLY blocking finding, so no newer 9.0 UBI9 build clears it today. Internal-only (backend-network, no published port). Flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete once the image is a clean rebuild.'
+  addedBy: 'claude (re-keyed from the operator-approved 8.0.8 entry; PR #817)'
+  expiry: '2026-11-20'
+# ── mongodb/mongodb-community-server:8\.0\.8-ubi9 — SEED ENTRY DELETED 2026-10-20 (feature 081 US8a, T057) ──
+# CVE-2025-68121 (Go stdlib, 8 blocking findings on 8.0.8-ubi9) stood here since feature 035. DISCHARGED,
+# not re-keyed: every mongo ref moved to 9.0-ubi9 (9.0.4), which Trivy 0.74.0 with the gate's flags and
+# normalizeTrivy() scans at ZERO blocking findings (T055, research.md R8). A re-keyed entry would match
+# nothing and fail under UNMATCHED ENTRIES; if a fixable Critical returns on 9.0, it re-blocks.
+# It did, once (2026-10-24): CVE-2026-114406 (ca-certificates) landed on every UBI9 image after T055, and is
+# carried by the re-keyed time-boxed entry above — not by this discharged seed.
 - image: 'postgres:18\.6-alpine3\.23'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in Go stdlib. Now on 18.6 (PR #362), which is NOT a remediation — that PR measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6 that 18.3 did, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10); feature 036 had separately verified 18.4-alpine3.24 was no better. Internal-only. NARROWED 2026-09-10 (item #406) from the transitional `18\.[36]` span, now that #362 has landed and 18.3 is no longer referenced — see the otel-lgtm entry below for why the span existed for exactly one merge.'

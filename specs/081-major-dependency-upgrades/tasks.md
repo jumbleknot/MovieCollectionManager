@@ -350,7 +350,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   proposed or widened. The window's PRs (#832–#836) are lock-file maintenance plus a docker group of patch
   and minor bumps only. The same read found `mongodb/mongodb-community-server` v9 under "Pending Status
   Checks", which would have been a bare, fatal bump (item #819). It is now hard-held below 9 in renovate.json,
-  to be lifted only in PR #817.
+  to be lifted only in PR #817. (Lifted in PR #817, 2026-10-24: see T058.)
 
 ---
 
@@ -441,14 +441,37 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   own `normalizeTrivy()`, DB 2026-10-20 — not a CI run: the workflow has no `workflow_dispatch`, so the CI
   scan of this digest is T057's own PR. T057 deletes the discharged 8.0.8 allowlist entry. Evidence:
   research.md R8.
-- [ ] T056 [US8] Local rehearsal on a copy of real-shaped data: backup → per-collection `countDocuments`
+- [X] T056 [US8] Local rehearsal on a copy of real-shaped data: backup → per-collection `countDocuments`
   (movie store + BFF store) → FCV per T054 → image move → counts → restore onto 8.0.8 (rollback rehearsal) →
   counts. **Done when**: all counts identical at every step (SC-005).
-- [ ] T057 [US8] Bump all five refs (`bff/compose.yaml`, `bff/compose.prod.yaml`, `mc-service/compose.yaml` ×2,
+  **Outcome, 2026-10-20 — identical at every step** (copy of the dev volumes in the prod auth shape: rs0 +
+  keyfile + SCRAM, standalone SCRAM): FCV read 8.0/8.0 → dump → 9.0.4 in place → FCV 9.0 → services' index
+  passes → restore onto fresh 8.0.8; counts and index lists hash-identical throughout, SERVER-89953 not
+  seen. **Found**: 9.0-ubi9 runs mongod as uid 1000 (8.0.8: 998) — 9.0 dies `FileNotOpen` on an 8.0.8
+  volume; fixed by T057's re-own wrapper. Every §6 runbook block executed against a prod-shaped stack.
+  Evidence: research.md R8 "T056/T057/T058".
+- [X] T057 [US8] Bump all five refs (`bff/compose.yaml`, `bff/compose.prod.yaml`, `mc-service/compose.yaml` ×2,
   `mc-service/compose.prod.yaml`) with digest; amend constitution's document-database line (human approval).
-- [ ] T058 [US8] Tiers: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mc-service` (replica set,
+  **Outcome, 2026-10-20**: five refs → `9.0-ubi9@sha256:6eefedc8…` (re-resolved; daily rebuild) + the
+  `mongo-data-owner` wrapper (`user: "0:0"`, re-own `/data/db`, `setpriv` to mongod) on the four data
+  services, guarded by `mongo-data-owner.guard.test.mjs` (mutation-RED ×4); 8.0.8 CVE-2025-68121 allowlist
+  entry deleted; constitution 2.6.0 → 2.7.0 (`9.0-ubi9`, operator-approved 2026-10-20); renovate.json
+  unchanged (no 8.0 pin exists; the stateful-major approval rule is name-based). Runbook: prod-data-tier-auth
+  §6, local-dev uid note.
+- [X] T058 [US8] Tiers: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mc-service` (replica set,
   cascade-delete transaction, collation indexes), `pnpm nx test:integration mcm-app` (BFF store, backup
   specs), `pnpm nx e2e mcm-app`, `pnpm nx infra-scan infrastructure-as-code`. **Done when**: green, 0 skipped.
+  **Outcome, 2026-10-20 (dev stack on 9.0.4, FCV 8.0)**: mc-service integration 187 passed / 0 ignored;
+  mcm-app integration 401/401, 0 skipped (after `gen-dev-env.mjs` fixed a stale pre-080 env file); gate-tier
+  E2E incl. agent specs 181 passed / 0 skipped / 0 flaky; infra-scan of the 9.0 digest 0 blocking, gate
+  passed. CI on the PR is the full sweep and the fresh-volume (FCV 9.0) run.
+  **CI (PR #817): red on `app-e2e` only — mongod 9.0.4 refuses host kernels 6.19.0–7.0.13 (SERVER-121912);
+  the shared CI/prod host is in that range. T059 is BLOCKED on a host kernel ≥ 7.0.14** (research.md R8).
+  **Unblocked 2026-10-24 (item #819)**: the host runs Ubuntu `7.0.0-38-generic` (`/proc/version_signature`
+  upstream 7.0.14), which 9.0.4's Ubuntu exemption (SERVER-131779) admits — the check reads that file when
+  `uname -v` says Ubuntu, not `uname -r` (measured; research.md R8 "2026-10-24"). Rebased onto main; digest
+  re-resolved to `2cb58a8d…` (9.0.4, 2026-10-23 build); the `<9` Renovate hold lifted; runbook P0 fixed to read
+  what mongod reads. CI re-run pending.
 - [ ] T059 [US8] Production cutover (operator-run, per `docs/runbooks/prod-data-tier-auth.md` +
   T056's procedure): counts before/after recorded in the PR. **Done when**: equal counts; PR 8a merged.
 

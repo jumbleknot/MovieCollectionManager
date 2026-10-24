@@ -130,13 +130,37 @@ services:
       retries: 3
 
   mcm-bff-store-mongo:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b701c3fb846876394c8137a9b42c35791ed1c8a931d8efa2cb0c8dd81
+    image: mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79
     container_name: mcm-bff-store-mongo
     restart: always
     # feature 026 (Workstream A): SCRAM auth on the standalone BFF store. Standalone (no --replSet) → NO
     # keyfile needed (no replica-set members to authenticate — a keyfile is only for member auth). This
     # is the ENFORCED end-state; the operator runs the staged --transitionToAuth cutover per
     # docs/runbooks/prod-data-tier-auth.md so the populated volume is not locked out during the switch.
+    # feature 081 US8a: 9.0-ubi9 runs mongod as uid 1000; 8.0.8-ubi9 ran it as uid 998, so every volume
+    # written by 8.0.8 is foreign-owned and 9.0 dies at start ("Unable to read the storage engine
+    # metadata file ... storage.bson", FileNotOpen — MEASURED 2026-10-20). The container therefore
+    # STARTS as root only to re-own /data/db once (skipped when already owned; `.mongodb` is mongosh's
+    # client log dir — HOME is /data/db — which exec'd mongosh writes as root), then drops to the
+    # image's mongod user with setpriv before anything else runs. mongod itself never runs as root.
+    # Guarded by scripts/__tests__/mongo-data-owner.guard.test.mjs.
+    user: "0:0"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        if [ "$$(id -u)" = 0 ]; then
+          if [ -n "$$(find /data/db -path /data/db/.mongodb -prune -o ! -user mongod -print -quit)" ]; then
+            echo "mongo-data-owner: re-owning /data/db to mongod (uid $$(id -u mongod))"
+            chown -R mongod:mongod /data/db
+          fi
+          exec setpriv --reuid=mongod --regid=mongod --init-groups "$$@"
+        fi
+        exec "$$@"
+      - mongo-data-owner
+      - python3
+      - /usr/local/bin/docker-entrypoint.py
     command: ["mongod", "--auth", "--bind_ip_all"]
     # #PROD no published port — internal to mcm-bff-network only.
     volumes:

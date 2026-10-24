@@ -3178,44 +3178,36 @@ test('(2026-10-09) every stateful datastore MAJOR requires dashboard approval; i
   }
 });
 
-// ── 2026-10-23: MongoDB 9 is HARD-held below 9 (item #819, PR #817) ───────────────────────────────────
-// The dashboard listed `mongodb/mongodb-community-server` v9 under "Pending Status Checks" (2026-10-23),
-// i.e. past the approval gate and waiting only on release age. A bare tag bump would be fatal on this
-// host: mongod 9.0.4 refuses to start on Linux 6.19.0–7.0.13 (log id 12257600, SERVER-121912) and the
-// homelab kernel is 7.0.0-27 with no Ubuntu 26.04 package leaving that range; and 9.0 runs mongod as uid
-// 1000 where 8.0.8 used 998, so it cannot open an 8.0 volume without PR #817's re-own wrapper. The
-// approval gate (rule above) is "not by accident"; this is "not until #819 unblocks" — so a ceiling.
-// LIFT IT IN PR #817 (rebased), which carries the wrapper, the constitution line and the T059 runbook.
-const MONGO_HELD_CEILING = '<9';
-test('(item #819) mongodb-community-server is held below 9 on every track', () => {
+// UPDATED AT THE CAUSE — spec 081 US8a (item #819, PR #817). These tests asserted the `<9` HARD hold
+// added 2026-10-23, when mongod 9.0.4 refused this host's kernel (Ubuntu 7.0.0-27, upstream 7.0.6;
+// SERVER-121912) and 9.0's uid-1000 mongod could not open an 8.0 volume. Both premises are discharged:
+// the host runs 7.0.0-38 (upstream 7.0.14) since 2026-10-24, which 9.0.4's Ubuntu exemption
+// (SERVER-131779) admits, and PR #817 itself moves every mongo pin to 9.0 with the re-own wrapper. A
+// `<9` left behind would block the 9.0 actually deployed and make Renovate propose a downgrade. As for
+// opensearch (071), langfuse (072) and the observability postgres (US8b), a discharged hold and a deleted
+// one look identical from the absence of `allowedVersions`, so what is asserted is the SUCCESSOR: no
+// ceiling, the next major (10) still needs a dashboard tick, and the patch stream stays automatic.
+test('(081 US8a, item #819) the mongo hold is DISCHARGED — replaced by approval, not by nothing', () => {
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(heldImage('mongodb/mongodb-community-server', updateType)),
-      MONGO_HELD_CEILING,
-      `mongodb ${updateType} is not held below 9 — mongod 9 crash-loops on this host's kernel (SERVER-121912) ` +
-        'and cannot open an 8.0 volume without PR #817; lift the hold only in #817.',
+      null,
+      `mongodb ${updateType} still carries a version ceiling — PR #817 moved every mongo pin to 9.0, so a ` +
+        '`<9` left behind blocks the version actually deployed and Renovate would propose a downgrade.',
     );
   }
-});
-
-test('(item #819) the mongo ceiling ADMITS the 8.x line and nothing from 9 on', () => {
-  const ceiling = resolvedAllowedVersions(heldImage('mongodb/mongodb-community-server', 'minor'));
-  for (const version of ['8.0.8', '8.0.34', '8.2.6']) {
-    assert.ok(allowedVersionsPermits(ceiling, version), `the mongo hold '${ceiling}' blocks ${version}`);
-  }
-  for (const version of ['9.0.0', '9.0.4', '10.0.0']) {
-    assert.ok(!allowedVersionsPermits(ceiling, version), `the mongo hold '${ceiling}' ADMITS ${version}`);
-  }
-});
-
-test('(item #819) the mongo hold catches no other datastore (control)', () => {
-  for (const depName of STATEFUL_DATASTORES.filter((d) => d !== 'mongodb/mongodb-community-server')) {
-    assert.notEqual(
-      resolvedAllowedVersions(heldImage(depName, 'major')),
-      MONGO_HELD_CEILING,
-      `${depName} picked up the mongo-only ceiling`,
-    );
-  }
+  assert.equal(
+    resolvedRuleValue(heldImage('mongodb/mongodb-community-server', 'major'), 'dependencyDashboardApproval'),
+    true,
+    'a mongodb MAJOR no longer requires dashboard approval — 8 -> 9 needed a data-owner migration and a host ' +
+      'kernel change; the next major is a data migration too, never a Friday-window merge.',
+  );
+  assert.equal(
+    resolvedRuleValue(heldImage('mongodb/mongodb-community-server', 'patch'), 'dependencyDashboardApproval'),
+    undefined,
+    'a mongodb PATCH requires dashboard approval — the within-major patch stream is the security patch ' +
+      'stream for the running image and must stay automatic.',
+  );
 });
 
 // UPDATED AT THE CAUSE — spec 081 US8b. This test asserted the `<17` HARD hold on the shared

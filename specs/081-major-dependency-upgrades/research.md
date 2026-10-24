@@ -465,6 +465,139 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   scans a not-yet-referenced image; the authoritative CI scan of this digest is the `infra-image-scan` job on
   T057's own PR, which runs Trivy because the compose refs change. This entry is a local scan with the gate's
   pinned version, flags and normalizer — not a CI run.
+- **MongoDB — T056/T057/T058 outcome, measured 2026-10-20: rehearsal identical at every step; one
+  blocker found and fixed in the compose (the image's uid changed).**
+
+  **Digest re-resolved at edit time** (Docker Hub tag API, never constructed): `9.0-ubi9` = `9.0.4-ubi9` =
+  index `sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627` (amd64 manifest
+  `sha256:f9f4895e…`, last_updated 2026-10-20 06:49 UTC) — the daily rebuild already moved it off T054's
+  `35497f83…`. In-image: `mongod v9.0.4`, `mongosh 2.6.0`, RHEL 9.8, `/usr/bin/setpriv` present.
+
+  **BLOCKER (new fact, not in T054): 9.0-ubi9 runs mongod as uid 1000; 8.0.8-ubi9 ran it as uid 998.**
+  `docker run --entrypoint id` on both digests. Every volume written by 8.0.8 is therefore foreign-owned, and
+  9.0 started on a copy of the dev movie volume died before touching data: `"s":"F" … "Unable to read the
+  storage engine metadata file" … "FileNotOpen" … /data/db/storage.bson`. The image's own entrypoint does not
+  help: started as root it does **not** drop privileges (mongod then runs as uid 0 — measured). Merging a
+  bare ref bump would have crash-looped both prod stores (and every developer's local stack). **Fix, in the
+  five-ref change itself**: each Mongo service that mounts `/data/db` gets `user: "0:0"` and a `sh -c`
+  wrapper that re-owns `/data/db` to `mongod` only when a file is foreign-owned (`find … ! -user mongod
+  -print -quit`, pruning `/data/db/.mongodb` — mongosh's client log dir, because `HOME=/data/db` and exec'd
+  mongosh writes it as root every healthcheck; without the prune the re-own fired on every restart —
+  measured) and then `exec setpriv --reuid=mongod --regid=mongod --init-groups` into the image's entrypoint
+  (prod movie store: into `mongo-entrypoint.sh`). Considered and rejected: `user: "998:998"` (a fresh volume
+  is copy-up-owned by 1000 → CI's fresh volumes break); an operator chown before merge (8.0.8 cannot run on
+  a 1000-owned volume, and the deploy lands ~an hour after the merge, so there is no safe moment); a
+  one-shot chown service (Komodo flags an exited one-shot as an unhealthy stack — compose.prod.yaml's own
+  note). Guard: `scripts/__tests__/mongo-data-owner.guard.test.mjs` (5 tests) asserts all four files carry
+  the same wrapper and executes it against stubbed `id`/`find`/`chown`/`setpriv`. Mutation REDs (each then
+  restored): chown→`true` 3 pass/2 fail; setpriv→plain `exec` 2/3; prune removed 3/2; `user: "0:0"` dropped
+  from mc prod 4/1; restored 5/0.
+
+  **SECOND FINDING — `docker stop` SIGKILLs mongod under the default entrypoint (both images).** PID 1 is
+  `python3 docker-entrypoint.py`, which does not forward SIGTERM: `docker stop -t 30` took the full 30 s and
+  exited 137 with no shutdown log, on 8.0.8 and 9.0. The prod movie store is unaffected (its entrypoint
+  `exec`s mongod: clean, exit 0), but the prod BFF store and both dev stores are killed on every redeploy and
+  reboot (dev startup logs `"Startup from clean shutdown?": false`). Not changed here (behaviour-preserving
+  PR); 9.0 recovered the SIGKILLed 8.0.8 BFF volume from its journal with identical counts, which is exactly
+  what the prod deploy will do. Candidate backlog item.
+
+  **T056 — rehearsal.** Data: a raw `cp -a` of the dev volumes (read-only mount; never started in place) —
+  `mc_db` 21 collections / 70 movies, BFF 14 backup runs + 2 agent configs, every production index
+  including the two `en`/strength-2 collation uniques and the BFF TTL index. Prod auth shape: started 8.0.8
+  unauthenticated (as prod was before feature 026), created `mc_root`/`mc_service_app` and
+  `bff_root`/`bff_app`, restarted the movie store through the committed `mongo-entrypoint.sh` with `--replSet
+  rs0 --keyFile` and the BFF store `--auth` (anonymous `listCollections` → "requires authentication").
+  Counts = per-collection `countDocuments({})` over every non-system DB; index list = every `getIndexes()`
+  entry minus `v`, keys sorted except the `key` document (compound order is significant).
+
+  | Step | mc counts | bff counts | mc indexes | bff indexes | FCV |
+  |---|---|---|---|---|---|
+  | P0 8.0.8 unauth | `mc_db.movie_collections 21`, `mc_db.movies 70`, `mc_test_pool.leases 1`, `mc_test_s0.* 0` | `backup_runs 14`, `user_agent_config 2`, `app_settings`/`backup_destinations`/`backup_jobs 0` | — | — | read: **8.0 / 8.0** (no set needed) |
+  | P1 8.0.8 prod auth shape, `mongodump --archive --gzip` (7 namespaces each, users included) | = P0 | = P0 | 39 lines (baseline) | 11 lines (baseline) | 8.0 |
+  | P2 image move to 9.0.4 in place (after the wrapper re-owned; BFF store SIGKILLed first) | = | = | = | = | 8.0; rs0 PRIMARY |
+  | P2b mc-service restarted (index pass `MongoDB indexes created/verified`) + BFF `ensureBackupIndexes` calls via driver 7.7.0 | = | = | = | = | 8.0 |
+  | P3 `setFeatureCompatibilityVersion:"9.0", confirm:true` (without `confirm` → refused) | = | = | = | = | **9.0 / 9.0**, `term` in rs.conf |
+  | P4 both mongods restarted, mc-service + BFF index passes again (SERVER-89953 check) | = | = | = | = | 9.0 |
+  | P5 rollback: P1 dump → **fresh** 8.0.8 volumes (unauth → `rs.initiate` → `mongorestore` 92/16 docs, 0 failed → prod auth shape), mc-service connects with the restored app user | = | = | = | = | 8.0 |
+
+  All count files hash-identical across P0–P5 (`eb0497d0…` mc, `71cb61ba…` bff); all index files identical
+  across P1–P5 (`ed316f03…`, `73dcc0a2…`). **SERVER-89953 did not appear** on 9.0.4 at FCV 9.0: no index
+  gained `collation: {locale: "simple"}`. Extra rollback evidence (the "after a soak" case): a dump taken
+  **from 9.0 at FCV 9.0** restored into a fresh 8.0.8 (8.0.8's own `mongorestore` 100.12.2, archive from
+  100.19.1) gave identical counts and indexes for both stores. **Credential-free FCV read**: mongod logs
+  `"id":5853300 … "current featureCompatibilityVersion value"` at startup, on 8.0.8 and 9.0.
+
+  **T059 procedure validated by execution**: every block of `docs/runbooks/prod-data-tier-auth.md` §6 was run
+  verbatim against a prod-shaped stack — the real `compose.prod.yaml` files from this branch (container names,
+  network and volume overridden, `--project-directory /workspaces/mcm/...` for the keyfile bind mount), a
+  fresh copy of the dev data, `mc-service:latest` — through pre-flight, P7 rehearsal, a compose-driven deploy
+  (`mongo-data-owner: re-owning …` once per store), V1–V4, F2, V2/V3 at FCV 9.0, RB0–RB3 and an 8.0.8 restart
+  on the restored volume (`8.0.8 FCV=8.0 PRIMARY`, `ROLLED-BACK-COUNTS-EQUAL`, `ROLLED-BACK-INDEXES-EQUAL`,
+  mc-service index pass OK). The first rollback attempt also showed RB2's in-use guard refusing to touch a
+  mounted volume, and 8.0.8 dying `FileNotOpen` on a volume 9.0 had run on — why RB3 is gated on RB2.
+
+  **T058 — tiers, dev stack on 9.0.4 (dev volumes at FCV 8.0, the post-merge soak state; CI's fresh volumes
+  are initialised at FCV 9.0, so both states are covered).** The dev volumes were copied first and restored
+  byte-identical afterwards (md5 of every file), so `main`'s 8.0.8 stack still opens them.
+  - `CARGO_BUILD_JOBS=4 MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mc-service`: 4 binaries, **187
+    passed, 0 failed, 0 ignored** (collections 41, health 8, movies 132, pool 6) — including
+    `delete_cascades_to_movies`, `delete_is_atomic_on_cascade_failure` (the transaction) and the
+    case-insensitive duplicate tests (collation uniques). (The first run's nx summary hid the libtest lines;
+    re-run with `--output-style=static`.)
+  - `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration mcm-app -- --maxWorkers=2`: **58/58 suites, 401/401
+    passed, 0 skipped.** First attempt 23 failed in 4 backup suites — an instrument fault: the copied
+    `.env.local`/`.env.docker` still named the pre-feature-080 `mcm-bff-backup-minio` host; `node
+    scripts/gen-dev-env.mjs` upgraded exactly those retired defaults (its own `RETIRED_BACKUP_DEFAULTS`).
+    The shared checkout's env files are stale the same way.
+  - `pnpm nx e2e mcm-app` equivalent (the nx target cannot launch chromium here — runbook): Playwright
+    v1.63.0 container, `E2E_TIER=gate`, dev-container BFF, `E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1
+    E2E_REQUIRE_BACKUP_TARGETS=1`, agent stack from `agent-stack.mjs` (Ollama `qwen2.5` for both models —
+    `qwen2.5:32b` is not installed): **181 passed, 0 skipped, 0 flaky, 0 failed (4.1 m).** A web-only first
+    run without the agent stack was 158 passed / 17 skipped / 2 failed (`assistant.spec.ts` needs the
+    gateway) — not counted. App images were the local `mcm-bff:latest` (10-19) and `mc-service:latest` (10-11,
+    pre-bson-3); CI's app-e2e builds both from this branch.
+  - `pnpm nx infra-scan infrastructure-as-code -- --image <9.0 ref>` (Trivy 0.74.0 via the pinned image, DB
+    `ghcr.io/aquasecurity/trivy-db:2`; `mirror.gcr.io` unreachable here) + `node
+    scripts/check-infra-image-findings.mjs`: **0 blocking**, gate passed with the 8.0.8 entry deleted; fixable
+    High 32, Medium 108, Low 8 (same as T055). The full sweep is CI's `infra-image-scan` job on this PR.
+
+  **CI on PR #817 (head `fd4f99fc`) — BLOCKER #2, a host precondition, found by app-e2e (run 5723).** Every
+  required context passed except `app-ci / app-e2e`: `mc-service-store-mongo` crash-looped with `"s":"F" …
+  "id":12257600 … "MongoDB cannot start: Linux kernel versions 6.19.0 through 7.0.13 have a known
+  incompatibility with this version of MongoDB. See https://jira.mongodb.org/browse/SERVER-121912"`. The string
+  is compiled into 9.0.4's `mongod`; `strings` shows no override parameter. This sandbox runs kernel **7.0.14**
+  — one patch above the range — which is why every local tier passed: the local result was true for this
+  kernel and said nothing about the runner's. The CI and prod daemons share one physical host
+  (Server-Setup-Runbook), so **prod's kernel is in the range too: merging today would crash-loop both prod
+  stores.** Not fixable in this repository; the remedy is a host kernel ≥ 7.0.14 (or a later MongoDB build
+  that lifts the check). Runbook §6.0/P0 now checks `uname -r` first and blocks. `infra-image-scan` (full
+  sweep) passed; `app-ci / dast` (advisory) failed in the same bring-up.
+
+  **2026-10-24 — BLOCKER #2 DISCHARGED (item #819).** Two premises above were wrong, and one was mis-measured:
+  - *"Ubuntu reports every kernel as 7.0.0-NN, so apt cannot leave the range"*: 9.0.4 carries
+    **SERVER-131779** ("Add linux the kernel 7.0.14 exemption for ubuntu"; fix versions 9.0.4, 8.3.14, 8.0.35).
+    Measured in this sandbox with an LD_PRELOAD shim faking `uname()` and the `/proc` kernel files under
+    `9.0-ubi9` (9.0.4): Ubuntu `7.0.0-27` / upstream 7.0.6 → refused (12257600); `7.0.0-38` / 7.0.14 → starts.
+    Ablation: the exemption needs **both** `Ubuntu` in `uname -v` **and** `/proc/version_signature`'s last field
+    ≥ 7.0.14; the ABI number and `/proc/version` play no part. SERVER-136848 (open) records `7.0.0-38` =
+    upstream 7.0.14 — the `linux-generic` candidate this host already had.
+  - *"no override"*: no startup parameter, but `GLIBC_TUNABLES=glibc.pthread.rseq=1` also passes the guard (it
+    switches TCMalloc to per-thread caches, `usingPerCPUCaches: false`, which is 8.0.8's default mode). Not
+    used: the kernel route is supported and needs no deviation.
+  - **The runbook's P0 was itself wrong**: `uname -r` reads `7.0.0` on every Ubuntu 26.04 GA kernel, so it would
+    have printed `KERNEL-BLOCKED` on a host mongod accepts. P0 now applies the measured rule, checked against
+    seven simulated kernels (Ubuntu -27/-38/6.8/7.1, non-Ubuntu 7.0.5/7.0.14, Ubuntu without the file).
+  The operator upgraded the host the same day: `7.0.0-38-generic`, `/proc/version_signature` =
+  `Ubuntu 7.0.0-38.38-generic 7.0.14`. **Digest re-resolved at rebase** (Docker Hub tag API): `9.0-ubi9` =
+  `9.0.4-ubi9` = `9.0.4-ubi9-20261023T064549Z`, index `sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79`
+  (amd64 manifest `sha256:fe9346916070…`). Renovate's `<9` hold (PR #837) is lifted here; the successor is the
+  stateful-major approval rule. Also found: `8.0-ubi9` resolves to **8.0.34**, whose guard reads "6.19 and
+  newer" with no Ubuntu exemption — any 8.0.x below 8.0.35 crash-loops on this host whatever its kernel.
+
+  **Renovate note (not changed):** `9.0-ubi9` is rebuilt daily, so a digest refresh of it ages against a tag
+  pushed every day — the same treadmill `renovate.json` describes for Langfuse `:4`. The constitution's
+  approved tag is `9.0-ubi9`; if digest refreshes never arrive, the remedy is the immutable dated tag
+  (`9.0.4-ubi9-<timestamp>`), not a cooldown exemption.
 - **Observability postgres 16** is held by `allowedVersions: "<17"` because one pin backs both
   `langfuse-postgres` and `unleash-postgres`, and `langfuse-postgres-shared-pin.guard.test.mjs` asserts it.
   It stays in scope as its own PR, moving **both** databases together, updating the guard **at its cause**
