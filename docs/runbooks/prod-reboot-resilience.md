@@ -184,7 +184,7 @@ The mechanism and its proof are in §2c. **Fix:** every prod compose service is 
 | Forgejo (forge + db) | `/home/prod/forgejo/compose.yaml` |
 | Komodo (core/periphery/ferretdb/postgres) | `/home/prod/komodo/ferretdb.compose.yaml` |
 | cloudflared (public tunnel) | `/home/prod/cloudflared/compose.yaml` |
-| beszel, dozzle, rustfs, uptime-kuma | `/home/prod/<name>/compose.yaml` — `rustfs` is the Nx-cache object store that replaced MinIO (feature 080). The old MinIO project is retired: do not list or restart it (its orphans are covered in Part 6) |
+| beszel, dozzle, rustfs, uptime-kuma | `/home/prod/<name>/compose.yaml` — `rustfs` is the Nx-cache object store (feature 080). The object-store project it replaced is retired: do not list or restart it (its orphans are covered in Part 6) |
 
 > **Interim runtime hardening** (already applied, survives until each container is next *recreated*): `docker update --restart always $(docker ps -q)`. The committed compose `always` values + host-compose edits are what make it durable across recreates/rebuilds.
 
@@ -214,9 +214,11 @@ prod$ docker update --restart no <container>   # stays Exited across the reboot
 prod$ docker rm <container>
 ```
 
+<!-- history:begin -->
 Before the 2026-10-24 reboot, this was done for the retired MinIO containers (`langfuse-minio`,
 `langfuse-minio-init`, `minio-minio-1`) and the finished one-shots (`rustfs-createbucket-1`,
 `minio-createbucket-1`, `mc-service-store-mongo-rs-init`). They stayed `Exited`, as intended.
+<!-- history:end -->
 
 ### Act as `prod` through a real user session
 
