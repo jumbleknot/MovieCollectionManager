@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Local dev infrastructure & environment variables
-description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — plus the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
+description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — the mcm stack's unprofiled stores and their replica-set and MongoDB 9.0 ownership rules — plus the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
-tags: [docker-compose, local-dev, secrets, keycloak, runbook]
+tags: [docker-compose, local-dev, secrets, keycloak, mongodb, runbook]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -58,7 +58,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -102,6 +102,33 @@ and the profile assignments live in the component compose files rather than in t
 So `pnpm nx up-auth infrastructure-as-code` really does start Keycloak with no profile, while the
 `mcm` stack's *unprofiled* bring-up is its stores only — the `up-mcm` target adds `--profile app`
 for you, and `bff-*` and `agents` stay opt-in.
+
+## The `mcm` stack's three stores, and two different Mongo shapes
+
+The unprofiled `mcm` bring-up is three stores, and the two Mongo ones are deliberately **not** the
+same shape — the difference is the reason each exists:
+
+- **`mc-service-store-mongo` is a single-member replica set**, started with `--replSet rs0`, plus a
+  one-shot `mc-service-store-mongo-rs-init` sidecar that mc-service waits on
+  (`service_completed_successfully`). The replica set exists because mc-service's cascade delete runs
+  inside one multi-document transaction, which a standalone `mongod` cannot serve. The sidecar
+  initiates `rs0` with `host: 'localhost:27017'` — a name that resolves both from the host (through
+  the published `27017`) and from mc-service in Docker, which connects with `directConnection=true`
+  and so never chases the member announcement. **Never bring it up with a bare `docker run`:** that
+  can initialise the set with the Docker-internal name instead, after which host-side `cargo test`
+  fails with "No such host is known" while the container itself looks healthy; the repair is an
+  `rs.reconfig(…, { force: true })` naming `localhost:27017`. A failed or interrupted integration run
+  also leaves `mc_test_*` databases behind (one crash left 31) — harmless, but they accumulate, and
+  the runbook's cleanup command anchors its regex on the 32-hex suffix so the real `mc_db` can never
+  match.
+- **`mcm-bff-store-mongo` is a plain standalone `mongod`** — no `--replSet`, no `directConnection`,
+  no rs-init sidecar. The BFF store does single-document upserts only, so it needs no transactions.
+  It publishes on `27018` so it cannot collide with the movie store's `27017`, and it is the store the
+  BFF's own boundary owns: the BFF must not reach across a service boundary into mc-service's
+  database.
+- **`mcm-bff-cache-redis` is the third**, and the BFF's login path reads it with no typed wrapper
+  around the first call — with Redis down, `/login` returns a bare 500 "Authentication failed" rather
+  than an infrastructure error, so check Redis first when login breaks.
 
 ## One-time bootstrap (per machine)
 
@@ -170,7 +197,9 @@ generator:
 - **Seeded once** — developer knobs and host-reachable URLs (`MC_DB_URL`, `MC_SERVICE_PORT`,
   `RUST_LOG`, `MONGO_URL`, `BFF_BASE_URL`, the backup encryption/tick keys, the destination
   allow-list). Absent keys are appended; keys already present are left exactly as the developer set
-  them, so a tuned `RUST_LOG` or a redirected Mongo survives a re-run. Measured 2026-09-20: with
+  them, so a tuned `RUST_LOG` or a redirected Mongo survives a re-run. The one exception is a value
+  byte-equal to a *retired generated default* (feature 080's backup S3 host rename), which is upgraded
+  in place — see the gotcha below. Measured 2026-09-20: with
   `.env.local` silent on the host-reachable service URLs, the integration suites fell back to
   `.env.docker`'s Docker-internal names and died on DNS resolution — a name no process outside the
   compose network can resolve.
@@ -196,7 +225,10 @@ carries no secret values on any path.
   `http_authz_test::*` cases that mint a real ROPC token) were the second half of the same defect
   and had been wrongly attributed to "needing a replica-set MongoDB". After the fix: **41 passed /
   0 failed**. A file that exists but lacks `MC_DB_URL` fails exactly like no file at all, which is
-  why the generator keys on the variable, not the path.
+  why the generator keys on the variable, not the path. The integration harness's own panic message
+  now names the generator command and the runbook section as well as the variable, so the two causes
+  — this file, versus the replica-set MongoDB the `http_authz_test::*` cases genuinely need — stay
+  apart at the moment of failure instead of three weeks later.
 - **The generator names the one `.env.local` it deliberately does NOT create
   (`agents/movie-assistant/`),** which carries the operator's own Anthropic credential — a generator
   step that quietly does nothing reads identically to one nobody thought of.
@@ -208,7 +240,9 @@ carries no secret values on any path.
   wait for Keycloak: OIDC discovery and the JWKS fetch run in a background task, and the service
   binds and serves immediately. If discovery fails, `/health` still answers and **every protected
   request is rejected with 401**, so the symptom is a working-looking backend that refuses every
-  login.
+  login. The asymmetry is worth holding on to: an unreachable **`MC_DB_URL` is a hard startup
+  failure** — mc-service connects and creates its indexes before it serves — while an unreachable
+  Keycloak is not.
 - **A password-on-first-init credential (Postgres / OpenSearch) is baked into its data volume on
   first boot and ignores later env changes.** Rotating one for real requires regenerating the `.env`
   (`--force`) *and* recreating the service against a fresh volume — otherwise the container keeps the
@@ -216,9 +250,36 @@ carries no secret values on any path.
   / app-secret values have no such persistence and rotate on a plain restart, and **RustFS is in that
   second group rather than the first** (feature 080): it does not bake its key pair into the drive, so
   rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus
-  recreating the RustFS service **and its bucket-init one-shot** (which passes the same pair to `curl`)
-  — no volume is touched. That is a measured property, not an assumption: starting RustFS on a migrated
-  drive with a different pair was readable by the new pair and not the old.
+  recreating every consumer of that key — no volume is touched. That is a measured property, not an
+  assumption: starting RustFS on a migrated drive with a different pair was readable by the new pair
+  and not the old. **Recreate the consumers together, because the key reaches more than the server.**
+  On the backup side that is the `mcm-bff-backup-rustfs` service **and its bucket-init one-shot**
+  (which passes the same pair to `curl`); on the Langfuse side the one `observability.env` key is
+  interpolated by four services in the same file — `langfuse-web` and `langfuse-worker` (each holding
+  two S3 upload keys, through a shared environment anchor), the `langfuse-rustfs` server, and
+  `langfuse-rustfs-init`. Recreate only the store and the uploaders keep the old key, so uploads fail
+  against a store that is healthy.
+- **MongoDB 9.0 runs `mongod` as uid 1000, where 8.0.8 ran it as 998 — so an older data volume is
+  foreign-owned and 9.0 refuses to start on it.** The symptom is `Unable to read the storage engine
+  metadata file ... storage.bson` (`FileNotOpen`, measured 2026-10-20), and nothing in the image
+  fixes it: its own entrypoint, started as root, does not drop privileges. Both Mongo services
+  therefore start as root **only** to re-own `/data/db` once — logging
+  `mongo-data-owner: re-owning /data/db to mongod (uid …)` — and then `setpriv` down to the image's
+  `mongod` user before `mongod` runs, so `mongod` itself never runs as root. The check skips
+  `.mongodb`, which is mongosh's own client-log directory (its `HOME` is `/data/db`), so an exec'd
+  `mongosh` does not trigger a re-own on every start. A bare `docker run` gets none of this and needs
+  the `chown` done by hand against the volume. Both halves of the wrapper are pinned by
+  `scripts/__tests__/mongo-data-owner.guard.test.mjs`, which runs it against stubs and asserts the
+  script text is identical across all four Mongo-bearing compose files. Going **back** to 8.0.8 on a
+  volume 9.0 has already run on is not supported — restore a dump onto a fresh volume instead.
+- **A seeded-once default can name a host that no longer exists, so the generator upgrades it in
+  place (feature 080).** `gen-dev-env.mjs`'s seed-once rule protects what a developer *chose*, not
+  what the generator itself wrote before a rename: a `.env.local` value byte-equal to a retired
+  generated default — the pre-080 backup S3 endpoint and the destination allow-list entry naming that
+  retired container — is rewritten to the RustFS host, in place and exactly once. Any other value,
+  including a developer's own endpoint, is left exactly as it is. Without this an existing box keeps
+  sending the BFF a host that no longer resolves while `.env.docker` (fully generated) admits only the
+  new one, and the suites fail on "destination not allowed" — which reads as a guard bug.
 - **`docker compose down --volumes` only wipes transient volumes.** Every persistent data volume is
   declared `external: true` with an explicit name in its own service compose file (so the stack's
   `include:` merge does not prefix it with the project name) and therefore survives. Wiping real data
@@ -252,7 +313,9 @@ carries no secret values on any path.
   gateway starts but every tool call fails closed (chat works; add/query/organize don't).
   `pnpm nx up-mcm-agents infrastructure-as-code` wraps this fetch-and-inject step; it is distinct from
   `scripts/agent-stack.mjs`, the light E2E variant that runs the agent stack with an in-memory
-  checkpointer.
+  checkpointer. The dev compose gateway is **Ollama-only** (`MODEL_PROVIDER=ollama`, supervisor and
+  specialist defaults `qwen2.5` / `qwen2.5:32b`), so host Ollama has to be serving those models; the
+  graph also takes ~20–40 s to build before the gateway's health endpoint answers.
 
 ## The realm check: a missing file is not the only way a credential goes wrong
 
@@ -310,6 +373,17 @@ no secret values) and the per-case procedure:
 credentials the realm refuses. It is the escape hatch for an unusual realm, **not a fix** — and the
 run says so in its own output rather than quietly reverting to the old unconditional claim.
 
+**The whole fresh-box path has its own end-to-end assertion.** `node verify/verify-fresh-realm-seed.mjs`
+provisions from scratch (wipe the volume → both generators → `pnpm nx up-auth infrastructure-as-code`)
+and then proves the seed with a real ROPC token grant: `e2e-test-user` authenticating against
+`mcm-bff-test` with the minted password and client secret, which only succeeds if the realm, its
+clients and `stacks/auth.env` are all coherent. `--assert-only` skips provisioning and asserts against
+an already-running auth stack. Its wipe encodes the ordering trap that makes the whole recovery work:
+the containers mounting the external volume must be **force-removed first**, because `down -v` does not
+remove an `external: true` volume and `docker volume rm` fails silently while a container still
+references it — leaving Postgres's original password in place, after which Keycloak dies with
+`password authentication failed for user "keycloak"` and the realm never imports.
+
 ## The missing-file case (feature 048)
 
 **Symptom.** An integration suite reports skips — or, under `MCM_REQUIRE_LIVE_STACK=1`, a wall of
@@ -339,13 +413,25 @@ set of documented `.env.local` files from the runbooks and fails if one is neith
 declared exception, so a documented file that nothing writes shows up here rather than three weeks
 later in someone's `nx affected`. The same guard pins the two loudness rules — a deliberately skipped
 file must be named in the generator's output, and an `mcm.env` missing `BACKUP_TEST_*` keys must be
-reported with the back-fill command while printing no value. `scripts/__tests__/gen-dev-secrets.guard.test.mjs`
+reported with the back-fill command while printing no value — and the feature-080 seed-once
+exception, in both directions: a `.env.local` holding the pre-080 backup endpoint and allow-list
+defaults is migrated to the RustFS host in place (one occurrence, no duplicate line, the retired host
+gone), while a developer's own endpoint is left untouched. It also pins the item #227 file's
+behaviour from the other side: an absent `backend/mc-service/.env.local` is created with the
+documented local values, an existing one keeps `RUST_LOG`, `MC_DB_URL` and unrelated keys, and a file
+that exists but lacks `MC_DB_URL` has it appended.
+`scripts/__tests__/gen-dev-secrets.guard.test.mjs`
 pins the item #552 completion rule from the other side: an existing `mcm.env` missing the four
 `BACKUP_TEST_*` keys gets all four seeded while prior values stay byte-for-byte, an empty
 `<generate:KIND>` key is filled **in place** (one occurrence, not a duplicate), a template-blank
 fixture key (its synthetic `REGISTRY_HOST=`, standing in for a per-machine value) is not treated as
 missing, and no fixture or minted value is ever printed.
-Both guards run the real script inside a throwaway mini-repo, so they are offline and keyless.
+Both guards run the real script inside a throwaway mini-repo, so they are offline and keyless. The
+realm check is switched off for the file-behaviour cases for exactly that reason, and item #395's own
+cases turn it back on against a **stub Keycloak on loopback** — which is how the refusal path can be
+asserted without a live realm: a 401 from the stub must leave a working `.env.e2e.local` byte-for-byte
+intact, write nothing, exit non-zero, name the stale credential and quote the realm's own
+`unauthorized_client`, print no secret value, and never emit the equality claim.
 
 See [testing tiers](../invariants/testing-tiers.md) for how these local suites relate to the gating
 tiers, [Keycloak](../projects/keycloak.md) for the realm and its clients, and

@@ -1,27 +1,12 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — the immutable core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
+description: The repository's ratified, versioned constitution — currently v2.7.0, ratified 2026-03-08 and last amended 2026-10-20 — the core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
 resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T07:04:46.529Z
-sources:
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-baa6cf05f830f1fa193ef74c
-    resource: repo://docs/templates/feature-test-tasks-template.md
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
-    resource: repo://scripts/check-web-bundle-budget.mjs
-  - id: openwiki-source-4388ebe240b6b1a6c540d5c5
-    resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
-  - id: openwiki-source-db3aa5ac2ffb577a529916ad
-    resource: repo://specs/081-major-dependency-upgrades/plan.md
-  - id: openwiki-source-f64018476db6cdad83959624
-    resource: repo://specs/081-major-dependency-upgrades/spec.md
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # The governing constitution
@@ -34,14 +19,15 @@ of the file) and has been amended more than twenty times as the system matured, 
 ratification through incremental clarifications like the client auth model rewrite and the Tamagui
 design-system mandate.
 
-The file currently reads **v2.6.0**, ratified 2026-03-08 and last amended 2026-10-17. The changelog
+The file currently reads **v2.7.0**, ratified 2026-03-08 and last amended 2026-10-20. The changelog
 entry marked `[CURRENT]` is the authoritative "latest amendment" signal — check it rather than
 inferring the version from any summary, this page included. Amendments follow the file's own
 **Governance** section: a proposal documenting rationale, impact and a migration plan; review and
 formal approval; a version bump (MAJOR for a principle change, MINOR for a guidance addition, PATCH
 for a clarification); and alignment of existing code within one release cycle. The bump level is
-informative, not decorative — v2.0.0 superseded the previous client auth model outright, while most
-MINOR bumps add a principle area or a scoped exception without redefining anything.
+informative, not decorative — v2.0.0 superseded the previous client auth model outright, while the
+recent MINOR bumps add a principle area or a scoped exception, or move a version-named stack
+baseline, without redefining anything.
 
 ```mermaid
 flowchart TD
@@ -59,11 +45,15 @@ flowchart TD
 
 How a constitution amendment moves from proposal to ratified version.
 
-v2.6.0 is the purest example of the MINOR kind: it advances the frontend stack baseline from Expo
-SDK 56 to Expo SDK 57 (with React Native 0.86 and React 19.2), redefines no principle, and was
-drafted in the same pull request as the dependency bump it authorises. That same-PR rule is the
-constitutional reading of "documentation-first": a version the document names is amended with
-explicit human approval, in the change that moves it, never silently afterwards.
+The two most recent amendments are the purest examples of the MINOR kind. **v2.6.0** advanced the
+frontend stack baseline from Expo SDK 56 to Expo SDK 57 (with React Native 0.86 and React 19.2).
+**v2.7.0** advanced the document-database baseline to
+`mongodb/mongodb-community-server:9.0-ubi9` (MongoDB 9.0 on Red Hat UBI 9) — and had to record
+that the image the document had named until then, `8.2.6-ubuntu2204-slim`, was stale: `8.0.8-ubi9`
+is what actually ran. Neither redefines a principle, and each was drafted in the same pull request
+as the change it authorises, with explicit human approval. That same-PR rule is the constitutional
+reading of "documentation-first": a version the document names is amended in the change that moves
+it, never silently afterwards.
 
 Notable principle areas: AI Assistant Constraints (behavior-descriptive identifiers, no vibe coding,
 comments only for non-obvious rationale); Security (classification, PKCE-only auth via the BFF
@@ -74,7 +64,9 @@ Beyond principles, the document carries the monorepo **directory tree** and the 
 diagrams** — the C4 container diagrams for the multi-frontend/multi-service layout and the additive
 AI-agents layer, plus the three auth-flow sequence diagrams (login, backend resource access, agent
 auth). Those diagrams are the canonical picture of BFF token custody and of the RFC 8693 agent token
-exchange, which makes the constitution a design reference as well as a rulebook.
+exchange, which makes the constitution a design reference as well as a rulebook. The document is a
+derived summary target, not a copy: read the source for the diagrams, the principle text and the
+version history.
 
 ## Gotchas
 
@@ -100,24 +92,37 @@ exchange, which makes the constitution a design reference as well as a rulebook.
   remember it; do not rely on a cached mental model of an old version.
 - **An "accepted exception" is bounded and scoped, never a quiet repeal.** v2.5.0 recorded exactly one
   for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the
-  2-second figure on a React-Native-Web + Tamagui stack, and it stands unchanged in v2.6.0 — that
-  amendment touches stack guidance only. It is capped by a committed entry-chunk byte
-  budget enforced by `scripts/check-web-bundle-budget.mjs`, it covers residual framework weight only
-  (the same principle's lazy-loading clause stays in force and is CI-enforced), and it applies to that
-  one client's cold load and nothing else — every other page and app still carries the 2-second rule.
-  Growth past the budget is a failure, not a further exception; raising the budget is a deliberate act.
+  2-second figure on a React-Native-Web + Tamagui stack, and it stands unchanged through v2.7.0 —
+  those amendments touch stack guidance only. It is capped by a committed entry-chunk byte
+  budget enforced by
+  [`scripts/check-web-bundle-budget.mjs`](../../scripts/check-web-bundle-budget.mjs), it covers
+  residual framework weight only (the same principle's lazy-loading clause stays in force and is
+  CI-enforced), and it applies to that one client's cold load and nothing else — every other page and
+  app still carries the 2-second rule. Growth past the budget is a failure, not a further exception;
+  raising the budget is a deliberate act.
 - **The document carries more than principles — it also carries stack baselines, the directory tree
   and the architecture diagrams**, so a "principle doesn't apply to me" reading is usually wrong: the
   per-stack sections bind language, framework, data-access library, container image, and even naming
   convention. Where a project legitimately cannot comply, the route is an amendment (or a scoped,
-  bounded exception like the one above), not a local convention.
+  bounded exception like the one above), not a local convention. See the per-surface pages —
+  [Expo/React Native universal app](../projects/expo-app.md),
+  [mc-service](../projects/mc-service.md), [Agent Gateway](../projects/agent-gateway.md) — and the
+  [repository layout](../projects/repository.md) it prescribes.
 - **Only a stack element named *with a version* forces an amendment when it moves.** The frontend
   stack section names Tamagui and `@mcm/design-system` as the UI/styling engine but pins no version
   for it, so a Tamagui major is not a constitutional change; the version-named lines — the Expo SDK
   and native runtime, the database and runtime images, the toolchain — are. Read the line before
   assuming an amendment is required, and before assuming it is not.
+- **A version the constitution names can itself be stale, so the named line is not proof of what
+  runs.** v2.7.0 had to record that the document-database image it had named since before
+  (`8.2.6-ubuntu2204-slim`) was never the image the stacks ran — `8.0.8-ubi9` was — before advancing
+  the line to `9.0-ubi9`. Compare a version-named line against the compose files and the lockfile
+  before treating it as the deployed truth; the changelog entry is where a correction of that kind
+  gets recorded.
 
 Full text, every principle, and the complete version history:
-[`.specify/memory/constitution.md`](../../.specify/memory/constitution.md). For how the principles
-are enforced per stack, see [Testing tiers and what gates a merge](../invariants/testing-tiers.md)
-and [Secrets management](../invariants/secrets-management.md).
+[`.specify/memory/constitution.md`](../../.specify/memory/constitution.md); the amendment procedure
+is the document's [Governance section](../../.specify/memory/constitution.md#governance). For how the
+principles are enforced per stack, see
+[Testing tiers and what gates a merge](../invariants/testing-tiers.md) and
+[Secrets management](../invariants/secrets-management.md).

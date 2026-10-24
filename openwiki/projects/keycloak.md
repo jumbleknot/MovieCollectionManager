@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, and the realm guards plus service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 sources:
@@ -100,7 +100,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T02:14:36.804Z
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -109,7 +109,8 @@ Keycloak is the identity provider for the entire MCM platform. It runs as `keycl
 `auth` Compose project — alongside its own Postgres (`keycloak-store-postgres`) and a Mailpit SMTP
 stand-in in dev — and is deployed under the Komodo `prod-auth` stack in production, whose `after = []`
 puts it at the root of the deploy order (every other prod stack waits on it). It is the only authority
-for user identities, OAuth2 token issuance, and the RFC 8693 token exchange the agent layer depends on.
+for user identities, OAuth2 token issuance, the RFC 8693 token exchange the agent layer depends on, and
+the long-lived offline grants that scheduled collection backups run on.
 
 **Realm:** `grumpyrobot`, stable across every environment and deliberately not the organization name.
 The user-facing login client is `movie-collection-manager`, and its **client** roles `mc-user` and
@@ -286,6 +287,70 @@ Both mappers are additive: every validator in the chain uses contains/intersecti
 so an extra `aud` entry is ignored by the components that do not need it. The agent-side story is on
 [Agent Gateway](./agent-gateway.md) and [Authentication and authorization chain](../invariants/auth-chain.md).
 
+## The dedicated backup-consent client
+
+Enabling a scheduled backup requires a separate OIDC round trip carrying `scope=openid offline_access`,
+whose result is stored as a standing permission and never turned into a session. Which client that round
+trip runs as is a realm-level decision with a session-level consequence: `BACKUP_CONSENT_CLIENT_ID`
+selects it — `mcm-backup-consent` in all three committed realm variants and in CI's generated BFF env —
+and when it is unset both the id and the secret fall back to the login client, with one
+`backup_consent_shared_client` warning per process.
+
+**Why a separate client is required (measured on Keycloak 26.8.0).** The member's browser already holds
+their SSO cookie, so Keycloak answers the consent round trip from the *existing* session and attaches the
+offline grant to it. Revoking a grant issued to the login client — by `/revoke`, by the admin API, with
+or without `prompt=login`; all measured — removes that client from the session, and the member's online
+session dies with the grant. Their access token still validates at the BFF, which checks JWTs locally,
+but everything Keycloak itself must honour fails: the agent subject-token exchange returns
+`invalid_token` (`TOKEN_EXCHANGE_ERROR … reason="subject_token validation failure"`, surfacing as
+"No caller identity"), and the next refresh returns `Session not active`, signing them out. A grant
+issued to a **separate** client detaches only that client and the session survives. This is a production
+defect, not a test artefact: a member who disables their last schedule or deletes its job lost assistant
+identity and was signed out at the next refresh.
+
+Two properties make the switch safe to roll out:
+
+- **Grants are always used as the client that issued them.** `credentialsFor(refreshToken)` reads the
+  stored token's `azp` claim and returns that client's id and secret, so grants made before the switch
+  keep working with no stored-data migration. An `azp` that matches neither client gets the login
+  identity, which Keycloak then refuses — the grant fails as unusable rather than being presented with a
+  secret that does not belong to it.
+- **The consent client reuses the login client's secret** (`${KEYCLOAK_CLIENT_SECRET}` in every realm
+  variant), because the BFF is the only custodian of both; a second value would buy no separation and
+  would need a new forge secret and a new Komodo Variable. `BACKUP_CONSENT_CLIENT_SECRET` exists so
+  production can choose a separate value later without a code change.
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant KC as Keycloak realm grumpyrobot
+  participant BFF
+  Browser->>KC: login, PKCE on movie-collection-manager
+  KC-->>Browser: SSO cookie, session S established
+  Browser->>KC: consent, scope openid offline_access on mcm-backup-consent
+  KC-->>Browser: redirect to the consent callback with a code
+  Browser->>BFF: consent code
+  BFF->>KC: exchange the code as mcm-backup-consent
+  KC-->>BFF: offline grant attached to session S
+  Note over KC: revoking that grant detaches only mcm-backup-consent
+  BFF->>KC: exchange the still-valid session token for a subject token
+  KC-->>BFF: subject token, session S still active
+```
+
+The consent round trip and the revoke that must not end the session: the dedicated client is what keeps the revoke scoped to the grant.
+
+The client is confidential and standard-flow-only: `directAccessGrantsEnabled`, `implicitFlowEnabled` and
+`serviceAccountsEnabled` are all false, PKCE is `S256`, and it carries the same `mc-service-audience`
+mapper as the login client, because an unattended run calls mc-service with a token minted from it.
+`prod-realm.json` declares it without a secret so Keycloak generates one.
+
+**A realm that already exists does not get this client from the realm JSON.** Import is
+`IGNORE_EXISTING`, so the client must be created in the running realm first and `BACKUP_CONSENT_CLIENT_ID`
+set afterwards; until then the BFF keeps working on the login client and logs the shared-client warning.
+CI always has it, because CI imports `ci-realm.json` into a fresh volume every run. The idempotent
+`kcadm.sh` block that creates it, and the "revoke with the token, not our database" check, are in
+[Per-user collection backups](../runbooks/backups.md).
+
 ## Realm files are generated, then drifted-guarded
 
 There is no hand-maintained source of truth for the dev realm: it lives in the dev box's Postgres
@@ -298,10 +363,10 @@ with a `${ENV_VAR}` placeholder Keycloak resolves from the container env at impo
 two diverge on realm name, app-client set, or `e2e-test-user` presence — it deliberately does **not**
 require byte equality, because redirect URIs and token lifespans may legitimately differ.
 
-Both committed realm files seed `e2e-test-user` (`mc-user`) and `e2e-admin-user` (`mc-user` +
-`mc-admin`), plus reconstructed `service-account-<clientId>` users carrying the service accounts'
+Both throwaway realm files (dev and CI) seed `e2e-test-user` (`mc-user`) and `e2e-admin-user` (`mc-user`
++ `mc-admin`), plus reconstructed `service-account-<clientId>` users carrying the service accounts'
 roles — a partial export does not include service-account role mappings, so a naive import would mint
-tokens that authorize nothing.
+tokens that authorize nothing. `prod-realm.json` seeds no users at all.
 
 On the dev side, `node scripts/gen-dev-secrets.mjs` mints the realm/client secrets into the gitignored
 `stacks/auth.env`, and `node scripts/gen-dev-env.mjs` projects the *same* values into the BFF env
@@ -455,6 +520,20 @@ Wiping `keycloak-store-postgres-data` and restarting is still the fix for a
 `pnpm nx up-auth` re-imports the `grumpyrobot` realm automatically; force-remove the containers that
 mount the volume first, or the wipe silently no-ops. See [Local dev](../runbooks/local-dev.md).
 
+**`mcm-backup-consent` is not created by importing a realm that already exists, and the
+`offline_access` role is what makes consent work at all.** Two realm facts sit behind the backup
+schedules, and both fail quietly:
+
+- The consent client must be present *before* `BACKUP_CONSENT_CLIENT_ID` names it. Import is
+  `IGNORE_EXISTING`, so an established dev or production realm keeps whatever it has; CI always has the
+  client because it imports `ci-realm.json` into a fresh volume. The BFF never creates the client
+  itself — that would be a broader runtime privilege than the fix needs.
+- **A user needs the `offline_access` role to grant consent.** Keycloak hands it out through the realm's
+  `default-roles-jumbleknot` composite, which Admin-API-created users inherit but users imported from
+  realm JSON do **not** unless the import grants the default role — which is why the committed
+  `e2e-test-user` and `e2e-admin-user` carry `realmRoles: ["default-roles-jumbleknot"]`. Drop that from a
+  seeded user and the failure is a blank page after sign-in, with nothing naming the missing role.
+
 **Any confidential Keycloak client whose secret isn't pinned in the realm JSON gets a fresh random
 secret on import.** After a new volume import, read the generated client secrets from the Keycloak
 admin console and update the matching Komodo Variables before deploying dependent services (the
@@ -477,7 +556,15 @@ the account-deletion step-up callback, and its own native scheme URI. It authent
 service account, reads the live client, and PUTs back the client with `[...existing, ...missing]` —
 additive by construction, so it neither duplicates an entry nor needs the caller to know what is
 already registered. Its errors are swallowed (the operator adds the entry in the console instead), and
-a module-level flag makes it one-shot per process, set only on a successful run.
+a module-level `Set` makes it one-shot *per client* per process, marked only on a successful run.
+
+The client is a parameter (`keycloakClientId = env.keycloakClientId`), and feature 083 added the second
+call that needs it: when `env.backupConsentClientId` differs from the login client, the route registers
+the consent callback on *that* client too, because the consent round trip is authorized as the consent
+client and a URI registered only on the login client is refused outright. The login client keeps the
+consent URI as well, for a deployment that has not configured a dedicated one. The test file pins all
+three properties: the pre-existing URIs survive, a second call adds no duplicate, and — when a distinct
+consent client is configured — the callback lands on it.
 
 That the write is *additive* rather than replacing is the property under guard, not an incidental
 detail: the moment the write became `redirectUris: <the list you passed>`, the first caller of the

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:38ebe70d959342f5ec9a87c0d687351a813f0fb49d1f8c37a98d7615eec444cf",
+  "pageVersion": "sha256:6898331910f5deb709ac988c9dc998a2b2653ce571ead525dad2c3e2ec7fc631",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -77,7 +77,7 @@
           "version": "repo-lines-v1:sha256:3050a5badfd7f36ce2e89abecf948fdc5615c8f823a9ee2252bd54a7468c2175:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVlN2MzMWEzM2RkMmI0OTQ1ZmE5MzY0MGM4ZDE4NjBmOTVlY2Y4MWZkODVmNTRhMjhlZTRmMWUxM2NkZWRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFmMWViODFmNDAxYjdmZTc3ZWI1YjJkMzgyNTZkNzFlNzNlNDRkNjBjMmQzZDljZTMxYWQwNTQ5ZDMxYjczNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc2MjJlN2FjMzU2Njg0NzY3MzBjOTA5NDRhMjVkOTNlN2UyM2Q3NGYxZTBjNTQ0MWEwY2U4MDA1MzVmMzIxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWExZTdhNGU5NTFmZDI3YjEzNWY3ZTQxOGVlMmFiMWUzY2Y5YjU5ZWU0OWVhY2Q1OGJjNmQ5MTQ1M2MzMjBiNyJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/server.js#L97-L143",
+          "resource": "repo://frontend/mcm-app/server.js#L127-L173",
           "version": "repo-lines-v1:sha256:e986fd4b7dec65972fd9cd9e80e37bcdfd93ca561ae0a33dfefc0e6045883e69:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNjI0NDgzZmMxMTVmZjY5NmE2NmNjZjc3MTFlYzY5YjY2Y2NiOWVkNjI5ZTZmNzNjMWI1YTE5YTJlMTA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDkxODg0MjkyY2QxMjVkNDA4ZDMwMTQ4YzM3NjdkNGYwZWUzY2MzY2UwM2EyY2VjYmZmOGIwMTFiMDY0OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODExODNmZWQxZGQ2Njc3YjAwMGE4NzU0OTQ1YjA5YjM5OThjODNjZjRmZjhmZGQ5YjFmNWQ0M2U3NmViNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjgzZmNjZTE0ZDZjNzhjMTQ3YmMwOWI0ZTdkZDE0Y2U5OGMxNzRlYzZkNTg2OGE4NDM1MjZmNzNiODAyODMifQ"
         }
       ]
@@ -87,7 +87,7 @@
       "statement": "Retention's safety property is that a failed or partial run prunes nothing, and a prune failure never fails the run — it is recorded separately in pruneFailureReason distinct from the run's failureReason.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L137-L143",
+          "resource": "repo://docs/runbooks/backups.md#L208-L214",
           "version": "repo-lines-v1:sha256:70dd47ae039a88a6e81c9071739c666524b7c2658ed422be06f6d1c1a6c5992e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI5MjRiZGQwYWM1MWNiZTY2ODRjZDRjMjhhZGJjNGEyMWE0YjZmMTk4YmJkMDE1ZjJmNDdmZjk4MzQ3ZTVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI4NmI5NThkMDBkOTgyZDQ4MDU3YThlZWQ2Yzg2MThlMWE0MDlmNjAwMzY5OWNkN2FjYzgyMjZhNDRjNzllNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzQxYzEyODU1ODJmNGFlZDM2NzlkMDIzNDkyODRiMmFiZTY3NTRmY2RlZmMzYzBjMDFlY2Q4NDliOTg4YzdlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU5MTQ1ZDk4YmRhY2Y0MTczODQ5ODEyMDU3NGUxYWQ3MzU0YzhhMzk4MzlkZTZkZjhmNzc5ZmI2ZjBmYjBjYiJ9"
         }
       ]
@@ -105,7 +105,7 @@
           "version": "repo-lines-v1:sha256:163242e8df9105efa1ff000669ff1ace04172bdaf43c1f9d724c0816dcd42bf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJjNmE0MTdiM2NkY2Q2ZjQxZWY3NTE2OTZmMTNlYmRiNDVmMDM2ZmY1ODlkOWFkMjRmZGJmYzM4ZWNlNDIxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNmYWY3YTcwOWUyMmI0ZjhjZGNkZDA5OWQ1ZjcwNjQ4ODUyZmJlM2M2ZTFhZDM2OWQyOGU4ZmFlODY0ODMwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2UyN2JhNDhiNjFmM2I5Mjk1MDBjMjg2ZjM0YjRjNjhlYWU3Y2FiOTZmNjhmMDMyY2EzNDA0OWQ0MTYyMWY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU4YmZkZWEyNTdiOTY5OWIyYmJjNWEzOWU4NjkwZTViZTllMDU3MTA5OWI3NjhiOWU1YmRmYzMzNmFkNzU3YSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L347-L357",
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L393-L403",
           "version": "repo-lines-v1:sha256:6f092fa9284be993947189eee516d8a9f73ca4e574f017db6c37dfd77f0e94fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNmQxZDFlMDZlZGVjMGMzY2E4OGVmZmY4ZDM0ZjQ0OTg0NTU1ODgxZGU5NjUxN2MwMzVmOGU3NTQ2ODM3NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmUyZDczZmIwYWY0NDNmYzhmZWQ5Mjk1NTdjODFjNDBlNTI1NmUyMTE1ZjBiMDVjZmZhNjJjMWI3MTQ1YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZTRmN2Y1M2ZlNDI5OWZiYWZlNDYyOTI0YTdmYmY4NTY5ZTkxYWNiNTA1MzMxN2E3Y2Y4YjQ5ODFkMDEzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjIxYTZkNzMzMDVkZWNlZThkMzFmMTNjMzc1NGU1MDUxMjcwMmU3NzFkMjkzNDliYzZiNmVjYzM5NjMwOTMifQ"
         }
       ]
@@ -115,7 +115,7 @@
       "statement": "The audit-sink redaction rule strips any key containing 'token' plus an explicit redact list, which does not name secretEnc, accessKeyId, or a destination password by field name; those fields are excluded by construction rather than by the token-matching rule and are asserted against real secret values in backup-audit.integration.test.ts.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L190-L193",
+          "resource": "repo://docs/runbooks/backups.md#L261-L264",
           "version": "repo-lines-v1:sha256:0dad9b00d0c64a4862206d1fd3dd1c10748852ca36d7c7774a645586196390b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzNGQ2ZGJlMmY4MzdmZjllY2ExNDQ5Mzg4YTY1YTg0MjE2YTU1ZDViMjdmZDExMGI5YzcxOTQ0M2ZhZTUzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM0MDk3YjRlOGNmMDJmODlhNGFjYjU0NDZmOTEzZmJiNzEwNGE2YWU4NDJmODg5MTRmYTI4YTU3ZTE2ZGFlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE0ZDhlNjdmNzVlY2NhZTZkMzM0ODRjOGJkOWEzZmFhNDZjYzMyNjQ5NzgxZGM1YTcyYzk3MmI3YWY1YjliZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FjMGM4YTA5MGFmNDA3MmIyZTFlZGEyMTQ1MzFiYmMyNTQwYmE3ZTEwZWI1MGQyMTJmOTk1MGY0NGM2NDhlMyJ9"
         },
         {
@@ -147,7 +147,7 @@
       "statement": "Streaming snapshots are not implemented (the size/count ceiling stands in for them), and failure notification is in-app only with no outbound email channel, since the existing email service only drives Keycloak account flows.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L213-L215",
+          "resource": "repo://docs/runbooks/backups.md#L292-L294",
           "version": "repo-lines-v1:sha256:4021962d99589ca456d81b244dd7c255816d70f7e54de66e595615ec6ffec864:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVjNjk1YTE5NDQ4OWQ2YTQyNTMyZWFkZDM4MDU5NGRiMmE1MjlmMjMwY2NhNjI2MDhmNjE4MTg5YjdkYzMzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjZmZiNjEzN2FkZDEyM2JiZjIyNjYyY2NmMmVjMmExMjUzZDc5M2VjOWFkNjZkZGYyOWQxMzY2ZWQ0ZjVlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVjZTk1MzU5MzllY2FhM2Y3M2NhMTUzOTUwZTE0NmE2MDM3YzcyMGMxY2QxZWZjNGIzYWFkMDc1M2ZmZDUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -165,7 +165,7 @@
           "version": "repo-lines-v1:sha256:84237cb89253df83b9a53ac6db87b62e548f4d42cd80928f5b0e058f6c582592:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVjMGQyNTY1NzgyZDUxN2NlYjA2YjEyMzE3MDBjZjEwOGQzMWUyNDdkMDE3ZmYzNzAwMDZmNDZkNTEwODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NzU0MzIzZTE3NTBmMTJiNWVlNzQ2NWRhNzcyZDZkYjViNjdiYTlkMjk4OTE5OTA4ODk2OTJhODUyOWM4YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MzUyMjU5YWEzZjBkMjI1MTg3ZmM0Njg4YjU5N2FjMGZmNDlhMTJmZWE1OGE2MDJkOTVjMDk0MjJkZmFmN2EifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L333-L368",
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L379-L414",
           "version": "repo-lines-v1:sha256:fdc34fb2bff7daf9dfe8c8f4cc772b1d569d420f781adfc89fddc09fdbc983a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MmRlNzIwNmQ5ZjUyZGNkMDIwNjVlZTcxNmU0ZGFhMTIyMTgwNTQ3YTVhZDRjZjUxMDgyZWI3NmU4YTc4YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMGQxMzk5Mjg4YmY2ODVhZTgzOWJkNzhmYjhhNGMyYWVmZWRiM2U5MmVjMjRkNDQ1MjE3MGUyODFjODg1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -179,10 +179,140 @@
           "version": "repo-lines-v1:sha256:16f24db1057e793d80301d94f75e6c63ef262f9b1514d30984c5ffa061da20dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlODk0MzM2NmNkYzljNTcxZDUyNzc3YjI3MzUyNTk2ODczZGU3NGNlNDJlOWQ1MTI2ODUwYzY3ZmE4MGU3YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_8ec32108e50b43d69d39047af54c19e4",
+      "statement": "Since feature 083 (#702) the scheduled-backup consent round trip runs as its own Keycloak client (BACKUP_CONSENT_CLIENT_ID, mcm-backup-consent) rather than the login client, because Keycloak answers the consent request from the member's existing SSO session and attaches the offline grant to it: revoking a grant issued to the login client removes that client from the session, so the member's still-locally-valid access token can no longer be exchanged for an agent subject token (invalid_token, the assistant answers \"No caller identity\") and the next refresh fails with 'Session not active', signing them out. Measured on Keycloak 26.8.0; prompt=login and admin-API offline-session deletion do not avoid it, and a grant issued to a separate client detaches only that client.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L117-L143",
+          "version": "repo-lines-v1:sha256:9e1d8dd778e41aa301dbf02c401640e7f8f889c67d37293717b212f397b1bc2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyY2JiNTIzZjhjMTQ1ZDJlYWVhYWZmMmI4ZjAyMDE3ZDcxMjY2Njk1Mjg3OTEzMTU1ZDVkNzdjZjgwYzAzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjUwZjE0M2M3MjViZDE4YjgxYWFjNTQ0ODg5MTBmYTEzZTQ4MjkwMWNhNzdmNGQ1ZTk1ZjNhNWU1MGNhN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmOGYzNDFmN2E5NzJjOWE3OTlmNDMwZGJlZjRjOWU4NDYxNWJkOGRhZjVjNjJmMmQzZThhMDJmMjkwYzI5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMmM0OTEyMDM3YzRiNTQxZTQzODNlYmU4NjIyMGUxNjE1YjljNzFjOTYyZDhiYmM5OTJlNzA3NjUzNzliNGIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L85-L107",
+          "version": "repo-lines-v1:sha256:2bb878aeeff362ab8192fc6af47aee3ecd0a839f0b7ac3a686c9b91e4ac7ede7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1OGZkYzQ5YWE3NDQ4N2Y2NGUzNmQ2MzIwNjljYTFkYzZhMzZiMDc3MmFmYWZhOWU3NjQxYjJmNWE1OWMyY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyYTY4MmI3Y2QxODZjZjI5YzZhOTk0ZGZjMjc2ZWM2ZDYwOGRhY2QwZmJiYWQ4MzgyNDE5ODkxNDhjODNiYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwMjU4Yjk0NGM4N2VjNmFkZTdjMzljMmI5YTIyNTI5NmFmY2FiMmJkNjc5ODAwOWRkYzQ4NGQ3OThlODM4ZDQifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/spec.md#L57-L88",
+          "version": "repo-lines-v1:sha256:7e19f5e465f930d16757b125f7a6fb50255f1c5289d909bf533fb2135a93b82d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ZjE5NDQ4ODE2ZjQ3NzQxYzBjN2RmNjQwYWNhMDI4OWUwOTc2OWMwMDI1MGVjOTM1MWEzYzFkNTMzYzUyZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YjJkMzYyNjFhZjc3NmNjMzhlYTM5ODRjZjRmMzk5ZWU5NTg2MzYyNGQ4NzgzZjBkYTc4ZjVmMzYyMmM5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOGNhZWE1NTFkNDBhNjM3ZDJiOThjOTUyOGM3OTkzOTY4ZmQyNTRmNjkxODQ1NjQxMmQ2YzBhN2Q4OWE5OWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_897e8db2ad1d425894f4a12f73a32dac",
+      "statement": "The app-e2e signature of the #702 defect is not flake: in every app-e2e run where the BFF logged 'Agent subject-token exchange failed', the BFF had logged backup_schedule_consent_revoked 2 min 10 s – 2 min 45 s earlier, which is one failed attempt's 150 s timeout followed by the retry, and the same mechanism is a production defect because disabling a last schedule, deleting its job, or an account teardown revokes the grant.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L117-L133",
+          "version": "repo-lines-v1:sha256:c5f104739f774766171c7da7ab0e60d422ee34d4af28baadf9bd8b9f9e94b5f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyY2JiNTIzZjhjMTQ1ZDJlYWVhYWZmMmI4ZjAyMDE3ZDcxMjY2Njk1Mjg3OTEzMTU1ZDVkNzdjZjgwYzAzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNTg3YjMxYWUzZGQ5YmQ1NWM4MmUyNWZjMDdiZTNiMjQ4ZjAzYzEwMTU0YThhNDM1ZTI3NDE1MGE4ZjhhOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmOGYzNDFmN2E5NzJjOWE3OTlmNDMwZGJlZjRjOWU4NDYxNWJkOGRhZjVjNjJmMmQzZThhMDJmMjkwYzI5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNzYxNWUwM2ExZDNkMWVmYjc3N2YwODY5MjdhOWRmMWViMmY4YWIwYmI5NDdiZmYwYTk5MTdhMDhhZmM3NzAifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/spec.md#L14-L56",
+          "version": "repo-lines-v1:sha256:b0414bccc483e56d4539ed768d51179dca597a4c70c760a4735a2fcf529eeefe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZWUzOGE2YTViNTVkYTE3NzczYzBjZjkzODFhNmQ5YjRjZWMxZjEyOGVmNDYxZGU3N2Y2MjJiOWMzODczMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YzQyNTVkOTRiYTEzMzI0MWM0YjQyY2E5OGQ1YzZmYmZlNGE1NmE3MmRhNDBjMGVlZGU4NThlOTA0MzlhMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkYTUyZDBjOTY5YWI4NTM2OWNhY2NiMGVmNzY4MDBlNjE2ZGVlYTkwOThiMjdiYmQzYTYyYzI2Mzc3ZTk5NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4444b1913c404e8a9f750296290e4554",
+      "statement": "A stored backup grant is always used and revoked as the client it was issued to, read from the refresh token's azp claim (credentialsFor), so grants minted by the login client before feature 083 keep working with no migration of stored data; an azp matching neither client falls back to the login identity, which Keycloak then refuses, so the grant fails as unusable instead of being presented with a secret that does not belong to it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L141-L143",
+          "version": "repo-lines-v1:sha256:da0dcca4ce68fa32a22dbd70f5c2eeff5ca0a26c54f8c09ed53e13293d6c01b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNhYjVhZDk2N2NiYTMxODlhOTFjODE1ZTgyOTQ5ZTlmZWU4Y2ZjZmJhZGI1MDIyZjM0OGMwM2IxY2ViOGNhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDgyNTBmMTQzYzcyNWJkMThiODFhYWM1NDQ4ODkxMGZhMTNlNDgyOTAxY2E3N2Y0ZDVlOTVmM2E1ZTUwY2E3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzY2NzBlZjI1MGRmYmZkM2I5M2RiOWI4MWYxM2I5NWQ4OWI0OTIzZjhkMmUwZGM3NjE0YWE2OWQ1YWYyMzQzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYyYzQ5MTIwMzdjNGI1NDFlNDM4M2ViZTg2MjIwZTE2MTViOWM3MWM5NjJkOGJiYzk5MmU3MDc2NTM3OWI0YiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L109-L131",
+          "version": "repo-lines-v1:sha256:22884cfbc7151f7eb7ba1661d8f0cd76e9561a8b9f9a8f881f76d4f1c69f017a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNGZlZTkxYjgxN2FhNTFiMjYyOGQ4OGRhMzBkZjgxY2I2ZDAzNmRlYWMwZjBlODJjN2I1Yzk4ZTBmOTk5N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNDdmNzk2YzNlZGViZTFmNmI2MTJhMGI2Y2FiYzc1NmNiYzc0NDFjMTRhZDczMzJlOGEwMDVjMjY5OGFkZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2842fbf5ab58441baa90f8c38fbd0193",
+      "statement": "With BACKUP_CONSENT_CLIENT_ID unset the BFF falls back to the login client — reproducing the defect above — and logs backup_consent_shared_client once; BACKUP_CONSENT_CLIENT_SECRET is optional and defaults to the login client's secret because the BFF is the only custodian of both.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L95-L107",
+          "version": "repo-lines-v1:sha256:86e866419d851868f17cbf161989cc8ca3eafc3e5373081010da63a52375b418:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NzU3MTVlOGUyN2JlOWViMjE4ZjFlNjI0ZjNhZTQwY2RmMzg4MGViOWM1MWM5ZmM3OTA0MjQyMDBkMzAyZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhMDE0MWM1OTU5OTNhYTE2NjU5M2ZlYjFiYWFjOWVmMWZhMzhkNTZlZGRjZDc5MjEyMzBhNzc2MzI0Nzc1MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwMjU4Yjk0NGM4N2VjNmFkZTdjMzljMmI5YTIyNTI5NmFmY2FiMmJkNjc5ODAwOWRkYzQ4NGQ3OThlODM4ZDQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L41-L47",
+          "version": "repo-lines-v1:sha256:a49f9669567bb21f50c6a72707518f6d91b3cd09fa9ebf8789953d490c35c7e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIxMzEzNjg2ZWZlODVjNjM0MmE1NTE2OGVjMjJmNGQ3ZjNmMmQ3ZjY5ODkzNTJhYzhiODlhZjU1YzNkYWVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIyZTAxMGM4NGFhMjM3ODNiZDY1MWQ1ZGIzYzllZTVhZmMyNzE1YjA2MmQ4NDcxMmY1NTlmYzFhZjE5N2EwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmQ2NDlhZjU2ZDk0ZTA0MDY2ZDhhMjU5YWI5YTVmY2Y1NGY4ODZhNDdkNDE0YmEyNDUzMWQzNDFhMjc1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzMyMTZmODQ1OTI3MmY5ZjZhYjE3MjRiNzA3ZDhiMTQ4MGU0OTk3MzRlNzI1ZTllYjM2YWIwYmY4ZjY3YzBjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0358528032d143d39a381949badf50d7",
+      "statement": "The backup-consent callback URI must be registered on the dedicated consent client as well as the login client, because Keycloak refuses an authorize request naming an unregistered redirect URI; /bff-api/auth/init makes a second ensureClientRedirectUris call for the consent client whenever the configured consent client differs from the login client, and an integration test pins that the pre-existing login-client URIs survive the call.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L47-L51",
+          "version": "repo-lines-v1:sha256:72220d240501af39c5212a60b6d559fee36eafc9c09c4366fa3b175470ccd96e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjk0MTA1N2NjMzAxODFlODEyMTk3ODRjOWQ5ZjYxNDM0NTU4NTE2MjNkZjUxYzg3MDhhZDQ2OGNlYTgxMGU1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWIxZjBjMGFhODEyMzhmNjkxM2ExYTdhMDU0ZTE5ZDY0OTdmMGYxMGE3ODRhM2ViMmU5ZjEzNDMxNmFiYWIzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIyMjAxZDA5ZDZjYmJjZTM5MzdhYmZiMTRkMTc0MjZjZDk3NTY0N2YzOTg1ZjdkZTA0NjRkMzA4YjY0NTM0ZSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts#L77-L85",
+          "version": "repo-lines-v1:sha256:832c8716bf52db8bd148f73c00004f40a35e8e104e553ca267740a09e4b3f827:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzkxZDRiYTQ0NmUxNDMyNjAxYzE2NDMzZDcwMTVmMjVhYTY2Y2E2ZGYwYjJiMWI4MjhlODc0MmI4MWI2NDJhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJhMGQwNmQ1OGQ3ZWE4NjIwMDk1M2ZlMTNhNzU4MDU1MjRiZWYwNGZkYTIwZGY5ZjI2NDdiNWViYmEyYTc0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e21c97f813c4a72bf969666d9fad1db",
+      "statement": "The dedicated consent client must already exist in a realm before BACKUP_CONSENT_CLIENT_ID is set: CI imports ci-realm.json fresh every run so the client is always present there and gen-ci-env.mjs sets the variable, but an existing dev or production realm is imported IGNORE_EXISTING and does not gain the client from the realm JSON, so setting the variable first breaks consent with 'client not found' and the operator must create the client in the running realm first.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L145-L150",
+          "version": "repo-lines-v1:sha256:6ee4160b48658b22852ad2f09cd1fc69ddb5fc9b4605a63bfcd0db48aae54dcb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU3Zjc4ZTZiOTFhMDRkNmZjNTYzNWVkMjk0MmQ3NDc2OWY5M2NmN2M4MjZhYjBhZTdkZWIwZTQxMzI4NzExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU1MTJmNmE1Mzc5ZWExN2Y5YmU4NmQ4NTY2NDkzMDg4NTE3ZDZkNGFhZDlmM2RhZTU2YWNlZTZmM2MyOGVkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDdiMTJkZTYwMTlkMWNmNDE2MTQyNzUxODU2YTgwNTQ4MGVlN2JmYmI0M2FlZTM2MThjOTA3NDc1MzE4MmM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZiMTQzYmRjMzZlN2ViZDk5ODIxMmZhMmM4NWZiYjQ4NmFkODRlODc2N2UyNjU1YmU5MDNlYmI3YzI4NWRjMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/.env.prod.example#L50-L54",
+          "version": "repo-lines-v1:sha256:544db5bc3412e609ce2a23999e7de0d6a6346a524a594e36238275065f2eec98:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4OWJhOWE4ODFjM2M0ZjIzYWI3YmJmOGVmMDFlNDM1M2MzZGIyNDZhZWUyODBkOWQ3NjVjNjkzZTgxZDA1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQxZTBmMGE3YTI4NzZhYjBkOTBhYjVmN2RiMjljODM1M2M1NzZiOTdiOTczNTliMDdmYjgxNGQyMzM2NTQ4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWU0ODlkYjFlMWY5ZTdjNzUwZmE2YWU2ZjZmNzEwMzAwNDliZTkzMWExNGI5NzQzMTE5YjZjMGQyODlhM2Y0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIxMTk0NDAzNGI1ODEyYmNmYzAyMDE2ZDliODEyN2RiYmY5YzI1YTdhYWMxMmY4MGZhZGU4NTIyYzY4ZWEzMCJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-ci-env.mjs#L85-L88",
+          "version": "repo-lines-v1:sha256:70d9d56073d84f5986e6f2abdf8db9581aac729cb55edbd4a8d81c2c352dc87a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQxMWU5YWY3NGY5ODJlMThlYmNiNWM5ZDkxYzI1ZmNlOWUxOTVkODQ2NDg0MGYxMjUzZjA2OWQ2ZmE2ZmM1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyMzBlNjIyODA4YWI4NDMzZTU0NGY1NDFlNGFkZjg3OGZjYjg4YmI5MGQzYzRiZDcxOTE2YTViOTBmMDRhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTY5ODJkN2U3Y2JiOWJlNTljMjY4ZjI3NzAzMWY2NTg0MDY1OGI3YjdiNTIyNjI1N2I0NjQ0MDBmMDkzMGRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNWZjY2MxOGI5NTI1YzBiYjg0ZWRmNDY3ZTFmYjJlMDk2NzllY2Y2OGNjMjNlYWEyYmE4NTU2NjVkNjQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d0dd1284b3242d3a9f5492e721f5057",
+      "statement": "The backup destination URL guard is the inverse of the Ollama SSRF guard in policy: loopback, RFC 1918, link-local (including the cloud-metadata address), carrier-grade-NAT/tailnet and other non-public addresses are denied by default and admitted only when the host is named on BACKUP_ALLOWED_DESTINATION_HOSTS, and an unresolvable name is treated as unsafe rather than as nothing blocked being found.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L1-L22",
+          "version": "repo-lines-v1:sha256:a1bca65fb1f3a2f0cd40acf25d360b56a88d07da2e86499edad0b794177d74c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwY2IzY2Q4YWJmN2NhYTE2MWU1OTQxODJmZjQ3M2FlNDliMmU5MjExYzc4NmFkOTUyMWIyYmM2YjQyZTBlNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMzkyNjljZGNlYmE5Njg1ZDQyYmQzMWVkMzg5NjAxMmMwNzcyNjFhODFjYWY3YTRkZGE1MWY3ODNhNzM0YWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMDQ3MWU2Y2JhOWNkNGQ1M2IwYTYyYmRkNDdhOGJkYjNhMjhhZDI5MGNiOTM5ZDM0ZGM3MmY0N2ZiNmJjMTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L206-L229",
+          "version": "repo-lines-v1:sha256:99e0cb1fd371f20fdb732b03e09e1ea98111ccdb79c690bb41b36545c9b24a95:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZjAyNjg1MjY0YmZkZjQ0N2Q5ZTUwYzdiYTk2OTdlYmMxOTJhYzM5N2Q3YmJlNjIxZDIxYjliZWJmMTFlMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0OGY5YWFkNjZmNThmNGU0MzEzNjBhZjEyODE3NmYyNzE5YjQwM2QzYTVjOWRiMWJhNDAwNmY0Y2JhZjE0N2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9251e1dcefc49ecbab3aec416765ee3",
+      "statement": "The destination check runs on save, on every probe and on every use, and it resolves all DNS answers rather than the first and pins the outbound connection to the vetted address set — so a hostname that was safe when saved but later resolves into private space cannot be written to, and the address checked is the address connected to.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts#L94-L104",
+          "version": "repo-lines-v1:sha256:cd48093b7d6f6d5824931e3a26d4a7b1bc0f4927d7125cbf074a91abf756bff3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYzE5MDliYWI2YTEwM2E2ZDY2YTE0ZmQ4M2ZjZjQwMzNjOGY1ODQ1YmRlOTVlYTdjMjBmZGI4YWRlNTBhYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzODBlMTExMzY2ZWI0YzBkYjQ4MWEyYjUwOWVlNmRlYTFkMGIxNGQ0ODg3NDcxYzQ1OGU4MDNhOTI0NGVlYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkODMzZTUwNmU1MTVjMDI0NzMzZDA2ZTcyNjBkMzljNjdiNjZhNTZkN2ViZmU0YjNkMjA5NWNjYzJhZDdkNTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts#L156-L244",
+          "version": "repo-lines-v1:sha256:c82fb7891c76cc4e64e1b2bf5d58b8fcc8ff4fd0fa18a88cc4ae8115ef118e3c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2ZmE5ZjQ5ZDU1NzVmZWQyNDA3Y2EzNDhkMmQ0ZmJmM2E0MTVhYmI0YmJmMjI4MmNhZDAxYTA3NjgwMTZiM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxOTQyN2U4MzVjNTE5MzIzOTZiYTIzMDVhMDU3YTcyN2E1NGU4NzU5YWM5NDIwMzIxYTVhNGYyODgzMzhmYjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bba8ce916d4542f5800e9db7a5f83014",
+      "statement": "The offline standing permission is given up only when no enabled job carrying a schedule remains for the user (revokeIfNoScheduleRemains counts remaining jobs before revoking), not on the first disable, so disabling one job does not silently break the user's other schedules.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L357-L377",
+          "version": "repo-lines-v1:sha256:63fc409ff82f36517e2b0fde5cf03c0eb29d759dc6daecf426d8922c99033dc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ODFmYmE1N2RmMTYxN2EyYzdlOGYxMzczZWY3NjUyMmRlYjA3ODY3ZDllYzg4NWUxNWE4ZjM4ZDRjNDY1NzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjA5YmRkMzM2YWYwNTUwNjJkMWJlNDdlNWFkNWVhZjQzZWIxNTQyNzQ1NTFkMGUyOGIyYzVjNGIxYzVlMmUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-27T16:58:28.669Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-24T14:53:13.584Z"
   }
 }

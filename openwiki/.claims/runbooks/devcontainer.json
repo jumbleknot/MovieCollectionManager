@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:03bd5a817658e6a69406ff08e098e6c056254c52eb3279a6346b8df959b6e7ef",
+  "pageVersion": "sha256:b8263f9286c611cbf8e4382debf3262431594904409cd6dd005af63b9909bce8",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -105,7 +105,7 @@
       "statement": "crates.io, index.crates.io, and static.crates.io ARE allowlisted in the devcontainer egress firewall (group `packages` in .devcontainer/egress-allowlist.json), so cargo resolves online in the devcontainer; --offline is now a tool, not a requirement. A failing --offline resolve still signals that a change adds a package absent from Cargo.lock and remains a useful lock-discipline check.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L190-L208",
+          "resource": "repo://.devcontainer/egress-allowlist.json#L193-L211",
           "version": "repo-lines-v1:sha256:121ac1daaa7365f1235381816b214dc9ad7c4695a66d55287f958d4f1035159d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YzUyZGYwZTAyYzY5OGE1NTA2ODE5ZjJjMzg0MGYyMTNhZTI3YTY1MGE2ZjI0ODhjZDFiNTAwZjY4ZDRjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMjcxM2JlNjUxNTgxNTFiNzVkODk1NWM2ZTQ5ZDdjMzdhNDg0MjhmYjZiMjVhYzNjNDU3ZDM0Y2M4NzIwM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTRhZDNjZTNjNTRiMTBhN2QyYjUwMjQ1ZmE1ZDljYzMwODQ2OGU1Nzc4YmMyMTgwN2NlM2IyZmRmZGQ2OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MTFkYWY0ZmMxZTAwMjc0Yjc5OWU4YzQ4MDEwM2NmZTgxYzlkNTE4OTg5MTNkNWZjODA5ZDk0OGJjOTUxNDkifQ"
         },
         {
@@ -134,7 +134,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L27",
-          "version": "repo-lines-v1:sha256:8afce274914f31df2e111c866e428848834bf926005caa5c56bad0d52d3d104c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
+          "version": "repo-lines-v1:sha256:3a93ecf160d73ab4a2cf174abad8b501f2b536f82950506e6a5ff1b1a52bb7bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-ollama.sh#L1-L15",
@@ -221,8 +221,8 @@
       "statement": "The devcontainer's egress destination list is no longer inlined in init-firewall.sh: it lives in .devcontainer/egress-allowlist.json as the single canonical list, read through scripts/gen-egress-policy.mjs --format ipset-domains (the same generator that emits the sandbox's host-side policy), with the forge registry host injected at runtime from FORGE_REGISTRY_HOST rather than stored. init-firewall.sh refuses to apply default-deny if the generator is missing, if node is absent from root's PATH, if the generator fails, or if it resolves to zero domains — so a generator crash cannot silently produce a total egress blackout.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L1-L22",
-          "version": "repo-lines-v1:sha256:2e1cc25ede9e64719c06e90cc453828e05fb3fb5a3e18794a79ba72fac7279bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
+          "resource": "repo://.devcontainer/egress-allowlist.json#L1-L25",
+          "version": "repo-lines-v1:sha256:fa9e9d2e03d360f53c319be941663169192f0e2d900a9bb774b97a97f9c7d5c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
         },
         {
           "resource": "repo://.devcontainer/init-firewall.sh#L49-L102",
@@ -313,7 +313,7 @@
       "statement": "The MCM_-prefix point-of-use mapping rule extends to the OpenWiki generator's Fireworks credential: MCM_FIREWORKS_API_KEY is mapped to FIREWORKS_API_KEY only inside the generator's own process (scripts/wiki-provider.mjs declares the accepted names and mapTo, and the launcher gives the child only the selected provider's key), and api.fireworks.ai is in the canonical egress allowlist for model traffic only — the fireworks.ai website FQDN is deliberately not covered. Unlike the four older credentials, MCM_FIREWORKS_API_KEY is not in the Docker Desktop path's containerEnv; it travels only on the sandbox path, where .devcontainer/gen-container-secrets-env.sh emits it into the --env-file alongside the four.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L31-L33",
+          "resource": "repo://.devcontainer/egress-allowlist.json#L34-L36",
           "version": "repo-lines-v1:sha256:65fc0f7c4888ab3369ad1eb81cc786c47eaac77a3909a526d6459a95a4182bcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5YTc4MjkzNjJmZjBiZjMwMGUwZWMxMmU0ZGVkOTk2ZWVhOTUyMjFhNmI2NDc4ZDJhMmUzNzIyNGQ3NDA0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdiZTYwYWFlNDY0Njk3YTI4YTYwMDI0ZTBjOTk1YTg4M2UwMjM4NmYxMDgwY2ZmNTE0NzMyYjBjMWM1NmMwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
@@ -380,11 +380,11 @@
     },
     {
       "id": "claim_fee2a793adf84f078f7a3d5e26375ae1",
-      "statement": "The dev-ollama compose file pins its image by tag AND digest (ollama/ollama:0.40.3@sha256:adca95a1…), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
+      "statement": "The dev-ollama compose file pins its image by tag AND digest (currently ollama/ollama:0.40.6@sha256:265409e1…, bumped deliberately rather than floating), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L36",
-          "version": "repo-lines-v1:sha256:6ae522e4e63faf1b0c778efe28744aec09e69b2ea5bc6a63681bc56c1a52ba1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:e1b0373fe621a8199046bc6b29721eec0276290c1e9f05bbdc62bf26e8807bff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -403,7 +403,7 @@
       "statement": "A blocked Ollama egress destination retires merge-gating tiers rather than merely failing a command: the canonical allowlist carries both `registry.ollama.ai` (the manifest host compiled into the ollama binary) and the pinned Cloudflare R2 blob host every model layer is served from (item #394). With either absent, `ollama pull` dies at DNS and `ollama list` stays empty, which makes the golden tier (nx test:golden movie-assistant), the agent half of the E2E gate, and nx up-agents-prod's model precheck unreproducible locally, and makes a real defect indistinguishable from an absent model. The blob host is pinned by exact FQDN instead of `*.r2.cloudflarestorage.com` because the subdomain is Ollama's R2 account id (constant across pulls) and the wildcard would open every account's bucket — so a layer failure after a clean manifest means the account id changed, not a stale ipset.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L174-L185",
+          "resource": "repo://.devcontainer/egress-allowlist.json#L177-L188",
           "version": "repo-lines-v1:sha256:503e7a10ce33f241aed2009281bab3e40e3e3ca77dc53d88766cdacf2e34a6ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlM2Q4MzY5MmFmNjMwYzlmY2E5MGNhMmU1ZDViYjNhYzYwODIwNzY4YjI2NWRjMTI5NDQ3OWZmMDU1NzFjOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4YmVkZjQ3ODE2YjU4NDVmNGUyOGFmZWUyNTBlZWM1YWRjMzlhYzg3OTMxMTg0YmUwMDc1ZmQ5ZmI4ZjczYmEifQ"
         },
         {
@@ -449,8 +449,8 @@
       "statement": "`scripts/gen-egress-policy.mjs` never writes a file: both enforcement forms (`--format sbx-policy` for the host-side sandbox policy and `--format ipset-domains` for `init-firewall.sh`) are piped by their consumer, so there is no generated artifact that can go stale in git and silently disagree with `.devcontainer/egress-allowlist.json`. The forge registry host is never stored in the canonical list — it is injected at runtime via `--forge-host`, and an absent value omits the entry cleanly rather than erroring.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L1-L22",
-          "version": "repo-lines-v1:sha256:2e1cc25ede9e64719c06e90cc453828e05fb3fb5a3e18794a79ba72fac7279bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
+          "resource": "repo://.devcontainer/egress-allowlist.json#L1-L25",
+          "version": "repo-lines-v1:sha256:fa9e9d2e03d360f53c319be941663169192f0e2d900a9bb774b97a97f9c7d5c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
         },
         {
           "resource": "repo://scripts/gen-egress-policy.mjs#L1-L37",
@@ -467,10 +467,116 @@
           "version": "repo-lines-v1:sha256:175ee65d025d3f6e10667d03f04a2da2fe8a53d7c13f8463e01851b9631c1744:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MTMzOGZjNzQ5NTA5MTQzNjhlZjM0ZmQ2ZDJjNTFhNTNhMzNmNWEwMTNjM2E3ZDU1M2I2MmY3ZDFjYWUzYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MWI3ZjE4MzY4NDMwNmNjYzJiZmYyMGVjYzdiY2E1ZWExMzc5MTY0N2YyY2U2YmY3M2RhOWEzNTkzNWJmODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZWQxZGU2ZTgwMTllZjU3NWQyMzUwNGVjYjIwMDFmMzY4MDcwNDJkMzExNjE2MmU1ZGIyYTQ1OTg1ZWQzZTYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_76a5240796a9492cb947540a2ac76f7a",
+      "statement": "The dev-ollama image pin is maintained rather than decorative: `dev-ollama.compose.yaml` was invisible to Renovate's docker-compose manager (whose default pattern requires the basename to begin with `compose`/`docker-compose`), so the ref sat un-bumped with `docker:pinDigests` already enabled; `renovate.json` now carries a strict superset pattern so the file is seen, and `scripts/__tests__/infra-image-scan.test.mjs` fails the build if any third-party image reference under `infrastructure-as-code/` carries no `@sha256:` digest — making a stale or un-pinned ref a real finding instead of a silent one.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L417-L439",
+          "version": "repo-lines-v1:sha256:5f400b73164695631511a3fe3f474b9021b10066e551cb4c5735a8d819e49217:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZjNiNTEyMWEwNWUwZWE5MmM3NTQzM2U0ZjNiMWMzNzQ1NzgxMzgyZDRjN2U2OTA1ZGU2NGIxZGRjZGEwYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzJhOTIwNmEyY2U1NTdjZjg2MGI0NzNkZTI4Y2NiYmY4ODZkODAyNGJlZTFlYWY2MGEyMDdmZmY0ZjA1NjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5YTRlMjQ4YTc5OGUwNjY1OGI4Njg0NzkzMWVkMmVjNjVlOWRhMGNiZmE4YzY0NzY2ZjRmNjFiZTdiMThkMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViODNhN2M2MzZhNTA4NGYzMjRmMWE2MDcxYjliNzg4ZWFjMDIzYWJmOWMxYjdkNzE0OWVjODFjOTM0ODEyYTgifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L559-L618",
+          "version": "repo-lines-v1:sha256:86ae19469a0c350773f6f4111f8a7d0efda9147610b4f7821e76b252389f2521:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjA0OWUzNTI0NDFkNjg4ZmE3NTczZTk5NjJhY2U5NGMyZTVlZjQzMGZhNWY1YjVmZGIyZTFjNWY5YWU5NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MWE4ZWIzOTJhYzMzNTlkOWQzNmY0NTQwZjQ5ZDcyNjMwZTRlZTExZDczZTJkMDRkMDViY2Q2YTRmOTNmZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZDVlNDlhNDU1MWQ3Y2U4YzQ3NmE1MjRjNDRhMGJiZjk5ZDIxZTJjMTVlMTM3YjEwNjEzOWZkMDcyNjkwMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e16ff88ca6e1433f8dca9f7584e5559a",
+      "statement": "Each destination in `.devcontainer/egress-allowlist.json` carries a `domain`, a `group` drawn from `agent | source | registry | packages | app`, a non-empty `reason` and a boolean `cdnRotating` flag; `scripts/gen-egress-policy.mjs --check` validates the whole file and exits 1 naming the offending entry, rejecting a bare IP, an empty or missing reason, an unknown group, a duplicate domain, a dotless hostname, a topology-sensitive suffix such as `.ts.net`/`.internal`/`.local`, and the forge registry host pasted in while `FORGE_REGISTRY_HOST` is set in the environment. Emission always validates first, so a malformed list is refused rather than piped into a live enforcement layer.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/egress-allowlist.json#L14-L25",
+          "version": "repo-lines-v1:sha256:54aa4f6f4b8a109fe212cad7df83bd9b6c8ee4be32a2446ace6536fb57731484:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMWFhMjU5ZWNhMzZjMmVjNGMxYmJlNDA0NzEyOGE2MmEzZDIxNDk1MjY0NmNmYTk2NjQzMDMxNDIyYWU3MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NjRiZDE1NGY2ZDc5MDMyMWJiMjk3ODQ2ZTEwMTRiM2MxYTcwNmFhMTg4ZGIwZjQ0OGQ1YTkyNmQyNzI3ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWQyYjZhODEwYzllYzQzMDE4YmMyZWJhMmJiZmNjN2FmNzk5NzhkZGU3NDlhOTcwYjAwYTYxODlhYmNhOGMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L188-L195",
+          "version": "repo-lines-v1:sha256:7001587894c57d6360e55fa30445e7d865472b24d159730d69a2a7c1f29ea4f9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYzNGQyMmEwOWUxZGUyYjVjM2U0YjFhZGU4ZDdkOTcxYWNhNWFlMjI3NmFiNzVhN2I1MGFhN2Q3NTgwZTZlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZmNTY2YjI0YTg0ZTdiOGQwN2JhZmE4ODhlYTNhODRmZGNmMzFhZTZiMmY1OTM1NjRjYzYwMzY3ZDA4YTRlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg5ZTEzYmY5OWRjYTI2NGFhNGRkM2RjZDEwODIxMDMyMjMyNTE3NzcyOGQwMTMyZTAzYTJkZjBkZDQwYjc5NSJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L92-L158",
+          "version": "repo-lines-v1:sha256:9e27a6f9b0eba6dfbf30cfc952dc91b7fcefe457945820c205cd0ef918caa8ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZTkyOWE3NGJkNzk3ZTI3NzQ5ODZhMzcxOGEyMDYzODZjNDFiNGNiOTI4NGI5YmZhOThmZDFhMzQ0ZjJjMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0ZTU1NDAzMTViMzBkMTg4Y2FhZWNiNDk0OGZkZGJiYjIyMGE1ZjA1NDhlMmU4MDc4MWIxZDA4OGI5MmY2N2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9243e3d5ef441bd897227f54c38ba5f",
+      "statement": "`scripts/gen-egress-policy.mjs` emits both enforcement forms in a deterministic order — by group in the fixed order agent, source, registry, packages, app, then alphabetically by domain, with the `--forge-host` entry appended last so its presence or absence never reorders the rest — which is what makes a regenerated form produce an empty diff.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L160-L166",
+          "version": "repo-lines-v1:sha256:832308b7521f05d837fe70ee0f57a5e109e35f162609f88889957e003acc0bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzgxYTJiMDYyZGRiNGM4ZWIxZDY4YWMzNTU3MGQzYTMyYjRlN2M0MTlkNWM4MjY0NTRjZmRkYjdjODZiNGIyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmY2NTBiY2MxMmNjOWMyNTNjNjhkNDE0NWE1YTFmYjljMzc2ZWM2MGEzMjc5OGExNzMyY2JhZTZiYTA1YzEwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjU0NDQzZTQ1Y2RiMTE4YjIxZmYzNWNhZWNhMzE4MGZmMzIxYWNmMzVkZWMwNjEzYTcxMGJjNWUwODkwYjVkMCJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L197-L213",
+          "version": "repo-lines-v1:sha256:91540e8217aef915107521018514d8395cff2b55c20639ac7fd2db1ab6d125d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZDFmZjdjMDBhZTYzOTllZTA4ZGFjYjczYTI1MWQzMmI2MjFkZjljMWQxMWY5MTY0ZDlmZTEzMDI2YjRlZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Nzg3ZThmNzJhNGJlOTU4ZjE3MDBiOGUxODE1YjgwM2FhYWE0ZDc3YzFkMzE3ZWUyZmMxMDYwMTYyNWMxYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NjZjYzFiMDM0YTI5NmY1MGNmYWQ5Njg4MTcwODA1YTAwZjgwZWY1YTEwMzc4NGFhMTExMTQ1NDNmY2FjYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiOTY4NTI0ZGEyYWQzOWIyNzhmNmE4Yzk3ZjZkOTMwZDc0Y2JkYTI2NWI4ZTY0YWU2ZmVlMDdiMjRjOWE5YmUifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-egress-policy.mjs#L39-L47",
+          "version": "repo-lines-v1:sha256:3323a2d07c86d4130f86594906259535a27b82fd81bdc42f3bd7e575e7d41237:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmNjZDJjNGQ5YjZiZWFjZDIwMDMxNTNkZjZjNWFkOGJlN2I0MWY4NTNhNTViNDViODJkMTRjZjllNDMxMmY2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGMwZjU2MjU1ZTg2N2U0M2FhMTliNjllZDBkYjczNTc4MGRiNjAyNDc3Yjc4ZWMzNjdjOWQ1YjJhODZlM2E1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ1M2IzOTA4MjkwOWNhYTQzZWMxNTQwM2RkZmUzNDdmZGJmNDNiNTkwNGYwM2EzN2I3YmY1NDM2NzBiODRiZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_463ec81b31e84fe3901f9ee30bc81855",
+      "statement": "The canonical allowlist encodes the telemetry inversion as an invariant: its `$mustNeverAppearHere` section forbids the forge/tailnet host, any credential, the OpenWiki analytics host, and every Claude Code / Anthropic telemetry endpoint (`statsig.*` and similar), because telemetry is disabled by configuration rather than permitted by allowlisting. The `wiki-update` Nx target setting `OPENWIKI_TELEMETRY_DISABLED=1` is the enforcement point (the Windows host has no egress firewall as a backstop), and the `containerEnv` entry is defence in depth for an ad-hoc bare `openwiki` call inside the container — so a blocked telemetry host is a working configuration, not a missing allowlist entry.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/devcontainer.json#L218-L227",
+          "version": "repo-lines-v1:sha256:bf4996eef19be9cbae9c00108a811ade4955d92cdef8060279c1782712946121:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZDcwMzY2Njk4NTBkZTVlZjAyMGEyN2UzNmI0NDIzYjAwZjZiMWE2NGUwNDljZDVkMjZmYWU4ZGFjZmRkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ODk3OGJlYWJmMTAxNTUzMDE0NWNkZDQ1ZDBlNmZmN2Q2OGQ3YjIzZGRhMTUwZTc2ZDkxYmIwZDAwZGMyZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjOGU5NWZhMGVkMTY3YmI1ODBmZWVjNmU4NmViNzI1NjcxZTgzMDYyMWJiZjc0NWI5NGY3ZTk2YTkwYmU3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZWU0NmUyZmZiNTZiN2Q5ZWUwZDYwZjlmMTM2MGZmOWViNzJiMDQ4NTEzYmM0YjU2M2Y1MjVkZDlkOTBkZDIifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/egress-allowlist.json#L20-L25",
+          "version": "repo-lines-v1:sha256:ea81d7e522687249151ef4429d8d63e2f8f36b8f9799392aea2123c1c035635f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkxNjA2Y2I2NTVhZDdiYmU3Yzg3NjgxMWQ4MzY5ODgxM2RjMTliMTg0YjYwMGFmMWZmYjE0MjU3YWE5YTYwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY0ZDhjMDczNDI5ODkzMTAxNTc2ZDg4ZDk5MTI3ZTg5ZDY4OTFkM2IxN2U4OWRmMDJlYzlhZTcwNzA1ZDhiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM3YjkxMDcwZGMzNjA5OTFhZTAwYThhMjRkMjhhYTY3MzVmNTg5YmVlNDQ4N2YwODI4OTBkMDc1NmMwMjcxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJlZDJiNmE4MTBjOWVjNDMwMThiYzJlYmEyYmJmY2M3YWY3OTk3OGRkZTc0OWE5NzBiMDBhNjE4OWFiY2E4YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e1fe583035c4bef930c7651c41d7449",
+      "statement": "`.devcontainer/egress-allowlist.json` records its deliberate omissions in `$consideredAndExcluded`, distinct from `$mustNeverAppearHere`: hosts that are permissible but unnecessary, such as Claude Code's self-update host (updates arrive by rebuilding the image), the package/toolchain install hosts `archive.ubuntu.com`, `security.ubuntu.com` and `static.rust-lang.org`, the hosted Nx cache, and third-party aggregators whose primary sources are already listed. The section exists so a later diagnosis can distinguish an intentional absence from a missing rule, and the stated bar for adding an entry is a symptom that requires it.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/egress-allowlist.json#L3-L13",
+          "version": "repo-lines-v1:sha256:9a1aae13ce7c92de6cfc270f2362480ded1e3f862c95ae6b401e2d9c4d157f66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNmNmOTY0YzllZTliMGEzYThlN2M3YjcyYTA2MGEwZDcwNzkwOGI4OTY4N2M2OGI1MDNmNjU2N2VjNTllMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMWM0MzRmMDI5MjQ1MzgxY2VlZWYzNTQ1YzdiNWQ2MTE3Yjk0ZTNkNWJiNmU1NDUwOTQ4ZjA4NzI1NGE5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMmI0OGYzMGE3YTMzZTg5Mzc0Y2MwNjM1OGQ4NWQ4MGI2MGFlNTU0ZmRkYTEwNDY5NTU1MjI1NDIyMzRmMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_44be334bb78048c498870198cb7845cf",
+      "statement": "`.devcontainer/verify/verify-egress-allowlist-contract.sh` is the contract check that keeps the two egress enforcement layers from forking: its eight assertions cover one emitted line per destination in both `sbx-policy` and `ipset-domains` formats, byte-identical and stably ordered output across runs, `--forge-host` appending exactly one entry to each form, omission of `--forge-host` being clean (exit 0, no literal, no stderr), `--check` accepting the committed file, and `--check` rejecting each of a bare IP, an empty reason and an unknown group. Its expected destination count is read from the canonical file rather than hardcoded, and it runs in any mode (Windows host, dev container or sandbox VM) because it only shells out to `node` and reads committed files.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-egress-allowlist-contract.sh#L1-L14",
+          "version": "repo-lines-v1:sha256:6f5907aa6ea1e1f32168a5e28392393d0eb27aa0891153e94102214c46cb7d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNzY5MGU0MjZlZjkzYTBhMGYzNDk0NzUwNDYyZGFlYjBmM2RiZGNmMDcyYmI4ZjBlMmNjNmNhMGNiYWZkMWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMGVhNmMxMWI0YWRiY2E0YTdmM2UwNzMwZWU0ZjRiNDgwYzJhYjRkOGQ1N2U0OGY5ZmU4Y2U4ZTkxMzE0ZDgifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-egress-allowlist-contract.sh#L171-L221",
+          "version": "repo-lines-v1:sha256:61e7af26a711b11dece8f037335fba05e0847a039a356229285c97bf6ee81484:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNWNiNjljM2Y2NzM4NzEyZTg0MTZlM2ZmNWIzMWVmN2YzYTAzMDIyYTE0ODYzMjVlZTg3MGVhY2M1YTIyMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjg2OGMyYzQ0ZjA1MzYxOWNlZjFjYzM4M2UxZDUzMDc0M2I1NzRjYTE5MmFjZTkxNjhhOWNjZjQ2YTg2ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMmMzNmRkZmMwNDJhNmU5MjkwMThmNTQ3OWEyMTlmYmQyNmMyODBhMmFhNzBiNTY3MzY0MTdmZGI4MWYzZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-egress-allowlist-contract.sh#L46-L54",
+          "version": "repo-lines-v1:sha256:dcc023649232eaac9832055a76bac091a115ac9e7319ded58b7314f7f3ff7b59:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY4ODZkODNkNDJiNmRlNmNhNjNmZTRlZTgwYjg4YzgzY2JiNTFiODYzODE0MzA1MDcxOGMyMzJkNDIyNjgxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDYzZWRlNjE0ODIxNmQ2YjI5ZGNhMTkzNDUyMzQ0NzlkMTdhY2FiNTI2OWI1M2U1M2I5YzhmMTI0ODI4MDRlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ2YjU1MjgyODhiYzc1MDQxOGIyMjg4ZGUzNzM1YWJkNTVhZmQ0YjQwNDAxZTIxYzBkMDdmOWUyOGFjMzI4NiJ9"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-egress-allowlist-contract.sh#L74-L169",
+          "version": "repo-lines-v1:sha256:432df7c59e797f84897733b6ef5ceff0da25c3eacea8bb08e2fb1e0fa645cfee:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkZGY5NmM4ZTRiMjY1NjYzY2ZiMjVmNTE1OGIxMTQxNjIyNjNmOGQzNjhmMTFkNDliMmUzMDNjODM0YTUzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExMGE5YmRmYmIyMjNhYTg1OGMyYmY0NGIxMjM5YjhjMjIwZjNjZjg1NWFiY2VmNTAxZGUxMDFjZDNlM2JlMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkODZmNWJmMTcwZDA5YjhkOTNiNjQ3Mzc5YWZlOWRhMzljMmZjOTZhMTkxMDgxMWI5NDg2ZGZiNzczZWUyODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8f3cba88b2a427a862ccfcbb01b259c",
+      "statement": "`verify-firewall-allowlist.sh` also derives its per-group reachability probes from `.devcontainer/egress-allowlist.json` (one representative domain per `group` value, read at run time) rather than hardcoding them, so a newly added group cannot be silently left unprobed while the check still reports PASS.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh#L120-L134",
+          "version": "repo-lines-v1:sha256:ad8976b5c4a0477cb3633ff2f5cb5ac92337566f57d84c4524e6cac21f8900be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OTIyOTE4MDc0NTE2YzBkYzhmM2E4ZGU3NTRkZTBjMjIxZTYwMmUxYjFkZjM5YTA4NzgxMmFhY2ZhY2RhZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxM2JhOWZiMzg0Yjg4NDFjNmU1OTAzZGExYThmMmY3OGYwOWVhZjczNDNjMDU3NmFmMzE1N2Y1MTg2MDlhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZjlmYjE0YTAyOTI2MDMyYzA5OWE5MDk0MDU1OWU5OWUxZjQxMDUyZDg2YzczMjBkNDQ0NjBiMTgzMzliZjIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T17:22:52.674Z"
+    "at": "2026-10-24T20:35:10.714Z"
   }
 }

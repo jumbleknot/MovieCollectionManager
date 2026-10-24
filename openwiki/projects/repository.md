@@ -90,7 +90,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T02:14:36.804Z
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -118,6 +118,18 @@ themselves are the authority:
 `cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 24** covers both the BFF
 container base and the dev-container toolchain image, with **pnpm 12** and **Nx 23** as the package
 manager and task runner.
+
+**Node is the one version deliberately *not* single-sourced, and the gate enforces a floor rather than
+agreement.** Workflow `node-version:` entries, the app Dockerfile's `FROM node:` and the bare `24` in
+the infra-image-scan workflow are allowed to drift apart, and they do — a Node bump legitimately
+arrives as two Renovate PRs on two different channels (`ci actions` and `docker base images`). The
+gate is what makes that acceptable: it fails only when a pin is below the root manifest's
+`engines.node` floor or is not an explicit version, so **there is no single "the Node version" to
+quote** — read it per context, and never "fix" the drift into one pin without also collapsing the two
+Renovate groups. The accepted-divergence record and the failure behind it (pnpm loading `node:sqlite`
+and crashing on Node 20 with `ERR_UNKNOWN_BUILTIN_MODULE`) are in
+[docs/runbooks/renovate.md](../../docs/runbooks/renovate.md) and
+[docs/runbooks/dev-environment-setup.md](../../docs/runbooks/dev-environment-setup.md).
 
 For the full description, architecture diagram, feature list, and the human-readable tech-stack
 table, see the [README](../../README.md) — treat that table as an overview, not as the pin, for the

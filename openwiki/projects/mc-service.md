@@ -4,9 +4,6 @@ title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns over its own replica-set MongoDB.
 resource: docs/MCM-Architecture.md
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-23T11:13:11.115Z
 sources:
   - id: openwiki-source-d54b05966a54dbfbb9eb63bc
     resource: repo://backend/mc-service/Cargo.toml
@@ -89,6 +86,9 @@ sources:
   - id: openwiki-source-072f6ea660585ea2cb7a706c
     resource: repo://scripts/mc-service-integration-guard.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -235,13 +235,45 @@ sort-field remapping and filter-parity traps are their own page:
   [mc-service musl-conditional vendored OpenSSL](../gotchas/mc-service-musl-openssl.md).
 - **Runtime config** is exactly the five env vars `Config::from_env()` requires — `MC_DB_URL`,
   `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `MC_SERVICE_PORT` — supplied by
-  `infrastructure-as-code/docker/mc-service/compose.yaml` for the dev/`app` profile. Dev Mongo comes
-  up as a single-member replica set (`--replSet rs0`) plus a one-shot `rs-init` sidecar, and
-  mc-service connects with `directConnection=true` to bypass member discovery. The production stack
-  (`compose.prod.yaml`) is a separate file: internal-only on its own network, no published ports,
-  `--keyFile`-enabled Mongo, and it carries its own mongod `command`, so the dev WiredTiger tuning
-  below never reaches production.
-- See [local dev](../runbooks/local-dev.md) for the stack/profile bring-up sequence.
+  `infrastructure-as-code/docker/mc-service/compose.yaml` for the dev/`app` profile (the service also
+  sets `RUST_LOG=info` and publishes `127.0.0.1:3001` for host-side runs). Dev Mongo comes up as a
+  single-member replica set (`--replSet rs0`) plus a one-shot `rs-init` sidecar, and mc-service waits
+  on that sidecar with `service_completed_successfully` and connects with `directConnection=true` to
+  bypass member discovery.
+- **Production is a separate file, not a profile of the dev one.** `compose.prod.yaml` publishes **no
+  ports** at all, runs Mongo with `--keyFile` (which implies `--auth`) and connects as the
+  least-privilege `mc_service_app` user with `authSource=admin`, and carries its own mongod `command`
+  — so the dev WiredTiger tuning below never reaches production. The network split is the DB boundary:
+  mc-service sits on both `backend-network` (peers: Keycloak for JWKS, the BFF and `movie-mcp` as
+  callers) and its own `mc-service-network`, while Mongo is on `mc-service-network` **only**, so a
+  compromise of any other backend container cannot reach the database. The dev stack has neither
+  half of that: Mongo carries no credentials and mc-service publishes `127.0.0.1:3001` for host-side
+  runs. Three further differences from dev: there is **no `rs-init` sidecar** (an exited one-shot
+  container makes Komodo flag the whole stack unhealthy), mc-service itself carries a `wget /health`
+  healthcheck on port 3001, and the image is promoted by digest from CI so nothing is built on the
+  prod host. Read that file's comments sceptically in two places, because they contradict its own
+  healthcheck: the header says the Mongo container self-initialises `rs0` via its healthcheck and the
+  `depends_on` comment still reads "healthy == rs0 initiated + PRIMARY", but under `--auth` that probe
+  cannot work — `rs.status()`/`rs.initiate()` require authentication — so the shipped healthcheck is a
+  credential-less `ping` (as its own feature-026 comment explains), and fresh-volume replica-set
+  initiation is a **separate authenticated bootstrap step**, not a healthcheck side effect. So on prod
+  `service_healthy` means "the store answers a ping", not "the replica set is up". The keyfile itself
+  is materialised in-container by `mongo-entrypoint.sh` from the `MONGO_MC_KEYFILE` env var (env-only —
+  no host file-secret), written `0400` and then `exec`ed so its owner matches the mongod runtime user
+  by construction; a `rm -f` first makes a container restart work, since the prior run's read-only
+  keyfile cannot be reopened by the non-root user.
+- **Both Mongo services start as root only to re-own `/data/db`, then drop to `mongod`.** The
+  9.0-ubi9 image runs mongod as uid 1000 while 8.0.8-ubi9 ran it as 998, so a volume written by the
+  older image is foreign-owned and 9.0 dies at start with `Unable to read the storage engine metadata
+  file … storage.bson` (`FileNotOpen`). The `sh -c` entrypoint re-owns `/data/db` once when it finds a
+  foreign-owned path (skipping `.mongodb`, which is mongosh's own client log dir), then
+  `setpriv --reuid=mongod --regid=mongod --init-groups` before handing off — mongod itself never runs
+  as root. Both halves are pinned by `scripts/__tests__/mongo-data-owner.guard.test.mjs`, which runs
+  the wrapper against stubs so it asserts what the script *does* rather than how it is spelled, and
+  checks the script text is identical across all four Mongo-bearing compose files.
+- See [local dev](../runbooks/local-dev.md) for the stack/profile bring-up sequence and
+  [production data-tier auth](../runbooks/prod-data-tier-auth.md) for the SCRAM cutover and keyfile
+  materialisation.
 
 ## Gotchas
 
@@ -302,8 +334,9 @@ sort-field remapping and filter-parity traps are their own page:
   properties a passing suite cannot show. If you make `cleanup_db` drop or wipe again, expect the
   churn to come straight back.
 - **`nx test mc-service` and `nx test:integration mc-service` must run the integration binaries the same way — and they now do.** Before 2026-09-16 the developer-facing `nx test` invoked cargo at default parallelism while the CI gate (`test:integration`) always ran through `mc-service-integration-guard.mjs` at `--test-threads=1`. The two tiers disagreed about the one setting that changes the result: a test failing ~2 runs in 3 locally was green in CI for months. The reconciliation: `nx test mc-service` now delegates via `dependsOn` to `test:unit` and `test:integration` rather than running cargo itself, so `--test-threads=1` is decided in exactly one place (`cargoArgs.push('--', '--test-threads=1', ...)` in the guard — a second copy anywhere else is a second thing to drift). Do NOT flip to parallel without fixing the underlying contention first — measured 2 failures in 29 runs at default parallelism from a clean MongoDB after item #462 was resolved, always in `movies::large_collection_test` (an index-creation failure or a `MovieNotFound` read-your-own-writes miss); serial over the same period was 180/180.
-- **The guard is also the tier's no-false-green gate, and Rust has no "skip" primitive.** A missing Mongo or Keycloak already *fails* a test (`.expect()`/`.unwrap()` in the body), so skips are not the concern; the two false-green vectors are an undocumented `#[ignore]` silently disabling a test, and a wholesale-disabled suite executing zero tests yet exiting 0. The guard forbids a **bare** `#[ignore]` anywhere under `tests/integration/` (a documented `#[ignore = "reason"]` is allowed — ~24 full-stack HTTP tests are legitimately ignored), and requires every binary declared as a `[[test]]` target to emit a `test result:` line with at least one executed test. Do not replace those with a blanket `--tests` invocation: the guard runs the integration binaries *explicitly* so the parsed result lines stay integration-only, since the crate's inline unit tests belong to `test:unit`.
+- **The guard is also the tier's no-false-green gate, and Rust has no "skip" primitive.** A missing Mongo or Keycloak already *fails* a test (`.expect()`/`.unwrap()` in the body), so skips are not the concern; the two false-green vectors are an undocumented `#[ignore]` silently disabling a test, and a wholesale-disabled suite executing zero tests yet exiting 0. So the guard does two things: it forbids a **bare** `#[ignore]` anywhere under `tests/integration/` (a documented `#[ignore = "reason"]` is *permitted*), and it requires every binary declared as a `[[test]]` target to emit a `test result:` line with at least one executed test. The permitted branch is currently unexercised — the guard's module header still explains the ban by saying "~24 full-stack HTTP tests are legitimately ignored", but the tree now contains **zero** `#[ignore]` attributes, so the ban is what does the work. Do not replace the explicit binary list with a blanket `--tests` invocation: the guard runs the integration binaries *explicitly* so the parsed result lines stay integration-only, since the crate's inline unit tests belong to `test:unit`.
 - **The guard discovers its binaries from `Cargo.toml`, and there are four of them — one more than one harness comment still says.** The `[[test]]` targets `health_test`, `collections_test`, `movies_test` and `pool_test` are each one integration binary; the guard parses those declarations rather than a hardcoded list, so a fifth added target is covered automatically — and one whose `path` stops pointing into `tests/integration/` is silently dropped from the executed-count assertion, which is the failure mode to watch when moving test files. `tests/integration/pool_test.rs` still says "the three integration binaries run one after another", written before `pool_test` itself was added, so do not take the count from that comment.
+- **The integration tier needs a live Keycloak *and* four ROPC credentials, not just a Mongo.** `tests/integration/common/auth.rs` mints a real bearer token by the OAuth2 Resource Owner Password Credentials grant against `KEYCLOAK_URL`/`KEYCLOAK_REALM`, reading `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER` and `E2E_TEST_PASSWORD`; every failure path panics naming the *variable* or the token endpoint's status and deliberately never echoes the response body, which can carry credential material. The token is cached once per test binary (the suite finishes well inside its lifetime, so there is no refresh path), and the identity's `sub` is read from the token's own payload rather than from the service's response — comparing a response to itself would pass even if the service stamped a constant subject. So a realm-import regression (a missing client, mapper or user) fails here with a named cause instead of surfacing later as an opaque 401 in the E2E legs. Run it through `node scripts/gen-dev-env.mjs`, which writes `backend/mc-service/.env.local`.
 - **The fast Rust gate compiles the tests, not just the library.** `nx lint mc-service` runs clippy
   with `--all-targets -- -D warnings`, and the flag must stay *before* the bare `--`; without it the
   fast `mc-service-checks` job checks lib + bins only, and since `test:unit` runs `cargo test --lib`

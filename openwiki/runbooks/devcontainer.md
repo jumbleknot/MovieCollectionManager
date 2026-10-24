@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
-description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall and its fatal-precondition design, the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
+description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall (its schema, exclusions and fatal-precondition design), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook, android]
 sources:
@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -100,6 +100,32 @@ of two allowlists and diagnosis into guesswork. The generator never writes a fil
 piped by their consumer — so no generated artifact can go stale in git and silently disagree with
 its source.
 
+**That file governs the list, it does not merely store it.** Each destination carries a `domain`, a
+`group` (one of `agent`, `source`, `registry`, `packages`, `app`), a non-empty `reason` and a
+`cdnRotating` flag; `node scripts/gen-egress-policy.mjs --check` validates the whole file and fails
+naming the offending entry, rejecting a bare IP, an empty reason, an unknown group, a duplicate, a
+dotless hostname, a topology-sensitive suffix (`.ts.net`, `.internal`, `.local`, …) and a forge host
+pasted in while `FORGE_REGISTRY_HOST` is set. Emitting validates first, so a malformed list is
+refused rather than piped into an enforcement layer, and the emission order is deterministic (group
+order, then alphabetical, with the forge host appended last so its presence never reorders the rest),
+which is what lets a regenerated form diff empty.
+
+**Telemetry is turned off by configuration, never by allowlisting — and that inversion is written
+into the file as an invariant.** Its `$mustNeverAppearHere` section names the forge/tailnet host, any
+credential, the OpenWiki analytics host and every Claude Code / Anthropic telemetry endpoint
+(`statsig.*` and similar). The `wiki-update` Nx target setting `OPENWIKI_TELEMETRY_DISABLED=1` is the
+enforcement point, since the Windows host has no egress firewall as a backstop; the `containerEnv`
+entry is defence in depth for an ad-hoc bare `openwiki` call inside the container. So a telemetry
+host that is *blocked* is a working configuration, not a symptom of a missing allowlist entry.
+
+**`$consideredAndExcluded` records the hosts that were deliberately left out**, each with the reason
+it is unnecessary rather than forbidden: Claude Code's self-update host (an update path this image
+deliberately does not have — updates arrive by rebuilding), the package/toolchain install hosts
+(`archive.ubuntu.com`, `security.ubuntu.com`, `static.rust-lang.org`), the hosted Nx cache, and
+third-party aggregators whose primary sources are already listed. It exists so the next person
+diagnosing a Claude Code failure can tell an intentional absence from a missing rule; the stated bar
+for adding an entry is a symptom that requires it.
+
 The script treats an unusable allowlist as a reason to **apply nothing at all** rather than to apply
 default-deny with an empty list. Every precondition failure is fatal, because the alternative —
 `DROP` with zero allowlisted destinations — is a total egress blackout that presents as a network
@@ -145,7 +171,18 @@ itself an example of the single-source rule: `verify-firewall-allowlist.sh` used
 inline copy of the destinations it checked, which cannot detect drift between the canonical list and
 the live ruleset; it now resolves each canonical domain through the same generator and asserts
 membership in the live ipset, so a `cdnRotating` entry whose A-records moved surfaces as the
-documented re-apply reflex rather than as a missing rule.
+documented re-apply reflex rather than as a missing rule. Its per-group reachability probes are
+derived from the canonical file too, so a new group cannot be silently left unprobed.
+
+The generator has its own check, `verify-egress-allowlist-contract.sh`, which is the reason the
+two-layer arrangement cannot quietly fork: eight assertions cover one emitted line per destination in
+both formats, byte-identical output across runs, `--forge-host` appending exactly one entry to each
+form, omission of `--forge-host` being clean (exit 0, no literal, no stderr), `--check` accepting the
+committed file, and `--check` rejecting each of a bare IP, an empty reason and an unknown group. Its
+expected destination count is read from the canonical file rather than hardcoded — a hardcoded
+expectation is precisely the drift-blind failure the single-source rule exists to prevent. The
+script runs in any mode (Windows host, container or sandbox VM), since it only shells out to `node`
+and reads committed files.
 
 ## Gotchas
 
@@ -248,17 +285,27 @@ documented re-apply reflex rather than as a missing rule.
   nested containers reach it through the bridge gateway; the agent gateway already targets
   `host.docker.internal:11434` (its compose default plus an `extra_hosts: host-gateway` mapping)
   and reaches it with no gateway change, image rebuild, or firewall change. The image is pinned by
-  tag **and digest** in `infrastructure-as-code/docker/dev-ollama.compose.yaml`; the script pulls
-  `qwen2.5` once into the `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB
-  download must never block container readiness), overridable via `DEVCONTAINER_OLLAMA_MODEL`, and
-  the balanced `qwen2.5:32b` tier is a by-hand pull only (`docker exec dev-ollama ollama pull
-  qwen2.5:32b`) because CPU inference makes it slow. The script is best-effort and idempotent **by
-  design**: it exits 0 when the nested dockerd is not ready or the API has not answered, so a failed
-  Ollama start can never block container start — agent flows just fall back to Anthropic.
-  Re-measured 2026-08-09: reachable from inside the gateway container. **Verify with the
-  liveness probe before trusting this note** — it has flipped once:
+  tag **and digest** — `ollama/ollama:0.40.6@sha256:265409e1…`, bumped deliberately — in
+  `infrastructure-as-code/docker/dev-ollama.compose.yaml`, which also declares `restart:
+  unless-stopped` and an `ollama list` healthcheck; the script pulls `qwen2.5` once into the
+  `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB download must never block
+  container readiness), overridable via `DEVCONTAINER_OLLAMA_MODEL`, and the balanced `qwen2.5:32b`
+  tier is a by-hand pull only (`docker exec dev-ollama ollama pull qwen2.5:32b`) because CPU
+  inference makes it slow. The script is best-effort and idempotent **by design**: it exits 0 when the
+  nested dockerd is not ready or the API has not answered, so a failed Ollama start can never block
+  container start — agent flows just fall back to Anthropic. Re-measured 2026-08-09: reachable from
+  inside the gateway container. **Verify with the liveness probe before trusting this note** — it has
+  flipped once:
   `docker exec movie-assistant-gateway python -c "import urllib.request,json; print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"`.
   See [Model-provider scoping](../invariants/model-provider-scoping.md).
+  - **That pin is maintained, not decorative — and it used to be invisible.** `dev-ollama.compose.yaml`
+    matches no manager's default file pattern, because the docker-compose manager requires the
+    *basename* to begin with `compose`/`docker-compose`; the pin sat un-bumped for months with
+    `docker:pinDigests` already enabled. The pattern in `renovate.json` is now a strict superset of the
+    default, so the file is seen, and `scripts/__tests__/infra-image-scan.test.mjs` fails any
+    third-party infra image reference in `infrastructure-as-code/` that carries no `@sha256:` digest —
+    a stale pin here is therefore a real finding rather than a silent one. Bump the tag and digest
+    together and deliberately; see [Renovate dependency bot](./renovate.md).
 - **A blocked Ollama destination is a blocked merge gate, not an inconvenience.** The canonical
   allowlist carries both `registry.ollama.ai` (the manifest host compiled into the ollama binary) and
   the pinned Cloudflare R2 blob host every model layer is actually served from (item #394). With
