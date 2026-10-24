@@ -325,12 +325,9 @@
 # releases, so no bump reaches the fix: root via @microsoft/agents-hosting 1.9.1 (latest; pins msal-node 5.6.0
 # EXACTLY), generator via @azure/identity 4.14.0 (latest; requires ^6.0.0). Forcing 7.x under either would be a
 # one-or-two-major jump beneath a library that pins it. Remove when a dependent release admits >=7.1.0.
-- scanner: "pnpm-audit"
-  id: "GHSA-xcx6-jx8p-x3h5"
-  locationPattern: "^@azure/msal-node@5\\.6\\.0$"
-  justification: "No reachable fix: @microsoft/agents-hosting 1.9.1 (latest, part of the BFF CopilotKit agent stack) pins @azure/msal-node 5.6.0 exactly; the fix is 7.1.0 (2026-10-23). The app performs no Microsoft identity authorization-code flow (no MSAL client configuration anywhere in src/), so the affected redirect path is not exercised. Time-boxed under the operator's keep-CI-unblocked direction 2026-10-24: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20; re-check agents-hosting then."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-20"
+# ROOT ENTRY DELETED 2026-10-24 (Renovate lockfile maintenance, PR #833): @microsoft/agents-hosting is only an
+# OPTIONAL peer of @copilotkit/channels-teams, and the regenerated lockfile no longer installs optional peers, so
+# msal-node is absent from the root lock and the entry would match nothing. Only the generator copy remains.
 - scanner: "pnpm-audit"
   id: "GHSA-xcx6-jx8p-x3h5"
   locationPattern: "^tools/openwiki-generator:@azure/msal-node@6\\.0\\.1$"
