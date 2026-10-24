@@ -147,6 +147,12 @@ Perform **once** after a change to the reboot posture merges to `main` and Komod
 
 **Pass = all rows pass on the first reboot, no manual `docker start`.** Any failing row is a defect to fix before closing the feature; if the reboot lands dirty, recover with the ordering in Part 5.
 
+**Validation history.**
+
+| Date | Trigger | Result |
+| --- | --- | --- |
+| 2026-10-24 | apt full-upgrade (103 packages): kernel 7.0.0-27 → 7.0.0-38, Docker 29.9.2, containerd 2.4.2, tailscale 1.104.2. Both rootless daemons (prod and ci) came back on 29.9.2 | **Pass, every row.** No manual start. Mongo and Vault `RestartCount=0` and healthy; periphery root on persistent disk; `keycloak-service` on `backend-network`; the three admin ports on `0.0.0.0`; `tailscale0` offloads off; `forgejo-runner` up |
+
 ## Part 5 — Feature 030: Reboot-Resilience v2 (2026-07-08 failure)
 
 A validation reboot on 2026-07-08 came back **not** clean: the DB tier was up but the **whole app tier + Komodo periphery + Forgejo were down**, and Komodo could not redeploy. Two independent root causes, both gaps 028 missed.
@@ -178,7 +184,7 @@ The mechanism and its proof are in §2c. **Fix:** every prod compose service is 
 | Forgejo (forge + db) | `/home/prod/forgejo/compose.yaml` |
 | Komodo (core/periphery/ferretdb/postgres) | `/home/prod/komodo/ferretdb.compose.yaml` |
 | cloudflared (public tunnel) | `/home/prod/cloudflared/compose.yaml` |
-| beszel, dozzle, rustfs, uptime-kuma | `/home/prod/<name>/compose.yaml` — `rustfs` is the Nx-cache object store (feature 080); until its M8 cutover the host still runs it from `/home/prod/minio/` |
+| beszel, dozzle, rustfs, uptime-kuma | `/home/prod/<name>/compose.yaml` — `rustfs` is the Nx-cache object store (feature 080). The object-store project it replaced is retired: do not list or restart it (its orphans are covered in Part 6) |
 
 > **Interim runtime hardening** (already applied, survives until each container is next *recreated*): `docker update --restart always $(docker ps -q)`. The committed compose `always` values + host-compose edits are what make it durable across recreates/rebuilds.
 
@@ -193,6 +199,56 @@ ExecStop=/bin/sh -c 'docker ps -q | xargs -r -P 20 -I{} docker stop -t 20 {}'
 ### Recovery ordering blind spot (why the UI was stuck)
 
 Komodo **periphery** is itself a rootless container — on the failed reboot it was down (drain victim), so **Komodo Core had no agent and the UI showed no stacks / could not sync**. And **Komodo clones the repo from Forgejo on every sync**, so Forgejo must be up first. Manual recovery order when a reboot lands dirty: **(1)** `docker start komodo-periphery-1` (Core reconnects), **(2)** `docker start forgejo-forgejo-1` (git source), **(3)** Komodo **Execute Sync** (re-clones to the persistent root, recreates + starts every stack).
+
+## Part 6 — Operating the host safely (lessons from the 2026-10-24 reboot)
+
+### A hand-stopped `restart: always` container comes back at boot
+
+`docker stop` does not change a container's restart policy. When the rootless daemon starts at
+boot, it starts **every** `restart: always` container again, including ones stopped by hand because
+they are retired. So before a reboot, take each orphan out of the policy, or remove it:
+
+```bash
+prod$ docker update --restart no <container>   # stays Exited across the reboot
+# or, once its data is no longer wanted (volumes are kept unless named):
+prod$ docker rm <container>
+```
+
+<!-- history:begin -->
+Before the 2026-10-24 reboot, this was done for the retired MinIO containers (`langfuse-minio`,
+`langfuse-minio-init`, `minio-minio-1`) and the finished one-shots (`rustfs-createbucket-1`,
+`minio-createbucket-1`, `mc-service-store-mongo-rs-init`). They stayed `Exited`, as intended.
+<!-- history:end -->
+
+### Act as `prod` through a real user session
+
+`systemctl --user` and the rootless `docker` CLI need the prod user's systemd session
+(`XDG_RUNTIME_DIR`, its D-Bus, and the rootless daemon's socket). `sudo -iu prod` does not create
+one: `systemctl --user` fails and `docker` cannot find the daemon. Use:
+
+```bash
+sudo machinectl shell prod@
+```
+
+### Run apt upgrades detached
+
+The `tailscale` package restarts `tailscaled` during the upgrade. That drops every Tailscale SSH
+session, including the one running `apt`, which happened on 2026-10-24. So run the upgrade as a
+transient systemd unit that does not belong to the SSH session:
+
+```bash
+sudo systemd-run --unit=apt-upgrade --setenv=DEBIAN_FRONTEND=noninteractive \
+  apt-get -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
+# follow it (safe to lose and re-attach):
+sudo journalctl -fu apt-upgrade
+# done when `systemctl is-active apt-upgrade` answers "inactive" (a finished transient unit is
+# garbage-collected, so `systemctl status` then says "could not be found" — not an error), and the
+# journal's last lines show "apt-upgrade.service: Deactivated successfully.":
+sudo journalctl -u apt-upgrade --no-pager | tail -3
+```
+
+`--force-confold` keeps locally edited config files; review the `*.dpkg-dist` files it leaves.
+Reboot only after the unit has finished, then run the Part 4 checklist.
 
 ## Rollback
 
