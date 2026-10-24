@@ -3,7 +3,7 @@
   "$consideredAndExcluded": {
     "$why": "Hosts that were FOUND while diagnosing a block and deliberately left out. Recorded because the next person to hit a Claude Code failure will extract the same hostname list and needs to know which absences are intentional — otherwise the allowlist grows by accretion, every unfamiliar name looking like a missing rule. Distinct from $mustNeverAppearHere: these are permissible, merely unnecessary. Add one only with a symptom that requires it.",
     "$howTheListWasObtained": "grep -aoE '[a-z0-9][a-z0-9.-]*\\.(anthropic|claude)\\.(com|ai)' /usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe | sort | uniq -c | sort -rn — reading hostnames out of the compiled binary beats guess-and-retry against a deny-by-default policy.",
-    "www.anthropic.com / docs.anthropic.com / docs.claude.com / support.claude.com / support.anthropic.com / status.claude.com": "Documentation, support and status pages. The CLI only ever prints these as links for a human to open in a browser ON THE HOST; nothing in the container fetches them. Excluded.",
+    "www.anthropic.com / support.claude.com / support.anthropic.com / status.claude.com": "Marketing, support and status pages. The CLI only ever prints these as links for a human to open in a browser ON THE HOST; nothing in the container fetches them. Excluded. (docs.anthropic.com and docs.claude.com were in this group until 2026-10-24 and are now DESTINATIONS: that premise stopped holding for them — the assistant itself fetches them.)",
     "api-staging.anthropic.com": "Anthropic's staging API. Never used by a released CLI against a production account. Excluded — allowlisting a staging endpoint on a production credential path is a needless widening.",
     "downloads.claude.ai": "Claude Code SELF-UPDATE. Excluded deliberately: the CLI version in this environment is part of the toolchain image, and a container that silently updates its own assistant mid-session is a reproducibility problem, not a feature. Updates arrive by rebuilding the image. ADD THIS ONLY IF you decide in-place self-update is wanted — the symptom will be an update check failing, never a broken session.",
     "gmail.mcp.claude.com / gcal.mcp.claude.com / microsoft365.mcp.claude.com": "Anthropic-hosted MCP connectors for Gmail, Google Calendar and Microsoft 365. This project's MCP servers are self-hosted and scoped (movie / web-api / spreadsheet); these connectors reach personal data stores that have no business being reachable from a repository's dev container. Excluded, and the bar for adding one should be high.",
@@ -622,6 +622,18 @@
       "domain": "mcp-proxy.anthropic.com",
       "group": "agent",
       "reason": "Tier 3 (assistant connector). The relay through which Claude Code reaches claude.ai-configured connectors (the 'Claude Docs' connector failed at session start on 2026-10-24 with getaddrinfo ENOTFOUND mcp-proxy.anthropic.com). ADDED AS A DELIBERATE DECISION, like mcp.context7.com: unlike a docs fetch, a connector call sends OUR QUESTION TEXT to the connector. The exposure is bounded by which connectors the account has configured; the personal-data connectors (gmail/gcal/microsoft365 .mcp.claude.com) stay excluded under $consideredAndExcluded and are separate FQDNs this entry does not open. Not telemetry — requested on demand — so the $mustNeverAppearHere inversion does not apply. Anthropic-operated, authenticated by the existing Claude login; no new credential. cdnRotating false: nothing MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "docs.claude.com",
+      "group": "agent",
+      "reason": "Anthropic's Claude platform and Claude Code documentation. Previously excluded under $consideredAndExcluded on the premise that 'nothing in the container fetches them'; REVERSED 2026-10-24 because that is no longer true — the assistant's own WebFetch does (the claude-api skill and the claude-code-guide agent both read Anthropic's docs), and the agent gateway's golden/prod model provider is Claude, so API, model and pricing pages are primary sources for this repository. Read-only and anonymous: a fetch sends the URL, not prompt text, so the $mustNeverAppearHere telemetry inversion does not apply. Not on the build or test path. The sibling status/support/marketing hosts stay excluded. cdnRotating false: nothing MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "docs.anthropic.com",
+      "group": "agent",
+      "reason": "Anthropic's legacy docs host; older links and SDK docstrings still point here, and it may redirect elsewhere — follow the chain before adding a further host. Previously excluded under $consideredAndExcluded on the premise that 'nothing in the container fetches them'; REVERSED 2026-10-24 because that is no longer true — the assistant's own WebFetch does (the claude-api skill and the claude-code-guide agent both read Anthropic's docs), and the agent gateway's golden/prod model provider is Claude, so API, model and pricing pages are primary sources for this repository. Read-only and anonymous: a fetch sends the URL, not prompt text, so the $mustNeverAppearHere telemetry inversion does not apply. Not on the build or test path. The sibling status/support/marketing hosts stay excluded. cdnRotating false: nothing MEASURED to rotate.",
       "cdnRotating": false
     }
   ]
