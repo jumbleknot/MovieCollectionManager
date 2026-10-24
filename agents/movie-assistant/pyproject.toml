@@ -45,7 +45,10 @@ dev = [
 # fastembed and its image path never run in the gateway.
 # fastembed 0.9.0 (latest) caps pillow<13, but nine High advisories (CVE-2026-112395..112899)
 # are fixed only in 13.0.0. Remove this override once fastembed lifts the cap.
-override-dependencies = ["pillow>=13.0.0"]
+# filelock: transitive only (huggingface-hub, litellm), capped <4 by a dependent, but CVE-2026-112940
+# (ReadWriteLock SQLite symlink/journal planting) is fixed only on the 4.x line. Forced to 4.2.4
+# (operator-approved 2026-10-23); drop this override once the dependents' cap admits 4.
+override-dependencies = ["pillow>=13.0.0", "filelock>=4.2.4"]
 
 [tool.ruff]
 line-length = 100

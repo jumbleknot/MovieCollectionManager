@@ -61,6 +61,47 @@
 # newest 1.x (1.21.4) was re-scanned the same day and is unchanged: libcrypto3/grpc + the two pgx Crits.
 # A re-keyed entry would match nothing and fail under UNMATCHED ENTRIES; and with renovate.json's
 # `<1.19` ceiling lifted, an empty vault allowlist is what makes this gate the vault hold now.
+# ── NEW advisories on unchanged pinned images (triaged 2026-10-23, operator-approved) ────────────────
+# CVE-2026-114406 (ca-certificates), next GHSA-2464-fhr4-w9xw / GHSA-673q-mjm6-r5xr and @sentry/nextjs
+# CVE-2026-114139 were published against images already running in prod; they turned infra-image-scan red
+# for every compose / renovate.json PR (#836, #837). Keycloak is remediated by a same-version digest
+# refresh in PR #838; the rest have no clean upstream today (scan table in PR #838). Time-boxed on purpose:
+# the 14-day expiry warning makes the weekly sweep red from 2026-11-06 — that is the re-check date.
+- image: 'grafana/otel-lgtm:0\.36\.0'
+  id: 'CVE-2026-114406'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream otel-lgtm 0.38.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'langfuse/langfuse:4\.56\.0'
+  id: 'CVE-2026-114406'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'langfuse/langfuse-worker:4\.56\.0'
+  id: 'CVE-2026-114406'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse-worker 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
+  id: 'CVE-2026-114406'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream mongodb-community-server 8.0.34-ubi9 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'langfuse/langfuse:4\.56\.0'
+  id: 'GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr'
+  justification: 'next 16.3.8 bundled in langfuse 4.56.0 (fix 16.4.1). A clean image EXISTS — langfuse/langfuse and langfuse-worker 4.68.0 (next 16.4.2, Trivy-verified 2026-10-23) — but 4.57-4.68 add ClickHouse and Postgres schema (billing ledger 4.60, audit-event relay 4.59/4.61), so the bump is a stateful migration taken as its own ADR-0002 PR, web and worker together. Delete these entries in that PR. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'langfuse/langfuse-worker:4\.56\.0'
+  id: 'GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr'
+  justification: 'next 16.3.8 bundled in langfuse 4.56.0 (fix 16.4.1). A clean image EXISTS — langfuse/langfuse and langfuse-worker 4.68.0 (next 16.4.2, Trivy-verified 2026-10-23) — but 4.57-4.68 add ClickHouse and Postgres schema (billing ledger 4.60, audit-event relay 4.59/4.61), so the bump is a stateful migration taken as its own ADR-0002 PR, web and worker together. Delete these entries in that PR. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: 'langfuse/langfuse:4\.56\.0'
+  id: 'CVE-2026-114139'
+  justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
 - image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in Go stdlib. Kept on 8.0.8 — feature 036 tried 8.0.26 but it (a) still bundles a pre-fix Go 1.25.5 binary (< fix 1.25.7; Trivy-verified) so it does NOT clear this Critical, and (b) came up UNHEALTHY on the CI rootless runner, breaking bring-up. No net benefit → stay on the long-stable 8.0.8. Internal-only; re-triage when a Go≥1.25.7 mongo image ships.'

@@ -260,6 +260,14 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-12-01"
 
+# ── zod 3.x GHSA-mrhx-c7xc-m3w5 (published 2026-10-23, operator-approved the same day) ─────────────
+- scanner: "pnpm-audit"
+  id: "GHSA-mrhx-c7xc-m3w5"
+  locationPattern: "^zod@3\\.25\\.7[56]$"
+  justification: "Memory exhaustion while validating oversized constrained collections. Fixed ONLY in zod 4.6.6+ (OSV: introduced 0, fixed 4.6.6); no 3.x release carries the fix. zod 3.25.76/3.25.75 are pinned by the BFF agent stack, not first-party code: @ag-ui/core/client/proto 1.0.2, @a2ui/web_core 0.10.4, @ai-sdk/* 2.x/3.x (anthropic, gateway, google, google-vertex, mcp, openai-compatible) and @microsoft/agents-activity/-hosting 1.9.1 (lockfile re-measured 2026-10-23); the app itself is on zod 4.6.7. Forcing zod 4 onto libraries written against the zod 3 API would break the agent runtime, so remediation is upstream (CopilotKit / ag-ui / ai-sdk moving to zod 4). The agent endpoints sit behind BFF session auth. Time-boxed: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20 — re-check the dependents' zod ranges then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+
 # ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
 # Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
 # `^braces@` and so, correctly, does not reach this workspace's findings (`<workspace>:pkg@version`).
@@ -296,3 +304,36 @@
 # 11.2.2 is gone from pnpm-lock.yaml and only the patched 12.0.3 remains. Deleted rather than left to
 # expire on 2026-11-06: an entry that matches nothing fails `--check-expiring` on the weekly sweep, and
 # deleting it is the direction that restores blocking if 11.x ever returns.
+
+# ── 2026-10-24: body-parser GHSA-27r3-jxmh-p828 in tools/openwiki-generator ONLY (operator-approved) ──
+# DoS via trailing bytes after a compressed request body; fixed in 2.4.0 (published 2026-10-22 11:39 UTC).
+# The ROOT workspace is FIXED, not allowlisted: pnpm-workspace.yaml's `body-parser@>=2.0.0 <2.4.0` floor
+# moves the BFF's express 5 to 2.4.0. The generator workspace enforces a 3-day `minimumReleaseAge`
+# (and forbids an exclude list), so 2.4.0 cannot resolve there before 2026-10-25 11:39 UTC — and without
+# this entry the repo-wide `sast` gate would hold every PR red until then. Bridge only: bump the generator
+# with the same floor after that time and DELETE this entry (item filed the same day).
+- scanner: "pnpm-audit"
+  id: "GHSA-27r3-jxmh-p828"
+  locationPattern: "^tools/openwiki-generator:body-parser@2\\.3\\.0$"
+  justification: "Fix (body-parser 2.4.0, 2026-10-22) is inside the generator workspace's own 3-day minimumReleaseAge, which forbids an exclude list, so it cannot be resolved there until 2026-10-25 11:39 UTC. The generator is a CI-only documentation tool (openwiki), not deployed and not exposed to untrusted request bodies. The root/BFF copy is fixed by an override in the same PR. Operator-approved 2026-10-24 as a short bridge; delete when the generator lock moves to 2.4.0."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-10-28"
+
+# ── 2026-10-24: @azure/msal-node GHSA-xcx6-jx8p-x3h5 — NO upstream fix reachable (operator rule: keep CI unblocked) ──
+# "Authorization code flow may disclose parameters to an attacker-controlled endpoint"; affected 5.0.0-beta.0
+# up to 7.1.0 (fixed 7.1.0, published 2026-10-23 22:16 UTC). Both copies are pinned by their dependents' LATEST
+# releases, so no bump reaches the fix: root via @microsoft/agents-hosting 1.9.1 (latest; pins msal-node 5.6.0
+# EXACTLY), generator via @azure/identity 4.14.0 (latest; requires ^6.0.0). Forcing 7.x under either would be a
+# one-or-two-major jump beneath a library that pins it. Remove when a dependent release admits >=7.1.0.
+- scanner: "pnpm-audit"
+  id: "GHSA-xcx6-jx8p-x3h5"
+  locationPattern: "^@azure/msal-node@5\\.6\\.0$"
+  justification: "No reachable fix: @microsoft/agents-hosting 1.9.1 (latest, part of the BFF CopilotKit agent stack) pins @azure/msal-node 5.6.0 exactly; the fix is 7.1.0 (2026-10-23). The app performs no Microsoft identity authorization-code flow (no MSAL client configuration anywhere in src/), so the affected redirect path is not exercised. Time-boxed under the operator's keep-CI-unblocked direction 2026-10-24: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20; re-check agents-hosting then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+- scanner: "pnpm-audit"
+  id: "GHSA-xcx6-jx8p-x3h5"
+  locationPattern: "^tools/openwiki-generator:@azure/msal-node@6\\.0\\.1$"
+  justification: "No reachable fix: @azure/identity 4.14.0 (latest, a transitive of the openwiki generator) requires @azure/msal-node ^6.0.0; the fix is 7.1.0. The generator is a CI-only documentation tool that authenticates to its model provider by API key (fireworks), not via an Azure authorization-code flow. Time-boxed under the operator's keep-CI-unblocked direction 2026-10-24: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20; re-check @azure/identity then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
