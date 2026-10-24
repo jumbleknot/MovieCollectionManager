@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2add33e3006f9c19dc9aeeb1d398a802b80fa497fda128446047a13b89bfe443",
+  "claims": [
+    {
+      "id": "claim_90d3031488b246f3931cda210aaddde1",
+      "statement": "The two production MongoDB stores have deliberately different auth shapes: `mc-service-store-mongo` is a single-member replica set (`rs0`) and therefore needs a replica-set keyfile, which implies `--auth`, plus SCRAM users, while `mcm-bff-store-mongo` is standalone and needs SCRAM credentials only and never a keyfile.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md",
+          "version": "repo-file-v1:sha256:612ddb4194b7f339affe519bf3e90f0fe8eaa8381747c2f58554ae7ec7cd7163"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:31dfc44c6ccef880abc2000c04c27ef80f3ef516b6c8f61ee9de8ce069548293"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:935bc8f328c0637a5caad461b966adbfba9c74ba3dd894049383f09f749b4269"
+        },
+        {
+          "resource": "repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md",
+          "version": "repo-file-v1:sha256:f4753d47ece2b8ac936482e2af60580e57303a4e2e133064bcc83b0717502e6f"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfd34a339444427b833bfcc2495a16df",
+      "statement": "The recommended cutover sequence pre-creates the app and root users with `createUser` against the still-unauthenticated `mongod` before merging the auth-enabled compose — users persist on the data volume, so the redeploy reconnects immediately with no unhealthy window; the localhost-exception cutover after auth is already on is the documented fallback, not the recommended path.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L59-L64",
+          "version": "repo-lines-v1:sha256:8e04ce004ca843f3f96ba8b410ccaf42eeb0dd7a5ff185c2381e3086b26bde2d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTEzMjNlYzI1NjNhYTdiMGIwODllZWFiNjY5MmEyMDhlOTA0MzFhNTI1MmY5MjM5YWE1NWY0ZGI2NzhmOTIwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVmN2MyMDJkODAyMTJlMTg5ZTNkZmI0YWQwOGJkZTU0ZGMxOGY4ZTRjZGQ1OGUxNDg2YWVmMzA1ZGVhYTE2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTMxY2UxZGFiZjY5NzQyMjQzMTM2ZmJhODgyZGMwNWVlNzZlMTY4MmM1OGI2M2FjYmM0ZTU4YTMzOGIyYmI3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc5YjE5MzZmODFmZmQ0NTY3YjVhNjAxZTAyZDU4YjRhZTdiNjY0YjY2YTk5NWZjZmFlMDcyMjJmMTE3YzgwMCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L91-L131",
+          "version": "repo-lines-v1:sha256:9784cad75c6da4c1bd22a81f2d9995d25f8fd23343428f52fc49a04d93b2bfc3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NWFhNGI5OTE1ZDAyZTc1N2IyNDE1MDUwOGMxZjIzMGQyNDc0Y2IyYTQ2N2RhNjcxNGNhZTk1NzUxODA5YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0YTE5NTdhZGZkM2UzNDZmOWZhYWRhZDE4NTg2OWEzYWE3NjlhZDRmZjQ3N2Y3NDc0Zjc2OTBjMjRlN2RhYTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4752024901454156b81b891cb795ec83",
+      "statement": "The movie store's keyfile is materialized inside the container from the `MONGO_MC_KEYFILE` environment variable at mode 0400 and mongod is `exec`'d in the same user context that wrote it, so ownership matches by construction; the entrypoint removes any prior keyfile before rewriting it so a plain container restart over a leftover 0400 file does not crash-loop.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L58-L67",
+          "version": "repo-lines-v1:sha256:26d453c9d9c87e511f799329128ed7031781dbaed2dc7631b52d5f6a36b3198e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDJiOGUwOGY2MGNjYmI1ZjNlZjdjY2ZmOWZkMTU3ZjM2NTY1NDY2NWFiYjVlMjJhYmVlMGNmYmQ5MGI1NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlN2EyNjdiODUyMDhkNDI4ZWZiYWI3MDhiMGY1NThlYmY4MGRkNDllZDc5M2JhMTNkOTM1ZTZmOTU2MDEzZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0ZTBjMThhYzk1NTdmYTNiMzFmMjA0OGRmZDRlMDQ0OTk3MDcyYTk0N2YwYTA3YjliMmRiOGFlZGIwN2QwNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNjM5Mjg0ZmI4YTIwM2YwYjBlMjZkMTZkOTg4OGUxNGFmYTA3YTM1NDY5YmFiMWIzY2NhNTZmYWMwZmUxNGMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh",
+          "version": "repo-file-v1:sha256:ffdc1b34663483aeb05a8e02309b4685ad8cbb8c60f472998b13be449c924b9d"
+        }
+      ]
+    },
+    {
+      "id": "claim_5187429440644d1a9b861bd90dabdfed",
+      "statement": "Both production data stacks use fail-fast `${VAR:?}` interpolation for their Mongo secrets, so the Komodo Variables (`MONGO_MC_APP_PASSWORD`, `MONGO_MC_KEYFILE`, `MONGO_BFF_APP_PASSWORD`) must be seeded before the merge or the deploy aborts rather than starting unauthenticated; the two `*_ROOT_PASSWORD` values are setup-only and are not wired into running services.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L22-L64",
+          "version": "repo-lines-v1:sha256:93ed8a615997395a247569615213b42783fd1cd0c181974b7650dc93aa28d34c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjA2YWNiZjU2OTQ4MWQzYTIwYWRiZTk0Y2FiZjU0ZjQxMjAwZGUwYmZkYTNiMGE4NmIxNjhiNGI1Mzc5NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlZjdjMjAyZDgwMjEyZTE4OWUzZGZiNGFkMDhiZGU1NGRjMThmOGU0Y2RkNThlMTQ4NmFlZjMwNWRlYWExNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3OWIxOTM2ZjgxZmZkNDU2N2I1YTYwMWUwMmQ1OGI0YWU3YjY2NGI2NmE5OTVmY2ZhZTA3MjIyZjExN2M4MDAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:31dfc44c6ccef880abc2000c04c27ef80f3ef516b6c8f61ee9de8ce069548293"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:935bc8f328c0637a5caad461b966adbfba9c74ba3dd894049383f09f749b4269"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+        }
+      ]
+    },
+    {
+      "id": "claim_4fc9c43ef49e4a9eb7fae39a718b2479",
+      "statement": "Merging the feature 081 US8a PR is the deploy: `app-ci` on `main` dispatches `cd-deploy` (deploy=true), which fires the signed Komodo webhook and the changed stacks redeploy in `after` order — `prod-mc-service` then `prod-mcm-bff` — landing 45–90 minutes after the merge because main's CI runs first.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml",
+          "version": "repo-file-v1:sha256:b6d6b673591e1b0d44f37ee56ca13bee9d885af1c7cbec248293728cb47f5ede"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
+          "version": "repo-lines-v1:sha256:92df60c6cdb47c2c4bc036330838523a7afaf6d8775d980a312d5128e7bf8c28:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MzhjNGVmMzkzMWVhYjc2ZGJmNDg5YWJiMDM5N2Q2Nzg3ZWQ5ODZmYmIzNGQ1OTZhZDBiZGRiOWU1NGZhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U3MmI5NTM4ZTZlYTBlYzU1NDhkNGViMzQ0ODBmYzUyMjRlOTAzOWNlMDkyMGM4MzM2ZGRjMjc5MGJhNTllOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQzYThmOTA3MGZhZTVmNDliMTk4NjMyNzFiOGRkZDY2MzZmNDRiZWE2MDg4MGNjZWExOGRkNjVlMzg3NmQxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjE1ZmRmNzdmNmQ3MWY1NzU1NzZlZWVlYmVhMmUwZTI5MmFiMTM5OTA5NTY2MDk1ODgyYWJmYTI3NTY5ZDdhYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L45-L70",
+          "version": "repo-lines-v1:sha256:57eddcb3c13fc8d66f0401b983f911a8945b4db723705927991d1255a6aac719:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlODVmNTgxMTcxMTYzNjJiNDM1N2M2OGYwODUxZDM4YjRhNTBkMjBjMDNlMDg2MGJkMzExYTcyMjEzYjc4ZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZjc2ZGQ3NjA3ZjcyMTNhNjlkNGZiNDNkOTE0Y2FjMWYwMzZkYzI4NTQ0YjE1MTAyMDVkMmExNmRiMzA3MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYmY4MDQzNTEyMjRmMDEyODg3MzhkZWI2ZWE2NjZkOWQ1M2UxNmI0ZmZjNGY1ZWZlYTBkOWI4YjMzNTFhNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea4419d50ed84457b63c1d224795abeb",
+      "statement": "The post-deploy health probe polls only the Keycloak OIDC issuer and the public app host for HTTP 200, so it cannot detect a broken MongoDB; verifying the upgraded stores is the operator's responsibility immediately after the deploy.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L274-L283",
+          "version": "repo-lines-v1:sha256:d8bd6e55e182636a81007b863f42cb822c17ab7943fb83309408e7c035af195a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjQ2ODUzMWFkNTkzZjM1YzM0ZjQ3ZmFiNTg5NjlkMTcyNjgyYTFkZDMxNmRhMTc3MjNmZjBjNDZkMDE4NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Y2I0ZjYxNDVjN2M1Mzc4YTI0OTg2MDE3MWNjNmVkYjY1MmE4YjJkYjk4NjQ2OTA2NDhmNTlkMTNhMjc5MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNWEyYTYzNzUxNGU4NjQxOGVhYTJiYmU1MDUzYWYzNDkzYzRkMGUyMzM3YmE3MjJkODI2ZDRjYzgzNmM2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxYmYyNTRmNjYyZmJmYTFiY2U5MmY3OTM0MWQ0MDExMzJlMzk2ZDA3NjBkZWI5M2ExZGM1ZmE4M2NmNjQzNjIifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
+          "version": "repo-lines-v1:sha256:92df60c6cdb47c2c4bc036330838523a7afaf6d8775d980a312d5128e7bf8c28:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3MzhjNGVmMzkzMWVhYjc2ZGJmNDg5YWJiMDM5N2Q2Nzg3ZWQ5ODZmYmIzNGQ1OTZhZDBiZGRiOWU1NGZhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U3MmI5NTM4ZTZlYTBlYzU1NDhkNGViMzQ0ODBmYzUyMjRlOTAzOWNlMDkyMGM4MzM2ZGRjMjc5MGJhNTllOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQzYThmOTA3MGZhZTVmNDliMTk4NjMyNzFiOGRkZDY2MzZmNDRiZWE2MDg4MGNjZWExOGRkNjVlMzg3NmQxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjE1ZmRmNzdmNmQ3MWY1NzU1NzZlZWVlYmVhMmUwZTI5MmFiMTM5OTA5NTY2MDk1ODgyYWJmYTI3NTY5ZDdhYSJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/health-probe.sh",
+          "version": "repo-file-v1:sha256:bfb55b341e621204a91a9fb58c34e6605e122f981c1e5f1a8fefc3ba62c7a418"
+        }
+      ]
+    },
+    {
+      "id": "claim_463753119b694710a53f513a9db9a099",
+      "statement": "The 9.0 deploy does not raise the feature compatibility version: the store starts on the 8.0 data at FCV `\"8.0\"`, and the raise to `\"9.0\"` happens only after a 7-day soak with `confirm: true` (which the command requires and which is idempotent), implicitly adding the `term` field to the replica-set configuration.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L478-L495",
+          "version": "repo-lines-v1:sha256:9c69f104fbb79d65aff547394c5adf46d99f1d96c1f0f19c874313105c5a0397:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDE3MGFjZjkxMzJiM2M3YmY4ZDI2ZmQwZWFhZTJkOTBmNjk4MDBiYTJhNGI2NmEyMWY2YzJlZjhiNjJkNGYifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L372-L393",
+          "version": "repo-lines-v1:sha256:62270fd8514006e9db3416a8a68895d5e42bb002cc9a19bc69a6360facaa4dea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyY2I3YTczZGM4NmE3MTJiMzE0NDgxOTI5ZGVlYTViMmVkODY0ODQ3MzdkOGM5MjM3MzM0OWEyMmIzMmZhMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ODU1NzBhOWExZDJjNTRjM2M0MjI4MThjYmU4MWRhNWY0ZTBjNTAyMDlhMjVhNGQ0YzY4MTk4MjdjOGY5NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0NjY1OTEzZTA1MWRmNmNiZWEyNzQyYzZlYWM1MGM5NjVjZjEzYjhiN2RiYThkYzgzMmIyMTJlNWY2NGE4ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyODhmZDVjYzYxMzJlNGUyMmZiYTQxMjM4Mjg5ZDliNzBhNWVmN2VkM2FjOGU3ODcyYWExMGM5MDA5ZDdlNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8475f41579c84c3ab9a8dd2b334833c2",
+      "statement": "There is no image-revert rollback for the 9.0 upgrade: MongoDB supports a binary downgrade from 9.0 only to the latest 8.0 patch, never to 8.0.8, and the volume has been re-owned to uid 1000, so rollback is a dump restored onto a fresh 8.0.8 volume — a path rehearsed both from the pre-flight archive and from a dump taken on 9.0 at FCV 9.0.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L503-L547",
+          "version": "repo-lines-v1:sha256:ae6a803de6b8834a5c256963e4b96a73e68d139280e386e6b5d3ff5d74f2b329:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYmU2OTViZDQyOTRhMDM4ZmMxYzAxYzNjZWRlNmFjYTNmMjRkYTgzZGExYjQ4ZjA0YmEyNDJlNDFhMzIzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYThiZTBjNWNhNTQ3MjYxYmRiODJiNmU4YTczNGRkYjc2YmY5M2E3NTM3YmQ2OWM3ODI4ZDI2OTg3MThkMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZjZhYjRhMmNkM2M2MDA1MjMxMjc5ZTFhMDc1YzkyOTM2YzYxZDcwMTBkOTYwM2UwYjFkYWNjNjUzYzM5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L388-L393",
+          "version": "repo-lines-v1:sha256:6eef797eedf6cebc8ef057bbaff3352dc2b573ee563e142912e8b7cf1d93e555:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRlMzY1OTJiODQ2ZDY4NGExNDIzMmE0ZWE0NzIwNDQ5NTY5OGI3ODU1ODBlM2NhM2Q2ZmRiOTdlMWQwOGQ4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY4NTU3MGE5YTFkMmM1NGMzYzQyMjgxOGNiZTgxZGE1ZjRlMGM1MDIwOWEyNWE0ZDRjNjgxOTgyN2M4Zjk0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiMTNiY2RlY2I4YzdjZWQ1YmMwMGQzYWVlZjc4ZjZlNGFiZDk5OTBlMmRmMjIxNTc4YTFiMmM1MjE5ZDA1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI4OGZkNWNjNjEzMmU0ZTIyZmJhNDEyMzgyODlkOWI3MGE1ZWY3ZWQzYWM4ZTc4NzJhYTEwYzkwMDlkN2U1NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ec8d118ca90433ba851e81eeb096276",
+      "statement": "mongod 9.0.4 refuses to start on Linux kernels 6.19.0 through 7.0.13 (SERVER-121912) with no startup parameter to override it and crash-loops instead, and the CI and prod daemons share one physical host — so the pre-flight kernel gate blocks the merge (`KERNEL-BLOCKED` means stop, do not merge). On Ubuntu the check is not `uname -r`: when `uname -v` contains `Ubuntu`, mongod takes the upstream version from the last field of `/proc/version_signature`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L255-L283",
+          "version": "repo-lines-v1:sha256:4bc4c3131234f80241ac5ad5a9f762e0a9030cb788185c385fa8737631a4bf3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NDZjY2Y5NTM4N2I0ZjM5ZmE1ZmQyODcxODQzOTdhZjI1Mzc1NDU2NDQzODdmZDFiZGI4MmZlYjZjNGJhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMmUzNWUyZjRjNjU2MmYzOWEyYjM3OGVjYmVmNGRkNDgzZWFmMzliYWZiN2I0MTAzMDg0MTA1NjQ3YjBkNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZTQ2N2VlMzZiNWFlZGQ0Njk0NDJjNTU2MDczNDdjYTU5YzAzNTlkNDllMzlhZWQ4ZTE0YWJkNmI4ZjU5YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmODhkMTZiNGQyZjM5NjllNTIyN2ZjZTkwYWFhMTIyZjkzMDM2ZGJjYzVkYWQ0YTMzOWE3M2IxYzRiNWQzMjMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L564-L595",
+          "version": "repo-lines-v1:sha256:f7ec27c637c54275a752166ff95657a48c36cdc279b0096bddb124ba693dd096:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZDdjYzFlZjc3NzZmOWU3NTcwMTE1YjBiMzZlZWVjM2VjYjBjMDllNDI3M2JmMzc0NjA0ZGE4N2M3N2E2OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWNiZGNmOThjYjQ2NjI3YTAwNDY5MDdkYzg0NzBiMThlYzZiY2EyNTc3NDA5M2I5NTUyZTUwZmE5N2EyOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MWUyNDZjZDMwNmI3NTNmNmJiMjJhMTExNjYxZTlhNGIzMmU0ZDMxNGIzZTA0YWQ1ZTg2N2IzMWFiZThiNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwOGI3MThiOWY0MjVjMDRkOTFlYzk0NTI4MWQ2ODk5OTkwMmEyMGEyZGFjMzdiNmJmMmE1ODM5MjhmMDEwOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0807fb1eb11e4f02a4b750e1391eea67",
+      "statement": "9.0-ubi9 runs mongod as uid 1000 where 8.0.8-ubi9 ran it as uid 998, so an 8.0.8-written volume is foreign-owned and 9.0 dies at start with `Unable to read the storage engine metadata file ... storage.bson` (`FileNotOpen`); therefore every MongoDB service mounting `/data/db` starts as `user: \"0:0\"` only to re-own the directory once and then drops to the image's `mongod` user with `setpriv`, and mongod itself never runs as root.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L140-L164",
+          "version": "repo-lines-v1:sha256:b6dcde2326f6c0b4890c4d378eff4db0e1ac24abfb253d914859b8753da576ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZDAyMzdjMWU5MmMyYzNjOTU1OTcxN2FiN2U3ZDZmNDE5MTgwOTI5YTAxZjk3ZWMzOGNkNzU5MTNiYmMwOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMTZkYjUwNjM0OWVmOTI1OWM3NjEyYjcxZTY0ZjUyZmY2ZTUyNjliODEyY2UxZmZiNjNhY2FkOTU4OWZhMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNTZkOTEwY2U4M2I1MWViMjdiMGQzMWNjOWVmYWZlNzJlMmE3N2EzNDBiMGU0ZWI5OTcyYTk3ODNhMmEzMWMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L34-L57",
+          "version": "repo-lines-v1:sha256:b18fd8245675dd78d0cb99425e05ace3ab1df537e9b281859fbbab00c5da7667:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZWM2YTE1MmQzNGFlNGQxNTkyYWNlYzJmZDA3MWRhYzBlODhmY2M3ZDA2N2VkYWUyOWEzZDIyNjE2NTcwNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNWM0OWI3NjMxYjRlN2UyNzUyMGQxMmY0ODdmYjQ1NWZmNzNiOTdkZTdiOTZjNTU0Njk5MTM3MWNiZjY5YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZDBhMjk0MjQ5MDg5NWFiZTU5ZDNhOTg4M2U0OWE0MWZhZDk3YWFlMWVlYTNhNTk4OTRlNGE3MGE4ZGQ3Y2QifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs",
+          "version": "repo-file-v1:sha256:6887de0705251017cd5c980a71ddef352017899124bb8173b3d320dc5882cc8f"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L476-L494",
+          "version": "repo-lines-v1:sha256:03fde165d0ef7d37ef4c56f324043b004647612174a228536a76467615faa666:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMGQwM2EzOTg2NDY4ODE1NTlmYjJiMjMzNDUyNTIyNDEwZGI0NTk4ZWYwZjFiYmJhMGY4MDNlNGQ1ODdkZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkODlmNjRlZDk0MmRmYjQzMjBhNWRiMTUzN2E2NTIxYTgyZDkzY2FjYjQyYTM0M2NlMTRjMjRjMWYyMDU4MWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NzM4MGM5YTU1NmM4MDUyN2E3NDNjYjA5ZTI5NzYyNjBiMGI3NWY4YTczZjY5NDVlNGRmZDk1NTkzYTUxYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZTEzY2QyNmFlNThkY2Y3YTEwYmZmZTQyMTc5MDQxZmNlNjc4NTkzMGY5MGE4ZWQ3NjI0YjFhYjZiNDc3MzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36058358753f437fa383c8aa4e94fc86",
+      "statement": "Pre-chowning the production volumes before the merge is forbidden, because 8.0.8 (uid 998) would then fail the same way 9.0 does on a foreign-owned volume and the deploy lands roughly an hour after the merge, leaving no safe out-of-band moment.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L254-L254",
+          "version": "repo-lines-v1:sha256:c21e6558259f9f7f144ef9ce092be75fa84f49a1a394d9026265f1aa02c6aa3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzIxZTY1NTgyNTlmOWY3ZjE0NGVmOWNlMDkyYmU3NWZhODRmNDlhMWEzOTRkOTAyNjI2NWYxYWEwMmM2YWEzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzIxZTY1NTgyNTlmOWY3ZjE0NGVmOWNlMDkyYmU3NWZhODRmNDlhMWEzOTRkOTAyNjI2NWYxYWEwMmM2YWEzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWQ0ZTVjYzdjMGQ3Y2QzN2I5MzIwMDUxNjk0ZTNiODA3MmI2ODNlZjZlODJiNzY0NTJjY2Y2OWQ1NzAxOWI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhhNjE5NjYzNGY3OTE5NDA5NzY4MTM4YjY1YzUyYzIzYTc4ODcxYWRiN2QzOThmZTIxMzgzNzIzNzM1ZmJhMSJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L487-L490",
+          "version": "repo-lines-v1:sha256:28865baf4fd117da9fe279adf2176e3dfda477f1a1093c9203b2e26c28e92f6c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUyYTY5OGU5NDM4ZDQwZWEwMThkZmI2N2RmZGMwYzgxYzhkNGM5OWQ0ODQ1M2QyMTc3MzI2NWY0OTYxNzliNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThhNTgzYjI4YTViYjkxZWU2MmMwNmU5Zjk0ODYyMDkyYzgxZjdjY2Y3Mjc2OTE3ZWI0YzE4NjQwMzJjMzlhOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI4YWVlZmE0MzAxYzMxYjM0NDQ2NDBhMDY4NWRhNzI3MmFiZWRhMDAwOTU4YjhlZThhN2UyYWUyMzBkMjBhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTcwN2FhMzFkNzQ5ZDE2M2VjYzIyMzRjOGIzOWY1YWFjNzJkZjMwMGNhNzNhZTNmYTEzMzBjMTZiNWU3MzdhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d634a4c4226a41c5a5cc294563a09897",
+      "statement": "`mongo-data-owner.guard.test.mjs` asserts that every MongoDB service mounting `/data/db` in both dev and prod compose files starts as `0:0`, runs the ownership wrapper, and hands off to mongod, that the wrapper script is byte-identical across all four files, and it executes the wrapper against stubbed `id`/`find`/`chown`/`setpriv` so the assertion covers behavior (re-own then drop, no re-own when already owned, unchanged exec when not root) rather than spelling.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L26-L113",
+          "version": "repo-lines-v1:sha256:158c4ae4fbcde9c6cc335f44827a27e4a4392a49712a43c39958ba5de9dc0796:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ODNhZDVhYzk1MmMwNTU1ODM4ZmQ3OGJmYjQzZTExNTk2NGZjN2MzM2JlZDJkZDI2NDNlZmFkYzExYjBkMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNWNjY2ZjNWQ3NDRhYWMyNWRiZDk3ZWI2MzU2OWRlNjZiZDA5YWViNjM3ZjY0ZDU5ZTQ3NWZjMDRkMTQ1MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72b387d9260244089a57a26a49389d07",
+      "statement": "Under both images mongod runs under a Python PID 1 entrypoint that does not forward SIGTERM, so `docker stop` of the BFF store waits out the timeout and SIGKILLs mongod (exit 137, no shutdown log); 9.0 recovered the SIGKILLed 8.0.8 BFF volume from its journal with identical counts, while the movie store's prod entrypoint `exec`s mongod and stops cleanly.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L246-L250",
+          "version": "repo-lines-v1:sha256:e391283a52fac28dd24d72b75002c920c8b080ae980f593fe0efe50fe43dbc15:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjBhMjI5MTA0MDEwYWYxMTkxNmRiZjFiMmVlMTBiN2E1YjQ0ZWVhNTNlNWZlMjUxZmNmNzJhNDRlODA2Nzc3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIzZTFlYzRmMjBhN2NkNjA4N2FlMmU4ZmRiYjlhOGRjMWVhNTA5OWRlOGNhMDJkMGVmZDYxMzVmMDE5NGNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjVlNmRhYjExYjI3ZTJhMWNjYTFhMDc4N2U5YTExYjM3NjE5ZmM2MTEyZDU4OGFlMjQwNDNhZTFiOTI0N2Q2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ0ZTVjYzdjMGQ3Y2QzN2I5MzIwMDUxNjk0ZTNiODA3MmI2ODNlZjZlODJiNzY0NTJjY2Y2OWQ1NzAxOWI0ZCJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L496-L502",
+          "version": "repo-lines-v1:sha256:84b6905c77475d2741aa7e7d66f62d2fd3f97abcf2cb5014d64ffb019028c5b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I0ZWU2ZTRiN2QxMDdhZmMyNzlkZGIwMDI1ODNiNGU2ZGIwMjRkNzE2MDVmNjI1NmU0OWRhZGJkZDliZTMxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FkMDQ0ZDcxZGY5NjM2ZmI1NjhhNGE1YzRhNWU0NjRlYjMyYWNhZWE2M2JkZTU0NDlhNjUxMThkYjRjZGJiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDUzZTk5MTIzMDI1ZWQyMTYzYTVkY2ZhZmI4YWNmZmZhZThiOGMwYzhmYWIxNmQ2MzM5MDMwMTZkMjgzMDQ1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNlOGNlOWI5OTFkOTVmZGJhZTE3MmVkMzg3NzM3MTBkYTNiMDNhMWVkZTRjOGYxMWVlNTA5Zjg4YjM3ZTQ5YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f57c7afef63940d4a394c23c87d146b1",
+      "statement": "Upgrade verification is a set of operator-run comparisons: container state plus the single `mongo-data-owner` re-own log line and the startup FCV line, per-collection counts diffed against the pre-flight files, index lists diffed after restarting `mc-service` and `mcm-bff-service` so their index passes run against 9.0, and a real app pass that opens the backup settings to trigger the BFF's lazy index pass.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L435-L476",
+          "version": "repo-lines-v1:sha256:bf4294406223333efba9d4a120b017219115e635ebaa2d78a7cb87d8139365da:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2FhNzBjMzVjMjhjMThlOWNkMGY2ZDVkMzgzMTkyZDMzZTY5ZTM4NzQ3NWZlNGFlZjFiNjIyOTk1MTQ0ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUzOWZlZjFmNjU3Yzc3ZDNmOGVjZjAwNTc3NzEzMmYzMTk3M2M3MjNhNWUwMjVmNWI2NzhhNzRkOGFkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhN2YyMGExMTljMzEyMzI0YWY1YWRjN2U3ZDczZTY3NTA2YmU1YmNmMWM0NjYzNDdhNWQxN2UwNGY4YThlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzg0YWE1ZTJiYTIyMTJjYjJmZWE4OGMxZmIwNzk5ODA2NzdkZDg1MTRhNjk5NjE2YWZmN2Q0M2NiZWYyODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8bc712b05c5449ecb7ecbe545502af9b",
+      "statement": "For the feature 026 cutover, auth flags never mutate data, so reverting the compose change alone restores the unauthenticated state and a volume-level restore from the verified pre-window backup is only needed if a separate problem is detected; a fresh-volume bootstrap (disaster recovery / new host) is a distinct procedure in which the replica set is initiated after auth is enabled over an authenticated connection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L210-L217",
+          "version": "repo-lines-v1:sha256:86cd0bf5fbd61211cb4f0d29bcbeb70f6bc9d5d7738f1c8b8cd9f2bba6dddf36:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdhYzZiM2RiZTlhZThmMWIwYjY3ZGQ0NjQ2OTI3MGVhZGRhNDRiZTU2MWQ0OWVkNmJlNWY2NzU1ZGE0MjVmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY0ZjllMDVkZTQ5ZmFlMDA0Y2M5ODdiZGUxYmExOTY0NjdjM2Y1NTY2MWI1MWM3YTRhNmY4YjNlNzAzNjQxZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L551-L568",
+          "version": "repo-lines-v1:sha256:cab905af81a03c3615fc60402654e50e2ff2510ca3280bfcd51a6367062c700a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MDMzNzcwNjZiZjk2YTM4ZTc3ZDNlMjM5ZTYzMjJhNTc0MTg1NjllM2EyMzViMTRlZWIyNDMxN2Y0OTI4MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOTUxMTc1ZTFkNzZmMThmY2E4ZTI1ODUyZjk1NzNiMzAzYmY3MzRlZjJiMjI4Mzk2YTZiOGQwOGU0NjY5OWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md#L40-L46",
+          "version": "repo-lines-v1:sha256:7fc56af5f3f94afe382607892ce3354f13493b7dd932b3b822a2e6bd52b954fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JlZTVkMGYxNjZlZTViMDUzNWY2M2U3NDE1YTYzMGQxNDUwMmY5NzQ3NmMxMTJlNTc3MTM4MGIzY2EwNmZmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA1MGFjNWYwN2Y0ZDQ2YjFhM2NhOTA3NGM2NjY4YzU0YzliNTJlMTM5ODU1OWUyYmE1N2M3MzlmNGMwZjM5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc5N2Y4YTJiZTkyNTkxMzljMDNhNDE0MWM2NmRiODhlZDBiYjI5YjU2OTNjZmFhNWRlMmFkYTBiNGI4MmMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY1NjEyZTI0NTk0NjVkN2NmZTVhZjVjZGE0M2RkMTlmZmJiY2Y1ODgzMmE0MTQzOTJhMTRjNDE1MWMxNmFjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ba0d84881ef4aca9bb0906a90f9be83",
+      "statement": "The keyfile permission check is defense-in-depth rather than incidental: `mongod` refuses to start on a group- or world-readable keyfile, and because the entrypoint re-materializes it at 0400 on every clean start, a manually widened keyfile self-heals on the next redeploy instead of needing manual repair.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L195-L206",
+          "version": "repo-lines-v1:sha256:22ec216116b1c09c0483b648164f996464a5f595d6246433aae47a9f114713b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMGQ5YTA5YjkzNWMyNWUyOGFiMGE4MDk4NmQ3ZjY4MGJhZjY0OTZlZTAzYmI0OGVkZGVkYzkyODA0OGYzYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGEwZWQzMjI1MDk3MmQzN2MzZjc1NDBlNzgxOGJmYmNmZDA5YzgyYzMyZjNlYzcyYjI5NDYyYzRhNzNjNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L4-L13",
+          "version": "repo-lines-v1:sha256:b3dd784ec54a735803ddd6c3ba65f129d5b9c985c178e1d0d403121b8628e96d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNzFjMjJhNWQ4MWQzZjQ1MDFkMDA2ZjE4OWRmY2RjMmY3NTNhNzg3NDNjMjUwNGZlMzNhNTU4Y2U5OTNkNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNzNlOGMwZjg3ZTRhZWU1NzVhNjBjY2U3OGIyYTBhNjgwYWYxYmE5ODVmYWFjNmY1ZTllNzBlYTJmYTQ4MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyMTNlMzJjZWZmZjJmZWVhOThkZmY4ODE2OGM0YTIxZGVkZmM3ZDY0NDJhNzMxYTVhOTUyZTVlYmQ2NTFlZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZTkxN2E0Mjg3OGRkOGMwNzY1ZDNiMTFjZjA4ZGJlMzI1OTAwMmI3Njg4Nzg5MzhiNzgwNDIxMTQ0OTRmNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d33dafddae24121b5838519edbaa595",
+      "statement": "The upgrade's premise, rehearsal and measurement record — supported direct 8.0 → 9.0 path, FCV prerequisite, server-9.0 support of both drivers, the digest re-resolution, the uid blocker and the kernel blocker/discharge — is recorded in specs/081-major-dependency-upgrades/research.md R8, under ADR-0002's stateful-major discipline of premise first, an explicit data decision and rollback by tested restore.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md",
+          "version": "repo-file-v1:sha256:37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L339-L393",
+          "version": "repo-lines-v1:sha256:10a1ba18a08a983c7071c30de1ac996317a691089c0dd2d3ebac9736f8862298:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MGFmOWI1MGY4MTM0MWM1NDRkZDc5ZmNiOWY5M2RiMTJkODdkMWZlMGU2N2RiOWZiZWUwY2Q1NTFjMTQ3ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ODU1NzBhOWExZDJjNTRjM2M0MjI4MThjYmU4MWRhNWY0ZTBjNTAyMDlhMjVhNGQ0YzY4MTk4MjdjOGY5NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwYzNiNjQ4ZTIxMWUxNzFjNTY4ZmRhYjE0N2YyMzY3ZGZlODY1Y2E5NmMwNjI1ODdmMDc0OTVkODk1MTYxODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyODhmZDVjYzYxMzJlNGUyMmZiYTQxMjM4Mjg5ZDliNzBhNWVmN2VkM2FjOGU3ODcyYWExMGM5MDA5ZDdlNTQifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L426-L476",
+          "version": "repo-lines-v1:sha256:ae8e4d0cd8e796604cb6a13aff0d165966b49b08769dadb117e773e03a8dad6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YjExNGE2NGRmNzQ3ZWFmYzVhNzU1ZGE2MzQyNjcyYzg5OGFjNTg2Y2Y4MTE2NmNmZmM5YTMwYWEwMDJhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MDhiZjE4YzEwMWVmNWFlNWY1ZjE4ODdhOGI0NTQ2NmQ4MjA1NjdkZjRiZjc2MjJmZjgzYWFhYjZkODg4MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NWIwMGU5MGM2Zjg4OGQ1MmJhMTE2MTVjOWQ3NmYzM2NmN2M5YWEyODVmNDRjYTdkZTgzYjcwN2RjMzk2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45ac9cafc9e345f98797808820417e80",
+      "statement": "The two stores' steady-state healthcheck is a credential-less `mongosh --eval db.adminCommand('ping').ok` on both containers — `ping`/`hello` run without authentication even under `--auth`, and the movie store's former self-initializing `rs.status()`/`rs.initiate()` probe is gone because those commands fail under auth and replica-set initiation on a fresh volume is a separate authenticated bootstrap step.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L175-L180",
+          "version": "repo-lines-v1:sha256:3ccc99dd24863353ba807034e1f0ba364f06b88e6fa5303804ec959eeb8b62af:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxZGI0ZTg3NWViOWE2YWYxNDU1NjMwNTg2MTk2Zjc0MjIyMzEyOGIzNjI1ODAwOTg0OWE2OGY4MDJjY2Y5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzZWY2YTRlYTBlNTYzN2MyM2RkYmYxZTRjN2ExNTJhNjI0ZmM5NDA2MjFkZTliMTA4YmQ0M2M4NzhmNTU3ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ4YjBiOTNmYzgyNzgyMmQ0OWRmOTY3ZDM1MWUxMzhiNWU4MjdhYTk4YWVjMzBjNTA5ZjA2MmQ1ODA1ZWIyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2IyYTQ1YWY2ZmU0MzY5MjNjMzRmZDgxNTc5N2I0OTc2ZjNmMzk5OTNhZTFiYzZlN2ZjMzExYjNkYzU1ZjMzOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L74-L84",
+          "version": "repo-lines-v1:sha256:a28da43e82bfaef2c10e7f518c0cfd0c6cca1a2dfcc8de9ed984a0a0a7dc7d95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MWRiNGU4NzVlYjlhNmFmMTQ1NTYzMDU4NjE5NmY3NDIyMjMxMjhiMzYyNTgwMDk4NDlhNjhmODAyY2NmOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNjY5OWZmZjFmMDQ5YzJkNzQ4MGViZmE0ODFhOGYzMmMyN2M1NDk1ZDZkMGMxNTZiZDQ2ZTY3NmQxZjhlODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWQ5MzIxYTNhZTQyZmY0MGRlOWNlYTlmOWM4NWIyY2FhMjY0ZWY3YTA3MWIwZjc0ZTQzOTEwNzVhMjNhODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        },
+        {
+          "resource": "repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md#L40-L46",
+          "version": "repo-lines-v1:sha256:7fc56af5f3f94afe382607892ce3354f13493b7dd932b3b822a2e6bd52b954fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JlZTVkMGYxNjZlZTViMDUzNWY2M2U3NDE1YTYzMGQxNDUwMmY5NzQ3NmMxMTJlNTc3MTM4MGIzY2EwNmZmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA1MGFjNWYwN2Y0ZDQ2YjFhM2NhOTA3NGM2NjY4YzU0YzliNTJlMTM5ODU1OWUyYmE1N2M3MzlmNGMwZjM5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc5N2Y4YTJiZTkyNTkxMzljMDNhNDE0MWM2NmRiODhlZDBiYjI5YjU2OTNjZmFhNWRlMmFkYTBiNGI4MmMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY1NjEyZTI0NTk0NjVkN2NmZTVhZjVjZGE0M2RkMTlmZmJiY2Y1ODgzMmE0MTQzOTJhMTRjNDE1MWMxNmFjMCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-24T20:35:10.714Z"
+  }
+}

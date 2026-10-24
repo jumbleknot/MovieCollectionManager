@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:58312a954b8bc625712ab1fa93d492edd2ff1d0bae9be1dde6cc900cab25302d",
+  "pageVersion": "sha256:ac69cdc421dd35f8d45feb8e1d07827e49138713f51d9c2f7a4ce1647a1519b9",
   "claims": [
     {
       "id": "claim_07ef00b788fa4e22a1e9fd4e07dee2b1",
@@ -211,21 +211,21 @@
           "version": "repo-file-v1:sha256:444aff50e27482ad2dc93dffabb0ad5037d84008b6505581d60b0c5f1a9be4ea"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L51-L61",
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L75-L85",
           "version": "repo-lines-v1:sha256:4d8d198848990727a6c70d363c11830654a4e7243da292b599c7a66a96466f44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNmJhNDI1NWQwMWM2ZDJjMDEyNWZkN2ExYWIxNmE3MWZmN2EwYjk4ZGFmYjU0MWMzYjMwOGIyMTdkODJjNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxYzU1ZWJlYTFmYWM3MmQ1MjYxYWRkZTUwMWMyZGE4MDM3NzExOTM4MGJkNmEwYTE2NTYxNDhiMTkyNzg1YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
         }
       ]
     },
     {
       "id": "claim_0b62ab2e0f824af1a73318b8464106b9",
-      "statement": "The dev mc-service MongoDB service is started with `--wiredTigerCacheSizeGB 1` plus `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` (MongoDB's own WiredTiger sweeper defaults) to stop the heap growth that OOM-killed mongod mid-run: with MongoDB's raised thresholds (`closeIdleTime=600 s`, `closeMinimum=2000`) nothing was ever eligible for sweeping, so data handles reached 65,844 for 2 live collections. These WiredTiger parameters are startup-only — `setParameter` at runtime is refused — and `compose.prod.yaml` carries its own `command` and is unaffected.",
+      "statement": "The dev mc-service MongoDB service is started with `--wiredTigerCacheSizeGB 1` plus `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` (WiredTiger's own sweeper defaults) to stop the heap growth that OOM-killed mongod mid-run: MongoDB raises those thresholds to `closeIdleTime=600 s` / `closeMinimum=2000`, which is sensible for a stable namespace set and wrong for a box that churns thousands of namespaces a minute, so nothing was ever eligible for sweeping and data handles reached 65,844 for 2 live collections. These WiredTiger parameters are startup-only — `setParameter` at runtime is refused — and `compose.prod.yaml` carries its own mongod `command`, so the dev tuning never reaches production.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L28-L35",
-          "version": "repo-lines-v1:sha256:94b3a0af49debe9c2750b910f6129701453540c9d10ca2677dc7331b03d35222:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VhNzQzNDdlMmMxNWMzNzlkNTA5MmI5M2U3YWRkY2ViNWZjMzhjZjU5MjM4MWU3ZjA1Mzc2M2M0OTgwMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlMWQ4NTQ3OTUyODVkY2NiZmI1YWEyYzllMjJmNjU0MGU1MmFlZGM2NmNkYmY2NmZkYTY1OWZiZDdhOTUwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRhZjdiOTgxY2UyM2RiNGFkYmIzYzVjMzI1MDhjMTE2NjI5ZGNiMWNkODVkOGRmZTU2OTMyMzNhNzRhNDgzMSJ9"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L58-L58",
+          "version": "repo-lines-v1:sha256:7742b8e08f60ccbb5f3ef7ccff9fd157f365654665abb5e22abee0cfbd90b563:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRlMGMxOGFjOTU1N2ZhM2IzMWYyMDQ4ZGZkNGUwNDQ5OTcwNzJhOTQ3ZjBhMDdiOWIyZGI4YWVkYjA3ZDA3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRhZjdiOTgxY2UyM2RiNGFkYmIzYzVjMzI1MDhjMTE2NjI5ZGNiMWNkODVkOGRmZTU2OTMyMzNhNzRhNDgzMSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L11-L61",
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L35-L85",
           "version": "repo-lines-v1:sha256:9ec26768bf57f9b261544bd23b161b46aa321d6825c5e5e806e71d1cb120ce00:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMTFiZGRiNDE2NDc0ZDJiM2FmMGE1ZDlmYjQyYTRkMzAxODcwYTQwMmQzYjIxZTExNjM1MGQxYzAxM2E5NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZWVjNjNjYjhjZjRhYjYyZGUyMzI5YWVmODdiYzQ1NmI2ZDUzZDExMGM2MDIwZWRhNjY4NTlhMTk1ODIxMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZjhkMzM5ZWU3NTE5OWEzMDAxZGZjMTVjNWE0MTFkZGMwODI3YmFhMzJhMmNlNDRjZmVlMTVkYWE5Y2FjNDMifQ"
         }
       ]
@@ -528,19 +528,19 @@
     },
     {
       "id": "claim_5a8fe74c9e754b0594d034a27d7c11b3",
-      "statement": "The dev/`app` profile wiring in `infrastructure-as-code/docker/mc-service/compose.yaml` supplies exactly the five env vars `Config::from_env()` requires, brings MongoDB up as a single-member replica set (`--replSet rs0`) with a one-shot `rs-init` sidecar that mc-service waits on, and connects mc-service with `directConnection=true` to bypass replica-set member discovery; the production stack file (`compose.prod.yaml`) is separate and carries its own mongod `command`, so the dev WiredTiger tuning never reaches production.",
+      "statement": "The dev/`app` profile wiring in `infrastructure-as-code/docker/mc-service/compose.yaml` supplies exactly the five env vars `Config::from_env()` requires (plus `RUST_LOG=info`), brings MongoDB up as a single-member replica set (`--replSet rs0`) with a one-shot `rs-init` sidecar that mc-service waits on via `service_completed_successfully`, and connects mc-service with `directConnection=true` to bypass replica-set member discovery. The production stack file (`compose.prod.yaml`) is separate and carries its own mongod `command`, so the dev WiredTiger tuning never reaches production.",
       "evidence": [
         {
           "resource": "repo://backend/mc-service/src/config.rs#L23-L43",
           "version": "repo-lines-v1:sha256:ebea36b0b3072a3b282069d09ca7bfa12bfe82dc3d8fa569dc79cdd9d8e13a73:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjhiYmIxOGNkODM4YTE1NjQxODc2MDkzZTdlODA3MGEzZDY4MmZjMzVmYmRjZjZkM2ExZjc5MWIwMjllZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5NWRmNWY5YjA1NzcxYjM2YTMxMGQyYmQxYWRiNWFkNmQ3MDUyNjJhYmUwZGUxYjljZGJkMGZjOTVmNDkxY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0OGUzM2ZmZTk0MjZhMTJkODQ0OWU3MWZiMTExYTE5ZDNiMTM2MDczMTA1YTQxOGRhYTg3NzhiMGYwMThiZmQifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L22-L35",
-          "version": "repo-lines-v1:sha256:cdf13eaca4d04be4a33cf67812cf54e01063f32f6c517117dbe203d0db8edf75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMTk0NzVmNTk2NGE1NDRjYTM5YTZmNGQ5YWFjNjE1MGQwYzEzYTkwMzRhOTk0MjUyMmYxNjk0MjZiODJhZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDJiOGUwOGY2MGNjYmI1ZjNlZjdjY2ZmOWZkMTU3ZjM2NTY1NDY2NWFiYjVlMjJhYmVlMGNmYmQ5MGI1NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MjNiN2IwODM4NmMzMGJiNTkzMjg2OGExNzFjZjEwMGFhMWIyMzU4YWQzMGNiMTBlOGYwZTFmYzQyM2M3M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkYWY3Yjk4MWNlMjNkYjRhZGJiM2M1YzMyNTA4YzExNjYyOWRjYjFjZDg1ZDhkZmU1NjkzMjMzYTc0YTQ4MzEifQ"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L58-L58",
+          "version": "repo-lines-v1:sha256:7742b8e08f60ccbb5f3ef7ccff9fd157f365654665abb5e22abee0cfbd90b563:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRlMGMxOGFjOTU1N2ZhM2IzMWYyMDQ4ZGZkNGUwNDQ5OTcwNzJhOTQ3ZjBhMDdiOWIyZGI4YWVkYjA3ZDA3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRhZjdiOTgxY2UyM2RiNGFkYmIzYzVjMzI1MDhjMTE2NjI5ZGNiMWNkODVkOGRmZTU2OTMyMzNhNzRhNDgzMSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L94-L151",
-          "version": "repo-lines-v1:sha256:6a44b6f6fb1dacf41fe969ae03cc977d2fe3ec3caed29fe0b250b530682089dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNGE3OTEwMGE2YjNmY2FhOTBlMGVkOGY0Y2Y4NWI3ZjU5MTY2YWZlMWM2Y2U3MDgwYTVhYjIwYjIxNTQ4YWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNjIxMTc5N2Q0MDExNjNlYjczMmJmYjMwYzU0ODE0MTEzODZkOWQwYzU5NDhkZDk5MWZhY2UwMDg4ODlmNjkifQ"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L151-L182",
+          "version": "repo-lines-v1:sha256:d212e84dad0f53be0570e315d15a01a111d277006409f716a3267b06d304aa4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YWFhYmFhMGRjN2Q4YjU1YTAxMWYyMjI1YmFiNmFkYzcyZTVlYmEwMzYwZGExMzViM2QxMTk1Yzc3Y2FkMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZGZkYWUzOTE1YTEwY2ExOWJmYzZhYjExMjc4YTVlN2FhOGU5NjQ1NWY1N2RhZDM4MzIyMDA4MmQzYzEwZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDZkZTQ1NDQ2OWNiMDQ0MmNkNWM3NWVkNjA1YmU1MTMxNDE1Y2FmZjcyNjZlMjhkN2QwOTdkOGViNTRjODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjM0ODBmMzU5OTFjN2NhMGNiY2FhOTI5MTJiMmQ4NzUzYWM5NzcwMDg3OWQ3YzRlNDNlMmJmYzE4Y2ZiMTkifQ"
         }
       ]
     },
@@ -587,10 +587,114 @@
           "version": "repo-lines-v1:sha256:4cc08557674427a060c273804b785fd5a3315e1bee2e8e18095e6f05564fc447:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MmJjMDJjNzM3NWU4MmRiMDVhOGE4NDk4ZjBhNjYzMTYzMDkxNGRlYTRiZDAxZTdiN2RlODZmMzE5NTk4NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MGFlNWYyZTRjMThiNTc4NjM0ZGVjNDdjZDc5OTA0MjAwNmIzMDllZjVmMmM0NjEwOGZhYWJjNzFkNDNiN2YifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7e4c748403b743f88024008e1620f863",
+      "statement": "The production mc-service stack is separated from dev by network scope and credential posture, not by a profile: `compose.prod.yaml` publishes no ports at all, runs Mongo with `--keyFile` (which implies `--auth`) and connects as the least-privilege `mc_service_app` user with `authSource=admin`, and mc-service joins both `backend-network` (peers: Keycloak for JWKS, the BFF and `movie-mcp` as callers) and its own `mc-service-network`, while Mongo is attached to `mc-service-network` only — so a compromise of any other backend container cannot reach the database. The dev stack has neither half: Mongo carries no credentials and mc-service publishes `127.0.0.1:3001` for host-side runs.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L91-L134",
+          "version": "repo-lines-v1:sha256:bafec1e5fcf27eeae01a9677d6b5259d3a3fce2b487a9dac9b78ee83fcb773d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YWFhYmFhMGRjN2Q4YjU1YTAxMWYyMjI1YmFiNmFkYzcyZTVlYmEwMzYwZGExMzViM2QxMTk1Yzc3Y2FkMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZTE1YTNlNTJiOGYzZjQxYjlkMmJiY2ZiZTYwNDA2MTc0YjljZjU5NDRkMWQzZjJmNjgxNTdjNGY0ZjFjMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjM0ODBmMzU5OTFjN2NhMGNiY2FhOTI5MTJiMmQ4NzUzYWM5NzcwMDg3OWQ3YzRlNDNlMmJmYzE4Y2ZiMTkifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L97-L105",
+          "version": "repo-lines-v1:sha256:03a634d04b2237b001e35fac8b3708755e3bc162923a4943c7975dd16ebddd74:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI3NDYzMzRmZGJkNjUxMzIzOWYxMzI2ZGI4YjYxMjc1N2I1YjMyYzA4MDhiNTA4MWE5OTM3ZjY1MzNiOGRiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhhNmQ2ODExNmQxYjA1NzA0MjA2NzY0YmYxMzIwMGZiMDg5MjBlNDkyZDIzNTI3YWNjMDM0MWM4ZmVkM2I0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M3MWViMWM2MDg5NGUwZTViZjljY2RhZmQ3NTg4NjlmOGEyY2RiYmQ2MzM2YzkyYmNlODVkMTdmYzUyOTI0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTI4ODRkZGU5MmNiOGY2YzFkMTcwZGM5NTU3OWIyMDIwNDM3ZmRjOGNjNDg5ZmFmZWU4Y2ZhNmJlYTY4NWM2YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc6aef79ce8048ffb8cb7c723d67691f",
+      "statement": "On the production stack there is no `rs-init` sidecar — an exited one-shot container makes Komodo flag the whole stack unhealthy — and the Mongo healthcheck is a credential-less `mongosh --eval db.adminCommand('ping').ok` rather than an `rs.status()`/`rs.initiate()` probe, because those commands require authentication once `--auth` is on. Two comments in `compose.prod.yaml` still contradict the shipped healthcheck (the file header says the container self-initialises `rs0` via its healthcheck, and the `depends_on` comment reads \"healthy == rs0 initiated + PRIMARY\"), so on prod `service_healthy` means only that the store answers a ping and fresh-volume replica-set initiation is a separate authenticated bootstrap step, not a healthcheck side effect.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L40-L43",
+          "version": "repo-lines-v1:sha256:f2bd9114c8efd56dab5a24fd3ea3b09434c6387da281fc18260f7d841c25153b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZhOWI2MjlkNmM5OTU5ZWZmMTI5OTQ3NDY4NzRhZDAwYzFkMzNiMmYzOGQzYjY4OThkYmUzZDNhYTViODRlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBmNTM2YzA5OThmODYzYWE0NTQzMWJkODllOWM4MmRiYzI3NDU4OTdiZjBjODQzMjIzMTg3MWRiOGM5NjM1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ0M2QwOWI0YjM5ZGNhZjgwM2Q5YWIwNTYzNzVkMTM2MTI3MzQyNWZhY2E5OTA2ODFlNDVmYzEzMmNkOWZiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzYjk3NzVkNTIxZTc3YTZmNjJmYzgzYzY0ZjFkODc3MjZlNGI3MjA4MzgzYzEyNjYxYzY0YTgwYWI4NmVmNCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L15-L18",
+          "version": "repo-lines-v1:sha256:f68eea1574c0d21c426a9836b6852136b11729e7565fec3f5f88f68bdee3962c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM3ODE2OGY5NmVlMmI0MWZkZGVhYWI2NGJkMTA0NzQyMTU2ODk0MjQxYWE2MDA1MjQ1YjEwYWM1YzNmMDA4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNkMmJiN2M2NjE5NzRmNTZkYWJmYTgwZjk4ZTE3MjMyZDQxOTlmMzI2NGU3ZDI3YWRjOWM3Mzk4YmQ3M2M5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzYwNDNhY2IwZGFiNTIyYzdhMDYxYWZmNTU4ODgzZWZjN2M0MmJhODYwZmZlM2E4MDQyYzI4ODBlY2IyMmYwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODYyM2I3YjA4Mzg2YzMwYmI1OTMyODY4YTE3MWNmMTAwYWExYjIzNThhZDMwY2IxMGU4ZjBlMWZjNDIzYzczYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L74-L112",
+          "version": "repo-lines-v1:sha256:34099a630e1c68a3a634f8529b303456e6bbba66e210269459a6b41ffbe42758:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MWRiNGU4NzVlYjlhNmFmMTQ1NTYzMDU4NjE5NmY3NDIyMjMxMjhiMzYyNTgwMDk4NDlhNjhmODAyY2NmOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzU2Mjc0NzZjNWZiMTNlMTM4YzFmYjZiMWFmZDA0MzYzMTExNGZlOTJlMGQxOWRkYzhkM2EwOWM5YTlhMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWQ5MzIxYTNhZTQyZmY0MGRlOWNlYTlmOWM4NWIyY2FhMjY0ZWY3YTA3MWIwZjc0ZTQzOTEwNzVhMjNhODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MjllYTE2ZDY0MzZiNWIwNzEzNjk1OWNjOWYyMTVlYTM5YjdmOTk1OGUyOTBhMmE1ZjMwNDlmOTNkYjRjODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_021db978f02143ccbcbaae6b3a0dab91",
+      "statement": "The production replica-set keyfile is materialised in-container from the `MONGO_MC_KEYFILE` environment variable by `mongo-entrypoint.sh` rather than bind-mounted: the script requires the variable, `rm -f`s any prior keyfile (a container restart leaves a `0400` file the non-root user cannot reopen, which would otherwise crash-loop), writes it under `umask 377` then `chmod 0400`, and `exec`s mongod so the file's owner matches the mongod runtime user by construction — no chown and no uid guesswork. This is what keeps the keyfile compatible with the repo's env-only secret posture.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L56-L63",
+          "version": "repo-lines-v1:sha256:cc84f9203e658373b67761e2cf099ffa76dfca0da531298be2c6dc29570136f4:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjExMGY5N2EwY2FkZmZlMTQ0NjMxNjBiNGM4OGVmMzMzOGRmMDU0YjdiZDA2NjcyZmQ4ODQ1NDVhNThmMTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWE3MTNiNzQ1N2UzOGE3ZTM3M2VjOGU2Zjk5Y2EwZGY0ZjI0YWI5OGE3M2YxY2JlMGY2NmNhZjI0OWZhZDFhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjk3NTlhMjU3ZmI5NzQxMjNiMDYxYWVkZGEyMjk1ZDg4Mzc0ZDg2ZDg3YjYyY2EwYjVjZjM1MGRhYTIwZGQ3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmY1NmNmMjBhMTUyMGJkZjc0YWUxYTI3N2IzYWRlZmRhYWJjZmQwNmUzZDgyNmE5N2IxMDAxNWM5Yzg5ODk2YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh#L1-L30",
+          "version": "repo-lines-v1:sha256:ffdc1b34663483aeb05a8e02309b4685ad8cbb8c60f472998b13be449c924b9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMTI0YjMwMTEzZGQyYWJiZTY4NGQ5MjJjMDk3YWE0OThjZTVhOGE1ZjIyNTVhOTQxZmYyYzFlMDVkNGUxOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bd8ed52da6441cbb61943cef63adf65",
+      "statement": "Both mc-service Mongo services start as root only to re-own `/data/db` and then drop privileges: the 9.0-ubi9 image runs mongod as uid 1000 while 8.0.8-ubi9 ran it as 998, so a volume written by the older image is foreign-owned and 9.0 dies at start with `Unable to read the storage engine metadata file … storage.bson` (`FileNotOpen`). The `sh -c` entrypoint re-owns `/data/db` once when it finds a foreign-owned path (pruning `.mongodb`, which is mongosh's own client log dir), then `setpriv --reuid=mongod --regid=mongod --init-groups` before handing off, so mongod itself never runs as root. `scripts/__tests__/mongo-data-owner.guard.test.mjs` pins both halves by executing the wrapper against stubs, and asserts the script text is identical across all four Mongo-bearing compose files.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L34-L58",
+          "version": "repo-lines-v1:sha256:211d0bf20b8ce2581aabae272a50c4f23c53f75f32ee4562b616c37875ac75e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDJiOGUwOGY2MGNjYmI1ZjNlZjdjY2ZmOWZkMTU3ZjM2NTY1NDY2NWFiYjVlMjJhYmVlMGNmYmQ5MGI1NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNWM0OWI3NjMxYjRlN2UyNzUyMGQxMmY0ODdmYjQ1NWZmNzNiOTdkZTdiOTZjNTU0Njk5MTM3MWNiZjY5YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkYWY3Yjk4MWNlMjNkYjRhZGJiM2M1YzMyNTA4YzExNjYyOWRjYjFjZDg1ZDhkZmU1NjkzMjMzYTc0YTQ4MzEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L8-L31",
+          "version": "repo-lines-v1:sha256:b29d89a80bfbd28833284ca319ef79320b64758a3174e052efced23ebe2fb977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NjZjODNmYTM1MzhkMjNhMDc5ZmFiMTM5ZTIwNTYwZDNjZjFmZjFkYTM5OGY0ZWM5ODU2YWRkZGQ0MTc1ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L1-L60",
+          "version": "repo-lines-v1:sha256:473e168ce13f01a3bb7dac73a0b70a16021242e89802ea3e4bbc0036ac87fd05:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDIxNTM0NDBkN2NlMmU4MTcwMWQwNjkxM2YxMmQ3N2ZmNmZkMTBkODQ4NWVjNWU5OGY2YmIzZjQ3MDc0MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZTJmZTQ3OGYyMDZhZDA3MTliNTZmYTZmMDEyNzI0YzFkMWY3OGRmZWQ3YWJmYTlkNDRkN2RiMGY0NmQ3MTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L92-L113",
+          "version": "repo-lines-v1:sha256:0e769448cc1d60d93ff36dae2154b39cc43ed0f4029b297434e2b48a6e38c74e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGEzNzdjYmQyYjgwZWMzZmY4MmM1Mzg5NWE0YmQ1ODMyNzBhYzY5ZTMyZmFmMjI5YWI4ZmZmMTdlNjk4NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f884625a0078469eb2b9dd131f45fd45",
+      "statement": "The mc-service integration suite currently contains zero `#[ignore]` attributes, so the guard's permitted branch (`#[ignore = \"reason\"]`) is unexercised and its bare-`#[ignore]` ban is what does the work; the guard's own module header still justifies the ban by describing \"~24 full-stack HTTP tests [that] are legitimately ignored\", a count that no longer exists in the tree. The earlier ignores were removed once the `axum-keycloak-auth` 0.8.3 \"JWKS flakiness\" was diagnosed as a deterministic `discovery.is_pending()` ordering bug.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L60-L80",
+          "version": "repo-lines-v1:sha256:52730284f8c5079efa8837715a83ea9cde432797e634646470032490c30eb3ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiOTFhNWIxN2YwNjJmNWFjZGJhMTVlZWFjZDgwZGZiZDc5ZGJjZmViZWRmYjI5ZDExMjJkZmNlNDZjZjc5OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MDc3ZjE3NTNiYWY4OTA1YzM3Zjc4OGYwYjI0NTlhMDY3MDhkODBmMTg4NGRhNGE5OGNhNTYyNmQ3NWYyMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YzAzMDc0ZWQxNDVlZTMxOTg0ZGZhZDYyMzhjZTYzYjQyNjc4OGMyNGJjMjdjYWNhZGY0ZTkzNjQ0OTM4ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkYWU4MTZiYmJlZDhiMDFhMWYxYjk1YzAzN2FjMjAyN2UwOTJhMDQxMmJlMTMwNzI3ZTMwOWM5ZmUwYTE5NGQifQ"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L15-L20",
+          "version": "repo-lines-v1:sha256:c0e00de017c88c81344859a030ec7f7bfb9e4289154cbc02ad24a3d885d30457:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDhkMjYzOWMyM2Y4MTljMjUwMWE3NzUzMWNiM2VmNGQ3ODc4MDhmZGVjNmFlY2IwZjJiNzg3ZGQ2Y2NmODcwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmMjNlYTQxNmJlNjk1YjdhZWMyZWNlMjM0YTg5MTBhZjQ0OTc3YmU3N2ZhMWRkMWE3OTcwOTE2NmRlNzA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY2OGEwMTAzNTA3ZjJhMzBhZjQyYzhmYWQ2NTJiMGIzMDc2NzI2ODMzNjg2ZjQ0M2ExYmUxMmFiNzMxMWFiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWUzOWFmZmIxYzQyMWIwZmVhZTIyODIwMGFjNzY0YmFlMzRhNzk4MjAzNjJmMjliY2IwODQwOGY3NGY1N2UwZiJ9"
+        },
+        {
+          "resource": "repo://specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md#L226-L231",
+          "version": "repo-lines-v1:sha256:a7ad1cd80f84ee9baeaf4f4809f9f73be861f7c40f9b9591cf9fbd3efb9a6633:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUwZDc1MDFlYjA0MzY0ZDVjMGY3ZGU4ZWQxZjI4M2E4ZDQ0NjA2YWZjYjE0MmQ3NWYxMTU4Yjc2NmFhZDY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ1YzI4NjE2ZTZkYWI3ODNhMTdlNjg2NGVhODQ3N2FjOWMyZTA1NmIxNTVmYWVjMTI0MmFiODlhMTY4OTIwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFiNTI2NWYwYjFjNzdkMDYyNGJjM2Y5NTE3ZWY5MmZiN2QwMDhjOWRmMjkzZjc5MWI3NWI0ZjMyY2U3MGVmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzkxZGZlZjE1ZjAzY2M1NWYwYjk4OTExZGQyN2VkNjI1YTg1NjMyMzY1ZDkwZTg2ODdlZGIwZjA1ODlmZTBmMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_03618c0ac9bf4719b965eee3cbf1b2b3",
+      "statement": "The mc-service integration tier needs a live Keycloak and four ROPC credentials in addition to MongoDB: `tests/integration/common/auth.rs` mints a real bearer token via the OAuth2 Resource Owner Password Credentials grant against `KEYCLOAK_URL`/`KEYCLOAK_REALM` using `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER` and `E2E_TEST_PASSWORD`, caching it once per test binary (the suite finishes well inside the token lifetime, so there is no refresh path). Every failure path panics naming the variable or the token endpoint's status and deliberately never echoes the response body, which can carry credential material; the identity's `sub` is read from the token's own payload rather than from the service's response, so an assertion cannot pass by comparing a response to itself. A realm-import regression therefore fails here with a named cause instead of surfacing later as an opaque 401. `node scripts/gen-dev-env.mjs` writes those variables into `backend/mc-service/.env.local`.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/auth.rs#L1-L57",
+          "version": "repo-lines-v1:sha256:b5fb25bb2b9f76e569db69cd961929858a612b8b9f2447ec43c24f689f8ab5ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGUzZmJjYWZkYzhmMWI2MTlhZGYxOTQ2N2NmMWI5ZTBhMTkzN2MwYTAxMDc2Yjc5OWMxNzk5OTJjNTg5NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMjE1MTRjOTc4NjkzMzVjZDY4ODAwOGFjNTk5ZDViOTMwZmY4NTkwZTE5Y2YyMzY2NzE3NTdhMWYwZDY1NTcifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/auth.rs#L137-L181",
+          "version": "repo-lines-v1:sha256:5157805a49dbdfe4ab268b8b78bf0b228013d659ba9e72947f870165c1902ceb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkN2Q2ZDg3ZGFhMWExNmRhNjZkYTgwZTMzMTE2OTkyYmNkYzdhY2M2N2ZjZjNlN2ZlODZkNjI4YjRjZmEwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L568-L598",
+          "version": "repo-lines-v1:sha256:f8a951690a8f9ac1379da0b3d2dd9d523f7388dcb3dbac555c119519a3d249c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2U0NGEzM2Q5M2JhZjZkMWZlODhjZjI3YTMxYTdmZTRkMDBhOTViOWMzZGU1NDAwOGYyYWVkZDc1MzNjNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDFjNDkzYjMzYTNkNDk3Y2EwMmJiMzY0ODg1N2VjZGRmYjZkYzZhYmU3NzY3MDVhMjRmMzkzMWI4MDM2ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1N2ZhZWFlMzViZTgxNTkyZDNkOGQ2NmNjMmJjNzc1ZTJiZjZmZGMzMGNlNGVjOGY5Y2U2OTY4NWMyNzI3YTAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-23T11:13:11.115Z"
+    "at": "2026-10-24T20:35:10.714Z"
   }
 }

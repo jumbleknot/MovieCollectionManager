@@ -4,9 +4,6 @@ title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -50,6 +47,9 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-c1c739d605caccb56fa33851
     resource: repo://specs/073-scheduled-backups/spec.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # System overview (MCM)
@@ -204,18 +204,38 @@ common source of confusion when reasoning about "why can't this user do X":
 - **`mc-db` runs as a single-member replica set, not a plain standalone `mongod`.** This is a
   correctness requirement (the cascade-delete transaction needs it), not an optional production
   hardening step — see [mc-service](../projects/mc-service.md) gotchas for what breaks if you
-  substitute a bare `mongo` container. The dev compose stack also caps WiredTiger's cache at 1 GB
-  and restores its sweeper defaults (`closeIdleTime=30 s`, `closeMinimum=250`); without these,
-  parallel `cargo test` runs OOM-kill the container on memory-constrained dev boxes, producing
-  "unexpected end of file" / "Connection refused" errors that are indistinguishable from a MongoDB
-  consistency bug — see [mc-service](../projects/mc-service.md) for the full measured
-  diagnosis (item #468). **The BFF's own store is the opposite case:** `mcm-bff-db` is a plain
+  substitute a bare `mongo` container. **The BFF's own store is the opposite case:** `mcm-bff-db` is a plain
   standalone `mongod` with no replica set, because the BFF does single-document upserts only — do not
   "fix" it to match `mc-db`, and never point one service at the other's database. That standalone
   posture has a second consequence feature 073 leans on: with no multi-document transactions
   available, exactly-once backup scheduling rests on a **single-document atomic claim**, and the
   Redis leader lock beside it is an optimisation with a TTL guess in it rather than the guarantee —
   see the [backups runbook](../runbooks/backups.md).
+- **The dev `mc-db` container carries two dev-only resource tunings, and the reason they exist is
+  the part worth keeping.** `--wiredTigerCacheSizeGB 1` caps a cache whose WiredTiger default is
+  roughly half of host RAM, and `--setParameter wiredTigerFileHandleCloseIdleTime=30
+  --setParameter wiredTigerFileHandleCloseMinimum=250` restore WiredTiger's *own* sweeper thresholds
+  in place of the raised pair MongoDB ships (`closeIdleTime=600 s`, `closeMinimum=2000`). Without
+  that second pair, the integration harness's per-test database churn left 65,844 WiredTiger data
+  handles open for 2 live collections, nothing was ever eligible for sweeping, and `mongod` was
+  OOM-killed mid-run — surfacing as "unexpected end of file" / "Connection refused" /
+  server-selection timeouts that read exactly like a MongoDB consistency bug (item #468). Both flags
+  are startup-only (`setParameter` is refused at runtime) and neither reaches production, where
+  `compose.prod.yaml` carries its own `mongod` command. The churn itself was then removed at the
+  harness, not only at mongod: `common::test_db()` leases a bounded pool slot (`mc_test_s<slot>`) and
+  resets on acquire, and `cleanup_db` is a deliberate no-op (item #470) — see
+  [mc-service](../projects/mc-service.md) for the full measurement.
+- **Both MongoDB stores run the same pinned `9.0-ubi9` image, and every service that mounts
+  `/data/db` starts as root only to re-own the data directory, then drops to the image's `mongod`
+  user with `setpriv` — `mongod` itself never runs as root.** The wrapper is not hygiene theatre:
+  9.0-ubi9 runs `mongod` as uid 1000 where `8.0.8-ubi9` ran it as 998, so a volume written by the
+  older image is foreign-owned and 9.0 dies at start with `Unable to read the storage engine metadata
+  file ... storage.bson` (`FileNotOpen`) — measured on a copy of the dev volumes before any data was
+  touched. Remove the wrapper and the next uid change, or a restore made by a different image, is an
+  outage on a populated store; remove the drop and `mongod` runs as root.
+  `scripts/__tests__/mongo-data-owner.guard.test.mjs` asserts both halves across all four compose
+  files, and runs the wrapper against stubs so the assertion is about what it *does* rather than how
+  it is spelled.
 - **mc-service does not wait for Keycloak, so a Keycloak outage looks like an auth bug, not a
   startup failure.** OIDC discovery and the JWKS fetch run in a background task, so the service binds
   and serves immediately; with Keycloak unreachable it still answers `/health` but rejects *every*

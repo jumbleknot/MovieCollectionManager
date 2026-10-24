@@ -1,45 +1,12 @@
 ---
 type: Gotcha
 title: mc-service errors are RFC 9457 Problem Details, never a stack trace
-description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the exceptions and contract gaps to know before asserting on an error response.
+description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it and the problem media type the BFF loses on the hop to a client.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T11:09:40.455Z
-sources:
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-e2e0cc10343e1c15759e3667
-    resource: repo://api-specs/mc-service-api.yaml
-  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
-    resource: repo://backend/mc-service/Cargo.toml
-  - id: openwiki-source-b6252ff5a95766690893a6aa
-    resource: repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs
-  - id: openwiki-source-b5925b87f787aa6f7bfee515
-    resource: repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs
-  - id: openwiki-source-4cc090993970bb2253a628ba
-    resource: repo://backend/mc-service/src/api/middleware/auth.rs
-  - id: openwiki-source-ab390bc7debabac317c9e258
-    resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-e7c775a958bbcf3eef93d65c
-    resource: repo://backend/mc-service/src/domain/errors.rs
-  - id: openwiki-source-d37d3bb410b631422ca1e9c9
-    resource: repo://backend/mc-service/tests/integration/collections/http_authz_test.rs
-  - id: openwiki-source-805a41325e924fb1df7abf14
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts
-  - id: openwiki-source-74f39153b978241c50c7addd
-    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
-  - id: openwiki-source-0476c5058778e33745a9b2c2
-    resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
-  - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
-    resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
-  - id: openwiki-source-8d4741ebc7bb90623f915acc
-    resource: repo://specs/046-authenticated-authz-tests/contracts/authenticated-http-authorization.md
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace
@@ -49,12 +16,15 @@ Every `DomainError` mc-service raises is converted to an HTTP response by
 helper. The response is `application/problem+json` per [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457):
 a JSON body with `type`, `title`, `status`, and `detail` fields, never a bare error string and never
 a stack trace. The
-[constitution](../../.specify/memory/constitution.md) makes that the service-wide error-handling
-rule, not a local convention.
+[constitution](../../.specify/memory/constitution.md) makes that the service-wide rule twice over —
+*API-First Design → REST Guidelines → Error Handling* names RFC 9457 for HTTP APIs, and
+*Security → Error Handling → Safe Error Responses* forbids exposing stack traces, internal file
+paths, database schemas, framework details or any system internals to the client.
 
 ```mermaid
 flowchart TD
     Req["Request to /api/v1"] --> Auth["KeycloakAuthLayer checks signature and audience"]
+    Auth -->|"credential not parseable as a JWT"| Lib400["400 body produced by axum-keycloak-auth"]
     Auth -->|"invalid or missing JWT"| Lib401["401 body produced by axum-keycloak-auth"]
     Auth -->|"valid JWT"| Role["require_app_role checks mc-user or mc-admin"]
     Role -->|"no app role"| Role403["403 as application/json, httpstatuses.io type URI"]
@@ -82,12 +52,13 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   body. Existing producers keep that safe by constructing a fixed sentence rather than interpolating
   raw input — `"Invalid pagination cursor"` in the keyset decoder and `"Search text is not a valid
   pattern"` when a search string cannot be escaped into a BSON regex, both in the movie repository,
-  and the three fixed sentences in `validate_external_ids()` (`domain/specifications/http_url.rs`) —
-  but the rule for a new one is simple: **a `ValidationError` message is client-visible**, so write it
-  as user-facing text and never interpolate a stored value, a credential or a driver error into it.
-  Note that `validate_sort()` in `api/movies/list.rs` already interpolates the rejected parameter
-  (`Invalid sortBy: {sb}`); that is a bounded echo of a query parameter, not a template to copy for
-  anything else.
+  the three fixed sentences in `validate_external_ids()` (`domain/specifications/http_url.rs`), and
+  the command-layer messages such as `"Movie title is required"` / `"Year must be a 4-digit number"`
+  in the create/update movie commands — but the rule for a new one is simple: **a `ValidationError`
+  message is client-visible**, so write it as user-facing text and never interpolate a stored value,
+  a credential or a driver error into it. Note that `validate_sort()` in `api/movies/list.rs` already
+  interpolates the rejected parameter (`Invalid sortBy: {sb}`); that is a bounded echo of a query
+  parameter, not a template to copy for anything else.
 - **There is no fallback path that serializes a panic or Rust backtrace to the client.** Every
   variant of `DomainError` is exhaustively matched in `domain_error_to_response()`, so adding a new
   domain error without a matching arm is a compile error, not a code path that could leak internals
@@ -126,7 +97,13 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   `problem_response` as the prerequisite for ever testing it. The `401` is a third, similar
   exception: it comes from `KeycloakAuthLayer`, not from `problem_response()`, and its body is
   library-produced — an integration test only asserts it is non-empty JSON rather than a panic trace.
-  Also note `DomainError::AccessDenied` — the one variant that *would* produce a `403 ACCESS_DENIED`
+  **The auth layer's statuses are not the ones you would guess.** A credential that cannot be parsed
+  as a JWT at all is answered with `400 Bad Request`, not `401`; only a well-formed but invalid token
+  yields `401`. `movie_metadata_rejects_a_malformed_token` pins the `400` as the shared layer's real
+  behaviour and records that it was verified identical on the pre-existing `/api/v1/collections`
+  route — so a `400` on a protected route is not necessarily a domain-validation failure, and an
+  assertion that expects `401` there is testing an aspiration rather than the service. Also note
+  `DomainError::AccessDenied` — the one variant that *would* produce a `403 ACCESS_DENIED`
   problem document — has no production producer today; it appears only in mocked unit tests.
 - **`serde_json` must keep `features = ["preserve_order"]`, because the member order is part of the
   bytes on the wire.** `problem_response()` builds the body with `json!`, so the emitted key order is
@@ -148,23 +125,29 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   `status` and `detail`, so no response will ever carry `instance`. Reading the schema alone would
   suggest a correlation identifier is available in the body — it is not; correlate through the
   `request_id` span field described in [Logging and audit](../invariants/logging-and-audit.md).
-- **The BFF has two producers that serve `application/problem+json`, and only one of them speaks
-  mc-service's namespace — while the `about:blank` shape it emits also appears served as
-  `application/json`.** `handleMcApiError()` in
-  [`mc-api-error.ts`](../../frontend/mcm-app/src/bff-server/mc-api-error.ts) propagates an upstream
-  mc-service body and status **unchanged**, so a proxied failure keeps the `.example` `type` URI. But
-  the BFF's own helper — `problemResponse()` in
-  [`account-route-support.ts`](../../frontend/mcm-app/src/bff-server/account-route-support.ts) — emits
-  `{"type": "about:blank", ...}` with `Content-Type: application/problem+json`. The same
-  `about:blank` body is written elsewhere in the BFF through `Response.json()` — `problem()` in
-  `backup-route-support.ts`, and the inline literals in the agent-config and backups-tick routes —
-  which means those refusals are *shaped* like RFC 9457 and served as `application/json`, the same
-  split `require_app_role` has on the mc-service side. A client that keys on the `type` namespace to
-  decide where a failure came from must expect both namespaces, and one that asserts on the media
-  type holds only on the account routes. The `about:blank` form means "no more specific type than the
-  status code" by RFC 9457, not "unknown service". The same BFF file's `errorStatus()` deliberately
-  discards a thrown error's message, because one can carry a hostname, a connection string or a
-  Keycloak diagnostic.
+- **The BFF re-serves a proxied mc-service problem as `application/json`; only its account routes
+  actually serve `application/problem+json`.** `handleMcApiError()` in
+  [`mc-api-error.ts`](../../frontend/mcm-app/src/bff-server/mc-api-error.ts) forwards an upstream
+  mc-service body and status **verbatim** through
+  `Response.json(err.response.data, { status, headers: securityHeaders() })` — and `securityHeaders()`
+  sets only CSP, `X-Frame-Options`, `X-Content-Type-Options` and `Referrer-Policy`, never a
+  `Content-Type`. The Fetch `Response.json()` default therefore wins, and the refusal reaches the
+  client as `application/json`. The body keeps the `mc-service.example` `type` URI; the **media type
+  does not survive the hop.** The one BFF producer that does serve the problem media type is
+  `problemResponse()` in
+  [`account-route-support.ts`](../../frontend/mcm-app/src/bff-server/account-route-support.ts),
+  which sets `Content-Type: application/problem+json` explicitly before constructing the `Response`.
+  The BFF's other `about:blank` bodies — `problem()` in
+  [`backup-route-support.ts`](../../frontend/mcm-app/src/bff-server/backup-route-support.ts) and the
+  inline literals in the agent-config and backups-tick routes — go through `Response.json()` as well,
+  so they are served as `application/json`, the same split `require_app_role` has on the mc-service
+  side. Two consequences for a client or a test: a problem-media-type assertion holds neither through
+  the proxy routes nor on the BFF's own problem-shaped refusals — assert it against mc-service
+  directly or on the account routes — and a client keying on the `type` namespace must expect both
+  `https://mc-service.example/errors/{CODE}` and `about:blank`. The `about:blank` form means "no more
+  specific type than the status code" by RFC 9457, not "unknown service". The same BFF file's
+  `errorStatus()` deliberately discards a thrown error's message, because one can carry a hostname, a
+  connection string or a Keycloak diagnostic.
 
 See [mc-service](../projects/mc-service.md) for the Clean Architecture layering that produces
 `DomainError` in the application/domain layers before this API-layer handler ever sees it, and

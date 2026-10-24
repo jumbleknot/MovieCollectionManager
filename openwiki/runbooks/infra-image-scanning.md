@@ -54,7 +54,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-24T20:35:10.714Z
 ---
 
 # Infra-image CVE scanning
@@ -270,18 +270,39 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   hold: it now blocks any fixable Critical in a proposed vault tag. What replaced the ceiling is a
   major-approval gate — a vault MAJOR needs a dashboard tick (raft storage on a dormant prod stack),
   while patch and minor stay automatic and scan-gated.
-- **What the allowlist actually holds today, and how to read the cohorts.** Twelve entries in three
-  cohorts. Three are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
-  `mongodb/mongodb-community-server:8\.0\.8-ubi9`, `postgres:18\.6-alpine3\.23` and
-  `postgres:18-alpine` (on the postgres pins the shipped binary carrying it is `usr/local/bin/gosu`) —
-  kept because no reachable tag clears it, with the measurement recorded per entry rather than assumed.
-  The mongo pin is additionally hard-held below 9 by renovate.json (`allowedVersions: <9`, item #819,
-  liftable only in the PR that carries the re-own wrapper), so a mongodb major is not a route to
-  discharging that entry either.
+- **A discharged hold is replaced, not deleted — and for mongo the re-own wrapper is what made the move
+  safe.** `mongodb/mongodb-community-server` was hard-held below 9 by a renovate.json
+  `allowedVersions: <9` ceiling added 2026-10-23 (item #819), because mongod 9.0.4 refused to start on
+  this host's kernel (SERVER-121912) and 9.0 runs mongod as uid 1000 where 8.0.8 used 998, so it could
+  not open an 8.0 volume. Spec 081 US8a (PR #817) discharged both premises in one change: the host moved
+  to a 7.0.0 patch that 9.0.4's Ubuntu exemption admits (SERVER-131779), every mongo ref moved to the
+  digest-pinned `9.0-ubi9`, each MongoDB service that mounts `/data/db` now starts as root only to re-own
+  the volume and drops to the image's `mongod` user with `setpriv` before mongod runs, and the ceiling
+  was lifted. What is asserted is the **successor**, not the absence — no `allowedVersions` on patch,
+  minor or major, `dependencyDashboardApproval` true on a major and undefined on a patch — because a
+  `<9` left behind would block the version actually deployed and make Renovate propose a downgrade, and
+  because a hold deliberately discharged and one someone deleted look identical from the absence of a
+  ceiling. `scripts/__tests__/mongo-data-owner.guard.test.mjs` is the second lock: it asserts both
+  halves of the wrapper (start as root to re-own, drop before mongod) on the dev AND prod compose files,
+  runs the wrapper against stubs so the assertion is about what it does rather than how it is spelled,
+  and requires at least one matching service per file so a rename cannot make every assertion pass
+  vacuously.
+- **What the allowlist actually holds today, and how to read the cohorts.** Eleven entries in three
+  cohorts. Two are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
+  `postgres:18\.6-alpine3\.23` and `postgres:18-alpine` (the shipped binary carrying it is
+  `usr/local/bin/gosu`) — kept because no reachable tag clears it, with the measurement recorded per
+  entry rather than assumed. A third seed entry for the same CVE, on
+  `mongodb/mongodb-community-server:8\.0\.8-ubi9`, is **discharged rather than re-keyed** (feature 081
+  US8a, T057): every mongo ref moved to `9.0-ubi9`, which scans at zero blocking findings on that
+  advisory, and a re-keyed entry would have matched nothing. The later `CVE-2026-114406` cohort is a
+  different entry — operator-approved on the 8.0.8 pin on 2026-10-23 and re-keyed to `9.0-ubi9` with
+  PR #817 — and lives below with the rest of that cohort. With the ceiling gone, a mongodb MAJOR now
+  rides the same successor gate as vault's — a dashboard tick — while patch and minor stay automatic
+  and scan-gated.
   Seven are **time-boxed to `2026-11-20`** and are the ones that will red the weekly expiry check
   first: the 2026-10-23 operator-approved `CVE-2026-114406` (ca-certificates) cohort on
   `grafana/otel-lgtm:0\.37\.0`, `langfuse/langfuse:4\.56\.0`, `langfuse/langfuse-worker:4\.56\.0` and
-  `mongodb/mongodb-community-server:8\.0\.8-ubi9`; the `next` pair `GHSA-2464-fhr4-w9xw` /
+  `mongodb/mongodb-community-server:9\.0-ubi9`; the `next` pair `GHSA-2464-fhr4-w9xw` /
   `GHSA-673q-mjm6-r5xr` on both langfuse images; and `@sentry/nextjs` `CVE-2026-114139` on
   `langfuse/langfuse:4\.56\.0`. All seven flag EXPIRING from `2026-11-06`, which is the re-check date.
   Two more are time-boxed to `2026-12-01`:
@@ -296,17 +317,21 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   (`@sentry/nextjs`) were published against images already running in prod, and turned
   `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) — the same
   unchanged-pin shape as the 2026-08-29 Keycloak case. Nothing upstream clears them yet: the newest
-  `otel-lgtm` 0.38.0, `langfuse`/`langfuse-worker` 4.68.0 and `mongodb-community-server` 8.0.34-ubi9
-  all still ship the pre-fix `ca-certificates`, while Keycloak cleared the *same* CVE by a same-version
-  digest refresh (PR #838), which is what this cohort is expected to follow. Every one of the seven is
-  **version-keyed to today's pin**, so a bump re-blocks and forces a fresh scan rather than inheriting
-  the suppression, and each justification states that the entry is deleted once a clean rebuild ships —
-  a time-box to force a re-check, not an accepted risk without one. The otel-lgtm entry has already
-  been through one such bump: the window moved the pin `0.36.0` → `0.37.0` (PR #836, 2026-10-24) and
-  the entry was **re-keyed** to `0\.37\.0` in the same change — same CVE, same expiry — rather than
-  deleted, because 0.37.0 still ships the pre-fix CA bundle. Re-keying is what keeps the discharge
-  property live: the next bump (0.38.0 or later) stops matching and re-blocks, which is the whole
-  point of keying on the version rather than on the repository.
+  `otel-lgtm` 0.38.0 and `langfuse`/`langfuse-worker` 4.68.0 still ship the pre-fix `ca-certificates`,
+  and on the newest `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index `sha256:2cb58a8d…`) the same
+  advisory is the image's **only** blocking finding, so no newer 9.0 UBI9 build clears it today — while
+  Keycloak cleared the *same* CVE by a same-version digest refresh (PR #838), which is what this
+  cohort is expected to follow. Every one of the seven is **version-keyed to the pin the run actually
+  scans**, so a bump re-blocks and forces a fresh scan rather than inheriting the suppression, and each
+  justification states that the entry is deleted once a clean rebuild ships — a time-box to force a
+  re-check, not an accepted risk without one. Two of the seven have already been through such a bump,
+  and in both cases the entry was **re-keyed** in the same change — same CVE, same expiry — rather than
+  deleted, because the new pin still ships the pre-fix CA bundle: the window moved otel-lgtm
+  `0.36.0` → `0.37.0` (PR #836, 2026-10-24), and spec 081 US8a moved the mongo store
+  `8.0.8-ubi9` → `9.0-ubi9` (PR #817), which also deleted the 8.0.8 entry it replaced so it could not
+  fail as UNMATCHED. Re-keying is what keeps the discharge property live: the next bump (otel-lgtm
+  0.38.0 or later, a newer 9.0 UBI9 build) stops matching and re-blocks, which is the whole point of
+  keying on the version rather than on the repository.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count
@@ -481,9 +506,10 @@ what matters here is that four of its lessons are about the *shape*, not about t
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. Also the discharged datastore holds, asserted as their **successors** rather than as absent ceilings (spec 081): no `allowedVersions` on any track for vault, opensearch, langfuse, the observability postgres or mongodb, a `dependencyDashboardApproval` gate on every major, an automatic patch stream, and — as the control — that neither hold has widened onto caddy or otel-lgtm. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
 | `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
+| `scripts/__tests__/mongo-data-owner.guard.test.mjs` | the MongoDB re-own wrapper that made the 8.0.8 → 9.0 move safe (spec 081 US8a): every service in the dev *and* prod compose files that mounts `/data/db` starts as `0:0` only to `chown` the volume and then drops to the image's `mongod` user with `setpriv`, with the wrapper executed against stubs so the assertion is about what it does rather than how it is spelled — and a per-file floor on the number of matching services so a rename cannot make every assertion pass vacuously. |
 | `node scripts/check-infra-image-findings.mjs --selftest` | the gate's whole decision table without Trivy, and CI runs it **before** the real scan so a broken gate is not mistaken for a clean sweep. |
 
 A guard is not decoration here: each one above exists because its absence was paid for — a silent

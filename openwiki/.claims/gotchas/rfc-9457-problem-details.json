@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1b018a20f8716c9041e78fcbcd29404edc39f49c2279ddefc2ff3f21608a1b5f",
+  "pageVersion": "sha256:ebcf7acfed3977ed730268457f5afd2d4a698b3331e20d2931ab9c1fb8593371",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:4cd440aadc91a601a9f8f3980602f7d46deb0c663c3260d7d473a8baa5cf12cd"
+          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
         },
         {
           "resource": "repo://backend/mc-service/src/api/middleware/error_handler.rs",
@@ -152,7 +152,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -172,11 +172,15 @@
     },
     {
       "id": "claim_b11f36d67d2a49d6baa4b2406e4e3bcc",
-      "statement": "The BFF produces RFC 9457-shaped bodies from more than one place, and the shapes are not interchangeable. handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status unchanged, so a proxied mc-service failure keeps the mc-service.example type URI. The BFF's own account-route problemResponse() emits Content-Type application/problem+json with type about:blank, while the equivalent about:blank body written through Response.json() by problem() in backup-route-support.ts and by the inline literals in the agent-config and backups-tick routes is served as application/json — so a client must expect both type namespaces, and a media-type assertion holds only on the account routes. about:blank means no more specific type than the status code by RFC 9457, not an unknown service.",
+      "statement": "The BFF loses the problem media type on every RFC 9457-shaped path except the account routes. handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status verbatim through Response.json(err.response.data, ...), and securityHeaders() sets only CSP, X-Frame-Options, X-Content-Type-Options and Referrer-Policy and never a Content-Type, so a proxied mc-service failure reaches the client as application/json while still carrying the mc-service.example type URI. The BFF's own about:blank bodies — problemResponse() in account-route-support.ts, problem() in backup-route-support.ts, and the inline literals in the agent-config and backups-tick routes — are shaped like RFC 9457, but only problemResponse() sets Content-Type: application/problem+json explicitly; the rest go through Response.json() and are served as application/json. A client must therefore expect both the mc-service.example namespace and about:blank, and a problem-media-type assertion holds only against mc-service directly or on the account routes; about:blank means no more specific type than the status code by RFC 9457, not an unknown service.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts",
           "version": "repo-file-v1:sha256:7b5ac7cc339611519edbfbd5a5335df49e03300518b06d56ae83e5937415c862"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
+          "version": "repo-file-v1:sha256:0c6d10784d924be28dedcc79e583cc9d99eecb8d1d977238decb6c93e2fe0679"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts",
@@ -189,12 +193,30 @@
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
           "version": "repo-file-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/security-headers.ts",
+          "version": "repo-file-v1:sha256:298ac98c2ff80945ebe99c26ec49f497805bae1bd02005eaa6c1dbf1a98cc27d"
+        }
+      ]
+    },
+    {
+      "id": "claim_6afca0db6a3242b9ac03008aad7819df",
+      "statement": "mc-service's shared auth layer answers a credential that cannot be parsed as a JWT at all with 400 Bad Request, not 401; only a well-formed but invalid token yields 401. movie_metadata_rejects_a_malformed_token pins this as axum-keycloak-auth's service-wide behaviour and records that it was verified identical on the pre-existing /api/v1/collections route, so a 400 on a protected route is not necessarily a domain-validation failure and a test asserting 401 there is asserting an aspiration rather than the service.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/auth.rs",
+          "version": "repo-file-v1:sha256:053ebecaeb6419739327bbfaebc60e15ef4e431d81c6e40d2d9f364ebb08e634"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/movies/movie_metadata_test.rs",
+          "version": "repo-file-v1:sha256:a885fc0722435ff0761252b8b2a789b8873678e52cd5ff3950e51ede7cb4d4d5"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-20T11:09:40.455Z"
+    "at": "2026-10-24T20:35:10.714Z"
   }
 }

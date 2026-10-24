@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ea150ffaf3a86a0f20382abc62cdc94da0fde79a1333926aaf428b4643179b99",
+  "pageVersion": "sha256:a341dce4e630f734d4d328a821e9aefb60549fa009e55fd1a62e9a7007a34c02",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -132,7 +132,7 @@
         },
         {
           "resource": "repo://security/infra-images/allowlist.yaml",
-          "version": "repo-file-v1:sha256:b1fe475b98ccc92a1f06caff142af28feea67debc12e43848072dbe3c0acb7b2"
+          "version": "repo-file-v1:sha256:9752e750ed577a611a3f340f8ff0470d556764dcf93c8fa20cc1b3b46fbcc801"
         }
       ]
     },
@@ -254,7 +254,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:8232c5a8872f0d3ce818dd6176c7ffbb3f73f612c696e50281a21c9682ff6b7e"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -479,11 +479,11 @@
           "version": "repo-lines-v1:sha256:c20bdd8bacd22729d1efdc8df546bc4e7bd27c9b96b956fb779b7733fc2ee6af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MWYwNDllMzUyNDQxZDY4OGZhNzU3M2U5OTYyYWNlOTRjMmU1ZWY0MzBmYTVmNWI1ZmRiMmUxYzVmOWFlOTYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlY2RkZTlhMTE2NWZiYjBhOGYwMDJmMDBiY2ZiYzMxYzk5YTQzNzE4OWRjMTg1YjNlNjljMGY1ZWYwNjJlYTI4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NDU2ZmJkYzRlNmNhNmE4ODg5MGZmZWFhNDk4Y2I0Y2JkYWZhOTdjZTM3MzgyMzMwM2NmYjlmZTkxYWNhMmM2In0"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L272-L276",
+          "resource": "repo://security/infra-images/allowlist.yaml#L275-L279",
           "version": "repo-lines-v1:sha256:d9eaa6bd5e43fefe10303fbd38dd205864f204181213a412449328d92d425a5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg2MzBjZGI2MDRmNTQwYTMyN2VkYzgwZDQ2MWQ4ZjNjNDE1YmZmOGVmN2E5OTQ4MTdkNDE2YmI0MzYzNmViMiJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L370-L374",
+          "resource": "repo://security/infra-images/allowlist.yaml#L373-L377",
           "version": "repo-lines-v1:sha256:1d172caea457314360a773a68376ef8e543fed6b055f9a8621c2417edfa9194b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxMjdlNjg2NGRiNTk3ODQyOGFjZjQ4NzVkNzI0Njc0MGZmMzBlMWM4ODE1ZmVmYjhiNTc1MjI0M2Y1NTc3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
         }
       ]
@@ -516,65 +516,93 @@
     },
     {
       "id": "claim_c8bc042116284749ab175a0ca0ee1e7a",
-      "statement": "The infra-image allowlist holds twelve live entries in three cohorts. Three are the un-expiring BASELINE for the same Go-stdlib Critical CVE-2025-68121 on `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`, `postgres:18\\.6-alpine3\\.23` and `postgres:18-alpine`, each recording its own measurement because no reachable tag clears it. Seven are time-boxed to `2026-11-20` and are therefore the cohort that reds the weekly expiry check first: the 2026-10-23 operator-approved CVE-2026-114406 (ca-certificates) entries on `grafana/otel-lgtm:0\\.37\\.0`, `langfuse/langfuse:4\\.56\\.0`, `langfuse/langfuse-worker:4\\.56\\.0` and `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`; the `next` pair GHSA-2464-fhr4-w9xw / GHSA-673q-mjm6-r5xr on both langfuse images; and `@sentry/nextjs` CVE-2026-114139 on `langfuse/langfuse:4\\.56\\.0` — all flagging EXPIRING from `2026-11-06`. Two more are time-boxed to `2026-12-01`: the OpenSearch netty CVE-2026-75595 digest key and the Unleash proxy-addr CVE-2026-90711 version+digest key. Comment blocks describing absent entries (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the retired object store) are the file's history, not live suppressions.",
+      "statement": "The infra-image allowlist holds eleven live entries in three cohorts. Two are the un-expiring BASELINE for the same Go-stdlib Critical CVE-2025-68121 on `postgres:18\\.6-alpine3\\.23` and `postgres:18-alpine`, each recording its own measurement because no reachable tag clears it (the shipped binary carrying it is `usr/local/bin/gosu`); the third seed entry for the same CVE, on `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`, is discharged rather than re-keyed (feature 081 US8a, T057) because every mongo ref moved to 9.0-ubi9. Seven are time-boxed to `2026-11-20` and are therefore the cohort that reds the weekly expiry check first: the 2026-10-23 operator-approved CVE-2026-114406 (ca-certificates) entries on `grafana/otel-lgtm:0\\.37\\.0`, `langfuse/langfuse:4\\.56\\.0`, `langfuse/langfuse-worker:4\\.56\\.0` and `mongodb/mongodb-community-server:9\\.0-ubi9`; the `next` pair GHSA-2464-fhr4-w9xw / GHSA-673q-mjm6-r5xr on both langfuse images; and `@sentry/nextjs` CVE-2026-114139 on `langfuse/langfuse:4\\.56\\.0` — all flagging EXPIRING from `2026-11-06`. Two more are time-boxed to `2026-12-01`: the OpenSearch netty CVE-2026-75595 digest key and the Unleash proxy-addr CVE-2026-90711 version+digest key. Comment blocks describing absent entries (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the retired object store, the mongo 8.0.8 seed) are the file's history, not live suppressions.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1132-L1149",
-          "version": "repo-lines-v1:sha256:09d37abcfd097999189d4bd1a5010b4bd917bc99dd533853e9d20cb439a127a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MDliNDQwODAyOThmYzkxNzY5YmMyZTY3MDgzOGNlMTFkYWM3YmJkZjNmZWU5ZDUwZmViNmVmYTZhYWFiNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3YmU2MDVmODk3MzY3OTRmZjAyZTk1ZjhjZmI3NWVmNmYzY2M3OWRhOWI5NjYzYzM0NjZmOWQ3ZGUxNTljOTIifQ"
+          "resource": "repo://security/infra-images/allowlist.yaml#L112-L119",
+          "version": "repo-lines-v1:sha256:212af772100d54a4789932bb57eb655620439aca2354fe275fd64765cdbe143d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YwZDMzYzI0YmRiMjc4Y2QwN2JhNmU3NjI0M2E0OTU5YmU3Y2FmNjNhY2JlMTAzYzFiMGY1M2NmMDRiNTViNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA4Y2ZlOWFjZGFmMDcyYThmMmRmZGQ0NzVlYmE4ZjVmZmUwZTBkMjhjYWE4MThmZTM4NzA5NDYzODY0YzNjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNlMmU2NTg2NWJjZTAzZGFkMzBmZjVlOWUxN2M0MjUwMzc2MGM0M2I2YTg5OThhMTQxMGRhMjM3ZTdjOWNiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RiZDhjZjU4YzIyOWFhMWFmZGZkNWZlYjYwMGMzOTY5MzY3Mjk0YmMxNGVkYWUyYjRiZjQyOGVlMWNkNTY4YSJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L272-L276",
+          "resource": "repo://security/infra-images/allowlist.yaml#L275-L279",
           "version": "repo-lines-v1:sha256:d9eaa6bd5e43fefe10303fbd38dd205864f204181213a412449328d92d425a5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg2MzBjZGI2MDRmNTQwYTMyN2VkYzgwZDQ2MWQ4ZjNjNDE1YmZmOGVmN2E5OTQ4MTdkNDE2YmI0MzYzNmViMiJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L370-L374",
+          "resource": "repo://security/infra-images/allowlist.yaml#L373-L377",
           "version": "repo-lines-v1:sha256:1d172caea457314360a773a68376ef8e543fed6b055f9a8621c2417edfa9194b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxMjdlNjg2NGRiNTk3ODQyOGFjZjQ4NzVkNzI0Njc0MGZmMzBlMWM4ODE1ZmVmYjhiNTc1MjI0M2Y1NTc3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L64-L116",
-          "version": "repo-lines-v1:sha256:8137e0533585c3f74c377be86a9b9a70029c5d1b56b93660dcecad760624d674:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOGNmZTlhY2RhZjA3MmE4ZjJkZmRkNDc1ZWJhOGY1ZmZlMGUwZDI4Y2FhODE4ZmUzODcwOTQ2Mzg2NGMzY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkYmQ4Y2Y1OGMyMjlhYTFhZmRmZDVmZWI2MDBjMzk2OTM2NzI5NGJjMTRlZGFlMmI0YmY0MjhlZTFjZDU2OGEifQ"
+          "resource": "repo://security/infra-images/allowlist.yaml#L70-L104",
+          "version": "repo-lines-v1:sha256:dae1ae4385c4115dc208bb1b99e78f119cc63df08ea1a123ffd755428c7e935b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTlmZmE3ZGFhYjIxMWM5NTI4MDk0OGFhOWE2NmEwOGI0YmJiMzAwMTk5MDdhNjI0MzJlYWU5NjczOGYwY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZTUxMzVmNTQ2ZDEyMDM5YWNhN2RmMzNmM2IwZWIyYzhjMDA5ZjE4OWU0NjM3MTE1ODVkZTJiNTI0MTkwYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOGVjZDYwZDRhNjZmOTI0N2I2OWQ4Y2Y2YjAzN2FhNzIwMWUzMzBiMDBhM2Y0NjE4NTYwOWZkZDViZDQwMzAifQ"
         }
       ]
     },
     {
       "id": "claim_945d6b601ee64c6ca03e3bf427a5f3b1",
-      "statement": "The 2026-10-23 allowlist cohort is the file's normal shape — advisories published against images nobody changed: CVE-2026-114406 (base-image ca-certificates), the `next` GHSAs and CVE-2026-114139 (`@sentry/nextjs`) turned `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) although the pins were untouched. No upstream bump clears them yet (newest otel-lgtm 0.38.0, langfuse/langfuse-worker 4.68.0 and mongodb-community-server 8.0.34-ubi9 all still ship the pre-fix ca-certificates), whereas Keycloak cleared the same CVE by a same-version digest refresh in PR #838, which is the expected follow-up. Each of the seven entries is version-keyed to the current pin so that a bump re-blocks rather than inheriting the suppression, and each justification states the entry is deleted once a clean rebuild ships — a time-box that forces a re-check rather than a permanent acceptance. The otel-lgtm entry has already been through one such bump: the Renovate window moved the pin 0.36.0 -> 0.37.0 (PR #836, 2026-10-24) and the entry was RE-KEYED to `0\\.37\\.0` in the same change, with the same CVE and the same expiry, rather than deleted — 0.37.0 still ships the pre-fix CA bundle, so the next bump stops matching and re-blocks.",
+      "statement": "The 2026-10-23 allowlist cohort is the file's normal shape — advisories published against images nobody changed: CVE-2026-114406 (base-image ca-certificates), the `next` GHSAs and CVE-2026-114139 (`@sentry/nextjs`) turned `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) although the pins were untouched. No upstream bump clears them yet — newest otel-lgtm 0.38.0 and langfuse/langfuse-worker 4.68.0 still ship the pre-fix ca-certificates, and on the newest mongo `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index sha256:2cb58a8d…) that advisory is the image's ONLY blocking finding — whereas Keycloak cleared the same CVE by a same-version digest refresh in PR #838, which is the expected follow-up. Each of the seven entries is version-keyed to the pin the run actually scans so that a bump re-blocks rather than inheriting the suppression, and each justification states the entry is deleted once a clean rebuild ships — a time-box that forces a re-check rather than a permanent acceptance. Two of the seven have already been through such a bump and were RE-KEYED in the same change — same CVE, same expiry — rather than deleted, because the new pin still ships the pre-fix CA bundle: the Renovate window moved otel-lgtm 0.36.0 -> 0.37.0 (PR #836, 2026-10-24), and spec 081 US8a moved the mongo store 8.0.8-ubi9 -> 9.0-ubi9 (PR #817), which also deleted the 8.0.8 entry it replaced so it could not fail as UNMATCHED.",
       "evidence": [
         {
+          "resource": "repo://security/infra-images/allowlist.yaml#L105-L111",
+          "version": "repo-lines-v1:sha256:561d8a1fd9b71c88fcaafa629e110761ed2f967814c7ebe9022b69b4d406a81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU3OTU0NTBlZWE3MmE4MjkzYmQyNGQxMTBhN2VjN2RkODU4ZmNmYTkyN2E2MDFkNDRmYWM1ZGVmMzMxNzA0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzg5NGQzOWMwYzIwNTc1NGE1OWZmNzg0OWU0Y2VjMWMxOTE2Yjc2MWRkYWQxMTFkOGEwMDUxZDYwMTY4MmFjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzE4NzEwNzA5MWFiM2U0OGRkMWYzMDk4OTYzMjc1YTY5MGI0MDM3YzVlYzIyM2M1Mzk4ZmNhNmMzMTE0ZDRlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRmZjYxMDA1M2VkMzhjZjVmZGVmNmY5YTU2YjI4YTVlNGIxNzIxODAzNWM5NmZkNThkYjJlMzUxZTZiOWFhNSJ9"
+        },
+        {
           "resource": "repo://security/infra-images/allowlist.yaml#L64-L104",
-          "version": "repo-lines-v1:sha256:0c1ded6bd1c0983716eb22a8344b830d60457e2ac0fed44a5b0ea6edd7dac73f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjOTUxMmUzOWQ0YmE5ZWU5MGVkNGVlMGZmNjg2OGYyNzkyMjljYzY5N2JhYzIyNmNjNmQ0MmEzZGUyYjhkYzkifQ"
-        },
-        {
-          "resource": "repo://security/infra-images/allowlist.yaml#L70-L74",
-          "version": "repo-lines-v1:sha256:1d1d701988c1ee7ca351933cc89f955bdd12fefd69da7786caf24a2838c41e07:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI5OWZmYTdkYWFiMjExYzk1MjgwOTQ4YWE5YTY2YTA4YjRiYmIzMDAxOTkwN2E2MjQzMmVhZTk2NzM4ZjBjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ2OGRhZDFmODM3ODU2ODViNmFjMDY0ODE4MDY0ZjI3MGM5NjU5ZGE3ZGQwYTY4MmQ1ODFiMTVhMzY2YjU2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzNlNTEzNWY1NDZkMTIwMzlhY2E3ZGYzM2YzYjBlYjJjOGMwMDlmMTg5ZTQ2MzcxMTU4NWRlMmI1MjQxOTBhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTcwY2U1Y2NmODEwN2U5ODZmYTFhMGMxYmJhZGY0Y2I4NGJlNTBjODU4ZDNkZmYxZDc5NWI4YzAzYzc3ZjNiYSJ9"
-        },
-        {
-          "resource": "repo://security/infra-images/allowlist.yaml#L90-L99",
-          "version": "repo-lines-v1:sha256:207f2c092278b0e7ff0c37044d9de9d0fb7467e52d96be0d5a20b1d1adffd010:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjY1OGM0ZGE0OTQzOGMxNzZiNjhkYTA2MTcwYTQ5YzFjOGQwZGEyMDFiYTY5NDQ5MTE4NjMxNDZjN2U4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NzY2YTcyMTU4YWZmNWU1MWJiMGFjZGI4OWJkYzE3YjYyOGJlOGNlMmU4M2VjMjhmNjZlZGMyOGM3NTAyOTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNThjZjNiYmQwNzBmZTRjYTliNTA4OTM4NWIyZWI0OGMzNDNjMGMyMzE4MjBiOGQxZTg3YmIwOGZlNjQ2OTEifQ"
+          "version": "repo-lines-v1:sha256:026d494c3dba5489c149cd5e24177e64b5b031a05ad527df30207086dff018d8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOGVjZDYwZDRhNjZmOTI0N2I2OWQ4Y2Y2YjAzN2FhNzIwMWUzMzBiMDBhM2Y0NjE4NTYwOWZkZDViZDQwMzAifQ"
         }
       ]
     },
     {
-      "id": "claim_cf618ec0b87a43bfa3da91355c6e2676",
-      "statement": "The baseline `mongodb/mongodb-community-server:8\\.0\\.8-ubi9` entry cannot be discharged by a version bump even in principle, because renovate.json hard-holds that image below 9 (`allowedVersions: <9`, item #819, PR #817) on every update track: mongod 9.0.4 refuses to start on this host's kernel (SERVER-121912) and 9.0 runs mongod as uid 1000 where 8.0.8 used 998, so it cannot open an 8.0 volume without PR #817's re-own wrapper. The guard test asserts the ceiling on all three tracks, that it admits 8.x and blocks 9+, and that it catches no other datastore; the hold is liftable only in the PR that carries the wrapper.",
+      "id": "claim_04e49eb6c65b47f989643ed4f1bd5afd",
+      "statement": "The `mongodb/mongodb-community-server` hold is discharged and replaced by an approval gate, and the re-own wrapper is what made the move safe. A renovate.json `allowedVersions: <9` ceiling (added 2026-10-23, item #819) existed because mongod 9.0.4 refused this host's kernel (SERVER-121912) and 9.0 runs mongod as uid 1000 where 8.0.8 used 998, so it could not open an 8.0 volume. Spec 081 US8a (PR #817) discharged both premises: the host moved to a 7.0.0 patch that 9.0.4's Ubuntu exemption admits (SERVER-131779), every mongo ref moved to the digest-pinned `9.0-ubi9`, every MongoDB service mounting `/data/db` now starts as `0:0` only to re-own the volume and drops to the image's `mongod` user with `setpriv` before mongod runs, and the ceiling was lifted. The guard asserts the SUCCESSOR rather than the absence — no `allowedVersions` on patch, minor or major, `dependencyDashboardApproval` true on a major and undefined on a patch — because a `<9` left behind would block the deployed version and make Renovate propose a downgrade.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L1177-L1193",
-          "version": "repo-lines-v1:sha256:b873cd3b74860ad5aa0779870cccbed990054f50f5ff95d39cabc92b319c9103:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZmExNzNjZDBlNDliYWZlODE2N2JiNmQxYTRhMGY4ZmY0ZjllYzYxMzdlMGNiZGIxOTg5ZjEwNDFiOWExOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L4-L31",
+          "version": "repo-lines-v1:sha256:22203d25d3ad722cfd1bf7f802ab4c20c4bdd1ce6a9190a8fdeaf63f90ae8559:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3Y2NjOWViNTRkYmE2OWI5MDA0NjU4MDJlNWViZDczOWNkNzg5YjY1ODBjYzM5ZTg4M2UxZTk4NjE3YTg2MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTMxZTc1ZWMwMWY3Y2ZjMzhjZmI2N2E3OGYxMDg1MmY3ZmY0MjVlZDQ5MDQwYTEzYjVjZmEyMWMwODcwOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3219",
-          "version": "repo-lines-v1:sha256:79f68294704014dfa942b7b0653e5ba74757642bb720b8fe23de05ce5ca84375:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZTZiOTgzZTYxYjQyNDBhZWU1OTI3N2M3MTdmOTk4ZmVkMTJiMzE2ZWJhZWQ4YzJkYzZmNzljMzdmODhhZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYmM3MDZkY2U0MmY2NzBlYWMyZDkxMmNjMTZiYTBmNTUwZmE1NWNhZjM4MjAyMzU5MDUzMDY4ZGY4NTJjZjYifQ"
+          "resource": "repo://renovate.json#L1152-L1176",
+          "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L105-L108",
-          "version": "repo-lines-v1:sha256:a7d17f9cc31d7645d31bc1baea39197617ce8bd55f82f5cb5d7f2bec30433114:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNiMjY2NWM0MzRlYTE3ZGU1ZjdhNWZmMzVkYTk4MGIyNmZiMmU1Y2NhNDRhZTk1YjgyNjYzZWM4MTlkMjI0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTdjMGNiMzFkZmQxYzY0OThmZDZjNzZjNGFjMWU0NTcxOWZiYjRhMmY2NDI5YTA4YjkwMmEwOTk3ZmFlNGNiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzA3NDVhNWFlZTA0NDk5OTcyNjIyZTRmYzQ3YjRiOTAxNjg3N2IxYjViNGMyYjAzYmQ4YjVjNjkyZWUzOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRmZjYxMDA1M2VkMzhjZjVmZGVmNmY5YTU2YjI4YTVlNGIxNzIxODAzNWM5NmZkNThkYjJlMzUxZTZiOWFhNSJ9"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3190-L3211",
+          "version": "repo-lines-v1:sha256:79e5a9eda1998f049784e7901cad1af8e5c410aae5cac1a74a35c5ba3b90aefa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZTdkNGEwZjc2YjRhNjMyYzAyNDdiMDk4ZjEzNjRmNjVhNjM2N2Y4MmYyYWViZjJiNjJkZmYwY2E1ZjUwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YjBhZjMyMTZjZDBiZGEzODE1OTU2NWFlYWJkMmIyYTAzZDlmYWNmNTA1NmM5OWZhMjIyMTJjYjY5ZjY2MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYmM3MDZkY2U0MmY2NzBlYWMyZDkxMmNjMTZiYTBmNTUwZmE1NWNhZjM4MjAyMzU5MDUzMDY4ZGY4NTJjZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c7922f7dcb24d87bbd886fcd796b413",
+      "statement": "`scripts/__tests__/mongo-data-owner.guard.test.mjs` is the second lock on the MongoDB image move: it requires every service in the dev AND prod compose files that mounts `/data/db` to start as `0:0`, to use the `sh -c` wrapper with `$0` `mongo-data-owner`, and to run `mongod`, asserts the wrapper text is identical across all four files, executes the wrapper against stubs so the assertion is about what it does (re-own only when the data is foreign-owned, then drop to `mongod`; no chown and no setpriv when not root) rather than how it is spelled, and requires at least one matching service per file so a rename cannot make every assertion pass vacuously.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L46-L65",
+          "version": "repo-lines-v1:sha256:c163d2419a109ca822075fb1317d3d355077cdcc787b3a1c07f5dcd69051541a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZjUwMDY1Y2U5YTMzYmJmZWJkMGQ1YzQyMmY5NDZjNzliOTk5NmZmNmFmMmE5YTBlYzg2N2IzMTRhMDZjM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxZDNhOGUxN2EwZDIxZTYyNGQ4YzkyMDgzYTk5MjFlOWRkZTg1ZDI2YmFhNjZmNGJkNmI1Y2JjNGYzNzRjYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ODBjZTE5MjkwNGY1ODc1YWJmYmEwNDhmMGI2YzY4ZTBhZTAzNWY2YmFiMzA5M2U1MGY3ZWVhMzRkMjE1ZTYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L92-L113",
+          "version": "repo-lines-v1:sha256:0e769448cc1d60d93ff36dae2154b39cc43ed0f4029b297434e2b48a6e38c74e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGEzNzdjYmQyYjgwZWMzZmY4MmM1Mzg5NWE0YmQ1ODMyNzBhYzY5ZTMyZmFmMjI5YWI4ZmZmMTdlNjk4NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a0313f7211040268b312bf1d9e6b292",
+      "statement": "`scripts/__tests__/renovate-workflow.guard.test.mjs` asserts each discharged stateful-datastore hold as its SUCCESSOR rather than as an absent ceiling — no `allowedVersions` on patch, minor or major plus a `dependencyDashboardApproval` major gate and an automatic patch stream for vault, opensearch, langfuse, the shared observability postgres and mongodb — because a hold deliberately discharged and one someone deleted are indistinguishable from the absence of a ceiling, and because a ceiling left behind would block the version actually deployed. The controls matter as much as the assertions: the vault and item #407 holds must not widen onto caddy, otel-lgtm, postgres, redis, keycloak or clickhouse, and the langfuse server and worker must still resolve identically on both keys because they are one deployment sharing one database.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1152-L1176",
+          "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1107-L1175",
+          "version": "repo-lines-v1:sha256:a66942caae9f42c692194d70d6fd6e6ab40809af45d952a754d84cdd75a1e688:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OWIxMGIxY2M4MjAwM2Q0MDQ2NDMwMTBhN2QyZDU4NDAyY2UwZmVjNjEzYzZiMmQ1MDRhZjhkYjQzY2FmZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyZDBlYzI3ZjdlNzM3ZjY4YjM1ZjliZWU5YjAxODhmYjI3ZTgxMjk5ZTBkNmQzODc0MzU3YWM2NjI3MmRjZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZTVkODM3M2FmNzYxOTg2Nzc0NzI4NWY4YjEwYmU1M2JjMDZiMTFmYzA1ZGE1Njg3NzkzMjE0MTU0OWNmYWYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1199-L1294",
+          "version": "repo-lines-v1:sha256:a4cfca5dbe89ecbededa8fb2ba526a8e9173130f2917a0ee95b6ad9df2f66c42:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3NmJmYjZmYTEwZWEyMTg0OWY5NzMwZjYzNTI1NDQzZjhmYTA3NTk3MTU4NmFlNTg1OTVjYzJiZDc0NjkzOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4N2ZhMTBjY2IwMmExM2ZhYTU5MTY1NTBkZWFjNzBmZDk4ODEzOTZjYzUyNWU4ZWIxOGIzOGM3NThiNjFmYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzZmOGIwYzg2NWVhYmQ3ZGViZmI4MmFlMDk4OTVmOWY3NTkzYzFhYmIwYmQwMjcyZDY0NjVhMDg5MGU5YjEifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T14:53:13.584Z"
+    "at": "2026-10-24T20:35:10.714Z"
   }
 }

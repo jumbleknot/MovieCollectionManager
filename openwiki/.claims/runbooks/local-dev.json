@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d981d81dd95865572256e70b87cb0ae92ccfdb018d1f863b745130f3840a85ef",
+  "pageVersion": "sha256:db36865ba49f2ab35d4181cb8b5d711c536ab24dd784fe6ffac7f03f1d8a0c44",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -111,7 +111,7 @@
       "statement": "Item #227: `backend/mc-service/.env.local` had no generator, so `pnpm nx affected -t lint,test,typecheck` on a branch whose Rust tree was byte-identical to main reported `mc-service:test` FAILED with 16 of 41 cases failing on configuration (`Missing(\"MC_DB_URL\")`) rather than code. `gen-dev-env.mjs` now creates the file when absent, re-syncs the KEYCLOAK_*/E2E_* lines from stacks/auth.env, and seeds MC_DB_URL, MC_SERVICE_PORT and RUST_LOG once and never rewrites them, taking that binary to 41 passed / 0 failed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L363-L385",
+          "resource": "repo://docs/runbooks/local-dev.md#L373-L395",
           "version": "repo-lines-v1:sha256:3448872750b360da28df7c9483db66a570e4bf1176676645269fb4e0d8f8b443:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1ODUzMjg1ZGE2NjE4MDNkMjZiNzU2ZjFlMzZiYjhlNTViNmRlMGMxOWM3NGNkZTcyMjViZmJlMzE1YTA0Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZmNhNDhmNGUwNDIyNmVjYmE2MTJkMDdmMjQ3Yzg4NDExN2NkNzJlMmYzNTJhNjA2ZDdhYzlkNTAwNmZjMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ODQxNTg4ZTRlNDFlZjEzMDI0MjllZmQwMjk0YTQzODE1YzA5M2JiMDA2Y2JiYTc3MTczYjg5NTNkMmM1NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNzk1NzlmNjNiZWIwZTcwNmZiZjQ3ZjZiNThjY2RhZDFlNTMwNzU5ZDZiYWJkNWQ2YmZjNTRkMjYwNTc4ZTYifQ"
         },
         {
@@ -129,7 +129,7 @@
       "statement": "The four E2E_* variables in `backend/mc-service/.env.local` (used by feature 046's authenticated `http_authz_test::*` cases to mint a real ROPC token) were the second half of item #227 and had been wrongly recorded as nine genuine replica-set-MongoDB failures: measured 2026-09-15 with Mongo up and the other 32 cases passing, all nine failed on `E2E_ROPC_CLIENT_ID is not set (or is empty)` instead.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L375-L381",
+          "resource": "repo://docs/runbooks/local-dev.md#L385-L391",
           "version": "repo-lines-v1:sha256:0c47f2e506ccbada4398800e72a8e3c723cd89ba8164281c9971ce49aea216e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdjZmEzYjczY2JhNzk1ZTI1N2ZhZDJhY2VjOTRkMzk4OGM3M2U1NzAwZTNkYzg2M2M2MTg5ODlkZDUwZDlhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JlYzIzMzI0YWRiZDdjZjRhMDAwMDdmZWUzZjlhZDFmNTA5YTdmZjFkNGE4NmI5ZDQzZDRiNGM1YWQyNjNkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2FkNGZjOTRlZWQ4YzMyM2JkYmM0ODQzYmJmYmFhMmRkY2ZhNDNiZjQ5NjNhOWY1MDg2OWFhOTZmMjkyNjZiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMwZjE4ODQ5Y2JkMjRkOTllYTgzYTQyMjIyOTljMDg1Y2QzNGUwZWQ2Mjc2MjFlOTVkMTY2NWIxMmJlMjA1YyJ9"
         },
         {
@@ -151,7 +151,7 @@
           "version": "repo-lines-v1:sha256:9ee5d973251c5c7d59050535d6cd5664d72a3a559fe4fdba1b32641609995f8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODYwZjUxNzk0OTA2MjVkNjU2NDg0ZTViZDJmNjlmNzJiYTBiZmY4MTZhYmFiOWJjMTdjNzQ5OWQzNjkzODgyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiNzU5M2IyOTQyYjkzOGY0ODRiMjExOTAzZGZlZGY1NjZhZmQ5MjMzODE0NTI0MTkwYTE4MzRlMGQ3MTkxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAxMzg2NWQyNDdiNzRhNjBmZmJkODM1Nzg4NzlhMmQ0NTIzNjEyYTY1NmU4NDdiNjBlM2QzNWZlZjc5NmEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGY2MWMxY2M1Njk1OTg5MGI4YmMwY2Q4MThhYWE5MTJmYmY1NTg5MTcxMDM3ZDE3ODIxY2Q0YzE0ZTljYmZmOSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L144-L144",
+          "resource": "repo://docs/runbooks/local-dev.md#L154-L154",
           "version": "repo-lines-v1:sha256:ee278475b4a2c99e6ff8636d5687489b04dbdeac9a04934417b07a733dfd277d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUyNzg0NzViNGEyYzk5ZTZmZjg2MzZkNTY4NzQ4OWIwNGRiZGVhYzlhMDQ5MzQ0MTdiMDdhNzMzZGZkMjc3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUyNzg0NzViNGEyYzk5ZTZmZjg2MzZkNTY4NzQ4OWIwNGRiZGVhYzlhMDQ5MzQ0MTdiMDdhNzMzZGZkMjc3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODE2NjA3MmU3ODJlZDFiN2IyZWI4NWMzZTBkN2I1NGQzNzMxNDQxNzBjNTA1ZDk2Yjc2MTJkYWMzZjU1MjQ5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVhYzA1OWRmOTliMDU5OTQ1MzU2NzZhODNmNGY0Yzk1OWNkNWZjNzFiMjVmNzE3ZTgwZjUyYzYzNjU1MDVmMSJ9"
         },
         {
@@ -203,7 +203,7 @@
           "version": "repo-lines-v1:sha256:f30a9c94c888b0d4c0e2c078ed5693629abe56cd565865feddabdf0c74870521:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YWVmYjVhMDc5MjkxNDgyMGQ4MzcyNGFmOGY3MWRiNTQ0MTgxMjFkNjcyNDY0OTFiMjRjMWU3OWI4NWU1NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwY2NjMzkxMWNmM2E5ZWRhNWJkZjFlMTllYmVhYjNkMDRmNmUzYzMxMmYyYzViN2NjNTViNTBiOTc3ZWZkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyOGIzM2ViMzVmZjg3NjkwNTZjMTdiMDQ2ZGIwODc3YmQ5OGU0MWJiMDljNjVlN2QzZjQ1ZjBkMTU5NWRiMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MzIyZDMyOTU5ODJjNzljNjYwNTlmMGUyZmE5NmY4YTdmNmE0YTBkZTgwZmQxY2QyYmJhNTRhMWZiMWNjNGQifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L168-L174",
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L192-L198",
           "version": "repo-lines-v1:sha256:01ae0e9fb091f71ebf1e854454bd7c7cae138892933c12b8e188d8e9f96b7f51:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVlNTEwMDMxYjNkNWNmZjg2OGI5OWEyNzVkZDI0ZDcyZTQ1Y2I1MDZiM2M0ZjU4OWNkMDhkZDgwZTlmYjJlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlmYWI1YzRiMzlhYjYwYmMyNTgwYmJlNzM0NzEyNmIzNzczNWU3ZGJiODY2YTgzYTZiMTIyNDM4ZWMzMjk0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhhOTIxNWNiMjY0NDU4ZmU5MWFhNWRmMWRkZjhmZDg2NjhiM2U5Mzg2OGExNDBiOTc3MWIxZjQ3ZjIxODUyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2IzYTMyODgwZDIxZjgxZDdiNTIxYmYzZTllYWNiY2EzNDUzYzg1MTFiNjg0Y2M2OGExMTRkZTZlMWRjYzlhOSJ9"
         },
         {
@@ -211,7 +211,7 @@
           "version": "repo-lines-v1:sha256:1246c418ba6d4fee5a3b469cc854d6af21532e003646b4a48d232f68f66c20ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVlNTEwMDMxYjNkNWNmZjg2OGI5OWEyNzVkZDI0ZDcyZTQ1Y2I1MDZiM2M0ZjU4OWNkMDhkZDgwZTlmYjJlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBmZmNhOWQwMzY4YzIxYmU1NmUyZmU1NDhhMWY3ZGU5YTA2NTI3ZWJhNGUwNDU3MTIyOTliNjI2ZDI0YjIwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkMjY0NDk4NjIzMWIxM2Q1OTk1ZGYwZDAwYzc3MmZlMjM0OTQyMzU3NWYyMjc2YmFiOGIyZmZhYTQ3ZWM3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L160-L163",
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L184-L187",
           "version": "repo-lines-v1:sha256:7065bac4a2eb3f1ac62aefefa7dc20d18e239488fcd6d00f21508208cb726ae4:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVlNTEwMDMxYjNkNWNmZjg2OGI5OWEyNzVkZDI0ZDcyZTQ1Y2I1MDZiM2M0ZjU4OWNkMDhkZDgwZTlmYjJlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M1YWZlZjA5YWFjNzUzZDQ4OTI2Zjk1MTZlMTU5YmEwMTAzYTIzYzBiMDhjNWQyMWYwN2FmZDI1MDdiNzgyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk2MDFiNGU5ZWNkMDU3MDQ3MTdlYWU5Y2RlZTU4ZDE1MmMzMTExNDJhZTI5YWU1MzY5NWYxYjY1NTI4MTRiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ2YmZkNmVhOTcwZTkxMzEzZGEwNTdhNDRjY2ZjZTA0OTA5OGQ1MmE3YjEwMGZjNDc2YTViZTBlNjcwZmQ5ZCJ9"
         }
       ]
@@ -253,7 +253,7 @@
       "statement": "A credential-driven integration-test skip means a missing gitignored file, not an unrunnable box: on 2026-08-07 an absent `frontend/mcm-app/.env.local` produced 38 errors and the wrong conclusion that the leg could only be proven in CI, because `syncEnvFile` returned early on a missing file so the three realm client secrets reached `.env.docker` but never the file `kc_admin.cfg()` reads; one `node scripts/gen-dev-env.mjs` run took the suite from 13 passed / 38 errors to 51 passed / 0 failed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L148-L167",
+          "resource": "repo://docs/runbooks/local-dev.md#L158-L177",
           "version": "repo-lines-v1:sha256:c6f6af68702c69e87ec75b203a901e9cf768543b35af90e059ec10fd6fcdd278:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZDRhZjJjZDU2ZWQzNDE0Mjc2MGFkNTJhNjRiNzI4NDBiZWM2NWMzZmNhNzY2NThjZjE5MjU1ODY3NjUxNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYzhiYzA0N2FiNTE0YjJlNzBhYzc0MGRmZmJkNjBmZjMwMzZjYTA5ZTI1NDMxNmYwYTFkYjBkYzUxNmE4Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYWMwNTlkZjk5YjA1OTk0NTM1Njc2YTgzZjRmNGM5NTljZDVmYzcxYjI1ZjcxN2U4MGY1MmM2MzY1NTA1ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MDI3YTIzMzc1YWNhN2I5NTU3ZDNhMzU4MmJlMDMyMGVkMTdlMjUwNDAzY2ViNjAwNmZjNzc4YTczNzU5MjUifQ"
         },
         {
@@ -267,11 +267,11 @@
       "statement": "The feature-048 lesson generalizes: before concluding 'this cannot run in this environment', name the specific missing input and check whether a generator, a `.env` file or a documented command supplies it — and a credential skip that does not name the variable, the file it is read from and the command that fixes it is itself the bug. Secrets are therefore checked by key name only (`cut -d= -f1`), never by printing a value.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L169-L179",
+          "resource": "repo://docs/runbooks/local-dev.md#L179-L189",
           "version": "repo-lines-v1:sha256:093bff6da9b679765cbd0a62ad93603a4c4d662d6f0725f2e070751deb3d7d96:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwM2E0MTY4ZWM3ZDc0YTBlODMzNDM5Njk4MzE4NWY4MzIyNzAwYzExODZjZWRmMmYwY2Y3ZDg2YmYwNDRlYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2N2Q2NGNiZjA5YTI2ZTNmOWVkYzYxNGQ1M2RiYmMzMDEzNzhhM2IxNmQ3YjYzOGQ3OTJmNTM1YzZhMjRkYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMGVkZTZlNDNjZGY2MjJmNzk5ZmI0NjE2ZDg2OGY4ODQ0Y2IwMWI2ZThiMjM4ODIwMjc5N2U1N2IyZDZlMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2NzJjMjdjYTNkODQ5NTRmOTI4MTk3NDFhNmNkZGY3NGJlNWQzM2VlOTIwODBlY2M0YzM0MjVhMDExNGRlZjgifQ"
         },
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L181-L186",
+          "resource": "repo://docs/runbooks/local-dev.md#L191-L196",
           "version": "repo-lines-v1:sha256:98c4c3ac3e7bb971c3204cb27274d53a89dd8f52817335b3f144297b5f07be56:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JkNGNmZjg0Zjk5MThmMWNjMjc5ZDVkOGZhYWYzNDhjNDQ1MjliOTY0NTIyY2JiMjg1NmU4Zjk1MzEyOWVjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlhNTNlOTU0NzdlMWY4ZmQ4MmYzZjk5YjJiNDFhMGRlYjRjZmVkY2E5OTY4NWVmNTJkODA3MTE4MjFmYmU2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWU0ZDAxMDBhNzc0YWZiNDJiMDJhODI3MGM2MDcxM2JlZDljMzRiZjAzYTE1ZjFlN2YzMTgyMDYwZmViZWNmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RlYTc4NTBhZTA4MjhkZmM3MGJlNGExOTFmNmE2ZDdiYWQxMmQwMmRiNTVjMjgxZjQ4ZDhhZGMyZGFlMjBkNiJ9"
         }
       ]
@@ -281,7 +281,7 @@
       "statement": "Legitimate remaining absences in a healthy local run are the `--profile observability` services (LangFuse, Vault, otel-lgtm, Unleash), `--profile audit` (OpenSearch) and OPA, which `app-e2e` does not bring up either and whose skips are allow-listed; the healthy baseline for the agent integration suite is 51 passed, 11 skipped, 0 failed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L188-L191",
+          "resource": "repo://docs/runbooks/local-dev.md#L198-L201",
           "version": "repo-lines-v1:sha256:c067947c365e863d32c23a99351792ad2847fa895bab4d759240d2d0e4546934:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBhMDEwN2I5ZGY4MTIyNTQwNzI2N2NiZDczZTFmOGY1MGI5YmU4NTQyM2I3OTgxODdmMGJlN2ZmOTYxYTljMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZkNmM3YjBhZjMwODEzODEzN2JiMTNkMjZkYjgwNWNiYWE3NmQzNTMzNGI0NWYyYWYxYTU4MDA0NjNmMGJiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWU2MjhhZjE3NjVhZTY1MTNhMzdmYzlkYmZjM2U3ZTQzZThhNmU1YzUxY2Y2NzRmNTFiYmZmOTIyODE0ODAwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVhNWVmOTAzYmI4OGZlNjdkNWFkM2EyZjdhYjlmMGJhZTg2ZjNkM2ZmMDYyZmNhMDJlMjEyMGJkYjAwYTQzOSJ9"
         }
       ]
@@ -291,7 +291,7 @@
       "statement": "Item #395: `gen-dev-env.mjs` asks the running realm for a token with each projected credential (`client_credentials` for `mcm-bff-service`, ROPC for `mcm-bff-test`) BEFORE writing anything, and reports one of four endings — `VERIFIED against the realm` (files written, exit 0), `NOT verified` on an unreachable realm or HTTP 404/5xx (files written, equality not claimed, exit 0), `NOT verified (MCM_SKIP_REALM_VERIFY is set)` (files written, exit 0), or `REFUSING TO WRITE: the realm … rejects credential(s)` (files untouched, exit 2).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L212-L228",
+          "resource": "repo://docs/runbooks/local-dev.md#L222-L238",
           "version": "repo-lines-v1:sha256:0e44c8eb7714f89f4015b27815578a50fdab92d194a84cc24ba13bc8987eedfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDZlMTg2NjY1MDIzY2VmY2ZmODZiY2RiOGI4ZWEwOThiYzQ5NTNiYjY3ODI2NjllZjVmOGM4ZTJkNmE4NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjdiZWMyMTU2ZWZlN2IxYTFjODZiN2RiZWE1ZGY0ZTY0MmVlNWExMzYyMjlkMzBlNWEzM2ZiMzBiZjhjYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0Mzk3YWU5ZDBiN2I4MWY5ZWU0NDk4NTIzYTIxNjNjZjJiZDBjZmU0OTgyMmY1YmJiZjQyOWIwNzUwY2Y1MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5M2U0ZjQ0ZTNjYzJhY2NkOGYwNjRjYzVjM2E2ZWJhNjliYjIyMTExOTEzMDc2ZWIyNmY5YzdjNWJiMjY3NjgifQ"
         },
         {
@@ -309,7 +309,7 @@
       "statement": "The verify-before-write ordering is load-bearing rather than cosmetic: measured on the operator's box 2026-09-09, `auth.env`'s `E2E_ROPC_CLIENT_SECRET` was the stale side while a hand-corrected `.env.e2e.local` held the value the realm actually accepts, so a generator that wrote first and checked afterwards would have destroyed the only working credential on the machine before announcing the problem.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L223-L228",
+          "resource": "repo://docs/runbooks/local-dev.md#L233-L238",
           "version": "repo-lines-v1:sha256:231cba23451b3747854923478588b355a259dcba886b593abf511d2c881e395f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0YzExMjcwZGE3MTk5NzQ5YWExZjI3ODRiMzFmYTMzODkwODY4NGU4NmU5MmMwZjkwZWU5YjA3MGI4MzM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEyN2JlYzIxNTZlZmU3YjFhMWM4NmI3ZGJlYTVkZjRlNjQyZWU1YTEzNjIyOWQzMGU1YTMzZmIzMGJmOGNhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWI4MDE2ZjdjNDY2NGQ0ZDhmNzBkNmFhN2IxYWMyMDRiYjFlMTA5MWQxNTIzMGY3ZTM1ZWI5ODdjMzc1MjE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzkzZTRmNDRlM2NjMmFjY2Q4ZjA2NGNjNWMzYTZlYmE2OWJiMjIxMTE5MTMwNzZlYjI2ZjljN2M1YmIyNjc2OCJ9"
         },
         {
@@ -323,7 +323,7 @@
       "statement": "The remedy for a stale projected credential depends on how much drift there is, and drift must be measured before acting: `stacks/auth.env` stays the source of truth (it seeds the realm) so the fix belongs at the realm, never by copying the realm's secret back into an env file. Measured 2026-09-09 on this repository, five of six client secrets matched `auth.env` and only `mcm-bff-test` had been regenerated — so the tempting reading 'the realm was seeded from a different auth.env' was wrong and the volume wipe it implies would have destroyed the whole Keycloak database to correct one field. A few drifted clients are converged via the admin API; most or all drifting means a real re-seed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L230-L284",
+          "resource": "repo://docs/runbooks/local-dev.md#L240-L294",
           "version": "repo-lines-v1:sha256:25e1372eb5a9b1daffbd630a28c12368409dd9e987abb236655143b64a6fb35c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NDRkYTBjZmVlOTNjZTFmNTg5ZjM1ZjgwMzMwMjIxYjA1MDFiNDE4MDdmZTAwOWUwYmFjODI3OTE2M2ZmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1Y2RkMWY2YzllZTY4M2M5M2JlOGUyM2NjYmEyNGQ3MWU4NGFmZTM2MzU3ZDlmZWUyMjcxOTcxOWY2YTBkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlMGQ1M2EzNTU3YWJhODEzOTA2MmE1YWY4ZTA3MGJkYmU1NGMyMWRmMWQwYTY1MWUxOWVhMTA3ZWIyOTQ0MWYifQ"
         },
         {
@@ -341,7 +341,7 @@
       "statement": "`MCM_SKIP_REALM_VERIFY=1` makes `gen-dev-env.mjs` project anyway, knowing the files will carry credentials the realm refuses; it is the escape hatch for an unusual realm and not a fix, and the run announces the skip rather than quietly restoring the old unconditional equality claim.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/local-dev.md#L286-L288",
+          "resource": "repo://docs/runbooks/local-dev.md#L296-L298",
           "version": "repo-lines-v1:sha256:9aa6a1613f44295beb0e16f0f7fb6e57528d09ca592a0b468c65103433b8a731:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAwNzgxZmNhYThhNjdmNjZkZTM5YzgwMmNjNzIzMDM4MTQ0M2U2MTVlMGVmNTNiZmEwZWQ0YTFjODM1MjAxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmFjNjMwNmUzNmIzNWJiNmMxMTk2ODk1NzFmZDQxNmNhMGViM2JlNmE2Yzk0NjYyZWUyNGFmMzRjOTY1ODhlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ3NDc1NjE1ODhkYmRmNzY4ZjkwM2M2NGY2MGI3NjkwMmJlMzk2YTdlY2ExZjI1NWFiODYwZGMxZTdmNzVjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVjOTMzMDgyODVlMTI2ODcwZmZiYzFkNTNkNDNmMWQ0ZWY5ZGZkYzJiMjhkMGQwMGQxMzc3MmY0NDAxOTVlMCJ9"
         },
         {
@@ -573,10 +573,226 @@
           "version": "repo-lines-v1:sha256:d98d85d92fd9734a284f45aafa064a0ccc1c4e6d790adde281dedc687ce783bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMGVjYmZlMzUyNWU0NThhYTZmZDQzYTA5YjNhOTUxODVhMjcwZmMxMzcwNzQ4Nzc2M2MzMjlhYjNhMTBmN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDQ1ZmRkY2Y3NzQ2YWZmMzcwZjg4Y2ZlZGY0N2IyOGFiZjcwZTFlMmI5MWQ2MGFjNDYyMjliMDk0NzYwYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjOTNhYjgyNTExYmQ3Nzg3ODkyZDE4NWFmNmFlM2ZiMmM0YmY5MGQxOTJjMTE2OTBmNzFlMjhkM2RkOTAxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNWI3OTcyMTY0ZmNhM2QzMjllZDg1MmFjNjEzNTY2ZmE1OTYxMGE1OTkwOTY4OGVkYWVmZGI3MGU3ODNjM2QifQ"
         }
       ]
+    },
+    {
+      "id": "claim_67aa7a338cbd40bbb620f25f24273ace",
+      "statement": "The `mcm` stack's unprofiled bring-up is three stores, and the two Mongo ones are deliberately different shapes: `mc-service-store-mongo` is a single-member replica set (`--replSet rs0`) plus a one-shot `mc-service-store-mongo-rs-init` sidecar that mc-service waits on with `service_completed_successfully`, because mc-service's cascade delete runs inside one multi-document transaction that a standalone `mongod` cannot serve. The sidecar initiates `rs0` with `host: 'localhost:27017'`, which resolves both from the host through the published port and from mc-service in Docker, which connects with `directConnection=true` and so never chases the member announcement.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L110-L121",
+          "version": "repo-lines-v1:sha256:f30a9c94c888b0d4c0e2c078ed5693629abe56cd565865feddabdf0c74870521:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YWVmYjVhMDc5MjkxNDgyMGQ4MzcyNGFmOGY3MWRiNTQ0MTgxMjFkNjcyNDY0OTFiMjRjMWU3OWI4NWU1NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwY2NjMzkxMWNmM2E5ZWRhNWJkZjFlMTllYmVhYjNkMDRmNmUzYzMxMmYyYzViN2NjNTViNTBiOTc3ZWZkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyOGIzM2ViMzVmZjg3NjkwNTZjMTdiMDQ2ZGIwODc3YmQ5OGU0MWJiMDljNjVlN2QzZjQ1ZjBkMTU5NWRiMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MzIyZDMyOTU5ODJjNzljNjYwNTlmMGUyZmE5NmY4YTdmNmE0YTBkZTgwZmQxY2QyYmJhNTRhMWZiMWNjNGQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L125-L152",
+          "version": "repo-lines-v1:sha256:8e880a33cb6900a68b07d8b7130c2e4c131e541007ed79620617d768b265d57c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDQ5ZTE3MDdlMjE3Nzc1ZGVlNmNkM2Y4Mjk0MTViZjMzNWNmNjE1ZGI5YTcyMjJjYmRkNDk2MjBkNzg1MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0MzIyZDMyOTU5ODJjNzljNjYwNTlmMGUyZmE5NmY4YTdmNmE0YTBkZTgwZmQxY2QyYmJhNTRhMWZiMWNjNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxY2U5ODk1MjRmMDY0MmE4MWE4YzNlODY4NzExNGZkMWJlMzE1ZDE5ODk2YzE4OGI1OGRlNzEwZTQ4YmIzMTYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L118-L149",
+          "version": "repo-lines-v1:sha256:b91a96048de86b2e6761f6ec3ec1291c8373bd53260ac8288d97dc314d5b346f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L151-L182",
+          "version": "repo-lines-v1:sha256:d212e84dad0f53be0570e315d15a01a111d277006409f716a3267b06d304aa4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YWFhYmFhMGRjN2Q4YjU1YTAxMWYyMjI1YmFiNmFkYzcyZTVlYmEwMzYwZGExMzViM2QxMTk1Yzc3Y2FkMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZGZkYWUzOTE1YTEwY2ExOWJmYzZhYjExMjc4YTVlN2FhOGU5NjQ1NWY1N2RhZDM4MzIyMDA4MmQzYzEwZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDZkZTQ1NDQ2OWNiMDQ0MmNkNWM3NWVkNjA1YmU1MTMxNDE1Y2FmZjcyNjZlMjhkN2QwOTdkOGViNTRjODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMjM0ODBmMzU5OTFjN2NhMGNiY2FhOTI5MTJiMmQ4NzUzYWM5NzcwMDg3OWQ3YzRlNDNlMmJmYzE4Y2ZiMTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_22b36488d66b4b1fb8c162925aeb02c6",
+      "statement": "Bringing the movie-store Mongo up with a bare `docker run` instead of the stack can initialise the replica set with the Docker-internal hostname, after which host-side `cargo test` fails with \"No such host is known\" while the container itself looks healthy; the documented repair is an `rs.reconfig(…, { force: true })` naming `localhost:27017`. A failed or interrupted integration run also leaves `mc_test_*` databases behind (one crash left 31) — harmless but accumulating, which is why the cleanup command anchors its regex on the 32-hex suffix so the real `mc_db` can never match.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L146-L152",
+          "version": "repo-lines-v1:sha256:11811aed21e2fa692431cc303622b0a7e59d7aae2771b04ebe54643f037e1184:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg0N2E1YjY1OGY1OTdlOGJlZjQ5MGJiMWU2Zjg1Njc0OTIyN2M3NmI4NjRkYWUwMmNlNzgyMGM0ODYzYzFjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ1MTU5MzgxNWU4YTYyZGI2YTUxODFhOTMyNzI1ZjFkYzkwOWNjZjczNDUxNjNiYzVjM2NkYzNiMTAxZDdiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjFjZTk4OTUyNGYwNjQyYTgxYThjM2U4Njg3MTE0ZmQxYmUzMTVkMTk4OTZjMTg4YjU4ZGU3MTBlNDhiYjMxNiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L414-L422",
+          "version": "repo-lines-v1:sha256:cce1ef58b88be4f35c7b7a46b2bd5f9d130e1cb817f591630515f41fa5ea256d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAzOWEyMjA3MjBkNDk2NGNhODZjNWU0ODk0MTBjODc2NzdiMTc5ZTJiZTc1M2YwNjA5NjZhNTE0YTUyMTY5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ0NzlmZGE2ZWM2YmIwNmRiYWNkZGUxZjFmMWU5MWRkNDRlYzJiYWI3M2U5OGU0NWJhMjc3ZmRlYTBhMDcwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDY5ZmIwYWY2MTA4ZGViOTgxZWZlMDYyN2NlMjM0ZjQ4NjZkNDFjM2ExZjM4Yjc2NTFiZTg3ODY0ZmYwMTAzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVlOTg0ODQ3M2Y1Njc1ODNkZWZlNzYwOWJmMjgxZDc2ZTlhZmM1NmJjOWYyZTFmMjZjMmJhNmFhOWRiYzQ4NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L130-L149",
+          "version": "repo-lines-v1:sha256:98cf7a8c3b34d53b5461376e93652d2b557d0c9f69ab15d474872d711ff904ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNmZhNzFlZTcxMTQxOTNiZjllNWEwOTg2MmM5OTAxYWE4MjgzNWYzNmE0ZTIzNDYzMzNmZjJhYjVjYTc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWRiNzJiYjExNTQ2MjQ2OTRkN2U1NmRlNjIzZjMxMjk4MDk3NDQyZDg3YjcxOWE3NDliMjNmMzVjMTVhN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca3e932fd90046e38b3502f14a5af3e4",
+      "statement": "`mcm-bff-store-mongo` is a plain standalone `mongod` — no `--replSet`, no `directConnection`, no rs-init sidecar — because the BFF store does single-document upserts only and needs no transactions. It publishes on host port 27018 so it cannot collide with the movie store's 27017, and it exists as a separate store because the BFF must not reach across a service boundary into mc-service's database.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L125-L134",
+          "version": "repo-lines-v1:sha256:d84ee1516f78f6f4799b704cb8eb6db61f16603fc2e91631ffbf59290e5f45c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDQ5ZTE3MDdlMjE3Nzc1ZGVlNmNkM2Y4Mjk0MTViZjMzNWNmNjE1ZGI5YTcyMjJjYmRkNDk2MjBkNzg1MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0MzIyZDMyOTU5ODJjNzljNjYwNTlmMGUyZmE5NmY4YTdmNmE0YTBkZTgwZmQxY2QyYmJhNTRhMWZiMWNjNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NDg5NGM5N2NkZmI2NjBmZmUwOGQwNDFhZmMyZTAyMmRjZGM4MmY4YThmODM3YjA3NmQ4OGZlOGYzNTZmMjYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L132-L185",
+          "version": "repo-lines-v1:sha256:050e3ca6d8d6c9fb94bc8ea2057ddb1a6b817cbba42569e949462f85b2cf3d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZmU1MTJhMDBjNmJlMmE2ZmExMjQ5MzQwMDg2ZGZlNDk1ZTdlMTAyZjUwMjczOWQ3NTk0NzRmOTQyOWU4MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MTdjMDc4OWNjMTEyNDU2MzczNTE2MWI4NDg1NGY0ZWNjZjYwYjFlMjc5ZWVkYjVlYzlkNGQwODU0NWEwNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZTFlMTFkNmVjZjU1MjQwMWE1MTEzODIwZGYxY2IyZDUyMjg2ODI3MjhlNjNmYWEwNzc0YjY4ODA2YWEyNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2aa17d972554a1288a49ea51a39f582",
+      "statement": "`mcm-bff-cache-redis` starts with no profile alongside the two Mongo stores, and the BFF's login path reads it with no typed wrapper around the first call: with Redis down, `/login` returns a bare 500 \"Authentication failed\" rather than a typed infrastructure error, so Redis is the first thing to check when login breaks locally.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L123-L123",
+          "version": "repo-lines-v1:sha256:336c57edf20f97ad3930b1e99d52c83a323dff9a7f98baa98325ec900c636cf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM2YzU3ZWRmMjBmOTdhZDM5MzBiMWU5OWQ1MmM4M2EzMjNkZmY5YTdmOThiYWE5ODMyNWVjOTAwYzYzNmNmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM2YzU3ZWRmMjBmOTdhZDM5MzBiMWU5OWQ1MmM4M2EzMjNkZmY5YTdmOThiYWE5ODMyNWVjOTAwYzYzNmNmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjkxZmRjNmFiMjE1ZTlkMGViNGJlOGVmMDhiZWZjMzY3NDY0OTMwNTFhMjg1MzczNjI5N2VlOWMxYmNlMGRmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGJlNGNlNWFhNzdhODAxMjc4NDAzNTA0ZDVjYTE0NDczOTY0MDA5OWU1YTllMGQ2NDkxMDRmOThjNTdlNmUxZSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L96-L115",
+          "version": "repo-lines-v1:sha256:02df934fd832a8e49a3f076fdb24b71b92bda3c6f0b2df2fcddd6748fdef72cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1YWNjODc1ZjFlYWQ1NmM5MzhlZGFjZGQxMzdkZmFlOTVlZjhlZWE5MjkyNjQwN2FjZjc4NGYwYWE0OGI3ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjVmOWI3Y2NiY2NhNmVmZmFhOTg0ZWRhM2Q3ZTUxNjYxMjY1ZDgyMDQyMjk4MjE2OWE4MTkxNWRiMDUxMzkifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L111-L130",
+          "version": "repo-lines-v1:sha256:86d8b5eaa8ec872cdcf78aaec7e31fe9b21644904b731d5390a2c6c16ab548cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNzAzYjZjNmRkNmQ3MzM1ODFhMTRhMDJmNTBmYzA1NThkY2Y0OGZlMTlmYzIzZDU2MWE2ODBmNWNlODIzODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YTBmY2NhZmRlNTdiMmY2YWI1NGQ2M2NhMzhiNTdmMzA0OTY0ZDI2NTAwMTQ1Zjg5Y2VmZmFlOTMwNGJhYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMDQ2MjAxMzg4YWJlNTkzYmRlMDcyNDJlMjk3NWFmM2U4ODMyNmY4ZmE3MDQzOTZjZDBkNzM1NjA3NTUyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0YWY2NWU3MGUwOGU4NjdmZGNlMTBiMmFhMDRkM2VlMGJlZDcxMmExODFlZGJlZGZkOGZiY2ViYzcwNjFlZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53bf6a880de64269ae2dc0b1f76cde75",
+      "statement": "MongoDB 9.0 runs `mongod` as uid 1000 where 8.0.8 ran it as 998, so a volume written by the older image is foreign-owned and 9.0 refuses to start on it with `Unable to read the storage engine metadata file ... storage.bson` (`FileNotOpen`, measured 2026-10-20) — and nothing in the image fixes it, since its own entrypoint started as root does not drop privileges. Both Mongo services therefore start as root only to re-own `/data/db` once (logging `mongo-data-owner: re-owning /data/db to mongod (uid …)`, and skipping `.mongodb`, which is mongosh's own client-log directory under `HOME=/data/db`), then `setpriv` down to the image's `mongod` user before `mongod` runs, so `mongod` itself never runs as root.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L136-L144",
+          "version": "repo-lines-v1:sha256:1631fbb2e1370ebc8f9dbb273a7a98a115cfa71d9b813a5cd3f789579b07c04e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgwYjMyMzVlYWViZjY4MTQ3YWZjOTQwYTE3MzRiMjBkODgzMzJmMDJlNzRkYmMwOTE5OWVmNzFlYWViNGM3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEwMzU0M2VjMTA2N2NjMWRmMjNlYjU1NzExNWRjMTI4OWE4ZjI1OGUyMGFjODg0ZTU2OGYyOWEzYTM2NTQyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3ODY2MmNjYzBlNWY2ZDEzZGMyOWE0ZTQ0N2FhNGRhOGE0MmE1NWRkYTUyNWZiNjE1YjRkZDA4NDI2OTZiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjU2ZmVjOWZlNjgzNGI5YmIwZWQzY2FjNGIxMWRjYjllNjFhYTQ4YzAwMDhkMTllN2M0NDE1MjExNDY1ZjFhMCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L143-L166",
+          "version": "repo-lines-v1:sha256:b29d89a80bfbd28833284ca319ef79320b64758a3174e052efced23ebe2fb977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0MGM2ZTdmYzkzZTc5NGQ5ZDVhZTM0ZmRmMjY1N2IyODE1NjBjZGU0YTA4M2I4OGRiYjg0OWNkMzZlNGVjMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNWM3NmJhYjE4YjM2ZGZhOWM4MjY0YTg2YzBiMzkyMjhkMWFiMDE5ZDIxNDcyMWI4MmJhMWRiYjU0Y2Y5NDEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L8-L31",
+          "version": "repo-lines-v1:sha256:b29d89a80bfbd28833284ca319ef79320b64758a3174e052efced23ebe2fb977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NjZjODNmYTM1MzhkMjNhMDc5ZmFiMTM5ZTIwNTYwZDNjZjFmZjFkYTM5OGY0ZWM5ODU2YWRkZGQ0MTc1ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L1-L14",
+          "version": "repo-lines-v1:sha256:3d124350864edc93690fbca16841393a13fa195786a697fab4524627b9866d65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDIxNTM0NDBkN2NlMmU4MTcwMWQwNjkxM2YxMmQ3N2ZmNmZkMTBkODQ4NWVjNWU5OGY2YmIzZjQ3MDc0MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNmE2ZGUyOTE0NTRmMjdiZGY1ZmE3ODQ4NWIyOWU4ZDkzYWViNmIyNDVlYTFkMzhkNjc0N2Q0MWM0Y2Q0NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YmZhNzI4ZmFmOWNkMmQ1ZDVjNDk1NGFlZTVkYjU2NGFhOThiYjIzNjZlYWIyM2FlMTI0NGRhMzFhYTk2YTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L92-L113",
+          "version": "repo-lines-v1:sha256:0e769448cc1d60d93ff36dae2154b39cc43ed0f4029b297434e2b48a6e38c74e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGEzNzdjYmQyYjgwZWMzZmY4MmM1Mzg5NWE0YmQ1ODMyNzBhYzY5ZTMyZmFmMjI5YWI4ZmZmMTdlNjk4NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a40780c3bc647c389045914b857a092",
+      "statement": "The mongo-data-owner wrapper is guarded so a future image move cannot brick a populated volume: `scripts/__tests__/mongo-data-owner.guard.test.mjs` asserts every MongoDB service that mounts `/data/db` in the four Mongo-bearing compose files starts as `user: \"0:0\"` with the `sh -c` wrapper and hands off to `mongod`, that the wrapper script text is identical across all four files, and — by executing it against stubs — that it chowns then `setpriv`s when root with foreign-owned data, chowns nothing but still drops privileges when already owned, and execs unchanged when not root. Going back to 8.0.8 on a volume 9.0 has already run on is not supported; a dump is restored onto a fresh volume instead.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L141-L144",
+          "version": "repo-lines-v1:sha256:01aa43cc85ae63ae712d56228b38be9c7fa33fb27a1ad1319c768306c94aa49c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkzYWY0Yzg0YmM2MWE2OGM1NTM5NmU2ZTE2ODg2NjM5ZmEyZjA1NmQwOTAxMDQ2OGMzYTUzYmYzMmE4MDFhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEwMzU0M2VjMTA2N2NjMWRmMjNlYjU1NzExNWRjMTI4OWE4ZjI1OGUyMGFjODg0ZTU2OGYyOWEzYTM2NTQyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzVhYTdiOGI4YTRhMjJjYWU2MWEzZGU0MmU5ZWY3Mjk5ZGRjY2QwMjU0ZTUzYmQ2NjIyOWU5MzZkZjc5MzE0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjU2ZmVjOWZlNjgzNGI5YmIwZWQzY2FjNGIxMWRjYjllNjFhYTQ4YzAwMDhkMTllN2M0NDE1MjExNDY1ZjFhMCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L26-L65",
+          "version": "repo-lines-v1:sha256:0ae62d61458a5f46d7c43c95e3df65e7a4c25f222a1db77fc4ec3a55b3083761:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ODNhZDVhYzk1MmMwNTU1ODM4ZmQ3OGJmYjQzZTExNTk2NGZjN2MzM2JlZDJkZDI2NDNlZmFkYzExYjBkMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNWNjY2ZjNWQ3NDRhYWMyNWRiZDk3ZWI2MzU2OWRlNjZiZDA5YWViNjM3ZjY0ZDU5ZTQ3NWZjMDRkMTQ1MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ODBjZTE5MjkwNGY1ODc1YWJmYmEwNDhmMGI2YzY4ZTBhZTAzNWY2YmFiMzA5M2U1MGY3ZWVhMzRkMjE1ZTYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L92-L113",
+          "version": "repo-lines-v1:sha256:0e769448cc1d60d93ff36dae2154b39cc43ed0f4029b297434e2b48a6e38c74e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMGEzNzdjYmQyYjgwZWMzZmY4MmM1Mzg5NWE0YmQ1ODMyNzBhYzY5ZTMyZmFmMjI5YWI4ZmZmMTdlNjk4NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38e4853282e44d3d9c28e3cc8b9c06a8",
+      "statement": "mc-service's two infrastructure dependencies fail asymmetrically, and the difference is the diagnostic: an unreachable `MC_DB_URL` is a hard startup failure, because `main()` connects and creates all indexes before it builds the router or binds, while an unreachable Keycloak is not — the service starts, `/health` answers, and every protected request is rejected with 401.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/main.rs#L21-L41",
+          "version": "repo-lines-v1:sha256:441b5d9ee58a03cbf08ac645fe93cfad0e77b2afd43d4d5cbc45f1e46adbb8a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNWZiMzhiMWMyZjQxNjlhYjZhZjI2YzcxMTE1ODhkZDY2YWNjNzNhZWI4YjkxYWRiNDk4N2FlZGQ5ZDVlZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MzE2ZDVjMDUyY2Q2ZDIyODUwZTE0ZDFlYWE3YTkwN2VjNDc4ODVjNmJlMDE1Mzc2NWExYTFmMjhhZmNlODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NWVjM2VlNzM0ZWMyMWRlZjY4ZmU1Y2JjOWJiZjc0ODExYjhhZTk5NTJhOGEwYTJhMWViOGNmYzkwMWRjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/health_test.rs#L427-L427",
+          "version": "repo-lines-v1:sha256:47a1a711428950bc55ddbdb510b59ba0d4cee0b5d5fc901c5f914d3bdad7ac57:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhMWE3MTE0Mjg5NTBiYzU1ZGRiZGI1MTBiNTliYTBkNGNlZTBiNWQ1ZmM5MDFjNWY5MTRkM2JkYWQ3YWM1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhMWE3MTE0Mjg5NTBiYzU1ZGRiZGI1MTBiNTliYTBkNGNlZTBiNWQ1ZmM5MDFjNWY5MTRkM2JkYWQ3YWM1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNmZmZhZWQ4NmY5YjZhNjA4NzQyYmNhMDZiN2IyOWJkYTEwZDRiOGUyNTg5MjljNDQzOWI1MzcxODhiYjUyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY0MDUwMmMyY2Y4OTg5YzU5MTE1ZjI4OThiYjU1NTk4YTAwOGMzMDY1MzM3YzJiMzRjNjk0M2Q4NTkyNjI2MiJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L424-L424",
+          "version": "repo-lines-v1:sha256:87763b041da795ca91565198a66f0cd2a109cc013f0ddbd0990e94406437dff7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODc3NjNiMDQxZGE3OTVjYTkxNTY1MTk4YTY2ZjBjZDJhMTA5Y2MwMTNmMGRkYmQwOTkwZTk0NDA2NDM3ZGZmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODc3NjNiMDQxZGE3OTVjYTkxNTY1MTk4YTY2ZjBjZDJhMTA5Y2MwMTNmMGRkYmQwOTkwZTk0NDA2NDM3ZGZmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU5YzY4NGQ4NjJmZmI0YjdiZTgwY2JhNTBiMDNmMzMxOWY3N2I5YWQ1NjNjY2FmODJmZDViODI5MGQ1NzMwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dad7d0e214ec4d2a9e4cc1cd6ec37826",
+      "statement": "The mc-service integration harness's configuration panic names the fix, not just the failure: it reports the missing configuration, the command that supplies it (`node scripts/gen-dev-env.mjs`), the runbook section, and that the failure is a CONFIGURATION failure distinct from the `http_authz_test::*` cases that genuinely need the local replica-set MongoDB — so the item #227 cause and the real infrastructure requirement stay apart at the moment of failure.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L94-L120",
+          "version": "repo-lines-v1:sha256:e48746cc59b521f902ba28e6c0d3b73cb32c3cb9adaa0e9f766aed5a244d85ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwYjRkYjEyYjU5NmNmMDdiZDk4OTlkZDQ4YWU5MDA4YjVkZjUwYzM5YzllMTEzMGZiNjkxY2YyYzgwMDI2YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzNTM0YTc5YmEzNWUyMzAwNTFmOTI4ODkzMzJiZWRmODZlYWJmMmU5NjFkYmE1ZjhlNjYyMTIxMGFiNzlhZmYifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L378-L391",
+          "version": "repo-lines-v1:sha256:66dfb9575ed0186413c937628d97afddc4244f6950f4e637887b69568a805ba6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZDYwZjRmMjExN2I2OTg3NzdhZmJmYmM5MzdkOTY2NjA1MjYxYzljMzcyMGZiMWI2Nzg0ZTBlOGJhMTgyYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZWMyMzMyNGFkYmQ3Y2Y0YTAwMDA3ZmVlM2Y5YWQxZjUwOWE3ZmYxZDRhODZiOWQ0M2Q0YjRjNWFkMjYzZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYTNiMWM4NTIxYmM4ZWIxZWY1ZDUyYjA0NDYzYzM3NWNlY2VmMjhiMTNmNmQ1MjQ1OGM0OWU4ZTJkODdjMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMGYxODg0OWNiZDI0ZDk5ZWE4M2E0MjIyMjk5YzA4NWNkMzRlMGVkNjI3NjIxZTk1ZDE2NjViMTJiZTIwNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8c520660371426781bfc4363deb2869",
+      "statement": "`node verify/verify-fresh-realm-seed.mjs` is the end-to-end assertion for the whole fresh-box path: by default it provisions from scratch (wipe the volume → both generators → `pnpm nx up-auth infrastructure-as-code`) and then proves the seed with a real ROPC token grant — `e2e-test-user` authenticating against `mcm-bff-test` with the minted password and client secret — which only succeeds if the realm, its clients and `stacks/auth.env` are all coherent; `--assert-only` skips provisioning and asserts against an already-running auth stack.",
+      "evidence": [
+        {
+          "resource": "repo://verify/verify-fresh-realm-seed.mjs#L1-L30",
+          "version": "repo-lines-v1:sha256:b32691452fba2f195291f9ebe961578da66610e2e9577827d0327a23fe069c42:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMDNhOTFmYmNhMDVmZGUyNTFjMmQ0MTU1OTA5ZWM4YjBiYTE1YzUzYTI4ZGQ3Y2U4MTI4ZGNjZjYxMmI2OGEifQ"
+        },
+        {
+          "resource": "repo://verify/verify-fresh-realm-seed.mjs#L102-L142",
+          "version": "repo-lines-v1:sha256:d27ec845ff7fa260f386d77a1ab3fd219a98071391a1fa23b0a5783e45ae6e7f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlODIwMGViZDE3MDliNmE2NzViZWNiM2JlOWYzOWU1M2JiYWMwMmNjOTI3MjM0NjJjMDU0NjhlYjBkYTZhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MGE4MjZiZTQyNjgxZTE4ZmYxNGZmYzk3ODQ5NWYwOWJiOGQxNzNjNjc5NzgzODQyNzc4Y2JmMWIwN2VlZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkM2RmNDBiN2I5M2Y2YmVjYTU0ZTY0ZDU0YzhkZjEyMjQ4N2RkOTYzNmM3Njg2NmY0MTA5OTU0YjA2ZDUyMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YTIxODk0MGY4MjViZDZlNGI0ZTJiNTNiZWM3ZDMyYWEzNGQzNGI4ZTY4YTQ4N2Y2NzIyZjU4ZTU4ZTYwMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c0dd34090574fa78bb488f017613ff7",
+      "statement": "The realm-wipe recovery only works if the containers mounting the volume are force-removed first: `docker compose down --volumes` does not remove an `external: true` volume and `docker volume rm` fails silently while a container still references it, so the wipe no-ops and Postgres keeps the password it was initialised with — after which Keycloak dies with `password authentication failed for user \"keycloak\"` and the realm never imports.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L51-L51",
+          "version": "repo-lines-v1:sha256:f75a269a8e5704a9fe133fad00ecbe0099683e34662fe409e97267c2028ab1ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjc1YTI2OWE4ZTU3MDRhOWZlMTMzZmFkMDBlY2JlMDA5OTY4M2UzNDY2MmZlNDA5ZTk3MjY3YzIwMjhhYjFlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjc1YTI2OWE4ZTU3MDRhOWZlMTMzZmFkMDBlY2JlMDA5OTY4M2UzNDY2MmZlNDA5ZTk3MjY3YzIwMjhhYjFlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYwMzVlYjM3Yzc4NTIwZjg4NzZiODE3NTAxNzFhZjcyNjIyMGUyMmQ2MGYwMjI1YzkxMGEwNTY3Y2Q5OTY2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTY2MTZkYzg1YzdjZWU5NTA3MWMzMjg5MzI5YWQ5MTgwNzFjNGYxNjRjZmI2NzMyODNlMTczZTY0NTdmM2NmOCJ9"
+        },
+        {
+          "resource": "repo://verify/verify-fresh-realm-seed.mjs#L103-L121",
+          "version": "repo-lines-v1:sha256:418bfca2b79401e6561e012faf9746d53325c3cd0fc259c8d05549b955bab7fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWI2NWMzNTA1ZTcwMmJmZjlkYjIwMTNkOGQyYmUzNmJlN2NkYTU2NWI0ZmVkY2UwMTE5MTI4ZjRiZWYxNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MDVjOTExOTA5YzMyODQxYTE0OTAxNGQzYjMyYzMyYTk3YTczYjVjNGUxNmJlM2UyYzZiZTViM2I5OWY4ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MzY3NjdhY2EzMGI4MmU5ZDYxYTA2NzQ3OTM2MDY5Y2EwZDI4NzUzZGRiMTQ0ZGFhODk2ZTg2NTYyNDRlNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNDQ0NmZjNzVjZjQ5OTBkODhhYmVjZjY3YTJlNjhjZTlkZGEwYmZmYjkzNWJiNzc0ZDY5MDAyZWY2MmY4MTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_158fe35402ac44e8982ae56c30ed58a8",
+      "statement": "The `gen-dev-env.guard` tests exercise item #395's refusal path without a live realm, by running the real generator against a stub Keycloak on loopback: a 401 from the stub must leave an existing `.env.e2e.local` holding the working value byte-for-byte intact, write nothing else, exit non-zero, name the stale credential, quote the realm's own `unauthorized_client`, print no secret value, and never emit the `realm-secret == BFF-secret == E2E-cred` claim. The same guard pins the item #227 file's behaviour from the other side — an absent `backend/mc-service/.env.local` is created with the documented local values, an existing one keeps a tuned `RUST_LOG`, a redirected `MC_DB_URL` and unrelated keys, and a file that exists but lacks `MC_DB_URL` has it appended.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L203-L315",
+          "version": "repo-lines-v1:sha256:5dc8dc0422c612346da5e61cc2c99ef045c4ea8dc04aa22be72f13314fc9c5b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2OTQyNjY3Y2RjZTc1MzgzNTU0NmJlYTQxZTllY2FhYTk2OGRmYmFhOWI0MjljZjRkN2Q3OGU5MjRlYmI3OGRiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYjFlYTE1YTBmN2IxZDc3NDFjMDkyZGU4MDJkMzlmZGE0NDM0ZWNmMDVmOTQzNThjNmYzNjljYTkxMTZlMjJmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZGRlNTQ5YWFlMWU3M2EzZGMwYmJlMzMyMDQwMmU2ZDk4YjRlODNhNDZlYzc2ZDA1Zjg0MWZjZGE0YmE0YzE0In0"
+        },
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L379-L468",
+          "version": "repo-lines-v1:sha256:1d1cfb546e2c01e1045ed3d8a81080eebb502f7867982a1474d98b7e1643f072:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZjgyY2VlZDU1MjBjNTNjODBhMTdjMGNjODFkZWIwNGE1MmRmYjAzNDM2MTIxNmNhMmQ4ZDY3NzBhZWJjMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0OTVhZjAzZWFmYTc3MDg4YTEzOGFmYWZmMjIzM2YyNDViYmY1MTg3YjY2ZjZiMWM3MWNmYzYxN2YxYzU4MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzYjViYjliMTIzZjQzZWMzMDA0MTQ2NmViY2I0NmUzMWFmNmIxNTI2MmY5Y2NhMjdkNDJhYTFiMTFlZmRmODcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L50-L59",
+          "version": "repo-lines-v1:sha256:d4d490bfab1463825b467250fb8fbf5ee7c1049149247c4bff527d0c04abce0b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MDFhNzdkMjkyZjk2ZTk1OGE2N2I4Y2Q4N2Y5NzU2OGZjYTVmZjA1ZmVhMzRjMTQ5NmI1MDYxMTBhMWIzM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMmUyMWI4NjY2OWI0ZmVlYTkwYjg0ZWZiZmVjYzgzZDY5NWZiMzY5ODlkZjFhMzMyNjU1ZGJmY2JkZmVhYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMGRiNzhlOTljMDU4NWY0OGMxODBmZDRhNmVmYjUyZWE5MzkzMDkwYjdmZGE2OTg5OGI5NjE5OGUwYWVkNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c4e60ebe30db476b90f217896a108482",
+      "statement": "The dev compose agent gateway is Ollama-only — `MODEL_PROVIDER=ollama` with `SUPERVISOR_MODEL` defaulting to `qwen2.5` and `SPECIALIST_MODEL` to `qwen2.5:32b`, reaching host Ollama at `host.docker.internal:11434` — so the host must be serving those models, and the graph takes roughly 20–40 s to build before the gateway's health endpoint answers. The separate `movie-assistant-gateway-metro` service declares `profiles: [agents-metro]` explicitly because YAML anchors do not merge `profiles`, so it never starts under `--profile agents`.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L21-L41",
+          "version": "repo-lines-v1:sha256:6a8ab7f3c5a1fc58024b5b85d16be1ca0234bdb26d9df8bb2ed1262b45d25d3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZGY2MzlhZDFlOTk4Y2E1YzY0MWQ3ZTBjYmYyM2Y2ZGMxMDRiZTA4YjcxNDc1YmFmNjQ1YTc2ZWQ0YzVhYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNTk2MGRlODc5ZjNhMGNlNGNmNzgwODdmM2VmZGI4NTI1NDJhM2I2OWVhOTM1MjJiOTk4ZjZhNWFhZTE0NTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MDZmYzQzYWM1M2JhOTUxMzYwZjI1MDZlMzJmNTRlNDk3OTBiYmJlNzkwNTEzZjY1MDk2MDk4NjZhZDRkOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NTJlYTNkNDM0ODgwNjIxZWI4Y2Q5NDc2Yjg4M2UyZmYyZGU0MDE0NTk4MGE4YjU0Mjc1YjQ3NzhjMDFiOGQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/agent-gateway/compose.yaml#L56-L70",
+          "version": "repo-lines-v1:sha256:235c2f789e985b766776d69237a48782843b90203b4edc544c7f35ba9e4e6b9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ZDY3NTdmNzJhM2FmMDUxNjAzMjA4NWQ2YzNjMTdkYWU3NzQ4ODViNDhiYzlmNTQ2MTg1YWQzZGFhZWUzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MTg2YWM0NGUzYzUxNGUyYmQ3Mzc1MDc0YzllMjllMTNmYTJiODdkZTYyZDgzNWFiNjAxOThlOWU5NTkwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0NmJmZDZlYTk3MGU5MTMxM2RhMDU3YTQ0Y2NmY2UwNDkwOThkNTJhN2IxMDBmYzQ3NmE1YmUwZTY3MGZkOWQifQ"
+        },
+        {
+          "resource": "repo://scripts/up-mcm-agents.mjs#L12-L13",
+          "version": "repo-lines-v1:sha256:2be8dca7d0c758143dc9d4b14414fe9546cf1433b1a43ff5865e0a165b7920b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM1OGVmZDg3ZGRjM2ZkNGQ4N2M5ZDdjODIyY2IzNDQ5NDZlMzgxMTg3MzI5MGM2NGQ0Y2I3M2Q1NTg0ZDU3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliNzU2NTE3N2IyNGEyNTI5MDg4ZDYxYjFjYmM4YTAwNGJmZjMzN2IyYTI5MTIzNTZhYjRjNWQzNWRkNThkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAxZjAwMDc5NTY0NjNlNzFmMjgwN2I2NmRmNjZiYmY0ODIzZWI5MDlhZTQyNmNmOTY1Yzg1Mjc4Y2RmNzQ1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE1MjkwMTJlMTA3ZjNlY2RjYTJlN2I3MWZkYjY2ODYyNDUyY2UzZWVjY2EyN2U5NGJjNjdiM2Q5MzM4YjZjOSJ9"
+        },
+        {
+          "resource": "repo://scripts/up-mcm-agents.mjs#L59-L60",
+          "version": "repo-lines-v1:sha256:8947d8c59f02667892ea7144581867dd38040ce868a4d0d146100859ccc789d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRmOGE5NWFlMjA2MmNhZjc5ZDdhNDYyMzZjODdmYmM3YmJlM2YyOTg3MzM3NzUwYTFlMDczNDZiNDc2YzBlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVjODk2ZmJhYzllOGIyMmJjOGE3MDg3ZTUxMmM0ZDE0Y2UxZmU4YWVkN2YwYmU5NmQ0MDYwMDhmNzg3Mjc2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ1ODc0NGFiNzAxODRkYjdmYWFkYzZmYjlmOGY1YWQ3YjU1OGY5NzFlNjU0MDY1NTE1ZGViYjJhOWFmY2Y4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T17:33:57.993Z"
+    "at": "2026-10-24T20:35:10.714Z"
   }
 }
