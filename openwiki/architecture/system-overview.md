@@ -18,6 +18,8 @@ sources:
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-e201e686a785f09b6d899f0b
     resource: repo://compose.yaml
+  - id: openwiki-source-c1146bc275906084150591a5
+    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-95a7ed7500d24b0881fc3468
@@ -26,6 +28,10 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-1c2acc0a72ab64fd663510a9
+    resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-4042a47526d6016cff835628
@@ -36,6 +42,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
   - id: openwiki-source-803bcd8d160132605ee08429
     resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
+  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
+    resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-864993a079e6e4df052ac4ea
     resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2

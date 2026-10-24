@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a1be595bd2af368a6dc769eb37499ce5c7687d232b6c030d5aa9469d1885c7a2",
+  "pageVersion": "sha256:a5d03814fee0c83c4817cfc1746824ec1122c93a1ed5d197bf37cb2ec8f516a2",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -686,15 +686,23 @@
     },
     {
       "id": "claim_96759465e443446fb8d8175ff7658f76",
-      "statement": "The repository's dependency pins must be re-derived from the declaring manifests — `frontend/mcm-app/package.json` and `packages/design-system/package.json` for the universal client, `backend/mc-service/Cargo.toml` plus `rust-toolchain.toml` for the backend, `package.json` and `nx.json` for the package manager and task runner, and `agents/movie-assistant/pyproject.toml` for the agent layer — because the README's tech-stack table is a human-readable overview whose section and line range move as the document is edited, so a line-range citation of it goes stale while the facts it stated remain true.",
+      "statement": "The repository's dependency pins must be re-derived from the declaring manifests — `frontend/mcm-app/package.json` and `packages/design-system/package.json` for the universal client, `backend/mc-service/Cargo.toml` plus `rust-toolchain.toml` for the backend, `package.json` and `nx.json` for the package manager and task runner, and `agents/movie-assistant/pyproject.toml` (the `requires-python` floor, mirrored in `uv.lock`) plus `agents/movie-assistant/Dockerfile` (the Python 3.14 runtime image) for the agent layer — because the README's tech-stack table is a human-readable overview whose section and line range move as the document is edited, so a line-range citation of it goes stale while the facts it stated remain true.",
       "evidence": [
         {
           "resource": "repo://README.md#L43-L56",
           "version": "repo-lines-v1:sha256:45f1b85ca3f3a6029b5c8993b1e1090478f25bb684e66f5aadf246b4749104b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMTdhYjU5ZDFlODRiMGVkZGMwYTQxYmQzYmQyMDE0MzZmOWU3NjM3OTJhZTlhZWJlMjkwMTc4NDgyMTQwYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNjdmNGYzYWQzZGFiMTlkOGE3ZTU2Y2QyYmU3ZTk3NDhiMmE3MjllYTBlYzVjMjkwMDU1Njk3ZGExMzUxYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhYThmMDk4NzU4MjEwM2QzYTg4ZTk5NjE0M2EzNWYyZDIzNGE1YzgxMzZkM2YwOTgxYWU5YTZhNTZjNzA2MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NTNiMTk4MDFiNjU3YTdjY2VkNmFiZmNhYjU5YzgyMTJlYzg0OGJmNzEzNzJhMjQyNzk5ZjZkNTdjZmJmMzAifQ"
         },
         {
-          "resource": "repo://agents/movie-assistant/pyproject.toml",
-          "version": "repo-file-v1:sha256:d55052c3cb18d6c99bc0658ccb5a1ffa611384ba3436d3c003fb7660474487e5"
+          "resource": "repo://agents/movie-assistant/Dockerfile#L4-L23",
+          "version": "repo-lines-v1:sha256:9c73d187ac2cf2114edc9e715aa989e6e3f5e97f4ed67d3fd5a60136f27ad542:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYzdjNGIxNDQwNzgyMWZmOWNmNzcwYzc4YWUxOGYzYjg1MjlmZDc5OTdlNGEyYzEwYTZhZmNkYTY4MmI2N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MzU1MGRlY2E3ZmJmMzA2NDcyYjc1NzlhZDc3ZjM3ZWIyYjBkN2MwNWU5ZDgxZTAyYmZkM2JkZTI3ZDg3ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhOWZhYTMyN2VmMGU2MTJmNzczODk2Y2Y3NTI0MzdhMGQ0MzZjNzViZjgzZGU3NjQ0ZjA3Zjg2YmJlZmU1NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZmFhMWM5MjA5ZDk3YWY4ZjZiYWMwZTNiY2NmNmI5MDk1YjhmNzY3NmQ3NWZlZjlkYTA0ZjRiNDIzYzkzMWQifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/pyproject.toml#L1-L7",
+          "version": "repo-lines-v1:sha256:5a9d3ffbde8f2fd80972def49055ef0b4b28c44e7f08fcb216521854cd5e3ebf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAyYTgxYzM4MzZlZGVmMmQwYmExMWQyMzUzZmI2ZGFiYzc3NzE1MGE3Y2E4M2VhMGQ5ZTlhNzAzMTNmZWFiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBhMGRhYTk2YTEyMDk4YzIyN2U3NjAwYTJkOTBhYzE3Mjk2MTdjNzdmOTMzYzc0Njc2MWRkYmY4ZGJkYjkxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA1ZGM3OTNjOWIwYTk2OWI3YTM0ZmYzNjFkYTdhOTk4OGY2ZTgzYjVhZDY0ZTkyZTQ5MmNmZmZmMjJjNzEyMSJ9"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/uv.lock#L1-L8",
+          "version": "repo-lines-v1:sha256:9f87706012709cfd7127337c349a53448998a41ef3643f7bf7341858bf068b09:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJhYjEyNjY1ZDk4YWVmMDIxYmE2NDk1M2M2MWIwZWQ4YTkwOGNmYjU2YTFjMDFlMmZjYjRiMDUyYjcxYTJhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQxZTA3YjE0ZjM1MGRmZDk3YWQ1MWJjMzIwNzk4OWIyMWFmOTYzYTQ0ZGE2MjdkOGI0MDI3OWFkYjE0YzFjZSJ9"
         },
         {
           "resource": "repo://backend/mc-service/Cargo.toml",
@@ -725,6 +733,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-23T11:13:11.115Z"
+    "at": "2026-10-24T02:14:36.804Z"
   }
 }

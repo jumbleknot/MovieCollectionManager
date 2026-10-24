@@ -75,12 +75,16 @@ sources:
     resource: repo://mcp-servers/spreadsheet-mcp/tests/unit/test_store_parsed.py
   - id: openwiki-source-76df27b4a027edcf1530faee
     resource: repo://mcp-servers/web-api-mcp/Dockerfile
+  - id: openwiki-source-c8694a8374cb0aa54a845eea
+    resource: repo://mcp-servers/web-api-mcp/README.md
   - id: openwiki-source-2bc785c80d65b5b370f0b9bf
     resource: repo://mcp-servers/web-api-mcp/src/observability.py
   - id: openwiki-source-fd49e83123fe206a186857fb
     resource: repo://mcp-servers/web-api-mcp/src/server.py
   - id: openwiki-source-4029b24de1f1e285cc450a93
     resource: repo://mcp-servers/web-api-mcp/src/tools.py
+  - id: openwiki-source-f43d011755018f3d914c74c6
+    resource: repo://mcp-servers/web-api-mcp/tests/integration/conftest.py
   - id: openwiki-source-214d8387bae9b4fdb7b3ad0a
     resource: repo://mcp-servers/web-api-mcp/tests/unit/test_certification.py
   - id: openwiki-source-912e241437b26393c5be6193
@@ -95,10 +99,10 @@ sources:
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-d253edfea28a71c8a87b78e7
     resource: repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-22T23:16:03.781Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # The three scoped MCP servers
@@ -144,6 +148,40 @@ sequenceDiagram
 Each server carries a *different* credential channel (or none), and the gateway attaches them
 independently: a movie-mcp call carries no TMDB key and a web-api-mcp call carries no bearer token.
 
+The network picture is the same three-way split. Only the Agent Gateway bridges the isolated MCP
+network to the backend, so web-api-mcp is reachable without being granted backend access:
+
+```mermaid
+flowchart LR
+  GW["Agent Gateway"]
+
+  subgraph BN["backend-network"]
+    MM["movie-assistant-mcp-movie"]
+    SS["movie-assistant-mcp-spreadsheet"]
+    MC["mc-service"]
+  end
+
+  subgraph MN["movie-assistant-mcp-network — isolated"]
+    WA["movie-assistant-mcp-webapi"]
+  end
+
+  subgraph BF["mcm-bff-network"]
+    RS["mcm-bff-cache-redis"]
+  end
+
+  TM["TMDB — public egress"]
+
+  GW -->|"backend-network"| MM
+  GW -->|"isolated MCP network"| WA
+  GW -->|"backend-network"| SS
+  MM -->|"Authorization: Bearer aud=mc-service"| MC
+  SS -->|"opaque handle only"| RS
+  WA -->|"X-TMDB-Key as the api_key param"| TM
+```
+
+The three servers' network placement and the credential each edge carries — only the gateway spans
+the backend and the isolated MCP network.
+
 ## What each server is allowed to touch
 
 The rule behind the scoping is that a server's identity model follows from what it actually needs to
@@ -169,12 +207,13 @@ All three are built the same way in `src/server.py`:
 
 - `streamable_http_app(stateless_http=True, json_response=True, …)` — each tool call is an independent
   request, so a per-call credential cannot leak into a later request through session state.
-- `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`. The MCP SDK
+- `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, held in a
+  module-level `_TRANSPORT_SECURITY` constant that `build_app()` passes explicitly. The MCP SDK
   auto-enables DNS-rebinding protection for a localhost host, and its `allowed_hosts` list then
   421-rejects a request whose `Host` header is a Docker service name — breaking every containerized
   gateway→MCP call, not just some. The setting is a `streamable_http_app()` parameter on SDK 2.x (it
-  was an `MCPServer()` constructor kwarg on 1.x), so `build_app()` passes it explicitly; a bare
-  `streamable_http_app()` silently re-enables the protection.
+  was an `MCPServer()` constructor kwarg on 1.x), so a bare `streamable_http_app()` silently
+  re-enables the protection.
 - The SDK's `host` parameter is deliberately **not** passed. It is not a bind address — the bind stays
   `*_MCP_HOST` / `*_MCP_PORT` (defaults `0.0.0.0` / `8000`) at the uvicorn entrypoint — and it is only
   the trigger for the DNS-rebinding auto-enable branch, which an explicit `transport_security`
@@ -340,9 +379,11 @@ after any source change — see the gotchas.
   production agent stack pins each image by digest. `scripts/agent-stack.mjs` builds all three images
   plus the gateway and publishes loopback-only host ports (8765 web-api, 8766 movie, 8767 spreadsheet)
   purely so host-side callers such as `nx test:integration movie-assistant` can reach the containerized
-  servers; inside the stack the gateway reaches them by Docker DNS. That script is the one deployment
-  where spreadsheet-mcp sits on `movie-assistant-mcp-network` and is attached to the BFF's Redis
-  network at runtime (`docker network connect`) rather than declaring both in its compose file.
+  servers; inside the stack the gateway reaches them by Docker DNS. That script is also the one
+  deployment where spreadsheet-mcp starts on `movie-assistant-mcp-network` instead of
+  `backend-network`, with the BFF's Redis network attached at runtime (`docker network connect`) —
+  the per-server compose file already declares both networks, so this substitution exists only in the
+  script's own `docker run` wiring.
 - **Gateway wiring**: the gateway is the only thing that joins `movie-assistant-mcp-network` on the
   backend's behalf — it carries both networks so web-api-mcp can be reached without being granted
   backend access. `MOVIE_MCP_URL`, `WEB_API_MCP_URL` and `SPREADSHEET_MCP_URL` each point at a
@@ -406,9 +447,17 @@ after any source change — see the gotchas.
   their backing service is absent (right for a credential-less checkout, wrong for CI); in CI
   `MCM_REQUIRE_LIVE_STACK=1` turns an unexpected skip into a failure, and the rule is to add a
   legitimate skip deliberately rather than deselect a red test.
+- **web-api-mcp's README and compose comment describe a TMDB key the runtime never reads.** They say
+  the key is "server-side config" — Vault-injected in prod, read from `.env.local` locally — and the
+  compose file does pass that `.env.local` in. But `_tmdb_key()` consults only the per-request
+  `X-TMDB-Key` ContextVar and has no env path at all, and the production stack sets no TMDB key for
+  this container. The `.env.local` key belongs to the *integration suite*, which calls TMDB directly.
+  A new caller wired from the README would omit the header and get the configuration error.
 
 See [Agent Gateway](./agent-gateway.md) for how tool calls are dispatched to these servers (the
-allowlist → rate-limit → identity → call → guardrail choke point), `docs/MCM-Architecture.md`'s "MCP
-Servers" section for where they sit in the container diagram, and each server's own README
-(`mcp-servers/movie-mcp/README.md`, `mcp-servers/web-api-mcp/README.md`,
-`mcp-servers/spreadsheet-mcp/README.md`) for the full tool signatures and environment reference.
+allowlist → rate-limit → identity → call → guardrail choke point), and
+[../../docs/MCM-Architecture.md](../../docs/MCM-Architecture.md)'s "MCP Servers" section for where
+they sit in the container diagram. Each server's own README carries the full tool signatures and
+environment reference: [../../mcp-servers/movie-mcp/README.md](../../mcp-servers/movie-mcp/README.md),
+[../../mcp-servers/web-api-mcp/README.md](../../mcp-servers/web-api-mcp/README.md),
+[../../mcp-servers/spreadsheet-mcp/README.md](../../mcp-servers/spreadsheet-mcp/README.md).

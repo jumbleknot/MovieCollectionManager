@@ -93,16 +93,14 @@ sources:
     resource: repo://scripts/export-ci-realm.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-921299f3e17b7f9cb4a1254c
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-22T23:16:03.781Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -144,13 +142,14 @@ See [Authentication and authorization chain](../invariants/auth-chain.md) and
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
 carries four facts worth reading directly, because none of them is visible in a realm file:
 
-- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:79c623a2…`, the
+- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`, the
   identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
-  drift apart. The digest matters separately from the tag: an infra-image allowlist entry is keyed to
-  version **and** digest, so a bumped image re-blocks instead of inheriting the previous suppression —
-  which is how the Keycloak allowlist entries were discharged rather than renewed. The bump is the
-  remediation and the exemption is deleted, so a later regression re-blocks instead of matching a
-  stale entry forever.
+  drift apart. The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
+  a finding only while its `image` regex still matches the scanned `repo:tag`, its `id` regex matches the
+  advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
+  discharge it rather than inherit it. The bump is the remediation and the exemption is deleted, so a
+  later regression re-blocks instead of matching a stale entry forever. The rule and the Keycloak case
+  are in [Infra-image scanning](../runbooks/infra-image-scanning.md).
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
@@ -199,6 +198,8 @@ flowchart TD
   pr --> vol
 ```
 
+The three realm-import paths into one Postgres volume: two Compose overlays and one prod file.
+
 Each environment imports the `grumpyrobot` realm into the same Postgres volume through its own overlay.
 
 Three details in that picture are load-bearing:
@@ -218,7 +219,8 @@ Three details in that picture are load-bearing:
 
 `prod-realm.json` is additionally sanitized before commit: no users, no embedded signing keys (so prod
 mints fresh ones), no dev redirect URIs, no real client secrets, `registrationAllowed: false`,
-`bruteForceProtected: true`, and a real `passwordPolicy`.
+`bruteForceProtected: true`, and a real `passwordPolicy`. The dev and CI variants are the permissive
+twins: `bruteForceProtected: false`, and users seeded for the test suites.
 
 ## Why the token lifespans differ
 
@@ -262,6 +264,8 @@ sequenceDiagram
   KC-->>Gateway: downscoped token, aud=movie-collection-manager + mc-service, TTL 60 s
   Gateway->>MC: downscoped token, forwarded unchanged through the MCP
 ```
+
+The two exchanges: the BFF mints a run-scoped subject token, the gateway downscopes it again.
 
 Two exchanges, two requester clients, and the audience mappers that make each one legal.
 

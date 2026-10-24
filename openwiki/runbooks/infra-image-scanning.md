@@ -51,10 +51,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # Infra-image CVE scanning
@@ -270,18 +270,35 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   hold: it now blocks any fixable Critical in a proposed vault tag. What replaced the ceiling is a
   major-approval gate — a vault MAJOR needs a dashboard tick (raft storage on a dormant prod stack),
   while patch and minor stay automatic and scan-gated.
-- **What the allowlist actually holds today, and how to read the cohorts.** Five entries in two
-  shapes. Three are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
+- **What the allowlist actually holds today, and how to read the cohorts.** Twelve entries in three
+  cohorts. Three are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
   `mongodb/mongodb-community-server:8\.0\.8-ubi9`, `postgres:18\.6-alpine3\.23` and
   `postgres:18-alpine` (on the postgres pins the shipped binary carrying it is `usr/local/bin/gosu`) —
   kept because no reachable tag clears it, with the measurement recorded per entry rather than assumed.
-  Two are **time-boxed** to `2026-12-01` and are the ones that will red the weekly expiry check first:
+  Seven are **time-boxed to `2026-11-20`** and are the ones that will red the weekly expiry check
+  first: the 2026-10-23 operator-approved `CVE-2026-114406` (ca-certificates) cohort on
+  `grafana/otel-lgtm:0\.36\.0`, `langfuse/langfuse:4\.56\.0`, `langfuse/langfuse-worker:4\.56\.0` and
+  `mongodb/mongodb-community-server:8\.0\.8-ubi9`; the `next` pair `GHSA-2464-fhr4-w9xw` /
+  `GHSA-673q-mjm6-r5xr` on both langfuse images; and `@sentry/nextjs` `CVE-2026-114139` on
+  `langfuse/langfuse:4\.56\.0`. All seven flag EXPIRING from `2026-11-06`, which is the re-check date.
+  Two more are time-boxed to `2026-12-01`:
   `opensearchproject/opensearch:3@sha256:bcc17975…` (CVE-2026-75595, netty) and
   `^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a` (CVE-2026-90711, proxy-addr). Both were
   re-measured, not re-dated, when renewed, and both are deliberately keyed so that a rebuild or an
   upgrade discharges them. A comment block above an absent entry is the file's history, not a live
   suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio) were
   deleted once a scan showed the fix had landed, and their prose was kept.
+- **The 2026-10-23 cohort is the file's normal shape: advisories landing on images nobody changed.**
+  `CVE-2026-114406` (base-image `ca-certificates`), the `next` GHSAs and `CVE-2026-114139`
+  (`@sentry/nextjs`) were published against images already running in prod, and turned
+  `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) — the same
+  unchanged-pin shape as the 2026-08-29 Keycloak case. Nothing upstream clears them yet: the newest
+  `otel-lgtm` 0.38.0, `langfuse`/`langfuse-worker` 4.68.0 and `mongodb-community-server` 8.0.34-ubi9
+  all still ship the pre-fix `ca-certificates`, while Keycloak cleared the *same* CVE by a same-version
+  digest refresh (PR #838), which is what this cohort is expected to follow. Every one of the seven is
+  **version-keyed to today's pin**, so a bump re-blocks and forces a fresh scan rather than inheriting
+  the suppression, and each justification states that the entry is deleted once a clean rebuild ships —
+  a time-box to force a re-check, not an accepted risk without one.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count

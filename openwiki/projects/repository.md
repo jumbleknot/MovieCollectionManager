@@ -27,8 +27,12 @@ sources:
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-81dfe425b1bf98f80dc07cd0
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
+  - id: openwiki-source-e1a892d57dc92d08a33c6172
+    resource: repo://agents/movie-assistant/Dockerfile
   - id: openwiki-source-16a40c342913cfc265574e4d
     resource: repo://agents/movie-assistant/pyproject.toml
+  - id: openwiki-source-727718aa0491359cbdbb97c7
+    resource: repo://agents/movie-assistant/uv.lock
   - id: openwiki-source-d54b05966a54dbfbb9eb63bc
     resource: repo://backend/mc-service/Cargo.toml
   - id: openwiki-source-a2371d6362e5db4bc834ad03
@@ -83,10 +87,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-23T11:13:11.115Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -108,7 +112,7 @@ themselves are the authority:
 | Backend | Rust 1.98.0 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
 | BFF and dev-container toolchain | Node 24 | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile` |
 | Package manager and task runner | pnpm 12.13.0, Nx 23.3.0 | `package.json`, `nx.json` |
-| Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/pyproject.toml` |
+| Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/Dockerfile`, `agents/movie-assistant/pyproject.toml`, `agents/movie-assistant/uv.lock` |
 
 **Rust 1.98.0** is pinned by `rust-toolchain.toml`, which `rustup` reads automatically for every
 `cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 24** covers both the BFF

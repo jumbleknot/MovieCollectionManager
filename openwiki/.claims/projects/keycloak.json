@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:06d8ab7b2365b8156ddf5b7fbf83eccdaed44fc0261d38ea4bb8aae11369abda",
+  "pageVersion": "sha256:f2a3f7ac0d50e9ddbd39b946e8928dfb4fbad02a4a9a2842f0f59752406a136c",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -15,8 +15,8 @@
           "version": "repo-lines-v1:sha256:bc7b994fedd92cf6693d7044987b9407c140f0cd593b01bbfc68e82956cc471b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQwMjYxYTk0ZjhjMjBkOWNiOWM4M2ZhNDc3NGI1NWUyNTQ5MTBjYTBkMjFmNmIwZjdhY2FjMjEyYWFmNzA0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY5YTBlNmMxNWQ5YWU0ZTcwYWExMDkyOWFmNzI2MDdlN2QyZjVmZTk2NWJlZDRkOWU3Yjk2ZDJhMjI3MGY3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L32-L38",
-          "version": "repo-lines-v1:sha256:11900757ca660d191d28faac30e4538a0d55844ae41b9058b67cd915726c5a5e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzMWUyNjAzOThhZDYxMDkxNGRmYzI4ZjA0OGQzOTI2NGJhN2Q1MDMyNzhkZDJmOGJiMWM0YzE0YjQ5OWQ5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE2ZDNhZWNkM2NlYzdlM2ViZWYyYzUyZDc2ODI4NjQ4YzE1OGFlODZjNGE0ZmZkNjNmZWE4ZDMzZDZmMTdiMCJ9"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
+          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L43",
@@ -500,19 +500,19 @@
     },
     {
       "id": "claim_8b84a6471c2c422fa9c760d88b19d86a",
-      "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.1@sha256:79c623a2…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one. The pin-by-tag-and-digest rule for production compose files is stated in the server-setup runbook.",
+      "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one. The pin-by-tag-and-digest rule for production compose files is stated in the server-setup runbook.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1232-L1232",
           "version": "repo-lines-v1:sha256:f3f9030c76057cc018fe60213615f6a960b171022b158bf6d6af38ab21f42788:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmOTAzMGM3NjA1N2NjMDE4ZmU2MDIxMzYxNWY2YTk2MGIxNzEwMjJiMTU4YmY2ZDZhZjM4YWIyMWY0Mjc4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmOTAzMGM3NjA1N2NjMDE4ZmU2MDIxMzYxNWY2YTk2MGIxNzEwMjJiMTU4YmY2ZDZhZjM4YWIyMWY0Mjc4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI5ZTJlODliZDQyN2YyM2EwM2Q2Nzg3YWI4MWIyNTJhZGUyYjVmYjUwMmQyNDc2ZTY5NmY3MDkwMzk5NzcyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L38-L41",
-          "version": "repo-lines-v1:sha256:0a86d259043fda073003818271f892b2b218b9513f16839b375fd5444896ce1d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2M2I0N2EwMjFkMTcwMmJkMjdjZjIzOTUxZDY1ZDBiMGIyNmYxODE0ODJmYjMzYWY2ZDczZTVkMjg1NDUzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJlNjE2ZGQ0MGRkYjI2ODU2Mzk4ZjZjOTU1OGI4MjI2MmQyOGMzOTRjOTA1NDAwZTY5ZDk5MzE4NjM4ZWVlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkNjFjZDFmMmIzZDMxYjBjMGMwM2ZhOTQwY2Y5NTg4NTE1OGNhYzkwMzljYTdlNDQ3NWExYjRkNTExM2I1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE0ZjVjYWQ3ZWY5NDczMjg1M2M5ODgxM2ZmZWU1NzlmOTUwMDk4OWFkM2FiY2M1MmYxYWRmZDIzNzg5YTVjMSJ9"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:d6ac40ba27fb4120372c6b5c6831116bdab3375c596161b7c15b633eb905f017"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L25-L35",
-          "version": "repo-lines-v1:sha256:37295b9a478be9b702daeffafb4ca961a0b5dd667df2b6e2e025d6c1b0c604eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZGU3NmYyMTk5ZjEwYjBhYmRiNDAyNTRmODliYzI5Y2FhNzU5NjVhNWNjMTE4YWRlZjA3MWY4ZDBkMTM2MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZTYxNmRkNDBkZGIyNjg1NjM5OGY2Yzk1NThiODIyNjJkMjhjMzk0YzkwNTQwMGU2OWQ5OTMxODYzOGVlZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNDdmNDI1ZTU4MTRjZjdiODM0ZDQ2ZDNjZmY0MThjYTdkODNlZTFhYjUzNzc3MDliZmY1YjBjZGZkZDVjMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTM2MzU1NmFiNDdmMDk5N2FkOGNmNTIyMTk3NTcxMTZmMzdhOWFlMTA2MmI2NjUzNzVjNGRiZDk4ZDViZTQifQ"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
+          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
         }
       ]
     },
@@ -560,7 +560,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:c5a8d053833d6684fd7ff396f8796629e9ac61dbbcf6f3b8e5e692ea6656f97a"
+          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
         },
         {
           "resource": "repo://scripts/export-ci-realm.mjs#L129-L136",
@@ -650,23 +650,19 @@
     },
     {
       "id": "claim_0828c4320e2c420a8f44b71ec75bb1cc",
-      "statement": "An infra-image CVE allowlist entry in `security/infra-images/allowlist.yaml` suppresses a finding only when its `image` regex matches the scanned `repo:tag` and its `id` regex matches the advisory id and the entry has not expired — so an entry keyed to a specific version AND digest stops matching once the pinned image is bumped, re-blocking instead of inheriting the previous suppression. That is how the Keycloak allowlist entries were discharged rather than renewed: the bump itself was the remediation and the entries were deleted, because a re-keyed entry would have matched nothing and failed the gate's UNMATCHED ENTRIES check.",
+      "statement": "An infra-image CVE allowlist entry in `security/infra-images/allowlist.yaml` suppresses a finding only when its `image` regex matches the scanned `repo:tag` AND its `id` regex matches the advisory id AND the entry has not expired — so an entry keyed to a pinned version (or version plus digest) stops matching once the pinned image is bumped, re-blocking instead of inheriting the previous suppression. That is how the Keycloak allowlist entries were discharged rather than renewed: the bump itself was the remediation and the entries were deleted, because a re-keyed entry would have matched nothing and failed the gate's UNMATCHED ENTRIES check, and deletion is also the direction that restores blocking if the advisory returns.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/infra-image-scanning.md#L553-L561",
-          "version": "repo-lines-v1:sha256:b6903ac12380b99618452e8731723a68a2da79b7b90f25f502e66806579d3a52:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVlNGVkMTFlYTEwNzhjMjBhN2YwMDYzNzMzYjEyMTgzNGE5MTkxYmU4MGYyYjE2MGNlYzA4ZWNiNDkzNzk0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThkODkyNmJjNzNhZDUzNDVmYjAwZDFkOGJmYTg2ZTc2ZjFkZDVkOWY4NDkwN2U5YzY5NWNiMWJmZjg1YWRjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGEwNzM5Y2NlMWM5ZjIxYTAwYzc1ZWVkZmQyNGJmZTQ1YTc1Nzk5ZTcyYjhlZTc1NTRjODY4ZDFjNTM1OGE5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUzMDA2YzZmMTZjMjk2YzJkY2MwOGZkOTQ0OWYwYzQ5M2QxMzQ5YjIwODlhMjEwMTlhMWE5YjFiOThkMjYwYiJ9"
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L527-L561",
+          "version": "repo-lines-v1:sha256:bb02b28592b2a78d1aab469c7721d99d821ea30a6134f36e4e237dbe8286a81e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NzFlMTZiMThkNDA5NWY2YTUxZTUxYmIyYmU3OGFjYzQwZGI5ZjljYzk4MDljMzc0YWUxNDc2ZGI3YmZjODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZDg5MjZiYzczYWQ1MzQ1ZmIwMGQxZDhiZmE4NmU3NmYxZGQ1ZDlmODQ5MDdlOWM2OTVjYjFiZmY4NWFkYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZDAxOWNiZTBhNjg5NDQ4ZjE3ZTg3ZDNlZmYzMTVjYjQyNzVlOGI5Nzc4OWZmOThmY2JhMjI2ZWVhYzlkNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMzAwNmM2ZjE2YzI5NmMyZGNjMDhmZDk0NDlmMGM0OTNkMTM0OWIyMDg5YTIxMDE5YTFhOWIxYjk4ZDI2MGIifQ"
         },
         {
-          "resource": "repo://scripts/check-infra-image-findings.mjs#L106-L114",
-          "version": "repo-lines-v1:sha256:afe07e0ac8fd1e5506aac8ed7c65b17d42e883e6d911db4e02efa0606a3236ab:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVkMWRmMGQyNTRkYTQ5OWRmODE0NzljYjM3MTQ5MWJhMWVkYjBiMjg2ZjgzMDJhYzcwZGJkODQ5OTY0MjI1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGYwZDEzOTkyODhiZjY4NWFlODM5YmQ3OGZiOGE0YzJhZWZlZGIzZTkyZWMyNGQ0NDUyMTcwZTI4MWM4ODU5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA1M2E1ZGIwNDBiZDAwNGRmZTU4MDVkN2YxYWE5YmVjMjk1YTYwNzFmMWExMTdhMzhkNDNlMTUxNTBmZDc5ZSJ9"
+          "resource": "repo://docs/runbooks/infra-image-scanning.md#L673-L675",
+          "version": "repo-lines-v1:sha256:329dde5c9d2622180c66ae6a37af1619f9131f85aaa3f148de1d06f86e775ee9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNlMjY2ZmVlZDUzZTZhYzgzMjY4MjdiOGE3OWY0NWRlZjQ4NGRiMzNiY2YzZTYyM2RiNDczZDE3MGNiZjUwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzA0NDk2MTE0NmIwNTZhN2ZmOWE3ZTQ2MDJmOWQ3MjVmYTBkNTFkNWJhYjdhZjlkMWFlMzBkOTc3YzAxMTY0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmI3ZWJjNmM4ZDg3ZTMwYzUxYWEwNTQ1ZGJhYjMyNTBkMjIxMDIyMTY5OGRkNDFkN2M4YTNkMGQ1MjlhZTk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhMTIzOWQ3Mzk4OTUzZGU1MWZkMTQ5NGY4MGI5OGExNGY0YTg3NDc0ZTBmYTA3NzJlNTdiOWI0NTIxZTVmYSJ9"
         },
         {
-          "resource": "repo://scripts/check-infra-image-findings.mjs#L95-L104",
-          "version": "repo-lines-v1:sha256:7fb1fdb126c5a45f4e37e2d812c18f2e14073a8055b812f9d72ca6bbb0c259b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDA0MmM2Y2U2MDM2YzJhYmY4NzEzZTZiOGFkMDVmZDE0ZTg0NDFiMGFiNDY4NDE1MTFjYTdmNWI3NGRkNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3MjY3MWUyYjQ0ZGEzYjMxNGY5ZTk4MmFiODM3OGRmMmE1ZGU4ODcyNTk4ODEyMzAyMmY4ZTM0OThkOGI4OWYifQ"
-        },
-        {
-          "resource": "repo://security/infra-images/allowlist.yaml",
-          "version": "repo-file-v1:sha256:10f92688774e03a46c9a50b8d0df9fc7c47ce3c3ccb298e6af1dbfd650ad2b87"
+          "resource": "repo://scripts/check-infra-image-findings.mjs#L95-L114",
+          "version": "repo-lines-v1:sha256:3ee5cd8ffb39f2bd36ee78be4fd1dc52ed6c817ddd1a29876828907b967b5754:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1ZDFkZjBkMjU0ZGE0OTlkZjgxNDc5Y2IzNzE0OTFiYTFlZGIwYjI4NmY4MzAyYWM3MGRiZDg0OTk2NDIyNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDA0MmM2Y2U2MDM2YzJhYmY4NzEzZTZiOGFkMDVmZDE0ZTg0NDFiMGFiNDY4NDE1MTFjYTdmNWI3NGRkNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNTNhNWRiMDQwYmQwMDRkZmU1ODA1ZDdmMWFhOWJlYzI5NWE2MDcxZjFhMTE3YTM4ZDQzZTE1MTUwZmQ3OWUifQ"
         }
       ]
     },
@@ -723,10 +719,28 @@
           "version": "repo-lines-v1:sha256:76e7471f50f2434d2313f66af62230ae4097a18d2b0036be86319e953dd5adc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZDhmZGNlMWQ3YmJiNTc4ZTg5ZDVlOTY3ODhjMzgzZDY0MzJjYWYxNTQ1NGQ2YTNlZDQ2MjMxMzMyYjk0NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NDE0NDU5N2Y3YWFiNzNmNDZjNWY1MmVkYmRkOTBjZjBmZmE3OGI0YTg0M2I5ODZmMTM2YTdjNjVkZGVmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjZjNhNGM4OWRiMmMxMWM3NmRhMzQxYmJhYzVjZGJkOTk0YzI2MjBhNGRlYjJjNzc0MGU0NjNjYzQ2ZTUxMDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e8e77006eda344368d1310e4ed10c52d",
+      "statement": "The committed realm variants differ in brute-force protection as well as password policy: `prod-realm.json` sets `bruteForceProtected: true` while `dev-realm.json` and `ci-realm.json` both set it to `false`, because the throwaway realms seed known test users whose passwords the E2E suites re-use across runs — so a brute-force lockout there would break the suites rather than protect a user.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json#L35-L38",
+          "version": "repo-lines-v1:sha256:42e82963c03e6cd2e91bbfd12bf83ccf1881baa705295e1596b131eeeab708d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjOWVlNzNhZmRkOWI1NWNkODI4ZDgyOTIwMmE1ZDA5ODExNTczNzExMzk1ODk4NzU4NzY4NzgxNTkzOGRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NzcwMjQ5MjNmOTdhZmUwMzFmMjQ0NDE5OTczM2VkMDFmYjVlMjA1YzUyODZkN2E4ZThmYjQ1MDJmZTVmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmJiMmZjM2E3YmRkODFmZGJjNzRkZGRkN2QxYTBhNGQ1MjNhMWU1YjMwYWY3MzhhNjQyZGI4ZWRlMTI4MjlkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFiMzY4NWExZmY4Y2M1MmFlMTRiZmVjODQwZDcyMWU5MzUwMTNhNmFhNjU2MWEyMjg0ODRkZTEzMWJiYmIxNCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/dev-realm.json#L35-L38",
+          "version": "repo-lines-v1:sha256:42e82963c03e6cd2e91bbfd12bf83ccf1881baa705295e1596b131eeeab708d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjOWVlNzNhZmRkOWI1NWNkODI4ZDgyOTIwMmE1ZDA5ODExNTczNzExMzk1ODk4NzU4NzY4NzgxNTkzOGRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NzcwMjQ5MjNmOTdhZmUwMzFmMjQ0NDE5OTczM2VkMDFmYjVlMjA1YzUyODZkN2E4ZThmYjQ1MDJmZTVmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmJiMmZjM2E3YmRkODFmZGJjNzRkZGRkN2QxYTBhNGQ1MjNhMWU1YjMwYWY3MzhhNjQyZGI4ZWRlMTI4MjlkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFiMzY4NWExZmY4Y2M1MmFlMTRiZmVjODQwZDcyMWU5MzUwMTNhNmFhNjU2MWEyMjg0ODRkZTEzMWJiYmIxNCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L36-L39",
+          "version": "repo-lines-v1:sha256:c966be44a952eb23368a99c87320c83663715d3390684aae797d093b8f30c308:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjOWVlNzNhZmRkOWI1NWNkODI4ZDgyOTIwMmE1ZDA5ODExNTczNzExMzk1ODk4NzU4NzY4NzgxNTkzOGRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NzcwMjQ5MjNmOTdhZmUwMzFmMjQ0NDE5OTczM2VkMDFmYjVlMjA1YzUyODZkN2E4ZThmYjQ1MDJmZTVmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmJiMmZjM2E3YmRkODFmZGJjNzRkZGRkN2QxYTBhNGQ1MjNhMWU1YjMwYWY3MzhhNjQyZGI4ZWRlMTI4MjlkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFiMzY4NWExZmY4Y2M1MmFlMTRiZmVjODQwZDcyMWU5MzUwMTNhNmFhNjU2MWEyMjg0ODRkZTEzMWJiYmIxNCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-22T23:16:03.781Z"
+    "at": "2026-10-24T02:14:36.804Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:30f99f0a1fbb568499088e1f488822100ec3f920838bacd1aaf1c8e2b2cef98a",
+  "pageVersion": "sha256:73a15f1c3a0890f0a002dc6946132eb347a04a0ff8bc2caf97f14288d08026ac",
   "claims": [
     {
       "id": "claim_bb4afd7234e2497fbeb2f2c50daca580",
@@ -492,11 +492,15 @@
     },
     {
       "id": "claim_7dbf21845b6b444a922e771db8f4d293",
-      "statement": "Deployment wiring differs between the stack compose files and the standalone script: the `mcm` stack `include`s all three per-server compose files (each carrying `profiles: [agents]`, no published host port), the production agent stack pins each MCP image by digest, and `scripts/agent-stack.mjs` is the one deployment where spreadsheet-mcp runs on `movie-assistant-mcp-network` and is attached to the BFF's Redis network at runtime via `docker network connect` instead of declaring both networks.",
+      "statement": "Deployment wiring differs between the stack compose files and the standalone script: the `mcm` stack `include`s all three per-server compose files (each carrying `profiles: [agents]`, no published host port), the production agent stack pins each MCP image by digest, and `scripts/agent-stack.mjs` — which does not use those compose files, it issues its own `docker run` — is the one deployment where spreadsheet-mcp starts on `movie-assistant-mcp-network` instead of `backend-network`, with the BFF's Redis network attached at runtime via `docker network connect`; the per-server compose file already declares both `backend-network` and `mcm-bff-network`, so this substitution exists only in the script's own wiring.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L119-L171",
           "version": "repo-lines-v1:sha256:9b57fe398435cff107694f67dbc4b1632dadaaf69be92fd3a81b9bfcff45385e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMWNmMmViM2U4NTMzZDNhYTA3NzVhNmNhMzk5M2ZjMzE3MzdlYzExNzVlZjQ2MWNjNWZlNmE0ZDRmNThmOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjk5MWQwZDIwYjZlMjljZmE1OTA0YTE0NmU2MWJjODk3MzVhN2NjMGU3YzllZDU2ZDQxODBhOTdjNjBmMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMzMwOTk1ZDJhZGJiYTc1OWNiODBhMWQxNTBiNGQzYzlkMjFjZjE0MzRhYWYwMTRjNGNkYTljNjMwMTZmMDIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/spreadsheet-mcp/compose.yaml#L19-L32",
+          "version": "repo-lines-v1:sha256:219283cb5a722f3e9d86a1e9b198e94df0c36b638ab0b62cdcc208993d69b214:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MDU3OTQ2MTNkOTE3ODIzNzJiZWU0Y2UwY2NiOTc3NDMyMTk1ZjI2NGYxNTJiZTcxZGIyNWUwZjA0YTY0OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNThjNWJjMGQ3Y2EyNzM0MGM1YWYwNDcwZmQ4NWQ3Nzc3MDI2ZTBjYzFlMTUwMmI5NjBkOWI1NmQ3MTYwZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YTE0ODYwMWYwNzIwMDVlMzRmNThjMDEwZmFhODg0ZmI1MmI4MGI2MjM2YjY2OTg3YTQyNTdmMzAyZjZmNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L38-L47",
@@ -593,10 +597,36 @@
           "version": "repo-lines-v1:sha256:59614f4c3a89a7fb2a1192901aa8cee9e30f7ade87c133d571585d37f37cec94:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI1ZWNiZmE2N2M2ZTI5YWRlNTNlNTUxMDRkMzM3Yzc1YTE2MGEwYTRmM2QzNTg5NTU1ODE4Njk2ODM3NDY5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTUzNGFlMzAxMDk1ODhkYTZlZjMyYjc5M2I0YmRhZDcwYmY1YzUyM2YyMjkyMTIxNzY1MzUxMWVhMjY1ZDUxYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyY2UyODc3Njc3NDAwMTg1ZDIyMGMwNzlkZGIwOThhZGJlZDAxMGU0NGI1Yzk0YjRhM2NjMTQ1NDU1MWQ1YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_6506bffca034474e8d8573245c39ca97",
+      "statement": "web-api-mcp's README and its compose comment describe a server-side TMDB key — Vault-injected in production and read from `mcp-servers/web-api-mcp/.env.local` locally, which the compose file does load — but the runtime never reads an environment key: `_tmdb_key()` consults only the per-request `X-TMDB-Key` ContextVar, and the production agent stack sets no TMDB key for this container. The `.env.local` key is the integration suite's own (that suite calls TMDB directly through `make_tmdb_client`), so a caller wired from the README without the header hits the configuration error instead.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L133-L140",
+          "version": "repo-lines-v1:sha256:a6126907b223456e6475daba649b44d38919b65a259a67be0d6d28559bc8ecd1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTExOTE0ZGJiOTdkYjJkYWNlNmViOTIyM2JkMWVlMmRjOGI2MmY0YzhlN2I2MzFhZWY1YzUyM2VhYzlkZjE3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTBiYzg0MGE5YjQyZTcxMDdhYTQ2OGNjMzIwNDhkNmE0ZTEzMzA1MTY4MTgxZDcyYWNlNTdiZDUzMDBiMWI1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk2MDFiNGU5ZWNkMDU3MDQ3MTdlYWU5Y2RlZTU4ZDE1MmMzMTExNDJhZTI5YWU1MzY5NWYxYjY1NTI4MTRiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml#L1-L19",
+          "version": "repo-lines-v1:sha256:c951726f3549c765f89194b551f43c9a8d63f31db4189e7cacaaf72779f5d779:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZTM1NmMyOTEzODAyMzMyOWI1ZTZhZjZkYzIzMzNiZTQ0M2E3NmVhZmY0NjEyNThlOTY5MjFmNGYzNmRlNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYmM4NDBhOWI0MmU3MTA3YWE0NjhjYzMyMDQ4ZDZhNGUxMzMwNTE2ODE4MWQ3MmFjZTU3YmQ1MzAwYjFiNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/README.md#L1-L31",
+          "version": "repo-lines-v1:sha256:51aefc6a06e90f6b5556cc4497e79e6d2ba6cd8c176b69991238578333b69f3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YWE5NzQ1MTM2MDEzYTUwMDNjYjA1NTBmZDU0YmUyOGJhYTllZTA5MWJiZTg1ZGRiNTVhNmVlNzJiYjQwNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZTRhNWZkY2YxOWU1OWUxMmEwMjkwMzIwODkzMjliOTE0Y2FhNWZhN2Q3YmEwMmVlZDQ1Njg2ZTVkZjE1M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/src/server.py#L47-L108",
+          "version": "repo-lines-v1:sha256:ed2d433402b0f76238eca3c69ac65b810c33ee603f6dc31492ca6772a3f5603b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NmJkM2U2NzhjYjY3NGIwMWIwYjUyNzg3M2I2ODliNzkwYjUyZjRhYTMzOTYyNWU5MjdiOGIwMDVlNmRiZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMTc1MzYxNTY2YjI1YjZhODFmZGYyOGVjZDNmZWViYTZkOTgxYjg3NjYyNWE5ZmQxOTdmYmE4N2U4YzBhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1NmRjMmNhZmU1NDUxM2MzMGFjYTY2ZDcxZDZjODE0N2E4NjVkODIxNTM3OWI1OWQ3OWFkMzE5MGIwMTFhMTIifQ"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/tests/integration/conftest.py#L89-L101",
+          "version": "repo-lines-v1:sha256:94b28e2fdc18e173940c6cd6591a8d7586bc02d9fd0d75a38301573355e33202:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNGY4ZWZiYTY0NWE0MWRiMWQyZjBkYjZjYzUyZjZlNWZkZGVlODNiMjJjNGQyOTM1N2M0ZDA3ZTdmNWIzZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-22T23:16:03.781Z"
+    "at": "2026-10-24T02:14:36.804Z"
   }
 }
