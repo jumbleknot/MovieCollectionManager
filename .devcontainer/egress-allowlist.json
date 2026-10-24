@@ -302,6 +302,36 @@
       "group": "app",
       "reason": "TMDB API. Feature 059 added this, REVERSING an earlier explicit 'do NOT allowlist TMDB' instruction, and the history matters because the reasoning has now changed twice. Under DinD (measured 2026-07-16) every RUNTIME path that calls TMDB — the BFF's validate-on-save probe, web-api-mcp's curator enrichment — was a NESTED container and so traversed the FORWARD chain, which init-firewall.sh deliberately leaves to dockerd; those paths never needed an entry, and adding one for them would have been cargo-culting. What changed in 059 is that the certification lookup became a merge-relevant assertion whose integration test (nx test:integration web-api-mcp) runs from the dev-container SHELL, i.e. the OUTPUT chain, where TMDB was correctly unreachable. Hence the entry — for the TEST RUNNER, not the app. UNDER FEATURE 060 THAT DISTINCTION NO LONGER HOLDS: the sandbox network policy is enforced host-side and governs ALL VM egress including every sibling container, so the app's own TMDB traffic is now governed by this list too. The entry is therefore required for BOTH the test runner and the application paths, and the old 'test runner only' wording would understate what this line now authorises.",
       "cdnRotating": true
+    },
+    {
+      "domain": "repo.mongodb.org",
+      "group": "packages",
+      "reason": "MongoDB's apt/yum package repository — Release/Packages indices AND the .deb files themselves (Filename paths are served from this same host). item #819 (MongoDB 9.0 parked by SERVER-121912 on the homelab's Ubuntu 7.0.0-NN kernel). Needed to test a VENDOR BUILD of mongod against the host's kernel-version check from this shell: the only published container images are ubi9/ubi10/ubuntu2204, so the Ubuntu 26.04 ('resolute') build — the one SERVER-131625 added in 9.0.4 — is reachable only as a .deb or tarball. Measured 2026-10-24: no redirect to a second host (curl -sSIL reports num_redirects=0 for the 9.0.4 .deb and the ubuntu2604 tarball), so no blob-host companion entry is needed. Anonymous downloads, no credential. cdnRotating is false because nothing here has been MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "fastdl.mongodb.org",
+      "group": "packages",
+      "reason": "MongoDB release tarballs (e.g. linux/mongodb-linux-x86_64-ubuntu2604-<ver>.tgz). item #819 (MongoDB 9.0 parked by SERVER-121912 on the homelab's Ubuntu 7.0.0-NN kernel). Needed to test a VENDOR BUILD of mongod against the host's kernel-version check from this shell: the only published container images are ubi9/ubi10/ubuntu2204, so the Ubuntu 26.04 ('resolute') build — the one SERVER-131625 added in 9.0.4 — is reachable only as a .deb or tarball. Measured 2026-10-24: no redirect to a second host (curl -sSIL reports num_redirects=0 for the 9.0.4 .deb and the ubuntu2604 tarball), so no blob-host companion entry is needed. Anonymous downloads, no credential. cdnRotating is false because nothing here has been MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "downloads.mongodb.org",
+      "group": "packages",
+      "reason": "MongoDB's machine-readable release index (full.json) — which builds exist for which platform, without guessing URLs. item #819 (MongoDB 9.0 parked by SERVER-121912 on the homelab's Ubuntu 7.0.0-NN kernel). Needed to test a VENDOR BUILD of mongod against the host's kernel-version check from this shell: the only published container images are ubi9/ubi10/ubuntu2204, so the Ubuntu 26.04 ('resolute') build — the one SERVER-131625 added in 9.0.4 — is reachable only as a .deb or tarball. Measured 2026-10-24: no redirect to a second host (curl -sSIL reports num_redirects=0 for the 9.0.4 .deb and the ubuntu2604 tarball), so no blob-host companion entry is needed. Anonymous downloads, no credential. cdnRotating is false because nothing here has been MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "jira.mongodb.org",
+      "group": "agent",
+      "reason": "MongoDB's public issue tracker (SERVER-121912, SERVER-131625, SERVER-125742) — the primary source for what a startup guard checks and which release changes it. item #819 (MongoDB 9.0 parked by SERVER-121912 on the homelab's Ubuntu 7.0.0-NN kernel). Assistant research tooling, not the build or test path; nothing in CI touches it. Before this entry the assistant could not read the ticket or release notes behind a vendor-imposed startup refusal and had to rely on third-party summaries, one of which (SERVER-131625 'fixes the version check') contradicted a direct measurement. Requested by us on demand and returns documentation, so the $mustNeverAppearHere telemetry inversion does not apply. No credential; anonymous read only.",
+      "cdnRotating": false
+    },
+    {
+      "domain": "www.mongodb.com",
+      "group": "agent",
+      "reason": "MongoDB documentation and release notes (production notes, TCMalloc/rseq guidance, 9.0 patch notes). item #819 (MongoDB 9.0 parked by SERVER-121912 on the homelab's Ubuntu 7.0.0-NN kernel). Assistant research tooling, not the build or test path; nothing in CI touches it. Before this entry the assistant could not read the ticket or release notes behind a vendor-imposed startup refusal and had to rely on third-party summaries, one of which (SERVER-131625 'fixes the version check') contradicted a direct measurement. Requested by us on demand and returns documentation, so the $mustNeverAppearHere telemetry inversion does not apply. No credential; anonymous read only.",
+      "cdnRotating": false
     }
   ]
 }
