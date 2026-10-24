@@ -318,3 +318,22 @@
   justification: "Fix (body-parser 2.4.0, 2026-10-22) is inside the generator workspace's own 3-day minimumReleaseAge, which forbids an exclude list, so it cannot be resolved there until 2026-10-25 11:39 UTC. The generator is a CI-only documentation tool (openwiki), not deployed and not exposed to untrusted request bodies. The root/BFF copy is fixed by an override in the same PR. Operator-approved 2026-10-24 as a short bridge; delete when the generator lock moves to 2.4.0."
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-10-28"
+
+# ── 2026-10-24: @azure/msal-node GHSA-xcx6-jx8p-x3h5 — NO upstream fix reachable (operator rule: keep CI unblocked) ──
+# "Authorization code flow may disclose parameters to an attacker-controlled endpoint"; affected 5.0.0-beta.0
+# up to 7.1.0 (fixed 7.1.0, published 2026-10-23 22:16 UTC). Both copies are pinned by their dependents' LATEST
+# releases, so no bump reaches the fix: root via @microsoft/agents-hosting 1.9.1 (latest; pins msal-node 5.6.0
+# EXACTLY), generator via @azure/identity 4.14.0 (latest; requires ^6.0.0). Forcing 7.x under either would be a
+# one-or-two-major jump beneath a library that pins it. Remove when a dependent release admits >=7.1.0.
+- scanner: "pnpm-audit"
+  id: "GHSA-xcx6-jx8p-x3h5"
+  locationPattern: "^@azure/msal-node@5\\.6\\.0$"
+  justification: "No reachable fix: @microsoft/agents-hosting 1.9.1 (latest, part of the BFF CopilotKit agent stack) pins @azure/msal-node 5.6.0 exactly; the fix is 7.1.0 (2026-10-23). The app performs no Microsoft identity authorization-code flow (no MSAL client configuration anywhere in src/), so the affected redirect path is not exercised. Time-boxed under the operator's keep-CI-unblocked direction 2026-10-24: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20; re-check agents-hosting then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+- scanner: "pnpm-audit"
+  id: "GHSA-xcx6-jx8p-x3h5"
+  locationPattern: "^tools/openwiki-generator:@azure/msal-node@6\\.0\\.1$"
+  justification: "No reachable fix: @azure/identity 4.14.0 (latest, a transitive of the openwiki generator) requires @azure/msal-node ^6.0.0; the fix is 7.1.0. The generator is a CI-only documentation tool that authenticates to its model provider by API key (fireworks), not via an Azure authorization-code flow. Time-boxed under the operator's keep-CI-unblocked direction 2026-10-24: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20; re-check @azure/identity then."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"

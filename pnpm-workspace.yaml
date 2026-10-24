@@ -84,7 +84,9 @@ overrides:
   '@expo/dom-webview': ^57.0.1
   form-data@<4.0.6: '>=4.0.6'
   hono@<4.12.25: '>=4.12.25'
-  undici@<6.27.0: '>=6.27.0 <7'
+  # RAISED 2026-10-24 from `undici@<6.27.0: '>=6.27.0 <7'`: GHSA-xjj6-f33q-929c (DoS on excessive
+  # content-encodings) affects 6.23.0-6.29.0, fixed in 6.29.1. Key and value move together.
+  undici@<6.29.1: '>=6.29.1 <7'
   # ADDED 2026-10-17 (feature 081, US3 PR 3b). nx 23.3.0 depends on `undici: 7.29.0` EXACTLY (nx 22
   # used axios instead), and 7.29.0 carries ten advisories that 7.29.1 fixes — two High
   # (GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3), five Medium, three Low. Before nx 23 the lock's only
