@@ -107,6 +107,9 @@ overrides:
   # >=10.2.1). Replaces a time-boxed acceptance that was 18 days from blocking every branch.
   ip-address@<10.3.1: '>=10.3.1 <11'
   nanoid@>=3.0.0 <3.3.18: '>=3.3.18 <4'
+  # ADDED 2026-10-23: GHSA-27r3-jxmh-p828 (DoS via trailing bytes after a compressed body), fixed in
+  # 2.4.0. express 5 (the BFF's server.js, PR #802) depends on body-parser ^2; floor within the major.
+  body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'
 
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
 # `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
