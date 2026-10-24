@@ -254,10 +254,14 @@ rehearsal, deploy, V1–V4, FCV raise, and RB0–RB5 — and printed the stated 
 - **Do NOT pre-chown the prod volumes before the merge** — 8.0.8 (uid 998) would then fail the same way.
 - **HARD PRECONDITION — the host kernel.** mongod 9.0.4 refuses to start on **Linux 6.19.0 through 7.0.13**
   (`"id":12257600 … MongoDB cannot start: Linux kernel versions 6.19.0 through 7.0.13 have a known
-  incompatibility with this version of MongoDB`, SERVER-121912) — there is no override flag. It crash-loops
-  instead. Measured on PR #817's `app-e2e`: the CI daemon's kernel is in that range, and the CI and prod
-  daemons share **one** physical host, so **prod is in that range too until the host kernel is upgraded**.
-  P0 checks it; do not merge while it fails.
+  incompatibility with this version of MongoDB`, SERVER-121912) — there is no startup parameter to override
+  it. It crash-loops instead. The CI and prod daemons share **one** physical host, so both see the same kernel.
+  **What mongod reads** (measured 2026-10-24, item #819): the release from `uname()`, EXCEPT that 9.0.4's Ubuntu
+  exemption (SERVER-131779) applies when `uname -v` contains `Ubuntu`: then it takes the upstream version
+  from the last field of `/proc/version_signature`. So Ubuntu `7.0.0-27-generic` (upstream 7.0.6) is refused
+  — that is what failed PR #817's first `app-e2e` — and `7.0.0-38-generic` (upstream **7.0.14**) starts. The
+  host has run `7.0.0-38-generic` since 2026-10-24 (`/proc/version_signature` = `Ubuntu 7.0.0-38.38-generic
+  7.0.14`). P0 checks it; do not merge while it fails.
 
 **How to use the blocks.** Run every block on the prod host, in the shell whose `docker` talks to the
 **prod** rootless daemon (not the CI one). Paste one block at a time and compare with **Expected**.
@@ -269,11 +273,13 @@ every block so a new terminal works.
 
 **P0 — right daemon, both stores up**
 ```bash
-uname -r; v=$(uname -r | cut -d- -f1); lo=$(printf '%s\n6.19.0\n' "$v" | sort -V | head -1); hi=$(printf '%s\n7.0.14\n' "$v" | sort -V | head -1); if { [ "$lo" = "$v" ] && [ "$v" != 6.19.0 ]; } || [ "$hi" = 7.0.14 ]; then echo KERNEL-OK; else echo "KERNEL-BLOCKED: $v is in 6.19.0..7.0.13 — mongod 9.0 will not start (SERVER-121912); upgrade the host kernel first"; fi
+uname -rv; v=$(uname -r | cut -d- -f1); src='uname -r'; if uname -v | grep -q Ubuntu && [ -r /proc/version_signature ]; then v=$(awk '{print $3}' /proc/version_signature); src=version_signature; fi; lo=$(printf '%s\n6.19.0\n' "$v" | sort -V | head -1); hi=$(printf '%s\n7.0.14\n' "$v" | sort -V | head -1); if { [ "$lo" = "$v" ] && [ "$v" != 6.19.0 ]; } || [ "$hi" = 7.0.14 ]; then echo "KERNEL-OK: $v ($src)"; else echo "KERNEL-BLOCKED: $v ($src) is in 6.19.0..7.0.13 — mongod 9.0 will not start (SERVER-121912); upgrade the host kernel first"; fi
 docker ps --format '{{.Names}} {{.Image}} {{.Status}}' | grep -E '^(mc-service-store-mongo|mcm-bff-store-mongo|mc-service|mcm-bff-service) '
 ```
-Expected: the kernel version, then `KERNEL-OK` (below 6.19.0, or 7.0.14 and later); `KERNEL-BLOCKED` → **stop,
-do not merge**. Then four lines; both stores on `mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b…`,
+Expected: the kernel release and version, then `KERNEL-OK: 7.0.14 (version_signature)` on today's host
+(Ubuntu `7.0.0-38-generic`; any upstream below 6.19.0, or 7.0.14 and later, is OK); `KERNEL-BLOCKED` → **stop,
+do not merge**. `uname -r` alone is NOT the answer on Ubuntu, which reports every kernel in a series as
+`X.Y.0-NN` — see the precondition above for what mongod actually reads. Then four lines; both stores on `mongodb/mongodb-community-server:8.0.8-ubi9@sha256:784dd73b…`,
 `Up … (healthy)`. Fewer lines → wrong daemon/user; stop.
 
 **P1 — evidence directory (chmod 700)**
@@ -347,7 +353,7 @@ is a grep for the marker, not a `tail`.) Copy `~/mongo-upgrade-081` off the host
 
 **P6 — pre-pull the 9.0 image and check its user**
 ```bash
-docker pull mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627 && docker run --rm --entrypoint sh mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627 -c 'mongod --version | head -1; id; command -v setpriv'
+docker pull mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79 && docker run --rm --entrypoint sh mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79 -c 'mongod --version | head -1; id; command -v setpriv'
 ```
 Expected: `db version v9.0.4`, `uid=1000(mongod) gid=1000(mongod) …`, `/usr/bin/setpriv`.
 
@@ -379,7 +385,7 @@ runs expired by TTL between P4 and now.)
 
 P7c — clean stop, re-own, start 9.0 on the same volumes, compare:
 ```bash
-( set -eu; B=~/mongo-upgrade-081; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627
+( set -eu; B=~/mongo-upgrade-081; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79
 for c in r081-mc r081-bff; do docker exec "$c" mongosh --quiet --eval 'db.adminCommand({shutdown:1})' >/dev/null 2>&1 || true; done
 i=0; while docker ps -q --filter name='^r081-(mc|bff)$' | grep -q .; do i=$((i+1)); [ $i -lt 30 ] || { echo "FAIL: scratch mongod did not stop"; exit 1; }; sleep 2; done; echo STOPPED
 docker logs r081-mc 2>&1 | grep -c '"Now exiting"' || true
@@ -409,7 +415,7 @@ the app between P4 and the deploy if you want the counts to compare exactly.
 
 **M2 — wait for the deploy, bounded, and catch a crash-loop** (polls for up to 2 hours):
 ```bash
-( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627; i=0
+( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79; i=0
 while :; do
   for c in mc-service-store-mongo mcm-bff-store-mongo; do
     s=$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' "$c" 2>/dev/null || echo "missing 0")
@@ -507,7 +513,7 @@ same with the names in brackets and **no** `--replSet`/`rs.initiate`.
 
 **RB2 — keep the 9.0 volume, then recreate an empty one under the original name**
 ```bash
-( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627; V=mc-service-store-mongo-data   # [mcm-bff-store-mongo-data]
+( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79; V=mc-service-store-mongo-data   # [mcm-bff-store-mongo-data]
 [ -z "$(docker ps -q --filter volume=$V)" ] || { echo "FAIL: $V still in use — stop the stack first"; exit 1; }
 docker volume create "$V-9.0-keep" >/dev/null
 docker run --rm -u 0 -v "$V":/src:ro -v "$V-9.0-keep":/dst --entrypoint sh "$NEW" -c 'cp -a /src/. /dst/ && du -s /src /dst'

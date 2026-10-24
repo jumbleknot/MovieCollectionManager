@@ -350,7 +350,7 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
   proposed or widened. The window's PRs (#832–#836) are lock-file maintenance plus a docker group of patch
   and minor bumps only. The same read found `mongodb/mongodb-community-server` v9 under "Pending Status
   Checks", which would have been a bare, fatal bump (item #819). It is now hard-held below 9 in renovate.json,
-  to be lifted only in PR #817.
+  to be lifted only in PR #817. (Lifted in PR #817, 2026-10-24: see T058.)
 
 ---
 
@@ -467,6 +467,11 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   passed. CI on the PR is the full sweep and the fresh-volume (FCV 9.0) run.
   **CI (PR #817): red on `app-e2e` only — mongod 9.0.4 refuses host kernels 6.19.0–7.0.13 (SERVER-121912);
   the shared CI/prod host is in that range. T059 is BLOCKED on a host kernel ≥ 7.0.14** (research.md R8).
+  **Unblocked 2026-10-24 (item #819)**: the host runs Ubuntu `7.0.0-38-generic` (`/proc/version_signature`
+  upstream 7.0.14), which 9.0.4's Ubuntu exemption (SERVER-131779) admits — the check reads that file when
+  `uname -v` says Ubuntu, not `uname -r` (measured; research.md R8 "2026-10-24"). Rebased onto main; digest
+  re-resolved to `2cb58a8d…` (9.0.4, 2026-10-23 build); the `<9` Renovate hold lifted; runbook P0 fixed to read
+  what mongod reads. CI re-run pending.
 - [ ] T059 [US8] Production cutover (operator-run, per `docs/runbooks/prod-data-tier-auth.md` +
   T056's procedure): counts before/after recorded in the PR. **Done when**: equal counts; PR 8a merged.
 

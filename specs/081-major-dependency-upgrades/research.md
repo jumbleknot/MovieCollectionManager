@@ -573,6 +573,27 @@ The item's correction says TS 6→7 "is genuinely independent". Measured:
   that lifts the check). Runbook §6.0/P0 now checks `uname -r` first and blocks. `infra-image-scan` (full
   sweep) passed; `app-ci / dast` (advisory) failed in the same bring-up.
 
+  **2026-10-24 — BLOCKER #2 DISCHARGED (item #819).** Two premises above were wrong, and one was mis-measured:
+  - *"Ubuntu reports every kernel as 7.0.0-NN, so apt cannot leave the range"*: 9.0.4 carries
+    **SERVER-131779** ("Add linux the kernel 7.0.14 exemption for ubuntu"; fix versions 9.0.4, 8.3.14, 8.0.35).
+    Measured in this sandbox with an LD_PRELOAD shim faking `uname()` and the `/proc` kernel files under
+    `9.0-ubi9` (9.0.4): Ubuntu `7.0.0-27` / upstream 7.0.6 → refused (12257600); `7.0.0-38` / 7.0.14 → starts.
+    Ablation: the exemption needs **both** `Ubuntu` in `uname -v` **and** `/proc/version_signature`'s last field
+    ≥ 7.0.14; the ABI number and `/proc/version` play no part. SERVER-136848 (open) records `7.0.0-38` =
+    upstream 7.0.14 — the `linux-generic` candidate this host already had.
+  - *"no override"*: no startup parameter, but `GLIBC_TUNABLES=glibc.pthread.rseq=1` also passes the guard (it
+    switches TCMalloc to per-thread caches, `usingPerCPUCaches: false`, which is 8.0.8's default mode). Not
+    used: the kernel route is supported and needs no deviation.
+  - **The runbook's P0 was itself wrong**: `uname -r` reads `7.0.0` on every Ubuntu 26.04 GA kernel, so it would
+    have printed `KERNEL-BLOCKED` on a host mongod accepts. P0 now applies the measured rule, checked against
+    seven simulated kernels (Ubuntu -27/-38/6.8/7.1, non-Ubuntu 7.0.5/7.0.14, Ubuntu without the file).
+  The operator upgraded the host the same day: `7.0.0-38-generic`, `/proc/version_signature` =
+  `Ubuntu 7.0.0-38.38-generic 7.0.14`. **Digest re-resolved at rebase** (Docker Hub tag API): `9.0-ubi9` =
+  `9.0.4-ubi9` = `9.0.4-ubi9-20261023T064549Z`, index `sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79`
+  (amd64 manifest `sha256:fe9346916070…`). Renovate's `<9` hold (PR #837) is lifted here; the successor is the
+  stateful-major approval rule. Also found: `8.0-ubi9` resolves to **8.0.34**, whose guard reads "6.19 and
+  newer" with no Ubuntu exemption — any 8.0.x below 8.0.35 crash-loops on this host whatever its kernel.
+
   **Renovate note (not changed):** `9.0-ubi9` is rebuilt daily, so a digest refresh of it ages against a tag
   pushed every day — the same treadmill `renovate.json` describes for Langfuse `:4`. The constitution's
   approved tag is `9.0-ubi9`; if digest refreshes never arrive, the remedy is the immutable dated tag

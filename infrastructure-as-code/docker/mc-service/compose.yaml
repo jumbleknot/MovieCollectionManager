@@ -2,7 +2,7 @@ name: mc-service
 
 services:
   mc-service-store-mongo:
-    image: mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627
+    image: mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79
     container_name: mc-service-store-mongo
     restart: unless-stopped
     # feature 081 US8a: 9.0-ubi9 runs mongod as uid 1000; 8.0.8-ubi9 ran it as uid 998, so every volume
@@ -119,7 +119,7 @@ services:
   # Idempotent: if rs0 is already initiated it exits cleanly.
   # mc-service waits for this to complete before starting.
   mc-service-store-mongo-rs-init:
-    image: mongodb/mongodb-community-server:9.0-ubi9@sha256:6eefedc81a1dbe67e03bf543ad740c3ca7e968b71e57f8b722b74a8a0836d627
+    image: mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79
     container_name: mc-service-store-mongo-rs-init
     restart: "no"
     depends_on:
