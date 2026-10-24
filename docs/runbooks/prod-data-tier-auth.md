@@ -440,7 +440,7 @@ Expected: `BOTH ON 9.0 after <n> min`. On `TIMEOUT` (sync did not redeploy): Kom
 docker inspect -f '{{.Name}} {{.Config.Image}} {{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}} restarts={{.RestartCount}}' mc-service-store-mongo mcm-bff-store-mongo mc-service mcm-bff-service
 for c in mc-service-store-mongo mcm-bff-store-mongo; do echo "== $c"; docker logs "$c" 2>&1 | grep 'mongo-data-owner' || echo "(no re-own line)"; docker logs "$c" 2>&1 | grep '"id":5853300' | tail -1 | grep -o '"featureCompatibilityVersion":"[0-9.]*"' || echo "(no FCV line in the retained log)"; done )
 ```
-Expected: both stores on the `9.0-ubi9@sha256:6eefedc8…` image, `running healthy restarts=0`;
+Expected: both stores on the `9.0-ubi9@sha256:2cb58a8d…` image, `running healthy restarts=0`;
 `mc-service` and `mcm-bff-service` `running healthy`; each store shows **one**
 `mongo-data-owner: re-owning /data/db to mongod (uid 1000)` and `"featureCompatibilityVersion":"8.0"`.
 

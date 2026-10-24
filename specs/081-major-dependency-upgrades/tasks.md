@@ -471,9 +471,27 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   upstream 7.0.14), which 9.0.4's Ubuntu exemption (SERVER-131779) admits — the check reads that file when
   `uname -v` says Ubuntu, not `uname -r` (measured; research.md R8 "2026-10-24"). Rebased onto main; digest
   re-resolved to `2cb58a8d…` (9.0.4, 2026-10-23 build); the `<9` Renovate hold lifted; runbook P0 fixed to read
-  what mongod reads. CI re-run pending.
-- [ ] T059 [US8] Production cutover (operator-run, per `docs/runbooks/prod-data-tier-auth.md` +
+  what mongod reads. CI green on `00942ea1` (app-e2e 180 passed / 0 skipped / 1 flaky on retry,
+  `agent-import.spec.ts:104`; dast green on re-run after a Docker Hub 502); merged as `42524608`.
+- [x] T059 [US8] Production cutover (operator-run, per `docs/runbooks/prod-data-tier-auth.md` +
   T056's procedure): counts before/after recorded in the PR. **Done when**: equal counts; PR 8a merged.
+  **Outcome, 2026-10-24 (operator-run, §6.1–§6.3)**: P0 `KERNEL-OK: 7.0.14 (version_signature)`; P3 both
+  stores `8.0.8 FCV=8.0` (mc `PRIMARY`); P5 dumps `GZIP-OK` / `NO-DUMP-ERRORS`. Deployed by CD (`build-deploy`
+  on `c52144ac`, 22:29 UTC). V1 both stores `9.0-ubi9@sha256:2cb58a8d…` `running healthy restarts=0`, one
+  `mongo-data-owner` re-own line each, FCV `8.0`; V2 `9.0.4 PRIMARY`, `MC-COUNTS-EQUAL`, `BFF-COUNTS-EQUAL`;
+  V3 `MC-SERVICE-INDEX-PASS-OK`, `MC-INDEXES-EQUAL`; V4 `BFF-INDEXES-EQUAL`, 0 BFF Mongo errors. Counts,
+  before = after:
+
+  | collection | count |
+  |---|---|
+  | `mc_db.movie_collections` | 2 |
+  | `mc_db.movies` | 2313 |
+  | `bff_db.app_settings` | 1 |
+  | `bff_db.backup_destinations` / `backup_jobs` / `backup_runs` | 0 / 0 / 0 |
+  | `bff_db.user_agent_config` | 1 |
+
+  (PR #817 was merged before this record existed, so it is recorded here and on item #819 instead.)
+  **Still open: §6.4 FCV raise to `9.0`** after the 7-day soak — not before 2026-10-31; tracked as a backlog item.
 
 **PR 8b — observability postgres 16 → 18 (Langfuse + Unleash together)**
 
