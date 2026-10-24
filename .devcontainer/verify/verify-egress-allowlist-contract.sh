@@ -149,7 +149,17 @@ fi
 if [ "$GEN_PRESENT" -eq 1 ]; then
   node "$GEN" --format ipset-domains >"$TMP/noforge.txt" 2>"$TMP/noforge.err"
   rc=$?
-  if [ "$rc" -eq 0 ] && [ ! -s "$TMP/noforge.err" ] && ! grep -qi 'forge' "$TMP/noforge.txt"; then
+  # "No literal" means the output is EXACTLY the canonical destinations, nothing appended. It
+  # was a substring grep for 'forge' until 2026-10-24, which a legitimate canonical entry
+  # (forgejo.org, the forge's docs) tripped; set equality still fails on any injected forge host.
+  node -e '
+    const fs = require("fs");
+    const want = require(process.argv[1]).destinations.map(d => d.domain).sort().join("\n");
+    const got = fs.readFileSync(process.argv[2], "utf8").split("\n").filter(Boolean).sort().join("\n");
+    process.exit(want === got ? 0 : 1);
+  ' "$LIST" "$TMP/noforge.txt"
+  only_canonical=$?
+  if [ "$rc" -eq 0 ] && [ ! -s "$TMP/noforge.err" ] && [ "$only_canonical" -eq 0 ]; then
     ok "omitting --forge-host omits the entry cleanly (exit 0, no literal, no stderr)"
   else
     err "omitting --forge-host was not clean (rc=$rc, stderr=$( [ -s "$TMP/noforge.err" ] && echo yes || echo no ))"
