@@ -1,18 +1,26 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:36fc6e705b9694ac45bb0ac34117229af08e5fc94ef828706177ef648bfc24f6",
+  "pageVersion": "sha256:58312a954b8bc625712ab1fa93d492edd2ff1d0bae9be1dde6cc900cab25302d",
   "claims": [
     {
       "id": "claim_07ef00b788fa4e22a1e9fd4e07dee2b1",
       "statement": "`backend/mc-service` is the sole authority for movie-collection domain logic: the BFF proxies every client request to it (forwarding the caller's JWT), it persists to its own dedicated MongoDB database `mc_db`, and it validates JWTs locally against a Keycloak JWKS cached at startup rather than calling Keycloak per request.",
       "evidence": [
         {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/client.rs#L3-L28",
+          "version": "repo-lines-v1:sha256:27bd85de692b9c40809584b8f9ef74461b5cfa09d1b1bf535bd9fc503ea535d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYjYwOGIwNjVlYjRjYWZkM2I5NGExNWI3NmYxOWFlODQxNjg0NmU1ZjcxNjUzZTQwNzg3MjUzNmZkMTI0ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMWM5YmY0ZDc4MTJlNDYzZTQ5NzJjZmRiMGNmMzM4YThhN2U4MGNlMTA1ODZkMmQ1ZDA1NDE3MzhjMjllY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1OTgyMWYzYmU0ODE5NDIyYzA2MDUyNGVlOTk4ZWY5NGM4MjMyM2MyNzllZGI5ODExMGNjMWM1ZDBkMjFkZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L144-L150",
+          "version": "repo-lines-v1:sha256:4413b6656913d39968e1bb80036dbf55213f156fd73270c1d8eb4129ab5d9c49:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE3NDM3MWQyM2M5Zjc0OWRkY2RhM2M5NjEyZDE0ZGNjNTRjMDBiM2JkYzYwY2QzN2Q0Mzk2MDBmOTI0MTNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhNDU3MmExNmEwMmZjOWUzNjZjMzg3ZTg3YTAzMzg4MDQ0MTFjZWU4MmJhN2FlODRiODc5ZDlhNmEyZWIyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTM3ZTc0YTc0NmYzZTRmYTk4ZDdjYjk4ZGIwN2QzMGJmZjY1Y2VmNjc2ZjE3YWIxZWE0OTNhYzQ4NDkwNjgxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFhNzAwODk2YmY2OWI4Y2RkNTE4ZDJjNDAwYmU4M2Q0YTcxZGI1MTY5ZDQ1MWQ3MGNlNWYxMTI2ZWI2MWQzYSJ9"
+        },
+        {
           "resource": "repo://backend/mc-service/src/main.rs#L21-L41",
           "version": "repo-lines-v1:sha256:441b5d9ee58a03cbf08ac645fe93cfad0e77b2afd43d4d5cbc45f1e46adbb8a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNWZiMzhiMWMyZjQxNjlhYjZhZjI2YzcxMTE1ODhkZDY2YWNjNzNhZWI4YjkxYWRiNDk4N2FlZGQ5ZDVlZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MzE2ZDVjMDUyY2Q2ZDIyODUwZTE0ZDFlYWE3YTkwN2VjNDc4ODVjNmJlMDE1Mzc2NWExYTFmMjhhZmNlODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NWVjM2VlNzM0ZWMyMWRlZjY4ZmU1Y2JjOWJiZjc0ODExYjhhZTk5NTJhOGEwYTJhMWViOGNmYzkwMWRjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:a24ce0514ae1f2b2a33a4eebc16eabca01b818124bc94e868ec8e228c18475d6"
+          "resource": "repo://docs/MCM-Architecture.md#L26-L30",
+          "version": "repo-lines-v1:sha256:d038d3f2e8558556fe96116ed5b32f615f6cce359f0fa4d168bac8130c94960c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGE0MjJmMzVkYjlmZGFlZGI2YzA3Yjc4ZjUwYmJiY2UyMWQxZTIzNjY0ZjI2ZDZkZGU0YzliMTFkZmFhMTY2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5MmFmZWVmZTkzYjAxMTViMzE1Y2ZkM2Q2MTkzNWQ1YzFjNTk4NjExYTkzYmNiNmNlMDgwZWJjZTkyOGQwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FhNDhjMzI3YTQ4ZDExNTU5OTRhMmZlMzQ2OTdkN2NkOGQ1ZmQyOTgxNGNhOTY5ZWRjZmViOGI0MWM2NDM5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzlmNjIzYjIzNWQzNDMyOTE2YTU3MjBiMmE3N2NhM2E5NTRjMzQxYjQ5ZmFmMzk1MmUxNGU2NDgwMzFmMTE5MCJ9"
         }
       ]
     },
@@ -110,15 +118,23 @@
     },
     {
       "id": "claim_e823cab718cd4a2a9a255984d17336f6",
-      "statement": "mc-service is organized into four Clean Architecture layers under a strict outer-to-inner import rule (`src/domain/` never imports from `application`, `adapters` or `api`): domain (entities, `DomainError`, specifications), application (commands, queries, repository trait ports, DTOs, DAC helper), adapters (`src/adapters/mongodb/` repository implementations, BSON↔domain DAOs, indexes) and api (Axum handlers, middleware, router assembly, `AppState`).",
+      "statement": "mc-service is organized into four Clean Architecture layers under a strict outer-to-inner import rule (`src/domain/` never imports from `application`, `adapters` or `api`): domain (entities, `DomainError`, specifications), application (commands, queries, repository trait ports, DTOs, DAC helper), adapters (`src/adapters/mongodb/` repository implementations, BSON↔domain DAOs, indexes) and api (Axum handlers, middleware, router assembly, `AppState`). `docs/MCM-Architecture.md`'s `## mc-service Architecture` section is the authoritative statement of that layer table.",
       "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/application/mod.rs#L1-L5",
+          "version": "repo-lines-v1:sha256:310921b893f2db66ef28361ecc6e56ea91a6eebf2b0d49515fd3e8c19e4ea8c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTllZDhiNDA1YTRlYWFjMjllNDc2NmQyNDMwNTRmZWQ5OWRiNzUzODg3YmZlMDg5OWY5ZTczNzQ3YTA5ODlkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNThlZDc4YTdkYWQwMTc5NjBkZmY3OTZhNzQ2NzFjMzg5ZWMzY2FiODhkNjk0ZjBmYjIyZjM0ZDJlNzFlZDQzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/mod.rs#L1-L5",
+          "version": "repo-lines-v1:sha256:587572cf347d99ec6fee280ef9321c5684f3145185b4239e3f0ddfd288530a89:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVhMDdhYTc0NjMzNDJmOTMwZDJhYTAxMjg1MmE3NGU2ZDRkNzdmOWZjYjkxYWRiYThkYmE3YmQ5YTA1YjZiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAxZmVkNWYzM2RiMThkZmQ1ODlhZDc0MDVlNjIyMjc5NmJlM2M2OWE2ZTQyZmI1NjBlNjU3MDFlMTA2YjBhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
         {
           "resource": "repo://backend/mc-service/src/lib.rs#L1-L8",
           "version": "repo-lines-v1:sha256:48725b348de9e5cbf6b84718869f19c0aec11c4507299c80dc6ae28887e90430:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEzYWI0OTE1OWI5OWE4YzcwMThhMTQ2YTliZmE4M2I5MjRmNGE3MDkyNTk5YmQ5OWMxMWZlZWYxZjQ1ZDhiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UzMjk2NDk4MmUxYWE5OWMzZDFjZDczODFhZDMxOWNlMzlkNDg5NzEwOTRlMmUzMDFlOTA3NWE2MTRlOGUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2NhYTk1Y2U0Zjk2MjdlYjFmZDZhN2U1MDI5MmU4OGIwMDc1ZWIzYTcwYjAyNmZhYTViOTJmMjAxZDZlYTMxNyJ9"
         },
         {
           "resource": "repo://docs/MCM-Architecture.md#L71-L81",
-          "version": "repo-lines-v1:sha256:400e24e226ce00068b5cbe15882179980a75a3a362ecc458a7ad07c559f24c3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMmQxNzNkZDQ4ZGRkZDc4YzU3ZjFmMzNhMzI1NTAyYTMyZWMzMGQ3YWM3NGFhNDk4MjdiYmY3MDQyNDQ2MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyMGUwNThhMzYzYmJjYjg2OTQ3YWZiMmY5MDE0OWEwOTg3NTJjZmQ3ZDc0YzI2MDkxZDRkZTcyNTRlOGVjMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YWIxNGNhNmNlNGNiYzkxMDczM2RlNTQ2NGI1ZTlhMGFkMmI5NWYxYjVlZjIxNGI0N2IzMWY1MGNhMjkyOGMifQ"
+          "version": "repo-lines-v1:sha256:7d1218468e057d8a730b10e7a116fec979ba9f3fe08f777f18092eb9828fb1ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMmQxNzNkZDQ4ZGRkZDc4YzU3ZjFmMzNhMzI1NTAyYTMyZWMzMGQ3YWM3NGFhNDk4MjdiYmY3MDQyNDQ2MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyMGUwNThhMzYzYmJjYjg2OTQ3YWZiMmY5MDE0OWEwOTg3NTJjZmQ3ZDc0YzI2MDkxZDRkZTcyNTRlOGVjMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzNTRkNTc4ZmFkODE1MDhlNGYwNjAxYTllNjExZjRhYzgwNWRjNWMzYzVlMjJkOWVlYjYxOTg0MGU4Y2UxNDcifQ"
         }
       ]
     },
@@ -273,7 +289,7 @@
       "statement": "mc-service's low unit-only coverage (~29%) is by design, not a gap: Clean Architecture pushes the MongoDB adapter and Axum API layers behind integration tests, and the enforced ≥70% line-coverage floor is measured over unit + integration together with `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`. `cargo-tarpaulin` is a dev dependency of the crate, not a standalone install.",
       "evidence": [
         {
-          "resource": "repo://backend/mc-service/Cargo.toml#L59-L67",
+          "resource": "repo://backend/mc-service/Cargo.toml#L68-L76",
           "version": "repo-lines-v1:sha256:d3a597e90a240bc7a6e6f7ea95a2f72a22169f4245aefbe2cb324053e49bed60:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMyYTQwYjE2ZTczZDlhNjcwYjYxYTNhYzA4Mjg1MmJmM2Y3M2QwNmVmYjlmZGEwYzYyOTVmYzNjZGYxOWEwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg2ZGZhOGY4ZjRmMzRmNTNiNzRjYTNiYmU1MWNhODc4YjUxZWQ0ZjU1MjIwNGQ2ZDEzOTk4ZGUwN2QxMGRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5ZDE5Y2ZhNjZmNGQzOGU2MjBlZmFlZTBkZWUwY2U1ZjM1MWFhMWYxNzliYjQwMmQ5MWEyNzViZmU1Nzg5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhiMTFlZjFhZjdhNmJmMmJjNjljOTcxODFhYzM4OTg5MTMwZmJhZDYwZjhiNGU0Y2RhNGI3MzUzZjMxZGMzNCJ9"
         },
         {
@@ -287,7 +303,7 @@
       "statement": "The vendored OpenSSL dependency is gated behind `[target.'cfg(target_env = \"musl\")'.dependencies]` in `Cargo.toml` because the Alpine/musl Docker build needs statically linked OpenSSL that Alpine's `openssl-dev` does not ship; moving it into the unconditional `[dependencies]` section silently breaks `cargo test` on Windows, where `perl` (required to build OpenSSL from source) is absent.",
       "evidence": [
         {
-          "resource": "repo://backend/mc-service/Cargo.toml#L52-L57",
+          "resource": "repo://backend/mc-service/Cargo.toml#L61-L66",
           "version": "repo-lines-v1:sha256:0cb8df89a5d7636ec677a182452424906ed2ab8fda654b9608701d9f1fe9a38c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiNThhMzkzNWI0MzNhMzBjNmI5N2MyYzhkOTgyMTNlM2MyNTAyYTgxZDk2MzgzY2RkODlkYTdkMjllZjAxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwNWY4ZGIwYzNlOTFhMmU2NzMxMzdlZWM2N2JkYzY1ZDVmOGQ1YWIxYzU5MTdiODU4ODAzNmU1ODY1ZTc5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTJlYTY2NjEwYzU4ODQ2YTRjNDFjNWJjMjZhYzZiZmVlY2QxNjRkYjJhZjM2M2IwMzRjMGM0NGRlZmU4YjAxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIxMWQ1ODk3ZDViYjViMTlmZWU5ZTcyYzQ4MjYyOGNhMWQ1MTliYTE4MTc0MDQyZWRiMjJkOWEyZmE1YmIxMCJ9"
         },
         {
@@ -455,7 +471,7 @@
           "version": "repo-lines-v1:sha256:7fb1ff2f304ac58a988f1e1fd6f631524312f88586f766ae2aefac1de98505d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZjkxNjMxYzYzMzI2MDlmOWE3ZDQ0NWNmMjkwMjE3OTI1ZmJiYjBjNzdlOGMzMDU1NDE1NWU1Yzk1MmU3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZmUwZDk5ODlmMjVjOWYwNGEwZjI3MTUzMjMwNGRlNWNhZTcyZGZjMTdjNDQ2MGZjNWEzZDAyNWJmNGZlMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjNTc5YmY1ZmZmYmE4ZTEyYzUwNTg0ZWI5NDE4ZTg1OWNlZTY3ZWI0YzVlZjc2NDMxNzE3ZmU2NTMzMzE4MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMmYyYjU3YjM5ZjQ4NzQzM2E3MjE1ZDNlNWQ1Mjc1OGY0OTEzZTdhZmRkMDcyMDcyOGU5NTRkYzgzMTNmYjMifQ"
         },
         {
-          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L602-L602",
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L620-L620",
           "version": "repo-lines-v1:sha256:1c9d3ba6a69a7320341ec78897f90218ec1685e33a7384a63b01dd11d5383d52:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5ZDNiYTZhNjlhNzMyMDM0MWVjNzg4OTdmOTAyMThlYzE2ODVlMzNhNzM4NGE2M2IwMWRkMTFkNTM4M2Q1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5ZDNiYTZhNjlhNzMyMDM0MWVjNzg4OTdmOTAyMThlYzE2ODVlMzNhNzM4NGE2M2IwMWRkMTFkNTM4M2Q1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTY5MGFlYTY1YWRiNGExMjJmODAxZDBhNjJkNDYzYjQzNmYxZDJhZDUxYWVkYzc5MzlkY2JhM2JlZTFkZDRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTczY2FhNjk4ZGQ5MWU5YWFkNDAwNDIxMGMyN2JjNzUwZjRjY2YxMmI3NThkZGZiMDlhNDdkODAyY2Y5NWQyMyJ9"
         },
         {
@@ -549,10 +565,32 @@
           "version": "repo-lines-v1:sha256:886f9ac6cc9ce48dc5dc06ebc3988d163bf34b9831bb403e5adc55392f32ae9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YzNkZGI2YjRlNjc3NDYzYzgzYzIzNTAxNTE3YTdiNWQzMzFiNDdkYWNlODc1ZjdhMDQxMTM4YTg3NjM0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c6142adcb5714083a6da4e448539b194",
+      "statement": "The integration guard discovers which binaries to run by parsing the `[[test]]` target declarations in `backend/mc-service/Cargo.toml` and keeping only those whose `path` points into `tests/integration/`, rather than holding a hardcoded list. That currently yields four binaries (`health_test`, `collections_test`, `movies_test`, `pool_test`); a new target is picked up automatically, but a target whose path moves out of `tests/integration/` is silently dropped from the guard's executed-test-count assertion, so the no-false-green check stops covering it without any error. `tests/integration/pool_test.rs` still describes \"the three integration binaries\", written before `pool_test` was added, so that comment is not a reliable count.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml#L89-L106",
+          "version": "repo-lines-v1:sha256:7c8cb6e7fd10b7eac39d0df879e2c90857336d8a779b5d9684bb308eb12c91cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYjdhZTMyMDgzMTk5MjhlZWJiYTk1MDhmOTEyOTU2YWZlYWJiZGY4YjE3ODM4ZTg3NmYxMzZiOWQ1NWNjMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YmE0NGQzYjM5MjRjYWE1NmU4MWFjNjI2YmZhNTVjMzBkODZjMWE3ZWUyYjYyYzAyZmZhMTBkYjBkYzA5NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYjgzYTQ2ODZlMTliNTVjMmIyZjFjNzM4MjI0YzJhYmM2NjI5ZDBkYTg2MDhlNjQ0MjA2NWQ4ZTBjYzI0YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNjUxMGE4NjliNmRjYWM5ZTk1M2QyNDY2MGI5ZjA1NWM5NGI4NGFiNjM2YjIxY2Y2ZmE1NTNlNTAzMDNmOGQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/pool_test.rs#L137-L137",
+          "version": "repo-lines-v1:sha256:f1b4b7d1d81e91b65280fc09e52bd168b9d878647905ed6d9ecd595efec24270:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiNGI3ZDFkODFlOTFiNjUyODBmYzA5ZTUyYmQxNjhiOWQ4Nzg2NDc5MDVlZDZkOWVjZDU5NWVmZWMyNDI3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiNGI3ZDFkODFlOTFiNjUyODBmYzA5ZTUyYmQxNjhiOWQ4Nzg2NDc5MDVlZDZkOWVjZDU5NWVmZWMyNDI3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU0NGY3ZjAxMDA0MjdmZmEyODhhODg0Y2U2MTk0ODM4NzVjYjIzNDMxYWE0YmJiZDk5ZmM0M2ViZjFkMTZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGRkZTk5MzlhN2UyMzgzYTgwNDM4MmRmN2Y5NmI1MGFkNjZkN2UxZjEyMGJlNDVlOGM5ZDM5NjVkNWVmZGQ1ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L151-L164",
+          "version": "repo-lines-v1:sha256:1d9f12dd1d38aee64eab897b87b19cb77372abf99202a6f3761e23fdc23d339f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTUzMjNhMzU2MDJkOThjN2E4NGU3MzZmZGIzZjM0N2ExMzZiZjNhMDcyOGZlZTg4OTU0ZWY3ODY1ZjdlYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMTBlYjQ0YWZmNzQ2OWY3YjU5MjIzZTQyYWM3N2QzOTlhNTI5NjZkMzk3NWFmNDY0ZTI4YWE0ZWY2ZWQ1YWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0ZWM2YWIwY2IxODRmOThmMGMyMDNhNWM1MmI3ODUzZjlkNzA0ZDU4ZmNlOWJkMjZkN2Y3NTFmMmJmMzFhZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMzI0YzNhYzUwYzgzZWE4YzQ0ZDllY2NhODE2ZGIyY2JiNjQ5ZTljYjUyZmY5NzBkMDE5NmJkMWE5YzQzNTQifQ"
+        },
+        {
+          "resource": "repo://scripts/mc-service-integration-guard.mjs#L53-L64",
+          "version": "repo-lines-v1:sha256:4cc08557674427a060c273804b785fd5a3315e1bee2e8e18095e6f05564fc447:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MmJjMDJjNzM3NWU4MmRiMDVhOGE4NDk4ZjBhNjYzMTYzMDkxNGRlYTRiZDAxZTdiN2RlODZmMzE5NTk4NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MGFlNWYyZTRjMThiNTc4NjM0ZGVjNDdjZDc5OTA0MjAwNmIzMDllZjVmMmM0NjEwOGZhYWJjNzFkNDNiN2YifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T03:23:45.685Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-23T11:13:11.115Z"
   }
 }

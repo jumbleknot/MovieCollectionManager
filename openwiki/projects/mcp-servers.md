@@ -11,12 +11,16 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-3f4dad889fae278d8fd6fa45
     resource: repo://agents/movie-assistant/src/eval/token_leak_scan.py
+  - id: openwiki-source-f6c222b8d4581ebb02aff7cb
+    resource: repo://agents/movie-assistant/src/runtime_nodes.py
   - id: openwiki-source-0bc082213ea2b05aafac8afe
     resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
   - id: openwiki-source-6f3ef98dd73ebeed1b8d0fd0
     resource: repo://agents/movie-assistant/src/tools/spreadsheet_tools.py
   - id: openwiki-source-52bc45450413efa644b4dbbc
     resource: repo://agents/movie-assistant/tests/unit/test_token_leak_scan.py
+  - id: openwiki-source-e201e686a785f09b6d899f0b
+    resource: repo://compose.yaml
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
@@ -53,6 +57,8 @@ sources:
     resource: repo://mcp-servers/movie-mcp/tests/unit/test_context.py
   - id: openwiki-source-bfd8d5ff5bfb26834a65cefb
     resource: repo://mcp-servers/spreadsheet-mcp/Dockerfile
+  - id: openwiki-source-56c7bd832a242dfd7a39468e
+    resource: repo://mcp-servers/spreadsheet-mcp/project.json
   - id: openwiki-source-de48752a0f1d2d2061611818
     resource: repo://mcp-servers/spreadsheet-mcp/src/builder.py
   - id: openwiki-source-5c17d774e857a6a759a60dd6
@@ -69,12 +75,16 @@ sources:
     resource: repo://mcp-servers/spreadsheet-mcp/tests/unit/test_store_parsed.py
   - id: openwiki-source-76df27b4a027edcf1530faee
     resource: repo://mcp-servers/web-api-mcp/Dockerfile
+  - id: openwiki-source-c8694a8374cb0aa54a845eea
+    resource: repo://mcp-servers/web-api-mcp/README.md
   - id: openwiki-source-2bc785c80d65b5b370f0b9bf
     resource: repo://mcp-servers/web-api-mcp/src/observability.py
   - id: openwiki-source-fd49e83123fe206a186857fb
     resource: repo://mcp-servers/web-api-mcp/src/server.py
   - id: openwiki-source-4029b24de1f1e285cc450a93
     resource: repo://mcp-servers/web-api-mcp/src/tools.py
+  - id: openwiki-source-f43d011755018f3d914c74c6
+    resource: repo://mcp-servers/web-api-mcp/tests/integration/conftest.py
   - id: openwiki-source-214d8387bae9b4fdb7b3ad0a
     resource: repo://mcp-servers/web-api-mcp/tests/unit/test_certification.py
   - id: openwiki-source-912e241437b26393c5be6193
@@ -89,10 +99,10 @@ sources:
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-d253edfea28a71c8a87b78e7
     resource: repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # The three scoped MCP servers
@@ -138,6 +148,40 @@ sequenceDiagram
 Each server carries a *different* credential channel (or none), and the gateway attaches them
 independently: a movie-mcp call carries no TMDB key and a web-api-mcp call carries no bearer token.
 
+The network picture is the same three-way split. Only the Agent Gateway bridges the isolated MCP
+network to the backend, so web-api-mcp is reachable without being granted backend access:
+
+```mermaid
+flowchart LR
+  GW["Agent Gateway"]
+
+  subgraph BN["backend-network"]
+    MM["movie-assistant-mcp-movie"]
+    SS["movie-assistant-mcp-spreadsheet"]
+    MC["mc-service"]
+  end
+
+  subgraph MN["movie-assistant-mcp-network — isolated"]
+    WA["movie-assistant-mcp-webapi"]
+  end
+
+  subgraph BF["mcm-bff-network"]
+    RS["mcm-bff-cache-redis"]
+  end
+
+  TM["TMDB — public egress"]
+
+  GW -->|"backend-network"| MM
+  GW -->|"isolated MCP network"| WA
+  GW -->|"backend-network"| SS
+  MM -->|"Authorization: Bearer aud=mc-service"| MC
+  SS -->|"opaque handle only"| RS
+  WA -->|"X-TMDB-Key as the api_key param"| TM
+```
+
+The three servers' network placement and the credential each edge carries — only the gateway spans
+the backend and the isolated MCP network.
+
 ## What each server is allowed to touch
 
 The rule behind the scoping is that a server's identity model follows from what it actually needs to
@@ -163,12 +207,13 @@ All three are built the same way in `src/server.py`:
 
 - `streamable_http_app(stateless_http=True, json_response=True, …)` — each tool call is an independent
   request, so a per-call credential cannot leak into a later request through session state.
-- `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`. The MCP SDK
+- `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, held in a
+  module-level `_TRANSPORT_SECURITY` constant that `build_app()` passes explicitly. The MCP SDK
   auto-enables DNS-rebinding protection for a localhost host, and its `allowed_hosts` list then
   421-rejects a request whose `Host` header is a Docker service name — breaking every containerized
   gateway→MCP call, not just some. The setting is a `streamable_http_app()` parameter on SDK 2.x (it
-  was an `MCPServer()` constructor kwarg on 1.x), so `build_app()` passes it explicitly; a bare
-  `streamable_http_app()` silently re-enables the protection.
+  was an `MCPServer()` constructor kwarg on 1.x), so a bare `streamable_http_app()` silently
+  re-enables the protection.
 - The SDK's `host` parameter is deliberately **not** passed. It is not a bind address — the bind stays
   `*_MCP_HOST` / `*_MCP_PORT` (defaults `0.0.0.0` / `8000`) at the uvicorn entrypoint — and it is only
   the trigger for the DNS-rebinding auto-enable branch, which an explicit `transport_security`
@@ -216,11 +261,12 @@ movie-mcp registers nine tools. Reads are `list_collections`, `get_collection`, 
 pagination), `count_movies` (server-side count), and `get_movie_metadata` (the option values
 mc-service accepts for a movie — the organizer derives its media-format and rip-quality toggles from
 this rather than holding a copy of domain data; that response is not collection-scoped and carries no
-user data, so it is safe for the gateway to cache process-wide). Writes are `create_collection`,
-`add_movie`, `update_movie` (full-replacement) and `delete_movie`; each carries an `idempotencyKey`,
-forwarded as a standard `Idempotency-Key` header that mc-service ignores today — at-most-once comes
-from mc-service's own uniqueness constraints, and the header keeps the contract forward-compatible.
-Writes execute only on the agent's approved-resume path.
+user data, so it is safe for the gateway to cache process-wide, and the organizer is its **only**
+holder — folding it into the shared read set would hand it to four agents that have no use for it).
+Writes are `create_collection`, `add_movie`, `update_movie` (full-replacement) and `delete_movie`;
+each carries an `idempotencyKey`, forwarded as a standard `Idempotency-Key` header that mc-service
+ignores today — at-most-once comes from mc-service's own uniqueness constraints, and the header keeps
+the contract forward-compatible. Writes execute only on the agent's approved-resume path.
 
 The wrappers add no domain logic: mc-service's response shapes pass through verbatim. The four
 **write** wrappers additionally catch `httpx.HTTPStatusError` and re-raise it as a
@@ -243,17 +289,19 @@ re-exchange result, so mc-service's existing RBAC and DAC are enforced unchanged
 web-api-mcp registers exactly two tools. `search_title` returns a typed `matchConfidence`
 (`none` | `exact` | `ambiguous`) plus result references, and `get_movie_details` returns an enriched
 candidate shaped for the mc-service add payload (year derived from `release_date`, poster URL built
-from the TMDB image CDN base, language resolved to the original language's English name rather than
-the raw ISO code). The two labels are derived, not asserted: zero results is `none`, exactly one is
-`exact`, more than one is `ambiguous`. The curator fetches details only on an `exact` match and
-offers options on `ambiguous`. TMDB failures surface as MCP tool errors rather than exceptions.
+from the TMDB image CDN base, language resolved to the original language's English name, falling back
+to the raw code rather than fabricating one). The two labels are derived, not asserted: zero results is
+`none`, exactly one is `exact`, more than one is `ambiguous`. The curator fetches details only on an
+`exact` match and offers options on `ambiguous`. TMDB failures surface as MCP tool errors rather than
+exceptions.
 
 The credential path is the distinctive part. The per-request `X-TMDB-Key` header is the **sole** source
-of the TMDB key — there is no shared env/Vault fallback by design — and a call arriving without one
-raises a clear configuration error rather than issuing an unauthenticated request that would surface as
-a confusing "couldn't find it". A second pure-ASGI middleware binds the header into a request-local
-variable and resets it afterwards. The production compose confirms the posture from the other side: it
-sets **no** TMDB key for this container at all.
+of the TMDB key — there is no shared env/Vault fallback by design, and a stray `TMDB_API_KEY` in the
+process environment is never consulted (a unit test sets one and asserts it is ignored) — and a call
+arriving without one raises a clear configuration error rather than issuing an unauthenticated request
+that would surface as a confusing "couldn't find it". A second pure-ASGI middleware binds the header
+into a request-local variable and resets it afterwards. The production compose confirms the posture
+from the other side: it sets **no** TMDB key for this container at all.
 
 Because TMDB v3 authenticates with an `api_key` **query parameter**, the secret is embedded in every
 request URL, so anything that stringifies that URL into a log leaks the user's key. `build_app()`
@@ -309,7 +357,10 @@ begins with `=`, `+`, `-`, `@`, tab, or CR by prefixing an apostrophe, and `pars
 guard, so an export→import round trip is symmetric while a legitimate leading apostrophe is preserved.
 Sheet names are made Excel-safe and de-duplicated at the builder. The store client is a lazily created
 process-shared instance — building a fresh client (and connection pool) per tool call leaks pools and
-sockets over the long-lived server.
+sockets over the long-lived server. That memoisation is right for the server and wrong for a test
+suite: `pytest-asyncio` gives every test its own event loop and a `redis.asyncio` client binds to the
+loop that created it, so the integration suite resets the shared client per test rather than changing
+`src/store.py`.
 
 ## Lifecycle, operations and tests
 
@@ -319,15 +370,20 @@ after any source change — see the gotchas.
 
 - **Nx targets** exist per server: `pnpm nx test <server>` (unit), `pnpm nx test:integration <server>`,
   `pnpm nx lint <server>` (ruff + mypy strict), `pnpm nx build <server>` (Docker build tagged
-  `<server>:latest`), `pnpm nx lock <server>`.
+  `<server>:latest`), `pnpm nx lock <server>`. Each project also declares a `deploy` target, but it
+  still shells out to the retired root `compose.yaml` and names a service that does not exist there
+  (the compose services are `movie-assistant-mcp-movie` and its siblings) — bring a server up through
+  the `mcm` stack's `--profile agents` instead.
 - **Compose**: each server has its own compose file under `infrastructure-as-code/docker/<server>/`
   with `profiles: [agents]` and no published host port; the `mcm` stack `include`s all three, and the
   production agent stack pins each image by digest. `scripts/agent-stack.mjs` builds all three images
   plus the gateway and publishes loopback-only host ports (8765 web-api, 8766 movie, 8767 spreadsheet)
   purely so host-side callers such as `nx test:integration movie-assistant` can reach the containerized
-  servers; inside the stack the gateway reaches them by Docker DNS. That script is the one deployment
-  where spreadsheet-mcp sits on `movie-assistant-mcp-network` and is attached to the BFF's Redis
-  network at runtime (`docker network connect`) rather than declaring both in its compose file.
+  servers; inside the stack the gateway reaches them by Docker DNS. That script is also the one
+  deployment where spreadsheet-mcp starts on `movie-assistant-mcp-network` instead of
+  `backend-network`, with the BFF's Redis network attached at runtime (`docker network connect`) —
+  the per-server compose file already declares both networks, so this substitution exists only in the
+  script's own `docker run` wiring.
 - **Gateway wiring**: the gateway is the only thing that joins `movie-assistant-mcp-network` on the
   backend's behalf — it carries both networks so web-api-mcp can be reached without being granted
   backend access. `MOVIE_MCP_URL`, `WEB_API_MCP_URL` and `SPREADSHEET_MCP_URL` each point at a
@@ -391,9 +447,17 @@ after any source change — see the gotchas.
   their backing service is absent (right for a credential-less checkout, wrong for CI); in CI
   `MCM_REQUIRE_LIVE_STACK=1` turns an unexpected skip into a failure, and the rule is to add a
   legitimate skip deliberately rather than deselect a red test.
+- **web-api-mcp's README and compose comment describe a TMDB key the runtime never reads.** They say
+  the key is "server-side config" — Vault-injected in prod, read from `.env.local` locally — and the
+  compose file does pass that `.env.local` in. But `_tmdb_key()` consults only the per-request
+  `X-TMDB-Key` ContextVar and has no env path at all, and the production stack sets no TMDB key for
+  this container. The `.env.local` key belongs to the *integration suite*, which calls TMDB directly.
+  A new caller wired from the README would omit the header and get the configuration error.
 
 See [Agent Gateway](./agent-gateway.md) for how tool calls are dispatched to these servers (the
-allowlist → rate-limit → identity → call → guardrail choke point), `docs/MCM-Architecture.md`'s "MCP
-Servers" section for where they sit in the container diagram, and each server's own README
-(`mcp-servers/movie-mcp/README.md`, `mcp-servers/web-api-mcp/README.md`,
-`mcp-servers/spreadsheet-mcp/README.md`) for the full tool signatures and environment reference.
+allowlist → rate-limit → identity → call → guardrail choke point), and
+[../../docs/MCM-Architecture.md](../../docs/MCM-Architecture.md)'s "MCP Servers" section for where
+they sit in the container diagram. Each server's own README carries the full tool signatures and
+environment reference: [../../mcp-servers/movie-mcp/README.md](../../mcp-servers/movie-mcp/README.md),
+[../../mcp-servers/web-api-mcp/README.md](../../mcp-servers/web-api-mcp/README.md),
+[../../mcp-servers/spreadsheet-mcp/README.md](../../mcp-servers/spreadsheet-mcp/README.md).

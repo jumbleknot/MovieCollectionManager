@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack re-derived from the manifests rather than from the README's moving tech-stack table, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies]
 sources:
@@ -27,6 +27,14 @@ sources:
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-81dfe425b1bf98f80dc07cd0
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
+  - id: openwiki-source-e1a892d57dc92d08a33c6172
+    resource: repo://agents/movie-assistant/Dockerfile
+  - id: openwiki-source-16a40c342913cfc265574e4d
+    resource: repo://agents/movie-assistant/pyproject.toml
+  - id: openwiki-source-727718aa0491359cbdbb97c7
+    resource: repo://agents/movie-assistant/uv.lock
+  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
+    resource: repo://backend/mc-service/Cargo.toml
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-dbbd2a072603d7674a1530f2
@@ -47,8 +55,12 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6
     resource: repo://frontend/mcm-app/eslint.config.js
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
     resource: repo://frontend/mcm-app/project.json
   - id: openwiki-source-6ba748254f38112b13d529da
@@ -75,10 +87,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -89,14 +101,27 @@ three scoped MCP servers, shared infrastructure-as-code, and a fully self-hosted
 pipeline. It is also a working example of spec-driven, AI-assisted development — every feature
 flows through a spec → plan → tasks artifact set before any implementation code is written.
 
-The current pins are **Expo SDK 57 / React Native 0.86 / React 19.2** on the universal client,
-**Rust 1.98** on the backend — pinned by `rust-toolchain.toml`, which `rustup` reads automatically
-for every `cargo`/`rustc` call inside the repo, so there is no channel to choose — and **Node 24** for
-the BFF and the dev-container toolchain image, with **pnpm 12** and **Nx 23** as the package manager
-and task runner.
+**Re-derive the pins from the manifests, never from a README line range.** The README's tech-stack
+table sits in a section that shifts as the document is edited, so a line-range citation of it drifts
+away from the rows it was meant to name while every fact it stated stays true. The declarations
+themselves are the authority:
 
-For the full description, architecture diagram, feature list, and tech stack table, see the
-[README](../../README.md). For individual deployable-unit pages, see the rest of the
+| Area | Pin | Declared in |
+|---|---|---|
+| Universal client | Expo SDK 57, React Native 0.86, React 19.2, Tamagui 3.0.18, CopilotKit 1.79 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
+| Backend | Rust 1.98.0 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
+| BFF and dev-container toolchain | Node 24 | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile` |
+| Package manager and task runner | pnpm 12.13.0, Nx 23.3.0 | `package.json`, `nx.json` |
+| Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/Dockerfile`, `agents/movie-assistant/pyproject.toml`, `agents/movie-assistant/uv.lock` |
+
+**Rust 1.98.0** is pinned by `rust-toolchain.toml`, which `rustup` reads automatically for every
+`cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 24** covers both the BFF
+container base and the dev-container toolchain image, with **pnpm 12** and **Nx 23** as the package
+manager and task runner.
+
+For the full description, architecture diagram, feature list, and the human-readable tech-stack
+table, see the [README](../../README.md) — treat that table as an overview, not as the pin, for the
+reason above. For individual deployable-unit pages, see the rest of the
 [projects/](index.md) section.
 
 ---

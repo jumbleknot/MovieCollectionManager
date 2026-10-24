@@ -6,14 +6,20 @@ resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T13:30:11.885Z
+    at: 2026-10-23T12:47:39.117Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
     resource: repo://backend/mc-service/src/api/router.rs
+  - id: openwiki-source-c24ab349f92ee5be03f5048a
+    resource: repo://backend/mc-service/src/application/access_control.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-e201e686a785f09b6d899f0b
+    resource: repo://compose.yaml
+  - id: openwiki-source-c1146bc275906084150591a5
+    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-95a7ed7500d24b0881fc3468
@@ -22,12 +28,22 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-1c2acc0a72ab64fd663510a9
+    resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-18dcf2373667222e1bc520c1
+    resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-803bcd8d160132605ee08429
+    resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
+  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
+    resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-864993a079e6e4df052ac4ea
     resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
@@ -47,7 +63,8 @@ collection/movie logic, and Keycloak as the external IAM provider. An additive A
 any existing `mcm-app` screen.
 
 Component shape, distilled ([MCM-Architecture.md](../../docs/MCM-Architecture.md) owns the full
-component list and the container diagrams — this page does not restate them):
+component list, the container diagrams and the diagrammed mc-service layer table — this page does not
+restate them; the *Core Components* section is the canonical list):
 
 - **`mcm-app`** — the universal frontend where users view/manage the collections they have access
   to, fronted by the BFF. It also mounts CopilotKit (`@copilotkit/react-native`) for the
@@ -61,9 +78,10 @@ component list and the container diagrams — this page does not restate them):
   and specification pattern — the [data model](./data-model.md) page covers its domain entities.
 - **`mc-db`** — a single shared MongoDB database (`mc_db`) with two shared collections:
   `movie_collections` (collection metadata + ACLs) and `movies` (movie records, denormalized owner).
-- **Keycloak** — external IAM. Expects a client named `movie-collection-manager` in a realm, and two
-  client roles: `mc-admin`, `mc-user`. New self-registrations default to `mc-user`. See
-  [Auth chain](../invariants/auth-chain.md) for how a token flows end to end.
+- **[Keycloak](../projects/keycloak.md)** — external IAM. Expects a client named
+  `movie-collection-manager` in a realm, and two client roles: `mc-admin`, `mc-user`. New
+  self-registrations default to `mc-user`. See [Auth chain](../invariants/auth-chain.md) for how a
+  token flows end to end.
 - **AI Agents layer** — additive by design: `movie-assistant` (the Python LangGraph supervisor +
   specialist graph), `movie-mcp` (MCP wrapper over the `mc-service` REST API), `web-api-mcp`
   (outbound TMDB/IMDB lookups), `spreadsheet-mcp` (token-free CSV/`.xlsx` parse and build over a
@@ -71,6 +89,18 @@ component list and the container diagrams — this page does not restate them):
   isolated from `mc-db`). The gateway and `agent-db` are private-network only: the client never
   reaches them, and only the BFF starts a run. See [agent-layer](./agent-layer.md) and
   [mcp-servers](../projects/mcp-servers.md) for detail.
+- **Control Tower (optional)** — LangFuse + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/
+  Loki), the OpenSearch append-only audit sink, and OPA + Unleash are profile-gated and **no-op with
+  a safe in-code default when unconfigured**, so the app and the agent layer run without them and
+  each control is switched on by configuration in the environments that need it (the architecture
+  document's *AI Agents Layer* section).
+- **Production secrets (Komodo Variables)** — shared *infrastructure* secrets (among them the
+  gateway's Keycloak OAuth client secret and the BFF's master encryption key) live in Komodo's masked
+  variable store and are injected at deploy into each stack's gitignored env file; **no** user,
+  model-provider or TMDB credential is ever stored there, because those are per-user by design.
+  HashiCorp Vault is deployed in production **dormant** (uninitialized and sealed) and is not a
+  secret source for any core stack — see
+  [ADR-0001](../decisions/adr-0001-prod-secrets-management.md).
 - **Per-user scheduled backups (feature 073)** — the BFF runs an in-process scheduler that copies a
   user's own collections to an S3-compatible or WebDAV destination *the user owns and supplies*,
   keeping the last N versions and offering a restore that only ever creates new collections (never
@@ -87,7 +117,7 @@ flowchart LR
   bff -->|"forwards JWT; RBAC: mc-admin OR mc-user"| mc["mc-service"]
   mc -->|"validates JWT locally against cached JWKS"| kc
   mc -->|"DAC: checks caller against acl[]"| db[("mc-db: movie_collections, movies")]
-  bff -->|"reads/writes encrypted per-user agent config"| bffdb[("mcm-bff-db: user_agent_config")]
+  bff -->|"reads/writes its own store"| bffdb[("mcm-bff-db: agent config, app settings, backup state")]
   bff -->|"run-scoped delegation token, server-side only"| gw["Agent Gateway (LangGraph, private network)"]
   gw -->|"checkpoints"| adb[("agent-db: LangGraph checkpoints")]
   gw -->|"MCP tools, per-call downscoped token"| mmcp["movie-mcp"]
@@ -102,6 +132,34 @@ flowchart LR
 Keycloak role, DAC gates inside mc-service against each collection's own ACL, and both the Agent
 Gateway and the backup scheduler reach mc-service through that same RBAC/DAC path, never around it.*
 
+## Runtime shape: four Compose stacks
+
+Local dev/test infrastructure is four independently operable named Compose projects under
+`infrastructure-as-code/docker/stacks/` (the architecture document's *Docker Infrastructure*
+section) — `auth`, `mcm`, `audit`, `observability` — each a thin `include:`-only aggregator over that
+stack's component compose files, each with its own lifecycle. No stack is profile-gated as a whole:
+`auth` and `mcm` each start services with no profile at all, and the per-service `profiles:`
+assignments live **in the included component files**, not re-declared in the aggregator. The root
+`compose.yaml` is retired to a pointer that names the four.
+[Infrastructure stacks](../projects/infrastructure-stacks.md) has the per-stack profile table and
+the production Komodo half; [Dev stack env files](../projects/stacks.md) covers how each stack's
+secrets reach Compose.
+
+The `mcm` stack is the one holding the application. Its no-profile services are the test infra
+(`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds
+`mc-service`, `bff-nonsecure` / `bff-secure` add the BFF, and `agents` / `agents-metro` add the agent
+layer. Two ordering facts are load-bearing:
+
+- **There is no cross-project `depends_on`, so `auth` must come up before the `mcm` app profile**
+  (`pnpm nx up-auth` then `pnpm nx up-mcm`, or `pnpm nx up-all`, which serialises them). Getting this
+  wrong looks like a broken login, not a bring-up error — the same symptom as the Keycloak-outage
+  gotcha below.
+- **The agent chain needs every hop up**: `movie-mcp` calls `mc-service` with the user's token, so an
+  end-to-end agent flow requires Keycloak, `mc-service`, `movie-mcp`, the gateway and the BFF.
+
+Production admin/UI ports are a separate convention with its own CI gate — see
+[published-port reservation](../invariants/published-port-reservation.md).
+
 ## Access control: two layers, not one
 
 RBAC and DAC are separate mechanisms enforced at different layers — mixing them up is the most
@@ -109,11 +167,18 @@ common source of confusion when reasoning about "why can't this user do X":
 
 - **RBAC** (coarse, Keycloak-issued client roles): `mc-admin` (full access to everything) vs.
   `mc-user` (normal use — create/view/update/delete *owned* collections). Enforced by JWT role
-  validation before a request reaches domain logic.
+  validation before a request reaches domain logic. In `mc-service` this is centralized as a tower
+  layer (`KeycloakAuthLayer<Role>`) plus a `require_app_role` middleware applied to the whole
+  `/api/v1` sub-router, so a newly added route is protected by default and no handler performs its
+  own auth check; `/health` and `/metrics` are the only unauthenticated routes.
 - **DAC** (fine-grained, per-collection): each collection has an owner plus zero or more
-  contributors/viewers, recorded in that collection's own ACL entry in `movie_collections`. The
-  owner grants/revokes contributor or viewer rights. This is enforced *inside* `mc-service`, not by
-  Keycloak — Keycloak has no notion of individual collections.
+  contributors/viewers, recorded in that collection's own ACL entry in `movie_collections`. The owner
+  is *meant* to grant and revoke contributor or viewer rights — the seam exists and is exercised, but
+  the grant/revoke workflow is not built yet (see the gotcha below). This is enforced *inside*
+  `mc-service`, not by Keycloak — Keycloak has no notion of individual collections. One shared
+  application-layer helper authorizes every movie operation against the parent collection's ACL,
+  deny-by-default, and reports a missing collection and an unauthorized caller *identically* as
+  `404` so collection existence does not leak.
 
 ## Gotchas
 
@@ -142,7 +207,11 @@ common source of confusion when reasoning about "why can't this user do X":
   consistency bug — see [mc-service](../projects/mc-service.md) for the full measured
   diagnosis (item #468). **The BFF's own store is the opposite case:** `mcm-bff-db` is a plain
   standalone `mongod` with no replica set, because the BFF does single-document upserts only — do not
-  "fix" it to match `mc-db`, and never point one service at the other's database.
+  "fix" it to match `mc-db`, and never point one service at the other's database. That standalone
+  posture has a second consequence feature 073 leans on: with no multi-document transactions
+  available, exactly-once backup scheduling rests on a **single-document atomic claim**, and the
+  Redis leader lock beside it is an optimisation with a TTL guess in it rather than the guarantee —
+  see the [backups runbook](../runbooks/backups.md).
 - **mc-service does not wait for Keycloak, so a Keycloak outage looks like an auth bug, not a
   startup failure.** OIDC discovery and the JWKS fetch run in a background task, so the service binds
   and serves immediately; with Keycloak unreachable it still answers `/health` but rejects *every*

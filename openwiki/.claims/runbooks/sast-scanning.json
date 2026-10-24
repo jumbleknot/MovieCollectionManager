@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:46c3fbb9fa3310acbe5ba9e62db0e86bb314a0cba6585d8daa198703321c327c",
+  "pageVersion": "sha256:25951cf2972377a751eca62e11adef77cc7e0ac67e17a52ca10d53a3b802611a",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -313,16 +313,16 @@
       "statement": "Keyed entries in `pnpm-workspace.yaml`'s `overrides:` map are a range keyed on a range where the key names the vulnerable span excluded and the value the patched floor forced; `scripts/check-override-consistency.mjs` enforces equality between the key's exclusive upper bound and the value's inclusive lower bound on pull requests, scoped to keys carrying an `@<range>` suffix while plain pins are out of scope and a compound key such as `js-yaml@>=3.0.0 <3.15.1` is compared on its `<` bound alone.",
       "evidence": [
         {
-          "resource": "repo://pnpm-workspace.yaml#L81-L109",
-          "version": "repo-lines-v1:sha256:36b54ebf3df7c9286afed257801bae29ea77713d57df64789b299c02781d01ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzNjNGM4ZjkxY2UzM2FlODI5MDQ5MGU5MjRmMzc1M2ZhM2E2YWYyMDM5YWYyMzNmNGNlNzY5NmE0NTg1NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+          "resource": "repo://pnpm-workspace.yaml#L81-L114",
+          "version": "repo-lines-v1:sha256:b2bc64b8c68573c86b7afae921569787369d5ce5863cc17f1a2a07b4f637f661:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWNjOTY1NDE2YTNhMjIzMDA4NmM2NzliNDE0YzQ4YjM4MDRhYTg3ZjgyMmFhMTg0YTcwNTkyMjExYTg0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
         },
         {
           "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L60-L63",
           "version": "repo-lines-v1:sha256:bd2596b8565705e2f1eec76fb285e7d1665d97c73fb99873173fe988fe0c82fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjYTI3MzE0ZDhiOTFmM2IzMzlmNDIwMmU4MWEyYTU3NDdjMjg5Mzg3ZTZmOTZhMDI3OWIzNTViNDYyOTAzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFlNzEzNDIwMGFlNDA5MjQyN2VlZWZmZTFiZjhjMTIwM2JlNTUzOGE3ZWU1MjA3MzVmNjZjMGI2YzdlOTE3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZjZGVlMjc4ZTAxM2IxNjlmNWMxMGU2NmUzNGUxOWI2NjM0Nzg0MDI5ZDlhMDk2M2JjMTY0MTY2MmZiMmI2ZSJ9"
         },
         {
-          "resource": "repo://scripts/check-override-consistency.mjs#L143-L178",
-          "version": "repo-lines-v1:sha256:0dddfcb1769e70c2174a3ec453be18cf9f690386961d34d98233dba2d7603c01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmI3YTA0ZmQwMGVmZDU1Y2M4YWVkNWVhZThmOGE0ZmJhY2U4MmVmMGJmM2QxODEwNDM2MjVhNzJlMDI4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0Y2Y4YjBiODJkNmRmMzEyZjEwMDVmMmRlMWNkYzc0NmRhZmYxYjQ2YTA2ODAxZjhjODJhOGIxNmM1MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTdlMGQ3YWE4OWYzY2M2NWE5OWVhMmMxNTgxZTAwMzUyZmQyNDI5ZjJjMDU0Y2I4NWMyYmMxZDc2NjgwOTIifQ"
+          "resource": "repo://scripts/check-override-consistency.mjs#L143-L193",
+          "version": "repo-lines-v1:sha256:d1e34cb70391099dd15b2af2314d883d2f943368cf8543d2f458437d0a8d9ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmI3YTA0ZmQwMGVmZDU1Y2M4YWVkNWVhZThmOGE0ZmJhY2U4MmVmMGJmM2QxODEwNDM2MjVhNzJlMDI4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0Y2Y4YjBiODJkNmRmMzEyZjEwMDVmMmRlMWNkYzc0NmRhZmYxYjQ2YTA2ODAxZjhjODJhOGIxNmM1MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTBkZWM5MzY5ZGQxYzI0M2JkNjU4NjdlYmYzNDNhMWI3ZDlmZmFkYzhhMDNhODM1NDY4NWM0MTI1N2ZmN2EifQ"
         },
         {
           "resource": "repo://scripts/check-override-consistency.mjs#L24-L38",
@@ -659,7 +659,7 @@
           "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L776-L782",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1043-L1049",
           "version": "repo-lines-v1:sha256:79dcc7355f709be994d0674cdb5bceef97aaac7a7b14c6c1a56b4a9580d4e75a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NTdjOTg3NjQ4ZjIyNzRjMWUwYWVjN2E5NTIyNDA1NGI2OWI1MmUxMDUzODg4MjE5NTQ5MjMxZTU2Nzc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhMWY0NWY0ZGEyMzFjNmJhZmY5MDZhZWU4NjBjNDMwNDZiMjM2MGMwZjc4YzkzODFmNDJjOWVkZWRmMTNjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMzMjk5NjgyMTU3YTA2OTg1MzBiODg2NjkyNWQ3OWM3MmUyMzc1YjM0ZGRlMTI3MDg1MTAwNzhlMTUwYTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3Y2RmMmQ3NDc0NzQzYjgzMWI1YzNmMjZkNTAyNWRjODczZTE4ZWE2MzJiNGUyNTFhMjVjNzcxMGMwOTI4YSJ9"
         }
       ]
@@ -789,11 +789,11 @@
       "statement": "A keyed override floor is also the remedy when an UPGRADE would downgrade a transitive into advisories rather than when an advisory has already landed: `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'` was added 2026-10-17 (feature 081) because `nx@23.3.0` depends on `undici: 7.29.0` exactly while nx 22 used `axios`, and 7.29.0 carries ten advisories that 7.29.1 fixes (two High) — the lock's only other 7.x, 7.29.1 via `@module-federation/dts-plugin`, leaves with nx 22's plugin tree, so without the floor the nx bump resolves below the patched version.",
       "evidence": [
         {
-          "resource": "repo://pnpm-workspace.yaml#L88-L93",
+          "resource": "repo://pnpm-workspace.yaml#L90-L95",
           "version": "repo-lines-v1:sha256:3334be56e27c9a1c8989ff068699d908514539d178bb7b4739db6a0e936f3a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY5OWZkNDM4YmRiNDAzM2VhMWQ1M2VmM2UwZWY3OGRkM2UxNTFjOTA0MTMwNDBlZmM3YmIzYTdkMTBmYzJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJjMTViY2I3MDBjNTRiY2IxZjcxMTM3YmM0MDYyNzdiZDA2ODhmMDcxY2NiYThiM2JhNzZjNjkwM2YwZTc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L916-L928",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1183-L1195",
           "version": "repo-lines-v1:sha256:ff8e44efed90c30ebbef312a7ff8b86e361a6e9318c281be288ed54e3313422b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDhjYjljNWY3NDZiNTI5NDYxODBkYTIzZjM2MjgyNGM1MzBlNTE1ZmIwZjI2MjlkNmJhMDkzYjNkMmM2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODQ0YmVkM2VmZjQwOGIyZjhmZDYwNTgxZDQ3ODM2NTI5MmVkM2FiNjEyNjIzYTRlM2M5MTM0Y2JlMTYxMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YzNhOTI2ODFjMmUwOTY0ZGI1ZDlmYTNhMzU2YjYyNDI3NTMwYTcwYWFmMTUzMjJjNjYxMTU1NzRlNTBkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODIxYjA2YzA3NDZhY2JkNmY1YzJmYzRiNGM5NWNmMmJmZTIxMDAwMDBhN2Q3ZDg0OGVjZGQ2YTIxMTM5NWQifQ"
         }
       ]
@@ -839,7 +839,7 @@
           "version": "repo-lines-v1:sha256:4f2d3c19d9b9068f97482ffde511698a37a2fbfa753040b51c398fc75a68ab40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjNmMmIzZDQ2MzdmMWEyNjg0ZmM4MTJlZDY3YjdmYzdkMTJlZDIxMWM2MTcwN2VmOGVhYzZhMWY4NjVmNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkODJlYThmMmU0ZjhiNDM3NWJhNThhOWJmMzc3ZGU1YmEyNTRlNmM2ZGZlZDQzZjI5N2VkNmQxNDE5YWY3YTcifQ"
         },
         {
-          "resource": "repo://renovate.json#L862-L882",
+          "resource": "repo://renovate.json#L882-L902",
           "version": "repo-lines-v1:sha256:3cfe4094b0f19f47c00f49050b209c62200c79da25102d0a4cb2b96dbe69c389:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViYjdlNzM5NGU3YmIwYzE1ZjBlZTMzNWVkMTdmZjEyZmM0YTc4NTkyYjNjMGNkMjFjNzIyNjg3YjUxYmJhZTgifQ"
         }
       ]
@@ -861,10 +861,28 @@
           "version": "repo-lines-v1:sha256:a85675321b21a8d8e0a82d66dcd371ee749c23514bc74ae9aaa46357714b2f1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyZjQxNTRiN2I3NzYxMmIyYTUxODk2NjA2MDJmZmU5YjAyZDkwYjg2ZjM4NTg1ZjczMTQyZjNhMWM5NTIwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzAyMTA2NjNhYTczYjEwZDI3ZjRiMmI2NDY0NGI5NTgzYTE2NGE2ZjJhYzUxMzY1NmIyM2QzZjA4ZDkxZWI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QxMzgxMTVkMmFiMGM3OWY0M2UxZTRmMDkyYWM5ZWUyZDhlYmMzOTdmY2FjZjhhMjU1Yzk3NGM1M2IyNjgwOSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_7d924097dfee4e6d898a43556ddbb5e9",
+      "statement": "The keyed override map keeps growing along the floor-within-a-major shape: `body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'` was added 2026-10-23 for GHSA-27r3-jxmh-p828 (express 5, the BFF's `server.js`, depends on `body-parser ^2`), and the 6.x `undici` key was raised on 2026-10-24 to `undici@<6.29.1: '>=6.29.1 <7'` for GHSA-xjj6-f33q-929c (DoS on excessive content-encodings, fixed in 6.29.1); both move key and value together and keep the value's cap at the next major, which is what the override-consistency gate requires.",
+      "evidence": [
+        {
+          "resource": "repo://pnpm-workspace.yaml#L112-L114",
+          "version": "repo-lines-v1:sha256:007121155075a2a9dfb8048730a5a56659a2738d722fee44bcfe8cc6d35ef14e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRmYWI5NjYzOTA2NTZhNGM5ZWJiZWY1NmQ0NDgxYTc3NDRhNWZlMjAwYWI5MTY2ZWFmOWE2ODAyNTkzNGExYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1Y2M5NjU0MTZhM2EyMjMwMDg2YzY3OWI0MTRjNDhiMzgwNGFhODdmODIyYWExODRhNzA1OTIyMTFhODQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ3ODQyZjc3NGE3YjliNzg4MDhhZWVlMGVkNmE5MDEwNmQ0NjUwMTkxMTE4MTE2MzIzZmUyODkyMTQ0MGNhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0MWI4Yjk3NDIzMzVlNmNhZmYyMWU1ZTJlNmUyZGJmYmUzNWI0NGU2N2RmZTMwZTViYjliY2U3ZjEwZWUxMSJ9"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml#L87-L89",
+          "version": "repo-lines-v1:sha256:a898a316b1c8770db46c224536419610a1a54480eb04127e1f5121135f98684f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZhZDFmODA4MzQ5YzUwZmYyYTBkMDg4MGY5MDVjYTEyMmNhMDBkYTAxMGQwYTY2Zjk2N2FkMzE4ZjExNDZmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc0NzI1OWQzNDg4MTkwNjAzZjRlZjE0OTIwNWIyNzhjMTBjZjdjMDk2ZTczNTFjMzg3ZDAzNDdlMDRhMzNkMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzExMjdjN2E0YzYzZGY0NGQxNGRkYTc0ZGI5MjNiNDk2OWIxZGVlOWYxNzhiMDI3ZjcyODJiZmNkMTA3YTg4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDZlYjBiMDQ4OGU2YzIxNzM5NjY5MjgwMWYxOGNkNDY2MjQ2YTZhOWQxNDliMTBiN2ZjZTQ0MDhmNzg3YWYxNiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L143-L193",
+          "version": "repo-lines-v1:sha256:d1e34cb70391099dd15b2af2314d883d2f943368cf8543d2f458437d0a8d9ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmI3YTA0ZmQwMGVmZDU1Y2M4YWVkNWVhZThmOGE0ZmJhY2U4MmVmMGJmM2QxODEwNDM2MjVhNzJlMDI4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0Y2Y4YjBiODJkNmRmMzEyZjEwMDVmMmRlMWNkYzc0NmRhZmYxYjQ2YTA2ODAxZjhjODJhOGIxNmM1MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTBkZWM5MzY5ZGQxYzI0M2JkNjU4NjdlYmYzNDNhMWI3ZDlmZmFkYzhhMDNhODM1NDY4NWM0MTI1N2ZmN2EifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-19T00:33:25.175Z"
+    "at": "2026-10-24T02:14:36.804Z"
   }
 }

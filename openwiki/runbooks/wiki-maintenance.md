@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget and per-event job deadline with its exit codes, the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, and the churn-citation and live-state rules.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget and per-event job deadline with its exit codes, slice packing and the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -63,10 +63,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
+    at: 2026-10-23T11:13:11.115Z
 ---
 
 
@@ -921,7 +921,21 @@ The figures in the example are illustrative.
   second proposal and died on `forge POST /pulls → 409`. A run now asks the forge which proposal is
   open for the branch before creating one, adopts it if found, and treats a 409 as "someone beat me to
   it — adopt and update" rather than a fatal error, so a run that lost its record self-heals instead of
-  staying permanently stuck (the one-proposal invariant survived only because the forge refused).
+  staying permanently stuck (the one-proposal invariant survived only because the forge refused). The
+  adoption happens at **reconcile, before planning** — including when the record's own pointer has just
+  been reconciled as merged or closed. Run 5229 is why: its record pointed at a proposal merged in the
+  same second as the merge that started it, while another run had already opened a different one, so
+  the run generated onto a fresh branch and the publish step then refused to push — correctly, because
+  pushing would have discarded the other proposal's commit — but only after about $1.35 had been spent
+  on four pages.
+- **A durable learning goes to the canonical home of its subject, not into a derived summary.**
+  `openwiki/INSTRUCTIONS.md` §7 states the rule: if the concept covering the subject carries a
+  `resource`, write the detail into the cited source — the runbook, decision record or architecture
+  document — and let the summary refresh from it; if it carries none, the concept is authoritative and
+  the learning goes into the concept. A concept that becomes a copy of its source has failed the
+  generation brief, which is why this page states rules and field meanings and defers to
+  `../../docs/runbooks/wiki-maintenance.md` for the procedures. The routing decision, and the rejected
+  grow-then-trim alternative, are in [Where a new learning goes](../process/wiki-maintenance.md).
 - **A protected passage may only live on a concept with no `resource`.** Freezing a derived summary
   against the document it summarizes would fail every legitimate refresh. To change such a passage,
   update its text and its fingerprint in the same change:
@@ -1079,6 +1093,26 @@ The figures in the example are illustrative.
   wiki-maintain's link normalization carry a covered page's certified hash across a pure link rewrite,
   so the harness cannot break the invariant it enforces — and only for a page that was durable *before*
   the rewrite, never laundering one that was already broken.
+
+## Verifying the machinery itself
+
+The machinery proves itself offline and keyless, so a check on it never needs the paid machinery to
+run — exactly when it matters:
+
+```bash
+node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
+pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12
+node --test scripts/__tests__/wiki-maintain*.test.mjs
+node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
+```
+
+`--selftest` drives the planner and the verifier against fixtures plus a **deliberately sabotaged
+generator** that exits 0 having written nothing — the exact false green feature 043 measured. It must
+fail that zero-page slice, return it to the backlog, hold the marker, and *still* pass a slice that
+genuinely wrote its page; if a clean verdict ever comes back, the zero-page detector is broken, which
+is the one failure mode that would let this whole arrangement go quietly back to reporting false
+green.
 
 Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the debounce arithmetic, and
 the self-test/lint/governance verification commands (`node scripts/wiki-maintain.mjs --selftest`,

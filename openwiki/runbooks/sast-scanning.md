@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -64,7 +64,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T00:33:25.175Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # SAST & SCA static scanning
@@ -279,12 +279,18 @@ or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> -
   `renovate.json` now disables `major` updates for this file outright (see [Renovate](./renovate.md)).
   Renovate produces exactly this mismatch when it proposes a floor raise, so expect bot PRs against
   this map to need their key half fixed by hand. **A floor is not always raised against an advisory
-  that already exists** — the newest keyed entry, `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, was added
-  on 2026-10-17 (feature 081) because an *upgrade* would have downgraded a transitive into ten
-  advisories: `nx@23.3.0` depends on `undici: 7.29.0` exactly, where nx 22 used `axios`, and 7.29.0
-  carries ten advisories that 7.29.1 fixes (two High). The lock's only other 7.x — 7.29.1, via
-  `@module-federation/dts-plugin` — leaves with nx 22's plugin tree, so without the floor the nx bump
-  would resolve *below* the patched version. Same keyed shape, same guard. Note also **where** these
+  that already exists** — a keyed entry added on 2026-10-17 (feature 081),
+  `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'`, exists because an *upgrade* would have downgraded a
+  transitive into ten advisories: `nx@23.3.0` depends on `undici: 7.29.0` exactly, where nx 22 used
+  `axios`, and 7.29.0 carries ten advisories that 7.29.1 fixes (two High). The lock's only other
+  7.x — 7.29.1, via `@module-federation/dts-plugin` — leaves with nx 22's plugin tree, so without the
+  floor the nx bump would resolve *below* the patched version. Same keyed shape, same guard. **The
+  map keeps growing along that shape rather than standing still:** `body-parser@>=2.0.0 <2.4.0:
+  '>=2.4.0 <3'` was added 2026-10-23 for GHSA-27r3-jxmh-p828 (express 5, the BFF's `server.js`,
+  depends on `body-parser ^2`), and the 6.x `undici` key was raised to `undici@<6.29.1: '>=6.29.1
+  <7'` on 2026-10-24 for GHSA-xjj6-f33q-929c — both floor-within-major moves that move key and value
+  together and keep the value's cap at the next major, which is why the guard stays green while the
+  cap rule keeps the Renovate widening out. Note also **where** these
   live: the map is in `pnpm-workspace.yaml`, not `package.json`'s `pnpm` field — pnpm 11 stopped
   reading that field and says so with an "ignored keys" warning, which is a security event rather than
   cosmetics, because every entry in the map exists to force a vulnerable transitive to a patched

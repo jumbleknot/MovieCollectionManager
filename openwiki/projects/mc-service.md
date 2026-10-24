@@ -4,6 +4,9 @@ title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns over its own replica-set MongoDB.
 resource: docs/MCM-Architecture.md
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-23T11:13:11.115Z
 sources:
   - id: openwiki-source-d54b05966a54dbfbb9eb63bc
     resource: repo://backend/mc-service/Cargo.toml
@@ -47,6 +50,8 @@ sources:
     resource: repo://backend/mc-service/src/application/commands/create_collection.rs
   - id: openwiki-source-cbd73c95b6c45a653448508d
     resource: repo://backend/mc-service/src/application/commands/create_movie.rs
+  - id: openwiki-source-1cad77b6b14d7ab3322be0e2
+    resource: repo://backend/mc-service/src/application/mod.rs
   - id: openwiki-source-1f191bf9f539949e27e34518
     resource: repo://backend/mc-service/src/application/ports/collection_repository.rs
   - id: openwiki-source-f1efcf3527980e1de9719972
@@ -57,6 +62,8 @@ sources:
     resource: repo://backend/mc-service/src/domain/collection.rs
   - id: openwiki-source-e7c775a958bbcf3eef93d65c
     resource: repo://backend/mc-service/src/domain/errors.rs
+  - id: openwiki-source-48aee1b6e73650c2995b7861
+    resource: repo://backend/mc-service/src/domain/mod.rs
   - id: openwiki-source-100cc47666cbe45bc9d2f0cb
     resource: repo://backend/mc-service/src/domain/specifications/spec.rs
   - id: openwiki-source-dd879f09a5a135a8daaa43b6
@@ -81,10 +88,7 @@ sources:
     resource: repo://scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs
   - id: openwiki-source-072f6ea660585ea2cb7a706c
     resource: repo://scripts/mc-service-integration-guard.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T03:23:45.685Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T03:23:45.685Z
+generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -292,13 +296,14 @@ sort-field remapping and filter-parity traps are their own page:
   owned by a thread identity: libtest spawns a *new thread per test*, so keying slots by `ThreadId`
   would have reproduced one-slot-per-test churn (measured: 41 tests produced 39 slots). If every slot
   is held by a LIVE process the pool degrades to the old unique name rather than sharing a database.
-  A lease whose holder pid has exited is reclaimable immediately — the three integration binaries run
-  in sequence, so without that the slot space would be exhausted within a single run — with the 600 s
+  A lease whose holder pid has exited is reclaimable immediately — the integration binaries run in
+  sequence, so without that the slot space would be exhausted within a single run — with the 600 s
   staleness window as backstop for a holder that cannot be judged. `pool_test.rs` exists to pin the
   properties a passing suite cannot show. If you make `cleanup_db` drop or wipe again, expect the
   churn to come straight back.
 - **`nx test mc-service` and `nx test:integration mc-service` must run the integration binaries the same way — and they now do.** Before 2026-09-16 the developer-facing `nx test` invoked cargo at default parallelism while the CI gate (`test:integration`) always ran through `mc-service-integration-guard.mjs` at `--test-threads=1`. The two tiers disagreed about the one setting that changes the result: a test failing ~2 runs in 3 locally was green in CI for months. The reconciliation: `nx test mc-service` now delegates via `dependsOn` to `test:unit` and `test:integration` rather than running cargo itself, so `--test-threads=1` is decided in exactly one place (`cargoArgs.push('--', '--test-threads=1', ...)` in the guard — a second copy anywhere else is a second thing to drift). Do NOT flip to parallel without fixing the underlying contention first — measured 2 failures in 29 runs at default parallelism from a clean MongoDB after item #462 was resolved, always in `movies::large_collection_test` (an index-creation failure or a `MovieNotFound` read-your-own-writes miss); serial over the same period was 180/180.
 - **The guard is also the tier's no-false-green gate, and Rust has no "skip" primitive.** A missing Mongo or Keycloak already *fails* a test (`.expect()`/`.unwrap()` in the body), so skips are not the concern; the two false-green vectors are an undocumented `#[ignore]` silently disabling a test, and a wholesale-disabled suite executing zero tests yet exiting 0. The guard forbids a **bare** `#[ignore]` anywhere under `tests/integration/` (a documented `#[ignore = "reason"]` is allowed — ~24 full-stack HTTP tests are legitimately ignored), and requires every binary declared as a `[[test]]` target to emit a `test result:` line with at least one executed test. Do not replace those with a blanket `--tests` invocation: the guard runs the integration binaries *explicitly* so the parsed result lines stay integration-only, since the crate's inline unit tests belong to `test:unit`.
+- **The guard discovers its binaries from `Cargo.toml`, and there are four of them — one more than one harness comment still says.** The `[[test]]` targets `health_test`, `collections_test`, `movies_test` and `pool_test` are each one integration binary; the guard parses those declarations rather than a hardcoded list, so a fifth added target is covered automatically — and one whose `path` stops pointing into `tests/integration/` is silently dropped from the executed-count assertion, which is the failure mode to watch when moving test files. `tests/integration/pool_test.rs` still says "the three integration binaries run one after another", written before `pool_test` itself was added, so do not take the count from that comment.
 - **The fast Rust gate compiles the tests, not just the library.** `nx lint mc-service` runs clippy
   with `--all-targets -- -D warnings`, and the flag must stay *before* the bare `--`; without it the
   fast `mc-service-checks` job checks lib + bins only, and since `test:unit` runs `cargo test --lib`
@@ -311,5 +316,6 @@ sort-field remapping and filter-parity traps are their own page:
 
 See [Auth chain](../invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, [data model](../architecture/data-model.md) for the domain entities, and
-`docs/MCM-Architecture.md` (dedicated "mc-service Architecture" section) for the full layer/CQRS
-diagrammed description and the MongoDB collection/index tables.
+`docs/MCM-Architecture.md` — whose `## mc-service Architecture` section is the authoritative source
+for the layer table and CQRS description, with its MongoDB collection/index tables immediately
+below — for the full diagrammed description.

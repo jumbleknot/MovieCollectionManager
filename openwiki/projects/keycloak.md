@@ -9,6 +9,8 @@ sources:
     resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-4cc090993970bb2253a628ba
+    resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
     resource: repo://backend/mc-service/src/api/router.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
@@ -17,6 +19,10 @@ sources:
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-7c76000f237dd683a4fb0536
+    resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
+    resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-318b395038e1943bc8a10f72
     resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
@@ -29,6 +35,10 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-4bb9aed3e8acb9d5ea822f53
+    resource: repo://frontend/mcm-app/src/config/keycloak.ts
+  - id: openwiki-source-632789ffafe5c334f1dbdfba
+    resource: repo://frontend/mcm-app/src/hooks/use-keycloak-auth.ts
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
@@ -83,16 +93,14 @@ sources:
     resource: repo://scripts/export-ci-realm.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-921299f3e17b7f9cb4a1254c
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T16:45:16.789Z
+    at: 2026-10-24T02:14:36.804Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -111,15 +119,37 @@ carrying only that authenticates and then fails with `login_role_denied`. The sa
 up one level up: the realm's built-in default role is still `default-roles-jumbleknot`, so a
 `default-roles-*` name that does not match the realm is expected, not drift.
 
+Both enforcement points read those roles the same way and neither trusts the other: the BFF reads
+them off the decoded JWT, and mc-service deserializes `Role` out of
+`resource_access.movie-collection-manager.roles` for its `KeycloakAuthLayer<Role>`, with a separate
+`require_app_role` middleware applying the `mc-user` **or** `mc-admin` rule that the layer's own
+`required_roles` cannot express (it requires every role listed). A valid token whose roles are empty
+or unknown is therefore authenticated and then refused with 403 — the same shape as the BFF's
+`login_role_denied`, one layer over.
+
+The realm is consumed from two directions, and only one of them fetches its endpoints. Server-side
+components reach Keycloak over the Docker network and validate tokens locally against a JWKS fetched
+once at startup. The app runs the authorization-code-with-PKCE flow itself but *derives* its
+discovery document — authorize, token, revoke, logout, userinfo — from the configured issuer instead
+of fetching the realm's `.well-known/openid-configuration`, because a client-side discovery fetch
+fails with a CORS "failed to fetch" in the browser and Keycloak's endpoint structure is standardized.
+A wrong issuer therefore breaks the login URL directly rather than surfacing as a discovery error.
+See [Authentication and authorization chain](../invariants/auth-chain.md) and
+[The Expo app](./expo-app.md).
+
 ## The service head
 
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
 carries four facts worth reading directly, because none of them is visible in a realm file:
 
-- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:79c623a2…`, the
+- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`, the
   identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
-  drift apart. The digest matters separately from the tag: an infra-image allowlist entry is keyed to
-  version **and** digest, so a bumped image re-blocks instead of inheriting the previous suppression.
+  drift apart. The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
+  a finding only while its `image` regex still matches the scanned `repo:tag`, its `id` regex matches the
+  advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
+  discharge it rather than inherit it. The bump is the remediation and the exemption is deleted, so a
+  later regression re-blocks instead of matching a stale entry forever. The rule and the Keycloak case
+  are in [Infra-image scanning](../runbooks/infra-image-scanning.md).
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
@@ -168,6 +198,8 @@ flowchart TD
   pr --> vol
 ```
 
+The three realm-import paths into one Postgres volume: two Compose overlays and one prod file.
+
 Each environment imports the `grumpyrobot` realm into the same Postgres volume through its own overlay.
 
 Three details in that picture are load-bearing:
@@ -187,7 +219,8 @@ Three details in that picture are load-bearing:
 
 `prod-realm.json` is additionally sanitized before commit: no users, no embedded signing keys (so prod
 mints fresh ones), no dev redirect URIs, no real client secrets, `registrationAllowed: false`,
-`bruteForceProtected: true`, and a real `passwordPolicy`.
+`bruteForceProtected: true`, and a real `passwordPolicy`. The dev and CI variants are the permissive
+twins: `bruteForceProtected: false`, and users seeded for the test suites.
 
 ## Why the token lifespans differ
 
@@ -231,6 +264,8 @@ sequenceDiagram
   KC-->>Gateway: downscoped token, aud=movie-collection-manager + mc-service, TTL 60 s
   Gateway->>MC: downscoped token, forwarded unchanged through the MCP
 ```
+
+The two exchanges: the BFF mints a run-scoped subject token, the gateway downscopes it again.
 
 Two exchanges, two requester clients, and the audience mappers that make each one legal.
 
@@ -298,12 +333,20 @@ fails on any `_`-prefixed key at any depth. **Document realm settings in the REA
 the guard catches `_`-prefixed keys, but only Keycloak can tell you the realm truly deserializes.
 Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the `${VAR}` placeholders
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
-command is in the [keycloak README](../../infrastructure-as-code/docker/keycloak/README.md). Treat a
-green run as a schema/deserialisation check, **not** a version-parity check: the README's one-minute
-proof pins a Keycloak image a minor version behind the deployed one (`26.7.0` in the command against the
-`26.8.1` compose pin), so a realm can import under the proof image and still meet a stricter schema on
-the deployed pin. That is the same class of change that made 26.6+ enforce the realm password policy
-against imported credentials.
+command is in the keycloak README's realm-import proof section
+([`infrastructure-as-code/docker/keycloak/README.md`](../../infrastructure-as-code/docker/keycloak/README.md)).
+That proof now runs the *same* `26.8.1` image the compose files pin, so it is a genuine
+version-parity check as well as a schema/deserialisation one — but it stays a check of the realm
+against the image, not of the image's own behaviour: the same class of change that made Keycloak 26.6+
+enforce the realm password policy against imported user credentials was a *server* behaviour change
+that no realm edit would have revealed. Keep the proof image and the compose pins in step
+deliberately; a proof image a minor version behind the deployed pin silently downgrades the proof to
+schema-only. Read the env-var names in the command against the realm rather than trusting them:
+placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
+intact rather than failing the import (that is why the realm's own `${role_*}` / `${client_*}` i18n
+keys survive an import), so a name that no longer matches the realm can still import "successfully"
+while leaving the literal placeholder where a secret belongs. The ROPC client's placeholder is
+`${E2E_ROPC_CLIENT_SECRET}`.
 
 **The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
 means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks
