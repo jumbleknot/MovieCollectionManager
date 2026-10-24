@@ -54,7 +54,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T02:14:36.804Z
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # Infra-image CVE scanning
@@ -275,9 +275,12 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   `mongodb/mongodb-community-server:8\.0\.8-ubi9`, `postgres:18\.6-alpine3\.23` and
   `postgres:18-alpine` (on the postgres pins the shipped binary carrying it is `usr/local/bin/gosu`) —
   kept because no reachable tag clears it, with the measurement recorded per entry rather than assumed.
+  The mongo pin is additionally hard-held below 9 by renovate.json (`allowedVersions: <9`, item #819,
+  liftable only in the PR that carries the re-own wrapper), so a mongodb major is not a route to
+  discharging that entry either.
   Seven are **time-boxed to `2026-11-20`** and are the ones that will red the weekly expiry check
   first: the 2026-10-23 operator-approved `CVE-2026-114406` (ca-certificates) cohort on
-  `grafana/otel-lgtm:0\.36\.0`, `langfuse/langfuse:4\.56\.0`, `langfuse/langfuse-worker:4\.56\.0` and
+  `grafana/otel-lgtm:0\.37\.0`, `langfuse/langfuse:4\.56\.0`, `langfuse/langfuse-worker:4\.56\.0` and
   `mongodb/mongodb-community-server:8\.0\.8-ubi9`; the `next` pair `GHSA-2464-fhr4-w9xw` /
   `GHSA-673q-mjm6-r5xr` on both langfuse images; and `@sentry/nextjs` `CVE-2026-114139` on
   `langfuse/langfuse:4\.56\.0`. All seven flag EXPIRING from `2026-11-06`, which is the re-check date.
@@ -298,7 +301,12 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   digest refresh (PR #838), which is what this cohort is expected to follow. Every one of the seven is
   **version-keyed to today's pin**, so a bump re-blocks and forces a fresh scan rather than inheriting
   the suppression, and each justification states that the entry is deleted once a clean rebuild ships —
-  a time-box to force a re-check, not an accepted risk without one.
+  a time-box to force a re-check, not an accepted risk without one. The otel-lgtm entry has already
+  been through one such bump: the window moved the pin `0.36.0` → `0.37.0` (PR #836, 2026-10-24) and
+  the entry was **re-keyed** to `0\.37\.0` in the same change — same CVE, same expiry — rather than
+  deleted, because 0.37.0 still ships the pre-fix CA bundle. Re-keying is what keeps the discharge
+  property live: the next bump (0.38.0 or later) stops matching and re-blocks, which is the whole
+  point of keying on the version rather than on the repository.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count

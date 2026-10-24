@@ -4,9 +4,6 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
@@ -95,6 +92,9 @@ sources:
   - id: openwiki-source-c5e086204a303667bdcd03f5
     resource: repo://specs/025-observability-audit-vault-prod/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -238,6 +238,21 @@ a deploy that references a missing one aborts up front — `external volume "…
 creating the resource (seeding it, where there is data to keep) and redeploying. That makes the resource
 list, like the `environment` list, part of the stack definition's contract with the host.
 
+The newest instance of that contract is a rename. Spec 081 US8b moved both observability databases
+from Postgres 16 to 18 and renamed their volumes to `observability-langfuse-postgres-v18-data` and
+`observability-unleash-postgres-v18-data`, leaving the pre-18 `…-postgres-data` volumes untouched as
+the rollback. Because both are `external: true`, the operator creates them — and restores the Unleash
+dump into its own — *before* the merge that deploys the file; a merge that lands first fails on the
+missing external volume and recreates nothing rather than bringing LangFuse up on an empty store. The
+asymmetry between the two is deliberate: ADR-0002 §4 ratifies losing the LangFuse trace history, not
+Unleash's flags. The volume `name:` and the mount path move as one change — postgres 18 keeps its
+cluster under `/var/lib/postgresql/18/docker`, so both services mount the **parent**
+`/var/lib/postgresql`, and a mount left on the pre-18 `/data` path makes the entrypoint exit 1 even
+on an empty volume. `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` pins all three
+facts together: `langfuse-postgres` and `unleash-postgres` reference one identical digest (so a
+find-and-replace bump cannot migrate Unleash's store as a side effect), the shared pin sits on the 18
+line, and both mount the parent path.
+
 The exception is `prod-auth`'s `keycloak-network`, declared `keycloak-network: {}` in
 `keycloak/compose.prod.yaml` and therefore **compose-managed** rather than external — deliberately, since
 feature 029. It carries only the intra-stack DB link `keycloak-service` ↔ `keycloak-store-postgres`
@@ -353,7 +368,17 @@ agent gateway reaches it via `host.docker.internal` with zero gateway/compose ch
 the backup-destination test services; see the interpolation gotcha below for why it is not an `mcm`
 profile. Both destinations are upstream images pulled by digest (`rustfs/rustfs` for S3, `httpd` for
 WebDAV) and join the mcm stack's `mcm-bff-network` as an external network, so the mcm stack must be up
-first.
+first. Two design decisions there are load-bearing rather than cosmetic. First, the WebDAV config and
+htpasswd arrive in a **named volume written by a one-shot**, not a bind mount: the dev container's
+Docker is a Sandbox microVM that shares only `/workspaces`, so a bind source outside it (a git worktree
+under `/home/coder`) does not exist in the VM — the daemon creates an empty directory there and mounts
+that, and the container then fails with `is a directory`, a message about file types for a problem about
+which filesystem the daemon can see. Second, the credentials reach `curl` through the **container's
+environment**, referenced as `$$VAR` and fed to `curl -K -` on stdin, never interpolated into the
+entrypoint by Compose, which would put them in the container's argv where `docker inspect` and `ps` can
+read them. Both destinations bind `127.0.0.1` only, and the URL guard denies loopback by default (the
+inverse of the Ollama guard), which is why `gen-dev-env.mjs` names them in
+`BACKUP_ALLOWED_DESTINATION_HOSTS`.
 
 **Static gates.** `scripts/check-resource-naming.mjs` — the `naming` CI job, also exposed as the
 `check-naming` Nx target — enforces the `<context>-<role>-<engine>` grammar on every declared volume

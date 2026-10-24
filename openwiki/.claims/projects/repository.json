@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a5d03814fee0c83c4817cfc1746824ec1122c93a1ed5d197bf37cb2ec8f516a2",
+  "pageVersion": "sha256:848770e5007c935b0d7f77fd4b4e66084cd2f05aafca43ad492e4e7578f22f8f",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -560,19 +560,23 @@
     },
     {
       "id": "claim_ad19004560484595ab9c4962c4c366fa",
-      "statement": "The current pinned tech stack is Expo SDK 57 / React Native 0.86 / React 19.2 on the universal client, Rust 1.98 (channel 1.98.0) on the backend, Node 24 for the BFF container and the dev-container toolchain image, with pnpm 12 workspaces and Nx 23 orchestrating JS/TS, Rust and Python through one task runner.",
+      "statement": "The current pinned tech stack is Expo SDK 57 / React Native 0.86 / React 19.2 on the universal client, Rust 1.98 (channel 1.98.0) on the backend, Node 24 for the BFF container and the dev-container toolchain image, with pnpm 12 workspaces and Nx 23 orchestrating JS/TS, Rust and Python through one task runner. The Node pin is deliberately not single-sourced: the workflow `node-version:` entries, the app Dockerfile's `FROM node:` and the bare `24` in the infra-image-scan workflow are allowed to differ, so the version must be read per context rather than quoted once.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/toolchain.Dockerfile#L23-L23",
-          "version": "repo-lines-v1:sha256:88c2589053d3694e94312c1634a04735af07c0a488d80cabfa7c588e5167f89c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhjMjU4OTA1M2QzNjk0ZTk0MzEyYzE2MzRhMDQ3MzVhZjA3YzBhNDg4ZDgwY2FiZmE3YzU4OGU1MTY3Zjg5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhjMjU4OTA1M2QzNjk0ZTk0MzEyYzE2MzRhMDQ3MzVhZjA3YzBhNDg4ZDgwY2FiZmE3YzU4OGU1MTY3Zjg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjdiOTMxNGU3MGVmNWM4Yzc0NDg1ODMwY2JhNjE2NTlkZWJjM2IxMTNkMjQ4M2FhYzNkMDkzODAzOTdjODJmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2FhMTk2MGExMGY4ZjNmN2M3OGU3MDc5OTM0MjBlM2EzNGQzMTg0NGU4YTM3NTBlODUwNTJlMTUwOWQ2ZGE4YSJ9"
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L12-L24",
+          "version": "repo-lines-v1:sha256:0ca6ac61c780e51255e2010ce77b3e1b9f326ca874d8b053b804eadc161c6554:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGZlZmRmNDI5ZDA4OTc5MzRmMzA2ZTJiYWIzOWQxYjZiZTI3Y2FhMzZmODM0YWIzYWFkNmMzZWNlOTk3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOWQ1MDk0Mjc5NjM1MDZiNmYyMmVkNjdiYzYwZWQxMDI0YTU3NjY1ZTc2ZTM2MGZkNTUxOGM3ZDBmNGM1ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/Dockerfile#L5-L5",
-          "version": "repo-lines-v1:sha256:26d2d81318365ca676af9b0739ef5b238b0006925eaceecdad08890cafe96939:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjZkMmQ4MTMxODM2NWNhNjc2YWY5YjA3MzllZjViMjM4YjAwMDY5MjVlYWNlZWNkYWQwODg5MGNhZmU5NjkzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjZkMmQ4MTMxODM2NWNhNjc2YWY5YjA3MzllZjViMjM4YjAwMDY5MjVlYWNlZWNkYWQwODg5MGNhZmU5NjkzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjkwMDc0MDY2NWRkNDJjYzVmOWY3N2IyZjliMTM2MmE0MzJlOTM5MmFkOWQyYmVkZDc3ODJkZDI2MjkxZWIyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGZlMmVmYmUyNTg4MmQzOWRhMjdkYWYxYmFjZjhhNDYwNzEwZTRlNzQ0NTQ1YWFkZGE3ODAxYWEyODI0ZmI0YSJ9"
+          "resource": "repo://docs/runbooks/renovate.md#L971-L980",
+          "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/package.json#L17-L64",
-          "version": "repo-lines-v1:sha256:ee202b4a309fc842d564b071f601ae5dcca893503022043dc8c91c19eccc2a53:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2I0NjlkOWUwOTc1NzIyNDY2NjczNGM5ZWY3YjI1NGQ4ODUzNGY1ZDViYjcwOTg5NjA4MDVjNTUzZGMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiNjU4NTZiZGJhMGI4ZmRlNTE2NjBiYjBiOWQyYjY0ZWExNmM3NGMxNWNiYzZmMzU1MzAzYWExN2U3NGFiZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZjYwOGVkNGZmMTU4MTJiYzA1ODk2YjQ4MjQ0MmJmMmI0ZTIzOTAzNzc1ZGQ2NTcyNjNlNzgwNjBjZWJjNzQifQ"
+          "resource": "repo://frontend/mcm-app/package.json#L32-L32",
+          "version": "repo-lines-v1:sha256:9e2b113a4cdf50a703bbafbd4b4e9813b294b2504f01e01ed5db3a82aab1b95a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUyYjExM2E0Y2RmNTBhNzAzYmJhZmJkNGI0ZTk4MTNiMjk0YjI1MDRmMDFlMDFlZDVkYjNhODJhYWIxYjk1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUyYjExM2E0Y2RmNTBhNzAzYmJhZmJkNGI0ZTk4MTNiMjk0YjI1MDRmMDFlMDFlZDVkYjNhODJhYWIxYjk1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ1MTYwZWE1ZDMwZTg1MjE4NTI5OTQ1NWEzMzUyMzcwYWIyNTRkY2Q3OWY0YzdhOTNmZTQ5OGI0MTM5ZWM5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg3NTY4MmZlNmE0ZjljZTI5YzYwZGU5Yjk5MjI3ODBlOGRkMjAyMTQ3MWU1ZDg3ZTI3ZjMyZDY1NzAwYWJjYSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L52-L54",
+          "version": "repo-lines-v1:sha256:bb54ca9a532e9d80f2ef2cb0b4f1631a6737becb5e2d08246da71b41da3b0adb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdlOWJmMDEyMDFmODgwMGFiZTBhMGFkNGZkMmU2NjUzMTE4NWYzOWFhMmY2NWM2ZmYyMzkxZDg0YjNjM2Q2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQyM2RiMzBkODQ0YWViY2IwZmUwMGRjNWVhNTI0Y2Q5NjEyZjRmMjEyYWVjOGJhNTg1MTUwZTU1MWQ5ZTFiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTAxNWJkZjIyZWQ0ZGJkZGY2NWE1YjEzZDk5ODViZWFiN2U2N2RmNDBkZTZhMDFjMTc2NzYwNGRiNTA2MmIwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTg2YzFkNGU3NmY0MDA5ZDRkN2RmMTUwMjNiMjZmNmQ4NDNmM2E1OTQ0NDliZDZhNzU3NjMwZmI4MGI5M2QzNCJ9"
         },
         {
           "resource": "repo://nx.json#L1-L5",
@@ -729,10 +733,32 @@
           "version": "repo-file-v1:sha256:029517e3b1759c7889f6083bfc2f70cdf779b521e2441cfb770c93d2f2c1b771"
         }
       ]
+    },
+    {
+      "id": "claim_c0e20a599a5d4782b5d93a059c86e8a7",
+      "statement": "Node is the one toolchain version the repository deliberately does not single-source, and the gate enforces a floor rather than agreement: `scripts/check-toolchain-consistency.mjs` fails only when a Node pin is below the root manifest's `engines.node` floor or is not an explicit version, never merely because two pins differ. The accepted consequence is that a Node bump can arrive as two Renovate PRs on two channels (`ci actions` for workflow `node-version:`, `docker base images` for Dockerfile `FROM node:`). The floor is a compatibility statement rather than a pin — every pin runs 24.x — and it must be raised whenever `packageManager` moves to a manager with a higher floor, or the gate keeps passing pins that manager refuses to run on.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/dev-environment-setup.md#L45-L57",
+          "version": "repo-lines-v1:sha256:e83dfb5c7260364ed7ef1ed22b24ff2601c039fa17b0817bb9a475a3e0fd9813:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZjExYjI0ZmNkNjdhMTYzNTc2MDI3NGY2MmJlMzA0OTNlNWQ4NDJiNzIzYzVlYWMwMzVjNzYyYmViOTQ4MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2Y2Q0MDI2ZmUwZmZmZGU3ZjJkNTAyOTliMWFhOGQ5ZTc2ZDRlM2MwZTNjNGM3OWNhYzc1MjZlNTliYjFhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhODdhODA4NjlmNzczM2MxOTQ4MzA2MTJiOWM1Y2Y5OGYyNmNkNGQ1NDc0Y2Q5ZDA0Yzc0NGQ5ZDdhNTQ3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNjY2ODI0NWQyYjc2NTA0MzE0YmRjMTIyNDMxYWYyZGJjNWVkNjkzMmY2YmRkOWY5ZmJiMzBhYmI2MzE1MGUifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L971-L980",
+          "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
+        },
+        {
+          "resource": "repo://package.json#L5-L9",
+          "version": "repo-lines-v1:sha256:93ab8df84b361baf232d1935f1601b151d6d1ca94845907bd05ff003a1ca4b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzg4MzkwOGZmZGRjNTZlMzg0OTI5ZWFkYzdjYmIzNTIwYWY1ZWZlYTFiMTViMzkyNjViOTJmYTQwNGY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQzNDE2ZDgzYTY2ODA4NTgyNGMwYTE1YWJiYzk4NzkxOTYzMzY0MTg4YTgxMjEwM2UzMzdiODUxMThhNWU2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs#L21-L38",
+          "version": "repo-lines-v1:sha256:710a798a647ea76e201febd6d08e12ab0d2142d7317655c8591715cdff76f9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYjc1ZjhiNzFhNTE1MzVjZDAwNTlkNDUzNDhhNWJiMGM1NmFiMDE0ZTJjODViNTBhNzdlM2Y2ZDZlMmJmYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTMxZmU5OGJjNDFiYzllOTBjMjQ2YWIyZDQ4NDdjYzBhZmJmNGViZTQyYTQzY2NlYTVjNjczYzY0NGFjN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NGJiYTA0NzIwYTNhZDk5ZmYzY2E4Nzg3YzEwM2UwMmE4OWUzNmM5YjkwMmI2YTdlZmQyZjRjZTUxNTI1ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhMjk0OThiYzRhYTNjY2Y1ZTYzNTc4ZjlhMzA2MzkxNzViYWZiMmIwOGZlN2I5YzcxZGQ2ZDFlNDljYzU0ZGQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T02:14:36.804Z"
+    "at": "2026-10-24T14:53:13.584Z"
   }
 }
