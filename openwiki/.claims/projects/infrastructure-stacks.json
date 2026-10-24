@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c249e74ab21d6cd15c006e5bf5b1d38dc834dd30b571aaa5d4dcc144f5e74f1a",
+  "pageVersion": "sha256:3b6d1f3e7c0cf06ea49309b235ff35dfcc053180e46d944aa4e075f31245464f",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
+          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -204,7 +204,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:cd659b191e36569ed974403a796d9e145b7f134c3ec641994151207ac2a185a1"
+          "version": "repo-file-v1:sha256:e13409e51de26aef2a6d0f0a57c7bc04af98322c8e91f2a71a18b3cad227c0f7"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -222,7 +222,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
         }
       ]
     },
@@ -288,11 +288,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
+          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
         }
       ]
     },
@@ -302,11 +302,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:88d99ff18c6d793bbc1e3268da82fe459323620e0e713165bc999975a877c410"
+          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -320,7 +320,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
-          "version": "repo-file-v1:sha256:1e2ac906c269329f02764b68abd00f33620b23112ec80c367cfe6a596909ff12"
+          "version": "repo-file-v1:sha256:4159d6b0482a8394efab040b401c68fff3277afb20fc505683ae5131c81b6446"
         }
       ]
     },
@@ -478,19 +478,23 @@
     },
     {
       "id": "claim_b49a2af338e249cbbea800c4867b063d",
-      "statement": "Feature 080 changed prod-observability's declared inputs in both directions: REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left the stack's environment block because it no longer pulls a ${REGISTRY_HOST}/jumbleknot/… image, and LANGFUSE_RUSTFS_SECRET_KEY was added for the upstream RustFS store (its access key being the literal langfuse). The Komodo Variables for the two departed names are deliberately kept until the rollback window closes, because reverting the merge restores the lines that need them and a revert cannot recreate a Komodo Variable.",
+      "statement": "Feature 080 changed prod-observability's declared inputs in both directions: REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left the stack's environment block because it no longer pulls a ${REGISTRY_HOST}/jumbleknot/… image, and LANGFUSE_RUSTFS_SECRET_KEY was added for the upstream RustFS store (its access key being the literal langfuse, the non-secret public half of the key pair). The Komodo Variables for the two departed names are deliberately kept until the rollback window closes, because reverting the merge restores the lines that need them and a revert cannot recreate a Komodo Variable.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L55-L56",
-          "version": "repo-lines-v1:sha256:94d0943e23f6d27ca1fc4bf0ab8d36dba2a75f52300a9493b884ca50336abbde:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwZDQ5YWU0OTBmZjBiYmI2MmJlYTY4NjRmY2I2NjAzMDA0OTcyMTQ1NzU4ZGI1YjYyY2YwYmNiNDZlNTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZjYxZDljMGFiODgzNWZkMmRiYTBjMTM0Njk0NmI3ZmJmMjQ5OTJkYjE0ZGM4MTA1OTAwY2E3OGYwODk4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM2YWM0ZWVkNTZlMjBjNmE5ZDY3NmJlOTY2ZWEwY2EwNmM1YmVlZTIzZjRjMzlmODZmYmI0OWEyOTg5NDdmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzU5MzhjY2U0MjlhZmI5MmZiZDU0Yjk3NGFmNTVmYjQzY2E5NDIwMmFlYjRhYjQzY2Y1NjNkNjg0ZTRmZDAyNSJ9"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L49-L60",
+          "version": "repo-lines-v1:sha256:7dd942fe64c09bd72e949ea58620262c62997955215a3738f232be094172ac7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZjZmOWEyNjdiY2ZmNDQ5MDFlMmQwMWNjOWEzMWRmNDRmOTE2MGYwZWEyNDg0N2JkZmU0MzRjYmMxN2M0NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTUyYmJhNzNjMWQ4ZDliZDllMGUxMGI1MGQ0ZDVhNjBhMjBlYjc0NTY0YjY3ZmExMDI0NGNhM2M1NjY0MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTk4YTBmOWNiNmNkODQxNzBiN2NjMTgzZDY1ZmI0NmYzYWUxNDM4ZjgzNGZjMmY3NmRkODVkM2Q1NzU2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZDdjNjU1ZDNlOTNmZjliMTEwNTY4NTYzY2M3YWFmNjE3NTI5NDA0ZWI0ZDIzZjcyY2YwMjBmMzcyMzVlODkifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L184-L194",
-          "version": "repo-lines-v1:sha256:0063984c1f31c1a1cdca36a9257a199ac8be314ba2e78b7c25786f9d756bf0d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
+          "version": "repo-lines-v1:sha256:47a07cf623daa757b89c46b222f1a318c0e08505b3d123e636eff06ef3bd2695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L175",
-          "version": "repo-lines-v1:sha256:cea17e566fac184eacc5662895d34503d7413539a71c182d79bae92189b3dbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L144-L175",
+          "version": "repo-lines-v1:sha256:71d93e6ace7f82d49357baa504ac4fbaffb3d190bf780f6ea53f0b422e9ebbf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNTRiYWNlMGQ3N2E1NjE1ZjRiZDdiNGFiNDViMWVlYmY3ZTMyMGQ0MTc3NmE4MGZiNzlhM2I2YzJkNGU2MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMDQzNjc4NTViMzczZWM4ODdiNjIzMDUwNTVkODVkOTUzNmJiZjViYTcwYjRiN2M0NDI1NzI5NDY4MmUxZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/research.md#L242-L265",
+          "version": "repo-lines-v1:sha256:41b6fcf61752dc93bf99ac9a932de10dba5cc5f9f76a82cfd4c4a3dc64bb9705:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTc5MTk3OTIwY2YxZWNjMGUwNWViMGNiNDcxMTYwYWQwZjI3NDBlOGY2NDA1OWVhZWI2OTRlOGJlMWY4N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MzdjNzVlMjAwNWUxZDgyZjg0NGZjOTBjZjU3ZDY0YWNiODMxZDY2MTI4MjQ5NGY2MTNkNzA3MjE4NmY2YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNTZkN2YzMjhjZDYxNDVlYTRkOTViY2ZiMDBkOWJmMDI5ZmYxMTllYzUyZGRhOTJkZTA3YTIwMjkwYmJlMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMTNhODlhMjg2N2U4MTcxNGQwOTVhMWQwOTJjYTUxMWY5ZmFiNzYzYmNlY2ZjODU3NjRhMTg2OGVkNmM5ZDkifQ"
         }
       ]
     },
@@ -593,10 +597,60 @@
           "version": "repo-lines-v1:sha256:0e9dd25a9b4de5d048c0f0f6b1c4e0a686bd2b24df18de36f324b6f1b1239b10:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Yjk4N2M5ZTY3OGExM2U0NjQ3MmE3NjNhOGIyZGU3MDdmYjZlYTU1NDc3MWFkOTY0ZDcyYzExOTY3MjUzODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjZDA2OWE3NTVjYzY3NTQwMzk2NjNiMWFmN2QzYjllNGNlYjg2Zjk2M2JmMzljODY4ZjkyMWUwZGE5OTZjNzcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_de60c1be05b84e17ae2679e1cee92a1c",
+      "statement": "Spec 081 US8b's observability database cutover is an external-resource contract, not just an image bump: both prod volumes are renamed (observability-langfuse-postgres-v18-data, observability-unleash-postgres-v18-data) and declared external: true with the pre-18 `…-postgres-data` volumes left untouched as the rollback, so the operator must create the new volumes — and restore the Unleash dump into its own — BEFORE the merge that deploys the file; a merge that lands first fails on the missing external volume and creates zero containers rather than bringing LangFuse up on an empty store. The asymmetry is deliberate: ADR-0002 §4 ratifies losing the LangFuse trace history, not Unleash's flag state.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L28-L47",
+          "version": "repo-lines-v1:sha256:a96531348c475cb2b4d79e9f253bb770bbf188705e9e13d7367489450b8170be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYzFmNWYyMTM3YTA1ZTk3NzA0MWU4ZDQ4MGVlZWMzNzMzMjg3ZWRmYzRlMGY0MDNjZmIwZTBkMjhlNGUxNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjZjU0ZTI2NGYyZWE5ZTcwODdmOTllYmRhYTcwYTliNTNlMzE2YzkxZGQ1NjExOTkyMDQ3ODJjYTc2NWFlZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZTcyNjc4NTAyNWMzOTQ2YzBkMmRkNjg5NjAzNjUxM2QzYTVkMmM5Y2UzOGQ0NmU3NGFhNGZlN2I2NWI2NDEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L379-L401",
+          "version": "repo-lines-v1:sha256:7e10fdb8bb8b49d5f57b1a1da667902204b4133bc174829be77d3b00f767a807:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZTUxMDAzMWIzZDVjZmY4NjhiOTlhMjc1ZGQyNGQ3MmU0NWNiNTA2YjNjNGY1ODljZDA4ZGQ4MGU5ZmIyZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiNmUwZWEyYTkyODY1NmI1OGQwNWI5ZDI0MWZmNWZkOWQ0MmFmZmVkZmFjYmQ2MGMxYWQ0NTIyMDlkODkxMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0NmJmZDZlYTk3MGU5MTMxM2RhMDU3YTQ0Y2NmY2UwNDkwOThkNTJhN2IxMDBmYzQ3NmE1YmUwZTY3MGZkOWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c9d22e9c9514db49ec83b4fc7793ff0",
+      "statement": "In both the dev and the prod observability compose files, langfuse-postgres and unleash-postgres reference one identical digest-pinned Postgres image and both mount the PARENT path /var/lib/postgresql rather than the pre-18 /data path, because postgres 18 keeps its cluster under /var/lib/postgresql/18/docker and a mount left on the older path makes the entrypoint exit 1 even on an empty volume. scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs pins all three facts together — the shared pin, its presence on the 18 line, and the parent mount — because a find-and-replace image bump would otherwise migrate Unleash's store as a silent side effect of a LangFuse change.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L113-L133",
+          "version": "repo-lines-v1:sha256:50e7de83baa5ea2d142c5ebca6ea0a469b748782a590938d485ebac2396615c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOTEzYTY2MjlmODE4MDhiZDg0MWFiNjc3MDZiYzcxZjUyNjYwM2Q2ZmJhZGU2Y2ZhNmM5NGQzNjU3MzQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxMDg1ZTZhZDJiN2I3ZjFlY2JlZWRiYjhjNWUzN2FhYmM5OThhODdlYzE2N2ExMjA1OGNiZTNjNjZiZjEyMDgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L106-L126",
+          "version": "repo-lines-v1:sha256:dd336c6a1351a5244f4701b263c088ed1136c6484e587ba58236aa5fc1d602c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOTEzYTY2MjlmODE4MDhiZDg0MWFiNjc3MDZiYzcxZjUyNjYwM2Q2ZmJhZGU2Y2ZhNmM5NGQzNjU3MzQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNTEzMjBhZmQ3NDBhZDhlNWNkZGFiNWIzZjAyM2NjZTE0YzI3ZDFiMzM1NTk4ZmUzY2VlMWQ1NTkxZTlmNjEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L33-L100",
+          "version": "repo-lines-v1:sha256:1c5ff4ba068eb1d8efc31a0e4bb62a4f49b041a33b566c224dd9755f56b6db9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMTJiZmIxZjc0NmI3M2UyYjI4YWQ0YWQyMWRkM2QzMDU5NWEzZGVhM2IyYTkyZWYyOWRkZGQ5MjE3MjY2N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMTk0ZWFmY2VmZDA3ZjQzM2EzNjMzMWI5YTExOWQ1YjljYjk2MzAzYmE5Yjc5NzUyZDk1YWI1MmQ1MTQwOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNDQ1ZTIyMWVlYjNlODZmZDNjNTI4OTEwNWEyNmUzM2JhNWZjMDlmMzUzM2FiYjk4NmRkZWNjNjRhMzQwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5OGVhNDk5NjQyZTQ1ZTcxZWM5ODJlNzc4NGZjOGU3NTQ2ZTc1MTI1MTY0Y2E4MGQ3MzM1OGM4ZDM1NDU0YWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e72be1474874b2d80c61f7558bfd177",
+      "statement": "infrastructure-as-code/docker/backups/compose.yaml's two backup destinations are built around two constraints beyond being a separate file: the WebDAV config and htpasswd live in a named volume written by a one-shot rather than a bind mount, because the dev container's Docker is a Sandbox microVM sharing only /workspaces so a bind source outside it (a git worktree under /home/coder) is silently created as an empty directory and the container fails with `is a directory`; and the destination credentials reach curl through the container's environment, referenced as `$$VAR` and fed to `curl -K -` on stdin, never interpolated by Compose into the entrypoint where docker inspect and ps could read them. Both destinations bind 127.0.0.1 only, and the backup URL guard denies loopback by default — the inverse of the Ollama guard — which is why scripts/gen-dev-env.mjs names mcm-bff-backup-rustfs and mcm-bff-backup-webdav in BACKUP_ALLOWED_DESTINATION_HOSTS for dev.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L102-L137",
+          "version": "repo-lines-v1:sha256:decd8863f22c10b634fd5363870a981c541f9de8caada818ed625c19ec124de4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMDE5ODg1YjZlMGJlOGE3NzJkMzhjZWU1YWY0MWZkNzlkZjRlYWU5YmU5NDQwZGM1NzQ1N2NhNjRkOTYyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmMxOTE2ZTIxMmYzZTU5ZTQ1MWRmZDRiZGU1ZTZhZGJmNDY1MDU0YzQxZmU0MWU4YjIxNWQ5N2U4MjRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMmI3ZmQwNTIzMzgwYTAyZWY2ZmQxZmI3ZTZiN2NhZWUzN2JjNWNhMTlmMzQyOTBjMmFiYzhjNDk1NDVhZWEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L18-L24",
+          "version": "repo-lines-v1:sha256:c0c550c1a003441717eea2af9cc215dd0e52a796480974caccd852ed4680679e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmYjJkZDRlNWNlYmE4NDg3MWVmZGE2Y2I5YTRkYjk2ZmQwYjcwNmFhNWYyYTU5MDU5NjU0NjU5NTg3MTA4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE0Yzc4MWJjZDMzMzRhYjZlNzY0NzE5NGYwYWJhODQ0OWFmNDlhMWU4ZTcyYjRjYTFjMDc3ZWY2MGM2MDEwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNmZGNjYTIxNjNhYjE4OGJiMjAyYTM1MmFmN2QyZTY4ZmU3YmIyZWE5OGVlZTc3NTIwNzg4ZDJjMzczNDE0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJmMjdmYTVjZGQ4YzBjZGI5NzEzMDdmYTk2YWYwMTVjOTJjMDVjZDU5MWUyMzVjYTM1YjBmMWIzNjQwMmJiNyJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L173-L184",
+          "version": "repo-lines-v1:sha256:47aa8c402dd3ea6eb5e0bed66667907fa855eb7cd4eab34daaa4f19be5c89646:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmIxOTU5YmZjZjA4NzAwNGJiNzVmNzY2YTU2MjgzMDM2YTZlMmQxZjI2ZjcwYjhlZjgzNjYxNmJkOWY2MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjOWZkMzFiNTU3ZmIzZjA0MzI1MmNjMzkwYzQwZTVjODM3N2E1NTJjZGEzMWRiNjg3YzMyMzFkM2NlN2I1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMTg3ZWRmYWMxOGNlNjY0ZWJiOTFjMWZiMzFiY2ViOGIzYjU1MTA1NDk1ZjhlOGQzZmJmNjg3YzlkZTM3OGUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-21T23:48:47.665Z"
+    "at": "2026-10-24T14:53:13.584Z"
   }
 }

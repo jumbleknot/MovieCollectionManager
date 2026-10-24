@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -248,17 +248,27 @@ documented re-apply reflex rather than as a missing rule.
   nested containers reach it through the bridge gateway; the agent gateway already targets
   `host.docker.internal:11434` (its compose default plus an `extra_hosts: host-gateway` mapping)
   and reaches it with no gateway change, image rebuild, or firewall change. The image is pinned by
-  tag **and digest** in `infrastructure-as-code/docker/dev-ollama.compose.yaml`; the script pulls
-  `qwen2.5` once into the `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB
-  download must never block container readiness), overridable via `DEVCONTAINER_OLLAMA_MODEL`, and
-  the balanced `qwen2.5:32b` tier is a by-hand pull only (`docker exec dev-ollama ollama pull
-  qwen2.5:32b`) because CPU inference makes it slow. The script is best-effort and idempotent **by
-  design**: it exits 0 when the nested dockerd is not ready or the API has not answered, so a failed
-  Ollama start can never block container start — agent flows just fall back to Anthropic.
-  Re-measured 2026-08-09: reachable from inside the gateway container. **Verify with the
-  liveness probe before trusting this note** — it has flipped once:
+  tag **and digest** — `ollama/ollama:0.40.6@sha256:265409e1…`, bumped deliberately — in
+  `infrastructure-as-code/docker/dev-ollama.compose.yaml`, which also declares `restart:
+  unless-stopped` and an `ollama list` healthcheck; the script pulls `qwen2.5` once into the
+  `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB download must never block
+  container readiness), overridable via `DEVCONTAINER_OLLAMA_MODEL`, and the balanced `qwen2.5:32b`
+  tier is a by-hand pull only (`docker exec dev-ollama ollama pull qwen2.5:32b`) because CPU
+  inference makes it slow. The script is best-effort and idempotent **by design**: it exits 0 when the
+  nested dockerd is not ready or the API has not answered, so a failed Ollama start can never block
+  container start — agent flows just fall back to Anthropic. Re-measured 2026-08-09: reachable from
+  inside the gateway container. **Verify with the liveness probe before trusting this note** — it has
+  flipped once:
   `docker exec movie-assistant-gateway python -c "import urllib.request,json; print([m['name'] for m in json.load(urllib.request.urlopen('http://host.docker.internal:11434/api/tags'))['models']])"`.
   See [Model-provider scoping](../invariants/model-provider-scoping.md).
+  - **That pin is maintained, not decorative — and it used to be invisible.** `dev-ollama.compose.yaml`
+    matches no manager's default file pattern, because the docker-compose manager requires the
+    *basename* to begin with `compose`/`docker-compose`; the pin sat un-bumped for months with
+    `docker:pinDigests` already enabled. The pattern in `renovate.json` is now a strict superset of the
+    default, so the file is seen, and `scripts/__tests__/infra-image-scan.test.mjs` fails any
+    third-party infra image reference in `infrastructure-as-code/` that carries no `@sha256:` digest —
+    a stale pin here is therefore a real finding rather than a silent one. Bump the tag and digest
+    together and deliberately; see [Renovate dependency bot](./renovate.md).
 - **A blocked Ollama destination is a blocked merge gate, not an inconvenience.** The canonical
   allowlist carries both `registry.ollama.ai` (the manifest host compiled into the ollama binary) and
   the pinned Cloudflare R2 blob host every model layer is actually served from (item #394). With

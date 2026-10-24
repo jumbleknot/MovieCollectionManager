@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:15d740e874e5ddd5007014247bf3ca9ed4238f68647184ebc51408e3cb5aaa01",
+  "pageVersion": "sha256:703fcdc55f4161a4733ba5f345021032a1dddbf378014e6804760a7f82ff1e99",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -51,11 +51,11 @@
           "version": "repo-lines-v1:sha256:ba0ee4a7b60d6542fedb9679e64995ffaf4f22f7aa3a180b80f1046bd39418b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZjdkZGZjZTVhYjRkZGJkZjVjNDk0YTAyODBiZDk1ZjA4OTExYzllNjE1MGZjMTg3NDdiNjliYjZhYWU3ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmNDYzZjM0OTU1NmU4NjRlZTM1MDQxODYzNmZhNjI5N2ZjMGE5Mjc5M2U4NWZhOTQ1YzExYWI0N2M5OTRiY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYTY1ZTNhZmFmYTY0MzIxMDhiM2ZkOTNmNmQ1N2U5MGY4YjI4MzgxZTEzYzgzNjhiM2MxOWYxMGY3ZmFmMzcifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/config/env.ts#L142-L145",
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L151-L154",
           "version": "repo-lines-v1:sha256:b6c73927f58a9e7f5d5cd55732efecc987326a3ef4d0b0e4f3996616947e0806:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1MzYzMDk4Y2E1ZjJlOGRiMjZkNmIyNzFjZTQ1MmJkNDllYWEzMjI5N2U0MjVkNGI0MGYyNWI3N2JjMTliNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdiYjI3ZmQ0OTBkMWQxMjdjNzIyZWQwMmVkM2YwM2ExNDA2YmYxYTY0ZTM2YTY2Nzc2MjE2OWZkOGJlMmYzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE5ZjYzOWVjZTlmY2IzZmNlODA0NTJiNGFiNDkxYTU0OThmMzA2YjhhMGVkMTkzNjgxNWY1ZDIyMTNmMmJkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQxM2JjM2Y1ZDlmZGJiNmMxY2Y1MDE4ZTBjOGVjMDY0ZjNjY2FhNmI1MjllMjQ3MWZjNzdlMGFlNTMwZTA1MiJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/config/env.ts#L79-L95",
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L88-L104",
           "version": "repo-lines-v1:sha256:6dd21f003a42d6ab7e753b8f88b80552dd5cb07ede50e9c2b1de8ac7628de6f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YzgwZjU0ZmUyNjQxZTRjMjM5MzRjZjE4ZmIzM2UzNGM1MDI5NDgzMTJmYWY4ZWNkZmMwNGI3ODUwZTBkZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5M2Q5ZjlkY2M2YzJkMDc0YzMyZDA2ZTM3MTE4ODkzMTY0NTc4M2I0ODA5ZWQzOTJkYmViZWEyZjViZGY3ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDcxNzM5NzBiNjEwM2YxYzM2MDhkNjg1MTIxM2Q3NzQ5NmI0YzAzNzMwYmU3MjU4ZmI1OGE4OTFhZTk4MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkYTM0ZmFkOWY3OWQzMDVlODMzOGQzYzgxMTE5MDdmOTNjZTNkOTA4MDVkYjVhZjQ1ZTM0ZmY5NjFhOGM3NjcifQ"
         }
       ]
@@ -193,7 +193,7 @@
           "version": "repo-lines-v1:sha256:097a09133363ccc12880bb3653109532433840a2f183c533362b2e20d48705a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmYzZjQwMTk2MzRmY2ZiODY0MjdmMTMxZjUyN2Q2YTNjZjU2MmJjMDM5MDc4ODYyZDEzY2UwNTZiYTBhZTYzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEzZjE0NmI5ZGFkMjQyN2RjMWZiOWZlMGExNjhiMjRiYTlkNGZiMmE0MjBkM2YxNTdkOWVlMmQyNmJhNzJlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFmYjE3NTZlZGQxYTA4NGNhYWE1N2UwYjlhMTI4MGMyN2ZmZmVkZWIzMzAxODM4ZDc0ZTQ0NWM3Yjk3MjZkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJjMDZjODMwODc1N2QwN2FmYzUzZjgyNTUxZTMzZWI2NzI0NDhiZTg3MDZjY2ZkODk3NzU0ODdhMmNmYjJiMCJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L341-L368",
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L387-L414",
           "version": "repo-lines-v1:sha256:4b70cc83283e41a6359777ad8fbe0ef36745c44b083fdfa683aa7c036f84871c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNmQ3NGRkYjRiNjVjYzY1YTgwZjk4ZTc4ZGUwYjhjZDlmMDY1ZGJkNTU2YzlmNzE3ZjlmODBjNzQyODdhZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZTg1YjNkNDc3NzkwYmNiMGVmMDJhZjc4NDY1ZWVjMDViZGJhMjg1N2MwMWU0ODViZTI2MzBiMTI4NDQ2M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -349,7 +349,7 @@
           "version": "repo-lines-v1:sha256:e8813c11ee47fabdefc7ade14d1fe8df338570109ba85e0c3c9bd26896237f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNWIyNGRjYzYzZGNlMmQ1M2MwOTgyYjUzMGFmYWYwZjhhMGUyN2ZlODUyNGFiOTk2YjI0OGQ1NjUyZWY2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YjA3Njg4ODhmMWQwODZkYTE2ZGY2MTJmMDI4N2FlMmY4NGQ3YmQwYWY1NmM5ZjdiM2M4NmEwZTA3ODUyYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MDU5Y2IwMjhlZDRmNmI2MTMwNjI2ZWM1ZDFlNWU0ZDNhMDVmZmI1OTQ0YjBmOWNmODdhNjMyYjlmMDhjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMjRhMGNiNTg1MTBlODkwMDkyNzMxZjE1NmVhZTE0NzI1NzYyNDg5MjQ1ZTQwYjgxMjAyMGVhNzU4ZTM1NmEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L356-L368",
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L402-L414",
           "version": "repo-lines-v1:sha256:e0e9e1c8f2bc44b84ddb6e4fbb625b287a47f537b56cd20858b9ba1eab0e5b6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZTQ4MGU2YWZiZjA4ZTVmZDUxODEzNDM0YzY3YWJiZGEzN2ZiMDYxMWViM2YwMWZiMDMxNGEzMzBmY2MzZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZGU1MjU3ZWJhNzdiYjYwZjM0Y2YwMGI1OGFmODY4OTFlZDgxYzgzMDU5YjlhNmQzOWQyYjdmOGQ4NWZkYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -418,19 +418,19 @@
     },
     {
       "id": "claim_4035a0268c0440b89cccb5b29f16edf6",
-      "statement": "GET /bff-api/auth/init is the redirect-URI reconciliation route: it is unauthenticated by design, is called once on app mount best-effort by the client root layout (fetch('/bff-api/auth/init').catch(() => {})), and passes ensureClientRedirectUris() the complete six-entry list this client needs — the web PKCE callback, the verified-email redirect, the native login scheme URI, the backup-consent callback, the account-deletion step-up callback and its own native scheme URI. Because the underlying write is additive and one-shot per process, the list is the contract: a URI left out is never registered by this path, and on a fresh realm nothing fails at deploy time until someone hits that flow.",
+      "statement": "GET /bff-api/auth/init is the redirect-URI reconciliation route: it is unauthenticated by design, is called once on app mount best-effort by the client root layout (fetch('/bff-api/auth/init').catch(() => {})), and passes ensureClientRedirectUris() the complete six-entry list this client needs — the web PKCE callback, the verified-email redirect, the native login scheme URI, the backup-consent callback, the account-deletion step-up callback and its own native scheme URI. When BACKUP_CONSENT_CLIENT_ID names a client other than the login client it makes a second call registering the consent callback on that dedicated client too, because a URI registered only on the login client is refused once the consent round trip runs as the dedicated client. Because the underlying write is additive ([...existing, ...missing]) and one-shot per client per process, the list is the contract: a URI left out is never registered by this path, and on a fresh realm nothing fails at deploy time until someone hits that flow.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/_layout.tsx#L54-L58",
           "version": "repo-lines-v1:sha256:d3959780b997dfd400fc9c3ce7c3e544bd355982a17f9ecdfd687f2b751f204c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E1M2YxOTA1ZWI5ZmUzMjcwYmIyZThkYjM0MmY3NTUxNzgxMWQ0M2Q3NDJjNDA0YzNiOWNiZmYyZjY5NWFmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRjNTJmMDhiMzliMDhiMDFjOGQzMDhiZjg4MGIwYmVmMDJmZDFkZmNjOWQ5YWE5M2E0ZDFiNWY0ZDU4YjZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ5NjVjOTRjYjE5Mzk2MGE2Y2QwMWRjMTNiMjY0MmU3YTk1ZDA4NzdiMjEwZDA2MzNjYjA2ZThiYTU0MDM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTA5YmNmMDMyNmIxZGQ5M2ZjZDJmNWM2OTk4MTg1MDM3YzgxMjA4YzU0YTMwODUwNmQwYjI1ZGZjZDQyZGViOCJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L1-L47",
-          "version": "repo-lines-v1:sha256:53b0eddce81759c1b0e4e200dd6e541ac151f58112794718a7404f41dadeb25c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L17-L53",
+          "version": "repo-lines-v1:sha256:59e24405f0cfc60c256def7db5a01a833e4b839f8b31b0599e58d06ea4983962:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzJlNWFlNjk2YjBjNWI2Y2FjNTdjZGQwZTMxNjcwZjEyNzZlYzY0ZmQxYWMyNzkwODRkZDI2NGYwZDVlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmY2ZlY2JjOGFjZjE5ZGY3MzY4Zjg0MTQ4MDQyMzE5NTNhZGFiODM5ZmY3Zjg3NjBiMDBlNTU3ZGQ4NThkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L516",
-          "version": "repo-lines-v1:sha256:7d431c3edca2085855666a9083e7a13f51f547ad9ee8fb733a5b02883ef94915:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L520",
+          "version": "repo-lines-v1:sha256:e7489ee54484f6b0652e3918f8e8f35ce8da363ad02f1ec447eacad7830aab4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -565,7 +565,7 @@
       "statement": "The backup integration suites escalate rather than skip quietly: tests/integration/helpers/backup-targets.ts treats missing destinations as a loud SKIP when MCM_REQUIRE_BACKUP_TARGETS is unset but as a HARD FAILURE at a named assertion (assertBackupTargetsPresent) when it is set, so a suite that passes with the targets down is not possible under the flag; the rule for reading a result is therefore to watch the skip count, not the exit code.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L150-L164",
+          "resource": "repo://docs/runbooks/backups.md#L221-L235",
           "version": "repo-lines-v1:sha256:7488caf2cc57b3b17130f5f9c7fd8df49e496f43797fde693c299973c0721574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzIwYjcxMTI4NzZiZmMxMmY2MmI0OTg2Mzc3ZmU3ZTk4ODU2YmI2MWQ3YmQ4ODU2ZWU1YTg0YjdkNTdkNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDI3YWJkMDYzMmQxOThhZjBhMTM3MjlkNTZhZjY4NjI3NDhjYTgyNjEzMzRjZWZhY2E5NzJlOWJjZTJlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNzhkZDQ4Y2RmMzI5MTU3ZDIwNzAzNmYzMzlkY2FmMDdlODBlYWRmYjMzNzg2NTU1YjU2MmMxMjFlZGMzZjIifQ"
         },
         {
@@ -807,10 +807,50 @@
           "version": "repo-lines-v1:sha256:4c5079a3113f27c2eb6a2fd14a43f79aaffc10e0652d0b9ec202efe960cf46ce:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_47767e29495d4736bc5e2f9145a169a5",
+      "statement": "The scheduled-backup consent round trip runs on its own Keycloak client, selected by BACKUP_CONSENT_CLIENT_ID (falling back to the login client when unset, with a one-time backup_consent_shared_client warning), because revoking a grant issued to the login client removes that client from the member's SSO session and ends the session — the agent's RFC 8693 subject-token exchange then fails with no caller identity and the next refresh returns 'Session not active' (measured on Keycloak 26.8.0). Stored grants are always presented as the client they were issued to, read from the refresh token's azp claim, so grants made before the switch keep working with no data migration.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L117-L143",
+          "version": "repo-lines-v1:sha256:9e1d8dd778e41aa301dbf02c401640e7f8f889c67d37293717b212f397b1bc2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyY2JiNTIzZjhjMTQ1ZDJlYWVhYWZmMmI4ZjAyMDE3ZDcxMjY2Njk1Mjg3OTEzMTU1ZDVkNzdjZjgwYzAzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjUwZjE0M2M3MjViZDE4YjgxYWFjNTQ0ODg5MTBmYTEzZTQ4MjkwMWNhNzdmNGQ1ZTk1ZjNhNWU1MGNhN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmOGYzNDFmN2E5NzJjOWE3OTlmNDMwZGJlZjRjOWU4NDYxNWJkOGRhZjVjNjJmMmQzZThhMDJmMjkwYzI5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMmM0OTEyMDM3YzRiNTQxZTQzODNlYmU4NjIyMGUxNjE1YjljNzFjOTYyZDhiYmM5OTJlNzA3NjUzNzliNGIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L85-L131",
+          "version": "repo-lines-v1:sha256:ce47b6c8d6cd246f9d016965ac260e3e21232b31ad3c2713cc40ecc233fed5e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1OGZkYzQ5YWE3NDQ4N2Y2NGUzNmQ2MzIwNjljYTFkYzZhMzZiMDc3MmFmYWZhOWU3NjQxYjJmNWE1OWMyY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyYTY4MmI3Y2QxODZjZjI5YzZhOTk0ZGZjMjc2ZWM2ZDYwOGRhY2QwZmJiYWQ4MzgyNDE5ODkxNDhjODNiYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNDdmNzk2YzNlZGViZTFmNmI2MTJhMGI2Y2FiYzc1NmNiYzc0NDFjMTRhZDczMzJlOGEwMDVjMjY5OGFkZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L41-L47",
+          "version": "repo-lines-v1:sha256:a49f9669567bb21f50c6a72707518f6d91b3cd09fa9ebf8789953d490c35c7e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIxMzEzNjg2ZWZlODVjNjM0MmE1NTE2OGVjMjJmNGQ3ZjNmMmQ3ZjY5ODkzNTJhYzhiODlhZjU1YzNkYWVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIyZTAxMGM4NGFhMjM3ODNiZDY1MWQ1ZGIzYzllZTVhZmMyNzE1YjA2MmQ4NDcxMmY1NTlmYzFhZjE5N2EwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmQ2NDlhZjU2ZDk0ZTA0MDY2ZDhhMjU5YWI5YTVmY2Y1NGY4ODZhNDdkNDE0YmEyNDUzMWQzNDFhMjc1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzMyMTZmODQ1OTI3MmY5ZjZhYjE3MjRiNzA3ZDhiMTQ4MGU0OTk3MzRlNzI1ZTllYjM2YWIwYmY4ZjY3YzBjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1b9685286b84af084c1872a780e3d87",
+      "statement": "The redirect URIs registered by /bff-api/auth/init are built from a fixed base (EXPO_PUBLIC_BFF_BASE_URL, falling back to http://localhost:8081), whereas the backup-consent and account-deletion callbacks deliberately derive their redirect URI from the origin the request actually arrived on — the same image serves the dev container and the TLS proxy while the build-time base is frequently unset, so a fixed base would send the browser to a port with no BFF on it. The container origins (:8082 dev, :8443 TLS) are therefore registered out of band by infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L17-L46",
+          "version": "repo-lines-v1:sha256:5e2b1413e7c6014bc1c223db08350d79970d146ea12948de68f6e4bf16e8c86c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzJlNWFlNjk2YjBjNWI2Y2FjNTdjZGQwZTMxNjcwZjEyNzZlYzY0ZmQxYWMyNzkwODRkZDI2NGYwZDVlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOWRiYzdmMmYyNGI1Mjg0MzU3Zjk4NjMwNmZlZjA0MTdjYzZmODFhODNhMDJiZjgxNTBmNzExMmY4ODNiMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmY2ZlY2JjOGFjZjE5ZGY3MzY4Zjg0MTQ4MDQyMzE5NTNhZGFiODM5ZmY3Zjg3NjBiMDBlNTU3ZGQ4NThkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjZDc0ZWZlMDhmZTJhZmU3OWU0MTk2NTA2MmFkYThlZTliNWU4MGM5NzhkZTlhYTMwNmU0Mzc3MzAzOWY5OGQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L31-L50",
+          "version": "repo-lines-v1:sha256:b5a7eb9c25c6c02a80c23736f875b1eac357642faa18dde23432ac2b36d6239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OTZmODM4NTlkMWJkMzZhMmFmNGE4OTMwMjkyMmE2ZjA4OWQxNjU5OTU2MmVmNWMxNTU1ZjExN2ExYTkyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYzQ2NTY0YmQyYmY0ODJlN2I5M2YzOTZlYTg2NDcwZTc3ZTFkYzZlZGE0MmRhM2JhMzc0NDM0YTY3MGVlOTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L11-L19",
+          "version": "repo-lines-v1:sha256:97b7cdfc6a285bc7cacf1bfaf651a907bbc1ff8eadc3a3ac507c5577059a554c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA0NjU5OWY4ZTViNjU5NWQxYjhjODEyNjFiYzk2NjQzMmVlMzZiN2UzMjViZDQ2OTdiNjg3M2ZhMDZmMTczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAwMTUzOTBlNGM0NmFkMDY1MjVmNjk1MmI0NTEyNTBjMzRkNDYwMDFhNzQ2Yzg1YzM3YWQ5NjkyODk3NjVkOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs#L1-L35",
+          "version": "repo-lines-v1:sha256:85a38a9d281b96e1b29c0530e0f5634746fc24e269f1db41356a6d04e9a0ccf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGNiY2FjNjExYTg1ZWZmZGYxMDlmMjVkNTNhYmFhZWIwNDQ0ZTFkODBiN2Y2YThhMzZkZmQyNTU3YzA2MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2I3ODczYzcxNTEyNTg1NmFlYmFhYTRhOTZmNzRhYTNhNjVmOTY4NjkxNzExNjVjODUxMjA3OTFhMzM3Y2MifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-20T11:09:40.455Z"
+    "at": "2026-10-24T14:53:13.584Z"
   }
 }

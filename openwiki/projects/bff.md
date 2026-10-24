@@ -1,9 +1,9 @@
 ---
 type: Service
 title: BFF (Backend-for-Frontend)
-description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract, its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract (including the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as), its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
 resource: frontend/mcm-app/README.md
-tags: [bff, expo-router, auth, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
+tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
@@ -124,7 +124,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T11:09:40.455Z
+    at: 2026-10-24T14:53:13.584Z
 ---
 
 # BFF (Backend-for-Frontend)
@@ -279,11 +279,19 @@ to know before changing a handler:
   `ensureClientRedirectUris()` the *complete* list this client needs — the web PKCE callback, the
   verified-email redirect, the native login scheme URI, the backup-consent callback, the
   account-deletion step-up callback and its own native scheme URI — and the write is **additive**
-  (`[...existing, ...missing]`) and one-shot per process. That makes the list the contract rather
-  than a convenience: a URI left out of it is never registered by this path, and on a fresh realm
-  nothing fails at deploy time — the app keeps working until someone hits the flow whose URI went
-  missing. The mechanism, and the test that asserts the pre-existing URIs survive a call, are on
-  [Keycloak](./keycloak.md).
+  (`[...existing, ...missing]`) and one-shot per client per process. One condition extends the call
+  rather than replacing it: when `BACKUP_CONSENT_CLIENT_ID` names a client other than the login
+  client, the route makes a *second* call registering the consent callback on that client too,
+  because a URI registered only on the login client is refused outright once the consent round trip
+  runs as the dedicated client. The list is therefore the contract rather than a convenience: a URI
+  left out of it is never registered by this path, and on a fresh realm nothing fails at deploy time
+  — the app keeps working until someone hits the flow whose URI went missing. Note the origin those
+  URIs are built on: `init` uses a *fixed* base (`EXPO_PUBLIC_BFF_BASE_URL`, falling back to
+  `http://localhost:8081`), unlike the backup-consent and deletion callbacks, which deliberately
+  derive their redirect URI from the origin the request arrived on. The container origins
+  (`:8082` dev, `:8443` TLS) are therefore ensured out of band, by
+  `infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`. The mechanism,
+  and the test that asserts the pre-existing URIs survive a call, are on [Keycloak](./keycloak.md).
 - **Registration is gated by an application-level toggle, not the realm flag.** Users are created
   through the Keycloak Admin API rather than Keycloak's self-service page, so `allowSelfRegistration`
   read server-side *before any user creation* is the effective control; it fails closed on a store
@@ -324,7 +332,14 @@ across a service boundary into a backend service's store):
   jobs (what/where/how often/how many to keep), and run history. An unattended scheduled run
   acts as the user via a Keycloak **offline token** they explicitly granted — there is no
   service account and no privileged fallback; if the grant is gone, the run fails rather than
-  finding another way in. Destination addresses go through a *different*, inverse-default SSRF
+  finding another way in. That consent round trip runs on its own Keycloak client, selected by
+  `BACKUP_CONSENT_CLIENT_ID` (falling back to the login client when unset, with a one-time
+  `backup_consent_shared_client` warning): revoking a grant issued to the *login* client removes
+  that client from the member's SSO session, which kills the session — the agent's subject-token
+  exchange starts failing with "no caller identity" and the next refresh returns
+  `Session not active`. Stored grants are always presented as the client they were issued to,
+  read from the token's `azp`, so grants made before the switch keep working with no data
+  migration. Destination addresses go through a *different*, inverse-default SSRF
   guard (`backup-destination-url-guard.ts`; private/loopback/link-local denied unless the host is
   on `BACKUP_ALLOWED_DESTINATION_HOSTS`). The two guards keep opposite **policies** by design (an
   Ollama endpoint is expected to be on the LAN, a backup destination is expected to be remote),

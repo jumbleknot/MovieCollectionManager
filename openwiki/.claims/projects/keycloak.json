@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f2a3f7ac0d50e9ddbd39b946e8928dfb4fbad02a4a9a2842f0f59752406a136c",
+  "pageVersion": "sha256:8e219fbbdf864751f02910e192c24c3a4d481304abca7ad91b255c9121abd1e3",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -16,14 +16,14 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
+          "version": "repo-file-v1:sha256:e4c43054d953a6b524fbd147707df9a7dfb0a151e17b9fdf9e10fab4a2f7fb43"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L43",
           "version": "repo-lines-v1:sha256:33974e6d6b06d56042913f0644877f9a31fd9be1cb98824054f2b0dbd83eb787:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZjNhOGU5ZTdjOGQ1NmJkMDY3MmYwNGE3MDZmYTI2OTkxMGIxOGZiNGY0YWI3ZjdmOTVmODVkZGMzNmQyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYTNhZDVjZGY0N2I0NDg2NzliZmNjZDc0YTRlNWNkNTY5ZTU1M2IxMzAxNzk5NGFiMzYwNDUxZjVmOWMyZGMifQ"
         },
         {
-          "resource": "repo://scripts/export-ci-realm.mjs#L193-L196",
+          "resource": "repo://scripts/export-ci-realm.mjs#L196-L199",
           "version": "repo-lines-v1:sha256:ac7339011a3877334fc9e2860b475c5f4403d2634b6307526dde8ba3c0e3edff:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjViNDA3YzNhODZhZTAzMmE3ODE1MTllMzgzZGQyZjMyNzQ2ZDgxNzcyMmM0Y2RjN2E5Mzg4N2JiNDRkNzFhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUyNTJhYmNkMzE1ZjNlNGZmMGNkOTcyMTRiNGQ3ODI1ZTNmZGVhMzg0OWJlNmMzZjE5OWM1Y2M4ZTEzNGIzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjA2OTc0MWNlYmMxOGI1YWQ3YWFiMTM4NGRjZDg2NmRmYzU2YTA1ZjU5NzgzOTliMGJhMWM1ZGU5NTE1ZmFlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY3OGU1NWQ0YzA3MTIxZjAwYmFhMjY5ODJhZjYwZjUwOTUyMzMxNTI5MDg5MWRiM2IyOTVmZjM4MDQ5MjQwZiJ9"
         }
       ]
@@ -231,7 +231,7 @@
           "version": "repo-lines-v1:sha256:543da5efb2b47b1b355597aeeb3e3e2f42ad873beb5abfb9482c1ec1bf6e2916:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQzZGE1ZWZiMmI0N2IxYjM1NTU5N2FlZWIzZTNlMmY0MmFkODczYmViNWFiZmI5NDgyYzFlYzFiZjZlMjkxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQzZGE1ZWZiMmI0N2IxYjM1NTU5N2FlZWIzZTNlMmY0MmFkODczYmViNWFiZmI5NDgyYzFlYzFiZjZlMjkxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBkOWI5NWU5Y2ZhMGU0OTI3MDg4NGQwNjlhNDM4ZWIyNDM1ODJiYmY0MDA0ZDM2N2Q4ODgyYmRkYWI2M2UxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQ0YWY5MzhlNDExYjc4ZDQ3MTlhZmI3YTQ1NzIzMmNjOTE2ZDdlZjVkYjFiZGNlOTRjMzg0YTgyZjNhYTY5MCJ9"
         },
         {
-          "resource": "repo://scripts/export-ci-realm.mjs#L129-L136",
+          "resource": "repo://scripts/export-ci-realm.mjs#L132-L139",
           "version": "repo-lines-v1:sha256:147b3042a9c767b423bf65f23e5718bbd67a505c57a11ee2f1b036930d18f836:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRhYmE0OTVkNDdhN2E1N2VhYzZkMzI5ODRlYWQ0NWUzNDI5NGM1Nzc3ZWMzNzBhNGEyNmQ2M2I4NTc2MjBlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlNTM0NGNlYTEyYWFlODJjNDMxN2ZjNWMyMzI0M2ZkMDI2NjQwZDQ1YTAwMTc1NDZmZGY2MzRlZDQ2YzlkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTliMWVlZDFjZDE1NmE5OGI1MTFkZDcwOGJiYzQ0MTM1MTkwNmQ2NDk2NzgwMjZiM2ZiNGEzZWY2OWNmYmRjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc0YmYxMWY2ZjMyYmMzMTlmNDVlMDc2Yjg1ZmUzZjM4YzczMGQ3YTY3MDU5ZjhjMTkzNTYwMGM0MWUyOGI4MSJ9"
         }
       ]
@@ -257,7 +257,7 @@
           "version": "repo-lines-v1:sha256:9b54faa7d0fe9a3199a9fac1ad76e0e288a413714238837f67e5417a4fa83950:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyM2NiNGMxM2Q2Nzc1OWQ1NGY3NjcxZDQ0MDM0OTcyZDA5MDNhMzlkMDhhZmFlNzNiYjk4MWViOWFiMGRjZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MWQ1YzcyYjFkODU4ZWJkNDM4ZjY1ZGI2OGJjNDQwNzk3NTgwOTg4N2VjMjNhMTlkMTAxZjJmMjgyOTIzZjIifQ"
         },
         {
-          "resource": "repo://scripts/export-ci-realm.mjs#L138-L180",
+          "resource": "repo://scripts/export-ci-realm.mjs#L141-L183",
           "version": "repo-lines-v1:sha256:c1c395f32f87ef0e6023eeb5484bac99a78989a5e52e61b3d215940c6a7c22a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NGRlNWY1ZmUwNWNmNGFmNDk5NmY2NDVjNDk0ZTI2OTQ4ZWQzNTE5NTExNzQ3M2FhMmYxMGU0YWIzNjY4ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzZGQzOWYyNTVjYjhmZWM0YmUxZjcxOWQyNTY5ODY0NDRhYzdmN2Y1ZjFkMTJjNmY3ZjlmYTlkZGI0OTg2YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNzhmNDlhNGU1ZTIxMzI3NmExYTg1MjNjZDY3YWU4Yzg0YTQ1Y2JhYTQ0OTczYTRkMDdmYWE0ZGYxODIyMTUifQ"
         }
       ]
@@ -512,7 +512,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
+          "version": "repo-file-v1:sha256:e4c43054d953a6b524fbd147707df9a7dfb0a151e17b9fdf9e10fab4a2f7fb43"
         }
       ]
     },
@@ -560,10 +560,10 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:4807bba812d5b0f881ce63757b59e41ed790e97e34e36ad97ceace96444a9aaa"
+          "version": "repo-file-v1:sha256:e4c43054d953a6b524fbd147707df9a7dfb0a151e17b9fdf9e10fab4a2f7fb43"
         },
         {
-          "resource": "repo://scripts/export-ci-realm.mjs#L129-L136",
+          "resource": "repo://scripts/export-ci-realm.mjs#L132-L139",
           "version": "repo-lines-v1:sha256:147b3042a9c767b423bf65f23e5718bbd67a505c57a11ee2f1b036930d18f836:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRhYmE0OTVkNDdhN2E1N2VhYzZkMzI5ODRlYWQ0NWUzNDI5NGM1Nzc3ZWMzNzBhNGEyNmQ2M2I4NTc2MjBlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlNTM0NGNlYTEyYWFlODJjNDMxN2ZjNWMyMzI0M2ZkMDI2NjQwZDQ1YTAwMTc1NDZmZGY2MzRlZDQ2YzlkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTliMWVlZDFjZDE1NmE5OGI1MTFkZDcwOGJiYzQ0MTM1MTkwNmQ2NDk2NzgwMjZiM2ZiNGEzZWY2OWNmYmRjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc0YmYxMWY2ZjMyYmMzMTlmNDVlMDc2Yjg1ZmUzZjM4YzczMGQ3YTY3MDU5ZjhjMTkzNTYwMGM0MWUyOGI4MSJ9"
         }
       ]
@@ -632,19 +632,19 @@
     },
     {
       "id": "claim_603e81bcdcc34fb0a518fe544390badd",
-      "statement": "`ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts` is the runtime counterpart to the committed redirect URIs: `GET /bff-api/auth/init` calls it on app mount with the complete list (web OAuth callback, verified-email redirect, the native `mcm-app://` login callback, the backup-consent callback, the account-deletion step-up callback, and that flow's own native scheme URI), and it authenticates as the BFF service account, reads the live `movie-collection-manager` client, and PUTs it back with `[...existing, ...missing]`. The write being ADDITIVE is the property under guard, and a module-level flag set only on a successful run makes the call one-shot per process; `tests/integration/backup-consent-redirect-uri.integration.test.ts` asserts against a real Keycloak that the pre-existing URIs survive a call, not merely that the new one appeared, because a list-replacing write would silently unregister every unnamed flow and surface only when someone hit that flow, at Keycloak, with nothing pointing back at the change.",
+      "statement": "`ensureClientRedirectUris(uris, keycloakClientId = env.keycloakClientId)` in `frontend/mcm-app/src/bff-server/keycloak.ts` is the runtime counterpart to the committed redirect URIs: `GET /bff-api/auth/init` calls it on app mount with the complete list (web OAuth callback, verified-email redirect, the native `mcm-app://` login callback, the backup-consent callback, the account-deletion step-up callback, and that flow's own native scheme URI), and it authenticates as the BFF service account, reads the live client, and PUTs it back with `[...existing, ...missing]`. The write being ADDITIVE is the property under guard; a module-level `Set` keyed by client id makes the call one-shot per client per process, marked only on a successful run, and the route makes a second call when `env.backupConsentClientId` names a client other than the login client so the consent callback is registered on that client too — a URI registered only on the login client is refused outright once the consent round trip is authorized as the consent client. `tests/integration/backup-consent-redirect-uri.integration.test.ts` asserts against a real Keycloak that the pre-existing URIs survive a call, not merely that the new one appeared, because a list-replacing write would silently unregister every unnamed flow and surface only when someone hit that flow, at Keycloak, with nothing pointing back at the change.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L22-L46",
-          "version": "repo-lines-v1:sha256:1ff1ae44fb241b61d0178de975d60860d93c58a6ab62be25ee0831474980b3ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMjg0NTAxZTA0ZTcyY2ZmMWZkMDk3YTYyNTdiNjIwOGJiZDViNDZmYmZlYzk0OGYzZWYxNjk3ZWQ3M2JhNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2Y2UxYTU3MmYwN2NlYmJlYTU4ZDQ2OWRlMTdkZjRkMzg3NmUyNzE1OTRlYmIzZTRmMDI0ZTkzODFkMjc0N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts#L19-L52",
+          "version": "repo-lines-v1:sha256:811339df5101c91c8a838f5b5d0e8115abc486f200a57af7df5f9cd34d855235:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NWY5MzMwYjg3NzQ0N2MzYWUxNmFiZDViMTE5MTdmOGEyMzljZWIyNDFmOWZlYTAxOTMxNDk4YjY0ZGJjODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODgzY2RjMWFjZTdlNjA1MTMyNTFkNzBmMjU5NThjNzQ4M2MzZjBkZWU4NzE3YzE0YjY3ZTI4ZjczODM5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L516",
-          "version": "repo-lines-v1:sha256:7d431c3edca2085855666a9083e7a13f51f547ad9ee8fb733a5b02883ef94915:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L520",
+          "version": "repo-lines-v1:sha256:e7489ee54484f6b0652e3918f8e8f35ce8da363ad02f1ec447eacad7830aab4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts#L1-L75",
-          "version": "repo-lines-v1:sha256:49f22b8b71c3fcb668d4767f066d8b641ecce94475e147426d43357f3c650068:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts#L1-L86",
+          "version": "repo-lines-v1:sha256:6029ab78e658b69da908e7515c047dad30345501952a62533900c008dea1f175:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -679,8 +679,8 @@
           "version": "repo-lines-v1:sha256:a207fb8529018a1172a374b7e4001737002d4622aeda00f74fb465547f0fac89:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5YzdhNzU0M2EwZDE1OTdjYjAyOGM2MmM1Njk2NzAxZmE2OGQzZGQ2YWY5Mzg1ZGYzMTRlZmI3NTZkZmU0NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMTY2YmU3YzRiNzYwMzM4MGMxZWZmZGQ2ODUzYmQ0MDJkZmY3YWViZDQxNTE1ZDdmZTYxZmY1ODRjZmI3MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwNDQxYTNiZjBlMjUzYzk5YTY5NTk2YzM0NTUwZTcxN2E1NGQzZDhiOWJmZTJiYjUzOWJiYjExZjY0ODdlODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhZTllMzkyOGU5ZGIwNTY1YjUwNjY2MzNkM2VkOWEwMGI3ODM3NWQ4Zjc1NTIzMzFlZThkYjNmNTE2MGEyNDIifQ"
         },
         {
-          "resource": "repo://scripts/export-ci-realm.mjs#L56-L73",
-          "version": "repo-lines-v1:sha256:344b54f20d49f499789f219fe69bdc41ff874b4c0f0eb816fa80b83225c453fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmFkMTRhZTZlZGNmNTkxMzY4ZTE0Yzk0MTlkNTAwNzRkMmQ1OWU5ZWJjMTczM2U3OThlMjBmMTQ0ZjNjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODIzYTcwMDFjMmMwZTBlMDYwNTMwOTg0OGM0MDg4YTE1ZWI3ZjJhMGU2M2Y2NDAxNDZiNmYyZjNkOGU4Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMjA2NmNiZGQ3OGU0NGUwZGM3MTljOGVmZmI3ODVlZTIyY2M4MmUyMGViZGFiZjRhMWMzN2Q0MDEzYTQ2ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NzY1MTgwOWViYzYxNTY0YzM1Y2I1YmE3Y2RhYmQxZDY2YmFiY2Y3OGJjNTg3YTE0ODZiN2YwZjFlMDM4MzYifQ"
+          "resource": "repo://scripts/export-ci-realm.mjs#L56-L76",
+          "version": "repo-lines-v1:sha256:e5662a04fd7b069c92f5d3ae953d3cb3732cfba53093d247af6fa941582d6fa9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmFkMTRhZTZlZGNmNTkxMzY4ZTE0Yzk0MTlkNTAwNzRkMmQ1OWU5ZWJjMTczM2U3OThlMjBmMTQ0ZjNjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODIzYTcwMDFjMmMwZTBlMDYwNTMwOTg0OGM0MDg4YTE1ZWI3ZjJhMGU2M2Y2NDAxNDZiNmYyZjNkOGU4Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMjA2NmNiZGQ3OGU0NGUwZGM3MTljOGVmZmI3ODVlZTIyY2M4MmUyMGViZGFiZjRhMWMzN2Q0MDEzYTQ2ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NzY1MTgwOWViYzYxNTY0YzM1Y2I1YmE3Y2RhYmQxZDY2YmFiY2Y3OGJjNTg3YTE0ODZiN2YwZjFlMDM4MzYifQ"
         }
       ]
     },
@@ -737,10 +737,80 @@
           "version": "repo-lines-v1:sha256:c966be44a952eb23368a99c87320c83663715d3390684aae797d093b8f30c308:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjOWVlNzNhZmRkOWI1NWNkODI4ZDgyOTIwMmE1ZDA5ODExNTczNzExMzk1ODk4NzU4NzY4NzgxNTkzOGRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NzcwMjQ5MjNmOTdhZmUwMzFmMjQ0NDE5OTczM2VkMDFmYjVlMjA1YzUyODZkN2E4ZThmYjQ1MDJmZTVmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmJiMmZjM2E3YmRkODFmZGJjNzRkZGRkN2QxYTBhNGQ1MjNhMWU1YjMwYWY3MzhhNjQyZGI4ZWRlMTI4MjlkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFiMzY4NWExZmY4Y2M1MmFlMTRiZmVjODQwZDcyMWU5MzUwMTNhNmFhNjU2MWEyMjg0ODRkZTEzMWJiYmIxNCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_e7bab3152d4f47379dfeb868b7419527",
+      "statement": "The scheduled-backup consent round trip — a separate OIDC flow carrying `scope=openid offline_access` whose result is stored as a standing permission and never turned into a session — runs as its own Keycloak client selected by `BACKUP_CONSENT_CLIENT_ID` (`mcm-backup-consent`, present in all three committed realm variants and set in CI's generated BFF env), and falls back to the login client with a one-time `backup_consent_shared_client` warning when unset. The separation is required by a measured Keycloak 26.8.0 session behaviour: the browser already holds the member's SSO cookie, so Keycloak answers the consent from the existing session and attaches the offline grant to it, and revoking a grant issued to the LOGIN client — by `/revoke`, by the admin API, with or without `prompt=login` — removes that client from the session, so the member's still-locally-valid access token then fails the agent subject-token exchange with `invalid_token`/`subject_token validation failure` (surfacing as \"No caller identity\") and the next refresh fails with `Session not active`. A grant issued to a separate client detaches only that client and the session survives, which makes this a production defect rather than a test artefact.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L117-L143",
+          "version": "repo-lines-v1:sha256:9e1d8dd778e41aa301dbf02c401640e7f8f889c67d37293717b212f397b1bc2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyY2JiNTIzZjhjMTQ1ZDJlYWVhYWZmMmI4ZjAyMDE3ZDcxMjY2Njk1Mjg3OTEzMTU1ZDVkNzdjZjgwYzAzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjUwZjE0M2M3MjViZDE4YjgxYWFjNTQ0ODg5MTBmYTEzZTQ4MjkwMWNhNzdmNGQ1ZTk1ZjNhNWU1MGNhN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmOGYzNDFmN2E5NzJjOWE3OTlmNDMwZGJlZjRjOWU4NDYxNWJkOGRhZjVjNjJmMmQzZThhMDJmMjkwYzI5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMmM0OTEyMDM3YzRiNTQxZTQzODNlYmU4NjIyMGUxNjE1YjljNzFjOTYyZDhiYmM5OTJlNzA3NjUzNzliNGIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L85-L131",
+          "version": "repo-lines-v1:sha256:ce47b6c8d6cd246f9d016965ac260e3e21232b31ad3c2713cc40ecc233fed5e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1OGZkYzQ5YWE3NDQ4N2Y2NGUzNmQ2MzIwNjljYTFkYzZhMzZiMDc3MmFmYWZhOWU3NjQxYjJmNWE1OWMyY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyYTY4MmI3Y2QxODZjZjI5YzZhOTk0ZGZjMjc2ZWM2ZDYwOGRhY2QwZmJiYWQ4MzgyNDE5ODkxNDhjODNiYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNDdmNzk2YzNlZGViZTFmNmI2MTJhMGI2Y2FiYzc1NmNiYzc0NDFjMTRhZDczMzJlOGEwMDVjMjY5OGFkZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L41-L47",
+          "version": "repo-lines-v1:sha256:a49f9669567bb21f50c6a72707518f6d91b3cd09fa9ebf8789953d490c35c7e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIxMzEzNjg2ZWZlODVjNjM0MmE1NTE2OGVjMjJmNGQ3ZjNmMmQ3ZjY5ODkzNTJhYzhiODlhZjU1YzNkYWVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIyZTAxMGM4NGFhMjM3ODNiZDY1MWQ1ZGIzYzllZTVhZmMyNzE1YjA2MmQ4NDcxMmY1NTlmYzFhZjE5N2EwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmQ2NDlhZjU2ZDk0ZTA0MDY2ZDhhMjU5YWI5YTVmY2Y1NGY4ODZhNDdkNDE0YmEyNDUzMWQzNDFhMjc1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzMyMTZmODQ1OTI3MmY5ZjZhYjE3MjRiNzA3ZDhiMTQ4MGU0OTk3MzRlNzI1ZTllYjM2YWIwYmY4ZjY3YzBjOCJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-ci-env.mjs#L85-L88",
+          "version": "repo-lines-v1:sha256:70d9d56073d84f5986e6f2abdf8db9581aac729cb55edbd4a8d81c2c352dc87a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQxMWU5YWY3NGY5ODJlMThlYmNiNWM5ZDkxYzI1ZmNlOWUxOTVkODQ2NDg0MGYxMjUzZjA2OWQ2ZmE2ZmM1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyMzBlNjIyODA4YWI4NDMzZTU0NGY1NDFlNGFkZjg3OGZjYjg4YmI5MGQzYzRiZDcxOTE2YTViOTBmMDRhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTY5ODJkN2U3Y2JiOWJlNTljMjY4ZjI3NzAzMWY2NTg0MDY1OGI3YjdiNTIyNjI1N2I0NjQ0MDBmMDkzMGRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNWZjY2MxOGI5NTI1YzBiYjg0ZWRmNDY3ZTFmYjJlMDk2NzllY2Y2OGNjMjNlYWEyYmE4NTU2NjVkNjQ2ZiJ9"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/spec.md#L57-L88",
+          "version": "repo-lines-v1:sha256:7e19f5e465f930d16757b125f7a6fb50255f1c5289d909bf533fb2135a93b82d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ZjE5NDQ4ODE2ZjQ3NzQxYzBjN2RmNjQwYWNhMDI4OWUwOTc2OWMwMDI1MGVjOTM1MWEzYzFkNTMzYzUyZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YjJkMzYyNjFhZjc3NmNjMzhlYTM5ODRjZjRmMzk5ZWU5NTg2MzYyNGQ4NzgzZjBkYTc4ZjVmMzYyMmM5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOGNhZWE1NTFkNDBhNjM3ZDJiOThjOTUyOGM3OTkzOTY4ZmQyNTRmNjkxODQ1NjQxMmQ2YzBhN2Q4OWE5OWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6b5e4dfe4f74d22b3b530a535d9e709",
+      "statement": "Two properties make the consent-client switch safe to roll out and both are enforced in code rather than by convention: grants are always used as the client that issued them — `credentialsFor(refreshToken)` reads the stored token's unverified `azp` claim and returns that client's id and secret, so grants made before the switch keep working with no stored-data migration, and an `azp` matching neither client gets the login identity that Keycloak then refuses, failing the grant as unusable rather than presenting a secret that does not belong to it — and the consent client reuses the login client's `${KEYCLOAK_CLIENT_SECRET}` in every realm variant, because the BFF is the sole custodian of both, while `BACKUP_CONSENT_CLIENT_SECRET` exists so production can pick a separate value later without a code change. The client itself is confidential and standard-flow-only (`directAccessGrantsEnabled`, `implicitFlowEnabled` and `serviceAccountsEnabled` false, PKCE `S256`), carries the same `mc-service-audience` mapper as the login client because an unattended run calls mc-service with a token minted from it, and `prod-realm.json` declares it without a secret so Keycloak generates one.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts#L109-L131",
+          "version": "repo-lines-v1:sha256:22884cfbc7151f7eb7ba1661d8f0cd76e9561a8b9f9a8f881f76d4f1c69f017a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNGZlZTkxYjgxN2FhNTFiMjYyOGQ4OGRhMzBkZjgxY2I2ZDAzNmRlYWMwZjBlODJjN2I1Yzk4ZTBmOTk5N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNDdmNzk2YzNlZGViZTFmNmI2MTJhMGI2Y2FiYzc1NmNiYzc0NDFjMTRhZDczMzJlOGEwMDVjMjY5OGFkZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L41-L47",
+          "version": "repo-lines-v1:sha256:a49f9669567bb21f50c6a72707518f6d91b3cd09fa9ebf8789953d490c35c7e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIxMzEzNjg2ZWZlODVjNjM0MmE1NTE2OGVjMjJmNGQ3ZjNmMmQ3ZjY5ODkzNTJhYzhiODlhZjU1YzNkYWVhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIyZTAxMGM4NGFhMjM3ODNiZDY1MWQ1ZGIzYzllZTVhZmMyNzE1YjA2MmQ4NDcxMmY1NTlmYzFhZjE5N2EwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmQ2NDlhZjU2ZDk0ZTA0MDY2ZDhhMjU5YWI5YTVmY2Y1NGY4ODZhNDdkNDE0YmEyNDUzMWQzNDFhMjc1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzMyMTZmODQ1OTI3MmY5ZjZhYjE3MjRiNzA3ZDhiMTQ4MGU0OTk3MzRlNzI1ZTllYjM2YWIwYmY4ZjY3YzBjOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json",
+          "version": "repo-file-v1:sha256:31fb04a272add4562a81e8d2c380911f828c81aa5f59c5e6d98af7f95e9f2f56"
+        },
+        {
+          "resource": "repo://scripts/export-ci-realm.mjs#L63-L76",
+          "version": "repo-lines-v1:sha256:0095efabce89aaf6aa25918c41fca87a8cdaf17ca059a8d6370424cfef9889ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OTBlMGZmZDBjMjAxOTJiYjU0NGY5NjQ5Njk0YzEzYTQ2YzQwMjExYWRlMDA1MjA1NTRkNDc1MjVhZTEyNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ODIzYTcwMDFjMmMwZTBlMDYwNTMwOTg0OGM0MDg4YTE1ZWI3ZjJhMGU2M2Y2NDAxNDZiNmYyZjNkOGU4Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2OTQ5MjI0MDQ1ZDYwYmVmMmE4Nzc0M2Y3MGU1MmQzYjQwMTA1MmMzYjY5ODc2NmYzNzhjOGE4YWJiYTBmYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NzY1MTgwOWViYzYxNTY0YzM1Y2I1YmE3Y2RhYmQxZDY2YmFiY2Y3OGJjNTg3YTE0ODZiN2YwZjFlMDM4MzYifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-ci-env.mjs#L85-L88",
+          "version": "repo-lines-v1:sha256:70d9d56073d84f5986e6f2abdf8db9581aac729cb55edbd4a8d81c2c352dc87a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQxMWU5YWY3NGY5ODJlMThlYmNiNWM5ZDkxYzI1ZmNlOWUxOTVkODQ2NDg0MGYxMjUzZjA2OWQ2ZmE2ZmM1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyMzBlNjIyODA4YWI4NDMzZTU0NGY1NDFlNGFkZjg3OGZjYjg4YmI5MGQzYzRiZDcxOTE2YTViOTBmMDRhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTY5ODJkN2U3Y2JiOWJlNTljMjY4ZjI3NzAzMWY2NTg0MDY1OGI3YjdiNTIyNjI1N2I0NjQ0MDBmMDkzMGRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNWZjY2MxOGI5NTI1YzBiYjg0ZWRmNDY3ZTFmYjJlMDk2NzllY2Y2OGNjMjNlYWEyYmE4NTU2NjVkNjQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ed4e1c10c4f4b55a4e34804d7650812",
+      "statement": "A user needs the `offline_access` role to grant backup consent: Keycloak supplies it through the realm's `default-roles-jumbleknot` composite, which Admin-API-created users inherit but users imported from realm JSON do not unless the import grants the default role — which is why the committed `e2e-test-user` and `e2e-admin-user` carry `realmRoles: [\"default-roles-jumbleknot\"]` alongside their `movie-collection-manager` client roles. Without it the consent round trip fails as a blank page after sign-in, with nothing naming the missing role. Relatedly, an established realm does not gain `mcm-backup-consent` from a realm JSON edit, because import is `IGNORE_EXISTING`: the client must be created in the running realm before `BACKUP_CONSENT_CLIENT_ID` names it, and the BFF never creates it itself.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L104-L111",
+          "version": "repo-lines-v1:sha256:ce23dacb2233b738899431ed594083b5dfb6021c75e44ef7f2d28f8df2584bac:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdhMmRmMDQ1NDc5NzRlODAwZmU2MGYyNDk2MjcxYjE3YjcxMWY3ZmZmZWZiODJlZTAzZWM5MzQ4YmY2Yjg0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJmMDE3ZjBlNjgwNWI2YmI4MTZiODk0YTRmYzBhMGEyNzkxYThlODU2NDNlYTVjMzM4ZTFjZmQ3YmMwZjY3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODU5ZjQ5MzlhNDIxZTYzY2Y1YTY3NDVmYjRhZDM4YjcxNzRkMWM3NjdiNWQ4NTE2ZGZkMDU4MDAyMDVhMzZmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVhMjY5NjY3NWQ4M2EwNzVmM2E2YmE4NGNjYjU1ZjEwMWVkNmQyYzZlYmQzNzhhOWE0M2FhN2ZmYjM4MTRiMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json",
+          "version": "repo-file-v1:sha256:54006ba1df683356ac1a321a914c8bcd78df95ab6b60e79927d728859a5275d6"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml#L13-L15",
+          "version": "repo-lines-v1:sha256:82a3d67556ddfaa24f0b2499a2d9e88e2d93d60102ecf7dfc3321354da861419:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQxMWZiOWZiNGExNzZhNzg5ZTgzZWQzMDY5NmRjMDY3ZjlhNDc0YjcwMDhlYzkwYzNkMjQ5MDkyNGRiODU5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA5Yjg3OWU0MzUzMTU0OTRjZGUzYzc5OWNjMDI2MDA5ZGE4ZWFjM2RjMDdjMDYzMWJiZmYxNWMxNWExZTFkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY5YmVjOTkyMWJiZTdmZjJmZWE4M2JlNDMxMjAxYzRiYWNmZTQ1NWZiNTNjNTdhNmMxNDg2MmE4NWY4Njc5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzNkYzJmNjE3MmI5MjBlMzcyZTQ3MTEwZTc5MjIwMGIxNzQwNTI1MzM4ZmIyNjE1NmQ5ZTZkZmQyYWNhOGZiZSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T02:14:36.804Z"
+    "at": "2026-10-24T14:53:13.584Z"
   }
 }
