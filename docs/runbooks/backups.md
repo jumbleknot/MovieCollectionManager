@@ -114,6 +114,75 @@ Disabling the last schedule, deleting the job, or deleting the account **revokes
 Keycloak**, in that order: revoke first, forget second. Reversed, a failed revocation strands a
 live, non-expiring token with nothing left pointing at it.
 
+### The consent runs on its own Keycloak client (feature 083, #702)
+
+**Revoking a grant issued to the LOGIN client ends the member's sign-in session.** The member's
+browser already holds their SSO cookie, so Keycloak answers the consent round trip from the
+existing session and attaches the offline grant to it. Revoking that grant removes the login
+client from the session. The member's access token still validates at the BFF, which checks JWTs
+locally, but Keycloak then refuses everything it must honour itself:
+
+- the agent subject-token exchange fails with `TOKEN_EXCHANGE_ERROR … error="invalid_token",
+  reason="subject_token validation failure"`, so the assistant answers *"No caller identity is
+  available for this action"*;
+- the next refresh fails with `Session not active`, so the member is signed out.
+
+Measured on Keycloak 26.8.0. `prompt=login` does not avoid it (Keycloak reuses the session), and
+neither does deleting only the offline session through the admin API. A grant issued to a
+**separate client** detaches only that client, and the session survives. That is what
+`BACKUP_CONSENT_CLIENT_ID` selects. Evidence: [spec 083](../../specs/083-backup-consent-session-isolation/spec.md).
+
+| Setting | Effect |
+|---|---|
+| `BACKUP_CONSENT_CLIENT_ID` unset | Consent runs on the login client: the defect above. The BFF logs `backup_consent_shared_client` once. |
+| `BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent` | Consent runs on the dedicated client. **The client must exist in the realm first.** |
+| `BACKUP_CONSENT_CLIENT_SECRET` | Optional; defaults to the login client's secret. Both are held only by the BFF, so a second value adds no separation. |
+
+Grants are always used as the client that issued them (the token's `azp`). Grants made before the
+switch keep working, and revoking one of them still ends that member's session that one last time.
+Re-enabling a schedule after the switch moves the member onto the dedicated client.
+
+CI imports `ci-realm.json` fresh each run, so the client always exists there, and `gen-ci-env.mjs`
+sets the variable. **A dev box or production realm that already exists does not get it from the
+realm JSON**: the import is `IGNORE_EXISTING`. Create it in the running realm first, then set the
+variable. The block below needs no typed secret: it uses the Keycloak container's own bootstrap
+admin, copies the login client's secret, and is safe to run twice. Expected output:
+`mcm-backup-consent: created`, or `…: already present` on a re-run.
+
+```bash
+docker exec keycloak-service sh -c '
+set -e
+K=/opt/keycloak/bin/kcadm.sh
+C=--config=/tmp/kcadm-083.config
+R=grumpyrobot
+$K config credentials $C --server http://localhost:8080 --realm master \
+  --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null 2>&1
+if [ -n "$($K get clients $C -r $R -q clientId=mcm-backup-consent --fields id --format csv --noquotes)" ]; then
+  echo "mcm-backup-consent: already present"; rm -f /tmp/kcadm-083.config; exit 0
+fi
+APP=$($K get clients $C -r $R -q clientId=movie-collection-manager --fields id --format csv --noquotes)
+SECRET=$($K get clients/$APP/client-secret $C -r $R --fields value --format csv --noquotes)
+ID=$($K create clients $C -r $R -i \
+  -s clientId=mcm-backup-consent -s enabled=true -s publicClient=false \
+  -s standardFlowEnabled=true -s implicitFlowEnabled=false \
+  -s directAccessGrantsEnabled=false -s serviceAccountsEnabled=false \
+  -s "attributes.\"pkce.code.challenge.method\"=S256" -s "secret=$SECRET")
+$K create clients/$ID/protocol-mappers/models $C -r $R \
+  -s name=mc-service-audience -s protocol=openid-connect -s protocolMapper=oidc-audience-mapper \
+  -s "config.\"included.client.audience\"=movie-collection-manager" \
+  -s "config.\"access.token.claim\"=true" -s "config.\"id.token.claim\"=false"
+rm -f /tmp/kcadm-083.config
+echo "mcm-backup-consent: created"
+'
+```
+
+Validated 2026-10-24 against Keycloak 26.8.0 on a realm imported without the client. The created
+client picks up the realm's default scopes, including `offline_access` as optional. Its redirect
+URI is registered by `/bff-api/auth/init` on the first app load after `BACKUP_CONSENT_CLIENT_ID` is
+set, as the login client's are today. If the bootstrap admin was replaced by a permanent one, the
+`config credentials` line fails and `set -e` stops the block before anything is created.
+Substitute that admin's username, and supply its password from the operator's own secret source.
+
 To confirm a revocation really happened, use the token — do not read our database:
 
 ```bash
@@ -122,6 +191,8 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   -d grant_type=refresh_token -d "client_id=$KEYCLOAK_CLIENT_ID" \
   -d "client_secret=$KEYCLOAK_CLIENT_SECRET" -d "refresh_token=$TOKEN"
 # 400 invalid_grant ("Offline user session not found") = genuinely revoked
+# Use the client the token was ISSUED to (its `azp` claim): for a grant made on
+# mcm-backup-consent, presenting movie-collection-manager is refused whether or not it was revoked.
 ```
 
 ---

@@ -12,6 +12,7 @@
 import { ensureClientRedirectUris } from '@/bff-server/keycloak';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
+import { env } from '@/config/env';
 
 const BASE_URL = process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081';
 
@@ -43,5 +44,10 @@ async function _get(): Promise<Response> {
     // sign-in.
     'mcm-app://account-delete-callback',
   ]);
+  // Feature 083 (#702): when the consent runs on its own client, its callback must be registered
+  // THERE too. The login client keeps it as well, for a deployment that has not configured one.
+  if (env.backupConsentClientId !== env.keycloakClientId) {
+    await ensureClientRedirectUris([`${BASE_URL}/bff-api/backups/consent`], env.backupConsentClientId);
+  }
   return Response.json({ ok: true }, { headers: securityHeaders() });
 }

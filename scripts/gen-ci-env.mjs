@@ -82,6 +82,10 @@ KEYCLOAK_PUBLIC_URL=http://localhost:8099
 KEYCLOAK_REALM=grumpyrobot
 KEYCLOAK_CLIENT_ID=movie-collection-manager
 KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+# Feature 083 (#702): backup consent on its own client, so revoking a grant cannot end the member's
+# session. CI imports ci-realm.json fresh every run, so the client always exists here; the secret is
+# the login client's (the realm entry uses \${KEYCLOAK_CLIENT_SECRET}), so no new Actions secret.
+BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent
 
 # BFF service account
 KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service

@@ -78,10 +78,56 @@ const revokeEndpoint = () =>
 const browserAuthorizeEndpoint = () =>
   `${env.keycloakPublicUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/auth`;
 
-function clientCredentials(): Record<string, string> {
-  return env.keycloakClientSecret
-    ? { client_id: env.keycloakClientId, client_secret: env.keycloakClientSecret }
-    : { client_id: env.keycloakClientId };
+function credentials(clientId: string, clientSecret: string): Record<string, string> {
+  return clientSecret ? { client_id: clientId, client_secret: clientSecret } : { client_id: clientId };
+}
+
+// THE CONSENT RUNS AS ITS OWN CLIENT, NOT THE LOGIN CLIENT (feature 083, #702).
+//
+// The member's browser already holds their SSO cookie, so Keycloak answers the consent round trip
+// from the EXISTING session and attaches the offline grant to it. Revoking a grant issued to the
+// login client — by `/revoke`, by the admin API, with or without `prompt=login`; all measured —
+// removes the login client from that session, and the member's session dies with the grant:
+// Keycloak refuses to exchange their still-valid access token (the assistant answers "No caller
+// identity") and refuses to refresh it (they are signed out). A grant issued to a dedicated client
+// detaches only that client. Measured on Keycloak 26.8.0; see
+// specs/083-backup-consent-session-isolation/spec.md.
+let sharedClientWarned = false;
+
+function consentClientCredentials(): Record<string, string> {
+  if (env.backupConsentClientId === env.keycloakClientId && !sharedClientWarned) {
+    sharedClientWarned = true;
+    logger.warn(
+      "backup consent runs on the login client — revoking a grant will end that member's session " +
+        '(#702); set BACKUP_CONSENT_CLIENT_ID',
+      { action: 'backup_consent_shared_client' },
+    );
+  }
+  return credentials(env.backupConsentClientId, env.backupConsentClientSecret);
+}
+
+/**
+ * The credentials to use a stored grant with: those of the client it was ISSUED to, read from the
+ * token's `azp`. Keycloak refuses a refresh or a revocation presented by any other client, so this
+ * is what keeps grants made before feature 083 (issued to the login client) working, with no
+ * migration of stored data.
+ *
+ * The claims are read without verifying the signature: the token is our own, sealed at rest, and
+ * Keycloak verifies it on every use. An `azp` that is neither client gets the LOGIN identity,
+ * which Keycloak then refuses — the grant fails as unusable rather than being presented with a
+ * secret that does not belong to it.
+ */
+export function credentialsFor(refreshToken: string): Record<string, string> {
+  let azp: unknown;
+  try {
+    azp = (JSON.parse(Buffer.from(refreshToken.split('.')[1], 'base64url').toString()) as { azp?: unknown })
+      .azp;
+  } catch {
+    throw new OfflineTokenUnusableError();
+  }
+  return azp === env.backupConsentClientId
+    ? credentials(env.backupConsentClientId, env.backupConsentClientSecret)
+    : credentials(env.keycloakClientId, env.keycloakClientSecret);
 }
 
 // ─── Consent (FR-022) ─────────────────────────────────────────────────────────
@@ -110,7 +156,7 @@ export async function buildConsentRequest(redirectUri: string): Promise<ConsentR
   const state = randomBytes(16).toString('base64url');
 
   const params = new URLSearchParams({
-    client_id: env.keycloakClientId,
+    client_id: consentClientCredentials().client_id,
     response_type: 'code',
     // Without this the exchange yields an ORDINARY refresh token, which dies with the SSO
     // session: the schedule would work until the user next logged out and then stop for ever,
@@ -142,7 +188,7 @@ export async function completeConsent(
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
-      ...clientCredentials(),
+      ...consentClientCredentials(),
       code,
       code_verifier: codeVerifier,
       redirect_uri: redirectUri,
@@ -231,7 +277,7 @@ export async function mintUserAccessToken(userId: string): Promise<string> {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      ...clientCredentials(),
+      ...credentialsFor(refreshToken),
       refresh_token: refreshToken,
     }).toString(),
   });
@@ -256,7 +302,7 @@ export async function revokeOfflineTokenAtIdp(refreshToken: string): Promise<voi
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      ...clientCredentials(),
+      ...credentialsFor(refreshToken),
       token: refreshToken,
       token_type_hint: 'refresh_token',
     }).toString(),

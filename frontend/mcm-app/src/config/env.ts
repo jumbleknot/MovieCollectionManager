@@ -18,6 +18,8 @@ function optionalEnv(key: string, fallback = ''): string {
 
 const keycloakUrl = requireEnv('KEYCLOAK_URL', 'http://localhost:8099');
 const keycloakRealm = requireEnv('KEYCLOAK_REALM', 'grumpyrobot');
+const keycloakClientId = requireEnv('KEYCLOAK_CLIENT_ID', 'movie-collection-manager');
+const keycloakClientSecret = requireEnv('KEYCLOAK_CLIENT_SECRET', '');
 
 export const env = {
   // Keycloak (server-side BFF — not exposed to client)
@@ -34,8 +36,15 @@ export const env = {
   // (user creation, role assignment, SSO logout, email verification) reach Keycloak from
   // inside a container instead of the build-inlined localhost:8099.
   keycloakAdminApiBase: `${keycloakUrl}/admin/realms/${keycloakRealm}`,
-  keycloakClientId: requireEnv('KEYCLOAK_CLIENT_ID', 'movie-collection-manager'),
-  keycloakClientSecret: requireEnv('KEYCLOAK_CLIENT_SECRET', ''),
+  keycloakClientId,
+  keycloakClientSecret,
+  // Feature 083 (#702): the client the scheduled-backup consent round trip runs as. It must NOT
+  // be the login client — Keycloak attaches the offline grant to the member's existing session,
+  // and revoking a login-client grant ends that session. Unset, both fall back to the login
+  // client (today's behaviour), so production keeps working until the realm has the client.
+  // The secret defaults to the login client's: the BFF is the only custodian of both.
+  backupConsentClientId: optionalEnv('BACKUP_CONSENT_CLIENT_ID') || keycloakClientId,
+  backupConsentClientSecret: optionalEnv('BACKUP_CONSENT_CLIENT_SECRET') || keycloakClientSecret,
 
   // Keycloak service account for Admin API calls (server-side BFF only)
   keycloakServiceClientId: requireEnv('KEYCLOAK_SERVICE_CLIENT_ID', 'mcm-bff-service'),
