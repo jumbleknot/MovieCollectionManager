@@ -460,22 +460,26 @@ export function __clearDiscoveryCache(): void {
 
 // ─── Keycloak Client Configuration ─────────────────────────────────────────────
 
-// Module-level cache: track whether redirect URIs have been verified this process lifetime.
-let redirectUrisEnsured = false;
+// Module-level cache: the clients whose redirect URIs have been verified this process lifetime.
+const redirectUrisEnsured = new Set<string>();
 
 /**
- * Ensure the Keycloak client's redirectUris list includes all required URIs.
- * Called once per process lifetime. Safe to call multiple times (no-op if already done).
+ * Ensure a Keycloak client's redirectUris list includes all required URIs — the login client
+ * unless another is named (feature 083: the backup-consent client has its own callback).
+ * Called once per client per process lifetime. Safe to call multiple times (no-op if already done).
  */
-export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
-  if (redirectUrisEnsured) return;
+export async function ensureClientRedirectUris(
+  uris: string[],
+  keycloakClientId: string = env.keycloakClientId,
+): Promise<void> {
+  if (redirectUrisEnsured.has(keycloakClientId)) return;
 
   try {
     const adminToken = await getAdminToken();
 
     // Find the client's internal Keycloak ID
     const clientsRes = await keycloakFetch(
-      `${env.keycloakAdminApiBase}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
+      `${env.keycloakAdminApiBase}/clients?clientId=${encodeURIComponent(keycloakClientId)}`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
     if (!clientsRes.ok) return;
@@ -509,7 +513,7 @@ export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
       );
     }
 
-    redirectUrisEnsured = true;
+    redirectUrisEnsured.add(keycloakClientId);
   } catch {
     // Non-fatal — the user may need to add the redirect URI manually
   }

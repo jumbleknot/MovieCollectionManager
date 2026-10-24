@@ -24,7 +24,7 @@ if (!CREDS_PRESENT && process.env.MCM_REQUIRE_LIVE_STACK === '1') {
 }
 const describeLive = CREDS_PRESENT ? describe : describe.skip;
 
-async function registeredRedirectUris(): Promise<string[]> {
+async function registeredRedirectUris(clientId: string = env.keycloakClientId): Promise<string[]> {
   const tokenRes = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,7 +36,7 @@ async function registeredRedirectUris(): Promise<string[]> {
   });
   const { access_token: adminToken } = (await tokenRes.json()) as { access_token: string };
   const res = await fetch(
-    `${KEYCLOAK_URL}/admin/realms/${REALM}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
+    `${KEYCLOAK_URL}/admin/realms/${REALM}/clients?clientId=${encodeURIComponent(clientId)}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
   const [client] = (await res.json()) as { redirectUris: string[] }[];
@@ -72,5 +72,15 @@ describeLive('consent callback redirect URI', () => {
 
     expect(after.sort()).toEqual(before.sort());
     expect(new Set(after).size).toBe(after.length);
+  });
+
+  // Feature 083 (#702): the consent round trip runs on its own client, so its callback must be
+  // registered on THAT client — on the login client only, Keycloak refuses the authorize request.
+  const consentClientIt = env.backupConsentClientId !== env.keycloakClientId ? it : it.skip;
+  consentClientIt('registers the consent callback on the dedicated consent client when one is configured', async () => {
+    const uri = `${BASE_URL}/bff-api/backups/consent`;
+    await ensureClientRedirectUris([uri], env.backupConsentClientId);
+
+    expect(await registeredRedirectUris(env.backupConsentClientId)).toContain(uri);
   });
 });

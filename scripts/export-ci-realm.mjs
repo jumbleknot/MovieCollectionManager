@@ -64,6 +64,9 @@ const CLIENT_SECRET_PLACEHOLDERS = {
   'movie-collection-manager': '${KEYCLOAK_CLIENT_SECRET}',
   'mcm-bff-service': '${KEYCLOAK_SERVICE_CLIENT_SECRET}',
   'agent-subject-token': '${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}',
+  // Feature 083: the backup-consent client shares the login client's secret on purpose — the BFF is
+  // the only custodian of both, so a second value buys no separation and would need a new secret.
+  'mcm-backup-consent': '${KEYCLOAK_CLIENT_SECRET}',
   // Arbitrary-in-CI clients (agent-gateway secret is fetched from KC at runtime by agent-stack.mjs;
   // mc-service is bearer-only; mcm-bff-test/ROPC is unused by app-e2e) — throwaway per-run values.
   'agent-gateway': '${AGENT_GATEWAY_CLIENT_SECRET}',
