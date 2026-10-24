@@ -186,7 +186,7 @@ services:
   # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
   # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
   langfuse-rustfs:
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
     container_name: langfuse-rustfs
     restart: always
     environment:
@@ -216,7 +216,7 @@ services:
   # PUT of an existing bucket answers 200. The secret is referenced as `$$S3_SECRET_KEY` from the
   # container's environment and fed to curl on stdin — never interpolated into argv.
   langfuse-rustfs-init:
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
     container_name: langfuse-rustfs-init
     restart: always
     depends_on:
@@ -247,7 +247,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.36.0@sha256:57c04cbd8e7022f32bb84c4ac005d79baf8b08e2c5be44facf11f5f1f9944ba2
+    image: grafana/otel-lgtm:0.37.0@sha256:57b5ab1ca6619beb180174e2fccce04762470750669d043f544b4726d0582d07
     container_name: otel-lgtm
     restart: always
     ports:
@@ -276,7 +276,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:1.21.2-debug@sha256:c21ae1b81702d227beb7c5307d8cc7fa29beb192144281b3f4382b8e105bc475
+    image: openpolicyagent/opa:1.21.3-debug@sha256:9ddaf23fbe4c8bf72b4c05ffc833cd4a68aebf33a86883b4a1f510df1f1d878f
     container_name: opa-service
     restart: always
     command:
@@ -348,7 +348,7 @@ services:
   # Seed 3 default-off flags, then STAY ALIVE idling (nothing depends on it) so Komodo's stack-health
   # doesn't count an exited container as unhealthy (same pattern as langfuse-rustfs-init / agent-audit-init).
   unleash-seed:
-    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    image: curlimages/curl:8.23.0@sha256:11e64e28c5f58c8d93ee95fcf22ac055f48b0bc440e0ce7d8013bbb5ad6aa8ac
     container_name: unleash-seed
     restart: always
     depends_on:

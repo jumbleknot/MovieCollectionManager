@@ -2,7 +2,7 @@
 # Installs all deps and runs expo export to produce the server bundle.
 # Build context must be the monorepo root:
 #   docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .
-FROM node:24.21.0-alpine3.23@sha256:9ec4a2e289874ed0d722e1772ec2de45d2801541db8612f3638b26f128c69ac2 AS builder
+FROM node:24.22.0-alpine3.23@sha256:e44c87c7dd212720eb00469aeac89504ca2be77b8f0d6dbffb30665d5fcc59e1 AS builder
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
@@ -79,7 +79,7 @@ RUN node /build-scripts/prune-bff-runtime-modules.mjs --check-bundle dist/server
 # It also keeps this layer keyed on the manifests and lockfile alone, so editing
 # app source does not re-run the 1.2 GB deploy — which matters because the build
 # cache competes for the same constrained disk as the images (item #246).
-FROM node:24.21.0-alpine3.23@sha256:9ec4a2e289874ed0d722e1772ec2de45d2801541db8612f3638b26f128c69ac2 AS deps
+FROM node:24.22.0-alpine3.23@sha256:e44c87c7dd212720eb00469aeac89504ca2be77b8f0d6dbffb30665d5fcc59e1 AS deps
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
@@ -123,7 +123,7 @@ RUN pnpm install --frozen-lockfile && \
 # ── Stage 3: Production runtime ───────────────────────────────────────────────
 # Receives artifacts only. No package manager runs here and none is needed —
 # the runtime is `node server.js`.
-FROM node:24.21.0-alpine3.23@sha256:9ec4a2e289874ed0d722e1772ec2de45d2801541db8612f3638b26f128c69ac2 AS runner
+FROM node:24.22.0-alpine3.23@sha256:e44c87c7dd212720eb00469aeac89504ca2be77b8f0d6dbffb30665d5fcc59e1 AS runner
 
 # Three things in one layer, all of which must precede the COPYs below:
 #   • gcompat — glibc compatibility for native Node modules (ioredis, etc.).
