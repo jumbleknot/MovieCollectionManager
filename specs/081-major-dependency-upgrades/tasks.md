@@ -344,8 +344,13 @@ time, use `--parallel=1` and Jest `--maxWorkers=2`, and commit and push WIP befo
 - [x] T042 [US5] Migrate API changes until GREEN. **Verify GREEN**: same command, 0 failures, coverage ≥70%.
   **Done when**: PR 5c merged; next dashboard read (T003) shows SC-004. **Done**: PR #798 merged 2026-10-19
   (`469d205c`), with the accepted 5-statement/5-branch coverage drop (double-submit guards unreachable under
-  RNTL 14's `disabled` handling); test-renderer held below 1.3 by PR #800. The SC-004 dashboard read is still
-  owed after the Fri 2026-10-23 Renovate window.
+  RNTL 14's `disabled` handling); test-renderer held below 1.3 by PR #800. **SC-004 read after the Fri
+  2026-10-23 window: PASS.** The held majors (typescript 7, babel 8, jest 30, async-storage 3) appear only
+  under the dashboard's "Pending Approval", and none was opened as a PR. No `pnpm-workspace.yaml` override was
+  proposed or widened. The window's PRs (#832–#836) are lock-file maintenance plus a docker group of patch
+  and minor bumps only. The same read found `mongodb/mongodb-community-server` v9 under "Pending Status
+  Checks", which would have been a bare, fatal bump (item #819). It is now hard-held below 9 in renovate.json,
+  to be lifted only in PR #817.
 
 ---
 
