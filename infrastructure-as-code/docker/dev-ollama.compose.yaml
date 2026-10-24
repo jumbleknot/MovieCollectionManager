@@ -14,7 +14,7 @@
 services:
   dev-ollama:
     # Pinned for reproducibility; bump deliberately. (Proven on 0.32.1.)
-    image: ollama/ollama:0.40.3@sha256:adca95a12c2b386a8f9a995e7fa0600e187e3323b5e5522f5a6c3b1ec73eff99
+    image: ollama/ollama:0.40.6@sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7
     container_name: dev-ollama
     # Publish on the dev container's 0.0.0.0:11434 so the nested gateway reaches it via
     # host.docker.internal. 0.0.0.0 (not 127.0.0.1) is essential — a nested container hits the bridge

@@ -67,9 +67,9 @@
 # for every compose / renovate.json PR (#836, #837). Keycloak is remediated by a same-version digest
 # refresh in PR #838; the rest have no clean upstream today (scan table in PR #838). Time-boxed on purpose:
 # the 14-day expiry warning makes the weekly sweep red from 2026-11-06 — that is the re-check date.
-- image: 'grafana/otel-lgtm:0\.36\.0'
+- image: 'grafana/otel-lgtm:0\.37\.0'
   id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream otel-lgtm 0.38.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream otel-lgtm 0.38.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Re-keyed 0.36.0 -> 0.37.0 with the Renovate bump (PR #836, 2026-10-24); same CVE, same expiry. Delete the entry once the image is bumped to a clean rebuild.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
 - image: 'langfuse/langfuse:4\.56\.0'
