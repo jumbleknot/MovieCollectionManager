@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod reboot resilience
-description: Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes — bind address, restart policy, keyfile idempotency, network attachment and periphery storage location — that made recovery hands-off.
+description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 sources:
@@ -36,7 +36,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-24T17:33:57.993Z
 ---
 
 # Prod reboot resilience
@@ -46,12 +46,14 @@ remediations applied outside the repo, repo/deploy-side fixes committed to compo
 survive every Komodo ResourceSync deploy), one operator redeploy step, and a validation-reboot
 checklist. It exists because a kernel-upgrade reboot exposed several defects at once, and a later
 validation reboot exposed further defects the first round had missed — a two-round history, not a
-single fix.
+single fix. It ends with the host-operation rules the second validation reboot taught, because several
+of them are counter-intuitive enough to undo the fixes silently.
 
 The source runbook, [`docs/runbooks/prod-reboot-resilience.md`](../../docs/runbooks/prod-reboot-resilience.md),
 is authoritative for the host-remediation table, the full tailnet-throughput diagnostic narrative, the
-port-migration history and the row-by-row validation checklist. This page explains the mechanisms and
-the shape of the two rounds; reach for the runbook to run a procedure.
+port-migration history, the row-by-row validation checklist and its history table, the numbered host
+procedures and the rollback steps. This page explains the mechanisms and the shape of the two rounds;
+reach for the runbook to run a procedure.
 
 ## The chain a reboot has to survive
 
@@ -130,7 +132,9 @@ Two consequences of that move are easy to miss, and both are the runbook's §2a:
 Feature 029 also made the intra-stack Keycloak↔Postgres network **compose-managed** instead of external,
 so compose creates and attaches it atomically on every `up`. That closed a worse version of the round-1
 network symptom: a failed port bind rolled back Keycloak's networking entirely, leaving it unable to
-resolve its own database (`UnknownHostException`).
+resolve its own database (`UnknownHostException`). The cutover on a host still carrying the pre-029
+external network is one-time: destroy the stack, remove the orphaned external network so compose can own
+the name, then deploy — the Postgres data volume is external, so no data moves (runbook Part 3).
 
 ### The bind-prefix variables both rounds retired
 
@@ -173,7 +177,7 @@ reintroduce `unless-stopped` on a prod or host-managed service expecting a reboo
 The immediate fix on the host was an interim `docker update --restart always` over the running
 containers, which only survives until each container is next *recreated*. What makes the policy durable
 across redeploys and rebuilds is the committed compose value plus the host-compose edits — the interim
-update is a stopgap, not the fix.
+update is a stopgap, not the fix. The runbook's Part 5 keeps the host-managed compose list.
 
 The drain unit was retained but **reworked to stop containers in parallel**. Sequentially it ran
 `docker stop -t 30 $(docker ps -q)`; with roughly 40 containers that exceeded `TimeoutStopSec=120` and
@@ -193,6 +197,31 @@ and the
 [server-setup runbook](./server-setup.md) Phase 9 now bootstraps that value so a rebuild cannot
 reintroduce `/etc/komodo` (see
 [`Server-Setup-Runbook.md` §Phase 9](../../docs/runbooks/Server-Setup-Runbook.md#phase-9--komodo-cd-to-the-prod-daemon)).
+
+## The validation reboot, and the pass on record
+
+A validation reboot is part of the change, not a follow-up. Once a change to the reboot posture has
+merged to `main` and Komodo has synced, the operator redeploys `prod-auth`, reboots the host once, and
+then verifies **every** checklist row *without starting anything by hand* — hands-off recovery is the
+whole point, so a row satisfied by a manual `docker start` or `docker network connect` has failed.
+
+The eleven rows cover, in substance: every prod container **and** every host-managed container
+(`Up`, via `restart: always`); Mongo and Vault healthy with `RestartCount=0` and no exit-127; periphery's
+root on real disk with the git checkout present; the three admin/UI ports reachable over the tailnet and
+shown bound to `0.0.0.0` in the Ports column; those same three ports refused from off-tailnet; Forgejo
+answering; and the app loading collections end-to-end. Pass means all rows on the *first* boot; any
+failing row is a defect to fix before the round closes, and a reboot that lands dirty is recovered with
+the ordering below.
+
+The checklist has been run and recorded. On **2026-10-24** an `apt` full-upgrade of 103 packages (kernel
+7.0.0-27 → 7.0.0-38, Docker 29.9.2, containerd 2.4.2, tailscale 1.104.2; both rootless daemons — prod and
+ci — came back on 29.9.2) **passed every row with no manual start**: Mongo and Vault at `RestartCount=0`
+and healthy, periphery's root on persistent disk, `keycloak-service` on `backend-network`, the three
+admin ports on `0.0.0.0`, the `tailscale0` offloads off, and the forge runner up.
+
+The runbook's Part 4 is the row-by-row procedure and its validation history table; the numbered rows are
+deliberately not restated here — see
+[`docs/runbooks/prod-reboot-resilience.md` §Part 4](../../docs/runbooks/prod-reboot-resilience.md#part-4--validation-reboot-checklist-operator-after-merge--komodo-sync).
 
 ## The rest of the host-side posture
 
@@ -252,6 +281,47 @@ that the same reboot stopped:
 With `restart: always` this ordering should never be needed — it is the manual escape hatch, not the
 intended path.
 
+## Operating the host safely
+
+The runbook's Part 6 collects the lessons of the second validation reboot, and each is a way an operator
+can undo a durability fix while believing they are being careful. All three are host-operation rules;
+none is enforced by a gate.
+
+- **`docker stop` does not change a restart policy, so a hand-stopped `restart: always` container comes
+  back at boot.** The rootless daemon starts *every* container whose policy is `always` — including ones
+  stopped by hand because they are retired. Before a reboot, take each orphan out of the policy
+  (`docker update --restart no <container>`) or remove it (`docker rm <container>`); leaving it merely
+  stopped means it returns. The 2026-10-24 reboot was prepared exactly this way for the retired
+  object-store containers and the finished one-shots, and they stayed `Exited` as intended.
+- **Acting as the prod user needs a real user session, not a login shell.** `systemctl --user` and the
+  rootless `docker` CLI need that user's systemd session — its `XDG_RUNTIME_DIR`, its D-Bus and the
+  rootless daemon's socket. `sudo -iu prod` creates none of those, so `systemctl --user` fails and
+  `docker` cannot find the daemon; `sudo machinectl shell prod@` gives a session that can.
+- **Run `apt` upgrades detached from the SSH session.** The `tailscale` package restarts `tailscaled`
+  during the upgrade, which drops every Tailscale SSH session — including the one running `apt`, which
+  happened on 2026-10-24. The upgrade belongs in a transient systemd unit (`systemd-run --unit=apt-upgrade
+  …`) that does not belong to the session, followed by `journalctl -fu apt-upgrade`. It is finished when
+  `systemctl is-active apt-upgrade` answers `inactive` — a completed transient unit is garbage-collected,
+  so `systemctl status` then reports "could not be found", which is not an error. `--force-confold` keeps
+  locally edited config files, at the cost of leaving `*.dpkg-dist` files to review. Reboot only after the
+  unit has finished, then run the validation checklist.
+
+See the runbook's Part 6 for the exact commands and the history block recording which containers were
+taken out of the restart policy.
+
+## Rolling back
+
+Rollback is asymmetric, and knowing which half is which is the point:
+
+- **Committed changes are ordinary config in git.** Revert the feature-028/029/030 commits and re-sync via
+  Komodo to return to the previous bind, entrypoint and restart behavior.
+- **The round-2 host changes are host state.** Restore the saved Komodo bootstrap env files and re-`up -d`
+  to revert the periphery root; the host-compose `restart:` edits and the reworked drain unit are
+  per-file reverts.
+
+There is no data migration in either direction, which is why the rollback is a revert rather than a
+procedure.
+
 ## Gotchas
 
 - **A tailnet-IP-scoped published port silently fails to bind if the container engine starts before the
@@ -276,6 +346,12 @@ intended path.
   containers that exist right now and is lost the moment one is recreated — by a Komodo redeploy, a
   compose `up`, or a host rebuild. Only the value in the compose file (or the host-managed compose file)
   survives, which is exactly why the policy is enforced as config-as-code.
+- **`docker stop` is not a retirement.** A container stopped by hand while its policy still says `always`
+  is started again by the daemon on the next boot. Either clear the policy (`docker update --restart no`)
+  or remove the container — and do it before the reboot, not after.
+- **An `apt` upgrade can kill the session that is running it.** The `tailscale` package restarts the
+  tailnet daemon mid-upgrade, which drops every Tailscale SSH session; an upgrade run interactively dies
+  with it. Run it as a transient unit and watch the journal instead.
 - **A crash-looping non-root Mongo keyfile entrypoint is a permissions bug, not a data bug** — a plain
   container restart (not recreate) can leave a prior run's read-only keyfile in place, and the non-root
   `mongod` process cannot overwrite it. The entrypoint fix removes the file before rewriting it on every
@@ -311,12 +387,17 @@ intended path.
   historical comment.
 - **A validation reboot is part of the change, not a follow-up.** Both rounds required one after merging
   and syncing, and the point is that nothing is started by hand after boot; any failing row is a defect to
-  fix before closing the round. The checklist is in the source runbook's validation section.
+  fix before closing the round. The checklist, and the 2026-10-24 row that passed it, are in the source
+  runbook's validation section.
 - **The restart-policy gate only sees in-repo prod composes.** Host-managed composes live outside the
   repository (Forgejo, Komodo, cloudflared, and the host side services — the monitoring stack plus the
   RustFS Nx-cache object store), so no gate can fail on their restart policy — their `always` is host
   state an operator must maintain by hand, and a rebuild that forgets it reintroduces the round-2 failure
   for those stacks only.
+- **A retired object store or a finished one-shot still has a container.** Removing it from the live
+  configuration does not remove the container on the host, and a leftover `always` policy will resurrect
+  it at the next boot; the runbook keeps the retirement work as a history block precisely so it is not
+  read as a live instruction.
 
 ## Enforcement — the two required gates
 

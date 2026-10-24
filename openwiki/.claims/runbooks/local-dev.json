@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f9ba610e02cce5abbf92da2b97365b7aed98a22b9b4c745493ebc83ea922fb95",
+  "pageVersion": "sha256:d981d81dd95865572256e70b87cb0ae92ccfdb018d1f863b745130f3840a85ef",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -166,15 +166,31 @@
     },
     {
       "id": "claim_6e599ff3782e4a26a827681b27dd2c1d",
-      "statement": "A password-on-first-init credential (Postgres, OpenSearch) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart, and RustFS is in that second group rather than the first (feature 080): it does not bake its key pair into the drive, so rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus recreating the RustFS service and its bucket-init one-shot, with no volume touched.",
+      "statement": "A password-on-first-init credential (Postgres, OpenSearch) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart, and RustFS is in that second group rather than the first (feature 080): it does not bake its key pair into the drive — measured by starting it on a migrated drive with a different pair, which the new pair could read and the old pair could not — so rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus recreating every consumer of that key, with no volume touched. Recreating the store alone is not enough, because one Langfuse key reaches four services in `observability/compose.yaml`: the two S3 upload key pairs on `langfuse-web` and `langfuse-worker` (through a shared environment anchor), the `langfuse-rustfs` server, and the `langfuse-rustfs-init` bucket one-shot; on the backup side the pair reaches `mcm-bff-backup-rustfs` and its bucket-init one-shot.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/local-dev.md#L49-L49",
           "version": "repo-lines-v1:sha256:4da9540fc37d821536ef7f7c9b5ec6b0919a42a028d3c17391304bae2a2650d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRhOTU0MGZjMzdkODIxNTM2ZWY3ZjdjOWI1ZWM2YjA5MTlhNDJhMDI4ZDNjMTczOTEzMDRiYWUyYTI2NTBkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRhOTU0MGZjMzdkODIxNTM2ZWY3ZjdjOWI1ZWM2YjA5MTlhNDJhMDI4ZDNjMTczOTEzMDRiYWUyYTI2NTBkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg1MjJmMzAwMjVkZTgxOTRjMGZkNTYzYzcwOWM1ZjljNjE0YWNjNmQyYWJiNTk2Y2FlNDg2YTNmOGYzZTYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzczZmU2YTIzMzViOGRjYWFlZjk0M2VjMTQ0NGVmNmI5MGY0NTY0MTU3NDY0YmU0M2NlZDRjODk4YWQ0ZTliZiJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L26-L45",
-          "version": "repo-lines-v1:sha256:c299f4dbca47f86e18957b7fb11fdb88fb392f36f1863ca692a45bc914d36e2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNDZhODUzMjI4MGU0ZDEzZjA1ZTU4MGRkY2Q1MDhiMzJmNDdjMjY2NmMxMjM0ZWQ5NGFmMjcyNDk4NWYwMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0MjIwY2E5NGJhOWY1ZGE4ZTQ1NDAyOWMwZDczMjg2OTQyZDg0NWFkZDExZGY5NjhiZGY2ZmM3MzI0YWVkY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwYTdmZjc3MjRmMDZkYzFmM2I2ZGY4Y2NjZDdiYTUwZTA3MGU0NmRmNjgzMGJiNDkxZGU3Yzk3NGE2NzQyNWIifQ"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L34-L45",
+          "version": "repo-lines-v1:sha256:4de652893b47e3e242eca222f55ffc1a68e930a9d036f5178d339f88689d8627:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3ZTg2ODUwNGUyZWNhZDhmODBjMzU2MjVmNzgxODJkMDZiMDM0MDQ3NmExZGQwNDk4MGRlZDJjYjBjNGE3NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNDZhODUzMjI4MGU0ZDEzZjA1ZTU4MGRkY2Q1MDhiMzJmNDdjMjY2NmMxMjM0ZWQ5NGFmMjcyNDk4NWYwMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhNGFjMDIwZWI4YjBmZGFjYzJjMzJjYzczNTNhYjdiOTJkMDFmY2FmNDZkZmM3ZDk2OWNjM2QwMzI5YTdhYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwYTdmZjc3MjRmMDZkYzFmM2I2ZGY4Y2NjZDdiYTUwZTA3MGU0NmRmNjgzMGJiNDkxZGU3Yzk3NGE2NzQyNWIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L77-L93",
+          "version": "repo-lines-v1:sha256:4d97e76d50026694ee267896c5fd1047b4529c60fbf05aca9c0e134f2a857a44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3NjJmMzc0MTE5ZjQ0NTc0NGY0ZDA2Yzk5ZDgwNjUwN2Y1M2JmOGQxMDY3MDg3ZjU5MzM0ZGYzMjYwMWEyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjN2VlMzgzYWQ5N2Y4NDM2NjMxY2MxNDMzYWU4YWI2MzYzZGVkZDkzMmU2YWFlNTUwOWI3YzNmYmRhZjZlNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhNWE2ZmJlNDYzZTUzYjBkYTQ5YzNlZTA5NTI1ZmIyYjMxODU1MTU1NmNjYzE5OTFhZDQzOWZmZTEyMjQwNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDkzOTE0ZmZkNWIwYzQ3ZjU3MDdiNGIwNjY3YzYxZjg2MTIzN2UzZGJiYzkzNmIzMTc4NGM4MDUzNjZjODYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L176-L221",
+          "version": "repo-lines-v1:sha256:35c4b3f898919a61e7c619bfdfb3c1145604885d9226a860cc2a83fa3cf15678:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOWFiNzliYTNkZjk0MTQ4OGJhMmM3ZTI0Y2Q5MzBlMWExOTE1YmY1NzFmMGYwOWY2OWUxMjFjZTE3MTkxMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYmM3OTJiZmJhYjEyYmRhYWFmYWMxOTRmMDU1YTM1YmQyMWQ2YmRkZmEzNzMzOGI1MzZlNjI4YzAwOGVlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2OGQzZGQ3YWNhZTVhNzEzMDQ1OGM0OWFjYmM1ZWI1ZjMxNGQxMDUwNjBiYTA2OWZkZDE5NzczY2ExZDg0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2ZjYxNDk0OTQxNTNkNmI0ZGNhYzhkMzliNDcyMzllNGEwMTA3OWIwNDEyZWFjNDU4OWZmOWJkOTNmNzRmMGQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L55-L63",
+          "version": "repo-lines-v1:sha256:f14fa553eb8d208f1883132249a1c79e590f95a79d3d6480a0e860266251e218:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFhMTQxZDA4OWVkY2I0YzQ3M2QxYzViZTE0YjI1Yjc3YjA3ZmQwYjk1MWMzYmRiMjA4YzE4NmYxNzQ0OWMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg0MTNkNmJiNzE3NTlmNzU4Yjg0MjNhOGJmYjBmNWRhODNjODZjMDdmZDQzZjIwZDlmYTA5NDI1YmNiMzFmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGIyZWNmODU0MmRlYzZiZjQ0NjIxMWMwMDdlMGQ2YjU2ODMyYTczMzIzMDdkZWU0MjU5NjI1NTEzMGIyYzkzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWRiNmYxZDJmYmJmYTAwYTY5YTA5NzczMTUzZWIwZDczNTFmZThlZmYxMGMxMTI3OGFlNGZhZGExOWU2OTQ5NSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-migration.rehearsal.mjs#L279-L283",
+          "version": "repo-lines-v1:sha256:7bbf3367e489086200632b5a07ca799c12b99de400e3f62e27b4cb9f4951f435:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMWE5M2FmMWMxMmYzNzE3ZjlkYjIyODYxNmQwZWExOGY0NmZiNDVhNTMzZWE3OGU2NDVmMjdlZjNiYWU5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNmM2UxMjZlYjVjODBhYjA3NDk4ZTRmMzZmYjNjZmM1ZTAxMjU3ZDc1YjExNTdkMDMxOWFkYWQzZjdiNGM2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTNjNWEzMWM5ZTljNDI3NmFmM2IyYWJkNDQ5NTBiN2ExNGEzYjkyMWNjOTZhYTA4ZjFjZTQyYzg0Njc2NmI0YyJ9"
         }
       ]
     },
@@ -535,10 +551,32 @@
           "version": "repo-lines-v1:sha256:21fbdcbedf27c5df8f814a62d65ba59f260891a9d3d5d5e3dea0eb8d8525a871:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2IyYTE4YzU1MDM2MmE0NjNhZWMyMzcxZGI0ZGViY2M5YWQ1Zjk0MGQzMWEwNDhmZWE2YzNlOTQ1NTBkMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyZmRiOWM3OWY1MmQ2ZDgxNzJjZjdlODdmZmE2ODU5MjJiMzZjZTJlNDNiZjVlMTVkZjI0ZDQxZTUxZTFlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0N2E5MDAwODFiYTc2Yjc2YTEyNzAzZDdmMzY2NTdlYzY0YTliZDQ0ODY4OGM3NDBiZTM1N2I3Y2I2ODJlNzMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d2e266c1dc464920831f01e3de29bd56",
+      "statement": "`gen-dev-env.mjs`'s seed-once rule protects what a developer CHOSE, not what the generator itself wrote before a rename: a `.env.local` value byte-equal to a retired generated default — the pre-080 backup S3 internal endpoint and the `BACKUP_ALLOWED_DESTINATION_HOSTS` entry naming the retired backup container — is upgraded in place to the RustFS host, while any other value (including a developer's own endpoint) is left exactly as it is. Without that migration an existing dev box keeps sending the BFF a host that no longer resolves while the fully generated `.env.docker` admits only the new one, and the suites fail on a destination-not-allowed error that reads as a guard bug.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/gen-dev-env.guard.test.mjs#L158-L201",
+          "version": "repo-lines-v1:sha256:9920fe9e8adbac0b88ff4bcfd1f6abdaeab07b5b9b5fd923f9ab07326dec1f1f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNzAxMGRjMjI4ZDIxNDc0ZDA1NDJiYTcyOTAzZTQ1YWVkOTI2ZWJiMzI2YjgzYjczYmFkODNjZTA1OTc2ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyYzUyMzZiYTI4MzExZTJkMzlhOTUzY2YwZGJiOTcyOTEyMzQ0NzZmZTZiYThkMjVlOWJmZWNkN2U3NmE0NjMifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L178-L184",
+          "version": "repo-lines-v1:sha256:2905ebbe7bc1e1d9102a3c8d127ffec7251c9e7772e22b7dd480ce19244571af:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZmZTAxYzVjOWExMmRiNjdmMzQ5NGE2Mjk0OTQ1YzI5NmIyNmJiZDUxZjIxOWM4YjNkMTEzMGY0Yzg1YzJjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTYyODYxNjgxNTEwYTVmZDhlOTEwMjkwYThhMDE5YmYyMjQ1MzEwNGVkOTBjZjUzYWUzZWNhN2EzZDM5NTYzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjMxODdlZGZhYzE4Y2U2NjRlYmI5MWMxZmIzMWJjZWI4YjNiNTUxMDU0OTVmOGU4ZDNmYmY2ODdjOWRlMzc4ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L466-L474",
+          "version": "repo-lines-v1:sha256:28e96f5a9ff45105f8b93e818ce2a1d8d8a6269be319731caca35bb130fa053e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhODBhZGNlODZkZGVkYTFlNGYyYzFjNWFlODhlZDA1YzFiOGI1MGMwZGQ5NWZhM2FiMDQwZTBjNmRjMDkzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNiNDllNGIxNjlmY2M1OGEwMDZiZDg2ODI4ZDJiMzUyNzI2NmE4NTAzMDFjNGJhZTIwMzljNzA4ZDVlMzgxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQwYjNjMTEzM2E5MWRlMDhlYmRjYWRjZmQxZDk0MjFlYzE0ZTFmMjEyMTE3NGFkZTMyYjUyNzIxNGZkNTIwYSJ9"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L483-L493",
+          "version": "repo-lines-v1:sha256:d98d85d92fd9734a284f45aafa064a0ccc1c4e6d790adde281dedc687ce783bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMGVjYmZlMzUyNWU0NThhYTZmZDQzYTA5YjNhOTUxODVhMjcwZmMxMzcwNzQ4Nzc2M2MzMjlhYjNhMTBmN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDQ1ZmRkY2Y3NzQ2YWZmMzcwZjg4Y2ZlZGY0N2IyOGFiZjcwZTFlMmI5MWQ2MGFjNDYyMjliMDk0NzYwYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjOTNhYjgyNTExYmQ3Nzg3ODkyZDE4NWFmNmFlM2ZiMmM0YmY5MGQxOTJjMTE2OTBmNzFlMjhkM2RkOTAxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNWI3OTcyMTY0ZmNhM2QzMjllZDg1MmFjNjEzNTY2ZmE1OTYxMGE1OTkwOTY4OGVkYWVmZGI3MGU3ODNjM2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-24T17:33:57.993Z"
   }
 }

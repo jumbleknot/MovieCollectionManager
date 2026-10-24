@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3b6d1f3e7c0cf06ea49309b235ff35dfcc053180e46d944aa4e075f31245464f",
+  "pageVersion": "sha256:1f779ff78979d4025a23eeff45d2dee717a107ee75a60820f860bcb0f4282bab",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -162,7 +162,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
+          "version": "repo-file-v1:sha256:ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f"
         },
         {
           "resource": "repo://scripts/check-prod-restart-policy.mjs",
@@ -647,10 +647,64 @@
           "version": "repo-lines-v1:sha256:47aa8c402dd3ea6eb5e0bed66667907fa855eb7cd4eab34daaa4f19be5c89646:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmIxOTU5YmZjZjA4NzAwNGJiNzVmNzY2YTU2MjgzMDM2YTZlMmQxZjI2ZjcwYjhlZjgzNjYxNmJkOWY2MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjOWZkMzFiNTU3ZmIzZjA0MzI1MmNjMzkwYzQwZTVjODM3N2E1NTJjZGEzMWRiNjg3YzMyMzFkM2NlN2I1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMTg3ZWRmYWMxOGNlNjY0ZWJiOTFjMWZiMzFiY2ViOGIzYjU1MTA1NDk1ZjhlOGQzZmJmNjg3YzlkZTM3OGUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_41497bb5acc94c87a24099b147d75d38",
+      "statement": "The prod restart-policy gate's scan is limited to the glob infrastructure-as-code/docker/**/compose.prod.yaml, so a prod-shaped compose outside that glob is unpoliced, and the host-managed composes (Forgejo, Komodo itself, cloudflared, and the host monitoring/object-store services) live outside the repository entirely — their restart: always is host state an operator maintains by hand, and a host rebuild that forgets it reintroduces the reboot failure for those stacks only. The gate runs selftest-then-scan in the naming job of guardrails.yml and locally through scripts/preflight.mjs alongside the other selftest-capable gates.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L125-L128",
+          "version": "repo-lines-v1:sha256:b48742a666f61ad7436e8ba2ab9ae4b94563c650aa0df5ec239f70fdd82ddfa5:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0ZDlmOGFkMjk2ZWUzN2ViOTA3MjljZjA3OWY3NzRmNGZlMGEyZjFhZWY0YjZjNjBjODI0NmY2ODA3ZDU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhhODk5MDJiNWQwNmJhNTAxZTg2NTcxOTYzNzRlYzhjNjgzOWYwYTA1YjY4ZTU4Zjg0YjQ5YzIyZDNhYTI3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWI5YTExMjM3ZjYwYTQwYWViM2FlYzZlNDlkOWYxNzJiMDJlNjMxNjVkMWQ1Njk4MmFiMDUxNjNkZmNhNzE1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGYwZGQwYjc1ZDRiYWUwYWMyMDUwMGM0NjA2ZTg4NTcxNzhkNmUxNjE3YWQzMDA0YWZkNjFlOWFhMDk5ZDY4OCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L176-L189",
+          "version": "repo-lines-v1:sha256:1b1d9b1db0ba06f78ad1a5fdb1ffd34f7e7d96bef32fa9b52c310423e8376d40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MTM5MDVmYTJmM2QxYjVhNzNiMTlhMmRmODYzNGU0NmJhMTg3OTZkYjdjZGM1M2RlNTUzOTBjZjFlZTk1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjNkZWI4YmE5N2FmMzU3OGQxYmY0NDliOTRkNjAwNmEwNTZkNDM3MWMyZDQzZjQ5YzJlYmE2YThmNDA1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L58-L60",
+          "version": "repo-lines-v1:sha256:06a44ed46db2ff7e7676da57236976ac6147fe32416841ff54e5f2f6017c8aaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVhNjEyZDg0OWNjMGZlYmM3OTNkOTQ0YjQyZTliNjhmMmFmZGUyZDYzMzMxNjEzNjUzYTgxOTY4NGM1NjNmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ2MzZkMzViODlhNDE2OTNlMWIzNzAwZDg2NDk3ZmNmZjE5ZWQ4YmNjMWUzMWExZTk2MjQ3MGQ5NzRjN2FhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI3OWI2ODA1MjBlZDUyNmRjYzRjOGFhMzczNTI3NTkwZTI4MTk1ZTQwZmJlNjEwN2UxZTViNDk1YTQ1NzczNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ1NWJkZGEyNTU4MmU4YzZhOTk2MTFiZjk1YzZjMDIxMmI0NDM3NDQ4OGZmNmJjODY2NzA4OTU3YzdiNGY0NiJ9"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L31-L44",
+          "version": "repo-lines-v1:sha256:caf1f04345333c672adb67dbaab4c29cfa477e1ada3cf60c3a0a325143852574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmExZTIxYjY1NTU3N2U2MTAxMzhjYThkMWFlOTQwMTIwN2Q0N2JjNmUxYWViM2RjZTc4MTBkMTdjNzdiMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YWZlMzM4YjI5MDA0NGFhN2U2ZjQzN2MyNzhiNzZlYzdjNjA2YTk5NzgzMmI1ODFiMTZkMTU0MzJlZDRhYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYzE3MjU0Mzk2NzU3NmNlNjgzODcxZGRiNTU5NGI2MjM1NzkyODc4NzM1NDJiNzgwNzgyYWNkMTk5YjhjYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35748b77d2d6423c952a9873707f06b0",
+      "statement": "The gate's one-shot exemption is a safety valve rather than the shape production uses: the one-shot init/seed containers that exist in the prod composes (langfuse-rustfs-init, unleash-seed, agent-audit-init) are themselves restart: always and idle on `sleep infinity` after an idempotent init, deliberately so Komodo's stack health never counts an exited container as unhealthy.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L106-L108",
+          "version": "repo-lines-v1:sha256:383648e737ed285fb38a3f9b63032b7c392db44235b2e157a5bfeb1bbb89b470:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdhMmNlNmJiNTVlZDBjY2ViZWU5N2Y3MDlkNzYzOTQ4MTBlODhmNTZjY2ZmZjE3OGFkMWIzNDMxMjJjY2FhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM5MGFjMmQ5OThhODE4MjQ1N2Q4MjVmY2ViZWY5ODJmYTJkN2U1ODMxMmIzN2U2NGRjNWMxMjEyZjVlMmI5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
+          "version": "repo-lines-v1:sha256:066adfbba0dc09da0b73c692163cb2ede4678cc094fd80f8e22b9f8755a27815:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L348-L374",
+          "version": "repo-lines-v1:sha256:6468815fd0f0916e0cf29ff605c97bdbf5b1d2cf0e41940ba5d0de953da739df:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzRhMmVmMjVmNmRmMmJhMzUxMDAwODIwNDBjMGY5Y2Y1YTM4MWQ3NmY3NDYyMzM3ZDhkMzFiNzViODlmYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L109",
+          "version": "repo-lines-v1:sha256:d4464a6c827148098b04947d00ec52ab7a27fa40e42e1f4473cface8e7342fb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk0MTJkNzc1ZTI4Y2I3YzgwYjM5M2IzM2EzZjIxMjc4Y2RkYjdkN2VkZmZkMjA1NTA1ZWJiNzY4MjE3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZjVjZmZkNzJiOWJkZjNjMTJlYThjY2U1ZDBhZjg0MTE5MWMwMzRjZDUzZDFiMWZlODJkMDhiNzE5OTE1ZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0533d9ff1bb4c0ba6a0477b88436c52",
+      "statement": "Because `docker stop` does not change a container's restart policy, a retired prod service whose block is deleted from a compose file keeps running and comes back Up on the next boot; taking an orphan out of the policy (`docker update --restart no <container>`) or removing it is a required operator step before a reboot, and the prod runbook records the containers this was done for.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L205-L221",
+          "version": "repo-lines-v1:sha256:0f418d9719ea49ab8d632e5ad724bb3f1b72eee732d40c00391c9c293de12f4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiY2FmYmJiMWM2ZGE2ZmQwYTY2NThmYmIzODA5ZmMzMWJkYmI2ODZiMDdkNmRhNGIwNTQyMTg1Mzg2NTEzMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMDViZWQyNjMwNzEzOGUyNWYyZGQ1MzAyZDRjYmJhNWQ5OWMzZDc5Y2Y2NWIyZTkzYTQ1Mzk4NzA5ZGNiZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMWRmMDQwN2NjYWE0MThlODIzNWQwZjkyNzk4MjU3YWZkOWQ4NTljYWE2MzViOGRhNTI2MDBlOTU0Y2UzOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNGU4NDY0OGQ1NDJhNDA3ZjgwMWM2NDExYWI4MTQ3MDBmNDg3M2E3ZTY2NjYxY2M0YzYyNGZhMDFkODIyOGYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T14:53:13.584Z"
+    "at": "2026-10-24T17:33:57.993Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:acc48dd47040ae290e983799119cc680bb5b1e59bc3643e8c18598937e106134",
+  "pageVersion": "sha256:aae0b37379b9f203941f072829d9090af39e055f845800b0f524a4818f7ee128",
   "claims": [
     {
       "id": "claim_9226997034364eb9b148a34270defeae",
@@ -39,7 +39,7 @@
           "version": "repo-lines-v1:sha256:1ef62a7f882189f1e1c90b06caa08c379b11f28be45b2579e3d56f5cd8d70b9b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDMyZDMyMzAyN2QyY2ExZWYyNDY4ZDMwMGQ4MDE4NjJiMzZkMDA5ZTg5NzFhNTE0MWEyOGI2OWI4YTUwZjE1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNmNDVjMmVjZDE5Y2IzYjkxOTNlYzYzZDBmMDA5ZjVjYTE2MjExMDE5YmQ0ZjkwNWRjOTVkYjBkYTExNDMzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L252-L258",
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L254-L260",
           "version": "repo-lines-v1:sha256:80959ad37f0a6ccd0435c5b6cd675b750278f54ca48f8485cb1dfab91c0c1f23:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkwZjE4ZTQ2ZmM4MDNiNTAxOWMxM2EyNzI1MzQ4ZmI2MWU3YmU2ZGM4YTIwMjk2ODNmM2QxYzA2OGY3YzFiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVlY2Y5N2MwNTg5ZGJjY2EwMTMyNDViZWI2ODM4M2FkZjQ4ZjM5YjY4NjM1YjllZTQzOTE4YmZmZDIzMjliOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNlZTEyN2YwOGYxODY4ZWYzMmM4YzZhMWNlOGJmZDExMTc4NTJhMTE1ZTQ2YjkxMzFmOWYwMTQ1Y2FjYzQ2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWRiZGJlMzg2ODlkMDA2MThiNGE3MjFjYTRhMWM4N2IzNmI4MTZmNjgwNzczMDM0YjAyN2QxMDY3MWQ1MzdiZiJ9"
         },
         {
@@ -117,7 +117,7 @@
       "statement": "Komodo periphery's `root_directory` default of `/etc/komodo` sits on a per-daemon tmpfs under rootless Docker (RootlessKit `--copy-up=/etc`), so the cloned repo checkout that every stack's relative bind-mounts resolve against is wiped on every reboot; Docker then auto-creates each missing bind-mount source file as a directory, and the Mongo and Vault containers fail with `not a directory … mount a directory onto a file` (exit 127).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L154-L168",
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L160-L174",
           "version": "repo-lines-v1:sha256:10057f2bc65bff64d8d2d36b37309f0f9a5a246885e25d2a925f077504147c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjk4YzI1MDE0YjNkMDc3NmQzZDc0MWI2MTU3ZmJjMGQ1ODRhMWVjNGQyNjI2MWMyNTUwZWEwOWM4YWQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWE3OWUxMjRmNzliYzNmYTNhYzIzODI0NTZiMWUwYjIxMjc1Y2EzYzkxYjJmNmViZjdhZmRlYjlhOWU3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
         },
         {
@@ -131,11 +131,11 @@
       "statement": "The periphery root fix is host state: `PERIPHERY_ROOT_DIRECTORY` must point at a path on persistent disk and periphery must be recreated, and the server-setup runbook Phase 9 now bootstraps that value so a host rebuild cannot reintroduce `/etc/komodo`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L846-L852",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L861-L867",
           "version": "repo-lines-v1:sha256:e97a152aa2dee73d2e4909e4687ba19a29338ecb19a68bd98b176e6a4c0314c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkNWI4NmFjYjg4OWU1Mjg0NzBlZjkyNzNlMjI5NzI4ODkxOWQzMTZmYmY4MjIyNTQyYmNkYjMyZTAxNDVjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1Mjk3NmNhODBmYzg2YzJhY2E5NjVjNDFkNTAwYTk4YTQwMGIyY2EwOTNlOGE5OTRkNWI5MWEwNzRlODM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTViOWY3NzhkMzQwMTM4YWExNzYyYmNlMmQ5OGU3ZmMxNmQyYTE2YjIyZDFiZDkwNTViZTY2MTRmZDYyODVmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZmE0OWRlY2VhZDQwZGVhNzNhZDRhNDA5MTBhMGY0NDE5ZDc2MmE0ZTY5YWQ2M2NhMzJmNjQxYmU4NGU4MyJ9"
         },
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L158-L168",
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L164-L174",
           "version": "repo-lines-v1:sha256:f526634e4f2893497523a9984e3f39ba40dc6595f420c6c8f88275639f46bc3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxNzkwZWQ4NTFhNmE3NjBmNzlmYWY4YjgzMDBhMTExOTg3NGI3MjBmMzIwYTkyZGIzODljOWI3ZmEwMGZlNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMzM1ZjY1NTA2MzdjZDkyNmYzZjQwNDRjZjk3MzFmY2VkNjY5MzM5YzZlMDFkOWY0Zjc0OWU2MTgyY2Y0YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
         }
       ]
@@ -145,7 +145,7 @@
       "statement": "The graceful-shutdown drain unit was reworked to stop containers in parallel: run sequentially as `docker stop -t 30 $(docker ps -q)` it exceeded `TimeoutStopSec=120` with roughly 40 containers and was SIGKILL'd mid-drain, stopping a non-deterministic subset.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L185-L191",
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L191-L197",
           "version": "repo-lines-v1:sha256:58db9343dafe8fcae8a0166caa7bca24c05bf0c4228146511b5ac159660f0337:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM5OGExYzIzZjg5Mjc4MWU0OTM3MjkyMmMyZGM0OTFhYWE3ODAwZDhiNDZkMTZlNzM0ZGMwOWQ4OTcyMWJkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTYyZDRkODIzZTU4MDk2NjBhNGE1NTc3NzkzZDJiYjQ4YjY2OWNmYTEzYzk3MjY4NDJhMGI4OTU1NWRkOWI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA0ZTdhM2Q1NmMwZDQ2YzJkNzRkOTZhMjg5M2I4ZDlkZTllMWU1ZTk1N2MxNzFlN2NlZmJmYTVmZjU2MjViYiJ9"
         }
       ]
@@ -189,7 +189,7 @@
       "statement": "When a reboot lands dirty, nothing self-heals until Komodo can act again, and the manual recovery order is: start Komodo periphery (Core otherwise has no agent and can redeploy nothing, including itself), start Forgejo (Komodo clones the repo from it on every sync), then run Komodo's Execute Sync (which re-clones into the persistent periphery root and recreates every stack with its declared networks).",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L193-L195",
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L199-L201",
           "version": "repo-lines-v1:sha256:bc4d900ed89e0ad5d49c18ab241535bd9a9249071b6d52d357943200b234a76a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5NTMzMDUyNjU2MjM3ZDFiMGI2YTAwYTE3NzIzOTNmNGMwZDQ5OGM4MDhhODE2NjM2NzY5NmZmYTJlZjJhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZkYzYxM2ZlMWIxZDllOWE2MjgyNmJkNWM2YzhkNThjZGJlYjJmNTNiZGMwNWEwMDQ1Yzk1MTUzYjE5Yzk1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVlYWUyN2NiMzA4NWIwNTgxOTMxOWVhOWIwNmE4YTI2ZTE3MGZlZjFmMWU5MmQwODg0M2NlYzQ5NGMyYjAzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y2NDI3ZGEwOWY4NGJjMjEzNDNiYWM4NTJiMTZkZDE1ZTNkMGJlM2I5NTU5NWE0NzNjY2Y4NTNmNGQ4YWYyNCJ9"
         }
       ]
@@ -259,12 +259,12 @@
       "statement": "The restart-policy durability comes from the committed compose value plus the host-compose edits, not from the interim `docker update --restart always` applied over running containers — that update is lost the moment each container is next recreated by a Komodo redeploy, a compose `up`, or a host rebuild.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L108-L108",
-          "version": "repo-lines-v1:sha256:896fb65ddd1367366db9da4d9faa7f16fd3309b8581e2a296d955e258602165e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTliMDFkMTE4ZDA5NzA1NzRiMzk5Njk5MmNlMzA1ODIwMTY5YmYzYjc4ZTFjYzkzZjRmMmJjM2NjN2VlNjBiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyJ9"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L106-L110",
+          "version": "repo-lines-v1:sha256:a463ce007676f3021ea3366912699baa8815f9e988f27e49168c6d4ebdc2f9f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdhMmNlNmJiNTVlZDBjY2ViZWU5N2Y3MDlkNzYzOTQ4MTBlODhmNTZjY2ZmZjE3OGFkMWIzNDMxMjJjY2FhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZmZTE5YTU1ZDY5ZDAxZDI0ODc5YTM1Y2NmYmM5NjA4NTE1ODEzY2E1YjBlMjVlNjkxOTY5MDI1ZTIxNGQ3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM5MGFjMmQ5OThhODE4MjQ1N2Q4MjVmY2ViZWY5ODJmYTJkN2U1ODMxMmIzN2U2NGRjNWMxMjEyZjVlMmI5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIwYzBkYjJkM2MzY2U5NjQ0MTY5Nzc0N2ZjYzg0NzU1ZGNhYTk2NjY4NTY0ODRkYzU5NTRmNGQ3ZDI3YjM3MSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L170-L183",
-          "version": "repo-lines-v1:sha256:572db950f04a17bb1b042b549f88701d7bf1b1cffa1af1684d822991149cc30b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MTM5MDVmYTJmM2QxYjVhNzNiMTlhMmRmODYzNGU0NmJhMTg3OTZkYjdjZGM1M2RlNTUzOTBjZjFlZTk1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjNkZWI4YmE5N2FmMzU3OGQxYmY0NDliOTRkNjAwNmEwNTZkNDM3MWMyZDQzZjQ5YzJlYmE2YThmNDA1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L176-L189",
+          "version": "repo-lines-v1:sha256:1b1d9b1db0ba06f78ad1a5fdb1ffd34f7e7d96bef32fa9b52c310423e8376d40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MTM5MDVmYTJmM2QxYjVhNzNiMTlhMmRmODYzNGU0NmJhMTg3OTZkYjdjZGM1M2RlNTUzOTBjZjFlZTk1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNjRlNTg1NmZlYzFhZDczYWFkNWM1MDhiMjBmZGFiYzgwMTYzN2ZmYWZiYjA2YTFjYmYzY2MzMmU5OGNiYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjNkZWI4YmE5N2FmMzU3OGQxYmY0NDliOTRkNjAwNmEwNTZkNDM3MWMyZDQzZjQ5YzJlYmE2YThmNDA1NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzQ4MGY0ZmJhNDY3MTkxZmY5YzFlZmU5ODU4YmFjMTE5MTM1MzczZjc5ZjdmZTM1MTMwNmY3NTU0NDgwOTYifQ"
         }
       ]
     },
@@ -273,12 +273,12 @@
       "statement": "One-shot init containers in the prod composes idle on `sleep infinity` after an idempotent init so they remain eligible for `restart: always`, which is why the `no`/`on-failure` exemption in the restart-policy gate is narrow rather than general.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L216-L241",
-          "version": "repo-lines-v1:sha256:f88a36b2a10014960fdc1b7e5ae6d4a5d66ad2bd0dc46c6322e71882002ea0a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZTY0Y2RkMTM1YTg4NzRlOTJhMTYyYmVmMTRhY2E0Zjg1MTkxMTgyN2I4OGIxZGUxMzA0N2VmNzNkMWQwM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NWMxNDdjYmVmMTE5YjA5MTBlNDYwMWYwZjE5MTI2NDE0NmYzNDVhMGFmNjRmNDQ2NmQ5MjY0YzA3MTIwOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
+          "version": "repo-lines-v1:sha256:066adfbba0dc09da0b73c692163cb2ede4678cc094fd80f8e22b9f8755a27815:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L74-L100",
-          "version": "repo-lines-v1:sha256:9937bf802a5fc91eb3a350b8a42a26102e9bbb769773737598288eb5dbdd8bba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWY2MmJkZTE4MzYwNmNmOGUzOTM2YmY1MmEyYjhkYWMzZWI5OWEzYTIwZTdhYjBmOTAyN2VjYjgxMmFkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YzIzODdkZWUxMDYyMTE0YmI2MzcxZDY0YjZhZjNiZDIxOGNlYzllZDIyZTU0NmEyOGNhZTliMjVlNmEzMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NGMxMzU4ZGFhMDE1YjMwMjg4NjQ2NjliOGZiNzJjZjNlNGI5NzYxYzI4YTA5OWUwYWY2MTlhMDFkMWY4ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZmE0ZWFhY2RiZDAxNzhmOGY1NGYzYTNiY2I4NzI4ZTVjNzA0ZWFhNDg3ZDlhZDIyNWYwN2YyZTcyMmIzNmYifQ"
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L103",
+          "version": "repo-lines-v1:sha256:aeb1281195230d201a6f0f58e47e2a3d9e8e197fea2df4d2fcc0ffe8f566c750:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk0MTJkNzc1ZTI4Y2I3YzgwYjM5M2IzM2EzZjIxMjc4Y2RkYjdkN2VkZmZkMjA1NTA1ZWJiNzY4MjE3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMDIwNjVlZTg5ZWNjYmNhNjg5OThlY2ViNzQzYTZiMDgzOTA4NDRjMjBjYzBiMjhmMzg5OTM2MzQ5MGFmZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NGQ5YzllZDM1MzNhZmQxZDk2MDQ5YjU1YzlhZTRiMTZlMjlkODVjOGRmZGE0NTEzOWUxMTMxYzU3ZDg5OGYifQ"
         },
         {
           "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L35",
@@ -317,10 +317,92 @@
           "version": "repo-lines-v1:sha256:9c7dbfe69517548fab025f96510b2679a9a23685d94fe802f2144660968a85fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2IxOTEwYzUzNDEzMjgwMTkzODIwYTk3MWFmYTRkZDQxMTNhNTE5NTYzMDY3ZDk5NzI4OWM4ZjUzMTgxMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMjg2ZTAxMTRjNzhhMzFkOGY1YzEwYmMwNmVjOWRkOTQwZjdhNDljZTc2YWFkMDE3YWFhY2JkNDA4ZDU1YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZGQxNjc1ODAxNjgxODNmMDNiMzhmNjgyYTg0MGI5NDIxM2QxNmYxODIwYmZiYTRlYjI5ZDY3ZmM2MTdjY2EifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b5827466740e4980970294615763eaff",
+      "statement": "The runbook's Part 4 defines an eleven-row validation-reboot checklist that must pass on the first boot with no manual start, and it records a validation-history row: the 2026-10-24 apt full-upgrade of 103 packages (kernel 7.0.0-27 to 7.0.0-38, Docker 29.9.2, containerd 2.4.2, tailscale 1.104.2, both rootless daemons back on 29.9.2) passed every row.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L126-L154",
+          "version": "repo-lines-v1:sha256:fe7171c5ecf52ddb4a7106f88e3a3a0d9659ba88ab40e0eab5e6c2c9b20891dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2N2FlMzlhNGVhY2E2YmJkN2ViNWY2MGYyY2JmZDQyMWJhODlmYTZmYTJlYmExNjUxMTY5YWQ5ZThhMDE0NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMDQ4ZDg4NmFkODUzMDczZjJiMDQ2NWQ0ZGUxOTc2YWFjMDQ1MTc4NmQzZDAwM2EwM2MyMTg5MDYyMzQ1OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNGZlYjM5Y2M1ZGE5NjEzNTMzMGE5M2M1NGIzZjIxODllNWM2M2M4YjAyNDAxYjkyZTdiNzFjMjkwYWY0NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMjg2MjZhZDFhNWRkZDAyYmU0YjdiNmY0YjhlNGY0N2I0MTRkODZiMGYwN2RkZDdkNDZhMzUzZTIxNWNlOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1eca724599b4d9eac721cc259c941b2",
+      "statement": "`docker stop` does not change a container's restart policy, so a `restart: always` container stopped by hand is started again by the rootless daemon at the next boot; taking a retired container out of the boot path requires `docker update --restart no` or `docker rm` before the reboot.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L205-L221",
+          "version": "repo-lines-v1:sha256:0f418d9719ea49ab8d632e5ad724bb3f1b72eee732d40c00391c9c293de12f4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiY2FmYmJiMWM2ZGE2ZmQwYTY2NThmYmIzODA5ZmMzMWJkYmI2ODZiMDdkNmRhNGIwNTQyMTg1Mzg2NTEzMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMDViZWQyNjMwNzEzOGUyNWYyZGQ1MzAyZDRjYmJhNWQ5OWMzZDc5Y2Y2NWIyZTkzYTQ1Mzk4NzA5ZGNiZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMWRmMDQwN2NjYWE0MThlODIzNWQwZjkyNzk4MjU3YWZkOWQ4NTljYWE2MzViOGRhNTI2MDBlOTU0Y2UzOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNGU4NDY0OGQ1NDJhNDA3ZjgwMWM2NDExYWI4MTQ3MDBmNDg3M2E3ZTY2NjYxY2M0YzYyNGZhMDFkODIyOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_263eab0510ac49aaba727b89d96a5f99",
+      "statement": "`systemctl --user` and the rootless `docker` CLI need the prod user's systemd session (its `XDG_RUNTIME_DIR`, D-Bus and the rootless daemon socket), which `sudo -iu prod` does not create; `sudo machinectl shell prod@` does.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L223-L231",
+          "version": "repo-lines-v1:sha256:c01d6431b23385e49815af0eeeaf0868ef3f2f134d18c3049c410bb8d7f6ffb4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk3MTM0Mzk2ODI4NzYzNWQyZjFmMzQ2YjcwYzY5NDhiMmY2NTY2YTJkZmQyZjI1YzljZmI1NDMxMjAwMTRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFjMjA2NjQ2YWMwYzU2YjBjNjZiNTRkMTY4ZjBlZmVlZTgxZWE5NGZmMmM3MTM4YjU0N2U5OWJjNWMwMTI4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWEwNGY4ODE0NjZiNjBhOWIxZDQ3ZGYwYTY2N2ZjZGRmOWZiYzJjZDBjMjJlMTgzYTM3NDAzYzIwODdiM2QxMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a8524df96244b7a95ce1fd82eb79d39",
+      "statement": "The `tailscale` package restarts `tailscaled` during an apt upgrade, which drops every Tailscale SSH session including the one running `apt`, so the upgrade must run as a transient systemd unit detached from the SSH session and is finished when that unit reports `inactive`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L233-L251",
+          "version": "repo-lines-v1:sha256:9f4d0a3cb78c010070420e1fd0a2d744c57a415c4b7c8bb570c38ea26d3e48ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTA2OWM0NzQ1MzY4YjIzYTRmMGIyMzJhYWE2MzNjODIzYzI2MmJiYmUwMWE2Y2U5MWI0Mzk2MzQxY2U4MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YzZlZjEyYWEzNmNmYTM4MTkyMjlhNTQwZGUzMjliNDZmMjgyNGIyMTIzZmRjZTFiYmU5NzJiOTM1YzFkMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiZTAyMjQ1NjBkNDQyMThiYTk2NTA0YWMyYjQ0NTNhMzZjNWUzNGUwNTEyYTMwMzMzY2Y5NDliMzQzZWEzNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmNjQyN2RhMDlmODRiYzIxMzQzYmFjODUyYjE2ZGQxNWUzZDBiZTNiOTU1OTVhNDczY2NmODUzZjRkOGFmMjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53a75b77640e4d849604c38dedd77d9c",
+      "statement": "Rollback of the reboot-resilience work is asymmetric: the committed feature-028/029/030 changes are reverted in git and re-synced via Komodo, while the round-2 host changes (periphery root, host-compose restart policies, reworked drain unit) are host state reverted per-file, and neither direction involves a data migration.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L253-L255",
+          "version": "repo-lines-v1:sha256:2ca5ddc1f444784b6d8a246cc4194de5370bc8f9747ac8a1220fd4e82ac3afa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDcxNGM4MmZhZDA5YzU4ZGU2NTI3NzQyNDFjNGMxOGI2ZmRjNjBiNGY2MGVlNzAzMDc2MjBlNjMwM2Q2OWJhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODczNWYxMDQ2NjI2OWI5NWM5ZGVlMWU4MmQ2Y2MxYjY3N2ZjODA3MzU4Nzk5ZTllY2E0ZWYxOWZiYjM1NTEzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRiOTA4ZTY3Y2IxNTU0OTQ0ODNlZWE3NGU0N2I0N2YxOWQ1YTg5NWZlNmM3YTM3ZTM3ZTQ3N2E1NGVhOTIzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_30274a67d3e8459a8993db7e2c6f2bc0",
+      "statement": "The feature-029 cutover on a host still carrying the pre-029 external `keycloak-network` is one-time: destroy the `prod-auth` stack, remove the orphaned external network so compose can own the name, then deploy — the Postgres data volume is external, so no data moves.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L118-L118",
+          "version": "repo-lines-v1:sha256:8f0f78504c2279f3fcfc20251065c4e798cd8efe6561f824d424ca10be78f758:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYwZjc4NTA0YzIyNzlmM2ZjZmMyMDI1MTA2NWM0ZTc5OGNkOGVmZTY1NjFmODI0ZDQyNGNhMTBiZTc4Zjc1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYwZjc4NTA0YzIyNzlmM2ZjZmMyMDI1MTA2NWM0ZTc5OGNkOGVmZTY1NjFmODI0ZDQyNGNhMTBiZTc4Zjc1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU3M2IxZDhiNGI5ZDJiMGNiNDM4NzM2NzI3ZWZmZGNlYWFhYmIyYzdlOGIwMzRkNGRkZmM4YjgzYjdmYWViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNjVlMzZlMjhjNThhZDIwMTg3MGNjMDIzMzgzMmNmMDY0NGRiMDQzOThjMmUxNjE0MDYyZWNjMzc5YTBkNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L111-L120",
+          "version": "repo-lines-v1:sha256:42575ff7f8bbc230ffb9510923e84b8236315e4e2840d3c9281dd748d26d2b9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNDZjMDg2YTJmMzgxY2NmZWU2ODk0ZDcxZjIzMjQ5NjlkNGJlMzRkODc5YWY1YTNjYTkxZjk0M2ZjZjczZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmOTY1MjAzMTgxOGNkMTViOWI0NjFjYWEzZDU1NDM2NTYwODcwMzQyZjM5Y2ZkNzMxN2YwYjg3ZTAxYWUwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZTYyYzQ5MDMwMjhkNGQ0NzQ3MzNjNjNkZWFhOWQ3YTcxODQyZDRkZTUzYjYxMWUwNjJiOTIxZjBlMzA4MWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_430e6e05f4224a339b5bdd55035517da",
+      "statement": "References to a retired object store or a finished one-shot container may only survive as a runbook history block between `<!-- history:begin -->` and `<!-- history:end -->`, a mechanism honoured only under `docs/runbooks/**`; a live instruction naming a retired store elsewhere fails the tree-wide no-retired-store guard.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L118-L120",
+          "version": "repo-lines-v1:sha256:7641336425a9f04768462f8e053ebcfd417fa9d2ce1cf7848ffaa4c9b2b591b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmNGQ0OTQzNmMwM2ZkOTA1NDc3N2QzNTVmNWVhNzczNTJkYTNjMTIwY2I2ZDg1MDZjODBkMWY5NzRkNTU4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE3NDY3ZmVlYmY1NWM2YTkzODJlZmE2NjlkYzEwYWYxNTU1ZTcwYTc5YTFlNjljZjc3N2M1M2ZiMGNlZThiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThhOTE3NTk3MmZlMTVlMmE5NjQxYWIxMzFmNTcxZTZjN2NhYmNhMDY4Mzc2MmViYTVmMjM1M2U0ODNjM2Q1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzcwODM3MTBjY2E0YzdiMGQ2ZmFhZjRiYmVhZDY1NDRlZjgyNDJkZGNjZjg5MTc3MzZiNzg5ZDhlOTJkNDQ5ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L19-L22",
+          "version": "repo-lines-v1:sha256:dff6bf1075751416d26837efd5478600cb336dc6bcd7c8efb8920b078fa477db:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJiYjBhMDJmMDc1MmQ1NDFlOGNhYmM5MmUzMjIyZmE3OTMxMmZmM2UxYjBjZTNmNDdjMGY1NGViYmMyNWQ2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFmZDU4ZDU5ZGM4NmM0NTI4YWJhNmFjOWFhMGU5MGMyZGY2YzEwOWViZGU3MDFjMWVmZjRiYzlkOTFjZmNiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWEzNjhlMDc4MjA2NWQwOThkZmNmMjFmZDY2NjhkODk0YzM2MGM1MGFmNWRkNmIzM2Q3NGE1Y2IzODU4N2ZiMiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L250-L258",
+          "version": "repo-lines-v1:sha256:cc404da751e934b8c2dca3271950bbb37899dc4573558fdc341b5f6712b2d9c4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdhNWQyZjdiOTk1YjIzNDI1YmQ1MjZjNDZjNjk0M2I5Y2RjM2UyZTkyNmU2NmMyYmUxMjJjNjhiYTRiNTA3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg5NDBkN2M2N2RiOTMyZTc0Zjk1NmQzZmE1ZDFlZmYxNWI0NGRlNTYyMWRkY2Q5NDMwZjc5Yzc1M2U3ZWY4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjExZDFhOTJjNzFiMmY4M2NlOTFjYzNhMzA1MTkyYjYwMTRkYWIzYWZmNTMwMjhmYTczYWMzNmY4M2YzMWEyNyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-24T17:33:57.993Z"
   }
 }

@@ -58,7 +58,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-24T17:33:57.993Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -170,7 +170,9 @@ generator:
 - **Seeded once** — developer knobs and host-reachable URLs (`MC_DB_URL`, `MC_SERVICE_PORT`,
   `RUST_LOG`, `MONGO_URL`, `BFF_BASE_URL`, the backup encryption/tick keys, the destination
   allow-list). Absent keys are appended; keys already present are left exactly as the developer set
-  them, so a tuned `RUST_LOG` or a redirected Mongo survives a re-run. Measured 2026-09-20: with
+  them, so a tuned `RUST_LOG` or a redirected Mongo survives a re-run. The one exception is a value
+  byte-equal to a *retired generated default* (feature 080's backup S3 host rename), which is upgraded
+  in place — see the gotcha below. Measured 2026-09-20: with
   `.env.local` silent on the host-reachable service URLs, the integration suites fell back to
   `.env.docker`'s Docker-internal names and died on DNS resolution — a name no process outside the
   compose network can resolve.
@@ -216,9 +218,23 @@ carries no secret values on any path.
   / app-secret values have no such persistence and rotate on a plain restart, and **RustFS is in that
   second group rather than the first** (feature 080): it does not bake its key pair into the drive, so
   rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus
-  recreating the RustFS service **and its bucket-init one-shot** (which passes the same pair to `curl`)
-  — no volume is touched. That is a measured property, not an assumption: starting RustFS on a migrated
-  drive with a different pair was readable by the new pair and not the old.
+  recreating every consumer of that key — no volume is touched. That is a measured property, not an
+  assumption: starting RustFS on a migrated drive with a different pair was readable by the new pair
+  and not the old. **Recreate the consumers together, because the key reaches more than the server.**
+  On the backup side that is the `mcm-bff-backup-rustfs` service **and its bucket-init one-shot**
+  (which passes the same pair to `curl`); on the Langfuse side the one `observability.env` key is
+  interpolated by four services in the same file — `langfuse-web` and `langfuse-worker` (each holding
+  two S3 upload keys, through a shared environment anchor), the `langfuse-rustfs` server, and
+  `langfuse-rustfs-init`. Recreate only the store and the uploaders keep the old key, so uploads fail
+  against a store that is healthy.
+- **A seeded-once default can name a host that no longer exists, so the generator upgrades it in
+  place (feature 080).** `gen-dev-env.mjs`'s seed-once rule protects what a developer *chose*, not
+  what the generator itself wrote before a rename: a `.env.local` value byte-equal to a retired
+  generated default — the pre-080 backup S3 endpoint and the destination allow-list entry naming that
+  retired container — is rewritten to the RustFS host, in place and exactly once. Any other value,
+  including a developer's own endpoint, is left exactly as it is. Without this an existing box keeps
+  sending the BFF a host that no longer resolves while `.env.docker` (fully generated) admits only the
+  new one, and the suites fail on "destination not allowed" — which reads as a guard bug.
 - **`docker compose down --volumes` only wipes transient volumes.** Every persistent data volume is
   declared `external: true` with an explicit name in its own service compose file (so the stack's
   `include:` merge does not prefix it with the project name) and therefore survives. Wiping real data
@@ -339,7 +355,11 @@ set of documented `.env.local` files from the runbooks and fails if one is neith
 declared exception, so a documented file that nothing writes shows up here rather than three weeks
 later in someone's `nx affected`. The same guard pins the two loudness rules — a deliberately skipped
 file must be named in the generator's output, and an `mcm.env` missing `BACKUP_TEST_*` keys must be
-reported with the back-fill command while printing no value. `scripts/__tests__/gen-dev-secrets.guard.test.mjs`
+reported with the back-fill command while printing no value — and the feature-080 seed-once
+exception, in both directions: a `.env.local` holding the pre-080 backup endpoint and allow-list
+defaults is migrated to the RustFS host in place (one occurrence, no duplicate line, the retired host
+gone), while a developer's own endpoint is left untouched.
+`scripts/__tests__/gen-dev-secrets.guard.test.mjs`
 pins the item #552 completion rule from the other side: an existing `mcm.env` missing the four
 `BACKUP_TEST_*` keys gets all four seeded while prior values stay byte-for-byte, an empty
 `<generate:KIND>` key is filled **in place** (one occurrence, not a duplicate), a template-blank

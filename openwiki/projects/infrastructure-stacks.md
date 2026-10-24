@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-24T17:33:57.993Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -499,7 +499,21 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   containers cleanly, and `unless-stopped` declines to restart an already-stopped container), and a
   missing `restart:` defaults to `no`. `scripts/check-prod-restart-policy.mjs` forbids both on
   `infrastructure-as-code/docker/**/compose.prod.yaml`, exempting only genuine one-shot init/seed
-  containers (`*-init`, `*-seed`, `*-rs-init`, `createbucket`), where `always` would restart-loop.
+  containers (`*-init`, `*-seed`, `*-rs-init`, `createbucket`), where `always` would restart-loop. That
+  exemption is a safety valve for a *genuine* one-shot rather than the shape prod actually uses: the
+  one-shot init/seed containers that exist in the prod composes (`langfuse-rustfs-init`,
+  `unleash-seed`, `agent-audit-init`) are themselves `restart: always` and idle on `sleep infinity`
+  after an idempotent init, so Komodo's stack health never counts an exited container as unhealthy.
+  The gate runs selftest-then-scan in the `naming` job of `guardrails.yml` and locally through
+  `scripts/preflight.mjs`. Two consequences of its scan glob are worth carrying: a prod compose file
+  outside `infrastructure-as-code/docker/**/compose.prod.yaml` is not policed at all, and the
+  **host-managed** composes (Forgejo, Komodo itself, cloudflared, the host monitoring stack) live
+  outside the repository entirely, so their `always` is host state an operator maintains by hand and a
+  host rebuild that forgets it reintroduces the reboot failure for those stacks only. Finally, a
+  `restart: always` container ignores a hand `docker stop` across a reboot: deleting a service's block
+  from a compose file leaves the running container untouched, so a retired container must be taken out
+  of the policy (`docker update --restart no <container>`) or removed before rebooting, or the daemon
+  starts it again on boot.
   Background: [Prod reboot resilience](../runbooks/prod-reboot-resilience.md).
 - **HashiCorp Vault is deployed as part of the `auth` stack's `vault` profile and as the production
   `prod-vault` stack, but is deliberately dormant in production** — uninitialized and sealed, with no

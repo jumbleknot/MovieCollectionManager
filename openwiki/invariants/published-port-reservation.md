@@ -6,7 +6,7 @@ resource: docs/runbooks/prod-reboot-resilience.md
 tags: [ports, ci, production, collision, homelab]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-24T17:33:57.993Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -47,10 +47,11 @@ manifests as a crash-loop on the *losing* side, not a clean bind error most engi
 
 The convention: **every prod admin/UI published port lives in the reserved range `19000–19099`**
 (Keycloak admin `19099`, LangFuse `19030`, Grafana/otel-lgtm `19002`, all `0.0.0.0`, tailnet-only via
-firewall rules). CI/dev keeps its own separate, lower port numbers. The range also sits below the
-Linux ephemeral port range (`32768+`), so a reserved prod port can never be transiently grabbed by an
-outbound client connection. `scripts/check-prod-ci-port-collision.mjs` is the CI gate that enforces
-disjointness between the two ranges.
+firewall rules). CI/dev keeps its own separate, lower port numbers — the dev/CI Keycloak still
+publishes `127.0.0.1:8099`, the very number the prod admin console used until feature 029. The range
+also sits below the Linux ephemeral port range (`32768+`), so a reserved prod port can never be
+transiently grabbed by an outbound client connection. `scripts/check-prod-ci-port-collision.mjs` is the
+CI gate that enforces disjointness between the two ranges.
 
 ```mermaid
 flowchart TD
@@ -64,9 +65,16 @@ Two rootless daemons publishing into one host port space — the reason a reserv
 
 Those three ports are the **only** published ports in production: every other service in the seven
 `compose.prod.yaml` files is internal-only, reached by Docker DNS on a shared network
-(`backend-network`, `edge-network`, `mcm-bff-network`, `agent-audit-network`; the intra-stack
-Keycloak↔Postgres `keycloak-network` is compose-managed). The new numbers translate the old ones so a
-service keeps its recognizable low digits — `8099 → 19099`, `3030 → 19030`, `3002 → 19002`.
+(`backend-network`, `edge-network`, `mcm-bff-network`, `agent-audit-network`, plus the intra-stack
+`mc-service-network` and `movie-assistant-mcp-network` links; the intra-stack Keycloak↔Postgres
+`keycloak-network` is compose-managed). A **new** prod published port is assigned inside the same
+range, echoing the port it replaces (`8099 → 19099`, `3030 → 19030`, `3002 → 19002`), and the gate's
+failure message says exactly that.
+
+Moving the admin/UI ports does **not** touch the public auth surface: the public issuer is the
+Cloudflare-tunnel hostname reaching `keycloak-service:8080` internally, and
+`KC_HOSTNAME_BACKCHANNEL_DYNAMIC` keeps the internal discovery document advertising that public
+issuer. No client or backend reconfiguration follows from a reserved-range port move.
 
 ## What the gate checks
 
@@ -125,17 +133,17 @@ have been dead config.
 
 ## Gotchas
 
-- **This rule exists because of a real outage, not preemptively.** A prod Keycloak admin bind on a
-  port also used by CI collided with a leftover CI Keycloak stack that held the port for several
-  hours, crash-looping prod auth. The fix was moving prod's admin/UI ports into the reserved range,
-  not just documenting "don't reuse ports." The bind in question was feature 028's `0.0.0.0:8099`,
-  which overlapped the CI app-e2e Keycloak's `127.0.0.1:8099` — the same number the dev compose still
-  publishes on loopback. Whenever a CI Keycloak was up, prod Keycloak could not bind on redeploy; on
-  2026-07-06 a leftover CI stack held the port for roughly six hours and kept prod auth down for that
-  long. The damage was not confined to a dead admin port either: the failed `0.0.0.0:8099` bind rolled
-  back `keycloak-service`'s networking, so it came back detached from every network and could not
-  resolve its own Postgres (`UnknownHostException`). That is why the reservation is treated as an
-  invariant rather than a preference.
+- **This rule exists because of a real outage, not preemptively.** Feature 028 first bound the prod
+  Keycloak admin at `0.0.0.0:8099`, which overlapped the CI app-e2e Keycloak's `127.0.0.1:8099` — a
+  prod `0.0.0.0` bind collides with *any* bind on that port number, whatever interface the other bind
+  names. Whenever a CI Keycloak was up, prod Keycloak could not bind on redeploy and crash-looped; on
+  2026-07-06 a leftover CI stack held the port for **6h**, so every prod recreate failed and prod auth
+  stayed down until the three admin/UI publishes moved into the reserved range. The damage was not
+  confined to a dead admin port: the failed bind rolled `keycloak-service`'s networking back
+  entirely, so it came back **detached from all networks** and could not resolve its own Postgres
+  (`UnknownHostException`). That is why `keycloak-network` is now compose-managed — created and
+  attached atomically on every `up` — instead of `external: true`, and why the reservation is treated
+  as an invariant rather than a preference.
 - **Moving or adding a prod published port also requires updating that port's self-referencing URL
   var**, because the collision gate only scans the `ports:` compose key, not those secondary
   references. The current pair is listed under
@@ -153,7 +161,8 @@ have been dead config.
   planted-literal fixture, and `scripts/check-prod-ci-port-collision.mjs` still parses
   `${TS_ADMIN_IP}:3030:3000` as one of its parser cases. Those are deliberately planted selftest
   inputs, not a stack or compose that reads the names. The remaining hits are historical records — the
-  operator checklist, the homelab proposal docs, and a `#PROD` comment in the observability compose
+  operator checklist's retired-Variable note, the retired entry's explanatory comment in
+  `keycloak/.env.prod.example`, the proposal/spec history, and `#PROD` comments in the composes
   explaining why the binds no longer use them. So a grep hit is not evidence that a bind prefix is
   back: check whether the hit is a fixture or a comment before concluding the variable is live. The
   same trap applies in reverse — a *live* reference is what matters, and the way to find one is to
@@ -185,6 +194,8 @@ Full incident narrative, the exact three reserved ports, the service/file/port b
 "Retired variables" record: [prod-reboot-resilience.md §2a](../../docs/runbooks/prod-reboot-resilience.md#2a-tailnet-ip-port-bind-race--bind-0000-us1).
 Related pages: [Infrastructure stacks](../projects/infrastructure-stacks.md),
 [Keycloak](../projects/keycloak.md),
+[prod reboot resilience](../runbooks/prod-reboot-resilience.md),
 [prod control tower](../runbooks/prod-control-tower.md),
 [server setup](../runbooks/server-setup.md),
+[local dev](../runbooks/local-dev.md),
 [secrets management](secrets-management.md).
