@@ -1,117 +1,74 @@
 {
-  "coveredCommit": "ac74233138ed2ec03d79108b4175e84809686194",
-  "coveredAt": "2026-10-24T09:40:47.190Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "f61036a5a61a06e030e5b2c0df0fa780500bfb76",
+  "coveredAt": "2026-10-24T15:44:47.925Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 831,
-    "headCommit": "07c5bc310d3369bc2ebc7fd85d622ff1ef687ee9",
-    "markerBefore": "1cb5db486ed074773c54843c14f2267ce5caba65",
+    "number": 846,
+    "headCommit": "cdca538774ade2cb59cfe9b0717d9ef59b2a3263",
+    "markerBefore": "ac74233138ed2ec03d79108b4175e84809686194",
     "slices": [
-      {
-        "area": "architecture",
-        "pages": [
-          "system-overview.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/MCM-Architecture.md"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "mcp-servers.md",
-          "keycloak.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "repository.md",
-          "mc-service.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md"
-      },
       {
         "area": "runbooks",
         "pages": [
-          "ci-evidence-pipeline.md",
-          "wiki-maintenance.md"
+          "backups.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-evidence-pipeline.md; source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-evidence-pipeline.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/backups.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backups.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       },
       {
-        "area": "architecture",
+        "area": "gotchas",
         "pages": [
-          "system-overview.md"
+          "keycloak-service-account.md"
         ],
         "kind": "refresh",
+        "drift": true,
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/MCM-Architecture.md"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "mcp-servers.md",
-          "keycloak.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md; source changed: docs/MCM-Architecture.md; source changed: infrastructure-as-code/docker/keycloak/README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mcp-servers.md; openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/keycloak-service-account.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-24T02:40:39.669Z"
+    "updatedAt": "2026-10-24T15:44:48.372Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 9,
+    "elapsedSeconds": 3099,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 241,
+    "calls": 690,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 846011,
-    "cached": 21670256,
+    "uncached": 2265669,
+    "cached": 59851318,
     "cacheWrite": 0,
-    "output": 392224,
-    "reasoning": 326466,
-    "ms": 2867502,
-    "estCostUsd": 0.8545,
+    "output": 1345639,
+    "reasoning": 1188253,
+    "ms": 9465013,
+    "estCostUsd": 2.6536,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/mcp-servers.md",
-        "projects/keycloak.md"
+        "runbooks/backups.md",
+        "gotchas/keycloak-service-account.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 0.8545,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 2.6536,
       "rateLimited": null
     }
   ],
