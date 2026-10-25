@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the four one-time stateful cutovers they have carried — the RustFS object-store swap, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, and the spec-081 US8b observability Postgres 16→18 move, now completed in production — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.3 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move completed in production, and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, cutover, runbook]
+tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
@@ -62,7 +62,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T02:24:18.205Z
+    at: 2026-10-25T01:38:05.401Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -77,14 +77,16 @@ of the secrets posture documented in [Secrets management](../invariants/secrets-
 [published-port reservation convention](../invariants/published-port-reservation.md) for its two
 tailnet-reachable operator UIs.
 
-On top of that steady state sit **four one-time stateful cutovers**, each operator-run, each with the
+On top of that steady state sit **five one-time stateful cutovers**, each operator-run, each with the
 merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
 object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
-OpenSearch 2 → 3 with the audit history preserved (feature 071), and the observability Postgres 16 → 18
-move (spec 081 US8b), which completed in production on 2026-10-20. Three of the four — RustFS, OpenSearch 3
-and Postgres 18 — put the new state on a **new external volume** and leave the old one untouched as the
-rollback; the Langfuse 4 cutover is the one that recreated its volumes in place and deliberately discarded
-the traces. The policy all four answer to is
+OpenSearch 2 → 3 with the audit history preserved (feature 071), the observability Postgres 16 → 18 move
+(spec 081 US8b), which completed in production on 2026-10-20, and the Langfuse 4.56.0 → 4.68.0
+schema-carrying minor (spec 081 US8 PR 8d, item 839), whose merge *is* its migration. Three of the five —
+RustFS, OpenSearch 3 and Postgres 18 — put the new state on a **new external volume** and leave the old
+one untouched as the rollback; the Langfuse 4 cutover recreated its volumes in place and deliberately
+discarded the traces, and the Langfuse 4.68 minor migrates in place, where a pre-merge backup is what
+separates a rollback from a loss. The policy they all answer to is
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
@@ -149,9 +151,9 @@ independently up/down-able.
 - **Non-root image runtimes and bind-mount ownership are the dominant class of prod-only failures here**
   — memlock rlimits, root-owned bind mounts under a non-root image user, and double-loaded entrypoint
   config all passed local `compose config` validation and only broke on the real prod host. The object
-  store is the same shape: RustFS runs as the image's own uid (`10001` for the pinned 1.0.1) with no
-  compose `user:` key, a fresh named volume inherits the image's `/data` with that ownership, and any other
-  uid fails at startup. Diagnose from container logs on the prod host itself, not from the compose file;
+  store is the same shape: RustFS runs as the image's own uid (`10001`) with no compose `user:` key, a
+  fresh named volume inherits the image's `/data` with that ownership, and any other uid fails at
+  startup. Diagnose from container logs on the prod host itself, not from the compose file;
   see the table below.
 - **A new external volume must exist before the merge, in every cutover that introduces one.** These
   volumes are `external: true`, so compose never creates them; a deploy that references a missing one
@@ -241,10 +243,14 @@ Full failure-symptom table and the reproduction recipe:
 ## Object-store cutover to RustFS (feature 080, item #560)
 
 The Langfuse event/media store was a from-source MinIO image built by this repository until feature 080
-replaced every instance with upstream `rustfs/rustfs`, digest-pinned and pulled rather than built. The
-prod instance runs as the image's own uid (`10001` for the pinned 1.0.1) with **no** compose `user:` key —
-a fresh named volume inherits the image's `/data` with that ownership, and any other uid fails at startup —
-and the bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the
+replaced every instance with upstream `rustfs/rustfs`, digest-pinned and pulled rather than built. Every
+shipped instance — the dev and prod observability composes and the backups compose — pins the **same
+1.0.3 line on one shared index digest**; the digest itself lives in the compose files and moves only
+through Renovate, and `scripts/__tests__/object-store-service.guard.test.mjs` is what holds the shape
+(the contract it enforces is `specs/080-minio-to-rustfs/contracts/object-store-service.md`, S1–S9). The
+prod instance runs as the image's own uid (`10001`) with **no** compose `user:` key — a fresh named
+volume inherits the image's `/data` with that ownership, and any other uid fails at startup — and the
+bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the
 same digest and Renovate moves them together, so a split that would run the server and its init on
 different images cannot arise from a hand edit. The production data is moved **in place**: the old drive is
 **copied** to a new external volume that RustFS reads, and the original is never written, so rollback is a
@@ -623,6 +629,53 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 [the Renovate runbook](./renovate.md) for what ticking it means, and
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
 
+## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839)
+
+The fifth cutover is a **minor**, which is exactly what makes it easy to wave through — and it is
+stateful anyway. A Langfuse minor can still migrate both stores: 4.57–4.68 add 11 Postgres (Prisma)
+migrations and ClickHouse migrations 52–53 (audit-log staging and relay, among others). The web
+container applies them on its first start, so **the merge is the migration**. Per
+[ADR-0002 §4](../decisions/adr-0002-stateful-major-upgrades.md) the trace store need not survive, but a
+backup taken first turns a rollback into a restore instead of a loss.
+
+**A digest revert ALONE does not roll back.** Measured 2026-10-25: 4.56.0 started on a store that 4.68.0
+had migrated crash-loops with `error: no migration found for version 53` (ClickHouse). The older image
+cannot run on the newer schema, so a rollback restores both stores (or recreates them empty) BEFORE the
+reverted digest starts.
+
+Two more traps: `wget localhost:3000` inside `langfuse-web` exits 4 because the server binds to the
+container hostname, so the health checks use `$HOSTNAME`. And neither web nor worker has a compose
+healthcheck, so `docker ps` shows `Up`, never `healthy`.
+
+```mermaid
+flowchart TD
+  Backup["pre-merge: freeze the writers, dump Postgres, cold-copy ClickHouse"] --> Merge["merge pinned to the head: the web container applies the migrations"]
+  Merge --> Check["post-deploy: both 4.68.0, 460 Prisma migrations, zero error lines"]
+  Check -- fail --> Restore["stop web and worker, restore or recreate BOTH stores"]
+  Restore --> Revert["revert through a PR, redeploy 4.56.0 on the restored stores"]
+  Check -- pass --> Live["a new trace lands in the UI over the tailnet"]
+```
+
+*Why the backup is a precondition of the merge, and why the revert is the LAST step of a rollback rather
+than the first.*
+
+The literal step blocks — B0–B3 before the merge, the P1 post-deploy checks, and the four-step
+restore-then-revert rollback — live in
+[the runbook's Langfuse minor section](../../docs/runbooks/prod-control-tower.md); what matters here is
+the shape. Both images move **together** to one version (all four refs across the dev and prod
+observability composes), and because the infra-image allowlist entries are keyed to the version they
+suppress, the bump takes them out of scope — so the same PR **re-keys** the entries at the cause rather
+than re-dating them, and the gate blocks until it does (see
+[infra-image scanning](./infra-image-scanning.md) for what a re-key means and why a re-date is not it).
+The pre-merge backup is a `pg_dumpall` of `langfuse-postgres` plus a cold `tar` of the stopped
+ClickHouse data volume; the acceptance reading afterwards is `_prisma_migrations` at 460, ClickHouse
+migration 53 applied, zero error lines in either container and a new trace readable. Note which Postgres
+store is in play: this cutover lands **after** the US8b move above, so the volume being dumped and
+restored is the `-v18-data` one that cutover created. The upgrade path was rehearsed on the dev stack
+from 4.56.0 upward on the same volumes, and the production run is the operator-run item that closes
+PR 8d in the [spec-081 task list](../../specs/081-major-dependency-upgrades/tasks.md) — read the
+runbook, not this page, for the commands.
+
 ## Capacity
 
 The pre-observability capacity check (2026-07-03) measured ~48 GiB RAM available on the prod host, actual
@@ -640,6 +693,7 @@ runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 [infra-image scanning](./infra-image-scanning.md) and [Renovate](./renovate.md), the US8b cutover's
 rehearsal record and completion note are in
 [the spec-081 research](../../specs/081-major-dependency-upgrades/research.md) and
-[its task list](../../specs/081-major-dependency-upgrades/tasks.md), and the stack-level
-view of the same seven Komodo stacks is in
+[its task list](../../specs/081-major-dependency-upgrades/tasks.md) — which is also where the
+Langfuse 4.68 minor's scan, allowlist re-key and dev rehearsal outcomes are recorded — and the
+stack-level view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

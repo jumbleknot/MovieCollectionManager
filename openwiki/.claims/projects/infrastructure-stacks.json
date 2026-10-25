@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1f779ff78979d4025a23eeff45d2dee717a107ee75a60820f860bcb0f4282bab",
+  "pageVersion": "sha256:e612fa7376de9761ff497ddfe7703e00e69609a176ea5692557f8d3c3febfc1f",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
+          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -214,15 +214,23 @@
     },
     {
       "id": "claim_e72ac8ee489949f4ac7d6e0d1c96ccbd",
-      "statement": "Both production operator UIs bind 0.0.0.0 on prod-reserved ports (LangFuse 19030, Grafana/otel-lgtm 19002) rather than the tailnet IP, because the rootless daemon starts before tailscaled and a tailnet-IP-scoped publish silently fails to bind; tailnet-only exposure is preserved by the host firewall default-deny.",
+      "statement": "Production publishes exactly three host ports, and all three are operator surfaces bound plainly to 0.0.0.0 on prod-reserved ports rather than to the tailnet IP: prod-observability publishes LangFuse web (19030:3000) and Grafana inside otel-lgtm (19002:3000), and prod-auth publishes the Keycloak admin console (19099:8080). The 0.0.0.0 bind is forced rather than chosen — the rootless daemon starts before tailscaled at boot, so a ${TS_ADMIN_IP}:host:container publish silently fails to bind (rootlesskit never learns the tailnet IP, the container ends up with no ports and nothing listens) — and tailnet-only exposure is preserved instead by the host firewall's default-deny on non-tailnet inbound. Every other service in the production topology is unpublished and reached by internal DNS, including otel-lgtm's OTLP 4317/4318 and OPA's 8181, and all three published ports sit in the prod-reserved 19000-19099 range so they cannot collide with the CI runner's own LangFuse, Grafana or Keycloak on the shared host.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L45-L53",
+          "version": "repo-lines-v1:sha256:0e6c3cfc51950e9abe258258e6cf0961e4b42e8b888badc7710511a0e8d6a80e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhMGU3OWRlNzZmNTkyYTRkZmRjNjQzMWM5MzI4MDNkMTRhN2VlODgxYzEyZjljZGRhZTFlMWExNDk0YTViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc3MGJlMTdlNTdkYWY3Y2VmNzM2NjU3MmQ0OTI5OTFlN2I4YTVjMWE5ZGViMDE3Njk5NDdkYWFlZGIwMDg2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE0ZjYyZGIzZTJhNjViNzVlM2E0Nzk4ZjhhNjJhZjJkZTdiZjk2MDZhM2FhMTdiNjY5N2RmYzYwNjBlN2Y4YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L253-L260",
+          "version": "repo-lines-v1:sha256:dc1eef13f9a246a59e7bb94d72e6e12b93d8846d6f9f1386858d2f0b925400ab:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVlY2Y5N2MwNTg5ZGJjY2EwMTMyNDViZWI2ODM4M2FkZjQ4ZjM5YjY4NjM1YjllZTQzOTE4YmZmZDIzMjliOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGRmNGRkMDRlMjYyMzZjMDk5MThkNTc1MTY2ZjVkNzM1MTMxNjVhMTFmMDM5Y2JmNmIyOTJhNTdmZmM4Mzg5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWRiZGJlMzg2ODlkMDA2MThiNGE3MjFjYTRhMWM4N2IzNmI4MTZmNjgwNzczMDM0YjAyN2QxMDY3MWQ1MzdiZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L40-L45",
+          "version": "repo-lines-v1:sha256:3a8f5a4881ef5ea65781fc28b0ea0c3691c9755b74b6cc958f5d0faa7b01efd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UxYjAyYzc2MjU1ODY3ZDJhNDg4MDljOWFmODlkNTRlYjVmZjkwNTA2NjM3OGQxMzg1YjNlNjcwZmI4MzRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E5YmM5YjFkZjU1ZWMzOGM0NzZhYzQ5NDY1YzI4NTZkOGFhMGVkN2MxMGJkY2UwNWIwY2UwZGUyMzE4MDYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVkZTQ1OWMzMjJmOWFlOGIyNTRlMDk3YzlhZDM1YjgyYTBmYjA2OGE1OTIxZjE2ZGZhNWRmYmFlMTYxMzkwMyJ9"
         }
       ]
     },
@@ -288,11 +296,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
+          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
+          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
         }
       ]
     },
@@ -302,11 +310,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:4b3f2707571bf130ebad515be5d3c0f73eb7c091713b075a2d226c8f9cd54283"
+          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:98e9d062a7f9b343e275991bc647ad93c8a5a427a930d1d4d978ffc44497e492"
+          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -589,7 +597,7 @@
       "statement": "The prod observability compose caps langfuse-clickhouse where the dev file does not — mem_limit: 4g, memswap_limit: 4g (no swap beyond the cap, since Docker's default memswap is 2x mem_limit) and cpus: 2 — because prod observability shares the physical host with the CI runner and on 2026-10-02 this container ran at ~725% CPU with swap full and slowed every CI job 2-3x; the ClickHouse image is cgroup-aware, so the container limit also bounds its internal max_server_memory_usage. The capacity check recorded in the prod control-tower runbook retained that 4g cap deliberately rather than lowering it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L569-L575",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L655-L661",
           "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY1N2U1MTRhNWU4ODg2NDA4ZGNkOTJiMzQ5YTRlOTA3NDg0ZTliYTdiYzBiZGM2YzYwYzNjNDA1M2UwZGJmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
         },
         {
@@ -701,10 +709,28 @@
           "version": "repo-lines-v1:sha256:0f418d9719ea49ab8d632e5ad724bb3f1b72eee732d40c00391c9c293de12f4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiY2FmYmJiMWM2ZGE2ZmQwYTY2NThmYmIzODA5ZmMzMWJkYmI2ODZiMDdkNmRhNGIwNTQyMTg1Mzg2NTEzMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMDViZWQyNjMwNzEzOGUyNWYyZGQ1MzAyZDRjYmJhNWQ5OWMzZDc5Y2Y2NWIyZTkzYTQ1Mzk4NzA5ZGNiZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMWRmMDQwN2NjYWE0MThlODIzNWQwZjkyNzk4MjU3YWZkOWQ4NTljYWE2MzViOGRhNTI2MDBlOTU0Y2UzOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNGU4NDY0OGQ1NDJhNDA3ZjgwMWM2NDExYWI4MTQ3MDBmNDg3M2E3ZTY2NjYxY2M0YzYyNGZhMDFkODIyOGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e2ca4fdfce50412f9e482c6d2a47aa90",
+      "statement": "The dev and prod observability compose files pin different OPA images and healthchecks for one shell reason: the dev file uses the distroless openpolicyagent/opa image and declares no healthcheck, while the prod file uses the -debug variant (distroless has no shell; -debug adds busybox so a healthcheck and a Komodo status exist at all) and its healthcheck invokes the opa binary itself (opa eval --fail ... http.send({...}).status_code == 200, exec form) rather than wget, because that busybox ships no wget, curl or nc — the previous wget form failed every run, so the container read unhealthy from ~2026-09-10 (FailingStreak 130247 by 2026-10-03) while OPA was serving fine.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L275-L303",
+          "version": "repo-lines-v1:sha256:38790f82e7a59cd4b2599d670aebcbf5c303db40a4de43d093210533e267df0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYzc4Yzk2MGUwMmY3Y2JkM2M2MzFlNTYyZjliNGViY2E3N2Y2NmJhZTkwZjhmN2NiZjU0MDMwMGEwYmRhZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYjA1MmIwMjQ1ZmQ1ZGYwYzQyYmFlZGU1YTEzM2VlN2E2NTY3ZTlkNGMyMGQ4MWJkM2E0NTdlYjU4NWFmMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMTQ0ZjEyZjVjN2M5NGE3YWViMjk3ODhlZGU3ZjQ1ZTA1ZjJmZTJkOGRlMWQ5ZjBjMTY3ZWQ1YTcyM2U3NzYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L247-L266",
+          "version": "repo-lines-v1:sha256:118db7a7a026f69fb9502bdfbeccff6a3a8603258237e017877e857e442432e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzYyYTExOTY1Njk0NTk5MDMxN2FkZGQxNjJjNDhkMDczYWE4Y2UwMjZiYzMwZGQ1ZDM1NTVmZjQ5NjA5YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OTU2MWZlZjZiZDU3NDM3OGJiMWUyN2YxZTVhYWQ1N2QwYzdmNzllMmRkMGU4OTFmNzUyM2E4NDlkZDk2ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MzRmN2JlZGNiZjgwMmI1ODQ5YTI3ZmEzYWNhNjljMjJiMGZlNDczZjRmOTRiZDkyMmQ1ZTMzYjA0YzEyZDMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T17:33:57.993Z"
+    "at": "2026-10-25T01:38:05.401Z"
   }
 }

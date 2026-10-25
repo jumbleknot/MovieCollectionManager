@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0dee608f8258b7f5ff02c68135f0e1ff5c6ee847050675bee3fb426d5548e60f",
+  "pageVersion": "sha256:c463f62f14aed7208eb9d772639ba6e6793d33a3cabb743fea1e725f8e0ec06a",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -26,7 +26,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -40,7 +40,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -54,7 +54,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -68,7 +68,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -241,8 +241,8 @@
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3158-L3222",
-          "version": "repo-lines-v1:sha256:6927e43e2bee286de1c2dd52d78f5c67ef6325be592dbd0c7d02aed64ba0062f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxN2VkOTg0MzQ4NGY0NTYwMjMyMzExOTdjNmFhZmZiMDRkODM1ZTRhMjA2MmIxZmNmM2IwYmZkYTY1NGNjYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDEwNzQzOWQ1YTVmNjY2MzY1N2U1ZjA2MWI3OTY0YjJmNWNhMGIyMTA2NWQ3YTc1NzhkN2EzYWE4NmE0YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3158-L3254",
+          "version": "repo-lines-v1:sha256:a5cacb30d39add7dd5469cc2eb3b2b5065633849a2abe1dcdc3d222d1f85bc68:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxN2VkOTg0MzQ4NGY0NTYwMjMyMzExOTdjNmFhZmZiMDRkODM1ZTRhMjA2MmIxZmNmM2IwYmZkYTY1NGNjYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDEwNzQzOWQ1YTVmNjY2MzY1N2U1ZjA2MWI3OTY0YjJmNWNhMGIyMTA2NWQ3YTc1NzhkN2EzYWE4NmE0YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
     },
@@ -259,7 +259,7 @@
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3222",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3213-L3254",
           "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -314,7 +314,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -346,7 +346,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -360,7 +360,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -384,7 +384,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -398,7 +398,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -502,7 +502,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -516,7 +516,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -550,7 +550,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -584,7 +584,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -612,7 +612,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:e70387bcdf06177a877b2fc9e50970b8f255a2b595b4e5bbfb9183571b26f57d"
+          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
         }
       ]
     },
@@ -664,7 +664,7 @@
     },
     {
       "id": "claim_08f91b29298d46bcae49c39188e94d9c",
-      "statement": "A discharged hold is replaced rather than deleted, because a hold someone deleted and a hold deliberately discharged are indistinguishable from the absence of allowedVersions: vault (<1.19), opensearch (<3), langfuse (<4) and the file-scoped observability postgres (<17) each ended as a matchUpdateTypes [major] plus dependencyDashboardApproval rule, and the guard test asserts the successor gate and the ordering rather than merely the missing ceiling — a stale ceiling left behind blocks the version actually deployed.",
+      "statement": "A discharged hold is replaced rather than deleted, because a hold someone deleted and a hold deliberately discharged are indistinguishable from the absence of allowedVersions: vault (<1.19), opensearch (<3), langfuse (<4), the file-scoped observability postgres (<17) and MongoDB (<9, held one day) each ended as a matchUpdateTypes [major] plus dependencyDashboardApproval rule, and the guard test asserts the successor gate and the ordering rather than merely the missing ceiling — a stale ceiling left behind blocks the version actually deployed, and a stale <9 would make Renovate propose a MongoDB downgrade.",
       "evidence": [
         {
           "resource": "repo://renovate.json#L1104-L1176",
@@ -675,8 +675,8 @@
           "version": "repo-lines-v1:sha256:d243f8f5fed2d2625c69debb90863b524f128145e8e2d4f2c4b894063fba0205:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNzBhZTRhZWQ2NTcwZWI5NzEyOThmNjVkMmQwY2U5ZGI4OWEwMGM0YzM4NGQ0Y2JlYzQ2MjAzNTgwZjMxNDIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YmViOGVmYmNlOGNmMzBkMDZmYjcyN2FlNjE4YjYyODQ0MWYwZDAxYzYwNTMwMjQ1MTZjMWVlNmM3ODgwODk4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYjViMDU2NzgyYzkzZjRkYjcxZDhjMGY2NTczN2IzNjc1ZGRmNDQzZGFkZjJkOThkZWFiMjNkNzE3Y2ZiY2QyIn0"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3222",
-          "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3254",
+          "version": "repo-lines-v1:sha256:a668d1ab5fb0dacc4bb86cf8e31df1962d0da4e2bd523849f532d7ef96bc2e40:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MDZiYzM2MWUxOWYyNTVmMzM2MDMyY2IyMTkyYjFkOTE3NzZiN2UzYTdkN2UwZGVlMTQ3ZjAxNDc4MTAxNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
     },
@@ -693,10 +693,38 @@
           "version": "repo-lines-v1:sha256:672a85085dd558ad9ac21ad37ba1c81e06ff033fd181e2ad8640794ad2b0a78a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjA0OWUzNTI0NDFkNjg4ZmE3NTczZTk5NjJhY2U5NGMyZTVlZjQzMGZhNWY1YjVmZGIyZTFjNWY5YWU5NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMjg2YmI1ZTc2YjM3MmQwNTYyMWNiYWMxMDNjYmFiODdlOTczMmFlZjk0ZDMzMGY3NjA4OTliNDEwNzUwMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MzgxYmRiMzUzYTFlMTU5YzRhNmNiMTRjNTA0ZmQxYzkyM2Q0NmFmN2FmYzhiY2M0MThmMzAzMGM3Mzg1MDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d723688c7b3e48269c4821156d4367e2",
+      "statement": "The MongoDB <9 hard hold was discharged into a major-approval gate rather than deleted: spec 081 US8a (item #819, PR #817) removed the ceiling because PR #817 itself moved every mongo pin to 9.0 and a leftover <9 would block the deployed version and make Renovate propose a downgrade; the guard test asserts no allowedVersions on patch, minor or major, dependencyDashboardApproval on a major, and an automatic patch stream.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1152-L1176",
+          "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3211",
+          "version": "repo-lines-v1:sha256:4f04f3908fd5d14cc4e195a77d4fcc42da4af59e2dae16b1b1fa3a36a05a0793:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MDZiYzM2MWUxOWYyNTVmMzM2MDMyY2IyMTkyYjFkOTE3NzZiN2UzYTdkN2UwZGVlMTQ3ZjAxNDc4MTAxNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYmM3MDZkY2U0MmY2NzBlYWMyZDkxMmNjMTZiYTBmNTUwZmE1NWNhZjM4MjAyMzU5MDUzMDY4ZGY4NTJjZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9869b66b4a84911a2c919790644b747",
+      "statement": "A MongoDB image major is also a data-ownership migration: 9.0's mongod runs as uid 1000 where 8.0.8's ran as 998, so a volume written by the older image is foreign-owned and 9.0 refuses to start with 'Unable to read the storage engine metadata file ... storage.bson'. Every MongoDB service that mounts /data/db therefore starts as root only to re-own that directory and then drops to the image's mongod user with setpriv before mongod runs; the mongo-data-owner wrapper is byte-identical across all four compose files and its guard test executes it against stubs, so the assertion is about what it does rather than how it is spelled.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L8-L31",
+          "version": "repo-lines-v1:sha256:b29d89a80bfbd28833284ca319ef79320b64758a3174e052efced23ebe2fb977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzZiNTE5MmIxNDMwMmRiYjdmZWRmYTE5ODhlMWYwNGVjOWY2NDhlYzU4MGYxMTMwMGMxMTBmMjdhZDcwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NjZjODNmYTM1MzhkMjNhMDc5ZmFiMTM5ZTIwNTYwZDNjZjFmZjFkYTM5OGY0ZWM5ODU2YWRkZGQ0MTc1ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/mongo-data-owner.guard.test.mjs#L1-L113",
+          "version": "repo-lines-v1:sha256:6887de0705251017cd5c980a71ddef352017899124bb8173b3d320dc5882cc8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YWQyMTUzNDQwZDdjZTJlODE3MDFkMDY5MTNmMTJkNzdmZjZmZDEwZDg0ODVlYzVlOThmNmJiM2Y0NzA3NDMxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-21T23:48:47.665Z"
+    "at": "2026-10-24T23:24:20.987Z"
   }
 }

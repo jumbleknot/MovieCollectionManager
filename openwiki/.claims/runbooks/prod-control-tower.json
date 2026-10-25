@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c46b087c1a94ca55c7c0069c150ff51e63f6f9175bb7c624663c0736151334d1",
+  "pageVersion": "sha256:562d9e709337454602397bff3deb087f9404bec85e3e8a222ac3dc659bdcc03c",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -21,7 +21,7 @@
       "statement": "A deployed support stack does not by itself change application behavior: the consumer composes reference every Control-Tower variable as plain ${VAR}, never ${VAR:?}, and each capability is gated in the consumer's own source (audit_sink on OPENSEARCH_URL, observability on LANGFUSE_*/OTEL_*, opa on OPA_URL, flags on UNLEASH_URL), so unset means a silent no-op. Rollback is therefore removing the consumer env and/or deleting the support [[stack]] block, with no app redeploy needed to disable a capability.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L618-L626",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L704-L712",
           "version": "repo-lines-v1:sha256:83b799765026fbf9bf09cd4cd00a2a0325f067d0f3d9aabdcf54fe3434926af4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NGM1M2JlNmViYjg3ZjU1OWI5ZjdiOGU0Yjg2M2YzNmY5YmRhMjk0NTFjNmY0Njg2YmU4ZWZlZjQ2MTc4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY4YWVmN2Y1NGRiNGNlMmVlM2Y3NTYwY2RhZDIzZmIyYWJjYzVjNzNlYjI1MWE3NWVhNGEwMWZmNDA2ZjU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlhMjcyY2RmNzE2MDgyZTRhZmViMTc2NzdmZTQyMzBkYmIxM2IzMGFkZWZhYjkzMGJjZGU2MDZmMjk1MTFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ5YjYzMzY0Mzg3N2UwM2RmNDQzNjdiNGE1MDM3OGU4Y2UxOTZiNzdjYTJiOGYzZjA3OWQwOGFiZjhiMGZlMyJ9"
         },
         {
@@ -40,7 +40,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -68,7 +68,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -86,7 +86,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -104,7 +104,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
@@ -122,7 +122,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
@@ -144,7 +144,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
@@ -158,11 +158,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
+          "version": "repo-file-v1:sha256:ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
@@ -194,7 +194,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         }
       ]
     },
@@ -204,7 +204,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         }
       ]
     },
@@ -307,7 +307,7 @@
       "statement": "The prod-only failure table's two smaller traps are still load-bearing: the audit-init container must use an image shipping both bash and curl (init-audit-user.sh is #!/usr/bin/env bash, so curlimages/curl cannot run it) and its entrypoint pre-creates the sibling stacks dir the script cd's into before its guard, or set -euo pipefail aborts everything; and the BFF's audit POST needs OPENSEARCH_INSECURE_TLS=true because OpenSearch serves a self-signed cert and the sink sets rejectUnauthorized:false only when that flag is truthy, while the gateway's httpx sink needs no flag.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L577-L595",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L663-L681",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -326,11 +326,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         }
       ]
     },
@@ -339,7 +339,7 @@
       "statement": "Enabling prod-observability followed a capacity check on the shared prod host rather than an assumption of headroom: ~48 GiB RAM was available against ~2.2 GiB of actual container RSS, and observability (~6-7 GiB) plus the audit sink (~1.5 GiB) left ~40 GiB free, so the decision was always-on with no opt-in fallback and ClickHouse's mem_limit retained; the check is to be re-run before any future footprint increase.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L569-L575",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L655-L661",
           "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwMzg1NzE1NDVjOTYzNTNlY2JjODQ0MzgwMTk2NDk4OTU5ZWM4Y2NlZGZkYjFkNmI5YzRiNjI2OTgyYzQ4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
         }
       ]
@@ -363,7 +363,7 @@
       "statement": "init-audit-user.sh no longer echoes the credentials it provisions. It used to print both passwords in full, and once agent-audit-init began running it in production that output went to container stdout, leaving both live credentials in docker logs agent-audit-init, in Komodo's log view and in anything shipping those logs — a direct violation of the stack's never-log list. It now prints where the credentials live (dev: the gitignored stacks/audit.env; prod: Komodo Variables), never what they are.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L577-L595",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L663-L681",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -374,11 +374,11 @@
     },
     {
       "id": "claim_1e12b323566a45a59adad17f8ff02b0a",
-      "statement": "The prod Langfuse event/media object store is no longer built in-repo: feature 080 replaced every instance with the digest-pinned upstream rustfs/rustfs image, which runs as its own uid (10001 for the pinned 1.0.1) with no compose `user:` key — a fresh named volume inherits the image's /data with that ownership and any other uid fails at startup. The bucket-init one-shot langfuse-rustfs-init reuses that same pinned image, all instances pin the same digest and Renovate moves them together, so a split between the server and its init cannot arise from a hand edit.",
+      "statement": "The prod Langfuse event/media object store is no longer built in-repo: feature 080 replaced every instance with the digest-pinned upstream rustfs/rustfs image, which runs as its own uid (10001) with no compose `user:` key — a fresh named volume inherits the image's /data with that ownership and any other uid fails at startup. All shipped instances (the dev and prod observability composes and the backups compose) pin the same 1.0.3 line on one shared index digest, and the bucket-init one-shot langfuse-rustfs-init reuses that same pinned image; the object-store guard test holds the whole shape (digest-pinned tag, no `user:` key, RUSTFS_* credentials, the readiness probe, and the prod stay-alive init), so a split between the server and its init cannot arise from a hand edit and the digest itself is left to the compose files and Renovate.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs",
@@ -396,7 +396,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
@@ -472,7 +472,7 @@
     },
     {
       "id": "claim_62c64aa6b1f744c6bb283cca3885b859",
-      "statement": "Three of the four one-time stateful cutovers on the production support stacks — the feature-080 RustFS object-store swap, the feature-071 OpenSearch 2→3 upgrade, and the spec-081 US8b Postgres 16→18 move — put the new state on a NEW external volume and leave the previous volume untouched as the rollback, so their rollback is a revert-and-redeploy rather than a data restore. The Langfuse 4 + ClickHouse 25 cutover (feature 072) is the one that recreated its volumes in place and deliberately discarded the production trace store, a trade ratified by ADR-0002 §4 at that cutover only.",
+      "statement": "Three of the five one-time stateful cutovers on the production support stacks — the feature-080 RustFS object-store swap, the feature-071 OpenSearch 2→3 upgrade, and the spec-081 US8b Postgres 16→18 move — put the new state on a NEW external volume and leave the previous volume untouched as the rollback, so their rollback is a revert-and-redeploy rather than a data restore. The Langfuse 4 + ClickHouse 25 cutover (feature 072) recreated its volumes in place and deliberately discarded the production trace store, a trade ratified by ADR-0002 §4 at that cutover only; the fifth, the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (spec 081 US8 PR 8d, item 839), migrates both stores in place, so there the pre-merge backup is what turns a rollback into a restore instead of a loss.",
       "evidence": [
         {
           "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md",
@@ -480,11 +480,11 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -494,7 +494,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
@@ -502,7 +502,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -512,15 +512,15 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:b7d1e8843fb718047aacfd9087e876d50048b6b97b96079a3c9ded1bd20e60f4"
+          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -534,11 +534,11 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -566,11 +566,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
-          "version": "repo-file-v1:sha256:e9e444fec74a727a5152d0195eb2f0d8950b4b85b573d2f6ea6cfb8b8ce46c1e"
+          "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
     },
@@ -580,11 +580,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:84ee5b56ee91bd454a75b297aacf495acd889b19059b89876f7e96b2758ecab1"
+          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
         }
       ]
     },
@@ -594,17 +594,63 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:84ee5b56ee91bd454a75b297aacf495acd889b19059b89876f7e96b2758ecab1"
+          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa420ce9734240449da685db596fe8a5",
+      "statement": "A Langfuse minor can still carry schema: 4.57–4.68 add 11 Postgres (Prisma) migrations and ClickHouse migrations 52–53 (audit-log staging and relay, among others), and the web container applies them on its first start, so for the 4.56.0 → 4.68.0 cutover the merge IS the migration. Per ADR-0002 §4 the trace store need not survive, but a backup taken first turns a rollback into a restore instead of a loss; the pre-merge backup is a pg_dumpall of langfuse-postgres plus a cold tar of the stopped ClickHouse data volume, and the acceptance reading afterwards is _prisma_migrations at 460 with ClickHouse migration 53 applied, zero error lines in either container and a new trace readable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
+          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+        }
+      ]
+    },
+    {
+      "id": "claim_bbb22a29b4a046b994714d08d9274058",
+      "statement": "For the Langfuse 4.56.0 → 4.68.0 cutover a digest revert ALONE does not roll back: measured 2026-10-25, 4.56.0 started on a store that 4.68.0 had migrated crash-loops with `error: no migration found for version 53` (ClickHouse), because the older image cannot run on the newer schema. A rollback therefore restores both stores (or recreates them empty) BEFORE the reverted digest starts, and because main is protected the revert itself goes through a pull request.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
+        }
+      ]
+    },
+    {
+      "id": "claim_3af61f7385004e859e2fd3313a06e557",
+      "statement": "Two smaller traps shape the Langfuse 4.68 minor's checks: `wget localhost:3000` inside langfuse-web exits 4 because the server binds to the container hostname, so the health checks must target `$HOSTNAME` (and the worker's equivalent is on its own port); and neither langfuse-web nor langfuse-worker declares a compose healthcheck, so `docker ps` shows `Up`, never `healthy`, and health must be read from the HTTP endpoint and the logs instead.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-21T02:24:18.205Z"
+    "at": "2026-10-25T01:38:05.401Z"
   }
 }
