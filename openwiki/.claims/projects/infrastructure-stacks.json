@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6eff87134e2b598199d367477d3936ad8986b7772fbe0c3da8d1feb172b087a6",
+  "pageVersion": "sha256:66e6ec2547acd702bb865a2c7ab6cc17ee316ef19fa30ffbf8a023d6e67dd13a",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -738,19 +738,19 @@
     },
     {
       "id": "claim_9f80a56aeab74f26a7f491b98bfecc4b",
-      "statement": "prod-mcm-bff's environment block is the largest in stacks.toml and is where the scheduled-backup switches live: feature 073's production enablement (item #843 follow-up, 2026-10-25) added BACKUP_CREDENTIAL_ENC_KEY, BACKUP_TICK_SECRET and BACKUP_ALLOWED_DESTINATION_HOSTS, and feature 083 added the consent pair BACKUP_CONSENT_CLIENT_ID / BACKUP_CONSENT_CLIENT_SECRET. Until the first three landed none was set, so scheduled backups were off in production — every private destination was refused, no destination secret could be sealed, and the boot log read 'backup scheduler disabled'. The allow-list is an exact host match with no port and is a plain rather than masked Variable because it is LAN topology, and BACKUP_CREDENTIAL_ENC_KEY must never be rotated casually because it orphans every stored destination secret and offline token.",
+      "statement": "prod-mcm-bff's environment block is one of the two largest in stacks.toml (fourteen keys, matching prod-observability) and is where the scheduled-backup switches live: feature 073's production enablement (item #843 follow-up, 2026-10-25) added BACKUP_CREDENTIAL_ENC_KEY, BACKUP_TICK_SECRET and BACKUP_ALLOWED_DESTINATION_HOSTS, and feature 083 added the consent pair BACKUP_CONSENT_CLIENT_ID / BACKUP_CONSENT_CLIENT_SECRET. Until the first three landed none was set, so scheduled backups were off in production — every private destination was refused, no destination secret could be sealed, and the boot log read 'backup scheduler disabled'. The allow-list is an exact host match with no port and is a plain rather than masked Variable because it is LAN topology, and BACKUP_CREDENTIAL_ENC_KEY must never be rotated casually because it orphans every stored destination secret and offline token.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "resource": "repo://docs/runbooks/backups.md#L51-L69",
+          "version": "repo-lines-v1:sha256:edacf9c409754c8e9505ac07a6e83bfd11844211e71a92a28fb11f1258d7503f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOWUyY2NjN2ZkN2U4ODM0ZGZhNzQzZGY3NmY4Mzc5MWM4ZTVjYzE0NTIxYjkxNGFmZmU3MzQzZDQzOTliNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YjE1NzRhYmM2MDhmMjI2NTEyZWU4MWViYTgzYjQ3Y2FkYTFhMTBmZGE2MTlhMDk2N2QzZTI0MTc2Nzg1MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYzllMTI1OTdmMWNmNTNkOWJmYWFmZmNjYjQzYzNkM2MwMDY2ODBjOWI4OWQ3YmUxMDJkZmEwYzdkZDhiOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZjAxYWZiNGQ2MWZmMWE3Y2IxNDg2OWI0NTNlMDk2YjE4NGU3ZmU5ZDM4ZTE1NGM4NjhjY2Y3Y2Q2MmNlNTIifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L104",
+          "version": "repo-lines-v1:sha256:1ec342b9fd508cc3005fcbe04ad8b3e8d31917d245df35a46e7cc1386bd9a4e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzgwYThkZDNjYzQ0ZmFhNzFjYWZlNWY1ZTlhYWY1NDE5MzAwZjVmNzE3NDEzNzZiZWFkZDAzNTgwNTc1NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYTlmMDAzYWFlMmE1OTgwOGJjMmY3OTdiOGM0Njg0OTY4MWQ0NjEyMGVhMDNhYzA1OTE4NWE0ZTJjNDAwODkifQ"
         },
         {
-          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md",
-          "version": "repo-file-v1:sha256:f0625476c0c34ba574696771c5cd90708e8eb13dd73e3ddf131338ee50dc5025"
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L113-L156",
+          "version": "repo-lines-v1:sha256:e413efa2fe68ff47e2a8df51042eda1b6a5f8c887a01368b46d072145b9bcdd3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYWYwYTYyZjg1ZWMwYjYxZGJhOGM0MDNiNWY3N2YwYWM1YWFkY2Q0MGZlZDZhZjllYTVjYmU0YWQ1MDZjYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzc1M2EwNzlhMjJhZGFlY2U3Yzc0ZDIxMjFlNTk3OGUyNjM0ZjJmMWNiOTkyZGI1MzBhMzZjZjFiNjAzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYzliMTEwZmJjMzRkOWUzOTEwYmIwMjBhM2I5NzliNjliM2ZlMmQ1ZWJlMDk4ODAyMGU1NDQ2Mzc2MWU3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZmY3MGEyY2QwMmM2OWMyODMyYzNiYWM5ZDBkMjZmZjk4YjZhYzMyNDEwOTQ5ZmE1ZjhiZWQ3NGVmNGI1OGYifQ"
         }
       ]
     },
@@ -768,7 +768,7 @@
         },
         {
           "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md",
-          "version": "repo-file-v1:sha256:f0625476c0c34ba574696771c5cd90708e8eb13dd73e3ddf131338ee50dc5025"
+          "version": "repo-file-v1:sha256:d85765df8bf5038ac2b70d93e3d2fee2240fa08de1333b91ae4a2229e9c4999a"
         }
       ]
     },
@@ -807,10 +807,32 @@
           "version": "repo-file-v1:sha256:fcc16e01476904162d68839214cfbeb4ec0e732a4add508478028076ade391f2"
         }
       ]
+    },
+    {
+      "id": "claim_62c8fce3b6dc4c059d24f7ac3f25d51f",
+      "statement": "prod-mcm-bff's production exposure is a proxy contract rather than a published port: the compose declares no ports and instead joins the external edge-network so cloudflared reaches mcm-bff-service:3000 by name, with TRUSTED_PROXY: \"true\" set inline in the compose environment (a non-secret literal, not a Komodo Variable). Since spec 083 T010 that flag also drives express's trust proxy in frontend/mcm-app/server.js, because the Expo server adapter builds every request URL from req.protocol and the raw Host header; without it the backup-consent and account-deletion re-authentication routes derived an http:// callback origin and Keycloak refused the unregistered redirect_uri, while the flag unset keeps a directly exposed BFF from being talked into https by a client-supplied X-Forwarded-Proto.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L46",
+          "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L182-L193",
+          "version": "repo-lines-v1:sha256:ea807b3b4aa14f6d23525847d3d7762391c557f5152bcb40a8adcbc0b875b88d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyYzU3NjYzNTVkZmNhYzBjOWMxZmJmYjI0NjE4NWY5YmZmMDZkOGJlNjU3NGMwZDVmOWEyMWM3MTJkZDAxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMzE3ZmIxNWJjYTA1YTY4OTQ5YWU4N2EyMzM5NTA1OWI3NzdmNzc2NDM1NTZiY2U1MmFhYTRhN2U5MDUwMzMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L36-L45",
+          "version": "repo-lines-v1:sha256:c3e4b0e04204be5dd9f81e0e98a6987f23d1628f5cef7a1cd2ab62e021670573:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNDEwNTNmNjlkNjFhYzI3YTQ0YjA4ZjZkYTVmZDZiN2JhMjcyOTliMWYxNjdkNzAwZjMyZWFkMjAyN2NjNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYzFkM2VhMzIxNDE1MGQzMWJkZjgxZTkxYWI4ZTBhODA2ZTFjZGJmZWMyY2JhOWNhODBlMWNlOTg2NzMwMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYTBjNDI1OWY5NWViZDA5YmViNjcwZjc5YTJlNjkzY2E3ZTM5ZjQxNTI2Mzg3YjQwMWIwMjNjYjI5ZmFjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhMWQ3MzI5NjBmYjM2MGEyNGVhOTE0YTMwNTc4MTQ1ZjY4MmVmNjUyMWFlMmYwOTQ4OWM2NjA5ODc0NDRmZDcifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L158-L182",
+          "version": "repo-lines-v1:sha256:60b1297909d80d163c76768ddc455addcd9895240adf03da14a96fce2b5b4610:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY3NDY1YzBlODQwYjBhMmNkYWExNDI0YWUzMTBmYzgzMmM1YzRjYjY3ZjNkZWExYzI0YmNjMDg2MDBjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGMwMmJkYTA0ZWE4YTFmMzg0NTU3OWYzZjJlOTVhNWY4ZjNiMGMwMmI0ZGZmYzU1YzYxZGIwZTYwYzY1ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyOWMwYjBjYjQ1MzMyYTlmZDg3NGZlOTkwY2IzMTRkOTM4ZGRlODQxODRlNjg4OWVmZDViZWJhMjg2NDY2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-10-25T18:33:06.357Z"
   }
 }

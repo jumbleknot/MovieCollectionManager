@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:061693f61b0862c1b6bc13f3c05b664d24bf7fb7877e16a35f363a02a9691038",
+  "pageVersion": "sha256:81fea3a6e7f426d5fdac02978910c28dfd2a7c219ba0ba67587f9e1fa3eaa7ec",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -277,8 +277,8 @@
       "statement": "The web security-header layer is built by `frontend/mcm-app/web-security-headers.js`, a pure plain-CommonJS module (not TypeScript) because the hand-written `server.js` Expo adapter lives outside the Metro bundle and cannot import the app's compiled TS; it builds an enforcing (never report-only) CSP whose `script-src` allow-lists Expo Router's single inline hydration bootstrap script by a stable sha256 hash so neither `'unsafe-inline'` nor `'unsafe-eval'` is needed, plus three always-on static baseline headers stamped on every response.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/server.js#L31-L71",
-          "version": "repo-lines-v1:sha256:77d1d83c9c20c8e37eb1fb0f189670e4e28e3e6e70426fa6478cb41e7d7fded7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYmEwMzlkZTJmMjg5N2IwNTM0NGI0MGE3M2Q1ZjQ5Nzg0MTcyMzgzNWM1OTMzMjliMDBkODliODhlMmViNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYTczMGVlNTJjZTUwN2E0YTA5MjJlOGE0NzI5OGNhMGZkNmJiMDVmMDAzMzVlOGI2Mzg4NzA0ZGY2OGJlMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
+          "resource": "repo://frontend/mcm-app/server.js#L48-L84",
+          "version": "repo-lines-v1:sha256:211b28dce08caa8ecada386eb243d5a132ca77211dba0a3116839982b5038d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2Y2OWYyMDQ3YmM3Y2NmZWM3YzM3YzZlNDliODNjOGYwMzVjODE5OWFkZjg5MWFkMWRiNzAyMWE1YzFmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMGUwMDMzNTM0NTgyZWVmYWVkNTBlM2JhNmQwNGJiNTMyZTdkOWFjMzcyMDQzZDAyMzQ4OWQwODc0Yjk2NGYifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/web-security-headers.js#L1-L40",
@@ -295,7 +295,7 @@
       "statement": "The browser-facing Keycloak origin that the CSP's `connect-src` needs is read from env at boot and reduced to a bare `http(s)` origin, falling back to a localhost default on anything malformed, because a scheme-less or non-web-scheme value does not throw in the WHATWG `URL` parser — it yields the opaque origin string `null`, which would emit a broken `connect-src 'self' null` directive.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/server.js#L35-L45",
+          "resource": "repo://frontend/mcm-app/server.js#L48-L58",
           "version": "repo-lines-v1:sha256:bf96f3fc54a97360e888a08cf39768d945805b0adcedb755a3c0f1777b27159c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNDQ1YjgwYjdlMGE0NTI3YTk1YTdiNDk2Zjg2M2Y3MDA0MWJiZmMxMmE3ZTZlNmE4YzFmZDZkMDBlN2RlMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5YTViZGI1Y2Q4OWY0NGZmNDAwMDljYzFhOTUyMTAxY2IxZjJjZTcwZTUyZmY3MzNmNjQ0MDM1MzY3NGZiMDIifQ"
         },
         {
@@ -309,7 +309,7 @@
       "statement": "The web-app CSP is path-scoped out of `/bff-api` by `isApiPath`, so the API surface keeps exactly one CSP — its own strict handler policy — rather than depending on adapter same-name header merge order, while the three static baseline headers apply to all paths.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/server.js#L57-L71",
+          "resource": "repo://frontend/mcm-app/server.js#L70-L84",
           "version": "repo-lines-v1:sha256:1f367afb6018f9ed1c64ba1bb1eec89e25029598c64ba6fbd0875ba385482630:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNDQ4YTlkYjFkYzY0NzYzOTBkYmE0Y2RkOWI0Yzg1NzRlZWQxMmNkMjU4YTYzOTFiZWYyOWUyNmRjOTQwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
         },
         {
@@ -565,7 +565,7 @@
           "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1277-L1320",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1424-L1467",
           "version": "repo-lines-v1:sha256:de5c36f62889a0e15afca6423d21af3163bb032b1845dae5579fc61b077bdce4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYjJmNzNkNjBlOTI3YmFjOWMwNWNjNmRmZjAyOTAxYjg1Zjc0ZTU3MTA4NDZlYjQ1M2VhNTM4ZDFhYmUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ZGU4MGU4NDMwMTA4MmFiNGY3ODBjZmFmNGEzNjZhNDIxOGUxNWE2MWYxMmY4Njg0Y2M0ZjljYzY5NTQ5MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDBhYzM3NmM2YjY3YmVlNTFjOTBiODkyNjAxZTE5YjYxZjFkZTk2NDQxYTM4ZmY1Y2FhYWFkODY2ZjY0M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0ZDNmNGQwMjFlNWQ3ZGQ4MTFjNmU0YWUzMDIwYmQwOWMwY2YwYWRhOWFmYjg5MWUwZTg1ODJkMzMxNjBjMDUifQ"
         }
       ]
@@ -645,10 +645,32 @@
           "version": "repo-lines-v1:sha256:768d80f90ac84f52da4547d1cd28ccacbbf0f92a91b475df776235e049973200:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjhhMjc3MjUzMTFjZmFhNDFiZTk1N2JmMTY2OTk0NDg2NGQ1NTQ3NWI4ZjM4NTY0ZmE0NGIwYzdmNjk1YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNjI3Y2EyOWIzMTg5YjcxY2QyMGNmNDhjZTRiNDI1NTQxZjNjNGZmZDVkMjFjNDcyMWNlNGI5ODU3NmRkMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMmMwYzUyM2IzNTUzZDY4Mzg4MWEwNDcyY2M1ODcwYTg4ZWZiZmNjZDU4N2YzMmMyY2ExOWRmM2E1MzZjNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZjk3MWI3OTI2NjlmYzAwMDkwYmQ1YzRkZDQwZTQ3NmRmNjZjOTRlYTllNWEyM2ZmZGIyYTJkMjY2M2VhMzAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_93f59b9ba3204dceb06ec1b602c8bc86",
+      "statement": "`frontend/mcm-app/server.js` enables express's `trust proxy` (set to `1`, trusting exactly the immediate hop) only when `TRUSTED_PROXY=true`, because `@expo/server`'s express adapter builds every request URL as `${req.protocol}://${req.get('host')}${req.url}` and behind the TLS-terminating proxy `req.protocol` otherwise reads `http`, which made the backup-consent and account-deletion routes send Keycloak an unregistered `http://` redirect_uri; only the scheme moves (the adapter reads the raw `Host` header, which `trust proxy` does not touch, so `X-Forwarded-Host` cannot move the origin), and leaving the variable unset keeps a directly exposed BFF from being talked into `https` by a client-supplied `X-Forwarded-Proto`.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L46",
+          "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L31-L50",
+          "version": "repo-lines-v1:sha256:b5a7eb9c25c6c02a80c23736f875b1eac357642faa18dde23432ac2b36d6239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OTZmODM4NTlkMWJkMzZhMmFmNGE4OTMwMjkyMmE2ZjA4OWQxNjU5OTU2MmVmNWMxNTU1ZjExN2ExYTkyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYzQ2NTY0YmQyYmY0ODJlN2I5M2YzOTZlYTg2NDcwZTc3ZTFkYzZlZGE0MmRhM2JhMzc0NDM0YTY3MGVlOTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L11-L19",
+          "version": "repo-lines-v1:sha256:97b7cdfc6a285bc7cacf1bfaf651a907bbc1ff8eadc3a3ac507c5577059a554c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA0NjU5OWY4ZTViNjU5NWQxYjhjODEyNjFiYzk2NjQzMmVlMzZiN2UzMjViZDQ2OTdiNjg3M2ZhMDZmMTczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAwMTUzOTBlNGM0NmFkMDY1MjVmNjk1MmI0NTEyNTBjMzRkNDYwMDFhNzQ2Yzg1YzM3YWQ5NjkyODk3NjVkOCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L81-L121",
+          "version": "repo-lines-v1:sha256:cfca5807d90f55a67289bf6f0da93d39771d2fa192c7b5ac363ca6ca67f448d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZWYwNjVkZjJlZDg4MDdiMGNkOTg3MDZjNzAxNjI2M2M3N2JlZTE3NWVhNWVmYWJjNGU3OGZjZDU5ZjhiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-20T06:13:33.915Z"
+    "at": "2026-10-25T18:33:06.357Z"
   }
 }

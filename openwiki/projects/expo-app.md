@@ -41,6 +41,10 @@ sources:
     resource: repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx
   - id: openwiki-source-c80309c52a299fc12aeafd42
     resource: repo://frontend/mcm-app/src/app/(app)/settings/index.tsx
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
+  - id: openwiki-source-74f39153b978241c50c7addd
+    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
   - id: openwiki-source-a5c6a4d72986b97be03d6e9d
     resource: repo://frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts
   - id: openwiki-source-0657d2ae17def9d557f75db7
@@ -75,6 +79,8 @@ sources:
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-6230a2d05eadba772d30d66a
@@ -105,10 +111,10 @@ sources:
     resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T06:13:33.915Z
+    at: 2026-10-25T18:33:06.357Z
 ---
 
 # Expo/React Native universal app
@@ -404,6 +410,15 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
   SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
   three; it opts out of the shared authenticated `storageState` because all three are public.
+  The same file also decides the *origin* the two identity-provider round trips above are built on:
+  `@expo/server`'s adapter derives every request URL from `req.protocol` and the raw `Host` header,
+  so `app.set('trust proxy', 1)` runs only when `TRUSTED_PROXY=true`, and without it the
+  Backups-consent and Account-deletion routes hand Keycloak an unregistered `http://` redirect URI.
+  Only the scheme moves — the adapter reads the raw `Host` header, which `trust proxy` does not
+  touch — and unset must stay unset so a directly exposed BFF cannot be talked into `https` by a
+  client-supplied header. Mechanism and measurement:
+  [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md)
+  and `tests/unit/bff-server-trust-proxy.test.ts`.
 - **A release APK reaches the dev BFF only because a config plugin allowlists cleartext for it.**
   Android `targetSdk` ≥ 28 blocks `http://` traffic by default and Expo only relaxes that in the
   DEBUG manifest, so the standalone RELEASE APK the mobile E2E suite installs could not reach the

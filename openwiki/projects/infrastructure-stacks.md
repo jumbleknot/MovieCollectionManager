@@ -21,12 +21,16 @@ sources:
     resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
+    resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
     resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
     resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
@@ -103,10 +107,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/research.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-25T18:33:06.357Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -290,6 +294,22 @@ by the host firewall's default-deny on non-tailnet inbound. Everything else stay
 reached by internal DNS, including `otel-lgtm`'s OTLP `4317`/`4318` and OPA's `8181`. All three published
 ports sit in the prod-reserved `19000–19099` range so they cannot collide with the CI runner's own
 LangFuse, Grafana or Keycloak on the shared host.
+
+One production stack's exposure is a proxy contract rather than a port. `prod-mcm-bff` publishes
+nothing: Cloudflare terminates TLS and `cloudflared` reaches `mcm-bff-service:3000` by name over the
+external `edge-network`, so the BFF itself speaks plain HTTP and its compose sets
+`TRUSTED_PROXY: "true"` inline — a non-secret literal in the compose file, not a Komodo Variable.
+That flag originally governed only rate-limit client identity; spec 083 T010 gave it a second job,
+because the Expo server adapter builds every request URL as
+`` `${req.protocol}://${req.get('host')}${req.url}` `` and `server.js` now sets express's
+`trust proxy` to `1` when the flag is true. Without it, every route that derives a callback from
+`new URL(req.url).origin` — the scheduled-backup consent route and the account-deletion
+re-authentication route — handed Keycloak an `http://…` `redirect_uri` while the client registers the
+`https://` one, and Keycloak answered `Invalid parameter: redirect_uri` (measured 2026-10-25). Only
+the scheme moves: the adapter reads the raw `Host` header, which `trust proxy` does not touch, so
+`X-Forwarded-Host` cannot shift the origin, and with the flag unset a directly exposed BFF cannot be
+talked into `https` by a client-supplied header. CI and dev never see this — there the BFF serves
+HTTPS itself on `:8443`.
 
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
 are declared:

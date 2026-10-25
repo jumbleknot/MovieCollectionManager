@@ -1,10 +1,9 @@
 ---
 type: Gotcha
 title: Expo Router server export and agent-transport traps
-description: Three related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving changes in server.js, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
+description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving changes in server.js, the TRUSTED_PROXY-gated trust proxy setting the adapter needs to see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
 resource: frontend/mcm-app/server.js
 tags: [expo-router, react-native, copilotkit, express, transport, frontend]
-timestamp: 2026-10-19T12:00:00Z
 sources:
   - id: openwiki-source-6af9a79d18f77a9b86839849
     resource: repo://frontend/mcm-app/Dockerfile
@@ -16,10 +15,18 @@ sources:
     resource: repo://frontend/mcm-app/src/app/_layout.tsx
   - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-cd9c9ac84bbb2c845f70e90d
     resource: repo://frontend/mcm-app/src/assistant-polyfills.native.ts
   - id: openwiki-source-ef52217f9f29eb3b427148ac
     resource: repo://frontend/mcm-app/src/assistant-polyfills.ts
+  - id: openwiki-source-74f39153b978241c50c7addd
+    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
+  - id: openwiki-source-abe552d5bae5c5ce75a9c776
+    resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-0b95b2665c338088eef0db7e
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-503103081c79db2ef99e2b27
@@ -32,14 +39,18 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/web/font-fallback.spec.ts
   - id: openwiki-source-5ee35374d6ab0e61934498cd
     resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
   - id: openwiki-source-0df6a785e730381b7aee77a1
     resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+  - id: openwiki-source-83771c9aeecb9de0bd4deaf4
+    resource: repo://specs/083-backup-consent-session-isolation/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-19T12:20:46.129Z
+    at: 2026-10-25T18:33:06.357Z
 ---
 
 # Expo Router server export and agent-transport traps
@@ -50,11 +61,13 @@ small CommonJS Express adapter that `require`s `@expo/server/adapter/express`, h
 *outside* the Metro bundle, so it cannot import anything from `src/` — every trap below follows from
 that boundary.
 
-Three of them live here, discovered the hard way (a hang, a silent 404 regression, and a silent auth
-failure) and each with a narrow, load-bearing fix that looks removable if you don't know why it is
-there: the exported bundle's missing `import.meta.url` registry, the express 5 behaviours that
-changed under the hosting layer, and the CopilotKit React Native streaming-fetch path that bypasses
-the app's token-refresh interceptor.
+Four of them live here, discovered the hard way (a hang, a silent 404 regression, a Keycloak
+`redirect_uri` refusal, and a silent auth failure on the agent route) and each with a narrow,
+load-bearing fix that looks removable if you don't know why it is there: the exported bundle's
+missing `import.meta.url` registry, the express 5 behaviours that changed under the hosting layer,
+the `TRUSTED_PROXY`-gated `trust proxy` setting that lets the adapter see the public scheme behind
+the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the
+app's token-refresh interceptor.
 
 ## `import.meta.url` crashes the exported server bundle
 
@@ -121,17 +134,77 @@ reads like a stylistic choice rather than a compatibility fix.
   as express 4 did. The regression is silent in the worst way: the page still renders, just in the
   fallback font.
 
-- **`tests/unit/bff-server-adapter.test.ts` is the pin for all three, and the only test that
-  exercises this layer at all.** It copies the real `server.js` and `web-security-headers.js` into a
-  temp directory next to a fixture `dist/client`, then boots it in a child process with only
+- **`tests/unit/bff-server-adapter.test.ts` is the pin for all three, and one of only two suites
+  that exercise this layer at all.** It copies the real `server.js` and `web-security-headers.js`
+  into a temp directory next to a fixture `dist/client`, then boots it in a child process with only
   `@expo/server/adapter/express` replaced by a `node -r` preload
-  (`tests/unit/fixtures/expo-adapter-stub.cjs`) that echoes what express delivered to the handler.
-  express itself resolves from the package's own `node_modules` via `NODE_PATH`, so the version
-  under test is the declared one. The unit tier imports TS modules and the integration tier calls
-  route handlers, and both bypass `server.js` — which is why the font case needs this test. No other
-  test would catch it either: `tests/e2e/web/font-fallback.spec.ts` aborts every font request on
-  purpose and asserts the app still renders on the system fallback, so it passes whether or not the
-  real fonts are servable.
+  (`tests/unit/fixtures/expo-adapter-stub.cjs`) that echoes what express delivered to the handler —
+  and, since spec 083 T010, the origin exactly as the real adapter builds it, via an `X-Test-Origin`
+  response header (see the scheme trap below for why that is needed).
+  `tests/unit/bff-server-trust-proxy.test.ts` boots the same real `server.js` through the same
+  preload. express itself resolves from the package's own `node_modules` via `NODE_PATH`, so the
+  version under test is the declared one. The unit tier imports TS modules and the integration tier
+  calls route handlers, and both bypass `server.js` — which is why the font case needs this test. No
+  other test would catch it either: `tests/e2e/web/font-fallback.spec.ts` aborts every font request
+  on purpose and asserts the app still renders on the system fallback, so it passes whether or not
+  the real fonts are servable.
+
+## The `trust proxy` hosting trap in the same `server.js`
+
+This one is a *hosting* trap that lives in the same file, not an express 5 regression: the major
+bump did not touch `req.protocol`, and the line exists because of where the process is deployed.
+It also reads the same env var that already meant something else, which is part of why it looks
+removable.
+
+- **The adapter builds every request URL from `req.protocol` and the raw `Host` header.** The
+  `@expo/server` express adapter constructs each `Request` as
+  `` `${req.protocol}://${req.get('host')}${req.url}` ``. In production TLS terminates at the edge
+  proxy and a tunnel reaches this process over plain HTTP, so `req.protocol` read `http` — and every
+  route that derives a callback from `new URL(req.url).origin` then sent Keycloak an unregistered
+  `http://` redirect_uri. Keycloak refused the authorization request outright with
+  `Invalid parameter: redirect_uri` (measured in production 2026-10-25, item 843). Two routes are
+  affected: the backup consent callback and the account-deletion re-authentication callback
+  (feature 076). CI and dev never saw it, because there the BFF serves HTTPS itself on `:8443` —
+  which is why this is pinned by a suite that boots the real `server.js` rather than by the web E2E
+  run. The measured record is
+  [spec 083 T010](../../specs/083-backup-consent-session-isolation/tasks.md#t010--the-bff-must-see-the-public-scheme-behind-the-tls-terminating-proxy-item-843-added-2026-10-25).
+
+- **`app.set('trust proxy', 1)` — the number is the point, not a shorthand.** It is set only when
+  `TRUSTED_PROXY === 'true'`, at boot and above the routes. A numeric value compiles to a hop-count
+  predicate over the socket hop index (`i < val`), so `1` means "the immediate peer is the proxy I
+  chose" and nothing wider — which is exactly the topology: one hop (the tunnel) in front of this
+  process. `true` would trust *any* peer, including a client connecting directly, and an address
+  list or CIDR would have to be kept accurate forever; the hop count is the narrowest form that
+  still describes the deployment. It is deliberately gated rather than unconditional so the setting
+  can never be stronger than the deployment actually is.
+
+- **Only the SCHEME moves, which is what makes this safe to enable.** `trust proxy` changes
+  `req.protocol`; it does not change `req.get('host')`, which is a raw header read
+  (`this.headers['host']`) with no proxy logic in it at all. That distinction is the whole reason
+  the trap is contained: express's *own* `req.host`/`req.hostname` getters do consult
+  `X-Forwarded-Host` once the socket address is trusted, but the adapter does not use them — it calls
+  `req.get('host')`. So `X-Forwarded-Host` cannot move the origin a callback is derived from, and a
+  forged `Host` cannot either — it would only produce a redirect_uri that is not registered on the
+  client, which Keycloak refuses instead of honouring. The suite pins this explicitly: adding
+  `X-Forwarded-Host` to an otherwise-valid request leaves the origin unchanged.
+
+- **Unset must stay unset, and unset is the default.** `TRUSTED_PROXY` defaults to `false`
+  (`src/config/env.ts`), so a directly exposed BFF keeps ignoring a client-supplied
+  `X-Forwarded-Proto`: otherwise any client could talk the process into believing it serves `https`
+  and emit callback URLs for a scheme it is not on. The same variable is also the BFF's rate-limit
+  client-identity flag (feature 009, finding #4), read *inside the bundle* by `extractClientIp` for
+  the right-most `X-Forwarded-For` hop — see [BFF](../projects/bff.md). The two consumers are
+  independent: setting `trust proxy` here does not change rate-limit identity, and `extractClientIp`
+  does not change the scheme.
+
+- **Pinned by `tests/unit/bff-server-trust-proxy.test.ts`, which boots the real `server.js` twice
+  through the same `node -r` preload the express-layer suite uses** — once as production runs it
+  (`TRUSTED_PROXY=true`), once without. The preload's `X-Test-Origin` header echoes
+  `` `${req.protocol}://${req.get('host')}` `` exactly as the real adapter builds it, which is what
+  makes the origin a route would compute observable from outside the child process; nothing else in
+  the harness would reveal it. Measured RED before the fix: 2 failed, 2 passed — the two
+  `TRUSTED_PROXY=true` cases asserting `https` failed with `http://…`, while the two that assert
+  `http` (the proxy saying nothing, and no trusted proxy at all) passed already.
 
 ## CopilotKit's RN streaming-fetch bypasses the axios refresh interceptor
 
