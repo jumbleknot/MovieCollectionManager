@@ -350,6 +350,11 @@ rehearsed; the infra-image scan passes.
 3. **Given** the security-held secrets-store image, **Then** it moves only if a scan with the gate's own
    criteria shows it no worse than the current one; otherwise the hold is re-recorded with the new
    evidence.
+4. **Given** the tracing service's stateful minor (Langfuse 4.56.0 → 4.68.0, item #839, added 2026-10-25),
+   **Then** web and worker move together to one version in the local and production stacks, allowlist
+   entries the new version discharges are deleted and the rest re-keyed (not re-dated), the local stack
+   records an agent turn's trace that the worker processes, and a backup is taken before the production
+   merge.
 
 ---
 

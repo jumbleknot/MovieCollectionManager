@@ -566,6 +566,92 @@ git revert --no-edit -m 1 44817a42 && git push origin HEAD:revert-081-us8b
 Once 18 has run for a while: delete `observability-unleash-postgres-data`, `observability-langfuse-postgres-data`
 (the 16 volumes) and `$DIR`. **Neither deletion is part of this procedure.**
 
+## Langfuse minor with schema: back up BEFORE the merge (4.56.0 -> 4.68.0, spec 081 US8 PR 8d, item #839)
+
+A Langfuse minor can still migrate both stores: 4.57–4.68 add 11 Postgres (Prisma) migrations and ClickHouse
+migrations 52–53 (audit-log staging and relay, among others). The web container applies them on its first
+start, so **the merge is the migration**. Per ADR-0002 §4 the trace store need not survive, but a backup taken
+first turns a rollback into a restore instead of a loss.
+
+**A digest revert ALONE does not roll back.** Measured 2026-10-25: 4.56.0 started on a store that 4.68.0 had
+migrated crash-loops with `error: no migration found for version 53` (ClickHouse). The older image cannot run
+on the newer schema, so a rollback restores both stores (or recreates them empty) BEFORE the reverted digest
+starts.
+
+Two more traps: `wget localhost:3000` inside `langfuse-web` fails (exit 4) because the server binds to the
+container hostname, so the health checks below use `$HOSTNAME`. And neither web nor worker has a compose
+healthcheck, so `docker ps` shows `Up`, never `healthy`.
+
+Every block below was rehearsed on the dev stack (dump, cold copy, restore onto recreated volumes, both
+traces readable after). Paste each block on its own and check its stated output before the next. If a block
+opens a new shell, set `DIR` again first.
+
+```sh
+# ── B0. PRE-FLIGHT (read-only) ────────────────────────────────────────────────────────────────────
+DIR=$HOME/839-langfuse-468; mkdir -p "$DIR" && chmod 700 "$DIR"
+docker ps --filter name=langfuse --format '{{.Names}}\t{{.Image}}\t{{.Status}}'   # web/worker on 4.56.0
+docker run --rm -v observability-langfuse-clickhouse-data:/v:ro --entrypoint du \
+  "$(docker inspect -f '{{.Config.Image}}' langfuse-clickhouse)" -sh /v           # ClickHouse size
+docker exec langfuse-postgres psql -U langfuse -d langfuse -Atc \
+  "select pg_size_pretty(pg_database_size('langfuse')), (select count(*) from _prisma_migrations)"  # size|449
+df -h "$HOME" | tail -1                                   # Avail well above the two sizes added together
+
+# ── B1. FREEZE the writers and DUMP Postgres (a Langfuse outage starts here, ~2 min) ──────────────
+#    Back-out at any point until the merge: `docker start langfuse-web langfuse-worker`.
+docker stop langfuse-web langfuse-worker
+docker exec langfuse-postgres pg_dumpall -U langfuse > "$DIR/langfuse-pg-4.56.sql"
+grep -c 'PostgreSQL database cluster dump complete' "$DIR/langfuse-pg-4.56.sql"   # 1
+
+# ── B2. COLD COPY of ClickHouse (stopped, so the parts on disk are consistent) ────────────────────
+#    Its OWN image does the tar, so nothing is pulled; stdout is redirected, so no bind mount is needed.
+CH_IMG=$(docker inspect -f '{{.Config.Image}}' langfuse-clickhouse); echo "$CH_IMG"
+docker stop langfuse-clickhouse
+docker run --rm -v observability-langfuse-clickhouse-data:/src:ro --entrypoint tar "$CH_IMG" \
+  czf - -C /src . > "$DIR/langfuse-clickhouse-4.56.tgz"; echo "tar exit=$?"           # tar exit=0
+docker start langfuse-clickhouse
+for i in $(seq 1 45); do s=$(docker inspect -f '{{.State.Health.Status}}' langfuse-clickhouse)
+  [ "$s" = healthy ] && { echo CH-HEALTHY; break; }; sleep 2; done                  # CH-HEALTHY
+gzip -t "$DIR/langfuse-clickhouse-4.56.tgz" && echo GZIP-OK; ls -la "$DIR"; chmod 600 "$DIR"/*
+
+# ── B3. RESUME on 4.56.0 until the merge ──────────────────────────────────────────────────────────
+docker start langfuse-web langfuse-worker
+for i in $(seq 1 60); do docker exec langfuse-web sh -c 'wget -qO- http://$HOSTNAME:3000/api/public/health' \
+  2>/dev/null | grep -q '"OK"' && { echo WEB-OK; break; }; sleep 2; done              # WEB-OK
+```
+
+Then merge, pinned to the head, and wait for `cd-deploy` and the `chore(cd): promote` commit.
+
+```sh
+# ── P1. POST-DEPLOY checks (read-only) ────────────────────────────────────────────────────────────
+docker ps --filter name=langfuse-w --format '{{.Names}}\t{{.Image}}\t{{.Status}}'   # both 4.68.0, Up, not Restarting
+docker exec langfuse-web sh -c 'wget -qO- http://$HOSTNAME:3000/api/public/health'; echo  # "version":"4.68.0"
+docker exec langfuse-worker sh -c 'wget -qO- http://$HOSTNAME:3030/api/health'; echo     # {"status":"ok"}
+docker exec langfuse-postgres psql -U langfuse -d langfuse -Atc 'select count(*) from _prisma_migrations'  # 460
+docker logs --since 30m langfuse-web 2>&1 | grep -E '^[0-9]+/u ' | tail -3          # ... 53/u add_skill_observation_references
+docker logs --since 30m langfuse-web    2>&1 | grep -c -E '\berror\b|ERROR'          # 0
+docker logs --since 30m langfuse-worker 2>&1 | grep -c -E '\berror\b|ERROR'          # 0
+```
+
+A trace lands: send one assistant turn in the app, then on the host
+`docker logs --since 5m langfuse-worker 2>&1 | grep -c ClickhouseWriter` should be non-zero, and the trace
+shows in the UI (`:19030`, over the tailnet).
+
+### Rollback — restore, then revert
+
+1. `docker stop langfuse-web langfuse-worker` (they are `restart: always`; a stop holds until the next deploy).
+2. Restore ClickHouse: stop and `docker rm` `langfuse-clickhouse` (a stopped container still pins its volume),
+   recreate `observability-langfuse-clickhouse-data`, then
+   `docker run --rm -i -v observability-langfuse-clickhouse-data:/dst --entrypoint tar "$CH_IMG" xzf - -C /dst
+   < "$DIR/langfuse-clickhouse-4.56.tgz"` (owners come back as 101:101).
+3. Restore Postgres: the same for `langfuse-postgres` and `observability-langfuse-postgres-v18-data`; start an
+   empty `postgres:18-alpine` on it with the password taken from the old container (`printenv`, never
+   typed), wait for `pg_isready -h 127.0.0.1`, then `psql -U langfuse -d postgres -q < "$DIR/langfuse-pg-4.56.sql"`.
+   Expect EXACTLY two errors: role and database `langfuse` already exist.
+4. Revert the merge through a PR (as for US8b above), merge it, and let the deploy start 4.56.0 on the restored
+   stores.
+
+Without a backup, steps 2–3 become "recreate both volumes empty" (ADR-0002 §4): history is lost, nothing else.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app

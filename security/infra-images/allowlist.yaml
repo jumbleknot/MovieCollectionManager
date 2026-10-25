@@ -72,29 +72,19 @@
   justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream otel-lgtm 0.38.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Re-keyed 0.36.0 -> 0.37.0 with the Renovate bump (PR #836, 2026-10-24); same CVE, same expiry. Delete the entry once the image is bumped to a clean rebuild.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'langfuse/langfuse:4\.56\.0'
+- image: 'langfuse/langfuse:4\.68\.0'
   id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'langfuse/langfuse-worker:4\.56\.0'
+- image: 'langfuse/langfuse-worker:4\.68\.0'
   id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse-worker 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild.'
+  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse-worker 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'langfuse/langfuse:4\.56\.0'
-  id: 'GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr'
-  justification: 'next 16.3.8 bundled in langfuse 4.56.0 (fix 16.4.1). A clean image EXISTS — langfuse/langfuse and langfuse-worker 4.68.0 (next 16.4.2, Trivy-verified 2026-10-23) — but 4.57-4.68 add ClickHouse and Postgres schema (billing ledger 4.60, audit-event relay 4.59/4.61), so the bump is a stateful migration taken as its own ADR-0002 PR, web and worker together. Delete these entries in that PR. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: 'langfuse/langfuse-worker:4\.56\.0'
-  id: 'GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr'
-  justification: 'next 16.3.8 bundled in langfuse 4.56.0 (fix 16.4.1). A clean image EXISTS — langfuse/langfuse and langfuse-worker 4.68.0 (next 16.4.2, Trivy-verified 2026-10-23) — but 4.57-4.68 add ClickHouse and Postgres schema (billing ledger 4.60, audit-event relay 4.59/4.61), so the bump is a stateful migration taken as its own ADR-0002 PR, web and worker together. Delete these entries in that PR. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: 'langfuse/langfuse:4\.56\.0'
+- image: 'langfuse/langfuse:4\.68\.0'
   id: 'CVE-2026-114139'
-  justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20.'
+  justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
 - image: 'mongodb/mongodb-community-server:9\.0-ubi9'
@@ -153,7 +143,8 @@
 #   grafana/otel-lgtm 0.32.0 .... v0.32.0 is latest (2026-08-28) — same
 #   (two date-tagged object-store images, since retired, were also listed here)
 #   hashicorp/vault 1.18 ........ deliberately pinned (feature 036); already carries three entries
-#   mongodb-community-server .... deliberately pinned on 8.0.8 (feature 036)
+#   mongodb-community-server .... deliberately pinned on 8.0.8 (feature 036); since moved to 9.0-ubi9
+#                                 (spec 081 US8a, PR #817)
 # Remediation for all of the above is an UPSTREAM REBUILD against x/crypto 0.55.0, which is already
 # happening: axllent/mailpit:v1.31.0 reports x/crypto v0.55.0 in its own warnings.
 #

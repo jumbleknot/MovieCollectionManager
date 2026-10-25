@@ -24,7 +24,7 @@ against a quiet lock and never overlap.
 | US5 | 5a, 5b, 5c | 5a: reject five override widenings + guard + Renovate rules for blocked majors. 5b: `eslint` 8→10 (flat config). 5c: `@testing-library/react-native` 13→14 | upgrade (eslint, RNTL); **hold**: jest 30 + babel-jest 30 (until SDK 58), `@babel/core`/`@babel/runtime` 8 (blocked through SDK 58), `typescript` 7 (typescript-eslint peer `<6.1.0`), async-storage 3 (bundled 2.2.0 through SDK 58) |
 | US6 | 6 | `express` 4→5 + `@types/express` 4→5, `ioredis` 5→6 | upgrade |
 | US7 | 7a, 7b | 7a: `@copilotkit/react-native` + `@copilotkit/runtime` 1.70.1 → latest (1.78.0 today) with `@ag-ui/client` 0.0.59 → the exact version they pin (1.0.2). 7b: `openai` 6→7; `@ai-sdk/openai` 3→4 **or removed** | upgrade / removal |
-| US8 | 8a, 8b, 8c | 8a: `mongodb/mongodb-community-server` 8.0.8 → 9.0.x (bff + mc-service, local + prod), data preserved. 8b: observability `postgres` 16 → 18 for **both** langfuse-postgres and unleash-postgres. 8c: `hashicorp/vault` 1.18 scan-gated | upgrade (8a, 8b); 8c upgrade **only** if scan clean, else re-recorded hold |
+| US8 | 8a, 8b, 8c, 8d | 8a: `mongodb/mongodb-community-server` 8.0.8 → 9.0.x (bff + mc-service, local + prod), data preserved. 8b: observability `postgres` 16 → 18 for **both** langfuse-postgres and unleash-postgres. 8c: `hashicorp/vault` 1.18 scan-gated. 8d: `langfuse/langfuse` + `-worker` 4.56.0 → 4.68.0 together (item #839) | upgrade (8a, 8b); 8c upgrade **only** if scan clean, else re-recorded hold |
 | US9 | 9a, 9b | 9a: `bson` 2→3 via mongodb's `bson-3` feature. 9b: `base64` 0.22→0.23, `reqwest` 0.12→0.13 re-check | 9a upgrade; 9b **hold** while `bson`/`mongodb` need base64 0.22 and `axum-keycloak-auth` needs reqwest 0.12 |
 
 ## Technical Context
@@ -343,8 +343,15 @@ rollback by tested restore.
   ("the two move together on one pin") — RED/GREEN; lift the `<17` rule in the same change. Tiers: the guard,
   `up-observability` smoke (Langfuse UI + Unleash API health), `infra-scan`.
 - **8c vault**: scan current 1.x and 2.x tags; move only on FR-013; else re-date the hold's evidence.
+- **8d Langfuse 4.56.0 → 4.68.0 (web + worker, item #839)**: a stateful minor (4.59–4.61 add ClickHouse
+  and Postgres schema), taken as its own PR. Premise scan of the exact digests with the gate's pipeline →
+  bump all four refs → allowlist at the cause: delete the discharged `next` entries and re-key what remains
+  (RED/GREEN on `check-infra-image-findings.mjs`) → guards → `up-observability` smoke (UI 200, agent-turn
+  trace, worker processes it) → operator backup → merge (= deploy). The 3-day cooldown is overridden by the
+  operator for 4.68.0 only; no release-age exclusion is added.
 - **Rollback**: 8a/8b — restore from the pre-move backup onto the previous digest (rehearsed locally before
-  prod). 8c — revert.
+  prod). 8c — revert. 8d — restore the pre-merge backup (or recreate the Langfuse volumes empty, ADR-0002 §4)
+  BEFORE the reverted digest starts: 4.56.0 crash-loops on a store 4.68.0 migrated (measured, T089).
 - **Exit**: SC-005 counts equal; scan green; holds updated.
 
 ### US9 — cargo
