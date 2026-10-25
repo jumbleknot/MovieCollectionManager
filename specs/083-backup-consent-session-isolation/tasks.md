@@ -154,3 +154,29 @@ stays green before and after, because all three are optional in `env.ts`. The re
 after the redeploy: the boot log no longer says `backup scheduler disabled`, the enc key decodes to 32
 bytes, the allow-list is non-empty, and a destination on the NAS saves and tests OK.
 Then T008's sign-in survival test.
+
+### T010 — The BFF must see the public scheme behind the TLS-terminating proxy (item #843, added 2026-10-25)
+
+**File(s)**: `frontend/mcm-app/server.js`, `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts`,
+`frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs`.
+
+Measured in production after T009: enabling a schedule sent the browser to Keycloak with
+`redirect_uri=http%3A%2F%2Fmcm.grumpyrobot.co%2Fbff-api%2Fbackups%2Fconsent` and Keycloak refused it
+("Invalid parameter: redirect_uri") — the client registers the `https://` URI. Cloudflare terminates
+TLS and `cloudflared` reaches the BFF over plain HTTP; `@expo/server`'s express adapter builds every
+request URL as `` `${req.protocol}://${req.get('host')}${req.url}` ``, and `server.js` never enabled
+express's `trust proxy`, so `req.protocol` ignored `X-Forwarded-Proto` and read `http`. Every route
+that derives a callback from `new URL(req.url).origin` is affected: the backup consent route and the
+account-deletion re-authentication route (feature 076). CI and dev never saw it: there the BFF serves
+HTTPS itself on `:8443`.
+
+Fix: when `TRUSTED_PROXY=true` (already set in prod for the same proxy), `app.set('trust proxy', 1)` —
+trust exactly the immediate hop. The host stays the raw `Host` header (the adapter reads
+`req.get('host')`, which `trust proxy` does not change), so `X-Forwarded-Host` cannot move the origin.
+Without `TRUSTED_PROXY` nothing changes, so a directly exposed BFF cannot be talked into `https` by a
+client-supplied header.
+
+**Verify RED** (measured: 2 failed, 2 passed): `bff-server-trust-proxy.test.ts` fails on `TRUSTED_PROXY=true` + `X-Forwarded-Proto: https`
+→ origin `http://…` (expected `https://…`), with and without `X-Forwarded-Host`. The two that keep `http` pass already.
+**Verify GREEN**: all cases pass, and `bff-server-adapter.test.ts` stays green. After the deploy, enabling a
+schedule in prod reaches the Keycloak consent screen, then T008's sign-in survival test.

@@ -32,6 +32,19 @@ const DIST_SERVER = path.join(__dirname, 'dist', 'server');
 // disclosure, ZAP 10037) from every response.
 app.disable('x-powered-by');
 
+// Spec 083 T010 (item #843): behind the TLS-terminating proxy, see the PUBLIC scheme. In
+// production Cloudflare terminates TLS and cloudflared reaches this process over plain HTTP; the
+// Expo adapter builds every request URL as `${req.protocol}://${req.get('host')}${req.url}`, so
+// without this `req.protocol` read `http` and every route deriving a callback from
+// `new URL(req.url).origin` (backup consent, account-deletion re-auth) sent Keycloak an
+// unregistered `http://` redirect_uri. `1` trusts exactly the immediate hop. Only the SCHEME moves:
+// the adapter reads the raw `Host` header, which `trust proxy` does not touch, so
+// X-Forwarded-Host cannot change the origin. Unset (a directly exposed BFF), a client-supplied
+// X-Forwarded-Proto stays ignored. Pinned by tests/unit/bff-server-trust-proxy.test.ts.
+if (process.env.TRUSTED_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
 // Feature 032 (US1): global baseline security headers on every browser-rendered/static response
 // (FR-001..FR-004, FR-010). The browser-facing Keycloak origin for the CSP `connect-src` is read
 // from env once at boot (FR-007) — never hard-coded; precedence mirrors src/config/keycloak.ts
