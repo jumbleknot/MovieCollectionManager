@@ -20,6 +20,10 @@ Module._load = function load(request, parent, isMain) {
     return {
       createRequestHandler: () => (req, res) => {
         res.setHeader('X-Test-Reached-Handler', '1');
+        // The origin EXACTLY as the real adapter builds it (`@expo/server` build/vendor/express.js:
+        // `${req.protocol}://${req.get('host')}${req.url}`), so a route's `new URL(req.url).origin`
+        // is observable here (spec 083 T010).
+        res.setHeader('X-Test-Origin', `${req.protocol}://${req.get('host')}`);
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ method: req.method, url: req.url }));
       },
