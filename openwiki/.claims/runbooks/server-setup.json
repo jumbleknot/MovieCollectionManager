@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:58db8ab42eba79425562244def1d5f2e6c5b96102b6835e8c6477a7e0e04f70d",
+  "pageVersion": "sha256:2d19f275fe90ee2d21fdcf53d9c135c81ecf3ed951d2ef2131e3b779bf253b4f",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -488,7 +488,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:a1111c96cc7bc75f8b5ca632442b9e83a2ad4315c524f16b6f02fd341f782ebf"
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         }
       ]
     },
@@ -525,10 +525,118 @@
           "version": "repo-lines-v1:sha256:32e20f68b79fe42bfa59b1d7cb5f4e57d23fe66ee6ff9da4e19175697b14b6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZjQ3ZGI5NDFmNTdmOTM4ZDZkZjRlZWVlZTFhZTM1OTRhMzkyYzk2MDVkOTIyZGI5MWVlZmMxMmVjNWYwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDVkNjljM2VhZTFkNmNjYmIxMTY1NTU0NjM4OWY5NmRjYmJhNDk0ZDUyN2I3NjMyYzY1Mjg5OGEzMWQ1ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NzhkMmM1ODVjNTc2M2Y4YmQ4Y2ZlN2M5MGE0ZDY2NDEwMTE5NWYxOWNkYmI3ZDEwMGIwZjUzMmIzMWI3ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmY2NmNTI0YzQ3M2IzOTZkZjJmZDUxYzA1MWY2YzA0OGMwNzg4YmEyNDI4YTYxNDU0ZTVjZTg5NDRkYmFmODUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_88d0c67837ab49679f0d02200c7b50ea",
+      "statement": "The object-store migration runs ON the host, from a repository checkout, through the `scripts/object-store-migration.sh` wrapper: the host has no `node`, so the wrapper copies the Docker CLI out of a digest-pinned CLI image, creates a digest-pinned node container with the host's rootless Docker socket mounted, copies the tool and the git-tracked observability compose into it (no bind mount of a checkout path), and copies the evidence directory back out — and it refuses `copy` without `--apply` and refuses `rehearse` outright. Credentials reach it by NAME (`-e S3_ACCESS_KEY -e S3_SECRET_KEY`) from the operator's shell, never as command-line values, and the tool itself is documented as never to be driven from the dev container over `DOCKER_HOST=ssh://`, because that would put standing root-equivalent control of the prod daemon in the sandbox. The tool and its wrapper are temporary: they exist for the three feature-080 cutovers and are deleted, with the guard exemption, in the cleanup PR after the rollback window.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L1-L39",
+          "version": "repo-lines-v1:sha256:e10f5d67e2b27a0c5ba6cd6013d7d24e21e1009386b77a2f01118ea5e2c2b765:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Mjc1OGQ4ZmY1YjFjMzY5NTBlOWVlNDc2YTExMTk5NTU3ZWM4Zjg0ODMzNzA1YjI4ZmFkOGRlOTc1ODgxZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTdjZTNjZmQ0MDcxZDljYWNjYmU0NDJkMTIzZTEzNzk1ODRjMjliOWQ2NjNkNmQ1ODg2MzVkMTgyMjA1NDAifQ"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.sh#L1-L33",
+          "version": "repo-lines-v1:sha256:9ec842f80f6f48827c46718a1d901e6c64964b1a1f043040fb562c40ca1f2ad3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZmM2MzM2NjdkMDMwMDczMWJkZDg0NDcyZGM0MjRlMWY5YzY0MTc1ZWEyYmFkYjY2NjQ3MmQ5MWFlYjRlZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZTNhNzE5MzQyYTVjOGM2NTc1ZjcyYTkzMTBmNzQwM2Q0MDAyMzY4ZTIxYjEzOTcyN2NhYmFhMGIwODhhZGEifQ"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.sh#L44-L107",
+          "version": "repo-lines-v1:sha256:af8d38ccbdb4746a8a4ba30c734b6cff9f45c0b9485eb526f9e8819c3367a885:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOGIyZTg0MjgzMWU0Njc0NmY1MzIwZmFjZTRiMWMwYmI5N2JiNGU5ODkwYTJkOTg0MTEzODg5NDM0YzdhYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYmNlZjg3ZDBhZTNlYTM4MTAwYTEyMjc3NDU5YWY0NTQ4NzJkZjY5YzIxNGEyYTZmNWYyM2ZlODRlZmU5ZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZGVhNzY0YjVhNTIzYTM0YjU1OGI5ZTE3OGUwZTI1MTUzYjU5MzM3ZDFiNjVmNTRjMGU0ODY2OGEwYjk0ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNTRmOGZkZWFiM2ZhMzMwMmU5ZWI0MGQ4ZTM1YjUwY2JmMzA2MzY1NzExZmUyMmM3NWM3ODJjODRhYjlkZTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b56419050eae47d3972448bbe8fa0f48",
+      "statement": "The migration tool refuses rather than guesses, and its refusals are the safety property: `copy` requires `--apply` (there is no dry-run spelling — `inventory` is how you look), a target volume that already exists is refused rather than written into, and a source volume still mounted by a running container is refused until the store is stopped. A passing copy records `targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0`, and an unchanged source digest (a source that changed during the copy is reported as no longer a valid rollback target), and the copy chowns the target to the uid read from the pinned image rather than a hard-coded literal.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L147-L150",
+          "version": "repo-lines-v1:sha256:ce8ee68bf0dc69efac309658565eebb7573ddf0e4af0e01dbfa6db6628fba22a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU5YmI0Y2Q5YWY2NzIxM2U1ZGZjOWZkMTNhMTVkOTc3ZGNhMTgzZTk1MzAxNTFlOWZhODRjMGI1ODY4OWM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM5MDM5NTY2OGIwMWJlZTlkNjk3ZTM4ZWViNjBjZDFkNTFhZWEyNjYxMzdiNDI4NGIyMmJhZGNiZTc1MGQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2IwZGM5NmNjMjRkNGIyODgwZGEzODc2OGFhNzM3ZGJmYjRjOGNkMWRjOGMwYjkxZjlhOWViNTUzNDNhOWU4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYxZDk0ZjIzYWYwNTE0ZDg0MjU3YjQwZTU3OTJjNDgyM2VhMWYwN2Y2MGZjZDYwZDZjNGEyNmMxYTVmYmM3NiJ9"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L675-L736",
+          "version": "repo-lines-v1:sha256:8b8536568613b926f90b6ab75b95076f3c2d0bc3ecc12d2ca66cb58208fed0f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MDhmNmNkZjAwMGFmZWY0NGMyNjYxN2IyMjBmYTI5YzZhMDFhNzc5OTM0ODUxMzdjNjFmYTliZjRmYjdlNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyOGNmNzYwODQ2NmZiZjQ4MzM3NDVmMThkMjVmOTk0Y2RlNjNlYTFjYjY0NjNhYWNhYTNiNmZmY2M4N2M4NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1Mjg0NDNhMWIyMDVlMmVmMmQ3ZmZmY2ZkMDBiYjZlYjA4MTUzZGNlMjVhNjUzY2YyZGEzMGQ2ZDdhODgyNTAifQ"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L74-L94",
+          "version": "repo-lines-v1:sha256:a78a629969fd621e7fc498b7d4a3ae52f095c39178c2944d0a96df8fe9c17dea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMTBhMGU1NjE4Yzc4YzA2ZjMxZWMwZjI4NjA3MTA4YTFiMDYxYTNiNjQ0NzcxODg0MGRiNWNiYmRiNjgzYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDI5NTI1MzZmYzYwMDBhZDkxNTY2YmQ5NTNmMjViYzk1OTYxMGU4MTFhNTI5YTliZWY4YjRmMDdjMWM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5YmViMmZkYWYzODE1NzVhNTlkNmY3ZTI5OTk5ZDI1Yjc4MmExNjAyY2RkYjIyMDU2NmY4YmFmYzc4MjIxYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ODg2NTJlNmUzY2U1ODAzNmEzMDgxNWU2MzZiY2Q4ZTY0MTliMDE1MDAzMDEzMDNkMzgzNmE3OTE4NDBjMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3a4672432ce4028b258847f61e4365e",
+      "statement": "The migration tool's default helper image is not hard-coded: it resolves the single digest-pinned `rustfs/rustfs` reference out of the git-tracked observability prod compose (`infrastructure-as-code/docker/observability/compose.prod.yaml`), and it errors if that file contains no such reference, more than one distinct reference, or a reference without a 64-hex `@sha256:` digest — so the uid the copy chowns to comes from the real production pin.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L188-L189",
+          "version": "repo-lines-v1:sha256:b3ad25174e82022d7a2e84bea4ba930b0726e04b6108c8ab756cc8fb74d48e96:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y5YWI3OWJhM2RmOTQxNDg4YmEyYzdlMjRjZDkzMGUxYTE5MTViZjU3MWYwZjA5ZjY5ZTEyMWNlMTcxOTEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYxMzlmZjZkM2FhN2E5Y2NiMTg0MmUxNzU2NDZlYThlZjQ1NjViODY0OWIyN2Y3NTVlMjAyYWZkMjk3NzNiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY4ZDNkZDdhY2FlNWE3MTMwNDU4YzQ5YWNiYzVlYjVmMzE0ZDEwNTA2MGJhMDY5ZmRkMTk3NzNjYTFkODRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ0MjNiYjYwMzcwNmFiN2I4ZDcyZDg4MTI1ZmJhODAxZjEwODc3OGI4ZDU0OTQ1ZTBiNjJjYWFkMTFhMjg0ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L404-L412",
+          "version": "repo-lines-v1:sha256:839b4691cb6e65bddc04c6ef7c123a2aed098e55c4484988f8b2f7d3413ba082:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk5ZTg5ZTkyMTFkMGEwZTNmYTE4MmEzNzdiYzM3ZjFmMTkyZTkwNWNmZTIzMGQ0NjYzMjA0ODdlMWZkY2M2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJiMDRjNGQ5OGVmOTJmY2FjY2I1ZWE4OWI3MjY5NGFlMGU5MGI2MWYxNzQyYzEzZDcwNDIxNDcyNzlkNmVlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmI5MmIyNjQ5NTFhODlkYzVhYTE5YWJjM2Q4YmJjNDIzNzY0NWRjMzc1ODlmMjZlZWMyNmVmYzk4OGM0ODg1ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L444-L448",
+          "version": "repo-lines-v1:sha256:8e38e9331fe114649bd122db85d8c3d279f4b51c9331242436fa2bb401cefb44:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRkZDZkZjM1NjNlODIwZGY1ZGMyYmI2ODdkNWJkZjYyNzdmZmRhZGMwM2YxYTQyNzk1MGM2MDg5NjJmOWYxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDFlYzdjNjVlZDFjODEzMjIyZTFmOTNkNzM1NjQyZWEwODI3MGM3NTFmZDE2ZDhjZTg3Yzc2M2NmNTVhOTYyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjgwYjllNGQ4MmU3NTc1N2Y1Y2QwYzk1ZWZmN2ZlYmZlYTIxMDA4ZjE0MWUzYWVmY2VlODQxMTIxYTgyZjQzNSJ9"
+        },
+        {
+          "resource": "repo://scripts/object-store-migration.mjs#L52-L53",
+          "version": "repo-lines-v1:sha256:984ae424b8bf247be562af3cf72e27ef8a08e4c353faa9f18398397b4edb8bd4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJhYjNkYzJjZmZjYzY5M2M3OTVkMzJlNTUzNWM3YjZjNWRiYzBhNTMzZmE1ODU3MjJiNmRjNDZmMzE3Njg1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI2OTAyMzk2Y2U3N2M0YWJhYjkyZTFkYmNiMTc2MTY0OTM2N2VkZWI5ZDhkMzFlODBiYTIxNWQ5MThjY2QzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTUzZTk5YjEyMTU4ODFmMTA0MDlhM2E0MWRiNTQ2NTA5MDQ4NTY4NDJhNDY0YWJhODZiNGRhNDc0NmQyN2U2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGFhOGIwZjI5MGNiNWVjYjEyOTEyNDI3OTIwNTk0MGQ5YjE4NTRiMTY0ZDBkYzNjYjhiOTg2ZjQwM2M5MmQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_26fadee2a9db4a6bb4dc6b07df059c52",
+      "statement": "`scripts/__tests__/object-store-service.guard.test.mjs` enforces the RustFS service contract (specs/080-minio-to-rustfs/contracts/object-store-service.md, S1–S9) over the git-tracked RustFS composes, including clause S9 — that the prod data volume is `external: true` under its canonical name — and it asserts it actually found the server and init services in each file so a guard cannot pass by matching nothing. The host-managed Nx-cache compose under the `prod` user's home is outside that scan, so for it the external-volume property rests on the runbook and on the volume existing rather than on a CI gate.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L1-L42",
+          "version": "repo-lines-v1:sha256:3058bb47ad4638e485a84050e2d97fd660ddfe91e209db25f0a207613e0c9261:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYzliZWY2Nzc4NGMzN2U5MWU0YTBiMWZmNTY2MTY3M2M1NTVkM2RiZTljZDM0YTk5ZThjMWM1OGJiNTc1NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMDY3OGIwZWVhZGFkMTMxNWZhNDQ0OGZhMThmMjRhZDVjNDNiYzM2N2Y1ODEyNzg3NDFkYjA5NWRhNTAyNzgifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L151-L174",
+          "version": "repo-lines-v1:sha256:c7637f42f0d6ce92c83f0984d58165111a1cf2be45457804b47cb9c46547b3cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YjI3ZTgxZDBmN2NmNzJjN2U0ZjIwYmZlNTBjYWFlMGU4ZjRmMjQxMWI3YTkxZGRhZDYxMWJjMmEyOGIyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/contracts/object-store-service.md#L117-L121",
+          "version": "repo-lines-v1:sha256:807d0b56eaeefbea41c2e293df75c89f0b676ffd8031b0722696d9b50c673353:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZlYjA1Mzg0OTYwNDE3YWJmOWQ0ZWNhNTJkYzIwOTZjNzkxNmI0YWM2YmI4NjQ1YmNlNjEwNmI0NGJmYWNjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg0ZTg4ODZjMzQwZWU1MGY5ODhhMzY1NDk0MTYyZjdmNjQ0ZWQ4ODJhYzdlNzZhZmRhOWVkOTAzNjNhNDZiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTIwZDQwMjU0YzE1ZDcwZTI1NDc5NzgzYzk5MzMxYzI0MzRjZDRjODAwZGViODc4ZjdkNmRlYjJjZDU4MzgwNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8fffc8ff3b12476cb9fe9832fc1aca93",
+      "statement": "The Phase 8 runbook snippet's RustFS pin lags the git-tracked one: it still shows `rustfs/rustfs:1.0.1@sha256:1803faef…` while the tracked observability prod compose has moved to `rustfs/rustfs:1.0.3@sha256:9ca95595…`, and every git-tracked RustFS service must share one digest-pinned Alpine tag. The host-managed Nx-cache compose is invisible to Renovate, so the pin must be copied by hand from the tracked file whenever that moves — check the tracked compose rather than the runbook's example.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L675-L694",
+          "version": "repo-lines-v1:sha256:a9f3f4a7ce97771c527ef45dc9be2b69318e8ee999dde445056228bc62bb6fe7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmY2U3NmE3NjdjYzYwMTcyODc3NTcyODY1ZmYwMDlhZmQwYTRkYjYxY2JkZTc2ODI1OGUzZTk0OWExY2YyYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YTRkNTM2NTEyYzVlOGZlZDQ3NjA1YjRkYWI3MzVlNjVjYmE1NmMwMjQ2MGQ4MjUwZmIyMzg3MDhkZTlmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyZTBhM2E4OTZiYzc0ZTMwNDdjMTljNDVlOTU1NDE2MDk4NmExNzhmZmZkMWUwNGQwNDhlMDdjMWZlYmQyZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNmUxNjllYzVlMDg5NmUzZTVmNTBlZTRjNTI5ZmRkMzdlZDNkNjAxNzVkYWE5MzU5MmFiZDQ3MGMzNmVhMDEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L186-L194",
+          "version": "repo-lines-v1:sha256:6767200ced5410acfa0855204b05521df739aa70bc5e6ec24e5c4fb094da206f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA4OThjODQwMjIyYTllZGM2ZDQ4MzAxNzVmYzAwODc3ZmZhOWFkNWVmM2NiMDhhMzRmOGQ4Mjk2YmZkYTQ1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE3YjExNDNlNTIzOTcxMDNjODhjOTkyMzhhNjk2ZTdkYTg4YjcyZTAwNDc3YjNiOWMzOWQ4OGE5YWY3NDAxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGYyMmIxMThiNWUxZmU1ZTFhMmI5MWIyNzYxYjljZGM0ZTg3YmY0OTJhZjAyOTRmNTVjMThhZTg3ZTdlODMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGI0NjBkOGFlNzAyZjU1YzU5ZGZmMjRlZjg1NjQ1YTNhNDEyNTgxOTdmMjMwODY0N2Q3MTk2NjE4NDJjOWYyNyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L165-L174",
+          "version": "repo-lines-v1:sha256:d8da9296e85146cf32633aec798fcf89961494a1eacc49ca8340276c98a082a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MzBkYTlmOTQ4ZTQ2MjhhYTdmOTBlN2I4YmU5YWRmODdlZTgzZWVmYmYzOWIyZjc4ZTVkNWFmNTk4NjhmZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f82f2fed8cd9455b94483ce29854a36d",
+      "statement": "A compose `up` that aborts on a missing external volume is loud rather than destructive: measured 2026-10-11 in the dev container against the shipped observability prod compose (Docker Compose 5.6.0, with every other external volume present so the RustFS one was the only gap, with and without pulling), compose aborted with `external volume \"…\" not found`, created zero containers, did not create the volume — and a scratch project showed the previously deployed containers were left running and unchanged, so a merge that lands before the copy leaves the old store still serving while the operator recovers.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L723-L733",
+          "version": "repo-lines-v1:sha256:85cfdca3af2d2a284671452c3dc29017962ca32c942d7adc68ef6c962c33dcc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZTUxMDAzMWIzZDVjZmY4NjhiOTlhMjc1ZGQyNGQ3MmU0NWNiNTA2YjNjNGY1ODljZDA4ZGQ4MGU5ZmIyZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODVlNDQyNTE3MmY1YmI3MjhmZjAyYTAxYzI5NWY2NWI4MzQzODQzMGI4YTI2ZmY3OWMxNDk0ODk2Njk4MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOWMxYTk4OTRiNTEwN2YzZDk2MzkwODA2YjU5Njc1NmRkMDhiMmZjNDM5M2FiOWRjZDlhODI4YmQxNzgwYmEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L102-L110",
+          "version": "repo-lines-v1:sha256:fedd364050a3021a9d190018d31b79dd151696cb932b2eb3a49f3e96370efc3a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjNGI3Y2YzYjhhNTE5N2Q2NTRlMGY5YmI2MjNlZjJhM2VkZTQ3NGEzOWJjODQxNTJhMzY0MGJjNmMzYjQxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI2ZDA4ZmM2ZTkwMjA1MWNlYWYzYzlhZDEwOGJhMTdjOWViMTMxM2MwOWJhNGZiZmI4NmEyMDY1YzQwNjBjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZiYmVmYTA3ZTU1YTJkZWNmNWU1ZjhkN2UwNDdiZWFlMzY0NmQ4MWRlNDQwYThiNTFkZTg5YTVkNzY1ZjVlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRmMzkwNzRhMmY0ZGJjYWY5MzMzM2UzYmFkMTdmOTMzZDIxNDczMmE2NDg4NTRmOTA5ODliZjFlZmJiMzFlOCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T23:24:20.987Z"
+    "at": "2026-10-25T01:38:05.401Z"
   }
 }

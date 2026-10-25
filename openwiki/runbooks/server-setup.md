@@ -34,7 +34,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T23:24:20.987Z
+    at: 2026-10-25T01:38:05.401Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -113,10 +113,21 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   with its console disabled and only the S3 port published. Moving an existing cache is an in-place,
   verified copy driven by `scripts/object-store-migration.sh` (`manifest` → `inventory` → `copy` →
   `verify`); recreating it empty is an accepted alternative, because the cache is rebuildable — a cold
-  cache costs time, not correctness. That cutover was performed on prod on 2026-10-21 (spec 080 T044)
-  as a copy rather than a recreate, and `verify` reported 1360 → 1360 objects. Client wiring is
-  entirely env-driven, so local runs without the token fall back to the local cache and no
-  remote-cache config leaks into the repo.
+  cache costs time, not correctness. The migration runs **on the host**, from a checkout, through that
+  wrapper: the host has no `node`, so the tool runs in a digest-pinned node container with the host's
+  rootless Docker socket mounted and takes the store's credentials **by name** from the shell, never as
+  command-line values — driving it from the dev container instead would put standing control of the prod
+  daemon in the sandbox. The tool refuses rather than guesses (`copy` requires `--apply`, and an existing
+  target or a source volume still mounted by a running container stops it), and a passing copy records
+  `targetPreexisted: false`, zero entries not owned by the image's runtime uid, and an unchanged source
+  digest. Both the tool and the wrapper are **temporary**: they exist for the three feature-080 cutovers
+  and are deleted, with the guard exemption, in the cleanup PR after the rollback window. The tool's
+  default helper image is not hard-coded either — it reads the single digest-pinned `rustfs/rustfs` ref
+  out of the git-tracked observability prod compose and refuses anything unpinned or ambiguous, so the
+  uid it chowns the copy to comes from the real production pin. That cutover
+  was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a
+  recreate, and `verify` reported 1360 → 1360 objects. Client wiring is entirely env-driven, so local
+  runs without the token fall back to the local cache and no remote-cache config leaks into the repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
@@ -238,7 +249,10 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
 - **The Nx-cache store is host state, so nothing in CI keeps its image pin fresh.** Phase 8's RustFS
   compose lives under the `prod` user's home like the other host-managed composes, which means
   Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
-  in the observability stack whenever that moves. The store's volume and network names are host state
+  in the observability stack whenever that moves — so check the pin against that file rather than
+  against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
+  while the tracked observability compose has moved to `1.0.3`; every git-tracked RustFS service must
+  share one digest-pinned Alpine tag). The store's volume and network names are host state
   too, so confirm them by ownership *and* contents before running the migration copy — and if the
   backup script captures the previous store's directory, it has to be pointed at the new one as well.
   The guard that fails on any *live* reference to the retired object store — with a closed list of
@@ -257,12 +271,20 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     only those two credential lines — the failure mode of leaving them behind is a cache server that
     starts healthy and cannot read the store.
   - **The store's volume is an external volume that nothing but the migration tool creates.** Its
-    compose declares the volume `external: true`, so compose never creates it: `copy --apply` brings it
-    into existence (a new host with no prior data creates it empty instead). Referencing it before it
-    exists aborts the compose up with an `external volume … not found` error and creates **no**
-    containers — the deploy fails instead of starting on an empty store, so the copy must precede
-    anything that mounts the volume. [Prod control tower](./prod-control-tower.md) owns the ordering
-    for the observability stack's identical cutover.
+    compose declares the volume `external: true` under the explicit name `nx-cache-rustfs-data`, so
+    compose never creates it: `copy --apply` brings it into existence (a new host with no prior data
+    creates it empty instead). Referencing it before it exists aborts the compose up with an
+    `external volume … not found` error and creates **no** containers — the deploy fails instead of
+    starting on an empty store, so the copy must precede anything that mounts the volume. The
+    failure is loud rather than destructive: measured 2026-10-11 against the shipped observability
+    compose (in the dev container, via a scratch project), a failed `up` of this kind leaves the
+    previously deployed containers running and unchanged — so an early merge leaves the old store
+    serving while you recover. [Prod control tower](./prod-control-tower.md) owns
+    the ordering for that stack's identical cutover. For the *git-tracked* RustFS services this property
+    is asserted, not merely documented — `scripts/__tests__/object-store-service.guard.test.mjs` fails
+    the build unless the prod RustFS data volume is `external: true` under its canonical name (contract
+    S9). The host-managed Nx-cache compose sits outside that scan, so for it the same property rests on
+    this runbook and on the volume actually existing rather than on a CI gate.
 
     ```mermaid
     flowchart TD

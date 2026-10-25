@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a3bb176ad41ecf3d91d745334eda20e1ae2092fd485e4c6afc5f1afb95347249",
+  "pageVersion": "sha256:38f60b502bf989709921a2be4cd163f72c1f0bbcdece28c35702d4b4da5ceea4",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -138,7 +138,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/spec.md",
-          "version": "repo-file-v1:sha256:b70d7f64747e56abcc0246cfff6f4432cf438694d5d1bdc722a44a68c8f30493"
+          "version": "repo-file-v1:sha256:4314b3977e85f5fd0a9ab9fcfd70d31e6f7f69b460d791bdcd1eecec1ce5809d"
         }
       ]
     },
@@ -152,11 +152,11 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
-          "version": "repo-file-v1:sha256:bceb259ae8aad796c81bb2a81446b53c179588f0d2913e682a845a8311359f53"
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/spec.md",
-          "version": "repo-file-v1:sha256:b70d7f64747e56abcc0246cfff6f4432cf438694d5d1bdc722a44a68c8f30493"
+          "version": "repo-file-v1:sha256:4314b3977e85f5fd0a9ab9fcfd70d31e6f7f69b460d791bdcd1eecec1ce5809d"
         }
       ]
     },
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:f78c6c986c7b616fd721df67a0d3d6a9b01ca61f6819b4a4267a99d8e2c765de"
+          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
         }
       ]
     },
@@ -208,7 +208,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
-          "version": "repo-file-v1:sha256:bceb259ae8aad796c81bb2a81446b53c179588f0d2913e682a845a8311359f53"
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
         }
       ]
     },
@@ -230,13 +230,31 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
-          "version": "repo-file-v1:sha256:bceb259ae8aad796c81bb2a81446b53c179588f0d2913e682a845a8311359f53"
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
+        }
+      ]
+    },
+    {
+      "id": "claim_850dac6335274ae2acac0e1332c6df6a",
+      "statement": "The constitution's Backend Services stack names `medi-rs` as the mandated mediator library for routing commands, queries and events from the API layer to the application-layer handler, but `backend/mc-service` ships no mediator crate: `router::build()` constructs one handler per operation over the repository traits and packs them into `AppState`, so dispatch is a direct method call on that struct. The divergence is recorded in `docs/MCM-Architecture.md` as a tracked backlog item rather than resolved by an amendment, so a constitutionally named library can be absent from the running system while the version history reads as current.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L249-L249",
+          "version": "repo-lines-v1:sha256:030e45697fa2eabe7f7d76c3ae07392d21f11b25520d5e33e97a250eef8b3ca6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwZTQ1Njk3ZmEyZWFiZTdmN2Q3NmMzYWUwNzM5MmQyMWYxMWIyNTUyMGQ1ZTMzZTk3YTI1MGVlZjhiM2NhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwZTQ1Njk3ZmEyZWFiZTdmN2Q3NmMzYWUwNzM5MmQyMWYxMWIyNTUyMGQ1ZTMzZTk3YTI1MGVlZjhiM2NhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JhMGViMWRiOWVhMTE4MGI0NTk0Y2M2MzBhODA5YWVjMzAzZmY5MmE5ZmRkYjcwZmFhNjAwN2UxOTAyNTAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY2MmQ0M2JkOWE4MGNmODBkNGQ4YTljODNmOTJlOTlmZjE3OWUwZjM5Nzk0Y2JmZjgxNDY3MmE3YjlkNGM3NSJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml",
+          "version": "repo-file-v1:sha256:57e5af427dd1026993ce957bd14ab75260eb088adc3529c3482a5058527aafa7"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L84-L84",
+          "version": "repo-lines-v1:sha256:918b82593d07d4d54a88f0026d1cd0fd84d1013f3bb4d585b00b7bf0af4dc35d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA5NDdhOWY0ZDNlYTdiZWEwN2ViMjkxMDllMzU3ZWQ0NmVmMDIxOWQ1Y2YxZjBiMzI3NzJiZWJkNmMyMGY5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI5MjBkNTY5MTAyNjEzN2JjNzMzMTlhMTFhNGQ1YWQyYmJkNTdkYmZkYjgxNzBjMzBhODAzYjE2ZjdkZDI4YSJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T23:24:20.987Z"
+    "at": "2026-10-25T01:38:05.401Z"
   }
 }

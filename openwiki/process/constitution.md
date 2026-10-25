@@ -6,7 +6,7 @@ resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T23:24:20.987Z
+    at: 2026-10-25T01:38:05.401Z
 ---
 
 # The governing constitution
@@ -138,6 +138,15 @@ version history.
   the line to `9.0-ubi9`. Compare a version-named line against the compose files and the lockfile
   before treating it as the deployed truth; the changelog entry is where a correction of that kind
   gets recorded.
+- **A named library can be aspirational — the amendment history is not a description of the running
+  system.** The Backend Services stack section requires `medi-rs` to route commands, queries and
+  events from the API layer to the application-layer handler, but `backend/mc-service` ships no
+  mediator crate: `router::build()` constructs one handler per operation over the repository traits
+  and packs them into `AppState`, so dispatch is a plain method call on that struct. The divergence
+  is recorded in [`docs/MCM-Architecture.md`](../../docs/MCM-Architecture.md) as a tracked backlog
+  item, not as an amendment — so a stack line can be out of step with the shipped code while the
+  version history reads as current. Read the manifest and the router before treating a named library
+  as present; see [mc-service](../projects/mc-service.md) for the shipped dispatch shape.
 
 Full text, every principle, and the complete version history:
 [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md); the amendment procedure

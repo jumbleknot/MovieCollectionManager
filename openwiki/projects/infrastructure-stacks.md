@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
-description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract and topology rules that keep them from colliding or drifting.
+description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 sources:
@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T17:33:57.993Z
+    at: 2026-10-25T01:38:05.401Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -264,6 +264,18 @@ and the one-time cutover on a host still carrying the pre-029 external net is
 `docker network rm keycloak-network` after a `prod-auth` destroy. See
 [prod reboot resilience](../runbooks/prod-reboot-resilience.md).
 
+Exposure is the other half of that contract, and it is deliberately tiny: only three host ports are
+published anywhere in production, and all three are operator surfaces bound plainly to `0.0.0.0` rather
+than to the tailnet IP — `prod-observability` publishes LangFuse web (`19030:3000`) and Grafana inside
+`otel-lgtm` (`19002:3000`), and `prod-auth` publishes the Keycloak admin console (`19099:8080`). The
+`0.0.0.0` bind is forced rather than chosen: the rootless daemon starts before `tailscaled` at boot, so a
+`${TS_ADMIN_IP}:host:container` publish silently fails to bind (rootlesskit never learns the tailnet IP,
+the container ends up with no ports and nothing listens), and tailnet-only exposure is preserved instead
+by the host firewall's default-deny on non-tailnet inbound. Everything else stays unpublished and is
+reached by internal DNS, including `otel-lgtm`'s OTLP `4317`/`4318` and OPA's `8181`. All three published
+ports sit in the prod-reserved `19000–19099` range so they cannot collide with the CI runner's own
+LangFuse, Grafana or Keycloak on the shared host.
+
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
 are declared:
 
@@ -356,7 +368,15 @@ host.
 **OPA policies** — `infrastructure-as-code/opa/policies/` is bind-mounted read-only into `opa-service`
 with `--watch /policies` in both observability compose files, so the policy bundle is part of the stack
 definition rather than baked into an image. It holds the `agent_ui_action` and `agent_token_exchange`
-policies alongside their `_test.rego` suites, all `import rego.v1` for OPA 1.x compatibility.
+policies alongside their `_test.rego` suites, all `import rego.v1` for OPA 1.x compatibility. The two
+files diverge on the image and the healthcheck, for the same shell reason: the dev file pins the
+distroless `opa` and carries no healthcheck, while prod pins the `-debug` variant — distroless has no
+shell, and `-debug` adds busybox so a healthcheck and a Komodo status are possible at all. Prod's check
+then invokes the `opa` binary itself (`opa eval --fail … http.send({…}).status_code == 200`, exec form)
+rather than `wget`, because that busybox ships no `wget`, `curl` or `nc`: the previous `wget` form failed
+every run, so the container read `unhealthy` from ~2026-09-10 (a `FailingStreak` of 130247 by
+2026-10-03) while OPA was serving fine — the thing that was wrong was Komodo's view of the policy
+server, not the policy server.
 
 **Dev-only Ollama helper** — `infrastructure-as-code/docker/dev-ollama.compose.yaml` is not part of any
 stack and not part of the production agent stack: it is a dev-container-only helper brought up by
