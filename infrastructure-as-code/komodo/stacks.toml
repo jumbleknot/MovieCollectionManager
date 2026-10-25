@@ -86,7 +86,13 @@ AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
 AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[AGENT_SUBJECT_TOKEN_CLIENT_SECRET]]
 OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
 MONGO_BFF_APP_PASSWORD=[[MONGO_BFF_APP_PASSWORD]]
+BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent
+BACKUP_CONSENT_CLIENT_SECRET=[[mcm_backup_consent_client_secret]]
 """
+# ↑ feature 083 (item #843): scheduled-backup consent runs on its OWN Keycloak client so revoking it
+#   cannot end the member's session (#702). The client was created in the admin console (its admins
+#   have 2FA, which kcadm's password login cannot satisfy), so it has its own secret, held as the masked
+#   Komodo Variable `mcm_backup_consent_client_secret`. The Variable must exist BEFORE this syncs.
 # ↑ feature 026 (Workstream A): MONGO_BFF_APP_PASSWORD is embedded in MONGO_URL (least-privilege app
 #   user bff_app). The BFF store is standalone → no keyfile. Root password + cutover are operational.
 # ↑ feature 025 consumer wiring: the BFF only consumes the audit sink + OPA. OPA_URL is a compose
