@@ -183,6 +183,31 @@ set, as the login client's are today. If the bootstrap admin was replaced by a p
 `config credentials` line fails and `set -e` stops the block before anything is created.
 Substitute that admin's username, and supply its password from the operator's own secret source.
 
+**Production uses the admin console instead (measured 2026-10-25, item #843).** The block above prints
+NOTHING there. The bootstrap admin is retired (server-setup runbook, "Admin hardening"), so the login
+answers `Invalid user credentials`, and its output goes to `/dev/null`. The named admins have 2FA, which a
+`kcadm.sh` password login cannot satisfy either. In the console (realm `grumpyrobot`):
+
+1. Clients → Create client. OpenID Connect, Client ID `mcm-backup-consent`. Client authentication ON,
+   Authorization OFF, **Standard flow only**. Valid redirect URI: the login client's
+   `…/bff-api/backups/consent` entry, copied exactly (prod: `https://mcm.<BASE_DOMAIN>/bff-api/backups/consent`).
+2. Advanced → Advanced settings → PKCE code challenge method `S256`.
+3. Client scopes → `mcm-backup-consent-dedicated` → new mapper **Audience**: `mc-service-audience`,
+   included client audience `movie-collection-manager`, access token ON, ID token OFF.
+4. Client scopes tab: `offline_access` is listed as **Optional**.
+5. Credentials → copy the client secret into the masked Komodo Variable `mcm_backup_consent_client_secret`.
+   The console cannot reuse the login client's secret, so this client has its own.
+
+prod-mcm-bff's environment is owned by `infrastructure-as-code/komodo/stacks.toml` (ResourceSync), which
+sets `BACKUP_CONSENT_CLIENT_ID` and references that Variable for `BACKUP_CONSENT_CLIENT_SECRET`. Do NOT add
+them in the Komodo UI: the next sync overwrites the stack's environment. Create the client and the Variable
+first; a merge to `main` then deploys the BFF with both. Check on the host (the value is never printed):
+
+```bash
+docker exec mcm-bff-service sh -c 'echo "id=$BACKUP_CONSENT_CLIENT_ID secret-len=${#BACKUP_CONSENT_CLIENT_SECRET}"'
+docker logs --since 15m mcm-bff-service 2>&1 | grep -c backup_consent_shared_client   # 0
+```
+
 To confirm a revocation really happened, use the token — do not read our database:
 
 ```bash
