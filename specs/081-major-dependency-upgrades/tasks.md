@@ -586,11 +586,19 @@ images, so the hand pin needs no config change and no release-age exclusion is a
   still readable. `/auth/sign-in` 200, `/` 200. The turn is a real model call (Ollama `qwen2.5`) through the
   gateway's own `build_langfuse_handler`, not a full graph run through the BFF: that needs the priced
   provider or the full agent stack, and the ingestion mechanism is the same.
-- [ ] T090 [US8] Prod (a merge is the deploy): operator-run pre-merge backup per
+- [x] T090 [US8] Prod (a merge is the deploy): operator-run pre-merge backup per
   `docs/runbooks/prod-control-tower.md` → merge pinned to the head → `chore(cd): promote` → operator post-deploy
   checks: UI 200, worker healthy, a trace lands. **Rollback**: stop web/worker, restore the backup (or recreate
   the Langfuse volumes empty, ADR-0002 §4), THEN revert the digests; a revert alone crash-loops (T089). **Done when**: post-deploy checks pass and
   item #839's criteria are ticked with evidence.
+  **Outcome, 2026-10-25 — done in prod.** Pre-merge backup (operator-run, runbook B0–B3, ~01:04 UTC): B0
+  4.56.0, ClickHouse 319M, Postgres `15 MB|449`; `pg_dumpall` marker `1` (0.9 MB); ClickHouse cold copy
+  `tar exit=0` / `CH-HEALTHY` / `GZIP-OK` (138 MB); `WEB-OK`. PR #852 merged pinned to `ef2f199f` as
+  `89bd8acd`; main green (11/11 required, app-e2e and infra-image-scan included). `prod-observability`
+  deployed by the Komodo sync (no promote commit: this change builds no image). Post-deploy (P1): web and worker
+  `4.68.0`, `Up`; health `{"status":"OK","version":"4.68.0"}` / `{"status":"ok"}`; `_prisma_migrations` 460;
+  `52/u create_audit_logs`, `53/u add_skill_observation_references`; 0 error lines in web and in worker; a
+  trace landed (worker `ClickhouseWriter` 1 within 5 min). Backup kept at `~/839-langfuse-468` on the host.
 
 ---
 
