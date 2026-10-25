@@ -1105,6 +1105,54 @@ test('verify: a page missing from the SECOND area is reported by area/page', () 
   }
 });
 
+// ── PR #857: the verifier runs the GOVERNANCE gate, not only the OKF gate ──────────────────────
+// Measured on run 6049: the generator rewrote openwiki/projects/bff.md WITHOUT its `resource:` (and
+// without description/tags). The page stayed OKF-conformant, so verifySlice passed it and the run
+// opened a PR that guardrails then failed on G11 — "NEITHER derived nor authoritative". The gate
+// that would have refused it already existed; the verifier never called it.
+
+/** A full root with BOTH governance files, committed: the governance fixture that passes. */
+function governedRepo() {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-gov-'));
+  cpSync(join(REPO_ROOT, 'scripts', '__tests__', 'fixtures', 'openwiki-governance', 'valid'), root, { recursive: true });
+  for (const args of [['init', '-q'], ['config', 'user.email', 't@e.invalid'], ['config', 'user.name', 'T'], ['add', '-A'], ['commit', '-qm', 'baseline']]) {
+    spawnSync('git', args, { cwd: root });
+  }
+  return root;
+}
+
+/** A real refresh moves the stamp — without it the page reads as still stale, a different violation. */
+const refreshed = (text) => text.replace(/^timestamp: .*$/m, `timestamp: ${new Date().toISOString()}`);
+
+test('verify: a regenerated page that DROPS its resource is a governance violation, not a proposable page (#857)', () => {
+  const root = governedRepo();
+  try {
+    const page = join(root, 'openwiki', 'runbooks', 'local-dev.md');
+    const before = mod.snapshotTree(root);
+    // What the generator did to bff.md: same page, front matter rewritten without `resource:`.
+    writeFileSync(page, refreshed(readFileSync(page, 'utf8')).replace(/^resource: .*\n/m, ''));
+    const v = mod.verifySlice({ root, bundleRoot: join(root, 'openwiki'), slice: sl('runbooks', ['local-dev.md']), before });
+    assert.equal(v.ok, false, 'a page with no determinable home must not be proposed');
+    assert.ok(v.violations.some((x) => /governance/i.test(x) && /local-dev\.md/.test(x)), v.violations.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('verify: the same rewrite KEEPING its resource passes both gates — the check is not a blanket refusal', () => {
+  const root = governedRepo();
+  try {
+    const page = join(root, 'openwiki', 'runbooks', 'local-dev.md');
+    const before = mod.snapshotTree(root);
+    writeFileSync(page, refreshed(readFileSync(page, 'utf8')).replace('Summary of the local stack bring-up order.', 'The local stack bring-up order.'));
+    const v = mod.verifySlice({ root, bundleRoot: join(root, 'openwiki'), slice: sl('runbooks', ['local-dev.md']), before });
+    assert.deepEqual(v.violations, []);
+    assert.equal(v.ok, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute: three areas are written by ONE invocation (SC-003), and every page is verified', () => {
   const root = twoAreaRepo();
   try {

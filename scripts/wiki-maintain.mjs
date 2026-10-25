@@ -1478,6 +1478,7 @@ export const TIME_BUDGET_SECONDS = 4 * 60;
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
 const OKF_GATE = join(REPO_ROOT, 'scripts', 'check-openwiki-okf.mjs');
+const GOVERNANCE_GATE = join(REPO_ROOT, 'scripts', 'check-openwiki-governance.mjs');
 
 // ── link normalization (item #491) ──────────────────────────────────────────────────────────────
 //
@@ -1818,6 +1819,25 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   if (okf.status !== 0) {
     const detail = `${okf.stdout ?? ''}${okf.stderr ?? ''}`.trim().split('\n').filter((l) => l.includes('✗')).join('; ');
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
+  }
+
+  // The GOVERNANCE gate too (PR #857, run 6049). The generator rewrote bff.md without its `resource:`;
+  // the page stayed OKF-conformant, so this verifier passed it and the run opened a PR that guardrails
+  // failed on G11 — a page that is neither derived nor authoritative has no home for a learning. The
+  // gate already existed; only the verifier never asked it. It reads the whole root (`--root`),
+  // because its rules span the bundle, CLAUDE.md/AGENTS.md and the two governance files.
+  //
+  // A bundle WITHOUT protected.yaml is a fixture that predates governance, not a weakened
+  // production run: the real repository always carries it, and guardrails' okf job fails closed
+  // without it. Skipped there out loud, never silently.
+  if (existsSync(join(bundleDir, 'protected.yaml'))) {
+    const gov = spawnSync(process.execPath, [GOVERNANCE_GATE, '--root', root], { cwd: REPO_ROOT, encoding: 'utf8' });
+    if (gov.status !== 0) {
+      const detail = `${gov.stdout ?? ''}${gov.stderr ?? ''}`.trim().split('\n').filter((l) => l.includes('✗')).join('; ');
+      violations.push(`the bundle breaks openwiki governance after this slice: ${detail || 'the governance gate failed'}`);
+    }
+  } else {
+    console.log(`[wiki-maintain] governance gate not run: no protected.yaml in ${bundlePrefix}`);
   }
 
   // Only the missing-page and stale-page checks are attributable to a PAGE; a policy or conformance
