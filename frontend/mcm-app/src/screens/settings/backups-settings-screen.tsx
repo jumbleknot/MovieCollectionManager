@@ -265,7 +265,10 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                             consentGranted={consent.granted}
                             busy={jobs.busy || consent.busy}
                             onChange={async (schedule: Schedule | null) => {
-                              await jobs.update(job.id, { schedule: schedule ?? undefined });
+                              // `null`, never `undefined`: JSON drops an undefined field, and the
+                              // route reads a PATCH with no `schedule` as "leave it alone" — which
+                              // is how the switch once failed to turn off (spec 083 T011).
+                              await jobs.update(job.id, { schedule });
                               // Turning the LAST schedule off gives the standing permission up
                               // (FR-023) — the server decides whether any other job still needs
                               // it, so this only has to re-read the answer.

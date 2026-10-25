@@ -6,6 +6,7 @@
  * the id names something real.
  */
 import * as jobStore from '@/bff-server/backup-job-store';
+import * as offlineToken from '@/bff-server/backup-offline-token';
 import {
   withBackupRoute,
   parseJsonBody,
@@ -18,6 +19,27 @@ import {
 import { logger } from '@/bff-server/logger';
 
 type Params = { jobId: string };
+
+/**
+ * FR-023: disabling a schedule or deleting the job gives the standing permission up — once no
+ * other enabled, scheduled job still needs it (`revokeIfNoScheduleRemains` decides that, across
+ * ALL the user's jobs). Called AFTER the store change, so the job just turned off is not counted.
+ *
+ * A refusal at the identity provider is a 502, as it is for the consent route: the job change
+ * has happened, but saying the permission is gone while a live offline token remains is the
+ * failure SC-012 exists to prevent. The screen re-reads the grant and still offers to withdraw it.
+ */
+async function giveUpPermissionIfUnused(userId: string): Promise<Response | null> {
+  try {
+    await offlineToken.revokeIfNoScheduleRemains(userId);
+    return null;
+  } catch (err) {
+    if (err instanceof offlineToken.OfflineTokenRevocationError) {
+      return problem('The permission could not be revoked', 502, err.message);
+    }
+    throw err;
+  }
+}
 
 export async function GET(req: Request, { jobId }: Params): Promise<Response> {
   return withBackupRoute(req, 'backup_job_get', async ({ userId }) => {
@@ -43,6 +65,10 @@ export async function PATCH(req: Request, { jobId }: Params): Promise<Response> 
     const updated = await jobStore.updateJob(userId, jobId, patch);
     if (!updated) return notFound();
     logger.audit('backup_job_updated', { userId, jobId });
+    if (schedule === null || rest.enabled === false) {
+      const refused = await giveUpPermissionIfUnused(userId);
+      if (refused) return refused;
+    }
     return json(updated);
   });
 }
@@ -51,6 +77,8 @@ export async function DELETE(req: Request, { jobId }: Params): Promise<Response>
   return withBackupRoute(req, 'backup_job_delete', async ({ userId }) => {
     const deleted = await jobStore.deleteJob(userId, jobId);
     if (!deleted) return notFound();
+    const refused = await giveUpPermissionIfUnused(userId);
+    if (refused) return refused;
     // The ARTIFACTS are deliberately left at the destination. They are the user's data in the
     // user's storage; deleting a job is a statement about future backups, not a licence to
     // remove past ones. Retention prunes them only while a job exists to govern it.

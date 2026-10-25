@@ -23,6 +23,13 @@ export interface JobDraft {
   schedule?: Schedule;
 }
 
+/**
+ * A change to a job. `schedule: null` REMOVES the schedule; an absent `schedule` leaves it alone.
+ * The two must stay distinguishable on the wire, which is why `null` is spelled out here: an
+ * `undefined` is dropped by JSON, and the route then reads the request as "change nothing".
+ */
+export type JobPatch = Partial<Omit<JobDraft, 'schedule'>> & { schedule?: Schedule | null };
+
 export interface RestoreOutcome {
   createdCollectionIds: string[];
   movieCount: number;
@@ -36,7 +43,7 @@ export interface UseBackupJobsReturn {
   error: string | null;
   reload: () => Promise<void>;
   create: (draft: JobDraft) => Promise<JobView | null>;
-  update: (id: string, patch: Partial<JobDraft>) => Promise<JobView | null>;
+  update: (id: string, patch: JobPatch) => Promise<JobView | null>;
   remove: (id: string) => Promise<boolean>;
   runNow: (id: string) => Promise<RunSummary | null>;
   listRuns: (id: string) => Promise<RunSummary[]>;

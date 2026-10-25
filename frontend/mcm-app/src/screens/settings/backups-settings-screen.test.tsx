@@ -10,8 +10,9 @@
  */
 
 import React from 'react';
-import { render, waitFor } from '@/test-support/render';
+import { render, waitFor, fireEvent } from '@/test-support/render';
 import { BackupsSettingsScreen } from '@/screens/settings/backups-settings-screen';
+import { apiClient } from '@/utils/api-client';
 
 jest.mock('@/utils/api-client', () => ({
   apiClient: {
@@ -42,5 +43,30 @@ describe('BackupsSettingsScreen', () => {
   it('says there are no destinations yet rather than showing an empty area', async () => {
     const { getByTestId } = await render(<BackupsSettingsScreen />);
     await waitFor(() => expect(getByTestId('backup-destination-list-empty')).toBeTruthy());
+  });
+
+  // Spec 083 T011 (item #843). Measured in production: the switch stayed On. The screen sent
+  // `{ schedule: undefined }`, which JSON drops, so the PATCH body was `{}` — and the route reads
+  // an absent `schedule` as "leave it alone". Only an explicit `null` clears it.
+  it('turning the schedule off sends an explicit null, which is what clears it', async () => {
+    const job = {
+      id: 'job-1', label: 'Nightly', destinationId: 'dest-1', collectionIds: ['c1'], keepLast: 7,
+      enabled: true, schedule: { frequency: 'daily', hour: 3, minute: 0, timeZone: 'America/New_York' },
+      nextRunAt: '2026-10-26T07:00:00.000Z',
+    };
+    (apiClient.get as jest.Mock).mockImplementation(async (url: string) => {
+      if (url === '/bff-api/backups/jobs') return { data: [job] };
+      if (url === '/bff-api/backups/consent') return { data: { granted: true, grantedAt: '2026-10-25T20:42:28Z' } };
+      return { data: [] };
+    });
+
+    const { getByTestId } = await render(<BackupsSettingsScreen />);
+    await waitFor(() => expect(getByTestId('backup-job-versions-job-1')).toBeTruthy());
+    await fireEvent.press(getByTestId('backup-job-versions-job-1'));
+    await waitFor(() => expect(getByTestId('backup-schedule-enabled')).toBeTruthy());
+    await fireEvent(getByTestId('backup-schedule-enabled'), 'onValueChange', false);
+
+    await waitFor(() => expect(apiClient.patch).toHaveBeenCalled());
+    expect(apiClient.patch).toHaveBeenCalledWith('/bff-api/backups/jobs/job-1', { schedule: null });
   });
 });
