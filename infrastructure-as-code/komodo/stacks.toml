@@ -88,7 +88,16 @@ OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
 MONGO_BFF_APP_PASSWORD=[[MONGO_BFF_APP_PASSWORD]]
 BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent
 BACKUP_CONSENT_CLIENT_SECRET=[[mcm_backup_consent_client_secret]]
+BACKUP_CREDENTIAL_ENC_KEY=[[mcm_backup_credential_enc_key]]
+BACKUP_TICK_SECRET=[[mcm_backup_tick_secret]]
+BACKUP_ALLOWED_DESTINATION_HOSTS=[[mcm_backup_allowed_destination_hosts]]
 """
+# ↑ feature 073 production enablement (item #843 follow-up, 2026-10-25): without these three, backups
+#   were OFF in prod — every private destination refused, no secret could be stored, no tick ran.
+#   All three are Komodo Variables that must exist BEFORE this syncs: the two keys masked (32 random
+#   bytes, base64), the allow-list plain — it is LAN topology, so it stays out of git like [[BASE_DOMAIN]].
+#   NEVER rotate mcm_backup_credential_enc_key casually: it orphans every stored destination secret and
+#   offline token. The allow-list is an EXACT host match, no port; edit the Variable, then Redeploy.
 # ↑ feature 083 (item #843): scheduled-backup consent runs on its OWN Keycloak client so revoking it
 #   cannot end the member's session (#702). The client was created in the admin console (its admins
 #   have 2FA, which kcadm's password login cannot satisfy), so it has its own secret, held as the masked

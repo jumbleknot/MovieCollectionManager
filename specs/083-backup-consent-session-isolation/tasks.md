@@ -131,3 +131,26 @@ BFF with both values.
 after: both values are optional (`env.ts` falls back to the login client), so no `${VAR:?}` guard applies.
 The real check is on the host after the deploy: `printenv` shows `id=mcm-backup-consent`, the secret length
 is non-zero, and `backup_consent_shared_client` is logged 0 times. Then the #843 sign-in survival test.
+
+### T009 — Turn scheduled backups on in production (item #843, added 2026-10-25)
+
+**File(s)**: `infrastructure-as-code/komodo/stacks.toml` (stack `prod-mcm-bff`),
+`infrastructure-as-code/docker/bff/.env.prod.example`, `docs/runbooks/backups.md`.
+
+The #843 sign-in survival test could not run: saving a destination in prod failed with "That address
+is not allowed". Feature 073 had never been enabled in production — prod-mcm-bff set none of
+`BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` or `BACKUP_ALLOWED_DESTINATION_HOSTS`, so every
+private destination was refused, no destination secret could be sealed, and the boot log read
+`backup scheduler disabled (BACKUP_TICK_SECRET is not set)`. Add all three: the two keys as masked
+Komodo Variables (`mcm_backup_credential_enc_key`, `mcm_backup_tick_secret`; ADR-0001), the allow-list
+as the plain Variable `mcm_backup_allowed_destination_hosts` holding the operator's LAN WebDAV NAS (exact
+host match) — a LAN address is topology, which stays out of git. `BACKUP_TICK_ALLOW_TIME_OVERRIDE` stays
+unset: it is dev/CI only.
+
+**Order**: the operator creates all three Variables BEFORE this merges, then checks the sync and redeploys.
+
+**Verify** (no RED: nothing becomes required): `node --test scripts/__tests__/komodo-stack-env.guard.test.mjs`
+stays green before and after, because all three are optional in `env.ts`. The real check is on the host
+after the redeploy: the boot log no longer says `backup scheduler disabled`, the enc key decodes to 32
+bytes, the allow-list is non-empty, and a destination on the NAS saves and tests OK.
+Then T008's sign-in survival test.
