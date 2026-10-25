@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.3 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move completed in production, and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.3 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration, both of them completed in production — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
@@ -62,7 +62,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -81,12 +81,13 @@ On top of that steady state sit **five one-time stateful cutovers**, each operat
 merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
 object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
 OpenSearch 2 → 3 with the audit history preserved (feature 071), the observability Postgres 16 → 18 move
-(spec 081 US8b), which completed in production on 2026-10-20, and the Langfuse 4.56.0 → 4.68.0
-schema-carrying minor (spec 081 US8 PR 8d, item 839), whose merge *is* its migration. Three of the five —
-RustFS, OpenSearch 3 and Postgres 18 — put the new state on a **new external volume** and leave the old
-one untouched as the rollback; the Langfuse 4 cutover recreated its volumes in place and deliberately
-discarded the traces, and the Langfuse 4.68 minor migrates in place, where a pre-merge backup is what
-separates a rollback from a loss. The policy they all answer to is
+(spec 081 US8b), and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (spec 081 US8 PR 8d, item 839),
+whose merge *is* its migration. The last two of the five have now run in production — US8b on 2026-10-20
+and the Langfuse minor on 2026-10-25. Three of the five — RustFS, OpenSearch 3 and Postgres 18 — put the
+new state on a **new external volume** and leave the old one untouched as the rollback; the Langfuse 4
+cutover recreated its volumes in place and deliberately discarded the traces, and the Langfuse 4.68 minor
+migrates in place, where a pre-merge backup is what separates a rollback from a loss. The policy they all
+answer to is
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
@@ -200,9 +201,13 @@ realities: non-root images, root-owned mounts, one-shot exits, orchestrator heal
 | Vault: `bind: address already in use` on :8200, crash-looping | the vault entrypoint already appends `-config=/vault/config`; passing the file explicitly loads the listener twice | `command: ["server"]` only |
 
 **The vault config that finally works needs all of `/vault/file` + `disable_mlock=true` +
-`cap_add: IPC_LOCK` + `command: ["server"]` together** — the cap is not optional even with mlock disabled,
-because without it the entrypoint takes a fallback path that double-starts vault. Both files carry that
-rationale in place: the mount path and `disable_mlock` in
+`cap_add: IPC_LOCK` + `command: ["server"]` together.** The mount path, `disable_mlock` and the cap each
+answer a measured failure above; the `command: ["server"]` alone answers the double-loaded listener. The
+cap was originally load-bearing for a second reason too — without it the entrypoint took a fallback path
+that double-started vault — and the shipped image has since moved to `hashicorp/vault:2.2` (spec 081 US8c),
+whose changelog drops the build-time `cap_ipc_lock` so it no longer double-starts without the cap. The cap
+is kept anyway: it is harmless, and the line matters again if the image is ever rolled back to 1.x. Both
+files carry that rationale in place: the mount path and `disable_mlock` in
 `infrastructure-as-code/docker/vault/config/vault.hcl`, the cap and the `command` in
 `infrastructure-as-code/docker/vault/compose.prod.yaml`. When iterating a container that crash-loops in
 prod but not locally, reproduce locally with the prod constraints
@@ -629,7 +634,7 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 [the Renovate runbook](./renovate.md) for what ticking it means, and
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
 
-## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839)
+## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839) — done in production
 
 The fifth cutover is a **minor**, which is exactly what makes it easy to wave through — and it is
 stateful anyway. A Langfuse minor can still migrate both stores: 4.57–4.68 add 11 Postgres (Prisma)
@@ -667,14 +672,32 @@ observability composes), and because the infra-image allowlist entries are keyed
 suppress, the bump takes them out of scope — so the same PR **re-keys** the entries at the cause rather
 than re-dating them, and the gate blocks until it does (see
 [infra-image scanning](./infra-image-scanning.md) for what a re-key means and why a re-date is not it).
+Here that re-key was mixed: the two `next` advisories the new version discharged were **deleted**, while
+the three that still block on the 4.68.0 digests (the base-image CA bundle on web and worker, and the
+bundled `@sentry/nextjs` on web) were re-keyed `4\.56\.0` → `4\.68\.0` with their expiry unchanged, and
+`renovate.json` needed no edit at all because the `langfuse` group and the major-approval rule match by
+name with no version in them.
 The pre-merge backup is a `pg_dumpall` of `langfuse-postgres` plus a cold `tar` of the stopped
 ClickHouse data volume; the acceptance reading afterwards is `_prisma_migrations` at 460, ClickHouse
 migration 53 applied, zero error lines in either container and a new trace readable. Note which Postgres
 store is in play: this cutover lands **after** the US8b move above, so the volume being dumped and
 restored is the `-v18-data` one that cutover created. The upgrade path was rehearsed on the dev stack
-from 4.56.0 upward on the same volumes, and the production run is the operator-run item that closes
-PR 8d in the [spec-081 task list](../../specs/081-major-dependency-upgrades/tasks.md) — read the
-runbook, not this page, for the commands.
+from 4.56.0 upward on the same volumes — the stack was first brought up on 4.56.0 and an agent turn traced,
+then web and worker alone were moved to 4.68.0 on those same volumes, which is how the migration path and
+not merely a fresh start got measured.
+
+### Done in production 2026-10-25
+
+The production run followed that shape and closed PR 8d (PR #852 merged pinned to `ef2f199f` as
+`89bd8acd`; the Komodo sync deployed `prod-observability` with no promote commit, because this change
+builds no image). The operator backup ran ~01:04 UTC: ClickHouse 319M and Postgres `15 MB|449` before,
+`pg_dumpall` marker found (0.9 MB), ClickHouse cold copy `tar exit=0` / `CH-HEALTHY` / `GZIP-OK` (138 MB),
+`WEB-OK` on 4.56.0. After the deploy both containers ran 4.68.0 `Up` with health
+`{"status":"OK","version":"4.68.0"}` and `{"status":"ok"}`, `_prisma_migrations` read 460, ClickHouse
+migrations `52/u create_audit_logs` and `53/u add_skill_observation_references` were applied, web and
+worker logged zero error lines, and a trace landed (the worker's `ClickhouseWriter`). The backup is kept
+on the host at `~/839-langfuse-468`; the task list records the run, this page records the shape — read
+the runbook for the commands.
 
 ## Capacity
 
@@ -694,6 +717,6 @@ runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 rehearsal record and completion note are in
 [the spec-081 research](../../specs/081-major-dependency-upgrades/research.md) and
 [its task list](../../specs/081-major-dependency-upgrades/tasks.md) — which is also where the
-Langfuse 4.68 minor's scan, allowlist re-key and dev rehearsal outcomes are recorded — and the
+Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded — and the
 stack-level view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

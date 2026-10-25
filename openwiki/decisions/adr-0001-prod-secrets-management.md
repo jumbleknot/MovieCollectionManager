@@ -34,7 +34,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T06:13:33.915Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # ADR-0001: Production secrets-management standard
@@ -72,12 +72,29 @@ The seven core prod stacks are `[[stack]]` blocks in
 `prod-observability` and `prod-vault`. All seven declare `env_file_path = ".env.prod"`; six of them
 also carry an `environment = """…"""` block in which every secret-bearing value is a masked
 `[[Variable]]` token, so the committed file holds no secret and the deploy-time interpolation *is* the
-mechanism. `prod-auth` is the only block that also carries a non-secret literal
-(`PROD_REALM_FILE=/home/prod/keycloak/prod-realm.rendered.json`). `prod-vault` is the one stack with
-no `environment` block at all — it holds no secret to interpolate. Non-secret operational values —
-bare image digests in the committed `.env.deploy`, and topology values, which are also `[[Variable]]`
-tokens rather than inline literals — travel by their own channels and sit outside the ADR's coverage
-map.
+mechanism. `prod-vault` is the one stack with no `environment` block at all — it holds no secret to
+interpolate.
+
+"Tokens only" is a rule about **secret-bearing values**, not about every line. Two blocks carry
+non-secret literals deliberately: `prod-auth` holds
+`PROD_REALM_FILE=/home/prod/keycloak/prod-realm.rendered.json` and composes its admin URL around a
+token (`KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099`), and `prod-mcm-bff` holds
+`BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent`, the client id that selects the dedicated
+scheduled-backup consent client instead of the login client. The token names themselves are ordinary
+Komodo Variable keys and are not uniformly cased — the `prod-mcm-bff` block uses lowercase names such
+as `[[mcm_keycloak_client_secret]]` and `[[mcm_agent_config_enc_key]]` alongside uppercase ones. Other
+non-secret operational values — bare image digests in the committed `.env.deploy`, and topology
+values, which are `[[Variable]]` tokens rather than inline literals — travel by their own channels and
+sit outside the ADR's coverage map.
+
+Seeding is a precondition of the sync, not part of it. A masked `[[Variable]]` that does not exist in
+Komodo yet interpolates **empty** into `.env.prod`, so the stack's fail-fast `${VAR:?}` reference
+aborts the deploy — the intended failure, and the reason the TOML names the Variables that must exist
+before the first sync referencing them: `LANGFUSE_RUSTFS_SECRET_KEY` for `prod-observability`, and
+`BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` and `mcm_backup_consent_client_secret` for
+`prod-mcm-bff` (the last of those created in the Keycloak admin console, because `kcadm`'s password
+login cannot satisfy the admins' 2FA). The same block records that the destination allow-list is an
+exact host match with no port.
 
 The coupling that makes this safe to change: Komodo writes a stack's `environment` block into that
 stack's `env_file_path`, so a variable absent from the block is absent at `docker compose config`
@@ -162,7 +179,10 @@ source supplies it. In production today those two env vars are unset, so the rea
   editing the Komodo Variable and redeploying the affected stack. Automated rotation, lease/TTL, and
   fine-grained secret-access audit are named, explicit non-goals until the ADR's §7 revisit trigger
   fires (dynamic short-lived DB credentials wanted, mandated rotation/audit, or a move to multiple
-  hosts/operators) — do not treat their absence as a gap to silently fix.
+  hosts/operators) — do not treat their absence as a gap to silently fix. Blast radius is per
+  credential and the declared-input list records the worst case: rotating `mcm_backup_credential_enc_key`
+  orphans every stored backup destination secret and offline token, which is why that line is
+  accompanied by an explicit "never rotate casually" warning.
 - **The `komodo-stack-env` guard checks one direction only.** It proves every required variable is
   *supplied*; it says nothing about a declared input no compose reads any more, or a Komodo Variable no
   longer referenced by any `environment` block. Both happen, and neither is self-cleaning: the

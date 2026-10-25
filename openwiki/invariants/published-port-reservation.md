@@ -1,12 +1,9 @@
 ---
 type: Convention
 title: Published-port reservation convention
-description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
+description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the self-referencing URL vars a port move must update, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
 resource: docs/runbooks/prod-reboot-resilience.md
-tags: [ports, ci, production, collision, homelab]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-24T17:33:57.993Z
+tags: [ports, ci, production, collision, komodo, homelab]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -36,6 +33,9 @@ sources:
     resource: repo://scripts/preflight.mjs
   - id: openwiki-source-2b08f7b6b68dedecf129d61c
     resource: repo://specs/029-prod-ci-port-isolation/research.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # Published-port reservation convention
@@ -108,11 +108,36 @@ must be updated in lockstep. Concretely, the two live secondary references today
 - `KC_HOSTNAME_ADMIN` in the `prod-auth` `environment` block of
   `infrastructure-as-code/komodo/stacks.toml` — the `http://[[TAILNET_HOST]]:19099` admin-console URL,
   which the keycloak compose also requires as `${KC_HOSTNAME_ADMIN:?}` in its `environment:` block.
+  Komodo interpolates the `[[TAILNET_HOST]]` token into the stack's gitignored `.env.prod` (the file
+  the compose loads with `env_file:`), so the live admin URL is a stack-TOML value, not a compose
+  literal — the port move edits `stacks.toml`, not the compose.
 - `NEXTAUTH_URL` in `infrastructure-as-code/docker/observability/compose.prod.yaml` — LangFuse's own
-  login/callback URL, pointing at the tailnet host on `:19030`.
+  login/callback URL, pointing at the tailnet host on `:19030`. Its port is a literal in that compose;
+  its host comes from `TAILNET_HOST`, which the `prod-observability` `environment` block of the same
+  `stacks.toml` passes as `[[TAILNET_HOST]]` and the compose requires as `${TAILNET_HOST:?}`.
 
 Miss either and the port binds cleanly while the service serves a URL that points at the old port —
 a working bind with a broken redirect, which no port-scan gate can see.
+
+That stack-TOML → compose coupling is **mechanically guarded**, which is what makes the port move
+safe to do:
+`scripts/__tests__/komodo-stack-env.guard.test.mjs` parses `stacks.toml` into one record per `[[stack]]`
+(name, `run_directory`, `file_paths`, `additional_env_files`, and the keys in its `environment` block),
+then asserts that every `${VAR:?}` a prod compose declares is supplied by that stack's `environment`
+block or a committed `additional_env_files` entry. So `KC_HOSTNAME_ADMIN` and `TAILNET_HOST` cannot
+quietly drop out of the stack TOML while the composes still require them — and the guard's own second
+test proves it is not vacuously green by deleting a real Variable and asserting the gap is reported. It
+also strips comment lines before scanning, so a `${VAR:?}` written in a `#` comment is not counted as a
+requirement. The guard runs as part of the `naming` job's script-unit-test step in
+`.forgejo/workflows/guardrails.yml` (`node --test scripts/__tests__/*.test.mjs`) and in
+`scripts/preflight.mjs`, so a broken stack↔compose input coupling fails CI, not a deploy. Note its
+limit: it verifies a required Variable is **supplied**, not that the port inside its value is the
+reserved one — a stale `:8099` in `KC_HOSTNAME_ADMIN` still passes it.
+
+Two more places carry the same number as **documentation only** (no runtime effect, but they drift):
+the committed template `infrastructure-as-code/docker/keycloak/.env.prod.example`, which records
+`KC_HOSTNAME_ADMIN` on the reserved `19099` admin port, and the runbooks that spell out the admin
+console URL. A port move that skips them leaves a correct deployment described wrongly.
 
 The same stack config shows the mirror-image hazard: **a variable that outlives the code that read
 it.** `KC_ADMIN_BIND_IP` was only ever the bind *prefix*. Feature 028 dropped it from the keycloak

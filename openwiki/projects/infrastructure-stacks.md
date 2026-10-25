@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
-description: How the four profile-gated local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
+description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 sources:
@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -227,7 +227,10 @@ time. All seven blocks name the same Periphery `server = "Local"`, the same `lin
 and the same `branch = "main"`, so one ResourceSync reconciles the whole production topology on one
 host. Nothing host-shaped or secret-shaped is committed: the git host lives in a separately
 bootstrapped Komodo `Repo` resource referenced by name, and the production domain, tailnet host and
-registry host are Variables.
+registry host are Variables. A few non-secret literals do sit inline beside the tokens — the rendered
+realm file's absolute path, the backup-consent client id, and the `http://…:19099` admin-URL shape
+wrapped around a `[[TAILNET_HOST]]` token — because the scrub rule is about topology and credentials,
+not about keeping the block purely symbolic.
 
 A production stack also never creates its own infrastructure. Every named volume a `compose.prod.yaml`
 mounts is `external: true` with an explicit `name:`, and so is every `networks:` entry except one,
@@ -285,8 +288,9 @@ are declared:
   `MONGO_MC_KEYFILE`; plus `.env.deploy`.
 - **`prod-mcm-bff`** (`docker/bff`) — `BASE_DOMAIN`, `REGISTRY_HOST`, `KEYCLOAK_CLIENT_SECRET`,
   `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`, `AGENT_CONFIG_ENC_KEY`,
-  `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`, `OPENSEARCH_PASSWORD`, `MONGO_BFF_APP_PASSWORD`; plus
-  `.env.deploy`.
+  `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`, `OPENSEARCH_PASSWORD`, `MONGO_BFF_APP_PASSWORD`,
+  `BACKUP_CONSENT_CLIENT_ID`, `BACKUP_CONSENT_CLIENT_SECRET`, `BACKUP_CREDENTIAL_ENC_KEY`,
+  `BACKUP_TICK_SECRET`, `BACKUP_ALLOWED_DESTINATION_HOSTS`; plus `.env.deploy`.
 - **`prod-movie-assistant`** (`docker/agents`) — `REGISTRY_HOST`, `AGENT_DB_PASSWORD`,
   `AGENT_GATEWAY_CLIENT_SECRET`, `OPENSEARCH_PASSWORD`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`,
   `UNLEASH_API_TOKEN`; plus `.env.deploy`.
@@ -300,7 +304,24 @@ are declared:
   `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet `NEXTAUTH_URL`. No
   `additional_env_files`.
 - **`prod-vault`** (`docker/vault`) — **no `environment` block at all**: a dormant Vault has no root
-  token to inject.
+  token to inject. Its `[stack.config]` still carries `env_file_path = ".env.prod"` and no
+  `additional_env_files`, so it is the fourth stack that receives no committed digest file (the other
+  three being `prod-auth`, `prod-audit` and `prod-observability`) — all four are upstream-image stacks
+  that nothing in CI builds.
+
+The block that grew most recently is `prod-mcm-bff`'s: feature 073's production enablement (item #843
+follow-up, 2026-10-25) added `BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` and
+`BACKUP_ALLOWED_DESTINATION_HOSTS`, and feature 083 added the consent pair `BACKUP_CONSENT_CLIENT_ID` /
+`BACKUP_CONSENT_CLIENT_SECRET`. Until the first three landed, none was set, so scheduled backups were
+**off in production** — every private destination was refused, no destination secret could be sealed,
+and the boot log read `backup scheduler disabled`. Two properties of this group are worth carrying:
+the allow-list is an **exact** host match with no port and is a plain Variable rather than a masked one
+(it is LAN topology, so it stays out of git like `[[BASE_DOMAIN]]`), and `BACKUP_CREDENTIAL_ENC_KEY`
+must never be rotated casually — it orphans every stored destination secret and offline token. This is
+also the clearest instance of a rule the gotchas below state in full: the addition was invisible to CI,
+because a capability whose keys are *optional* has no `${VAR:?}` for a guard to see. See
+[the backups runbook](../../docs/runbooks/backups.md) for the production section and
+[the BFF page](./bff.md) for what the switches do at runtime.
 
 Two names left `prod-observability`'s block with feature 080, which swapped the from-source object-store
 image for upstream `rustfs/rustfs`: `REGISTRY_HOST` (the stack no longer pulls a
@@ -342,13 +363,20 @@ ignore rule, because the file holds only digests — no host, no secret.
 
 Not every file under `infrastructure-as-code/` is a stack. Four artifacts exist to serve the stacks
 without being one, and every compose file the gates discover is subject to a set of static gates.
-Three of those gates (naming, inline-secret, port-collision) discover files by basename glob —
-`infrastructure-as-code/docker/**/compose*.yaml` plus
-`infrastructure-as-code/docker/stacks/*.compose.yaml`, with the retired root `compose.yaml` added by
-name — so a compose file whose basename does not *begin* with `compose` falls outside all three:
+Three of those gates (naming, inline-secret, port-collision) discover files by basename glob, and the
+scopes differ by exactly one glob. `scripts/check-no-inline-secrets.mjs` and
+`scripts/check-prod-ci-port-collision.mjs` both glob
+`infrastructure-as-code/docker/**/compose*.yaml` **plus**
+`infrastructure-as-code/docker/stacks/*.compose.yaml`; `scripts/check-resource-naming.mjs` globs only
+the first of those, so the stack aggregators are outside the naming gate (they declare no
+`container_name`, volume `name:` or network of their own, so nothing there is lost). The naming and
+secret gates each add the retired root `compose.yaml` by name on top of their globs; the port-collision
+gate does not. The consequence that matters is shared by all three: a compose file whose basename does
+not *begin* with `compose` falls outside them.
 `infrastructure-as-code/docker/dev-ollama.compose.yaml` is neither name-checked, secret-checked nor
-port-checked (the CVE enumerator uses its own wider `infrastructure-as-code/**/*.{yaml,yml}` glob and
-does see it). Name the file `compose.<something>.yaml` if it needs that coverage.
+port-checked (the CVE enumerator uses its own wider
+`infrastructure-as-code/**/*.{yaml,yml}` glob and does see it). Name the file
+`compose.<something>.yaml` if it needs that coverage.
 
 **ClickHouse system-log TTL config** — `infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml`
 is bind-mounted read-only into `langfuse-clickhouse` in *both* the dev and the prod observability
@@ -477,6 +505,19 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   closes, because a revert restores the lines that need them. See
   [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
   the port-move rule.
+- **A stack `environment` key that nothing *requires* fails open, and a sync that only rewrites
+  `environment` does not recreate the container.** The guard above only asks about `${VAR:?…}`, so the
+  whole optional half of a declared input list has no static check at all — and its absence reads as
+  "the capability is off", not as a broken deploy. That is how scheduled backups stayed off in
+  production until 2026-10-25 while every gate was green: the BFF's env reader treats
+  `BACKUP_CREDENTIAL_ENC_KEY` / `BACKUP_TICK_SECRET` / `BACKUP_ALLOWED_DESTINATION_HOSTS` as optional, so
+  no `${VAR:?}` existed to fire, and the only symptom was `backup scheduler disabled` in the boot log
+  plus "That address is not allowed" when a destination was saved. And a `[[stack]]` edit alone is not
+  enough to deliver new values: Komodo writes the block into `.env.prod`, but a sync that changes only
+  the environment does not recreate the container, so the running service keeps the values it started
+  with until the stack is explicitly **Redeployed**. Check the effective values on the host
+  (`printenv`, `docker inspect`) rather than inferring them from the TOML. See
+  [the backups runbook](../../docs/runbooks/backups.md).
 - **The committed `stacks.toml` never carries a real host, domain, or IP.** The git-provider host lives
   in the bootstrapped Komodo `Repo` resource referenced by name (`linked_repo = "mcm-repo"`); the
   production domain, tailnet admin address, and registry host are Komodo *Variables*, interpolated at

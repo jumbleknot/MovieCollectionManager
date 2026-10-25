@@ -1,35 +1,12 @@
 ---
-type: Runbook
-title: Per-user collection backups (scheduled & on-demand)
-description: Feature 073's per-user scheduled/on-demand collection backup system to user-owned S3-compatible or WebDAV storage — versioning, keep-last-N retention, and restore-as-new-collection-only — and the operational gotchas around offline-token auth, the standalone-Mongo claim, the dev-mode tick gap, the dedicated feature-083 consent client that stops revoking a grant from ending the member's session, and how feature 076 account deletion tears backups down without touching the user's stored artifacts.
-resource: docs/runbooks/backups.md
-tags: [backups, feature-073, feature-076, feature-083, bff, s3, webdav, keycloak, mongodb, redis, runbook]
-sources:
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-2335f107cbd84a8f7aed9777
-    resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
-  - id: openwiki-source-8b28b8f7ca849a6400dddf6f
-    resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
-  - id: openwiki-source-8ff4ea0c4e9c1b88a4c0eee7
-    resource: repo://frontend/mcm-app/src/bff-server/audit-sink.ts
-  - id: openwiki-source-e37e5da5fa7401fdb7992219
-    resource: repo://frontend/mcm-app/src/bff-server/backup-job-store.ts
-  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
-    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
-  - id: openwiki-source-0ff64644c3a9837917af5e5d
-    resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
-  - id: openwiki-source-3bf0ad96857ee228607b018c
-    resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
-  - id: openwiki-source-c1c739d605caccb56fa33851
-    resource: repo://specs/073-scheduled-backups/spec.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
+type: "Reference"
+title: "Per-user collection backups (scheduled & on-demand)"
+openwiki_generated: true
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-25T13:33:13.758Z
 ---
+
 
 # Per-user collection backups (scheduled & on-demand)
 
@@ -38,9 +15,9 @@ collections to storage *they* own — an S3-compatible bucket or a WebDAV server
 versioning, keep-last-N retention, and restore that only ever creates a **new** collection (there
 is no code path that overwrites one). The BFF (see [BFF project overview](../projects/bff.md))
 owns destination configuration, the scheduler, the run/restore pipeline, and the audit trail. The
-authoritative operating manual, including the full environment-variable table and step-by-step
-triage/test procedures, is [docs/runbooks/backups.md](../../docs/runbooks/backups.md); this page
-distills the load-bearing gotchas an operator needs before touching the system.
+authoritative operating manual, including the full environment-variable table, the triage tables
+and the test and leak-scan recipes, is [docs/runbooks/backups.md](../../docs/runbooks/backups.md);
+this page distills the load-bearing gotchas an operator needs before touching the system.
 
 ## Gotchas
 
@@ -71,14 +48,37 @@ distills the load-bearing gotchas an operator needs before touching the system.
   an optimization with a TTL guess baked into it — it reduces redundant scanning across BFF
   instances, but it is **not** the correctness guarantee for exactly-once execution.
 - **The run-size ceiling (`BACKUP_MAX_MOVIES` / `BACKUP_MAX_UNCOMPRESSED_BYTES`) exists because a
-  run holds the entire artifact in memory rather than streaming it.** This is a deliberate
-  trade-off (a stream that fails partway leaves an unrestorable partial object discovered only
-  when the user needs it), not an oversight — streaming snapshots are a filed follow-up (see
-  Known gaps below).
+  run holds the entire artifact in memory rather than streaming it.** The run builds the whole
+  artifact, checks both ceilings *before anything is written*, and PUTs it as a single object, so a
+  failure can never leave a partial object that the user later discovers is unrestorable at the
+  moment they need it. The ceilings are what make that trade defensible, and they fail loudly,
+  naming both the limit and the measured value so the operator knows what to raise. Two units are
+  checked independently because a big library of ordinary records is count-bound while a handful of
+  records with long plot text is bytes-bound. Streaming snapshots are a deliberate filed follow-up,
+  not an oversight (see Known gaps below).
 - **The scheduler tick is `server.js` POSTing to the internal `/bff-api/backups/tick` route over
   loopback with a shared secret**, because `server.js` is CommonJS outside the Metro bundle and
-  cannot import `src/bff-server/*` directly. Consequence: **no tick fires under `pnpm start` in
-  dev** — this is expected, not a fault to chase. Call the tick route directly instead.
+  cannot import `src/bff-server/*` directly. Three consequences worth knowing: **no tick fires under
+  `pnpm start` in dev** — expected, not a fault to chase; call the tick route directly. A wrong
+  secret answers **404 rather than 401**, deliberately, so the route does not advertise itself, and
+  the comparison is constant-time — so "the tick 404s" means the caller and the BFF hold *different*
+  secrets. A supplied `?now=` is refused with 400 unless `BACKUP_TICK_ALLOW_TIME_OVERRIDE=1`, which
+  is dev and CI only. `leader: false` is a normal 200: another instance took the lock.
+- **In production the feature is switched on entirely from `infrastructure-as-code/komodo/stacks.toml`,
+  never from the Komodo UI**, whose edits the next ResourceSync overwrites. The `prod-mcm-bff`
+  `[[stack]]` block carries the three switches — `BACKUP_CREDENTIAL_ENC_KEY` and
+  `BACKUP_TICK_SECRET` (both masked Komodo Variables, 32 random bytes) and
+  `BACKUP_ALLOWED_DESTINATION_HOSTS` (plain: it is LAN topology, so it stays out of git) — plus
+  `BACKUP_CONSENT_CLIENT_ID` and the Variable behind `BACKUP_CONSENT_CLIENT_SECRET`. A Komodo
+  Variable **must exist before the sync that first references it**, or Komodo writes the literal
+  `[[…]]` placeholder; and a sync that changes only the environment does **not** recreate the
+  container, so a **Redeploy** is required. Until 2026-10-25 none of the three switches was set, so
+  backups were off in production — the symptoms were "That address is not allowed" on a LAN
+  destination and `backup scheduler disabled` at boot (item #843, spec 083 T009). Dev and CI values
+  come from `gen-dev-env.mjs` / `gen-ci-env.mjs`, which **seed** the credential key rather than
+  syncing it: re-running must not orphan every stored destination secret and offline token. The
+  allow-list is an **exact** host match with no port, so adding a NAS means editing the Variable and
+  Redeploying.
 - **Retention's load-bearing safety property is that a failed or partial run prunes nothing.**
   Pruning on the failure path would turn "today's backup didn't happen" into "and yesterday's is
   gone too." Separately, a prune failure never fails the run — it is recorded on its own
@@ -167,12 +167,21 @@ What an operator has to get right:
 
 - **The client must exist in the realm before `BACKUP_CONSENT_CLIENT_ID` is set.** CI imports
   `ci-realm.json` fresh every run, so the client always exists there, and `scripts/gen-ci-env.mjs`
-  sets the variable; the realm gives the dedicated client the login client's secret on purpose, so
-  no new CI secret is needed. An existing dev or production realm is imported `IGNORE_EXISTING` and
-  therefore does **not** get the client from the realm JSON — create it in the running realm first,
-  then set the variable. Setting the variable first breaks consent with "client not found". The
-  runbook carries the idempotent `kcadm.sh` block that creates it, validated 2026-10-24 against
-  Keycloak 26.8.0 on a realm imported without the client.
+  sets the variable; the CI and dev realms give the dedicated client the login client's secret on
+  purpose, so no new CI secret is needed. An existing dev or production realm is imported
+  `IGNORE_EXISTING` and therefore does **not** get the client from the realm JSON — create it in the
+  running realm first, then set the variable. Setting the variable first breaks consent with "client
+  not found". The committed `prod-realm.json` template does define the client, but only for a fresh
+  install, and it carries no secret value. The runbook carries the idempotent `kcadm.sh` block that
+  creates it, validated 2026-10-24 against Keycloak 26.8.0 on a realm imported without the client.
+- **In production the client is created in the admin console, not by that `kcadm.sh` block**
+  (measured 2026-10-25, item #843): the bootstrap admin is retired and the named admins have 2FA,
+  which a `kcadm.sh` password login cannot satisfy, so the block prints nothing there. The console
+  cannot reuse the login client's secret, so this client has its own, copied into the masked Komodo
+  Variable `mcm_backup_consent_client_secret`. `stacks.toml` — not the Komodo UI — sets
+  `BACKUP_CONSENT_CLIENT_ID` and references that Variable, so create the client and the Variable
+  first; a merge to `main` then deploys the BFF with both. See the production gotcha above for the
+  Variable-before-sync and Redeploy rules.
 - **Unset is the fallback, not a supported configuration.** With `BACKUP_CONSENT_CLIENT_ID` unset
   the consent runs on the login client — the defect above — and the BFF logs
   `backup_consent_shared_client` once. `BACKUP_CONSENT_CLIENT_SECRET` is optional and defaults to
@@ -205,6 +214,10 @@ itself the feature, pinned by `account-deletion-order.test.ts`:
   identity. It revokes the user's backup offline token at Keycloak, then deletes the user's
   backup destinations, jobs, and runs (in that order) — never the artifacts already written to
   the user's own S3/WebDAV destination.
+- **`removeAgentConfig` must come *after* the teardown, not before.** The standing permission is
+  stored *inside* the user's agent-config document, as `offlineRefreshEnc`; removing that document
+  first would destroy the only local record of a token still live at Keycloak, leaving nothing in
+  the system that knows it exists.
 - **`deleteIdentity` (`deleteUser` in `keycloak.ts`) runs last**, because it is the only
   irreversible step: once the identity is gone there is nothing left to retry the pipeline as.
 - **The pipeline throws on the first failing step and attempts nothing after it.** The caller

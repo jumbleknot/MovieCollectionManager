@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a18fe981e4ea59ad46e6883a8f50c00bb93c8f84059ee737ff3c999c51ea7bca",
+  "pageVersion": "sha256:1e515cc6367988755066c4382d13eae31f595ff98ea4708b6e45a033da580d5f",
   "claims": [
     {
       "id": "claim_c7afeb250e0c4e5797ccafcbc6ed1594",
@@ -33,8 +33,8 @@
           "version": "repo-lines-v1:sha256:4b062bd22ea6fcd113b5247c363812c1cef3c61ef9d0213d345a0dac0e6c03e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzNiNzViOGZjMjhiZjZiMDY1ZDI5MTU0OGY2OWE2ZTdjNjA0MTdhYzk2M2ZmM2I3MzU2ODRhM2VlYmMwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlOTY3NGI5NmE3YjVhMWU1MGViMTgzNjI1MjM0ZDM2NjA5MjY5NjJmZTM0NTNkMzRlZjk3YjU3ZDUwYTRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYjQ5Mzk0NTFhZTg1ZDM2NDQ3ZmRhNWM0MWEyZTk2N2VjZjcxZGU2ZGE2OWYwZTllNzQwOGU5NDM5ZmFhZWMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L119",
-          "version": "repo-lines-v1:sha256:7ffd56d134362367236a1d5a205623fb82b74b33ac5173ec53b3f5c917bfe4bf:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YzExMjQ3M2E2ZmRkYzY3NTNhNjhhMjUxYjdjNzgyZDdhODExNTQxMzI5NDA4YjIzYjlkZTYyMWM4YjMzOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZjNhOGU5ZTdjOGQ1NmJkMDY3MmYwNGE3MDZmYTI2OTkxMGIxOGZiNGY0YWI3ZjdmOTVmODVkZGMzNmQyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMGZlM2FmNGU0Nzk1ZjRjM2MzM2VlMTRmYzYxMzJiYjk2ZmQ1MTFhNjBhMmMyNjgzYWY1OWNlYWQxZWQ0NzcifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L134",
+          "version": "repo-lines-v1:sha256:76e046863bc081533dd37c39a9e3de52ee8c9ca69008e5f0a340114acac5ccaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMGNhZGQ2MDNiMGRiODQwOTk2NmRlMTY4YTg2OGE0NmRlMDIwNWQ4N2I1YTI3YTFjY2NhODAxMmFiNWUwZDRiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NWMxMTI0NzNhNmZkZGM2NzUzYTY4YTI1MWI3Yzc4MmQ3YTgxMTU0MTMyOTQwOGIyM2I5ZGU2MjFjOGIzMzhkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MmYzYThlOWU3YzhkNTZiZDA2NzJmMDRhNzA2ZmEyNjk5MTBiMThmYjRmNGFiN2Y3Zjk1Zjg1ZGRjMzZkMmYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYTBmZTNhZjRlNDc5NWY0YzNjMzNlZTE0ZmM2MTMyYmI5NmZkNTExYTYwYTJjMjY4M2FmNTljZWFkMWVkNDc3In0"
         }
       ]
     },
@@ -97,8 +97,8 @@
           "version": "repo-lines-v1:sha256:c5f0fa86f3b249666b2e763535dcb83fd0631931731cc0119bf844dc8d540a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZWU5MTU5MjdiMzMyNGRjMjYyN2YwYmViNTA2NDIyOTFkY2YwNGI1YTZiZDk5ZGNjZDNhYmVhN2UyYzk1NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNjYwZjZhMjgzNDQxNGRhNzI1ZWJmNDNhOWI4MmQ3YWJhZDUxMDZhYTgwMDg5YTA3NmRmZGQwODBjYjFiNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZTZjMjJmYmQwZDNmYTBhZjk0YTc1NTdiMmM2YmVmZjJiNDlmZGNkM2EwMDFkOTAzMDBmMzZlMTY5N2RmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhM2ExYmE5NGI5NjFkMjVkYjg2ZThmYTcyMDliOTcyZjYzMzRmOTk2Zjk2Mzg4ZTA1ZWY0MmQ0MTA1YTJiYTIifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L88-L91",
-          "version": "repo-lines-v1:sha256:7379c1fb3ddf5183557a5bc5905c8179cfb8b9e9aa669078039027c5ddbd597b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyMTZiZjZlYzJhMGIzNjFiYWFhN2Y5ZTZiZDdjZDg0NDIyMTViMWJhZDMwNWEyOWY4YTIzMDlhYTZkZDVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTUwNzZhNGYwODQ1NjlhZTdhMTRkOTBiZmE1ZDIxNTIzZDg3OTc4NjEwYTY2NGY5MmQ1MTk3MjY1NTA1YjQ4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWZjZGI4N2U4YjViOGY1MzA0Mjc2ZjZkM2ZjZGY3NjEzM2NmZWI4MTgwNzQyMThjMWU0OWQzMjY5MTk1MDIxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTZmYjcxODlhNzViNTQzMjU1YWFiMDViNTc4NmMyYWI2MWJhYTYzNDcyZWFkYzE3NmFjMzFhOWMxMTk1ZGExZSJ9"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L88-L106",
+          "version": "repo-lines-v1:sha256:5127d87c44ce8065196c4311b3af2d36c06a07d701fd1fff94d7ef04dbcf9135:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMjE2YmY2ZWMyYTBiMzYxYmFhYTdmOWU2YmQ3Y2Q4NDQyMjE1YjFiYWQzMDVhMjlmOGEyMzA5YWE2ZGQ1ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MDc2YTRmMDg0NTY5YWU3YTE0ZDkwYmZhNWQyMTUyM2Q4Nzk3ODYxMGE2NjRmOTJkNTE5NzI2NTUwNWI0OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmY2RiODdlOGI1YjhmNTMwNDI3NmY2ZDNmY2RmNzYxMzNjZmViODE4MDc0MjE4YzFlNDlkMzI2OTE5NTAyMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2ZmI3MTg5YTc1YjU0MzI1NWFhYjA1YjU3ODZjMmFiNjFiYWE2MzQ3MmVhZGMxNzZhYzMxYTljMTE5NWRhMWUifQ"
         }
       ]
     },
@@ -197,10 +197,86 @@
           "version": "repo-lines-v1:sha256:a5458514c8418bd1998c590b7cd0eaca55c4e4bfb67497baef902beb02322411:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwNWVlNmM3ZGM0ZDBiNmEzMTMwZGJiOWY5ZDE5YzNmOGQ3ZDE0MzU3ZGM4ODZhMWU1MWQ2M2YxOTNhNmJjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTJiMjg5NDYzNWNmMTQ5NDBjMjliOTliZWU5ZjVhMjFiY2VmZmZmZDYxNWY0YWUwN2IzY2YxMzlkM2FhMTk0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZjZGZkMDViNGVjZDA1ZWNmNzJlNTQ2NDAxYjk0NDBlMWRjNjk0OGQxMzFjMDJhZjdlNjkzNzE1MzdhNDcxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUxYzA0MGE1MGVjZGJhMGJjZjdkM2U0MTE3YzI3OGJlMTdkYmQwYjUxZDUzZWY5MDE0YTZlMDIyMDU3ZjhlZSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_4584e1225f18491b8241e9a3e87d9980",
+      "statement": "stacks.toml's one ResourceSync was later extended with three feature-025 Control-Tower support stacks that hang off the same core chain rather than forming a second deploy path: prod-audit is an independent root (after = []), prod-vault follows prod-auth because it is logically in the auth tier while living in its own block, and prod-observability follows prod-mcm-bff as graph ordering only (no hard dependency); every block carries deploy = true, so one push still reconciles and redeploys all seven stacks.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L136-L204",
+          "version": "repo-lines-v1:sha256:c009c74c7e47ffeda90db2bfa50d2b3aac248beec2e5592cc89ce82ebf8c40ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNjNzUxZGRmMjI5ZTE4YWJkN2UxYzBmNDNiYTZkY2FhNDhmYzI4NThiOGQ1N2VjOTk4NWJhMDgyNjQyNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YWIyNDI4NGZiNWE2NDZiZmJmYzIwYzljMjJkODYzMmIwMDExNjBkZTkxNjQ2YmIxMjZlMWI3ZDU1OTg0MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L146",
+          "version": "repo-lines-v1:sha256:922fe89938548154cf35210d8cda23fe5749c83a2ec75598016577fa37e0cb7a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc1M2JhMzZlNzE4NmNhZmUyNjQzOWQ2ZGNhM2JlZjc0ZTA4OWEzNTRkMjVlOWIzOTE1YjRlNDhjMmRlZWU4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWZjMGM1OGM5Y2Q1NmRiN2FlMTkwODlhYTgxNjI3MjVkZjVmMGFjZDIyOTkwZjk1MTk5M2ZkMDIxN2RmZDU3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L192-L204",
+          "version": "repo-lines-v1:sha256:22c96f63a012d4095528be3d6e61112271ac00456bb720bda2b5614a8eec417d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNWRhNjg1ODgyNTMwNjRlM2FjZGJmMTE1Zjk4ZjIxZjk1ZjMxNzNlODQyZGY0NGYyMjIwOTYwOTkyOTU4NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7928301a1c841268eb8ed05e99cc488",
+      "statement": "The two production Mongo stores are deliberately asymmetric: mc-service-store-mongo is a single-member replica set whose keyfile implies --auth (so it needs the keyfile plus SCRAM users), while mcm-bff-store-mongo is standalone and needs SCRAM credentials only and never a keyfile, since a standalone mongod has no replica-set members to authenticate; only MONGO_MC_APP_PASSWORD, MONGO_MC_KEYFILE and MONGO_BFF_APP_PASSWORD are wired into running services, the two *_ROOT_PASSWORD values are setup-only, and under --auth the replica-set self-init healthcheck was replaced by a credential-less ping because rs.status()/rs.initiate() require authentication.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L30-L38",
+          "version": "repo-lines-v1:sha256:07d983b770a66c42329b49f03ced234019d8699992672038209d35fbc1407579:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFkNmEzNGQ1M2UzMDYzZmI5Njc4YTY2OWI4ZDUxMDgxNzM3ZmZmM2I1NTEzMjg5ZjM1YTc0OGYxMmExYTk1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZiODk4MDQ2ODRmMDIxNDc2NzY5YjdiMjUyNmVjYzhkMDA3NWJmNTJmY2Y4MTQzMjViMGRmZTE3M2M5OGY5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA3ODQ5M2UwMmZhMzA4NWM1NjM3NDA5M2JmZTg0YzA4YjVkZGUyM2E5ODVhOGQ3NjNhYjcyYzQwOGRjMWRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjE0MWU0M2UwYjBkODgwMDVlOTU2YzAyNzMzMGFlZDc4ZGY0OTFlMWI5Yjg3MTMzNThmOTdiZjEyYmIwMjg3MSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L48-L56",
+          "version": "repo-lines-v1:sha256:0e746edd60671546bd8028c51f762ca49704d2197a1ece52430cfa4a4021217a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdhYzk5ZTdlZDM4Njc5NDY4NmEzYjYzN2NjMTQ0YzBjZGY4YjA0N2NlNTBiYTRlMDRiMGU2M2QzYjNmOGY1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQ3OWQxYTE2MTA0MjQ5ZDc1YTBhODMyYWEyZGU3NWYwZThhODNjZDViZTIwY2FhZWQwNjBiY2RiMjA3NDdjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTRiZjA0MDBmZWE4ZTk2NzhjNTlmMzE5ODI5YmEyNTQxZGUwOWM4MWRlYTcyYjg0ODdiMmM4ZmMxMWJhYmZiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM4MTZiZmVhNmIzZjRkYjY3MzQ2M2Q3YzY1ZjU5OWMzYjEyYmFkODQzNTFjOWQ2MDVkOGRjMjcwMGUyMTVlOSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L75-L84",
+          "version": "repo-lines-v1:sha256:a3e939dff6955e5ce94c0fb78c46dbb36b55fbf40a9dbf16dd4bc4878ee60bad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4Nzg0Yjc3NDQ1ZGI1NTNhZjcyYzQ2OTkyODk5ZTRjYmIzMmU1NGRlMTk3YzJhMjE5NzY0YjUxYjRkYmNkMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNjY5OWZmZjFmMDQ5YzJkNzQ4MGViZmE0ODFhOGYzMmMyN2M1NDk1ZDZkMGMxNTZiZDQ2ZTY3NmQxZjhlODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMWNhZGUwN2NhODkzNjAwN2UxMGFhYzJmNGQwZmJmNGZlZDA0MjBkYmNkNWU0NWIyODU1ZDU5ZTc3MTBhZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19bad285ba074cadaf378366dae49739",
+      "statement": "Edits to infrastructure-as-code/komodo/stacks.toml are gated in both directions and each gate encodes a real deploy failure: scripts/check-komodo-sync.mjs, run in the guardrails naming job, fails on any infra-topology literal in komodo/*.toml (a *.ts.net host, a Tailscale CGNAT IP, or a hardcoded URL authority, comments included), forcing host/domain/webhook values to stay [[NAME]] Variables; and scripts/__tests__/komodo-stack-env.guard.test.mjs requires every ${VAR:?…} a prod compose declares to appear in that stack's environment block, because that block is the only declaration of the stack's required inputs and a missing variable is absent at docker compose config time — invisible in CI and only firing on a real Komodo deploy.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L109-L112",
+          "version": "repo-lines-v1:sha256:77c9ebbf6d89d56fa28329b868c26edd5bd08225b1ca2452ed7c16252a510068:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdiZDg3NzIxYzM5MWUwM2VmNjA0Njc2ZDk3ZTYzNzUzNzcwNWEyMzM2NmFjNzFiNTMyOGUxMTc2MTIzMTc0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk1MzlkNjNlNDA4NmRjODI4MDYwZTllMDk4MzE5MmMxM2IyNTdmMTM1ZmVhNmYzNjg2MDRhZGFlN2JiMWE1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTk2OTY2OTU2ZjI2YzBiMTY2YzI5OGRjZDg3ZGEwMDczNjFhMjg3ZmVkMTM5ZjFhMzY0NjRkMjFjYjM0NDg3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTJhZTA5MjAxOWIxMDNlNmE4YTk0YTJmYTFjNTBkMzI1NzFjYzIzOGYyNjI2NmMwZGQyZTc5ZmQxODZiZTRjMCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L1-L23",
+          "version": "repo-lines-v1:sha256:9902f72fae1da2aecc37bccd2791140144d49f64c689128fef4d4082218fe433:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjMxZGViMzdkZTJiMWU1YjYyYTA3YTE5ZDAzZDRkYTQyYTBjY2E2ZjBjNzg2ZjFlOTliMmE1OTY3ZWM1NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZTBiMjE5YzBiMzEzYmVjNjcxNTgyZTk5NzliMjQ1MmExOTFmODcxMTY3NGI2Y2I0MjgxMWM3Y2U4NTdkZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMTNiZTA1MDk3ZDM3YzBiODU2M2NhN2Y0ZDUzMTMwNWIzZGNkMjIzZGVmZjA2MThmZDU5NGY1NzMwNTMwZjcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L87-L105",
+          "version": "repo-lines-v1:sha256:272acde3558b2acb2c2013e7a4327ad88f9bd586bed1280e82bc93e08f1f5065:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzVlNDQxM2FkMjBhYTA5NjVjMDJhNTFiMDIyZWM3MTFmMGI3MmVkMzBkYTdiYjY4OTQwOTI2YWQyZjlkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTQ2OGNhOWJjYTVlMmZjMzg5NDZjYmI0NDg2ODlmMGNhNzhkMjQ3MzcwZmQ1ZjBhZjhkN2Y3MzNlNDZmN2EifQ"
+        },
+        {
+          "resource": "repo://scripts/check-komodo-sync.mjs#L24-L51",
+          "version": "repo-lines-v1:sha256:817303533724c83c6ff743f10b3b4d7bd910373c8e3b1fd7d487346b6787fd2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjN2Y2NmJjODkyM2IyZjBjNjUwNTI5NTVkZjM3N2E1NGQzY2RiZTEwMmY2NmE0MGQzM2FlMjFkNGUzNjFlN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2MzA3ZDViYjg2ZDliM2E3ZDA0MjYwMmM5ODI2Y2ZlY2Y3YjZhZDNlMzRkNmFmMDg4OTFiODk1MmU0MjE3OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlOTY1OTEzMjk3NjY3MWI4ZGViNThiNzlmNmMyZWM1OGM4ZjBjMmMzZGU3MjQxYzBkNmUyNDk3ZGY2MmMxMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10c78403290747bea3c7f83ee3c8d376",
+      "statement": "main's required status checks are a glob list read live from branch protection, with a hand-maintained six-glob list (guardrails*, four app-ci / … globs, and infra-image-scan / infra-image-scan*) only as a reported fallback, because the hardcoded mirror once held five globs while main required six and reported VERDICT mergeable while the merge API answered 405 — the over-reporting direction that lets an automated status-and-merge wrapper 405.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L839-L857",
+          "version": "repo-lines-v1:sha256:0f7ec5b97584cf37e0e6d1a52275195a06cb2d159d56225219da990adfaab22a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkN2JiMzc0OTUyNjA4ZmNkNjE3ZmYxZjgwMWRiZGYxMzM3MDU2MzcxZmIyMjhmNTdlODhjMDM5YWFkNTQwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTFiZDQ2MWRlYjE3NTA3ODczYjYyZmMyMmRiYWQwNGIzNTQ0Mjk2ZTcxMjgxZTM4M2YzYjg4NTk4MTQyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjFkZDA1ZDdhYmE0ZThjYmVlY2RmNWIzOWM4ZmQ0ZDhkZmQxYWU2NzQyYzMzY2RkNjQyNmQwY2E4ZTRmOGQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L454-L472",
+          "version": "repo-lines-v1:sha256:dbd4bec668287ec9a6a5954c1c903579cbf35377d7aa72ab83ac1e5e3cdfc421:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNjk0Yjk3MzM1YmVmMzhlYjMwZjRjZDYzMjg0M2Y2ZDc2OTRiNDRiMjIyOGU5NTMxNTk0OTdlZWVjMDc1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L496-L520",
+          "version": "repo-lines-v1:sha256:65ca06bd4816f166ceb0f3039f857fb340e349fbdefe7d858c3fdaa8e86a8959:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MmUwNmZlNTdiMmMzOGM3MTAyMWNkNGEzNmMzZjVmZTFkZDAxOWE0OTE3MTgyNWM5ZjMwMmFkOTVkODUyNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ZGE3MTY0ZTcwNGJhYjIyZjkzZGZlZDNiY2NiZjRiM2JmZTg0YmYzZmFhNDJkYmY4OGIwOGY1NzI2NzgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGFlYzAzZGNmMDc2ODdlNzYzZjRjNTFkNGU3MjQyZDU0NjA4ODZjZjFhNWZlNWQzMTgxYWNmOWE2MWIzODgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-15T10:11:13.472Z"
+    "at": "2026-10-25T13:33:13.758Z"
   }
 }

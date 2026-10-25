@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Phase 15 operator checklist (bring the full app live)
-description: A completed historical working log of the manual, operator-only steps that took production from BFF-only to the full app — the new prod-mc-service and prod-movie-assistant stacks, the agent chain's token exchange verified end to end, the CD deploy=true webhook leg validated with a rollback drill, and the consolidation from hand-made stacks into one config-as-code Komodo ResourceSync.
+description: A completed historical working log of the manual, operator-only steps that took production from BFF-only to the full app — the new prod-mc-service and prod-movie-assistant stacks, the agent chain's token exchange verified end to end, the CD deploy=true webhook leg validated with a rollback drill, and the consolidation from hand-made stacks into one config-as-code Komodo ResourceSync that later absorbed the three Control-Tower support stacks.
 resource: docs/runbooks/Phase-15-Operator-Checklist.md
 tags: [production, komodo, deployment, operator, runbook]
 sources:
@@ -30,7 +30,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-15T10:11:13.472Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)
@@ -87,15 +87,21 @@ The historical arc the checklist records: two sequential paths, not an either/or
 - **Config-as-code consolidation replaced per-stack webhooks.** One ResourceSync webhook now reconciles
   and redeploys every affected stack in `after` order — `prod-auth` → `prod-mc-service` →
   `prod-mcm-bff` → `prod-movie-assistant` (agents last, because `spreadsheet-mcp` needs the BFF's
-  network and Redis) — and this is the deploy model every production change uses today, including the
-  support stacks added afterwards. Because the sync adopts live stacks, its first apply redeployed all
-  four in order and was treated as a maintenance window. See
-  [infrastructure-as-code stacks](../projects/infrastructure-stacks.md).
+  network and Redis) — and this is the deploy model every production change uses today. Because the sync
+  adopts live stacks, its first apply redeployed all four in order and was treated as a maintenance
+  window. See [infrastructure-as-code stacks](../projects/infrastructure-stacks.md).
+- **The same file later absorbed the support stacks without changing the model.** Three feature-025
+  blocks now hang off the core chain: `prod-audit` as an independent root (`after = []`), `prod-vault`
+  after `prod-auth` because it is logically in the auth tier while living in its own block, and
+  `prod-observability` after `prod-mcm-bff` as graph ordering rather than a hard dependency. Every
+  `[[stack]]` block carries `deploy = true`, so one push still reconciles and redeploys all of them.
 - **Token hygiene and branch protection were finished here**: the registry push/pull token split, the
   `main` required status checks, the 022 branch merge, and the final smoke against the merged `main`.
   The two required checks named at the time (`guardrails` + `app-ci`) were the starting pair, not the
-  final list — the current set is a wider glob list, read live from branch protection rather than
-  hand-maintained, and the per-token inventory and rotation procedure live in the
+  final list — the current set is a wider glob list (`guardrails*`, four `app-ci / …` globs and
+  `infra-image-scan / infra-image-scan*`), read live from branch protection rather than hand-maintained,
+  because the hand-maintained mirror drifted once and reported `VERDICT mergeable` while the merge API
+  answered 405. The per-token inventory and rotation procedure live in the
   [server-setup runbook](./server-setup.md).
 
 ## Superseded detail
@@ -104,8 +110,14 @@ Where this log states that the prod-mc-service (and BFF) Mongo is unauthenticate
 that is no longer true: feature 026 has since enabled SCRAM on both stores, and
 `infrastructure-as-code/komodo/stacks.toml` now supplies `MONGO_MC_APP_PASSWORD` plus
 `MONGO_MC_KEYFILE` (the replica-set keyfile) to `prod-mc-service` and `MONGO_BFF_APP_PASSWORD` to
-`prod-mcm-bff`. The checklist's secret map and its "no credential" step A note are historical — the
-current cutover and recovery procedures are in
+`prod-mcm-bff`. The auth shape is not symmetric and the asymmetry is the point: the movie store is a
+single-member replica set, so its keyfile **implies** `--auth` and it needs both the keyfile and a
+least-privilege app user, while the BFF store is standalone and needs SCRAM credentials only — never a
+keyfile, because a standalone `mongod` has no replica-set members to authenticate. Only those three
+values reach a running service; the two `*_ROOT_PASSWORD` variables are setup-only. The checklist's
+secret map (`prod-mc-service: none`) and its "no credential" step A note are therefore historical, and
+its healthcheck description is too — under `--auth` the old `rs.status()`/`rs.initiate()` probe fails,
+so liveness is now a credential-less `ping`. The current cutover and recovery procedures are in
 [production data-tier authentication](./prod-data-tier-auth.md). The vars the checklist seeds in the
 Komodo UI are the mechanism later ratified as the standard for every core stack: masked Komodo Variables
 interpolated into each stack's gitignored `.env.prod` — see
@@ -137,6 +149,15 @@ interpolated into each stack's gitignored `.env.prod` — see
   overwritten by the next reconcile; change the Komodo Stack Environment, or the `[[stack]]` block's
   `environment` once config-as-code owns it, and let the deploy write the file. See
   [Secrets management](../invariants/secrets-management.md).
+- **Editing `stacks.toml` is gated in two directions, and both gates encode a real deploy failure.**
+  `scripts/check-komodo-sync.mjs` (in the `guardrails` naming job) fails on any infra-topology literal in
+  `komodo/*.toml` — a `*.ts.net` host, a Tailscale CGNAT IP, or a hardcoded URL authority — so a host,
+  domain or webhook must stay a `[[NAME]]` Variable; it scans comments too. In the other direction
+  `scripts/__tests__/komodo-stack-env.guard.test.mjs` requires every `${VAR:?…}` a prod compose declares
+  to appear in that stack's `environment` block, because that block is the only declaration of the
+  stack's required inputs and a variable missing from it is missing at `docker compose config` time —
+  the break is invisible in CI and only fires on a real Komodo deploy. Adding a fail-fast variable to a
+  prod compose is therefore a change to `stacks.toml` as well.
 - **A validated web login bug does not imply the mobile login is fine, or vice versa** — this checklist
   hit one login defect that only manifested on web (a build-time environment variable that never made
   it into the browser bundle) alongside a second, independent defect in the realm's redirect-URI

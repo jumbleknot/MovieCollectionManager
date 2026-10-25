@@ -6,7 +6,7 @@ resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # The governing constitution
@@ -50,18 +50,33 @@ frontend stack baseline from Expo SDK 56 to Expo SDK 57 (with React Native 0.86 
 **v2.7.0** advanced the document-database baseline to
 `mongodb/mongodb-community-server:9.0-ubi9` (MongoDB 9.0 on Red Hat UBI 9) — and had to record
 that the image the document had named until then, `8.2.6-ubuntu2204-slim`, was stale: `8.0.8-ubi9`
-is what actually ran. Neither redefines a principle, and each was drafted in the same pull request
-as the change it authorises, with explicit human approval. That same-PR rule is the constitutional
-reading of "documentation-first": a version the document names is amended in the change that moves
-it, never silently afterwards.
+is what actually ran. Neither redefines a principle, and the same-PR rule governs both: a version
+the document names is amended in the change that moves it, with human approval, never silently
+afterwards. Feature 081 writes that requirement down as **FR-015** — where the constitution names a
+version the feature changes (the platform SDK and native runtime, the document-database image), the
+amendment must land in the same pull request as the change it authorises, with human approval.
+
+Amendments are drafted rather than hand-edited. The Spec Kit constitution command
+([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),
+and the equivalent skill at
+[`.claude/skills/speckit-constitution/SKILL.md`](../../.claude/skills/speckit-constitution/SKILL.md))
+loads the existing constitution, applies the same MAJOR/MINOR/PATCH rule (MAJOR for a removal or
+redefinition of a principle or governance rule, MINOR for a new section or materially expanded
+guidance, PATCH for clarifications), and carries a consistency-propagation checklist that pushes the
+change back into the dependent templates —
+[`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md) and its spec and
+tasks siblings. A principle amended without those following is a tooling failure, not just a
+documentation one.
 
 Compliance is operationalized per feature rather than left to review. Every `plan.md` carries a
-**Constitution Check** gate — the template's wording is *"GATE: Must pass before Phase 0 research.
-Re-check after Phase 1 design."* — where each principle gets a row with a status and how it is
-satisfied. Feature 081's plan is a worked example: the Expo SDK line and the document-database image
-line are marked **AMENDMENT REQUIRED**, each naming the story that amends it, while the Tamagui line
-is marked PASS because the constitution names that library but no version of it. That gate is what
-turns "every spec and plan must comply" into a per-principle artefact a reviewer can check.
+**Constitution Check** gate — the wording in
+[`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md) is *"GATE: Must
+pass before Phase 0 research. Re-check after Phase 1 design."* — where each principle gets a row with
+a status and how it is satisfied. Feature 081's plan is a worked example: the Expo SDK line and the
+document-database image line are marked **AMENDMENT REQUIRED**, each naming the story that amends
+it, while the Tamagui line is marked PASS because the constitution names that library but no version
+of it. That gate is what turns "every spec and plan must comply" into a per-principle artefact a
+reviewer can check.
 
 Notable principle areas: AI Assistant Constraints (behavior-descriptive identifiers, no vibe coding,
 comments only for non-obvious rationale); Security (classification, PKCE-only auth via the BFF

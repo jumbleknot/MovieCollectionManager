@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:562d9e709337454602397bff3deb087f9404bec85e3e8a222ac3dc659bdcc03c",
+  "pageVersion": "sha256:969295f171467ae5dad296de04c8a9436eccce49d5907a399949bbb3a376dbcd",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -44,7 +44,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -57,8 +57,8 @@
           "version": "repo-lines-v1:sha256:938d8fd369b5bc4ef5ace0e3dc67ec64528ff2a9e0c1ccf0995c7bb4c11431f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNzRkNGE1ZDdmY2ViMDZjMmQ4MGU0YWFlMDdjOTRiZjc1OTFlYjY2OThiMWY4MTE4Njg4N2E0MjhjNGMyZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjE0OGI4MDRhYjg4MzNjNDIxYjFhNTc0Mjg3MjhlOWU5YmY4MWEzMDcyZjE4ZDk3ZWRhZTdkNTU3NDA3MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkOTgyODllNDc2YzZlZTA5OWRiNTU1Yjc1MDkwYTE0MjA2OGYzNmJiMDU3NGZiMGQwYzhjZTYwYTExYzQwZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZWVlM2VhZTU0ZDQyNTExMzA2ODBiNGI2OWY4YjliZDllMjk1ZjhlMGQ4YzY4NmU3NjA4ODdhYTA1YTQyZWMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L119",
-          "version": "repo-lines-v1:sha256:64bda3cfe6580bb36ad00cb0cf5ff64f4b22f26733fac3caa115789b969fea9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YzExMjQ3M2E2ZmRkYzY3NTNhNjhhMjUxYjdjNzgyZDdhODExNTQxMzI5NDA4YjIzYjlkZTYyMWM4YjMzOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMGZlM2FmNGU0Nzk1ZjRjM2MzM2VlMTRmYzYxMzJiYjk2ZmQ1MTFhNjBhMmMyNjgzYWY1OWNlYWQxZWQ0NzcifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L134",
+          "version": "repo-lines-v1:sha256:f5d449030d2e9ef8a7948cdd804d478fee430ca730fdab98895b35962ab20d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YzExMjQ3M2E2ZmRkYzY3NTNhNjhhMjUxYjdjNzgyZDdhODExNTQxMzI5NDA4YjIzYjlkZTYyMWM4YjMzOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMGZlM2FmNGU0Nzk1ZjRjM2MzM2VlMTRmYzYxMzJiYjk2ZmQ1MTFhNjBhMmMyNjgzYWY1OWNlYWQxZWQ0NzcifQ"
         }
       ]
     },
@@ -118,19 +118,19 @@
     },
     {
       "id": "claim_3174f5fb03ed4f64927a4bbc9c0738be",
-      "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault), disable_mlock = true, cap_add: IPC_LOCK, and command: [\"server\"] together: without the cap the entrypoint takes a fallback path that double-starts vault, and passing -config explicitly loads the listener twice because the entrypoint already appends -config=/vault/config. The rationale is stated in place in vault.hcl (mount path, disable_mlock) and in the vault compose (the cap, the command), and is repeated in the runbook's prod-only gotchas table.",
+      "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault and no chown is needed), disable_mlock = true, cap_add: IPC_LOCK and command: [\"server\"] together, and each rationale is stated in place: vault.hcl carries the mount path (because /vault/data is absent from the image and would land root-owned, so vault uid 100 could not create vault.db) and disable_mlock (the prod daemon's memlock rlimit is finite, so mlockall fails even with the cap, and raft/BoltDB mmaps are the recommended case for it), while the vault compose carries the cap and the bare `server` command (the entrypoint already appends -config=/vault/config, so passing the file explicitly loads the listener twice and the second instance dies with `bind: address already in use`). The cap's original second reason — without it the entrypoint took a fallback path that double-started vault — no longer applies to the shipped hashicorp/vault:2.2 image (spec 081 US8c), whose changelog drops the build-time cap_ipc_lock, but the cap is kept deliberately: it is harmless and the line matters again if the image is ever rolled back to 1.x. The page repeats the rationale in its prod-only gotchas table.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L196-L211",
+          "version": "repo-lines-v1:sha256:f918c29efdfbb83d855a7cbeff67099358a08d300ad3278e7810cf9d1a1189fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiN2EzNjg1YWU2Yjk2ZGQ4ZDM5M2IxMmQ1NzIyMWQ4NzU5ZTBhODkwNjYxYTZiYjVlZGY5MGJjNGY5Mjc3MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MDI4NGNlNThlYzdkMzI0MDExMzk4OTlhN2I0N2Q2M2U0MzFiMmQzM2ZlNDdiMDM4YWYwZWJlYzM0ZmU3MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNTA5YzEwZDg5NWYxNmMyOGM5YjJlOGI4NWRhYWEzMzc2Njg3YzU4MDFkZjBlNTM1ZjJhYTY4Y2RkYzUwZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NDhmNzRiMzEwYjA2MWYxMjNhMzYzNDY4ZGEzOTA4NzQ4NzcyNjdmMzJkN2Y0YzhiNjAyYTNhY2MzMzkzZTQifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml#L19-L38",
+          "version": "repo-lines-v1:sha256:f2e539e4e48613ecdb16e9b6093bc672cbb5c0ffe3c35942f5ab06bc611328fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMGUxMGNkYTU5YjJjNWVmMzcwMTFlZTZhZjEzMDg2MjVlNTNhY2E4YzA1YmQwNDEwNWYyYWY3MTk3ZjI0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZjhjZTU0ZTIzNzBjNTA4NzQ2ZTE5YzAxOWYwNmUwMGVhNDlhN2IwMjIzNGFkNGZhZjY0NzJhNDUzNzRiMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYWRmNDU3OGYzZDFkNzQ2NTk4YTFmZWM5NDQyNTZiMTliNWQ1MzBlZmZiNjYyZTYwN2U3YWRhZjVmYjFmNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZmQxODJlY2MzZmIyNzU0NTA4OWVkNTBiNGZmODgzY2M3MzM5ZjRlZmI2MDJmMjJkZjc4NjE4ZTA2MDM0NmUifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/vault/config/vault.hcl",
-          "version": "repo-file-v1:sha256:ab37e20560b81625b14a0d59f7dda2a1fb74e46da8b2aa2e1a6e32ac14995d3b"
+          "resource": "repo://infrastructure-as-code/docker/vault/config/vault.hcl#L9-L31",
+          "version": "repo-lines-v1:sha256:252fe6939ad878ef771230468ef15367a2db1d95256cb12181596afe0c54593e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4OGZiYWQ3M2ZkYzM0YzNkNDlmMjVlNDZkMWMxZTk0N2FmN2M0MDFkZmVjZWRlZDBhZmM5ODgyZDcxYzMyYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NTQxMzEzMTc4M2RmMjRmNDE2MDY3NTQwYThmMzg4OWVmYWYzNGU0NjJiYzA2MzEzMTBhOTliZTY0Mzg2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZWI5Y2RhN2Y5ODhhZWNhMTc4MjYyOGMzOTZkNmEwYTVlODRjOGU0MjFmYTc1YzQzZmQ4OWI2MmU2MzY2ZTkifQ"
         }
       ]
     },
@@ -584,7 +584,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
         }
       ]
     },
@@ -598,7 +598,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
         }
       ]
     },
@@ -616,7 +616,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
         }
       ]
     },
@@ -647,10 +647,56 @@
           "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
         }
       ]
+    },
+    {
+      "id": "claim_b6eae21c48c14caeaf7cc8cf0dce2aa0",
+      "statement": "The Langfuse 4.56.0 → 4.68.0 minor completed in production on 2026-10-25 (PR #852 merged pinned to ef2f199f as 89bd8acd) and closed PR 8d. Unlike the app stacks there was no cd-deploy promote commit: the Komodo sync deployed prod-observability directly, because this change builds no image. The operator pre-merge backup ran at ~01:04 UTC (ClickHouse 319M and Postgres `15 MB|449` read before, pg_dumpall marker found at 0.9 MB, ClickHouse cold copy tar exit=0 / CH-HEALTHY / GZIP-OK at 138 MB, WEB-OK on 4.56.0) and is kept on the host at ~/839-langfuse-468. Post-deploy both containers ran 4.68.0 Up with health {\"status\":\"OK\",\"version\":\"4.68.0\"} and {\"status\":\"ok\"}, _prisma_migrations read 460, ClickHouse migrations 52/u create_audit_logs and 53/u add_skill_observation_references were applied, web and worker logged zero error lines, and a trace landed via the worker's ClickhouseWriter — the same acceptance reading the runbook prescribes.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L686-L697",
+          "version": "repo-lines-v1:sha256:a79c1bdc3102c665f7eac36556ba9053bb35197a9cfefb5ef020130b68cb5c3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNTA4ODJjOTUwNTIwMTE2MzAyODI4MDczODI3MDIxZjRkZDg2YzFjZjAwNjdjOTIyNWU0MDk0MzZkZDhhZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYTc2YWM5NjIzZmU5NDcyMWQwOTc1ZjkxZGJmNTZhMDkxZjVkZmRkMTRjMjJkYzVlOGExMmYyMTk1Y2U0MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4OGU1OWJjNWI1MjJhYjcyMGI0MDgzZTlkMTJiMTMxZjdhNzdlNDg4NDFmYTFkNDJmZjVmNTcxZDIwNDhjMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMWY3MWVjZGY3ZDM4MTViNDFmNmJjZTQ3ZWE1NDhiMDg1NTlkZmIyYjhkOGJlYTUxNGI2MzVjN2UxMzk2OWIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L28-L94",
+          "version": "repo-lines-v1:sha256:6dc87113a272dad66875062a8163a6f99e8b02b7347fda3203aea457c80209ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZmQzZGYzYzBjYzI5NDYzZGI3Y2MwM2IyZTNhMTg5ZWM5ZGJkNjkxZjdkNzNhMWYwMWU5NDYxZjI3ZjYxZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyN2FjNTlhMzJlNGY1OTExZTg1ZThlNGVjODkzOTA5YTdkMTM1NWNjNWVlODE4Y2I0ZTYwOTViMGNhNmVkMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjNWZjZmVhNWY2ZWZkMTFiYzQ4YTMyMmJiM2IzODVlZThmMzZkN2I2YTcwYzNlMTczZmY5NTQ4N2VmOTMzZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYzc3ZGI0OWFiNTc4NGU2ZWJmMzA5MzA1YjI4NzdlNmM4YTZlNmRmM2RhODdiZDIyNmU4Y2FmNmQ4Y2ZjNjQifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L589-L601",
+          "version": "repo-lines-v1:sha256:7148614761f309f01ac4d521f4efda45eb274a7ea1c8604e95cdb0e125aacbd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NzE5OGFmODFhZDlmMzFiOWQ0ZmU4Y2I0YTk5MzRmNTFhMDY4NDczOWFlMmY0NmU0NDkyZjdlY2FiY2FmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzN2IwMTg0NjM0N2Q3NDFmMmU2NjI2MGUzYzYwODNmYzZiNmUxOTdiZGI0OWU3MWUzNzMzZjZlZDg0ZjM2MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NmM3OGI0YWJiOGI4N2RmMDgxMWZiM2ViODU1MTE3ZDhlZGQ1ZGM2NTQ4NGZkMmI5MGNmOTIzM2M3ZjczZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e9bb63959b248d8a859810fb804398e",
+      "statement": "The 4.68.0 bump's allowlist work was mixed rather than uniform, and the page's \"re-key at the cause\" rule is the shape while this is the instance: the two `next` advisories the new version discharged were DELETED, while the three that still block on the exact 4.68.0 digests — the base-image ca-certificates CVE on web and worker, and the bundled @sentry/nextjs CVE on web — were RE-KEYED 4\\.56\\.0 → 4\\.68\\.0 with their 2026-11-20 expiry unchanged, so the gate passed with 0 unmatched entries and --check-expiring still opens its warning window on 2026-11-06. renovate.json needed no edit at all, because the `langfuse` packageRule and the stateful-major dependencyDashboardApproval rule match by package name with no version in them — recorded as a fact rather than changed cosmetically.",
+      "evidence": [
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L75-L89",
+          "version": "repo-lines-v1:sha256:4d0455d1309d3dcdb6e904322fc83db9e5ae716fa4364bbca2d0d9d61aed46d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNTAyNzZhZjQ2NTU3MmY2YWM2MDUzMzI2OTFiNjE4MTFhNzMxNTAwOTVjYzJhNzNlZWViN2Q3MGFjYmM4ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmNjVhYzU3YTc0YjY4Nzg0N2E5OTI0OTZiNDVmYjFjYTdiMGI5NDBmN2Y1OTVjMmM0ZGFjNjg0MDExYmM5MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODk0MWU5NDE5NTBlYzA3MmY3YmU4YzRlMTdmM2U1M2RiYWVkZDJjMmUzOGIxMjIzOWM2MzhhMjhkMTc4MGIifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L556-L573",
+          "version": "repo-lines-v1:sha256:41e29e0b1ad83315b28e51be92bb246ea62379f4e43cc45e6944b46d61c81788:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0Y2NhM2E1M2Q5NGIxMTMwYTAwMWM2Yjc1ZDY3MDJmMzU1OTM4MzA4NWM1Zjk5ZDQ1OTc4N2Q4MzA0YWI1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MmM4M2Q4MzNmYjAzYTczODdlZGQwODhjYTYyNDM4YWVhNWJiZDdiMzU2MmE3MDI4MDg4MmU1MGY3MmU0YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyZmZhZWI0NGQ1MmMzZTkzMmE4MTVkYWRkMDkzNTZjNDNkYjllOThkNmY2NDIxMDAwOWRmMTM4MmZiZGVlODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMDBjODkxNjVkNTI2N2NlN2FmYTlmZmYyYjNiOGVhNmQwOGUxOWQ2ZTdjY2RjNWQyYjQwNWYyNTM2YjQ2OTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_379c21466fa14cbf92f39ae0696ceaf1",
+      "statement": "The 4.68.0 upgrade path was measured on the dev stack rather than inferred from a fresh start: the stack was first brought up on 4.56.0 and an agent turn traced, then web and worker alone were moved to 4.68.0 on the SAME volumes, which is how the migration path itself got verified. Prisma applied 11 migrations (460 total, including add_audit_log_staging and its failure columns), ClickHouse applied 52 create_audit_logs and 53 add_skill_observation_references with schema_migrations 53 / dirty 0, both containers logged zero error/warn lines, and both the pre-move and post-move traces sit in ClickHouse events_core — written by the worker's ClickhouseWriter — with October history still readable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L677-L684",
+          "version": "repo-lines-v1:sha256:5c0904b9d179c40eb00d7747a8f57406f12ed1216bb6c856ed471d2b379c3a54:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRiYTQ1NDQ2ZGQ0NDAwMDc1ZjI5ZTZjMmE1MDg1NTRiN2I1NGJjMmUzMzRjNGI2YWFhMjdjZmMyYmE1MTg0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcwNzE2ZmVhY2Y0N2I2NzE1YzQxNjlkZGYyNDgyOTkwMGMyMDAyNThhOGZiOWIwNDFiNTEzYTViZWQwYzMzMSJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L574-L588",
+          "version": "repo-lines-v1:sha256:dc0140a021de288a1dba62cee9f7baf44ca30fd9c8a367d2bfd6f738bfd15a59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNzljZTU2ZjdiODc3OTJkMWY0OThkMjI3NDI4ODdlZDE2Nzg2N2UyNDAxM2U3YWU4MTBkNWI2MmEzZDdjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NzViNjdlODA5OWEzZTVjMDQ2YWY3MDU1ZWVhZDg3YjgwZTc3ZGI2MzJjNGZmOTY0NmJlNTkzZjhmNmZlOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YzA2NGVjYTRjNmU5OTk0MzMwNTkxY2YxYzMzODc5MGVhOTExNmZlYWRjYmUyYzQ1NmQ4OWQyOWFjN2Y5OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNGQ0ZmY4MTg0ODZhYzg0NDMxNGVjMGI0YzExMzgwMDM1MDU1ZGVmMDExN2M2NWUzYWM5NmJiNDE2ZWI2YzIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T01:38:05.401Z"
+    "at": "2026-10-25T13:33:13.758Z"
   }
 }

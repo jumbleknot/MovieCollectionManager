@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
-description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade with its kernel precondition, uid re-own, FCV soak and restore-only rollback.
+description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, now deployed in production at FCV 8.0 with the FCV raise still pending after its soak.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T23:24:20.987Z
+    at: 2026-10-25T13:33:13.758Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -24,6 +24,25 @@ ResourceSync**, not a manual `docker` command against the host. The source runbo
 [`docs/runbooks/prod-data-tier-auth.md`](../../docs/runbooks/prod-data-tier-auth.md), is authoritative
 for the exact commands, the `Expected` output of every block, the baseline/verification counts and the
 rollback drills; this page explains what each procedure achieves and when to reach for it.
+
+### Where these procedures stand today
+
+Both procedures have been run against production, so read this page as the *shape* of the work and a
+pointer to the exact commands, not as a queue of pending chores:
+
+- **Feature 026 (auth).** Both cutovers are recorded as executed, and the auth-enabled compose is the
+  live one — `mc-service-store-mongo` starts with `--keyFile` (which implies `--auth`) and
+  `mcm-bff-store-mongo` with `--auth`. The cutover sequence below is what you reach for on a fresh
+  store, a credential rotation or a recovery, not for first-time enablement.
+- **Feature 081 US8a (8.0.8 → 9.0).** The production cutover ran on 2026-10-24 and the deploy landed
+  through CD, not by hand. Both stores are on `9.0-ubi9` (`9.0.4`) at FCV `"8.0"`, each having logged
+  its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the
+  pre-flight files. The one step still outstanding is §6.4's **FCV raise to `"9.0"`**, which follows
+  the 7-day soak and was therefore not to be run before 2026-10-31 — until it runs, everything below
+  about FCV `"8.0"` still describes production. The measured record (before/after counts, the V1–V4
+  output, the kernel-gate result) is in
+  [`specs/081-major-dependency-upgrades/tasks.md`](../../specs/081-major-dependency-upgrades/tasks.md)
+  T059, not in the runbook — the runbook is the procedure.
 
 ## The auth-shape split is the spine
 
@@ -56,7 +75,14 @@ image digest in their compose files rather than by a floating tag.
   `*_ROOT_PASSWORD` values are setup-only, used to create users during the cutover, and must not be
   placed in a running service's environment. The user matrix is `mc_root`/`mc_service_app` on the movie
   store and `bff_root`/`bff_app` on the BFF store, with `readWrite` scoped to `mc_db` / `bff_db`
-  respectively and `authSource=admin` throughout.
+  respectively and `authSource=admin` throughout. Note the second half of that coupling: a stack's
+  `environment` block in
+  [`infrastructure-as-code/komodo/stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml) is the
+  *only* declaration of its required inputs, so adding a fail-fast Mongo variable to a prod compose is
+  also a `stacks.toml` change —
+  [`komodo-stack-env.guard.test.mjs`](../../scripts/__tests__/komodo-stack-env.guard.test.mjs) fails
+  when a prod compose declares a `${VAR:?}` its stack never supplies, and that break is invisible in CI
+  until a real Komodo deploy fires.
 - **The keyfile only applies to the movie store.** The BFF store is standalone and needs SCRAM
   credentials only, never a keyfile — conflating the two setups is a common source of an unnecessary
   extra step or a misconfigured mount.
@@ -110,7 +136,7 @@ flowchart TD
   Raise -->|"problem found"| Rb
 ```
 
-The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore.
+The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore. The pre-flight through verification and the FCV-8.0 soak are complete in production; the FCV raise is the step still ahead.
 
 ### Gotchas (the upgrade)
 
@@ -215,4 +241,7 @@ rollback blocks with their `Expected` output:
 is [§6](../../docs/runbooks/prod-data-tier-auth.md#6-mongodb-808--90-upgrade-data-preserved-feature-081-us8a-t059).
 The acceptance oracles are `specs/026-prod-data-auth-vault/quickstart.md` (Scenarios 1–5) and the
 contract `specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md`; the upgrade's premise,
-rehearsal table and measurements are in `specs/081-major-dependency-upgrades/research.md` R8.
+rehearsal table and measurements are in `specs/081-major-dependency-upgrades/research.md` R8, and the
+production execution record — what the deploy actually did, with the before/after counts — is in
+[`specs/081-major-dependency-upgrades/tasks.md`](../../specs/081-major-dependency-upgrades/tasks.md)
+T059.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:38f60b502bf989709921a2be4cd163f72c1f0bbcdece28c35702d4b4da5ceea4",
+  "pageVersion": "sha256:f60be45e80701dc16ce14551814cac0d9e03445bde0e4055ccfb73fa57d229f6",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -172,7 +172,7 @@
     },
     {
       "id": "claim_507596cf5530417ab5c5bd7477872a7b",
-      "statement": "Constitution v2.7.0 is a MINOR, stack-guidance-only amendment that advances the document-database baseline to `mongodb/mongodb-community-server:9.0-ubi9` (MongoDB 9.0 on Red Hat UBI 9), and it records in the changelog that the image the document had named until then, `8.2.6-ubuntu2204-slim`, was stale — `8.0.8-ubi9` is what actually ran. It was operator-approved and drafted in the same pull request as the five compose-file image references it authorises.",
+      "statement": "Constitution v2.7.0 is a MINOR, stack-guidance-only amendment that advances the document-database baseline to `mongodb/mongodb-community-server:9.0-ubi9` (MongoDB 9.0 on Red Hat UBI 9), and it records in the changelog that the image the document had named until then, `8.2.6-ubuntu2204-slim`, was stale — `8.0.8-ubi9` is what actually ran. It redefines no principle, was operator-approved, and landed in the same pull request as the compose-file change it authorises.",
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:6c974d778c6605a31580a14a7098d7e7f676eb6457df6520917edc4a4c5ab88b"
+          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
         }
       ]
     },
@@ -251,10 +251,42 @@
           "version": "repo-lines-v1:sha256:918b82593d07d4d54a88f0026d1cd0fd84d1013f3bb4d585b00b7bf0af4dc35d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA5NDdhOWY0ZDNlYTdiZWEwN2ViMjkxMDllMzU3ZWQ0NmVmMDIxOWQ1Y2YxZjBiMzI3NzJiZWJkNmMyMGY5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI5MjBkNTY5MTAyNjEzN2JjNzMzMTlhMTFhNGQ1YWQyYmJkNTdkYmZkYjgxNzBjMzBhODAzYjE2ZjdkZDI4YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_6874273043674bee97007444f610ef59",
+      "statement": "The constitution's amendment procedure is drafted through the Spec Kit constitution command (`.github/agents/speckit.constitution.agent.md`, mirrored as `.claude/skills/speckit-constitution/SKILL.md`), which loads the existing constitution, applies the MAJOR/MINOR/PATCH rule — MAJOR for a principle or governance removal or redefinition, MINOR for a new section or materially expanded guidance, PATCH for clarifications — and carries a consistency-propagation checklist that pushes the change into the dependent templates, including `.specify/templates/plan-template.md` and its spec and tasks siblings.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/speckit-constitution/SKILL.md",
+          "version": "repo-file-v1:sha256:c1a044aba243ca6aff627fb5e4404feb6f1108d4f7dd174631bee3ae477d6c15"
+        },
+        {
+          "resource": "repo://.github/agents/speckit.constitution.agent.md",
+          "version": "repo-file-v1:sha256:89e14df67db5f8a52b8802a6e396b69d3e4badc46e97de804810aaaf439e0d5e"
+        },
+        {
+          "resource": "repo://.specify/templates/plan-template.md",
+          "version": "repo-file-v1:sha256:cc7f7979cf8d8836ec26492785affd80791d3422a2b745062ec695be8c985ef7"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9aee7d8ed1b4304ad4e343e5408c115",
+      "statement": "Feature 081 codifies the same-PR amendment rule as its governance requirement FR-015: where the governing constitution names a version the feature changes (the platform SDK and native runtime, the document-database image), the amendment MUST land in the same pull request as the change it authorises and with human approval; because the constitution names the UI styling library without a version, that story (US10) needs no amendment.",
+      "evidence": [
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
+          "version": "repo-file-v1:sha256:319286709f15665c4c75c8b00876f1d9808225094f5537e84307186ac4930a9a"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/spec.md",
+          "version": "repo-file-v1:sha256:4314b3977e85f5fd0a9ab9fcfd70d31e6f7f69b460d791bdcd1eecec1ce5809d"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T01:38:05.401Z"
+    "at": "2026-10-25T13:33:13.758Z"
   }
 }
