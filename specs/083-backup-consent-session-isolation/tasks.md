@@ -109,3 +109,25 @@ pnpm nx lint mcm-app && pnpm nx test mcm-app
 
 Open the PR and watch app-e2e. **SC-003**: grep the run's BFF log for `Agent subject-token exchange
 failed`; expected 0. Record the result on #702.
+
+### T008 — Production enablement as config-as-code (item #843, added 2026-10-25)
+
+**File(s)**: `infrastructure-as-code/komodo/stacks.toml` (stack `prod-mcm-bff`), `docs/runbooks/backups.md`.
+
+prod-mcm-bff's environment is owned by `stacks.toml` (ResourceSync), so a value typed into the Komodo
+UI is overwritten by the next sync. Add `BACKUP_CONSENT_CLIENT_ID=mcm-backup-consent` (literal, not a
+secret) and `BACKUP_CONSENT_CLIENT_SECRET=[[mcm_backup_consent_client_secret]]` (masked Komodo Variable,
+ADR-0001).
+
+The production realm's admins have 2FA, which `kcadm.sh`'s password login cannot satisfy
+(`Invalid user credentials`; the bootstrap admin is retired per the server-setup runbook). So the client is
+created in the admin console. The console cannot copy the login client's secret, so the new client keeps
+its own, which is what `BACKUP_CONSENT_CLIENT_SECRET` exists for. The runbook gains the console path.
+
+**Order**: the operator creates the client and the Variable BEFORE this merges. The merge deploys the
+BFF with both values.
+
+**Verify** (no RED: nothing becomes required): `node --test scripts/__tests__/komodo-stack-env.guard.test.mjs` stays green before and
+after: both values are optional (`env.ts` falls back to the login client), so no `${VAR:?}` guard applies.
+The real check is on the host after the deploy: `printenv` shows `id=mcm-backup-consent`, the secret length
+is non-zero, and `backup_consent_shared_client` is logged 0 times. Then the #843 sign-in survival test.
