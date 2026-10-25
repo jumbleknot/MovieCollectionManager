@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "707cb42fdb9a10c3b0913ce4fb0994ad1382e5e4",
-  "coveredAt": "2026-10-25T16:49:12.422Z",
+  "coveredCommit": "cacc10c12caef34ec5b2b1d74e2420719817bc04",
+  "coveredAt": "2026-10-25T18:56:48.612Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 857,
-    "headCommit": "cbe9193e886b0836c4f0f0f8d23321d513533676",
+    "headCommit": "944a1132733f010c6f6910abb53089ed2502906e",
     "markerBefore": "89bd8acd7aced12a2bb537b9ca2cec8bd7efa000",
     "slices": [
       {
@@ -42,29 +42,41 @@
         "areaExists": true,
         "reason": "drift: docs/runbooks/backups.md changed after the page's stamp",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backups.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "gotchas",
+        "pages": [
+          "expo-router-and-transport-traps.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: frontend/mcm-app/server.js changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/expo-router-and-transport-traps.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-25T16:49:12.989Z"
+    "updatedAt": "2026-10-25T18:56:49.177Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 22,
-    "elapsedSeconds": 2055,
+    "pagesWritten": 4,
+    "elapsedSeconds": 1427,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 182,
+    "calls": 241,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 675883,
-    "cached": 18432578,
+    "uncached": 737014,
+    "cached": 18133532,
     "cacheWrite": 0,
-    "output": 361300,
-    "reasoning": 311916,
-    "ms": 2368770,
-    "estCostUsd": 0.7469,
+    "output": 456332,
+    "reasoning": 397391,
+    "ms": 3012772,
+    "estCostUsd": 0.8775,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -74,11 +86,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/backups.md"
+        "gotchas/expo-router-and-transport-traps.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.7469,
+      "estCostUsd": 0.8775,
       "rateLimited": null
     }
   ],
