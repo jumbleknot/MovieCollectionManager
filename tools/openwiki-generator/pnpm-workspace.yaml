@@ -24,3 +24,12 @@ allowBuilds:
 # died on a transitive two minutes old. Do NOT add a minimumReleaseAgeExclude list: nothing here is a
 # security floor, and this code runs with the generator's model credential.
 minimumReleaseAge: 4320
+
+# Security floors. The root workspace's `overrides:` do not reach here (this is its own root), so a
+# floor the generator's tree needs is repeated in this file.
+overrides:
+  # ADDED 2026-10-25 (item #840): GHSA-27r3-jxmh-p828 (DoS via trailing bytes after a compressed body),
+  # fixed in 2.4.0. express 5 (via @modelcontextprotocol/sdk) depends on body-parser ^2; floor within the
+  # major, the same entry as the root pnpm-workspace.yaml. Resolvable here only from 2026-10-25 11:39 UTC,
+  # when 2.4.0 clears this workspace's minimumReleaseAge.
+  body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'
