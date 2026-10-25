@@ -1,105 +1,47 @@
 {
-  "coveredCommit": "42524608f221462ef724f93f394823fc163feb8a",
-  "coveredAt": "2026-10-24T21:11:49.925Z",
+  "coveredCommit": "542d708860b59795e870903e51df625c70240ef1",
+  "coveredAt": "2026-10-25T00:01:02.185Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 846,
-    "headCommit": "ed6dc765f2462bcac45386c023f0d92f95c2b89f",
-    "markerBefore": "ac74233138ed2ec03d79108b4175e84809686194",
+    "number": 851,
+    "headCommit": "3ce3c704396b72b2946abc8d79122301ee428cf4",
+    "markerBefore": "42524608f221462ef724f93f394823fc163feb8a",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "backups.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/backups.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/backups.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "gotchas",
-        "pages": [
-          "keycloak-service-account.md"
-        ],
-        "kind": "refresh",
-        "drift": true,
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/keycloak-service-account.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "invariants",
-        "pages": [
-          "published-port-reservation.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/invariants/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/invariants/published-port-reservation.md. The openwiki/invariants/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/invariants/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "prod-reboot-resilience.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/prod-reboot-resilience.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-reboot-resilience.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "local-dev.md",
           "prod-data-tier-auth.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/local-dev.md; source changed: docs/runbooks/prod-data-tier-auth.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md; openwiki/runbooks/prod-data-tier-auth.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "process",
-        "pages": [
-          "constitution.md"
-        ],
-        "kind": "refresh",
-        "drift": true,
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: .specify/memory/constitution.md changed after the page's stamp",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/constitution.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/prod-data-tier-auth.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-data-tier-auth.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-24T21:11:50.412Z"
+    "updatedAt": "2026-10-25T00:01:02.536Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 2204,
+    "pagesWritten": 4,
+    "elapsedSeconds": 2206,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 504,
+    "calls": 312,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1920355,
-    "cached": 45108134,
+    "uncached": 1923501,
+    "cached": 33158466,
     "cacheWrite": 0,
-    "output": 967809,
-    "reasoning": 836110,
-    "ms": 5885548,
-    "estCostUsd": 2.0081,
+    "output": 589846,
+    "reasoning": 517346,
+    "ms": 4472830,
+    "estCostUsd": 1.4838,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -109,13 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/local-dev.md",
-        "runbooks/prod-data-tier-auth.md",
-        "process/constitution.md"
+        "runbooks/prod-data-tier-auth.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 2.0081,
+      "estCostUsd": 1.4838,
       "rateLimited": null
     }
   ],
