@@ -305,19 +305,11 @@
 # expire on 2026-11-06: an entry that matches nothing fails `--check-expiring` on the weekly sweep, and
 # deleting it is the direction that restores blocking if 11.x ever returns.
 
-# ── 2026-10-24: body-parser GHSA-27r3-jxmh-p828 in tools/openwiki-generator ONLY (operator-approved) ──
-# DoS via trailing bytes after a compressed request body; fixed in 2.4.0 (published 2026-10-22 11:39 UTC).
-# The ROOT workspace is FIXED, not allowlisted: pnpm-workspace.yaml's `body-parser@>=2.0.0 <2.4.0` floor
-# moves the BFF's express 5 to 2.4.0. The generator workspace enforces a 3-day `minimumReleaseAge`
-# (and forbids an exclude list), so 2.4.0 cannot resolve there before 2026-10-25 11:39 UTC — and without
-# this entry the repo-wide `sast` gate would hold every PR red until then. Bridge only: bump the generator
-# with the same floor after that time and DELETE this entry (item filed the same day).
-- scanner: "pnpm-audit"
-  id: "GHSA-27r3-jxmh-p828"
-  locationPattern: "^tools/openwiki-generator:body-parser@2\\.3\\.0$"
-  justification: "Fix (body-parser 2.4.0, 2026-10-22) is inside the generator workspace's own 3-day minimumReleaseAge, which forbids an exclude list, so it cannot be resolved there until 2026-10-25 11:39 UTC. The generator is a CI-only documentation tool (openwiki), not deployed and not exposed to untrusted request bodies. The root/BFF copy is fixed by an override in the same PR. Operator-approved 2026-10-24 as a short bridge; delete when the generator lock moves to 2.4.0."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-10-28"
+# ── body-parser GHSA-27r3-jxmh-p828 bridge entry (tools/openwiki-generator): DELETED 2026-10-25 (item #840) ──
+# Discharged as planned: once body-parser 2.4.0 cleared the generator workspace's 3-day
+# `minimumReleaseAge` (2026-10-25 11:39 UTC), the generator took the same `body-parser@>=2.0.0 <2.4.0`
+# floor as the root workspace and its lock resolves 2.4.0. No exclude list was added. Deleted rather
+# than left to expire on 2026-10-28: an entry that matches nothing fails `--check-expiring`.
 
 # ── 2026-10-24: @azure/msal-node GHSA-xcx6-jx8p-x3h5 — NO upstream fix reachable (operator rule: keep CI unblocked) ──
 # "Authorization code flow may disclose parameters to an attacker-controlled endpoint"; affected 5.0.0-beta.0
