@@ -527,6 +527,45 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   three seed entries deleted, guard updated at the cause and mutation-RED'd; local prod-posture start
   (sealed/healthy) + init/unseal/persist verified. Evidence: research.md R8.
 
+**PR 8d — Langfuse 4.56.0 → 4.68.0, web + worker together (item #839)**
+
+A minor, not a major, but stateful: 4.59–4.61 add ClickHouse and Postgres schema (an append-only billing
+ledger; audit events staged in Postgres and relayed to ClickHouse). Taken under ADR-0002 discipline as its
+own PR. **Release-age cooldown overridden by the operator for 4.68.0 only (2026-10-24)**: these are Docker
+images, so the hand pin needs no config change and no release-age exclusion is added anywhere. Per ADR-0002
+§4 the prod trace store need not survive, so rollback is a digest revert plus a volume recreate.
+
+- [ ] T085 [US8] Premise: scan the exact 4.68.0 index digests (web `b29c245d…`, worker `f3afef57…`) through
+  the gate's own pipeline (`node scripts/infra-image-scan.mjs --image <ref>`, Trivy 0.74.0 via the shim in
+  `docs/runbooks/infra-image-scanning.md`). **Done when**: on both images, next GHSA-2464-fhr4-w9xw and
+  GHSA-673q-mjm6-r5xr are absent, and the only blocking findings are CVE-2026-114406 (ca-certificates, both)
+  and CVE-2026-114139 (`@sentry/nextjs`, web). **Any NEW blocking finding stops the story** for an operator
+  decision; it is not allowlisted here.
+- [ ] T086 [US8] **Verify RED**: move all four refs (`observability/compose.yaml` and `compose.prod.yaml`, web
+  and worker) to `4.68.0@<digest>`, leave `security/infra-images/allowlist.yaml` untouched, and run
+  `node scripts/check-infra-image-findings.mjs` on each image's T085 report.
+  **Expected RED**: fails. The entries are keyed `4\.56\.0`, so they are out of scope for the new refs, and
+  CVE-2026-114406 (and CVE-2026-114139 on web) report as blocking.
+- [ ] T087 [US8] Allowlist at the cause: DELETE the two `GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr` entries
+  (discharged by next 16.4.2); RE-KEY the CVE-2026-114406 (web, worker) and CVE-2026-114139 (web) entries
+  `4\.56\.0` → `4\.68\.0`, with the same expiry and a re-key note appended to each justification (the PR #836
+  otel-lgtm precedent). Correct the stale "deliberately pinned on 8.0.8" comment for mongodb (9.0-ubi9 since
+  PR #817). **Verify GREEN**: the gate passes on both reports with 0 unmatched entries, and
+  `node scripts/allowlist-expiry.mjs` reports the same expiry dates as before.
+- [ ] T088 [US8] Guards: `renovate-workflow.guard.test.mjs`, `langfuse-postgres-shared-pin.guard.test.mjs`,
+  `langfuse-v4-read-path.guard.test.mjs`, `no-minio-references.guard.test.mjs`, `infra-image-scan.test.mjs`.
+  The `langfuse` Renovate group (packageRule 34) matches by name with no version, so it needs no edit; record
+  that, rather than a cosmetic change. **Verify GREEN**: 0 failures, 0 skipped.
+- [ ] T089 [US8] Local: `pnpm nx up-observability infrastructure-as-code` on 4.68.0. **Done when**: both
+  containers run 4.68.0 healthy, the web UI returns 200, the web and worker logs show the 4.59–4.61
+  migrations applied without error, a trace from an agent turn appears via the public API, and the worker log
+  shows it processed.
+- [ ] T090 [US8] Prod (a merge is the deploy): operator-run pre-merge backup per
+  `docs/runbooks/prod-control-tower.md` → merge pinned to the head → `chore(cd): promote` → operator post-deploy
+  checks: UI 200, worker healthy, a trace lands. **Rollback**: revert the digests and recreate the Langfuse
+  volumes (ADR-0002 §4), or restore the backup if history is wanted. **Done when**: post-deploy checks pass and
+  item #839's criteria are ticked with evidence.
+
 ---
 
 ## Phase 11: US9 — cargo (P3) — PRs 9a, 9b
