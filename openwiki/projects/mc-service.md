@@ -67,6 +67,8 @@ sources:
     resource: repo://backend/mc-service/src/lib.rs
   - id: openwiki-source-19a939e3a38241d7960054fe
     resource: repo://backend/mc-service/src/main.rs
+  - id: openwiki-source-647ddcd68235aa7d8df6a2c8
+    resource: repo://backend/mc-service/tests/integration/common/auth.rs
   - id: openwiki-source-16c2f372398849e8eff53877
     resource: repo://backend/mc-service/tests/integration/common/mod.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
@@ -77,14 +79,24 @@ sources:
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-8cb0da307c90adb4287997a5
     resource: repo://docs/runbooks/dev-environment-setup.md
+  - id: openwiki-source-a679e2e5a49381a72df446c5
+    resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-d5b1faab58eeb909bb999298
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-852cc196002c1a675baddf5c
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
   - id: openwiki-source-94eec9a3262aa7855d62efcc
     resource: repo://scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-072f6ea660585ea2cb7a706c
     resource: repo://scripts/mc-service-integration-guard.mjs
+  - id: openwiki-source-227e2a7bba71e73939b765c7
+    resource: repo://specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
 verified:
   - by: openwiki/0.7.1

@@ -13,6 +13,8 @@ sources:
     resource: repo://.gitignore
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-318b395038e1943bc8a10f72
     resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
   - id: openwiki-source-23175e1d10427daa3344d3ec
@@ -35,6 +37,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
     resource: repo://infrastructure-as-code/docker/observability/compose.yaml
+  - id: openwiki-source-5c295e2a3945cc4a649c1abc
+    resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
   - id: openwiki-source-79878dc2da65b6b5c71034f7
     resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
@@ -63,6 +67,8 @@ sources:
     resource: repo://scripts/__tests__/infra-image-scan.test.mjs
   - id: openwiki-source-a6996cae4bd83db81e823602
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
+  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
+    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-0af8f352da052e268e893ea2
@@ -81,6 +87,8 @@ sources:
     resource: repo://scripts/check-resource-naming.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-1dabdb308579a8f9d6d49612
     resource: repo://scripts/gen-dev-secrets.mjs
   - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
@@ -91,6 +99,10 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-c5e086204a303667bdcd03f5
     resource: repo://specs/025-observability-audit-vault-prod/tasks.md
+  - id: openwiki-source-2e80450c72b5a1cbf460cfc1
+    resource: repo://specs/080-minio-to-rustfs/research.md
+  - id: openwiki-source-83771c9aeecb9de0bd4deaf4
+    resource: repo://specs/083-backup-consent-session-isolation/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1

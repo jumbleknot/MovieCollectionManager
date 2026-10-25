@@ -13,6 +13,8 @@ sources:
     resource: repo://agents/movie-assistant/src/tools/token_exchange.py
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-3b86829117dd0577834407fc

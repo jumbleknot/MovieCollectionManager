@@ -7,6 +7,39 @@ tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-25T13:33:13.758Z
+sources:
+  - id: openwiki-source-fddbbd0ed8c6150575261296
+    resource: repo://.claude/skills/speckit-constitution/SKILL.md
+  - id: openwiki-source-30724a7ef510bcfb76113f02
+    resource: repo://.github/agents/speckit.constitution.agent.md
+  - id: openwiki-source-bff475d8fa855e3592cfedc2
+    resource: repo://.specify/memory/constitution.md
+  - id: openwiki-source-40c6c36ebb2091923abbb4bf
+    resource: repo://.specify/templates/plan-template.md
+  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
+    resource: repo://backend/mc-service/Cargo.toml
+  - id: openwiki-source-541e2287bdfb42c605c78f3f
+    resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-baa6cf05f830f1fa193ef74c
+    resource: repo://docs/templates/feature-test-tasks-template.md
+  - id: openwiki-source-82e76cb56a030095b60d27cd
+    resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
+    resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-4388ebe240b6b1a6c540d5c5
+    resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
+  - id: openwiki-source-db3aa5ac2ffb577a529916ad
+    resource: repo://specs/081-major-dependency-upgrades/plan.md
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-f64018476db6cdad83959624
+    resource: repo://specs/081-major-dependency-upgrades/spec.md
+  - id: openwiki-source-2e26935bed37e1316dc175a0
+    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 ---
 
 # The governing constitution

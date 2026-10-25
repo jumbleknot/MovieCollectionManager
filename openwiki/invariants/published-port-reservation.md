@@ -17,12 +17,16 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
+  - id: openwiki-source-34854463fd23e29b106dcb63
+    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-7ed01c27b7f22a2815bd5d15
     resource: repo://scripts/check-komodo-sync.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08

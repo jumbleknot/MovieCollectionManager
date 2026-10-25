@@ -21,6 +21,8 @@ sources:
     resource: repo://agents/movie-assistant/.python-version
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-3b86829117dd0577834407fc
@@ -29,6 +31,8 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03

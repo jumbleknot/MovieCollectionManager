@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e5184e3657d165d3f9bf05bcb542b7452ef37927323b1393089a9afc988f84c9",
+  "pageVersion": "sha256:2da874cc7d2d868c4df9785a07ce55b018a8b4f8b17f7594821674caedd53f41",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -385,10 +385,42 @@
           "version": "repo-file-v1:sha256:b4679ec621b29ad86fffaaad6ccded3381deb56c66715adf4861540d79b0d887"
         }
       ]
+    },
+    {
+      "id": "claim_b76034f200224cf6900e5c4f41172107",
+      "statement": "The feature-073 backup integration suites SKIP rather than fail when the two real backup destinations are absent, so they must be run with MCM_REQUIRE_BACKUP_TARGETS=1 alongside MCM_REQUIRE_LIVE_STACK=1: the flag converts the skip into a hard failure that names the missing input, and the jest global preflight then also probes Backup S3's /health/ready and the WebDAV endpoint's unauthenticated 401 — which is the only place the distroless WebDAV container's liveness is asserted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts",
+          "version": "repo-file-v1:sha256:de52f4a7539b5e25aef3fffa52cf64e53bebce30e5c625646916426f0b5fd8ba"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/setup/preflight.global.js",
+          "version": "repo-file-v1:sha256:aa86accf66a7993268a725ba82a0e981333795ec06267cbb05c6c7306cb9814f"
+        }
+      ]
+    },
+    {
+      "id": "claim_42c7b46e9df141399937c1913a54072d",
+      "statement": "Retention only ever treats keys matching `<basePath>/<jobId>/<iso>.json.gz` as deletion candidates, filtered both by the job prefix and by an artifact-name check, so another job's objects and any file the user keeps at the same destination — including one inside this job's own folder — are never deleted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-retention.ts",
+          "version": "repo-file-v1:sha256:82984ccadff62ef168380db351b852810b9a0adebe0f2cc10ea8d9959a5b7b8e"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-10-25T16:15:01.685Z"
   }
 }

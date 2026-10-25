@@ -7,6 +7,8 @@ tags: [production, komodo, deployment, operator, runbook]
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-15d21023a0d5744ca095edfa
@@ -19,12 +21,22 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-4af9b1718a0206bbe016cb00
     resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-85fc21a7b778685b168d8d3b
+    resource: repo://scripts/__tests__/ci-status.test.mjs
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-91fe8d515f906bfe802750e0
     resource: repo://scripts/cd/health-probe.sh
   - id: openwiki-source-3e6437aecf987ee671b546b4
     resource: repo://scripts/cd/rollback.sh
+  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
+    resource: repo://scripts/check-komodo-sync.mjs
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-48b430e61b4404a6e7b22c10
     resource: repo://specs/023-forgejo-cicd/HANDOFF.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }

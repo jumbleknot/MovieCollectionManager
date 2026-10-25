@@ -51,10 +51,14 @@ sources:
     resource: repo://scripts/object-store-migration.mjs
   - id: openwiki-source-8d48276c31ac9a4e5887d2ca
     resource: repo://scripts/object-store-migration.sh
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-2470b658ec43d754a7fc16c1
     resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
+  - id: openwiki-source-db3aa5ac2ffb577a529916ad
+    resource: repo://specs/081-major-dependency-upgrades/plan.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0

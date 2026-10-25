@@ -7,6 +7,35 @@ tags: [production, mongodb, auth, security, upgrade, runbook]
 verified:
   - by: openwiki/0.7.1
     at: 2026-10-25T13:33:13.758Z
+sources:
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-a32b06ef0f76afb80af4d88a
+    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
+  - id: openwiki-source-a679e2e5a49381a72df446c5
+    resource: repo://docs/runbooks/prod-data-tier-auth.md
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
+  - id: openwiki-source-852cc196002c1a675baddf5c
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
+  - id: openwiki-source-91fe8d515f906bfe802750e0
+    resource: repo://scripts/cd/health-probe.sh
+  - id: openwiki-source-f7c18c5bafd858a90cb17c5d
+    resource: repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md
+  - id: openwiki-source-2d334ad195e0817c343e894d
+    resource: repo://specs/026-prod-data-auth-vault/tasks.md
+  - id: openwiki-source-2ffebe6972c17fbcc2a83423
+    resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-2e26935bed37e1316dc175a0
+    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade

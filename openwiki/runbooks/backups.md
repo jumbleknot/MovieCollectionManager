@@ -1,12 +1,66 @@
 ---
-type: "Reference"
+type: Runbook
 title: "Per-user collection backups (scheduled & on-demand)"
+description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
+resource: docs/runbooks/backups.md
+tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-25T16:15:01.685Z
+sources:
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
+    resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-2335f107cbd84a8f7aed9777
+    resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
+  - id: openwiki-source-dc9c673c8dc973e1e621fa45
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-1f97e5240572ea9ecae44ac5
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
+  - id: openwiki-source-8b28b8f7ca849a6400dddf6f
+    resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
+  - id: openwiki-source-8ff4ea0c4e9c1b88a4c0eee7
+    resource: repo://frontend/mcm-app/src/bff-server/audit-sink.ts
+  - id: openwiki-source-f3703151c1ce1fae30ed6c7b
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-driver.ts
+  - id: openwiki-source-c22d81a0331031d61ad2c7e3
+    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
+  - id: openwiki-source-e37e5da5fa7401fdb7992219
+    resource: repo://frontend/mcm-app/src/bff-server/backup-job-store.ts
+  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
+    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
+  - id: openwiki-source-47daf7df6853f8ba4f64564a
+    resource: repo://frontend/mcm-app/src/bff-server/backup-retention.ts
+  - id: openwiki-source-284b2b399a6eebffc24d3e93
+    resource: repo://frontend/mcm-app/src/bff-server/backup-runner.ts
+  - id: openwiki-source-0ff64644c3a9837917af5e5d
+    resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
+  - id: openwiki-source-3bf0ad96857ee228607b018c
+    resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-b84c2ebda1fa9702c5fd6055
+    resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
+  - id: openwiki-source-53aa23c014c1f05d94e82617
+    resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
+  - id: openwiki-source-77b77a1d89a52ebe7205f42b
+    resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
+  - id: openwiki-source-f873d74e3a5ee524df98c4b4
+    resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-864993a079e6e4df052ac4ea
+    resource: repo://scripts/gen-ci-env.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
+  - id: openwiki-source-c1c739d605caccb56fa33851
+    resource: repo://specs/073-scheduled-backups/spec.md
+  - id: openwiki-source-511cf70d08e685e1be0170b8
+    resource: repo://specs/083-backup-consent-session-isolation/spec.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T16:15:01.685Z" }
 ---
-
 
 # Per-user collection backups (scheduled & on-demand)
 
@@ -83,7 +137,9 @@ this page distills the load-bearing gotchas an operator needs before touching th
   Pruning on the failure path would turn "today's backup didn't happen" into "and yesterday's is
   gone too." Separately, a prune failure never fails the run — it is recorded on its own
   (`pruneFailureReason`, distinct from the run's `failureReason`) because the backup the user
-  asked for still succeeded.
+  asked for still succeeded. Only keys matching `<basePath>/<jobId>/<iso>.json.gz` are ever
+  deletion candidates, so a file the user keeps at the same destination is never touched, even
+  inside the job's own folder.
 - **Revocation ordering on disable/delete is revoke-at-Keycloak-first, forget-locally-second.**
   Reversed, a failed revocation would strand a live, non-expiring offline token with no local
   record left pointing at it to retry the revoke. `tearDownUserBackups` (in
@@ -111,6 +167,14 @@ this page distills the load-bearing gotchas an operator needs before touching th
   [Secrets management](../invariants/secrets-management.md) for the broader redaction posture and
   [Auth chain](../invariants/auth-chain.md) for how the offline-token grant fits the rest of the
   BFF's session/token model.
+- **A missing backup destination makes the feature's integration suites SKIP, and a skip reads as
+  a pass.** The two real destinations live in their own compose file rather than the default stack,
+  so the suites are written to skip when `BACKUP_TEST_S3_SECRET_KEY` is unset. Run them with
+  `MCM_REQUIRE_BACKUP_TARGETS=1` **alongside** `MCM_REQUIRE_LIVE_STACK=1`: the flag converts the
+  skip into a hard failure that names the missing input, and the jest preflight then also probes
+  both destinations. Watch the skip count, not just the exit code. Bringing the destinations up and
+  running the tiers are in [Local dev infrastructure & environment variables](./local-dev.md) and
+  [E2E testing](./e2e-testing.md).
 
 ## The consent runs on its own Keycloak client (feature 083)
 

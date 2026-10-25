@@ -11,6 +11,8 @@ sources:
     resource: repo://backend/mc-service/src/api/router.rs
   - id: openwiki-source-c24ab349f92ee5be03f5048a
     resource: repo://backend/mc-service/src/application/access_control.rs
+  - id: openwiki-source-16c2f372398849e8eff53877
+    resource: repo://backend/mc-service/tests/integration/common/mod.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-e201e686a785f09b6d899f0b
@@ -29,8 +31,20 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-2d7a83a560ab6dec0daf8651
+    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-fe13721a7608b6a93a9e93f2
+    resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
+  - id: openwiki-source-7459d01be6fee66a2e45ca1c
+    resource: repo://frontend/mcm-app/tests/integration/backup-driver-webdav.integration.test.ts
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
+  - id: openwiki-source-60cf9a830f0ca275ffed94d7
+    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-18dcf2373667222e1bc520c1
@@ -41,6 +55,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
   - id: openwiki-source-864993a079e6e4df052ac4ea
     resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2

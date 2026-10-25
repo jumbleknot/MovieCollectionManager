@@ -35,6 +35,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
   - id: openwiki-source-3962f527ba083cef06c1e6a6
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
@@ -121,6 +123,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/route-coverage.integration.test.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
+  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
 verified:
   - by: openwiki/0.7.1

@@ -15,6 +15,8 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
     resource: repo://infrastructure-as-code/docker/observability/compose.yaml
   - id: openwiki-source-7ad99116ef3a9756b7c06307
@@ -29,6 +31,8 @@ sources:
     resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
     resource: repo://scripts/__tests__/infra-image-scan.test.mjs
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
   - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
@@ -51,6 +55,8 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-0a3ed93b2a41764b679ff58d
     resource: repo://security/infra-images/severity-map.yaml
+  - id: openwiki-source-2e26935bed37e1316dc175a0
+    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
