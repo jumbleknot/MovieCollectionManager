@@ -180,3 +180,33 @@ client-supplied header.
 → origin `http://…` (expected `https://…`), with and without `X-Forwarded-Host`. The two that keep `http` pass already.
 **Verify GREEN**: all cases pass, and `bff-server-adapter.test.ts` stays green. After the deploy, enabling a
 schedule in prod reaches the Keycloak consent screen, then T008's sign-in survival test.
+
+### T011 — Switching scheduled backups off must clear the schedule and give the permission up (item #843, added 2026-10-25)
+
+**File(s)**: `frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx`,
+`frontend/mcm-app/src/hooks/use-backup-jobs.ts`, `frontend/mcm-app/src/app/bff-api/backups/jobs/[jobId]/index+api.ts`,
+`frontend/mcm-app/src/app/bff-api/backups/consent+api.ts`, `frontend/mcm-app/src/bff-server/backup-job-store.ts`,
+`frontend/mcm-app/src/bff-server/unit-tests/backup-schedule-off-routes.test.ts`,
+`frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx`.
+
+Measured in production after T010, three defects against feature 073 FR-023/SC-012:
+
+1. **The switch never turned off.** The screen sent `{ schedule: schedule ?? undefined }`; JSON drops an
+   `undefined` field, so the PATCH body was `{}`, which the route reads as "leave the schedule alone".
+   Only an explicit `schedule: null` clears it. Fix: send the value through unchanged, and type the
+   hook's patch so `null` is expressible.
+2. **Nothing revoked on disable or delete.** FR-023 requires disabling a schedule or deleting the job to
+   revoke the standing permission at the identity provider. `revokeIfNoScheduleRemains` existed and was
+   integration-tested, but no route called it — the screen's comment "the server decides" described
+   code that did not exist. Fix: PATCH (schedule cleared or job disabled) and job DELETE call it after
+   the store change; an identity-provider refusal answers 502, as the consent DELETE already does.
+3. **"Withdraw permission" left the schedules on**, so the screen said "Scheduled backups are switched
+   off" over a switch reading On, and the next due run would fail (fail-closed, FR-024, but every
+   night). Fix: after a SUCCESSFUL revocation, clear every schedule the user has. A refused revocation
+   keeps them, so nothing is claimed that did not happen.
+
+**Verify RED**: `backup-schedule-off-routes.test.ts` fails on the PATCH-null, PATCH-disable, PATCH-502,
+job-DELETE and withdraw-clears cases; the screen test fails with the PATCH body `{}`.
+**Verify GREEN**: both pass, the mcm-app unit suite and lint stay green. After the deploy, in prod: turning
+the switch off leaves it Off after a reload, logs `backup_schedule_disabled` then
+`backup_schedule_consent_revoked`, and the next-run line disappears.

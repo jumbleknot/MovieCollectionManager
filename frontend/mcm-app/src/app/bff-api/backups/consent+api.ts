@@ -19,6 +19,7 @@
  * user — so a callback can only ever complete the consent that that same user started.
  */
 import * as offlineToken from '@/bff-server/backup-offline-token';
+import * as jobStore from '@/bff-server/backup-job-store';
 import {
   withBackupRoute,
   json,
@@ -136,6 +137,10 @@ export async function DELETE(req: Request): Promise<Response> {
       }
       throw err;
     }
+    // Spec 083 T011: with the permission gone no schedule can run (FR-024), so none is left on —
+    // otherwise the screen reports scheduled backups off over a switch still reading On. Only
+    // AFTER the revocation succeeded: a refusal above returns first and changes nothing.
+    await jobStore.clearSchedules(userId);
     return json({ granted: false });
   });
 }

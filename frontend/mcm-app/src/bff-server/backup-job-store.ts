@@ -293,6 +293,30 @@ export async function deleteJob(userId: string, jobId: string): Promise<boolean>
 }
 
 /**
+ * Switch every one of the user's schedules off (spec 083 T011, FR-023).
+ *
+ * Called once the standing permission has been withdrawn. A schedule left on after that could
+ * only ever produce a failed run (FR-024), and the screen would be telling the user their
+ * backups were off while showing them a next-run time. The jobs themselves stay: they still
+ * run on demand, and they still own the versions at the destination.
+ */
+export async function clearSchedules(userId: string): Promise<number> {
+  const jobs = await getBackupJobsCollection();
+  const scheduled = await jobs.find({ userId, schedule: { $exists: true } }).project({ _id: 1, enabled: 1 }).toArray();
+  if (scheduled.length === 0) return 0;
+  await jobs.updateMany(
+    { userId, schedule: { $exists: true } },
+    { $set: { updatedAt: new Date().toISOString() }, $unset: { schedule: '', nextRunAt: '' } },
+  );
+  // The same per-job transition event updateJob emits, so the audit trail reads the same
+  // whichever way a schedule was turned off.
+  for (const job of scheduled) {
+    if (job.enabled) logger.audit('backup_schedule_disabled', { userId, jobId: job._id });
+  }
+  return scheduled.length;
+}
+
+/**
  * Copy the newest run's summary onto the job.
  *
  * DENORMALISED on purpose: the list view shows every job with its last outcome, and without
