@@ -535,31 +535,57 @@ own PR. **Release-age cooldown overridden by the operator for 4.68.0 only (2026-
 images, so the hand pin needs no config change and no release-age exclusion is added anywhere. Per ADR-0002
 §4 the prod trace store need not survive, so rollback is a digest revert plus a volume recreate.
 
-- [ ] T085 [US8] Premise: scan the exact 4.68.0 index digests (web `b29c245d…`, worker `f3afef57…`) through
+- [x] T085 [US8] Premise: scan the exact 4.68.0 index digests (web `b29c245d…`, worker `f3afef57…`) through
   the gate's own pipeline (`node scripts/infra-image-scan.mjs --image <ref>`, Trivy 0.74.0 via the shim in
   `docs/runbooks/infra-image-scanning.md`). **Done when**: on both images, next GHSA-2464-fhr4-w9xw and
   GHSA-673q-mjm6-r5xr are absent, and the only blocking findings are CVE-2026-114406 (ca-certificates, both)
   and CVE-2026-114139 (`@sentry/nextjs`, web). **Any NEW blocking finding stops the story** for an operator
   decision; it is not allowlisted here.
-- [ ] T086 [US8] **Verify RED**: move all four refs (`observability/compose.yaml` and `compose.prod.yaml`, web
+  **Outcome, 2026-10-25 — premise holds**: index digests re-resolved the same day (`docker buildx imagetools
+  inspect`): web `sha256:b29c245d72ab…`, worker `sha256:f3afef571845…`. Trivy 0.74.0 (container shim, ghcr DBs),
+  the gate's own orchestrator: web 197 findings / **2 blocking** (CVE-2026-114406 ca-certificates
+  2025.2.80_v9.0.305-91.el9; CVE-2026-114139 `@sentry/nextjs` 10.64.0); worker 198 / **1 blocking**
+  (CVE-2026-114406). No `next` finding of any severity on either image. No new blocking finding.
+- [x] T086 [US8] **Verify RED**: move all four refs (`observability/compose.yaml` and `compose.prod.yaml`, web
   and worker) to `4.68.0@<digest>`, leave `security/infra-images/allowlist.yaml` untouched, and run
   `node scripts/check-infra-image-findings.mjs` on each image's T085 report.
   **Expected RED**: fails. The entries are keyed `4\.56\.0`, so they are out of scope for the new refs, and
   CVE-2026-114406 (and CVE-2026-114139 on web) report as blocking.
-- [ ] T087 [US8] Allowlist at the cause: DELETE the two `GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr` entries
+  **Outcome, 2026-10-25 — RED as expected**: web `✗ … 2 un-allowlisted fixable Critical finding(s)`, worker
+  `✗ … 1 …`, exit 1 each, with the allowlist byte-identical to `main`.
+- [x] T087 [US8] Allowlist at the cause: DELETE the two `GHSA-2464-fhr4-w9xw|GHSA-673q-mjm6-r5xr` entries
   (discharged by next 16.4.2); RE-KEY the CVE-2026-114406 (web, worker) and CVE-2026-114139 (web) entries
   `4\.56\.0` → `4\.68\.0`, with the same expiry and a re-key note appended to each justification (the PR #836
   otel-lgtm precedent). Correct the stale "deliberately pinned on 8.0.8" comment for mongodb (9.0-ubi9 since
   PR #817). **Verify GREEN**: the gate passes on both reports with 0 unmatched entries, and
   `node scripts/allowlist-expiry.mjs` reports the same expiry dates as before.
-- [ ] T088 [US8] Guards: `renovate-workflow.guard.test.mjs`, `langfuse-postgres-shared-pin.guard.test.mjs`,
+  **Outcome, 2026-10-25 — GREEN**: 2 entries deleted, 3 re-keyed (expiry `2026-11-20` kept), mongodb comment
+  corrected. `check-infra-image-findings.mjs` exit 0 on both reports (`✓ Infra-image gate passed`), and
+  `--check-expiring` (the weekly sweep's mode, which reads `allowlist-expiry.mjs`) exit 0 with no UNMATCHED,
+  EXPIRING or EXPIRED entry: the warning window still opens 2026-11-06.
+- [x] T088 [US8] Guards: `renovate-workflow.guard.test.mjs`, `langfuse-postgres-shared-pin.guard.test.mjs`,
   `langfuse-v4-read-path.guard.test.mjs`, `no-minio-references.guard.test.mjs`, `infra-image-scan.test.mjs`.
   The `langfuse` Renovate group (packageRule 34) matches by name with no version, so it needs no edit; record
   that, rather than a cosmetic change. **Verify GREEN**: 0 failures, 0 skipped.
-- [ ] T089 [US8] Local: `pnpm nx up-observability infrastructure-as-code` on 4.68.0. **Done when**: both
+  **Outcome, 2026-10-25**: the five named files 197 pass / 0 fail / 0 skipped; every
+  `scripts/__tests__/*.guard.test.mjs` 474 pass / 0 fail / 0 skipped (real `pnpm install --frozen-lockfile`
+  in the worktree, not a symlinked tree). `renovate.json` unchanged: packageRule 34 (`langfuse` group) and
+  the major-approval rule are name-based and carry no version.
+- [x] T089 [US8] Local: `pnpm nx up-observability infrastructure-as-code` on 4.68.0. **Done when**: both
   containers run 4.68.0 healthy, the web UI returns 200, the web and worker logs show the 4.59–4.61
   migrations applied without error, a trace from an agent turn appears via the public API, and the worker log
   shows it processed.
+  **Outcome, 2026-10-25 — the upgrade path, not just a fresh start**: the dev stack (the `up-observability`
+  compose command) was first brought up on **4.56.0** and an agent turn traced (`ecc57560…`), then web and
+  worker alone were moved to 4.68.0 on the same volumes. Health `{"status":"OK","version":"4.68.0"}` after
+  9 s; Prisma applied 11 migrations (460 total, incl. `add_audit_log_staging` and its failure columns);
+  ClickHouse migrations `52 create_audit_logs`, `53 add_skill_observation_references`, `schema_migrations`
+  53 / dirty 0; **0** error/warn lines in either container; every worker queue executor started. A new turn
+  (`6460979c…`) read back via `GET /api/public/v2/observations` within 3 s, and BOTH traces sit in ClickHouse
+  `events_core`, written by the worker's ClickhouseWriter (logged 00:30:05, the flush second); October history
+  still readable. `/auth/sign-in` 200, `/` 200. The turn is a real model call (Ollama `qwen2.5`) through the
+  gateway's own `build_langfuse_handler`, not a full graph run through the BFF: that needs the priced
+  provider or the full agent stack, and the ingestion mechanism is the same.
 - [ ] T090 [US8] Prod (a merge is the deploy): operator-run pre-merge backup per
   `docs/runbooks/prod-control-tower.md` → merge pinned to the head → `chore(cd): promote` → operator post-deploy
   checks: UI 200, worker healthy, a trace lands. **Rollback**: revert the digests and recreate the Langfuse
