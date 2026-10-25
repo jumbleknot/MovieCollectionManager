@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:aa033de807edd03c445daebbacb3c600403dc1561e77d7c3042b810fc7b47488",
+  "pageVersion": "sha256:58db8ab42eba79425562244def1d5f2e6c5b96102b6835e8c6477a7e0e04f70d",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -405,7 +405,7 @@
           "version": "repo-lines-v1:sha256:bc2ba736c47c667af19f64d590ad708eef9b655949aa3bb83fe285e165132a71:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGU3ZDNkZjgwY2RkYmFhYjkyYTlkZWVjY2EyMzM3MmY4OTk1OGYwZGU0NDBiMDAxMTc2MDQ3OGU5NWEzYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzgyYmI1NDg5ODRjMTA2ODVlZTcyMGRkZTU0MTY1YmFhMmM4MWVjYWYzZWE5MDBiOTc4YTc1MTdjZTM2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzNjNmI3MjBlMzU3MWQwMjRjZmE5NjkyNGYwMzU1YzNhZTMxMGViMmZkOTFmMTI4Y2Y2NjQ1NDMzMGY0NDUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L154-L168",
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L160-L174",
           "version": "repo-lines-v1:sha256:10057f2bc65bff64d8d2d36b37309f0f9a5a246885e25d2a925f077504147c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjk4YzI1MDE0YjNkMDc3NmQzZDc0MWI2MTU3ZmJjMGQ1ODRhMWVjNGQyNjI2MWMyNTUwZWEwOWM4YWQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWE3OWUxMjRmNzliYzNmYTNhYzIzODI0NTZiMWUwYjIxMjc1Y2EzYzkxYjJmNmViZjdhZmRlYjlhOWU3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
         }
       ]
@@ -444,7 +444,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
-          "version": "repo-file-v1:sha256:f034f46e459254ae473fc9989040a11b15601c5a66450fd417f0b8e00686d560"
+          "version": "repo-file-v1:sha256:ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f"
         }
       ]
     },
@@ -501,10 +501,34 @@
           "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
         }
       ]
+    },
+    {
+      "id": "claim_c3ab8e1066754343b326ce71a17c2639",
+      "statement": "The `machinectl shell <user>@` requirement is not confined to bring-up: `systemctl --user` and the rootless `docker` CLI both need that user's systemd session (`XDG_RUNTIME_DIR`, its D-Bus, and the daemon's socket), so every later operation as `prod` — stopping the Nx-cache service, bringing a compose up, enabling a user unit — goes through `sudo machinectl shell prod@` rather than `sudo -iu prod`, which creates none of those and leaves `systemctl --user` failing and `docker` unable to find the daemon.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L216-L233",
+          "version": "repo-lines-v1:sha256:342f65ab660605e5d10e85ab8e82e2e99f83bf19ccab30da1a7a6acf342eebc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNTZiZGRkMzZhMWQ1MDdkY2IwNjgyMTc0NzI3YjkyZWYwNTBkMWU4NmYxMjQ1NzU3Yzc0MjU0ZDgyMzcyYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNjI4MDcyYTBkNTI4NmIyYjJiNzkzNmUzODNiODNmMGU5YjZiOWU0YmVkM2RiNTBiZDc1MjIyM2U0NjFhMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MDZjOTUwNTI3NjRlNjVmNjU4YzE4NzkxMDMzZjNjODU2MzYwZTY4NmI1MWEyYWFkMWE1NzI2OTk5MDEzOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxN2Q0OTQ2YjFiMjYyYTA0ZWY2N2ZkNDkyNjg4YWQ3MDZhNWI4NzdkNzU1OWRmMDg4M2VhMGZiMDNiYmU4ZTQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L223-L231",
+          "version": "repo-lines-v1:sha256:c01d6431b23385e49815af0eeeaf0868ef3f2f134d18c3049c410bb8d7f6ffb4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk3MTM0Mzk2ODI4NzYzNWQyZjFmMzQ2YjcwYzY5NDhiMmY2NTY2YTJkZmQyZjI1YzljZmI1NDMxMjAwMTRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFjMjA2NjQ2YWMwYzU2YjBjNjZiNTRkMTY4ZjBlZmVlZTgxZWE5NGZmMmM3MTM4YjU0N2U5OWJjNWMwMTI4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWEwNGY4ODE0NjZiNjBhOWIxZDQ3ZGYwYTY2N2ZjZGRmOWZiYzJjZDBjMjJlMTgzYTM3NDAzYzIwODdiM2QxMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_49f4ede88bfd45d8915d3b8011fc2629",
+      "statement": "The host backup script's dump list is the part of Phase 14 that must grow with the host: the original script captured only Forgejo, Komodo and the object-store/cache config directories and no application database at all, so a reboot that corrupted Forgejo's Postgres left Forgejo the only stateful service with a real backup. The standing rule drawn from that incident is that whenever a stateful service is added its dump must be added to `backup.sh` — the same obligation that put the Nx-cache store's config directory on the `restic backup` path list.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1059-L1069",
+          "version": "repo-lines-v1:sha256:32e20f68b79fe42bfa59b1d7cb5f4e57d23fe66ee6ff9da4e19175697b14b6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZjQ3ZGI5NDFmNTdmOTM4ZDZkZjRlZWVlZTFhZTM1OTRhMzkyYzk2MDVkOTIyZGI5MWVlZmMxMmVjNWYwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDVkNjljM2VhZTFkNmNjYmIxMTY1NTU0NjM4OWY5NmRjYmJhNDk0ZDUyN2I3NjMyYzY1Mjg5OGEzMWQ1ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NzhkMmM1ODVjNTc2M2Y4YmQ4Y2ZlN2M5MGE0ZDY2NDEwMTE5NWYxOWNkYmI3ZDEwMGIwZjUzMmIzMWI3ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmY2NmNTI0YzQ3M2IzOTZkZjJmZDUxYzA1MWY2YzA0OGMwNzg4YmEyNDI4YTYxNDU0ZTVjZTg5NDRkYmFmODUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-21T23:48:47.665Z"
+    "at": "2026-10-24T23:24:20.987Z"
   }
 }

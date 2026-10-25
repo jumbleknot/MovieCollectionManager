@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2add33e3006f9c19dc9aeeb1d398a802b80fa497fda128446047a13b89bfe443",
+  "pageVersion": "sha256:e2b7648b36d61eab1dbb8e1c051f226fd9a356244c99f588226bf7ef604cfc85",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md",
-          "version": "repo-file-v1:sha256:612ddb4194b7f339affe519bf3e90f0fe8eaa8381747c2f58554ae7ec7cd7163"
+          "version": "repo-file-v1:sha256:edf226b45effb67e38a88c13cd8a7810113cfa0c3c8ca49da19942fec0d8c8db"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
@@ -214,11 +214,11 @@
     },
     {
       "id": "claim_f57c7afef63940d4a394c23c87d146b1",
-      "statement": "Upgrade verification is a set of operator-run comparisons: container state plus the single `mongo-data-owner` re-own log line and the startup FCV line, per-collection counts diffed against the pre-flight files, index lists diffed after restarting `mc-service` and `mcm-bff-service` so their index passes run against 9.0, and a real app pass that opens the backup settings to trigger the BFF's lazy index pass.",
+      "statement": "Upgrade verification is a set of operator-run comparisons in the runbook's §6.3: container state plus the single `mongo-data-owner` re-own log line and the startup FCV line, per-collection counts diffed against the pre-flight files, the movie store's index list diffed after restarting `mc-service` so its index pass runs against 9.0, and a real app pass (sign in, page, search, open the backup settings — which is what triggers the BFF's lazy index pass) after which the BFF index list is diffed.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L435-L476",
-          "version": "repo-lines-v1:sha256:bf4294406223333efba9d4a120b017219115e635ebaa2d78a7cb87d8139365da:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2FhNzBjMzVjMjhjMThlOWNkMGY2ZDVkMzgzMTkyZDMzZTY5ZTM4NzQ3NWZlNGFlZjFiNjIyOTk1MTQ0ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUzOWZlZjFmNjU3Yzc3ZDNmOGVjZjAwNTc3NzEzMmYzMTk3M2M3MjNhNWUwMjVmNWI2NzhhNzRkOGFkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhN2YyMGExMTljMzEyMzI0YWY1YWRjN2U3ZDczZTY3NTA2YmU1YmNmMWM0NjYzNDdhNWQxN2UwNGY4YThlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzg0YWE1ZTJiYTIyMTJjYjJmZWE4OGMxZmIwNzk5ODA2NzdkZDg1MTRhNjk5NjE2YWZmN2Q0M2NiZWYyODEifQ"
+          "version": "repo-lines-v1:sha256:3a656940df2f520b5778021487d59a407c6e545fc1cfaa49c47f77ed5d1f581d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2FhNzBjMzVjMjhjMThlOWNkMGY2ZDVkMzgzMTkyZDMzZTY5ZTM4NzQ3NWZlNGFlZjFiNjIyOTk1MTQ0ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUzOWZlZjFmNjU3Yzc3ZDNmOGVjZjAwNTc3NzEzMmYzMTk3M2M3MjNhNWUwMjVmNWI2NzhhNzRkOGFkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhN2YyMGExMTljMzEyMzI0YWY1YWRjN2U3ZDczZTY3NTA2YmU1YmNmMWM0NjYzNDdhNWQxN2UwNGY4YThlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzg0YWE1ZTJiYTIyMTJjYjJmZWE4OGMxZmIwNzk5ODA2NzdkZDg1MTRhNjk5NjE2YWZmN2Q0M2NiZWYyODEifQ"
         }
       ]
     },
@@ -256,19 +256,23 @@
     },
     {
       "id": "claim_3d33dafddae24121b5838519edbaa595",
-      "statement": "The upgrade's premise, rehearsal and measurement record — supported direct 8.0 → 9.0 path, FCV prerequisite, server-9.0 support of both drivers, the digest re-resolution, the uid blocker and the kernel blocker/discharge — is recorded in specs/081-major-dependency-upgrades/research.md R8, under ADR-0002's stateful-major discipline of premise first, an explicit data decision and rollback by tested restore.",
+      "statement": "The upgrade's premise, rehearsal and measurement record — the supported direct 8.0 → 9.0 path, the FCV-8.0 prerequisite, server-9.0 support of both drivers, the digest re-resolution, the uid blocker and the kernel blocker and its discharge — is recorded in specs/081-major-dependency-upgrades/research.md R8, under ADR-0002's stateful-major discipline of premise first, an explicit data decision and rollback by tested restore.",
       "evidence": [
         {
           "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md",
           "version": "repo-file-v1:sha256:37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347"
         },
         {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L221-L229",
+          "version": "repo-lines-v1:sha256:54b939e7f1a6aeb7e823deb6f5bb431c37278e827c1401cae59c0ddd777e2576:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGEwNTY2MWFhOGJjMWEwNzg3ZDJkODY2MzhkODhhOWI3YjAxNmQxZjIxZWVmMjBhZDc1NjZiNDU5NDBhOTE5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZmYTAzYTUzMTFlNjBmYWI1YmEwODYyYjczYTA3YzI1YmUwNzMzMGIwNjg2M2E3NDNmOTQ4NjJkZjIwOWY1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzJiNmU3ZjY2NDQ1OTY5NzE2NDczY2NlZDk0MmEzZjE1ZDMwYWIxNDhmYjkyMjEwOWZkYWYwZjJkOTM1MTJkYSJ9"
+        },
+        {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md#L339-L393",
           "version": "repo-lines-v1:sha256:10a1ba18a08a983c7071c30de1ac996317a691089c0dd2d3ebac9736f8862298:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MGFmOWI1MGY4MTM0MWM1NDRkZDc5ZmNiOWY5M2RiMTJkODdkMWZlMGU2N2RiOWZiZWUwY2Q1NTFjMTQ3ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ODU1NzBhOWExZDJjNTRjM2M0MjI4MThjYmU4MWRhNWY0ZTBjNTAyMDlhMjVhNGQ0YzY4MTk4MjdjOGY5NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwYzNiNjQ4ZTIxMWUxNzFjNTY4ZmRhYjE0N2YyMzY3ZGZlODY1Y2E5NmMwNjI1ODdmMDc0OTVkODk1MTYxODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyODhmZDVjYzYxMzJlNGUyMmZiYTQxMjM4Mjg5ZDliNzBhNWVmN2VkM2FjOGU3ODcyYWExMGM5MDA5ZDdlNTQifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L426-L476",
-          "version": "repo-lines-v1:sha256:ae8e4d0cd8e796604cb6a13aff0d165966b49b08769dadb117e773e03a8dad6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YjExNGE2NGRmNzQ3ZWFmYzVhNzU1ZGE2MzQyNjcyYzg5OGFjNTg2Y2Y4MTE2NmNmZmM5YTMwYWEwMDJhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MDhiZjE4YzEwMWVmNWFlNWY1ZjE4ODdhOGI0NTQ2NmQ4MjA1NjdkZjRiZjc2MjJmZjgzYWFhYjZkODg4MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NWIwMGU5MGM2Zjg4OGQ1MmJhMTE2MTVjOWQ3NmYzM2NmN2M5YWEyODVmNDRjYTdkZTgzYjcwN2RjMzk2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L564-L595",
+          "version": "repo-lines-v1:sha256:f7ec27c637c54275a752166ff95657a48c36cdc279b0096bddb124ba693dd096:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZDdjYzFlZjc3NzZmOWU3NTcwMTE1YjBiMzZlZWVjM2VjYjBjMDllNDI3M2JmMzc0NjA0ZGE4N2M3N2E2OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWNiZGNmOThjYjQ2NjI3YTAwNDY5MDdkYzg0NzBiMThlYzZiY2EyNTc3NDA5M2I5NTUyZTUwZmE5N2EyOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MWUyNDZjZDMwNmI3NTNmNmJiMjJhMTExNjYxZTlhNGIzMmU0ZDMxNGIzZTA0YWQ1ZTg2N2IzMWFiZThiNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwOGI3MThiOWY0MjVjMDRkOTFlYzk0NTI4MWQ2ODk5OTkwMmEyMGEyZGFjMzdiNmJmMmE1ODM5MjhmMDEwOGEifQ"
         }
       ]
     },
@@ -289,10 +293,24 @@
           "version": "repo-lines-v1:sha256:7fc56af5f3f94afe382607892ce3354f13493b7dd932b3b822a2e6bd52b954fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JlZTVkMGYxNjZlZTViMDUzNWY2M2U3NDE1YTYzMGQxNDUwMmY5NzQ3NmMxMTJlNTc3MTM4MGIzY2EwNmZmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA1MGFjNWYwN2Y0ZDQ2YjFhM2NhOTA3NGM2NjY4YzU0YzliNTJlMTM5ODU1OWUyYmE1N2M3MzlmNGMwZjM5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc5N2Y4YTJiZTkyNTkxMzljMDNhNDE0MWM2NmRiODhlZDBiYjI5YjU2OTNjZmFhNWRlMmFkYTBiNGI4MmMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY1NjEyZTI0NTk0NjVkN2NmZTVhZjVjZGE0M2RkMTlmZmJiY2Y1ODgzMmE0MTQzOTJhMTRjNDE1MWMxNmFjMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_c1ced7fe61244bacbb307cb8704a1717",
+      "statement": "The kernel guard is not only a 9.0 problem: any MongoDB 8.0.x below 8.0.35 carries the same kernel check in its un-exempted form — it reads '6.19 and newer' with no Ubuntu carve-out — so such an 8.0 patch release crash-loops on the shared prod/CI host whatever kernel it runs.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L255-L264",
+          "version": "repo-lines-v1:sha256:3a9a444620e6146842ab0b5775029559c45c75a5e965823519776c4d98b7f330:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NDZjY2Y5NTM4N2I0ZjM5ZmE1ZmQyODcxODQzOTdhZjI1Mzc1NDU2NDQzODdmZDFiZGI4MmZlYjZjNGJhY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZDcyZGE3OTMxYjg5YmM1MzhhZDEzYTc2YTk2NDM5ZjU0MjQ1ZTZlZmQ3YzM4YWFlM2E3OGY4OTdlMGM4NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZTQ2N2VlMzZiNWFlZGQ0Njk0NDJjNTU2MDczNDdjYTU5YzAzNTlkNDllMzlhZWQ4ZTE0YWJkNmI4ZjU5YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MmRlZjg0Y2YzNmVmOTI0MDE0ZTMxNzVjYTUxNjMxNzAyNjk3NzU0YzhkM2JkOGM1MDcxYjQxYTkwMDZiNWMifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L593-L595",
+          "version": "repo-lines-v1:sha256:ff1e29df774108f554c1dd231f8e93f70274c3fafe0858c2aa5f296fdc7ad521:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU0ZTk1MWIxZDQ2MTYxOGE5MzJhMjQyNWUyODNlMzNiZWMxYmQ3M2U5N2I2NjEzYzc1ZGY0M2JjYzNjMTVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ1Y2JkY2Y5OGNiNDY2MjdhMDA0NjkwN2RjODQ3MGIxOGVjNmJjYTI1Nzc0MDkzYjk1NTJlNTBmYTk3YTI4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGUyN2FmNTNhOWIxMGUxNTdhOWMxYjM3MmUzMTUxN2U0N2FmMDA0Mjc3MTg4YjZhNmQ0NzBiODE3OGE4NjkwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjA4YjcxOGI5ZjQyNWMwNGQ5MWVjOTQ1MjgxZDY4OTk5OTAyYTIwYTJkYWMzN2I2YmYyYTU4MzkyOGYwMTA4YSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T20:35:10.714Z"
+    "at": "2026-10-24T23:24:20.987Z"
   }
 }

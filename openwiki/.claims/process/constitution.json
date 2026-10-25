@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:27c124280f608ec55a0295a70bfec645974cb8b6533cf1012e61754f20995ad0",
+  "pageVersion": "sha256:a3bb176ad41ecf3d91d745334eda20e1ae2092fd485e4c6afc5f1afb95347249",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:dc26eea3399a40411bb80b1770180416157c5a47d1ff2d58d584923a8020e8c2"
+          "version": "repo-file-v1:sha256:f78c6c986c7b616fd721df67a0d3d6a9b01ca61f6819b4a4267a99d8e2c765de"
         }
       ]
     },
@@ -197,10 +197,46 @@
           "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
         }
       ]
+    },
+    {
+      "id": "claim_1eb547fba38b4f9a95284aa061634055",
+      "statement": "Constitution compliance is operationalized per feature through a mandatory **Constitution Check** gate in every `plan.md` (the template's wording: \"GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.\"), which gives each principle a row with a status and how it is satisfied. Feature 081's plan is a worked example: it marks the Expo SDK line and the document-database image line as AMENDMENT REQUIRED, each naming the story that amends it, and marks the Tamagui line PASS because the constitution names that library but no version of it.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/templates/plan-template.md",
+          "version": "repo-file-v1:sha256:cc7f7979cf8d8836ec26492785affd80791d3422a2b745062ec695be8c985ef7"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
+          "version": "repo-file-v1:sha256:bceb259ae8aad796c81bb2a81446b53c179588f0d2913e682a845a8311359f53"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4ba87ea946548a1a866f33773eedd49",
+      "statement": "The constitution's unversioned \"UI / Design System\" line asserts Tamagui is \"wired runtime-only by default (the Tamagui babel/metro compiler plugins are optional optimisations)\", and that behavioural claim was inaccurate from feature 015 onward, which enabled `@tamagui/babel-plugin`. Feature 081 US10 restored the line's accuracy by code rather than by amendment: Tamagui 3 removed the Babel plugin, and its replacement `@tamagui/metro-plugin` 3.0.x was measured to lower some web modules to static class names without emitting their CSS while saving no bytes (entry chunk 1,881,353 B with it versus 1,881,066 B without, against the 2,000,000 B budget), so no Tamagui compiler is wired and `frontend/mcm-app/babel.config.js` runs no Tamagui plugin.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md",
+          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/README.md",
+          "version": "repo-file-v1:sha256:d6100c8a656aa551e5965dc037a010209b2ae17d73c98c222dcdfbba3a37a051"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/babel.config.js",
+          "version": "repo-file-v1:sha256:5ff74527b551f804587b61f91fb36b47a1bf78b1c68f7292ce9dafd1ac319ac2"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
+          "version": "repo-file-v1:sha256:bceb259ae8aad796c81bb2a81446b53c179588f0d2913e682a845a8311359f53"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T20:35:10.714Z"
+    "at": "2026-10-24T23:24:20.987Z"
   }
 }

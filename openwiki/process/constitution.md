@@ -6,7 +6,7 @@ resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-10-24T23:24:20.987Z
 ---
 
 # The governing constitution
@@ -54,6 +54,14 @@ is what actually ran. Neither redefines a principle, and each was drafted in the
 as the change it authorises, with explicit human approval. That same-PR rule is the constitutional
 reading of "documentation-first": a version the document names is amended in the change that moves
 it, never silently afterwards.
+
+Compliance is operationalized per feature rather than left to review. Every `plan.md` carries a
+**Constitution Check** gate — the template's wording is *"GATE: Must pass before Phase 0 research.
+Re-check after Phase 1 design."* — where each principle gets a row with a status and how it is
+satisfied. Feature 081's plan is a worked example: the Expo SDK line and the document-database image
+line are marked **AMENDMENT REQUIRED**, each naming the story that amends it, while the Tamagui line
+is marked PASS because the constitution names that library but no version of it. That gate is what
+turns "every spec and plan must comply" into a per-principle artefact a reviewer can check.
 
 Notable principle areas: AI Assistant Constraints (behavior-descriptive identifiers, no vibe coding,
 comments only for non-obvious rationale); Security (classification, PKCE-only auth via the BFF
@@ -113,6 +121,17 @@ version history.
   for it, so a Tamagui major is not a constitutional change; the version-named lines — the Expo SDK
   and native runtime, the database and runtime images, the toolchain — are. Read the line before
   assuming an amendment is required, and before assuming it is not.
+- **An unversioned line can still carry a behavioural claim, and that claim can be false without the
+  line being version-stale.** The same "UI / Design System" line says Tamagui is "wired runtime-only
+  by default (the Tamagui babel/metro compiler plugins are optional optimisations)" — which was
+  inaccurate from feature 015 onward, because that feature enabled `@tamagui/babel-plugin`. Feature
+  081 US10 restored the line's accuracy *by code*, not by amendment: Tamagui 3 removed that Babel
+  plugin, and its replacement, `@tamagui/metro-plugin` 3.0.x, was measured to lower some web modules
+  to static class names **without emitting their CSS** (lost gaps, widths, radii) while saving no
+  bytes — 1,881,353 B with it versus 1,881,066 B without, against the 2,000,000 B budget. So no
+  compiler is wired and `frontend/mcm-app/babel.config.js` runs no Tamagui plugin. A constitutional
+  line can be wrong about *behaviour* as well as about a version; check the config, not only the
+  version numbers.
 - **A version the constitution names can itself be stale, so the named line is not proof of what
   runs.** v2.7.0 had to record that the document-database image it had named since before
   (`8.2.6-ubuntu2204-slim`) was never the image the stacks ran — `8.0.8-ubi9` was — before advancing

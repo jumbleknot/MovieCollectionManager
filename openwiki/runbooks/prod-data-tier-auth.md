@@ -4,10 +4,9 @@ title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0
 description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade with its kernel precondition, uid re-own, FCV soak and restore-only rollback.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
-timestamp: 2026-10-25T12:00:00-04:00
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-10-24T23:24:20.987Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -197,7 +196,8 @@ throwaway 8.0.8 containers with no network and their own volumes, stops them cle
 9.0 on the same volumes — exactly what the deploy does — and diffs counts and indexes. The counts
 recorded before and after are the T059 evidence attached to the PR. The design reasoning behind the
 upgrade path, the FCV steps, the driver support for server 9.0 and the digest re-resolution is in
-[`specs/081-major-dependency-upgrades/research.md`](../../specs/081-major-dependency-upgrades/research.md).
+[`specs/081-major-dependency-upgrades/research.md`](../../specs/081-major-dependency-upgrades/research.md)
+R8.
 
 One known upstream issue is recorded rather than chased: SERVER-89953 says `listIndexes` may report
 `collation: {locale: "simple"}` on simple-collation indexes at FCV 9.0. It did **not** appear in the

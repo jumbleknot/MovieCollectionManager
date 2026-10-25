@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the five version ceilings that were discharged into approval gates rather than deleted (vault, opensearch, langfuse, the observability postgres, MongoDB), the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 sources:
@@ -48,7 +48,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
+    at: 2026-10-24T23:24:20.987Z
 ---
 
 # Renovate dependency bot
@@ -291,7 +291,20 @@ and Unleash — used to be the exception: it was hard-held below 17 so a postgre
 Unleash as a side effect, which kept it off this list entirely. Spec 081 US8b moved both databases to 18
 together, discharged that hold, and left that pin resolving exactly like keycloak's and agent-db's
 postgres, so no postgres is special any more — see
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md).
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md). MongoDB had a `<9` hard hold for one
+day (added 2026-10-23, item #819) and then the same treatment: spec 081 US8a removed the
+ceiling, moved every mongo pin to 9.0, and left the major-approval gate in its place, so 8 → 9 is now a
+tick like any other datastore major — see
+[prod data tier auth](prod-data-tier-auth.md) for the migration itself.
+
+MongoDB is also the sharpest example of what "how its data survives the move" means for an *image*
+major: 9.0's `mongod` runs as uid 1000 where 8.0.8's ran as 998, so a volume written by the older image
+is foreign-owned and 9.0 refuses to start (`Unable to read the storage engine metadata file …
+storage.bson`). Every MongoDB service that mounts `/data/db` now starts as root only to re-own that
+directory and then drops to the image's `mongod` user with `setpriv` before `mongod` runs; the
+`mongo-data-owner` wrapper is byte-identical in all four compose files and is covered by its own guard
+test, which executes it against stubs so the assertion is about what it does rather than how it is
+spelled.
 
 **Which credential does what (measured 2026-10-09).** Ticking edits item #29, which needs the
 issue-scoped token (`MCM_FORGE_ISSUE_TOKEN`). The `git credential fill` token answers `token does not
@@ -365,7 +378,7 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `hashicorp/vault` | **none** — a major now takes `dependencyDashboardApproval` | the `<1.19` ceiling ran 2026-08-30 → 2026-10-20 and is discharged: the refs moved to `2.2`, which scans with zero fixable Criticals (1.21 added two pgx ones on top of the libcrypto3/grpc pair), and the three `vault:1\.18` allowlist entries were deleted in the same change, so the scan gate alone now blocks a worse image |
 | `python` | `<3.15`, derived from `agents/movie-assistant/.python-version` | the interpreter minor is a toolchain decision, not a base-image sweep; the guard derives the ceiling from the pin for **both** managers and fails when they disagree, so raise them together |
 | `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
-| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's. Patches, minors and digest refreshes stay automatic |
+| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's; MongoDB's four-day `<9` hold (item #819) was discharged into this gate by spec 081 US8a. Patches, minors and digest refreshes stay automatic |
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
 | `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
 | majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
@@ -374,14 +387,15 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `test-renderer` | `/^1\.[0-2]\./` | feature 081 US5c: 1.3.x pulls `react-reconciler` 0.34, which peers on `react ^19.3`, and the workspace runs 19.2.3 (Expo-pinned); in its own group so the held member does not gate every routine npm bump batched with it |
 | `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
 
-**A hold can be discharged, and a discharged hold is replaced rather than deleted.** Four ceilings have
-now gone this way — vault (`<1.19`), opensearch (`<3`), langfuse (`<4`) and the `matchFileNames`-scoped
-observability postgres (`<17`) — and in each case the successor is a `matchUpdateTypes: ["major"]` +
-`dependencyDashboardApproval` rule, because the real requirement was "not by accident", not "never". A
-hold someone deleted and a hold deliberately discharged look identical from the absence of
-`allowedVersions`, which is exactly why the guard test asserts the successor gate and the reasoning, not
-just the missing ceiling. A discharged ceiling left behind is worse than a missing one: a stale `<17`
-blocks the version actually deployed.
+**A hold can be discharged, and a discharged hold is replaced rather than deleted.** Five ceilings have
+now gone this way — vault (`<1.19`), opensearch (`<3`), langfuse (`<4`), the `matchFileNames`-scoped
+observability postgres (`<17`) and MongoDB (`<9`, held for one day) — and in each case the successor is
+a `matchUpdateTypes: ["major"]` + `dependencyDashboardApproval` rule, because the real requirement was
+"not by accident", not "never". A hold someone deleted and a hold deliberately discharged look identical
+from the absence of `allowedVersions`, which is exactly why the guard test asserts the successor gate and
+the reasoning, not just the missing ceiling. A discharged ceiling left behind is worse than a missing one:
+a stale `<17` blocks the version actually deployed, and a stale `<9` would make Renovate propose a
+MongoDB *downgrade*.
 
 **The `java-jdk` ceiling is a regex on purpose, and that is the one hold shape worth copying.** This dep
 uses `semver-partial` versioning, and Renovate tries the dep's own versioning before npm semver:
@@ -559,6 +573,8 @@ test catches a key Renovate knows but ignores depending on where it is written (
 - [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why a
   database major waits in Pending Approval, and why `langfuse` takes its own `groupName` (and its
   explicit `prPriority` reset) rather than riding `docker base images`
+- [Prod data tier auth](prod-data-tier-auth.md) — the MongoDB 8 → 9 and observability postgres 16 → 18
+  migrations whose ceilings this page's approval gates replaced
 - [SAST and SCA scanning](sast-scanning.md) — the gate that consumes the semgrep and cargo-audit pins
 - [Wiki maintenance](wiki-maintenance.md) — the OpenWiki generator tree whose pins this repository
   groups as one `openwiki generator` PR

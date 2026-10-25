@@ -31,10 +31,10 @@ sources:
     resource: repo://scripts/check-topology-scrub.mjs
   - id: openwiki-source-8d48276c31ac9a4e5887d2ca
     resource: repo://scripts/object-store-migration.sh
+generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-21T23:48:47.665Z
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+    at: 2026-10-24T23:24:20.987Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -157,6 +157,11 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   containers cleanly before the runtime is killed, and UPS + NUT for power loss. The runbook warns
   explicitly that this host-level DR is not the same thing as the application's per-user collection
   backups.
+  - **The dump list is the part that has to grow with the host.** The original script captured only
+    the service config directories and no application database at all, so a reboot that corrupted
+    Forgejo's Postgres left Forgejo the only stateful service with a real backup. The standing rule
+    the runbook draws from that is that adding a stateful service means adding its dump — the same
+    obligation that put the Nx-cache store's config directory on the `restic backup` path list.
 - **15 — Wire the pipeline.** The trigger ordering, digest-by-git promotion and Komodo ResourceSync
   deploy; the current shape is documented in
   [CI/CD pipeline](../projects/ci-cd-pipeline.md) and
@@ -199,7 +204,11 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     not `sudo -iu`/`su`.** The setup tool needs a real systemd user session to install its auto-start
     unit; the wrong session type silently falls back to a manual-start mode that looks successful but
     does not survive a reboot. Ordering the rootless user manager after the tailnet daemon is an
-    optional defense-in-depth extra, not a substitute.
+    optional defense-in-depth extra, not a substitute. The requirement does not end at bring-up:
+    `systemctl --user` and the rootless `docker` CLI both need that user's session, so every later
+    operation as `prod` goes through the same `machinectl shell prod@` — see
+    [Prod reboot resilience](./prod-reboot-resilience.md) Part 6 for the host-operation rules that
+    depend on it.
   - **Subordinate UID/GID ranges must be exactly one, non-overlapping line per user.** `useradd -m`
     already assigns one, so normally there is nothing to do but verify; adding a second range manually
     creates an overlap that breaks rootless Docker's user-namespace mapping with an opaque `newuidmap`
