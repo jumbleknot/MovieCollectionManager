@@ -650,7 +650,7 @@ shows in the UI (`:19030`, over the tailnet).
 4. Revert the merge through a PR (as for US8b above), merge it, and let the deploy start 4.56.0 on the restored
    stores.
 
-Without a backup, step 2–3 become "recreate both volumes empty" (ADR-0002 §4): history is lost, nothing else.
+Without a backup, steps 2–3 become "recreate both volumes empty" (ADR-0002 §4): history is lost, nothing else.
 
 ## Capacity check (T013) — result (2026-07-03)
 

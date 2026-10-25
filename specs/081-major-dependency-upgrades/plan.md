@@ -350,8 +350,8 @@ rollback by tested restore.
   trace, worker processes it) → operator backup → merge (= deploy). The 3-day cooldown is overridden by the
   operator for 4.68.0 only; no release-age exclusion is added.
 - **Rollback**: 8a/8b — restore from the pre-move backup onto the previous digest (rehearsed locally before
-  prod). 8c — revert. 8d — revert the digests and recreate the Langfuse volumes (ADR-0002 §4: the trace
-  store need not survive), or restore the backup.
+  prod). 8c — revert. 8d — restore the pre-merge backup (or recreate the Langfuse volumes empty, ADR-0002 §4)
+  BEFORE the reverted digest starts: 4.56.0 crash-loops on a store 4.68.0 migrated (measured, T089).
 - **Exit**: SC-005 counts equal; scan green; holds updated.
 
 ### US9 — cargo

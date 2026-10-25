@@ -588,8 +588,8 @@ images, so the hand pin needs no config change and no release-age exclusion is a
   provider or the full agent stack, and the ingestion mechanism is the same.
 - [ ] T090 [US8] Prod (a merge is the deploy): operator-run pre-merge backup per
   `docs/runbooks/prod-control-tower.md` → merge pinned to the head → `chore(cd): promote` → operator post-deploy
-  checks: UI 200, worker healthy, a trace lands. **Rollback**: revert the digests and recreate the Langfuse
-  volumes (ADR-0002 §4), or restore the backup if history is wanted. **Done when**: post-deploy checks pass and
+  checks: UI 200, worker healthy, a trace lands. **Rollback**: stop web/worker, restore the backup (or recreate
+  the Langfuse volumes empty, ADR-0002 §4), THEN revert the digests; a revert alone crash-loops (T089). **Done when**: post-deploy checks pass and
   item #839's criteria are ticked with evidence.
 
 ---
