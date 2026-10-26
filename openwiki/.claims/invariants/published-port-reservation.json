@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e0cab715f275b45dc8f3cf2ea58a8b4de454fe4390c4d7cb2a11189c89529240",
+  "pageVersion": "sha256:be9b2c776f5ddd5d11201c5291f7791af53a228ce34564a0e988f9c92d0471f9",
   "claims": [
     {
       "id": "claim_c94970677b844011986b6c34aa1dac78",
@@ -158,7 +158,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -230,7 +230,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -252,7 +252,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -323,10 +323,74 @@
           "version": "repo-lines-v1:sha256:3a6d52f8a24356638c5f6aba1c1fa806b74d7e5ea40ac914d6994ae49fa8d2d4:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ2ZjI4YTRkZGNhYjJhMWI3MzYwYzU3MDIwYzE5ZjYyN2RlY2FhOTNjZmI1NmMzNTcxZjY3ZDg2ZWJjZDJlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVkZTU3Y2UyMGRjYjQ3OGQ2ZjRiMDYxMTNmY2I5Mzg4N2IyYzE4ZmYzYTk3ZDJkNzY5MzgzMWFkNTJlNDdiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFkNzQ0MTYyM2VmZTA2OTEyYjY1ZmE5ZTk5N2E3YTgyN2UxZDMxNTYxMDhiZjliMTFhM2E4OGMzNTEzNTI2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMwZTkwMTdkZTkxYmQ0NDFmY2VlNGQwYmU5ZDVhMWE1YzE4Nzg5MWY1NmZiMDlhY2IzZWVlMmJmMTE0ZDU1ZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_87d515f614bc4cf69ab39c43ce390466",
+      "statement": "A mechanical guard couples each prod stack's declared inputs to what its composes require: scripts/__tests__/komodo-stack-env.guard.test.mjs parses infrastructure-as-code/komodo/stacks.toml into one record per [[stack]] (name, run_directory, file_paths, additional_env_files, and the keys of its environment block) and asserts that every `${VAR:?}` in that stack's prod compose is supplied by the environment block or a committed additional_env_files entry — so a required Variable such as KC_HOSTNAME_ADMIN or TAILNET_HOST cannot silently disappear from the stack TOML while the compose still demands it. The guard strips comment lines before scanning (a `${VAR:?}` written in a `#` comment is not a requirement), and its second test deletes a live Variable to prove the check is not vacuously green.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L107-L132",
+          "version": "repo-lines-v1:sha256:b11d822dea7b0e50c602a47cec55ac153cd1b8c52005cbcee71f1afb0c2671b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYmQwOTE1ZGU2ZjZmNTM4YjkyNDUwMzI3NTBjNTEwOWQwMzUyYTJiYzgxMmUyMDRiZTljMzczYzEzNTYzZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmMyY2IwYjViYzYyOGI5Y2UzZTFlNTJiMzEyMTgwZjBjNjk4NzZjODQzYzllYTE5YjU2NGE3YjFiY2Q4ZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L32-L58",
+          "version": "repo-lines-v1:sha256:19b7693a0d62f3331506a736223e960170fdc1eefd1f4faf78623a69616a641b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMjk4YjkyOGQyMjE2OWQ0ODgxMDhjZjg4Mzc5OGNmOGIyNGU2ZmY3OGZjYzg2MmRhMGMxYjg4NWMyY2ZiYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMWUzMzllNmUxYzA3ODBjM2Q2YzNkMmZiZTgwZDI0ZWIzMWRhNjFjOWJhN2ZlMmEwZTQ0Yzc3YjNhNmIxMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3OWJlMjNmYTczNjJkNzRhZGI0YmZhODNkMmI1NWMyNjAyM2RmZjg5Y2FmYzU4OTc4YmMwOGY5Y2VkMjhjZWUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L60-L105",
+          "version": "repo-lines-v1:sha256:72bfe8d914127c22952fbc6df4e89b01f3b93783f17b0e5a529c2130b25eaa52:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MTVhMzg1NmE5ZDMxZTg1YTQ2MzBkZGUxMmU4Zjg0YTE5ZTBjOTcyNDUyNWY1OTQyZDA2Mjk1NTc4N2Y2NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTQ2OGNhOWJjYTVlMmZjMzg5NDZjYmI0NDg2ODlmMGNhNzhkMjQ3MzcwZmQ1ZjBhZjhkN2Y3MzNlNDZmN2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c8b47afe93f439285dafe92da618366",
+      "statement": "That stack↔compose input guard runs in CI as part of the `naming` job's script-unit-test step (`node --test scripts/__tests__/*.test.mjs` in .forgejo/workflows/guardrails.yml, added by feature 041 because scripts/__tests__ ran in no workflow) and in scripts/preflight.mjs, so a broken input coupling fails CI rather than surfacing as a failed Komodo deploy — but it only verifies that a required Variable is supplied, not that the port inside its value is still in the reserved range, so a stale `:8099` in KC_HOSTNAME_ADMIN passes it.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L170-L176",
+          "version": "repo-lines-v1:sha256:ca133cf65df8a111686fd253aba3b59d2a4861fa8273d6e2501a5f9354ba49fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDQ0MWFmODA1NDg1NGJlZGUwYzgxOTRmNWZiNDYxNTRjMWVjZTRlZDZmOWRlODRkYTRlNDY4MzMzOTRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU4NmU2NjdkNmQxOWI1ZDQwNjA4MmY5Mjk4MzJhYTcyMWMwNWZkM2Y5NmNmNDAxZjlhYmYxNDMxYTQ5OGZiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L87-L105",
+          "version": "repo-lines-v1:sha256:272acde3558b2acb2c2013e7a4327ad88f9bd586bed1280e82bc93e08f1f5065:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzVlNDQxM2FkMjBhYTA5NjVjMDJhNTFiMDIyZWM3MTFmMGI3MmVkMzBkYTdiYjY4OTQwOTI2YWQyZjlkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTQ2OGNhOWJjYTVlMmZjMzg5NDZjYmI0NDg2ODlmMGNhNzhkMjQ3MzcwZmQ1ZjBhZjhkN2Y3MzNlNDZmN2EifQ"
+        },
+        {
+          "resource": "repo://scripts/preflight.mjs#L75-L83",
+          "version": "repo-lines-v1:sha256:318d50e3d34f525e36f47a72805af200bb3f3bd20e52e7a79b61fc7c136e0ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU2YTU2MGQ4ZDkwYmIxYTQ5YTViZGE3MmY4NWQ4M2RmZDBjNWE0YWM4YjZhNzczOTAxYjE1YWY1ZjM2YTdmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkyZDIwNDYwNjQzNDQwNTg4ZjVkN2YwNWZjZmRhZjk0Y2NiODgzN2JkZWE2MmM4Mjc0YjVhOTg1YTk4MGVlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM0NjI4Yzg2MDJmOWRiYjhmZGUwMDdlNzA0YjczN2UyNDhlNjhhZTU3NDgyNzllOWJhY2I3OTZkNThmYzBiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYyYmRmNGU3OTE5NDliNzNhN2E5NWMxYzAzOTYwYTYyYTkxMmIxODhmNzQxOWIyMDhlYWZmYjg2ODIxYmRiYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f8a9580c7f64a578812d772636ecf42",
+      "statement": "The reserved admin port also appears in documentation-only artifacts that a port move must update to stay truthful: the committed template infrastructure-as-code/docker/keycloak/.env.prod.example records KC_HOSTNAME_ADMIN on the prod-reserved 19099 admin port (noting it was 8099, which collided with the CI Keycloak on the shared host) and keeps the retired KC_ADMIN_BIND_IP only as an explanatory comment, while the runbooks and docs spell out the admin-console URL on 19099 and the LangFuse UI on 19030. No gate reads these, so they drift silently.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L86-L96",
+          "version": "repo-lines-v1:sha256:749b32413c6b135719e96463aa08cdf6711b6ead3018a1be1bb9d9abe012171a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlMmUxNTVhYThiYTg4Y2NhMzRmYmY4ODkxNWQ3MjZiYjY1ZTZhOWFjNTFlOTUxNjZjNjBkMjY3YTI5NzcxMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NzdiMzc3MmI5NjZiN2U2MzE0NmQ1OWFiMzI2MmE5MWM0OTc1NmViYzczMDdhZTQ2NDU0ZmNmMDIwYmIxNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljOWY2ZTk5M2E2NjgzNzMxYjUzYWQzMzI1ZTA4NmE4Y2YzZWRjMzZjNTc1ZGVlNzZhMTljZTYzY2NmM2Q2YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmOWFhZGQ1YmEwNThlNDgyYWQwN2Y1ZTJlZjE0MGRhOGU1MWUyMDEwM2U0YjY2NjE1NjlmYzVjZTBiMWQ3NTYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/.env.prod.example#L11-L17",
+          "version": "repo-lines-v1:sha256:cde2581d7ccc42a3b196012df655dca45eb32c9542ae852f429d08fe6cef8a42:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVmOWEzM2U1Yjk0ODdiNGRhZTM4OTU4ZDIxNzkwNDA5YzYzZmY3ODMxOTNjZmM4OWFlOTY5MTQ5NmY3ZDIxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMzgwM2RjMTUyM2QwYzk2MTVlZTljNDY0ZjNmMDQ5MDRjMDE2NjMwYTMxMGYwZTM0YzI1NDJjNWJiNzA5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljZWZlMzZiOTNjZDE3YWIwMWIwMmM2YTBlM2UxNzQ1NWUyYTdmZjIyNDIwYzlhYjhkNDZhZDE0NWUwNDNjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVhZmZhOTRkYmJiZDA3NmI3OTE5MTJmYWEzNjBlMjAxYzI2ZmY0MzBkNDhkYjNlYjFjMWQzM2MzNzAzZGU1YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_560e5ee3df5f42feaa8eb76b494e236d",
+      "statement": "The prod-observability environment block in infrastructure-as-code/komodo/stacks.toml supplies TAILNET_HOST as [[TAILNET_HOST]] (an existing prod-auth Variable reused for LangFuse's NEXTAUTH_URL on :19030, so nothing new to seed) alongside the thirteen LangFuse/Unleash secret Variables, while the compose requires it fail-fast as `${TAILNET_HOST:?}` — so the LangFuse login/callback port lives in the compose as a literal and its host is a stack-TOML value.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L72-L74",
+          "version": "repo-lines-v1:sha256:48cdcff65aaf7b005e8e18475bfedff336869473a2be0d4608ed18960f6d4731:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMjllYzg3ZjgyN2Y1NDI2MmM1YTE1Mzg1NjI0OTM1NTVmYzY4OGYwMzk2YmYyYzE2YjgxNDRjYmUzMjIzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxZDliMWU5NzllZDFlZGI2ZmUzYTE1MjU1MTIxOTM4MWY1YjQyNTg3Njc0OTQ1ZmYwZGNjYzRkZGIzYjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFkNjZlNzViNmViNTU4YmFhYWQ3OGI3NzE5NTU0YjI1MzIwMjY5MWY4ODc2MzliODdiOGZlODcyNWQwNTE2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ1NDEzZTBkNTIyNDI2NDM5NDZkNjgyOTZmM2NlZDljODRhZDUwMTI1Y2Q0Mzg0ZmM5NDI1MmU1OGQzYzUyMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L169-L190",
+          "version": "repo-lines-v1:sha256:cea17e566fac184eacc5662895d34503d7413539a71c182d79bae92189b3dbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T17:33:57.993Z"
+    "at": "2026-10-25T13:33:13.758Z"
   }
 }

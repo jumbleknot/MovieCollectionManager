@@ -23,6 +23,8 @@ sources:
     resource: repo://.devcontainer/toolchain.Dockerfile
   - id: openwiki-source-84525c5b1053cfa785b83c28
     resource: repo://.devcontainer/verify/run-harness.sh
+  - id: openwiki-source-5b1388e1d8c716d3fe2a3cdb
+    resource: repo://.devcontainer/verify/verify-egress-allowlist-contract.sh
   - id: openwiki-source-4811c78aebdb18972e0c3805
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
@@ -31,6 +33,10 @@ sources:
     resource: repo://docs/runbooks/devcontainer.md
   - id: openwiki-source-ff035ef3df6eca36fc791d1d
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
+    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
   - id: openwiki-source-c3ef9454981554d2b5a20dec
     resource: repo://scripts/devcontainer-ollama.sh
   - id: openwiki-source-0b13188628bc70e422253f37

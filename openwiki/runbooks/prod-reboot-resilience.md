@@ -25,6 +25,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
+    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff

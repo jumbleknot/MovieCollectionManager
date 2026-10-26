@@ -1,6 +1,6 @@
 # Files
 
-- [The governing constitution](constitution.md) - The repository's ratified, versioned constitution — the immutable core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
+- [The governing constitution](constitution.md) - The repository's ratified, versioned constitution — currently v2.7.0, ratified 2026-03-08 and last amended 2026-10-20 — the core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
 - [Feature branch test scope](feature-test-scope.md) - The user-story to web-spec-file and mobile-flow mapping used during iteration on a feature branch, and the rule that only the touched story's suites run during iteration while the rest are deferred to final validation.
 - [PR batching — split only when a failure would be ambiguous](pull-request-batching.md) - The rule for how many pull requests to open for a set of changes, given a single CI runner and a ~35-minute app-e2e job — batch by default, split only when a red build could not be attributed to one change.
 - [Proposal → spec → plan → tasks → implementation lifecycle](spec-driven-development.md) - How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.

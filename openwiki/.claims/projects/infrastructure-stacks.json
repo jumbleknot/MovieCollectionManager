@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e612fa7376de9761ff497ddfe7703e00e69609a176ea5692557f8d3c3febfc1f",
+  "pageVersion": "sha256:66e6ec2547acd702bb865a2c7ab6cc17ee316ef19fa30ffbf8a023d6e67dd13a",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -54,17 +54,25 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
     {
       "id": "claim_60f379643eb9475cb68122ceea12673b",
-      "statement": "Each production stack's environment block is the only declaration of that stack's required inputs: Komodo writes it into the stack's env_file_path (.env.prod), and the three CI-built stacks (prod-mc-service, prod-mcm-bff, prod-movie-assistant) additionally receive their committed host-free .env.deploy as additional_env_files, while prod-auth, prod-audit and prod-observability take none.",
+      "statement": "Each production stack's environment block is the only declaration of that stack's required inputs: Komodo writes it into the stack's env_file_path (.env.prod), and the three CI-built stacks (prod-mc-service, prod-mcm-bff, prod-movie-assistant) additionally receive their committed host-free .env.deploy as additional_env_files, while the four upstream-image stacks (prod-auth, prod-audit, prod-observability, and prod-vault, which declares an env_file_path but no environment block at all) take none.",
       "evidence": [
         {
+          "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:93baafcc270526e192c347492300b72174d03b46872a6ce2a70a77dc9650b68e"
+        },
+        {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
+          "version": "repo-file-v1:sha256:1b9f02a4af0aa60c0f3c719bf3d5d15bb82e43752151668627dc87b3853b992a"
         }
       ]
     },
@@ -91,7 +99,7 @@
           "version": "repo-lines-v1:sha256:6a0385aad430e240a295f3b3b460d2bde3551c819af86dae8ec02692947e8826:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ0ZjMxNzExZDU2MTg0NzE3OTY3MzI1NzViMjMzNmI5OThkZTI1YjE2YzUzMjNjNzY4MzI0MTA1ZWI4NDZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzYTk2ZjM0MzE2ZTQxZmEyNjJmZWI4Y2FhMzRlYzkxYmY0NDM4ODNkZDgwNjhlNTIwYTA5ZDRjNmU3Y2NmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM3OGRjY2UxN2FjYzczMzI0MTBiOThjOWFjYzEzNGY0NDBjOWM0ZjlkMjc2NmEyMzgwMTQyYTE3MGJkNTdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2I1NWZiN2JlYTY5ZTQ3Njg4ZjZjNzExYTAzMjIyOTcwNmYxYzc0MmQ4OGJiMzhhNTNkMzkzN2JhZTEyY2JiOCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L154-L175",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L169-L190",
           "version": "repo-lines-v1:sha256:cea17e566fac184eacc5662895d34503d7413539a71c182d79bae92189b3dbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Mjk4ZjZjYTc3NzZlYTdjODUxNzFiYzVhY2IyY2E4NzZiODc5YTBkZmI2ZTI4NjAwN2NhZmVjNGQ1OWI3M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
         }
       ]
@@ -102,7 +110,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         },
         {
           "resource": "repo://scripts/check-komodo-sync.mjs",
@@ -124,7 +132,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -138,7 +146,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -180,7 +188,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -440,7 +448,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -457,7 +465,7 @@
           "version": "repo-lines-v1:sha256:f90810f4fb8b5bfd4ab480dbba9e15fc21c4babb23535c2fcd53454d8c451c37:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM2NzJlYjhlYTk4NjUyYTJhNTVlZjQzZjM4NzBhMDFmOWY1NzU5MDViNDA0ZDE5NTk0ZTU3ZTAwMWEwMWVlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdjNWQxNjVlODI5MGM4YjRlMmFjM2JlNTg4Y2UzZGVjMDI0MGFjNWM1MWE0MDg4MmU4N2I4M2IwZjFlYWI4MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDliODQwZWE0ODVlMDkzYTg5NWVlODg5MzMxYmNjOTM2NWUwOWMwOWJjZjI5NDM1NzMyNDc5YTUyZmVhZjAzOCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L121-L127",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L136-L142",
           "version": "repo-lines-v1:sha256:d02fce837e798d6974245a8b1c67b9174a445ef48a23c1c7ab9e94e17fcf25ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdhYjI0Mjg0ZmI1YTY0NmJmYmZjMjBjOWMyMmQ4NjMyYjAwMTE2MGRlOTE2NDZiYjEyNmUxYjdkNTU5ODQzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRiN2MxZGY0M2RiYWYyNzgxY2Y3OWU1NTMxZDA1ZWYyZmQ2MGE0NDA4OWYxYmI1Zjc3OGZjMjM2NDU2NzMwNCJ9"
         },
         {
@@ -497,7 +505,7 @@
           "version": "repo-lines-v1:sha256:47a07cf623daa757b89c46b222f1a318c0e08505b3d123e636eff06ef3bd2695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L144-L175",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L159-L190",
           "version": "repo-lines-v1:sha256:71d93e6ace7f82d49357baa504ac4fbaffb3d190bf780f6ea53f0b422e9ebbf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNTRiYWNlMGQ3N2E1NjE1ZjRiZDdiNGFiNDViMWVlYmY3ZTMyMGQ0MTc3NmE4MGZiNzlhM2I2YzJkNGU2MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMDQzNjc4NTViMzczZWM4ODdiNjIzMDUwNTVkODVkOTUzNmJiZjViYTcwYjRiN2M0NDI1NzI5NDY4MmUxZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
         },
         {
@@ -511,7 +519,7 @@
       "statement": "A Komodo Variable referenced by a stack's environment block must be seeded before the sync that first references it: an unseeded [[VAR]] interpolates empty, and the ${VAR:?} guard in that stack's prod compose then aborts the deploy, which is the intended fail-fast rather than a silent default.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L121-L126",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L136-L141",
           "version": "repo-lines-v1:sha256:645e2830423439f866f93f49f69d25217d2a90597016e1b8001d809e41347d55:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwM2M3NTFkZGYyMjllMThhYmQ3ZTFjMGY0M2JhNmRjYWE0OGZjMjg1OGI4ZDU3ZWM5OTg1YmEwODI2NDI1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdhYjI0Mjg0ZmI1YTY0NmJmYmZjMjBjOWMyMmQ4NjMyYjAwMTE2MGRlOTE2NDZiYjEyNmUxYjdkNTU5ODQzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBhOGUwMDBhNWM0ZGViYTc1MDFlNTEzNWFkOGMyNDliNGEyM2UxNjRhM2I2NWY1MDk5YzA5MjI0MzRiYWJiOCJ9"
         },
         {
@@ -727,10 +735,104 @@
           "version": "repo-lines-v1:sha256:118db7a7a026f69fb9502bdfbeccff6a3a8603258237e017877e857e442432e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzYyYTExOTY1Njk0NTk5MDMxN2FkZGQxNjJjNDhkMDczYWE4Y2UwMjZiYzMwZGQ1ZDM1NTVmZjQ5NjA5YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OTU2MWZlZjZiZDU3NDM3OGJiMWUyN2YxZTVhYWQ1N2QwYzdmNzllMmRkMGU4OTFmNzUyM2E4NDlkZDk2ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MzRmN2JlZGNiZjgwMmI1ODQ5YTI3ZmEzYWNhNjljMjJiMGZlNDczZjRmOTRiZDkyMmQ1ZTMzYjA0YzEyZDMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9f80a56aeab74f26a7f491b98bfecc4b",
+      "statement": "prod-mcm-bff's environment block is one of the two largest in stacks.toml (fourteen keys, matching prod-observability) and is where the scheduled-backup switches live: feature 073's production enablement (item #843 follow-up, 2026-10-25) added BACKUP_CREDENTIAL_ENC_KEY, BACKUP_TICK_SECRET and BACKUP_ALLOWED_DESTINATION_HOSTS, and feature 083 added the consent pair BACKUP_CONSENT_CLIENT_ID / BACKUP_CONSENT_CLIENT_SECRET. Until the first three landed none was set, so scheduled backups were off in production — every private destination was refused, no destination secret could be sealed, and the boot log read 'backup scheduler disabled'. The allow-list is an exact host match with no port and is a plain rather than masked Variable because it is LAN topology, and BACKUP_CREDENTIAL_ENC_KEY must never be rotated casually because it orphans every stored destination secret and offline token.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L51-L69",
+          "version": "repo-lines-v1:sha256:edacf9c409754c8e9505ac07a6e83bfd11844211e71a92a28fb11f1258d7503f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOWUyY2NjN2ZkN2U4ODM0ZGZhNzQzZGY3NmY4Mzc5MWM4ZTVjYzE0NTIxYjkxNGFmZmU3MzQzZDQzOTliNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YjE1NzRhYmM2MDhmMjI2NTEyZWU4MWViYTgzYjQ3Y2FkYTFhMTBmZGE2MTlhMDk2N2QzZTI0MTc2Nzg1MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYzllMTI1OTdmMWNmNTNkOWJmYWFmZmNjYjQzYzNkM2MwMDY2ODBjOWI4OWQ3YmUxMDJkZmEwYzdkZDhiOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZjAxYWZiNGQ2MWZmMWE3Y2IxNDg2OWI0NTNlMDk2YjE4NGU3ZmU5ZDM4ZTE1NGM4NjhjY2Y3Y2Q2MmNlNTIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L104",
+          "version": "repo-lines-v1:sha256:1ec342b9fd508cc3005fcbe04ad8b3e8d31917d245df35a46e7cc1386bd9a4e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzgwYThkZDNjYzQ0ZmFhNzFjYWZlNWY1ZTlhYWY1NDE5MzAwZjVmNzE3NDEzNzZiZWFkZDAzNTgwNTc1NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYTlmMDAzYWFlMmE1OTgwOGJjMmY3OTdiOGM0Njg0OTY4MWQ0NjEyMGVhMDNhYzA1OTE4NWE0ZTJjNDAwODkifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L113-L156",
+          "version": "repo-lines-v1:sha256:e413efa2fe68ff47e2a8df51042eda1b6a5f8c887a01368b46d072145b9bcdd3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYWYwYTYyZjg1ZWMwYjYxZGJhOGM0MDNiNWY3N2YwYWM1YWFkY2Q0MGZlZDZhZjllYTVjYmU0YWQ1MDZjYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzc1M2EwNzlhMjJhZGFlY2U3Yzc0ZDIxMjFlNTk3OGUyNjM0ZjJmMWNiOTkyZGI1MzBhMzZjZjFiNjAzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYzliMTEwZmJjMzRkOWUzOTEwYmIwMjBhM2I5NzliNjliM2ZlMmQ1ZWJlMDk4ODAyMGU1NDQ2Mzc2MWU3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZmY3MGEyY2QwMmM2OWMyODMyYzNiYWM5ZDBkMjZmZjk4YjZhYzMyNDEwOTQ5ZmE1ZjhiZWQ3NGVmNGI1OGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97c3b87855d74270b85bf080064d4ca8",
+      "statement": "A stack environment key that nothing requires fails open, and the static coupling guard cannot see it: komodo-stack-env.guard.test.mjs only asks whether every ${VAR:?…} in a stack's prod compose has a supplier, so a capability whose keys are optional in the app's env reader has no static check at all — which is how scheduled backups stayed off in production while every gate was green. A [[stack]] edit alone is also insufficient to deliver new values: Komodo writes the environment block into .env.prod, but a sync that changes only the environment does not recreate the container, so the running service keeps the values it started with until the stack is explicitly Redeployed, and the effective values must be read from the host rather than inferred from the TOML.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
+          "version": "repo-file-v1:sha256:1b9f02a4af0aa60c0f3c719bf3d5d15bb82e43752151668627dc87b3853b992a"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md",
+          "version": "repo-file-v1:sha256:d85765df8bf5038ac2b70d93e3d2fee2240fa08de1333b91ae4a2229e9c4999a"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bd746cea58e4b0ebbd63c470059e2da",
+      "statement": "The three basename-discovering compose gates do not share one scope: scripts/check-no-inline-secrets.mjs and scripts/check-prod-ci-port-collision.mjs glob infrastructure-as-code/docker/**/compose*.yaml plus infrastructure-as-code/docker/stacks/*.compose.yaml, while scripts/check-resource-naming.mjs globs only the first of those (so the stack aggregators, which declare no container_name, volume name or network of their own, are outside the naming gate); the naming and inline-secret gates each also add the retired root compose.yaml by name. The shared consequence is that a compose file whose basename does not begin with 'compose' falls outside all three, which is why infrastructure-as-code/docker/dev-ollama.compose.yaml is neither name-checked, secret-checked nor port-checked even though the CVE enumerator's wider infrastructure-as-code/**/*.{yaml,yml} glob does see it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-no-inline-secrets.mjs",
+          "version": "repo-file-v1:sha256:8fb3601b7232f1580808bd3e83f4c28bf4064283edf2b4714fe6e1af60edf79b"
+        },
+        {
+          "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
+          "version": "repo-file-v1:sha256:40006e27eec40864087b5343050b4435f0fd4aa857d3aac8663e2cbcd853c771"
+        },
+        {
+          "resource": "repo://scripts/check-resource-naming.mjs",
+          "version": "repo-file-v1:sha256:569a55f5257fe7f93f2be43aaec1289fc6be10c5559e850e9f28e501bc986120"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs",
+          "version": "repo-file-v1:sha256:1a6b5bb0d1414bfc4e7e8cfef92dec638fbdc1021de258b812fc98b95706f153"
+        }
+      ]
+    },
+    {
+      "id": "claim_5cac14f1199949d8bb1861603f6f7083",
+      "statement": "Not every value in stacks.toml is a Variable token: alongside the masked [[NAME]] references the blocks carry a few deliberate non-secret inline literals — the rendered realm file's absolute path (PROD_REALM_FILE), the backup-consent client id (BACKUP_CONSENT_CLIENT_ID), and the admin-URL shape built around the [[TAILNET_HOST]] token — because the scrub rule is about topology and credentials rather than about keeping the block purely symbolic, and the topology gate flags a literal host, CGNAT address or non-[[var]] URL authority, not a literal path or client id.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+        },
+        {
+          "resource": "repo://scripts/check-komodo-sync.mjs",
+          "version": "repo-file-v1:sha256:fcc16e01476904162d68839214cfbeb4ec0e732a4add508478028076ade391f2"
+        }
+      ]
+    },
+    {
+      "id": "claim_62c8fce3b6dc4c059d24f7ac3f25d51f",
+      "statement": "prod-mcm-bff's production exposure is a proxy contract rather than a published port: the compose declares no ports and instead joins the external edge-network so cloudflared reaches mcm-bff-service:3000 by name, with TRUSTED_PROXY: \"true\" set inline in the compose environment (a non-secret literal, not a Komodo Variable). Since spec 083 T010 that flag also drives express's trust proxy in frontend/mcm-app/server.js, because the Expo server adapter builds every request URL from req.protocol and the raw Host header; without it the backup-consent and account-deletion re-authentication routes derived an http:// callback origin and Keycloak refused the unregistered redirect_uri, while the flag unset keeps a directly exposed BFF from being talked into https by a client-supplied X-Forwarded-Proto.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L46",
+          "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L182-L193",
+          "version": "repo-lines-v1:sha256:ea807b3b4aa14f6d23525847d3d7762391c557f5152bcb40a8adcbc0b875b88d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMTg4ZTA1YTcwY2M5MGQ3Y2U4OGYzMGM3ZWFiNDdjZjM4MjFhNTA5Y2ZkNDQ1NDZlN2ZmMjdmOWFiMGE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyYzU3NjYzNTVkZmNhYzBjOWMxZmJmYjI0NjE4NWY5YmZmMDZkOGJlNjU3NGMwZDVmOWEyMWM3MTJkZDAxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMzE3ZmIxNWJjYTA1YTY4OTQ5YWU4N2EyMzM5NTA1OWI3NzdmNzc2NDM1NTZiY2U1MmFhYTRhN2U5MDUwMzMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L36-L45",
+          "version": "repo-lines-v1:sha256:c3e4b0e04204be5dd9f81e0e98a6987f23d1628f5cef7a1cd2ab62e021670573:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNDEwNTNmNjlkNjFhYzI3YTQ0YjA4ZjZkYTVmZDZiN2JhMjcyOTliMWYxNjdkNzAwZjMyZWFkMjAyN2NjNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYzFkM2VhMzIxNDE1MGQzMWJkZjgxZTkxYWI4ZTBhODA2ZTFjZGJmZWMyY2JhOWNhODBlMWNlOTg2NzMwMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYTBjNDI1OWY5NWViZDA5YmViNjcwZjc5YTJlNjkzY2E3ZTM5ZjQxNTI2Mzg3YjQwMWIwMjNjYjI5ZmFjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhMWQ3MzI5NjBmYjM2MGEyNGVhOTE0YTMwNTc4MTQ1ZjY4MmVmNjUyMWFlMmYwOTQ4OWM2NjA5ODc0NDRmZDcifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L158-L182",
+          "version": "repo-lines-v1:sha256:60b1297909d80d163c76768ddc455addcd9895240adf03da14a96fce2b5b4610:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY3NDY1YzBlODQwYjBhMmNkYWExNDI0YWUzMTBmYzgzMmM1YzRjYjY3ZjNkZWExYzI0YmNjMDg2MDBjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGMwMmJkYTA0ZWE4YTFmMzg0NTU3OWYzZjJlOTVhNWY4ZjNiMGMwMmI0ZGZmYzU1YzYxZGIwZTYwYzY1ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyOWMwYjBjYjQ1MzMyYTlmZDg3NGZlOTkwY2IzMTRkOTM4ZGRlODQxODRlNjg4OWVmZDViZWJhMjg2NDY2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T01:38:05.401Z"
+    "at": "2026-10-25T18:33:06.357Z"
   }
 }

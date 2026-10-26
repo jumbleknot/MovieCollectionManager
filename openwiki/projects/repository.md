@@ -55,8 +55,6 @@ sources:
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-6af9a79d18f77a9b86839849
-    resource: repo://frontend/mcm-app/Dockerfile
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6
     resource: repo://frontend/mcm-app/eslint.config.js
   - id: openwiki-source-e9bcd4372a4632d555b861a6

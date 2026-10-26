@@ -17,6 +17,8 @@ sources:
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
@@ -31,10 +33,14 @@ sources:
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
+    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
   - id: openwiki-source-d58b64a5afcc9df80ea92152
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-4bb9aed3e8acb9d5ea822f53
     resource: repo://frontend/mcm-app/src/config/keycloak.ts
   - id: openwiki-source-632789ffafe5c334f1dbdfba
@@ -91,10 +97,14 @@ sources:
     resource: repo://scripts/check-realm-consistency.mjs
   - id: openwiki-source-d332b78944bf7820230a82f2
     resource: repo://scripts/export-ci-realm.mjs
+  - id: openwiki-source-864993a079e6e4df052ac4ea
+    resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-921299f3e17b7f9cb4a1254c
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
+  - id: openwiki-source-511cf70d08e685e1be0170b8
+    resource: repo://specs/083-backup-consent-session-isolation/spec.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }

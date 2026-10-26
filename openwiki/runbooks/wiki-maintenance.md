@@ -1,12 +1,14 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown, the run budget and per-event job deadline with its exit codes, slice packing and the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
   - id: openwiki-source-e119253b3c3737247dc63f2a
@@ -15,12 +17,16 @@ sources:
     resource: repo://docs/runbooks/wiki-maintenance.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
     resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-1ec4caa0504831af48a18166
     resource: repo://scripts/__tests__/openwiki-ignore-claims.guard.test.mjs
   - id: openwiki-source-cccdf9eddce7e76440d4cd28
     resource: repo://scripts/__tests__/openwiki-stamp.test.mjs
+  - id: openwiki-source-b24a848c671edad8616a78b0
+    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
   - id: openwiki-source-4047a2562f1a8a3b01b32f18
     resource: repo://scripts/__tests__/wiki-drift-plan.test.mjs
   - id: openwiki-source-1ec987a43e345e6cfd96dd77
@@ -35,12 +41,16 @@ sources:
     resource: repo://scripts/check-openwiki-governance.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-be4449db5d1cd6939f816b1e
+    resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-efa55c3a8c70016f55bf6266
     resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-90247be1c59fce45745bd214
     resource: repo://scripts/openwiki-drift.mjs
   - id: openwiki-source-d6ba69382020a933bb1c9de0
     resource: repo://scripts/openwiki-stamp.mjs
+  - id: openwiki-source-bd64475e04b69688a7d80d8d
+    resource: repo://scripts/sast-scan.mjs
   - id: openwiki-source-de5cc40b364f5505ca211c27
     resource: repo://scripts/wiki-claims-audit.mjs
   - id: openwiki-source-8f2b3cd6a24d68c4abe301fb
@@ -63,10 +73,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T16:15:01.685Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-23T11:13:11.115Z
+    at: 2026-10-25T16:15:01.685Z
 ---
 
 
@@ -289,17 +299,33 @@ settings (which deliberately set no cooldown) do not apply and its own do. It se
 time, so a lockfile regeneration cannot pick a transitive younger than three days (the gap item #271
 describes for the root workspace, closed for this directory), and at **install** time, where a frozen
 install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked entry inside the
-window. There is deliberately **no** `minimumReleaseAgeExclude` list: nothing in the generator is a
-security floor, and the code runs with a model credential. `better-sqlite3` is the one package allowed
-to run an install script (`allowBuilds`), because openwiki's LangGraph checkpointer loads its native
-binding at runtime.
+window. There is deliberately **no** `minimumReleaseAgeExclude` list, and the file says so in as many
+words: an exclusion is a *security-floor* exception — a fix that landed inside the cooldown and is needed
+now — and this code runs with the generator's model credential, so the mechanism is not spent on
+impatience. `better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because
+openwiki's LangGraph checkpointer loads its native binding at runtime.
+
+**Being its own root cuts both ways: the cooldown is local, and so is every floor.** The same fact that
+lets this directory set a cooldown the root deliberately does not have means the root's `overrides:` map
+does not reach it, so a security floor the generator's tree needs is repeated in this file. Item #840 did
+exactly that — `body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'` for GHSA-27r3-jxmh-p828 (a DoS via trailing bytes
+after a compressed body, fixed in 2.4.0), reached through `express` 5 via `@modelcontextprotocol/sdk`; it
+is the same keyed-range-on-range entry the root workspace carries, capped within the major. The floor and
+the cooldown interact: the fixed version has to clear this workspace's own three-day window before the
+floor can resolve at all, so a floor added the day a fix ships sits inert until then rather than failing
+the install. Note what is *not* inherited either: `check-override-consistency.mjs` reads the **root**
+`pnpm-workspace.yaml`, so neither the key/value half-bump rule nor the major-cap rule is applied to this
+file — the floor is duplicated by hand and its halves must be moved together by hand. The same nested-root
+fact is why the SCA audit set is discovered from git instead of hard-coded, and why a *root* override never
+yields lockfile advice for a finding in this tree — see
+[SAST & SCA static scanning](sast-scanning.md).
 
 **Checking the cooldown yourself** (the live half of the proof; the static half is
 `scripts/__tests__/wiki-maintain.guard.test.mjs`, which fails a cooldown under three days, an exclusion
-list, a range instead of an exact pin, a lockfile that disagrees with the manifest, or any run-time
-resolution in the workflow). Copy the three files somewhere scratch, raise the window past the age of
-the lock, and install frozen — **from the repository root**, with `--dir`, so corepack picks this
-repository's pnpm:
+list, a range instead of an exact pin, a lockfile that disagrees with the manifest, a root workspace glob
+that swallows this directory, or any run-time resolution in the workflow). Copy the three files somewhere
+scratch, raise the window past the age of the lock, and install frozen — **from the repository root**, with
+`--dir`, so corepack picks this repository's pnpm:
 
 ```bash
 d=$(mktemp -d) && cp tools/openwiki-generator/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$d"/

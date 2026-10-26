@@ -5,16 +5,28 @@ description: Keycloak Admin API calls (user lookup, creation, role assignment, f
 resource: frontend/mcm-app/src/bff-server/keycloak.ts
 tags: [auth, keycloak, bff, security]
 sources:
+  - id: openwiki-source-dc9c673c8dc973e1e621fa45
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-3962f527ba083cef06c1e6a6
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-990dbb7c25cfde4ba1d8330a
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/resend-verification%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
     resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
+  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
+    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
   - id: openwiki-source-0ff64644c3a9837917af5e5d
     resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
   - id: openwiki-source-d58b64a5afcc9df80ea92152
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-7ee24640f6ecf841a7ce2b17
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts
+  - id: openwiki-source-7f78c834443744c0dcf8d134
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-b84c2ebda1fa9702c5fd6055
+    resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
     resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
   - id: openwiki-source-3574b605c1922bedacc8f2fa

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e2b7648b36d61eab1dbb8e1c051f226fd9a356244c99f588226bf7ef604cfc85",
+  "pageVersion": "sha256:21a5c055e0ab6edd8b51e7d7b4e2c37e0ebd3e5bea2eeb2a4199de4ee256414b",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -70,7 +70,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:e159820d62cbe4fd8f5e22f2f234a0451758f67afaf6435d9dc05b7eb6c7474e"
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         }
       ]
     },
@@ -307,10 +307,60 @@
           "version": "repo-lines-v1:sha256:ff1e29df774108f554c1dd231f8e93f70274c3fafe0858c2aa5f296fdc7ad521:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU0ZTk1MWIxZDQ2MTYxOGE5MzJhMjQyNWUyODNlMzNiZWMxYmQ3M2U5N2I2NjEzYzc1ZGY0M2JjYzNjMTVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ1Y2JkY2Y5OGNiNDY2MjdhMDA0NjkwN2RjODQ3MGIxOGVjNmJjYTI1Nzc0MDkzYjk1NTJlNTBmYTk3YTI4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGUyN2FmNTNhOWIxMGUxNTdhOWMxYjM3MmUzMTUxN2U0N2FmMDA0Mjc3MTg4YjZhNmQ0NzBiODE3OGE4NjkwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjA4YjcxOGI5ZjQyNWMwNGQ5MWVjOTQ1MjgxZDY4OTk5OTAyYTIwYTJkYWMzN2I2YmYyYTU4MzkyOGYwMTA4YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_714497a4aab74538ae57ddaf2025c47b",
+      "statement": "Both feature-026 cutovers have been executed against production, so the auth-enabled compose is the live state: `mc-service-store-mongo` starts mongod with `--keyFile` (which implies client `--auth`) and `mcm-bff-store-mongo` with `--auth`, which is why the pre-create-users sequence is the recovery/rotation path rather than first-time enablement.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L136-L164",
+          "version": "repo-lines-v1:sha256:3ac2bcc1a8b74e83b5410fe43c3594edb1d33fb0d04e8b26d76fdea52ce057ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZWYzMTdhODA1MmY5MThiNjQ3YWQxNmU5ZjA4ZmZiN2ZmZDliYTg3MzgyYjAzNGY5NTVhZmEyY2I3ZDM3ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZDAyMzdjMWU5MmMyYzNjOTU1OTcxN2FiN2U3ZDZmNDE5MTgwOTI5YTAxZjk3ZWMzOGNkNzU5MTNiYmMwOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5YjRhMmY2NTFmOTkzODUzNjE5NTFjODU4YjBkNWI4YTY1M2FjYzgzMzllYzBiYTliZWIzYzU1ZGViNmE1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNTZkOTEwY2U4M2I1MWViMjdiMGQzMWNjOWVmYWZlNzJlMmE3N2EzNDBiMGU0ZWI5OTcyYTk3ODNhMmEzMWMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L28-L58",
+          "version": "repo-lines-v1:sha256:d69755526f71872a08ed31fcaae005b73fd02e2397f846d33f29bbd6d95a81b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlYTc0MzQ3ZTJjMTVjMzc5ZDUwOTJiOTNlN2FkZGNlYjVmYzM4Y2Y1OTIzODFlN2YwNTM3NjNjNDk4MDBlM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDJiOGUwOGY2MGNjYmI1ZjNlZjdjY2ZmOWZkMTU3ZjM2NTY1NDY2NWFiYjVlMjJhYmVlMGNmYmQ5MGI1NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyNDI1ZmI0NDJiYTFmNzAyZmFkZWY2MjVjODMxZTJkYWM2MWJhZTlmYWZhZmIzMjk1ODEyMzRkYWNhMDBhYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkYWY3Yjk4MWNlMjNkYjRhZGJiM2M1YzMyNTA4YzExNjYyOWRjYjFjZDg1ZDhkZmU1NjkzMjMzYTc0YTQ4MzEifQ"
+        },
+        {
+          "resource": "repo://specs/026-prod-data-auth-vault/tasks.md#L93-L95",
+          "version": "repo-lines-v1:sha256:b42a81b63d95a504547bd98fcc59d426fc5e3e40e39583fe5d3bf4caa1f0b53e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTRiZDljNWRlZmViOTcyMzQwMjE3MzMyYzgyYjZhMjlkZDEyZDM1OTJkNTRjZmUzZTQ0MjVlMGE2NTM1NTRhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ5NzBlMzdiNjdiYjI3MDRkY2FmNjA5ZDg0ZGM0YWQzZjJlNjMzODM4MTNjYTc0ZTdmY2ZiM2VkMzRkODg0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjExNWE1MjI1ZGI5N2Q5MzQ5ZTVhMTIyZjI4MjIyOTljMTRjMzU0MDk4M2RkNWM0Y2YyY2M2MmM2MGIzODNlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWY4MTgzZTlhNDcxY2M3OTUyMDBlOTQ5NGJkOWYyN2JmYTMzYTYwMTYwOTRmYjIzNTFkMTQ0OTlmZTExZGY3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_98a3026e34e14bd7a6ba18a9cd6f6c96",
+      "statement": "The feature 081 US8a production cutover ran on 2026-10-24 and was deployed by CD rather than by hand: both stores are on `9.0-ubi9` (9.0.4) at FCV `\"8.0\"`, each having logged its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the pre-flight files — and the only step still outstanding is §6.4's FCV raise to `\"9.0\"` after the 7-day soak, not before 2026-10-31, so the FCV-8.0 state still describes production.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L478-L495",
+          "version": "repo-lines-v1:sha256:9c69f104fbb79d65aff547394c5adf46d99f1d96c1f0f19c874313105c5a0397:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDE3MGFjZjkxMzJiM2M3YmY4ZDI2ZmQwZWFhZTJkOTBmNjk4MDBiYTJhNGI2NmEyMWY2YzJlZjhiNjJkNGYifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L476-L494",
+          "version": "repo-lines-v1:sha256:68a4a24b4e33470e733ca9fa40128556a7bdc557c0a22190fa9dfa394883a5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjRiOGUzMTFjMjhkNTgzMjg3NmI4NjQxMmMwNDA3NWIxOTZjOWExZjA5NTZhNmEzYzc2MmJhOTQzYzQ3YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOGIzNzc0OTkxZDk0NGNlYTA2ODQ1ZGM5MDE2YmE3MjlhYTk2NGQxNmQ2Y2MyZTU0NmQwODRiOTc5YmFmOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlM2VmODkyNDBhY2YxNzkwOGIwMjk5NTFkMjg4YjgxODRmZDNhODk1MzhjN2MyM2Q1OTM2NzE3MmY5NWVhMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0c6e61838014c9dbb7a67c1372e67ca",
+      "statement": "A Komodo stack's `environment` block in `stacks.toml` is the only declaration of that stack's required inputs, so adding a fail-fast `${VAR:?}` Mongo variable to a prod compose is also a `stacks.toml` change: `scripts/__tests__/komodo-stack-env.guard.test.mjs` parses the `[[stack]]` blocks and fails when a prod compose declares a required variable that neither the environment block nor a committed `additional_env_files` supplies, a break that is invisible in CI and only surfaces on a real Komodo deploy.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L45-L66",
+          "version": "repo-lines-v1:sha256:e3a9ecec0a97ee09d281a814e795eac290dff4ce6538bcb2315d08dd5e1a9e32:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZjc2ZGQ3NjA3ZjcyMTNhNjlkNGZiNDNkOTE0Y2FjMWYwMzZkYzI4NTQ0YjE1MTAyMDVkMmExNmRiMzA3MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwOTdkZmMyM2E5ZWVkNmRkZjBiM2FlNTVhM2MwYmQ3MDRkMWY1NzIxNmEyYTZiNTFhZWExMmVkN2ZiODhjNWMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L67-L94",
+          "version": "repo-lines-v1:sha256:9d426624151cd083ec922720d502f3e3bbc7b17e6c5bae8c091b8bdf9d0119ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiZWQyYWEzZDc2YmIxNDQ2MTc1Y2Y1ZTc1ZmJjN2FmMTA5Y2U3Mjc1NDllNDkxMWEwZDk1ZDgwMmViOGY4MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMGViZDM0MWI2MzliZDE2YzQ0ZDBlOWIyMTFiMzA0ZjQ5YmI3NTkzYzVhZjNkNGI3MTZhODViNWIxM2VjY2MifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
+          "version": "repo-file-v1:sha256:1b9f02a4af0aa60c0f3c719bf3d5d15bb82e43752151668627dc87b3853b992a"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T23:24:20.987Z"
+    "at": "2026-10-25T13:33:13.758Z"
   }
 }

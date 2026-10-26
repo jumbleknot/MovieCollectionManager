@@ -17,8 +17,12 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-482173336861a06249bf1372
+    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -29,8 +33,12 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-ccfb73bb2cb3f790e18d9144
+    resource: repo://scripts/object-store-migration.mjs
   - id: openwiki-source-8d48276c31ac9a4e5887d2ca
     resource: repo://scripts/object-store-migration.sh
+  - id: openwiki-source-8e1cfc141032a9d913893039
+    resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
 verified:
   - by: openwiki/0.7.1

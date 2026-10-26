@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c0079f5506ce532c88158ac14fdf277933bf31cdbcff007ba8eac35716e7e097",
+  "pageVersion": "sha256:a6113a116103f6412677b2ddd212b1b82eb725d499d84942d3403809ea5e8ef9",
   "claims": [
     {
       "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
@@ -984,7 +984,7 @@
     },
     {
       "id": "claim_a151d82289324c4286da368ec6c59c62",
-      "statement": "`tools/openwiki-generator/pnpm-workspace.yaml` sets `minimumReleaseAge: 4320` (three days, Renovate's catch-all) with deliberately no `minimumReleaseAgeExclude` list, and pnpm enforces it twice — at resolve time, so a lockfile regeneration cannot pick a transitive younger than the window (the item #271 gap at the root), and at install time, where a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked entry inside it; `better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because openwiki's LangGraph checkpointer loads its native binding at runtime.",
+      "statement": "`tools/openwiki-generator/pnpm-workspace.yaml` sets `minimumReleaseAge: 4320` (three days, Renovate's catch-all) with deliberately no `minimumReleaseAgeExclude` list — an exclusion is a *security-floor* exception, and this code runs with the generator's model credential — and pnpm enforces the window twice: at **resolve** time, so a lockfile regeneration cannot pick a transitive younger than three days (the item #271 gap at the root workspace), and at **install** time, where a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked entry inside it. `better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because openwiki's LangGraph checkpointer loads its native binding at runtime. `scripts/__tests__/wiki-maintain.guard.test.mjs` pins all of it: a cooldown under three days, any exclusion list, and a root workspace glob that would swallow the directory and silently stop the cooldown applying.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
@@ -995,8 +995,8 @@
           "version": "repo-lines-v1:sha256:2f330b72930e6725dc7430820ceadf2a3fcfa9c3cf70dc194fc9224a80e07a92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0M2ZmMDFiYjJkNzBjMjU2YTFlYTliODRjNDcwYjUyYmNkN2QyNjYwZmFlMmZkNzdlY2QyYWM0OWFiMmM1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZTljMjdlZjZhYjRkMDgzM2VlNzAwZGI4NzFhZTZjNGMxZGUxMDgxMzZjMDU3YjNlNDViNWRiMWJhYWJlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NTIyYzVjM2FlZDE5MjAwMDc0OTY2NTg5YTNiMzE2MGMxY2ViNjgxOTZhNTRhNTAwNWI4ZjE5MjEyNDU3N2EifQ"
         },
         {
-          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml",
-          "version": "repo-file-v1:sha256:7bbc7cca772606d863821427d57426ebea3432153e9f742634c653d9c5fa7b9e"
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L14-L26",
+          "version": "repo-lines-v1:sha256:7265d8918920310e89899872c032b1cef62f402ac99c2094dc73b38444a18132:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NzgwYzNjMzg4ZGQ5ODI3MjE4ZjA3MTg4YjE2NmU4OTMwNDJlZTIxYTlhN2ViZDE5YzcyNGI0N2Y4YzRkYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NTJjYjA4MmRkZDFjNTljZWZkMjFhNGY2NzM4NGE3YmU1NGE2ODE0YTExZTZiYzBlOWUxMzE5NDg4OGZjZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwZmQ4YjFlYjU5NDQ5NTYwODQwY2VhNDk0NzUxY2M1ODFiY2E3YTA2OWYzMmZhZDA2MThkODI1MmZhNGNmOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MmRmMzEwYjgyM2E3ODgyODQ5Mjc3MTRmOGRhZmU2M2UxMmUzOGM1YWEwMmIwM2RhYjNjMDQxOGQzMWM2MDEifQ"
         }
       ]
     },
@@ -1215,10 +1215,60 @@
           "version": "repo-lines-v1:sha256:f402b8e4b3bae06ae42404e6d36fc77908583f9736c4846297d5c439558deea5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OWJjNTIwNzEyZjIxN2VlNjI4NGVlZjUyZjQzNzA2MDU1NGMzYmM0YjY1ZGZjZTdhNThjMDcwZjUwMzQyMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZjMzYWFjMmJiMjM1NTNkYWNkYWMyMWQwODdmMjQ2ZTZkNzIwMzI4MzI3OTgwY2U3ZGJlYjMyMDgwNDE5MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZTlhNGUxMTI2NjBkNmM1NTBlN2E2NWJjNWZlNWZiNmFmNDY4NDQ3YjRiZWI2ZGJmMjVhM2FkN2IwOWQ0ZmMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_790009874a294ab1a485ecce8eb21eb4",
+      "statement": "Because `tools/openwiki-generator/` is its own pnpm workspace root, the root `pnpm-workspace.yaml`'s `overrides:` map does not reach it, so a security floor the generator's tree needs is repeated in the generator's own file: item #840 added `body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'` for GHSA-27r3-jxmh-p828 (a DoS via trailing bytes after a compressed body, fixed in 2.4.0), reached through `express` 5 via `@modelcontextprotocol/sdk` — the same keyed-range-on-range entry the root carries, capped within the major. The two settings interact: the fixed version must clear this workspace's own three-day `minimumReleaseAge` window before the floor can resolve at all, so a floor added the day a fix ships sits inert until then rather than failing the install.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml#L112-L114",
+          "version": "repo-lines-v1:sha256:007121155075a2a9dfb8048730a5a56659a2738d722fee44bcfe8cc6d35ef14e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRmYWI5NjYzOTA2NTZhNGM5ZWJiZWY1NmQ0NDgxYTc3NDRhNWZlMjAwYWI5MTY2ZWFmOWE2ODAyNTkzNGExYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1Y2M5NjU0MTZhM2EyMjMwMDg2YzY3OWI0MTRjNDhiMzgwNGFhODdmODIyYWExODRhNzA1OTIyMTFhODQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ3ODQyZjc3NGE3YjliNzg4MDhhZWVlMGVkNmE5MDEwNmQ0NjUwMTkxMTE4MTE2MzIzZmUyODkyMTQ0MGNhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0MWI4Yjk3NDIzMzVlNmNhZmYyMWU1ZTJlNmUyZGJmYmUzNWI0NGU2N2RmZTMwZTViYjliY2U3ZjEwZWUxMSJ9"
+        },
+        {
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L20-L35",
+          "version": "repo-lines-v1:sha256:2d8522b1e7c9f5cad4e29904fa27bad0419cafff14d061da31219dd6ae56e305:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYWJiNzQ0YzM3OTY5ODZjYTYyZTg4OGI4ZmFkNzY0ZTc0MDA4NDI2MTYyMDY3M2EzNzk3Y2VlM2M0MjRlNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWNjOTY1NDE2YTNhMjIzMDA4NmM2NzliNDE0YzQ4YjM4MDRhYTg3ZjgyMmFhMTg0YTcwNTkyMjExYTg0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1OGY0ZTg3MjVhNmQ5YWM4NGYwODFiNmEyMDAwNGUzZTc3NWNkMzE4OWY1ZjgwYmY5NWQwYTlhOGZlMmYwZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8509371b82bb4f7dbf4bc00e5c1df673",
+      "statement": "`check-override-consistency.mjs` reads `pnpm-workspace.yaml` at the repository root only, so neither its key/value half-bump rule nor its major-cap rule is applied to `tools/openwiki-generator/pnpm-workspace.yaml`: a floor duplicated into the generator's tree must have both halves moved together by hand, with no gate to catch a half-bump there.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L149-L158",
+          "version": "repo-lines-v1:sha256:4c71fb2df0f2e05c2d2a0b634fe8877a7afe7a3728cce1c94a4994bb41f4c637:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTlhN2QwM2YwNmVlMTU4Y2Y3ZTZmMzU2YTFkMDdiZGE4ZGI2YzYyMTIwZWRmMjVjNzRhODAzMzc1ZGI3YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNjZiMWI0OGIzYmY1ZWNjYzU1NDc3ODY0YjM5ZGY3N2Q2Mzk2NGJiNjVjMzgyNTQwMmIyZjM1NjJkMzE1NGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NDQ1MmI3OGJjNzc0OThhZWFjY2FkOGMyOWFmN2RiOWYxN2I3OGY4NGFlNDUwYjdkMzRmMDU0YzAwMzkzYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBmNjA1NzIxNjVkMjA5NzNjM2Q5YTI1ODY5Mjk1ZWI5NjY0N2ZhYTlmNTE4MjYzY2MyNGE3Mzg2NjZhNTcifQ"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L196-L211",
+          "version": "repo-lines-v1:sha256:56712b10cad463fd3a546b0edd402c7d2a7a695346eddd7053efb789a408ea08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YTg5NGZmM2Q5NTdmNzk2OTY1ODI4MTgwMDgwN2ZlOGU0OWQ3MjQwM2NiZWIzMDEyY2I4ZjFhMjdhMWQ3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3YzNlZTZkMjMwZGU4Nzg4MmE0YWZmYzdhZGRiM2Q1YWJiYTE5OTVhMWFiMzRmNGE1NTZhMzE1ZjYzOTlmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiNjRlNmY5YmJjMzlmODNjNjg0ZWYwNThiNzAzN2Q4M2MwOGJmMDY5ZGRkZWE2YjQ4NmVmNzY2MzA2NTFkNTAifQ"
+        },
+        {
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L28-L35",
+          "version": "repo-lines-v1:sha256:985ec8700cf88448e81192089677b60b1e56c3c9ea973e8f5bf0b42cd3bbca58:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU0YjJmZjI4YzRmYjIxZjk2ZTNkZTlkNmFjNTQ3ZTRiYTVlNGVlM2E0MjAxNGFmMDZhNmY3NjNhOWJiYzQ5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1Y2M5NjU0MTZhM2EyMjMwMDg2YzY3OWI0MTRjNDhiMzgwNGFhODdmODIyYWExODRhNzA1OTIyMTFhODQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzlmZTU4OTk2NDQzZmQ0MjM1NjMyOWQ1ODY1ZDdlNDA0MjBjYWYyYjM0MzdkZjhlM2YyZDcwZDAyYTM5MDFhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d312d385b95341bb9e4c724c4dae165c",
+      "statement": "Because `tools/openwiki-generator/` is a nested pnpm workspace, the SCA audit set is discovered from git (every committed `pnpm-lock.yaml`) rather than hard-coded, and a finding in that tree is workspace-qualified (`tools/openwiki-generator:package@version`) so a root allowlist entry never covers it and a *root* `pnpm-workspace.yaml` override never yields lockfile advice for it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/sast-scan.guard.test.mjs#L439-L483",
+          "version": "repo-lines-v1:sha256:0ad6f0a5d919ed7e503bcf7dfedc0c9276f9c7fc2598a7c9291d4f0d57f01983:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MjdhMmVjNTUxZmVhNmVhNGEyNjg5NmUzNzY5ZWNhNDI1NjdhMDY5ZjlkMTRjMjJkNjc4NTg2NTQ0OTUzNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2OTFhOTVkMWZmM2M3YTg5ZGM2NTZjZTA1ZjA3ODI0NDFmZDU0NTRhNGJkMjZiMzEzZTVkMmMzYjc2MTcwMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L451-L486",
+          "version": "repo-lines-v1:sha256:9aff1074f5214aa025a3b37a2753ffd770a002576a4374fe456647e70f8a1749:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDZmNTBjZDI5NzVjYzQxNDNmMjk1MWJmM2FjNDI5MDk4ZDVlNzQxYTdlM2FjOGM1YmY0NzJmYzAxZGY3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExN2M5MWFjNjg1ZWQ2Njk4MGJjYjYwMGM3NjA4OGQzOTIxZTY0MGMxMzgxMjEzNmRkMGZiZTU4ODU4MGQxNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-23T11:13:11.115Z"
+    "at": "2026-10-25T16:15:01.685Z"
   }
 }

@@ -1,20 +1,138 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0332be14f3990dfb3e916c183baaed76024ebd16233b85791daef438059480f5",
+  "pageVersion": "sha256:d99b2d25d5bdaa5f029a9f37a1c7123b53a621eff78a116c7733cfc6c29af877",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
-      "statement": "The openwiki/runbooks/ directory provides one concept page per live operator document under docs/runbooks/, now spanning 19 pages: dev-environment-setup, local-dev, devcontainer-sandbox (primary) and devcontainer (retained DinD path), android-emulator, e2e-testing, ci-diagnostics, sast-scanning, dast-scanning, infra-image-scanning, renovate, backlog, backups (per-user scheduled/on-demand collection backups distilling docs/runbooks/backups.md), server-setup, prod-control-tower, prod-data-tier-auth, prod-reboot-resilience, phase-15-operator-checklist, and wiki-maintenance.",
+      "statement": "The brief requires at least one bundle concept per canonical document under docs/runbooks/, docs/decisions/ and the architecture documents, so the openwiki/runbooks/ directory now carries a concept page for each of the 21 live operator documents there: dev-environment-setup, local-dev, devcontainer-sandbox (primary) with devcontainer-sandbox-lifecycle (its lifecycle half) and devcontainer (the retained DinD path), android-emulator, e2e-testing, ci-diagnostics, ci-evidence-pipeline, sast-scanning, dast-scanning, infra-image-scanning, renovate, backlog, backups, server-setup, prod-control-tower, prod-data-tier-auth, prod-reboot-resilience, phase-15-operator-checklist, and wiki-maintenance; docs/runbooks/agent-layer.md is instead summarized by the architecture/agent-layer.md concept.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:564b41391e2afd70a22e26a0865b19253fbdfafd27864004e7dcc1b7db104381"
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md",
+          "version": "repo-file-v1:sha256:fe56e9c2adc9c7dab209acfe4d450f28df3f3590b6d21e09986c0c851b78e1c9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
+          "version": "repo-file-v1:sha256:81b202105d19e6374e0ff7e97b5417a320605b5c09f4b7a06a1222c2b4c97029"
+        },
+        {
+          "resource": "repo://specs/043-openwiki-okf/spec.md",
+          "version": "repo-file-v1:sha256:6dcba0b804f9210aa0927be81360bc408795e17c8630b2485fe5ecb0b1dd120b"
+        }
+      ]
+    },
+    {
+      "id": "claim_7685d28812604ecf9090353cc31a7fcf",
+      "statement": "A bundle page's `resource` front-matter field classifies it: with a resolving resource the page is a derived summary of that file, and with none it is authoritative — canonical in its own right and listed under `authoritative:` in openwiki/protected.yaml. The governance gate (rule G11) rejects a page that is both or neither, so a page cannot be canonical and a summary of something else at once.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs",
+          "version": "repo-file-v1:sha256:35fbdd66e851c47c771fa6b9b4de823302c7d8f44a0335a05e600821373ac89c"
+        },
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
+          "version": "repo-file-v1:sha256:33fa7e68e5e9939cc9247bd1755e94a3c5c097140e0555941554a0c73eb90627"
+        }
+      ]
+    },
+    {
+      "id": "claim_76ca6e16dbcf4899a14b328721a9fa8e",
+      "statement": "openwiki/index.md, openwiki/INSTRUCTIONS.md, openwiki/log.md and openwiki/quickstart.md are reserved navigation/support files rather than concepts: the governance gate skips them when classifying pages as derived or authoritative, which is why this quickstart page carries a `resource` without appearing under `authoritative:` in the protection manifest.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L52-L53",
+          "version": "repo-lines-v1:sha256:05a9d3e3986cab196d424bcce13eea62d853555fb2da6203e52e3ea0fee9a9ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUzOTllNWRlY2YxYzY3NTUwNmEyNjNlZWQzYWMxMTI0NzU5M2Q3ODNhZjkyNzRjOGY1YjI4Zjg3YjY2ZDMwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjMTUxZmExZjZkZWUyYmRjODc2MWM2OTQ2NTQ4NzNhMThkMWY1MjRkMmZiNjg2MDY4Y2NmOTI2M2VkMjVjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY4NDcxNGFhZjY3NDBhMzU2YzdkODdiZmUzZTQ2ZWMwMTZkZDM4ZDIyNGYxZjhlOWUyNGM3NmE3MGQyZDViNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjRhNzljNTYzNDA5ZTEyOWFjM2U1MDZjZmMxNDNhOGI2ZWRhZjJmNWU2ZTg3YzZlYmQ0NjQ1YmQzNzE1ZTkwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c67ab2e63e244031b123a7afae1042e3",
+      "statement": "Every in-repo body link in the bundle must be written relative to the file containing it, because a site-root-absolute link resolves against the forge's site root and 404s. Conformance rules V14 and V15 fail the absolute form outright and fail any relative link that does not resolve from its own file's directory; they were added after 204 such dead links survived across 61 of the bundle's 77 files while okf-lint passed, because it only verified the `resource` front matter (item 491).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs",
+          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
+        },
+        {
+          "resource": "repo://scripts/openwiki-links.mjs",
+          "version": "repo-file-v1:sha256:d61bd0c16b4736ec185409848fc6025f5cf979386cbd2e8ff5814c81bdef367a"
+        }
+      ]
+    },
+    {
+      "id": "claim_d02b3cf1a90246cea606e2bdb9f629e3",
+      "statement": "The brief requires one concept page per canonical document under docs/runbooks/, docs/decisions/, and the architecture documents, so the absence of a concept reliably means no such document rather than incomplete coverage; docs/proposals/** (pre-specification ideation) and docs/test-data/** (a binary unit-test fixture) are declared `excluded` in openwiki/policy.yaml and deliberately have none.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://specs/043-openwiki-okf/spec.md",
+          "version": "repo-file-v1:sha256:6dcba0b804f9210aa0927be81360bc408795e17c8630b2485fe5ecb0b1dd120b"
+        },
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
+          "version": "repo-file-v1:sha256:33fa7e68e5e9939cc9247bd1755e94a3c5c097140e0555941554a0c73eb90627"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c7d8f83b0d54f6d93da22a9172bb5d3",
+      "statement": "Adding a canonical document requires adding its concept page and an entry in that directory's index.md in the same change: the conformance gate fails a directory that holds concepts but no index.md, and fails a concept its own directory index does not list.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs",
+          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a3b78234ec7469296386df13b5be6bf",
+      "statement": "A durable learning belongs at the canonical home of its subject, decided mechanically from the concept covering it: into the cited source when the concept is a derived summary, into the concept itself when it is authoritative, and into a newly added concept when none covers the subject — never appended to a derived page, and never to CLAUDE.md, which is an index into the bundle.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
+          "version": "repo-file-v1:sha256:33fa7e68e5e9939cc9247bd1755e94a3c5c097140e0555941554a0c73eb90627"
+        }
+      ]
+    },
+    {
+      "id": "claim_ac67c6ca90354dbd911d5bb8fa1aae35",
+      "statement": "The two gates that police the bundle — `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1-V16) and `pnpm nx okf-governance infrastructure-as-code` for policy, protection and classification (rules G0-G12) — run offline and keyless and are fail-closed: an absent or partially-written bundle, or a missing governance file, is a violation rather than a skip, and there is deliberately no skip flag and no allowlist.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json",
+          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs",
+          "version": "repo-file-v1:sha256:35fbdd66e851c47c771fa6b9b4de823302c7d8f44a0335a05e600821373ac89c"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs",
+          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-27T16:58:28.669Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-25T16:15:01.685Z"
   }
 }

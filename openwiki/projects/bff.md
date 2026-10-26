@@ -35,6 +35,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
   - id: openwiki-source-3962f527ba083cef06c1e6a6
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
@@ -107,6 +109,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-bfd1dcd66339cb51fd41729c
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
   - id: openwiki-source-11fb40898d5d9eecbab09373
     resource: repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts
   - id: openwiki-source-fe13721a7608b6a93a9e93f2
@@ -119,13 +123,22 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/route-coverage-map.ts
   - id: openwiki-source-b2d2e0a4e2082278dc56a992
     resource: repo://frontend/mcm-app/tests/integration/route-coverage.integration.test.ts
+  - id: openwiki-source-5ee35374d6ab0e61934498cd
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
+  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
+  - id: openwiki-source-2fd97bbde36fd9eab32aa7ba
+    resource: repo://specs/032-security-header-hardening/HANDOFF.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-25T18:33:06.357Z
 ---
+
 
 # BFF (Backend-for-Frontend)
 
@@ -587,7 +600,7 @@ is not available without weakening it.
   `state_mismatch`, `subject_mismatch`, `missing_auth_time`, `stale_auth`) rather than free text, so
   a refusal can be counted and no message from Keycloak can leak into the audit stream.
 
-## `server.js`: the CommonJS boundary and the scheduling tick
+## `server.js`: the CommonJS boundary, the express layer, and the scheduling tick
 
 `frontend/mcm-app/server.js` is the shipped entrypoint (the image's command is `node server.js`) and
 it runs *outside* the Metro bundle. It is CommonJS: it `require`s `@expo/server/adapter/express`,
@@ -624,6 +637,63 @@ open — but the reason it exists is this constraint.
   must run before `createRequestHandler` loads the bundle. It looks like dead defensive code, and
   removing it reintroduces a silent production-only hang — the mechanism is owned by
   [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md).
+
+### The express layer in front of the handler
+
+Everything above is the *hosting* contract; the request pipeline itself is a few express statements,
+and three of them are compatibility decisions rather than style (feature 081's express 4 → 5 bump:
+path-to-regexp v8, serve-static 2). `tests/unit/bff-server-adapter.test.ts` boots the real `server.js`
+in a child process — with only `@expo/server/adapter/express` replaced by a `node -r` preload that
+echoes what express delivered to the handler — and pins all of them. Each trap's full rationale is on
+[Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md);
+what matters here is that these lines are load-bearing rather than stylistic:
+
+- **The catch-all is `app.all('/{*splat}', …)`, and both the method and the form matter.** `app.all`
+  (not `app.use`) forwards every method — GET/POST/PUT/DELETE/PATCH — and the raw query string,
+  bracket syntax included, to the Expo handler, which is what one registration has to do for both the
+  `/bff-api/*` surface and the SSR pages. A route decodes its params, so a malformed percent-encoded
+  path is answered 400 by express before the Expo handler ever sees it. The wildcard is named and
+  braced because path-to-regexp v8 rejects a bare `'*'` at boot, and the braces make it optional so
+  `/` itself still matches.
+- **Static serving is two `express.static` instances, selected on the last *decoded* path segment.**
+  `expo export` writes every dependency-shipped asset under `dist/client/assets/node_modules/.pnpm/…`,
+  a dot-directory, and serve-static 2 ignores dot-directories as well as dotfiles — which would 404
+  all 45 of those assets silently (the page still renders, in the fallback font). So a request whose
+  last segment is a dotfile goes to the default (`ignore`) instance and everything else to an `allow`
+  one; decoded, because `/%2Eenv` must count as a dotfile, and an undecodable path falls to the strict
+  instance. Assets are served with the production cache headers (`public, max-age=31536000, immutable`
+  under `NODE_ENV=production`).
+- **`app.set('trust proxy', 1)` is applied only when `TRUSTED_PROXY === 'true'`, and it is what makes
+  the origin-derived callbacks work behind the TLS terminator.** The adapter builds every request URL
+  as `${req.protocol}://${req.get('host')}${req.url}`, so without it `req.protocol` read `http` behind
+  the production edge and the backup-consent and account-deletion routes sent Keycloak an unregistered
+  `http://` redirect_uri (`Invalid parameter: redirect_uri`, measured 2026-10-25, item 843). `1` trusts
+  exactly the immediate hop. Only the **scheme** moves: the adapter reads the raw `Host` header, which
+  `trust proxy` does not touch, so `X-Forwarded-Host` cannot move the origin. Unset must stay unset — a
+  directly exposed BFF must not be talked into `https` by a client-supplied header. Both halves are
+  pinned by `tests/unit/bff-server-trust-proxy.test.ts`, which boots the real `server.js` twice.
+
+That last bullet is the same env var the rate limiter reads as `env.trustProxy`, but the two consumers
+are independent: `server.js` sets the express setting, while `rate-limiter.ts` decides from the parsed
+env whether a client IP can be derived at all. One flag, two consequences, and each fails in a way
+that looks like something else — see the `TRUSTED_PROXY` gotcha below.
+
+```mermaid
+flowchart TD
+    A["incoming request"] --> B["X-BFF-Source and baseline headers stamped"]
+    B --> C{"last decoded segment is a dotfile"}
+    C -->|yes| D["strict static instance"]
+    C -->|no| E["allow instance, dot-directories served"]
+    D --> F{"file exists in dist/client"}
+    E --> F
+    F -->|yes| G["served with the production cache headers"]
+    F -->|no| H["app.all catch-all route"]
+    H -->|"malformed percent-encoding"| I["400 from express, handler never runs"]
+    H -->|valid| J["Expo handler: bff-api routes and SSR pages"]
+```
+
+*The order inside `server.js`: headers first so every response class carries them, then the two static
+instances, then the one catch-all that splits the API surface from the SSR pages.*
 
 ### What the tick route does with the call
 
@@ -676,8 +746,14 @@ per request.
   `'unsafe-eval'` is deliberately not added — permitting real eval app-wide would defeat the
   hardening.
 - `X-Powered-By` is disabled (server-technology disclosure), and the `X-BFF-Source` marker stamped on
-  every response is what lets the web E2E positively prove the request path is the container rather
-  than the Metro dev server, defeating a silent false-green.
+  every response — static asset, SSR HTML, `/bff-api/*` route and express's own 400 alike, with the
+  value taken from the `BFF_SOURCE` env var (`unknown` when unset) — is what lets the web E2E
+  positively prove the request path is the container rather than the Metro dev server, defeating a
+  silent false-green. `global-setup.ts` asserts the marker against `E2E_BFF_TARGET` and fails the run
+  before seeding if it is missing or wrong, so a Metro server squatting on the port cannot be mistaken
+  for the shipped image. The same `app.use` layer is why the headers reach all three response classes
+  at all: `@expo/server` ignores `+middleware.ts` at runtime, so this is the only global injection
+  point in the process.
 
 The client-side view of the same layer, and the header contract's tests, are on the
 [Expo/React Native app](./expo-app.md) page.
@@ -707,10 +783,16 @@ The client-side view of the same layer, and the header contract's tests, are on 
   frozen into the client bundle at `expo export` time is not reachable from inside the container
   network. Confusing the two produces cryptic OIDC failures that look like a Keycloak
   misconfiguration. Related: [Docker internal DNS](../gotchas/docker-internal-dns.md).
-- **`TRUSTED_PROXY` defaults to `false`.** Below a trusted reverse proxy, IP-based rate limiting is
-  silently skipped (with a warning) rather than trusting a spoofable client-supplied header. Any
-  non-loopback deployment must set `TRUSTED_PROXY=true` explicitly, which then trusts only the
-  right-most `X-Forwarded-For` hop.
+- **`TRUSTED_PROXY` defaults to `false`, and one flag has two independent consequences.** For the rate
+  limiter it is the difference between per-IP limiting and none: below a trusted reverse proxy, IP-based
+  limiting is silently skipped (with a warning) rather than trusting a spoofable client-supplied header.
+  For `server.js` it gates `app.set('trust proxy', 1)`, without which `req.protocol` reads `http` behind
+  the TLS terminator and the routes that derive a Keycloak `redirect_uri` from `new URL(req.url).origin`
+  send an unregistered `http://` value — which Keycloak refuses, so the flow fails at the identity
+  provider rather than in this code. Any non-loopback deployment must set `TRUSTED_PROXY=true`
+  explicitly. With it set, the rate limiter derives the client IP from the right-most
+  `X-Forwarded-For` hop — left entries are client-forgeable — while the express setting trusts exactly
+  the immediate hop and never takes the host from `X-Forwarded-Host`.
 - **Cookies, not tokens, cross the wire to the client.** The BFF sets three `HttpOnly`,
   `SameSite=Strict` cookies (access token, refresh token — scoped to the refresh path only — and
   session id); client code never sees a raw JWT. The client Axios instance sends no `Authorization`

@@ -9,12 +9,18 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
+  - id: openwiki-source-19a939e3a38241d7960054fe
+    resource: repo://backend/mc-service/src/main.rs
+  - id: openwiki-source-16c2f372398849e8eff53877
+    resource: repo://backend/mc-service/tests/integration/common/mod.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
   - id: openwiki-source-e201e686a785f09b6d899f0b
     resource: repo://compose.yaml
   - id: openwiki-source-f84ce669ebf8d13e89ba2f75
     resource: repo://docs/runbooks/local-dev.md
+  - id: openwiki-source-abe552d5bae5c5ce75a9c776
+    resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
@@ -43,6 +49,10 @@ sources:
     resource: repo://scripts/__tests__/gen-dev-env.guard.test.mjs
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
+  - id: openwiki-source-9718a90a7733637f39e0b867
+    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
+  - id: openwiki-source-8dd20ff5f3c23521e132240b
+    resource: repo://scripts/__tests__/object-store-migration.rehearsal.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
     resource: repo://scripts/check-no-inline-secrets.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
