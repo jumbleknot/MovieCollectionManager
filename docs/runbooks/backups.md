@@ -169,6 +169,10 @@ variable. The block below needs no typed secret: it uses the Keycloak container'
 admin, copies the login client's secret, and is safe to run twice. Expected output:
 `mcm-backup-consent: created`, or `…: already present` on a re-run.
 
+**Production: do not run this block; use the admin console steps after it.** In prod it prints
+nothing at all: the bootstrap admin is retired and the named admins have 2FA, so the login fails
+into `/dev/null` and nothing is created.
+
 ```bash
 docker exec keycloak-service sh -c '
 set -e
