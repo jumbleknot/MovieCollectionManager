@@ -1,10 +1,9 @@
 ---
-type: "Reference"
-title: "BFF (Backend-for-Frontend)"
-openwiki_generated: true
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-25T18:33:06.357Z
+type: Service
+title: BFF (Backend-for-Frontend)
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract (including the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as), its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
+resource: frontend/mcm-app/README.md
+tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
@@ -135,6 +134,9 @@ sources:
   - id: openwiki-source-2fd97bbde36fd9eab32aa7ba
     resource: repo://specs/032-security-header-hardening/HANDOFF.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-25T18:33:06.357Z
 ---
 
 

@@ -80,7 +80,7 @@
       "completedRunId": "0b8f3a99-5e18-49b7-b28c-aa4436813396"
     },
     "/openwiki/projects/bff.md": {
-      "pageVersion": "sha256:0b564d0f011cf0b8e659feaf1c708ea593f9a41fe997f5f0f63a57f29dab3139",
+      "pageVersion": "sha256:be97e5ab1d02f85cad98c54e156d589f6b603beeebe38826c8f144b4bad86900",
       "completedBy": "openwiki/0.7.1",
       "completedRunId": "21d8921b-39db-4856-85bb-4d618ad1fb76",
       "gitHead": "444de9fe35b88c8fd5d02bd68d9698ee51bb331f",
