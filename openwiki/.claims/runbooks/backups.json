@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2da874cc7d2d868c4df9785a07ce55b018a8b4f8b17f7594821674caedd53f41",
+  "pageVersion": "sha256:6035fb9714dc5626c0dbf8adbad5e9edc5a87f4432f148a347c5489391554b8f",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -64,7 +64,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-runner.ts",
@@ -81,7 +81,7 @@
           "version": "repo-lines-v1:sha256:3050a5badfd7f36ce2e89abecf948fdc5615c8f823a9ee2252bd54a7468c2175:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVlN2MzMWEzM2RkMmI0OTQ1ZmE5MzY0MGM4ZDE4NjBmOTVlY2Y4MWZkODVmNTRhMjhlZTRmMWUxM2NkZWRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFmMWViODFmNDAxYjdmZTc3ZWI1YjJkMzgyNTZkNzFlNzNlNDRkNjBjMmQzZDljZTMxYWQwNTQ5ZDMxYjczNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc2MjJlN2FjMzU2Njg0NzY3MzBjOTA5NDRhMjVkOTNlN2UyM2Q3NGYxZTBjNTQ0MWEwY2U4MDA1MzVmMzIxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWExZTdhNGU5NTFmZDI3YjEzNWY3ZTQxOGVlMmFiMWUzY2Y5YjU5ZWU0OWVhY2Q1OGJjNmQ5MTQ1M2MzMjBiNyJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/server.js#L127-L173",
+          "resource": "repo://frontend/mcm-app/server.js#L140-L186",
           "version": "repo-lines-v1:sha256:e986fd4b7dec65972fd9cd9e80e37bcdfd93ca561ae0a33dfefc0e6045883e69:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNjI0NDgzZmMxMTVmZjY5NmE2NmNjZjc3MTFlYzY5YjY2Y2NiOWVkNjI5ZTZmNzNjMWI1YTE5YTJlMTA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDkxODg0MjkyY2QxMjVkNDA4ZDMwMTQ4YzM3NjdkNGYwZWUzY2MzY2UwM2EyY2VjYmZmOGIwMTFiMDY0OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODExODNmZWQxZGQ2Njc3YjAwMGE4NzU0OTQ1YjA5YjM5OThjODNjZjRmZjhmZGQ5YjFmNWQ0M2U3NmViNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjgzZmNjZTE0ZDZjNzhjMTQ3YmMwOWI0ZTdkZDE0Y2U5OGMxNzRlYzZkNTg2OGE4NDM1MjZmNzNiODAyODMifQ"
         }
       ]
@@ -91,7 +91,7 @@
       "statement": "Retention's safety property is that a failed or partial run prunes nothing, and a prune failure never fails the run — it is recorded separately in pruneFailureReason distinct from the run's failureReason.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L253-L259",
+          "resource": "repo://docs/runbooks/backups.md#L257-L263",
           "version": "repo-lines-v1:sha256:70dd47ae039a88a6e81c9071739c666524b7c2658ed422be06f6d1c1a6c5992e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI5MjRiZGQwYWM1MWNiZTY2ODRjZDRjMjhhZGJjNGEyMWE0YjZmMTk4YmJkMDE1ZjJmNDdmZjk4MzQ3ZTVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI4NmI5NThkMDBkOTgyZDQ4MDU3YThlZWQ2Yzg2MThlMWE0MDlmNjAwMzY5OWNkN2FjYzgyMjZhNDRjNzllNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzQxYzEyODU1ODJmNGFlZDM2NzlkMDIzNDkyODRiMmFiZTY3NTRmY2RlZmMzYzBjMDFlY2Q4NDliOTg4YzdlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU5MTQ1ZDk4YmRhY2Y0MTczODQ5ODEyMDU3NGUxYWQ3MzU0YzhhMzk4MzlkZTZkZjhmNzc5ZmI2ZjBmYjBjYiJ9"
         }
       ]
@@ -119,7 +119,7 @@
       "statement": "The audit-sink redaction rule strips any key containing 'token' plus an explicit redact list, which does not name secretEnc, accessKeyId, or a destination password by field name; those fields are excluded by construction rather than by the token-matching rule and are asserted against real secret values in backup-audit.integration.test.ts.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L306-L309",
+          "resource": "repo://docs/runbooks/backups.md#L310-L313",
           "version": "repo-lines-v1:sha256:0dad9b00d0c64a4862206d1fd3dd1c10748852ca36d7c7774a645586196390b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzNGQ2ZGJlMmY4MzdmZjllY2ExNDQ5Mzg4YTY1YTg0MjE2YTU1ZDViMjdmZDExMGI5YzcxOTQ0M2ZhZTUzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM0MDk3YjRlOGNmMDJmODlhNGFjYjU0NDZmOTEzZmJiNzEwNGE2YWU4NDJmODg5MTRmYTI4YTU3ZTE2ZGFlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE0ZDhlNjdmNzVlY2NhZTZkMzM0ODRjOGJkOWEzZmFhNDZjYzMyNjQ5NzgxZGM1YTcyYzk3MmI3YWY1YjliZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FjMGM4YTA5MGFmNDA3MmIyZTFlZGEyMTQ1MzFiYmMyNTQwYmE3ZTEwZWI1MGQyMTJmOTk1MGY0NGM2NDhlMyJ9"
         },
         {
@@ -151,7 +151,7 @@
       "statement": "Streaming snapshots are not implemented (the size/count ceiling stands in for them), and failure notification is in-app only with no outbound email channel, since the existing email service only drives Keycloak account flows.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L337-L339",
+          "resource": "repo://docs/runbooks/backups.md#L341-L343",
           "version": "repo-lines-v1:sha256:4021962d99589ca456d81b244dd7c255816d70f7e54de66e595615ec6ffec864:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVjNjk1YTE5NDQ4OWQ2YTQyNTMyZWFkZDM4MDU5NGRiMmE1MjlmMjMwY2NhNjI2MDhmNjE4MTg5YjdkYzMzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjZmZiNjEzN2FkZDEyM2JiZjIyNjYyY2NmMmVjMmExMjUzZDc5M2VjOWFkNjZkZGYyOWQxMzY2ZWQ0ZjVlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVjZTk1MzU5MzllY2FhM2Y3M2NhMTUzOTUwZTE0NmE2MDM3YzcyMGMxY2QxZWZjNGIzYWFkMDc1M2ZmZDUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -320,7 +320,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -334,7 +334,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://scripts/gen-dev-env.mjs",
@@ -358,7 +358,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -392,7 +392,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts",
@@ -410,17 +410,109 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-retention.ts",
           "version": "repo-file-v1:sha256:82984ccadff62ef168380db351b852810b9a0adebe0f2cc10ea8d9959a5b7b8e"
         }
       ]
+    },
+    {
+      "id": "claim_0b0e43c030bf480d9e0fcc0feb170bda",
+      "statement": "Destination secrets and offline grants are sealed under the feature's own AES-256-GCM master key BACKUP_CREDENTIAL_ENC_KEY, deliberately separate from AGENT_CONFIG_ENC_KEY so that key's blast radius is not widened from the user's assistant credentials to every store the user's whole collection can be written to; the key is read at first use rather than at boot so a deployment that configures no destination still starts, and rotating it makes every stored destination secret and offline token unreadable, forcing each user to re-enter their destination and grant consent again.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts",
+          "version": "repo-file-v1:sha256:0996758804b9fad2db72f800042cd93914404cc0e84acde321fdcfae68247082"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts",
+          "version": "repo-file-v1:sha256:a42e570472a270ca96935e664c15578ca12a2bf2be10e8b951b473c48e22c17e"
+        }
+      ]
+    },
+    {
+      "id": "claim_7123ddf66cf7418a9ed6e0e3bf5ac16b",
+      "statement": "Backup encrypted blobs are bound by AAD to their owner and field, so a store-layer mixup fails the GCM authentication check loudly instead of decrypting: a destination secret is bound to userId plus destinationId (not userId alone, which would make two of one user's own destination secrets interchangeable), while the offline grant is bound to userId alone because a user consents once and revocation is a single act.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts",
+          "version": "repo-file-v1:sha256:0996758804b9fad2db72f800042cd93914404cc0e84acde321fdcfae68247082"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts",
+          "version": "repo-file-v1:sha256:25d9b61e550f9526171652f230cf9853e60cb1241872d8c6710d3bae9b0ec15a"
+        }
+      ]
+    },
+    {
+      "id": "claim_606e1024889046d89f0a83c8d5a62c22",
+      "statement": "Granting backup consent also requires the realm's offline_access role, which Keycloak reaches through the realm's default-roles composite: a user created through the Admin API inherits it, but a user created by a realm-JSON import gets it only if that import grants the default role, and the failure is invisible — it surfaces as a blank page after sign-in rather than an error, which is how the seeded e2e-test-user once ended up unable to consent.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json",
+          "version": "repo-file-v1:sha256:54006ba1df683356ac1a321a914c8bcd78df95ab6b60e79927d728859a5275d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_0eaccf518889461883c38face27f33d7",
+      "statement": "The scheduling tick is silent when nothing is due, by design, so its liveness proof is the first Mongo connect one interval after boot rather than a per-tick log line; a job that never runs usually has no nextRunAt at all, because a disabled job deliberately carries none so that re-enabling does not fire for an occurrence that passed while it was off, and a job left claimed by an instance that died self-heals after the 30-minute reclaim ceiling. Catch-up is deliberately once-only: a job whose time passed while the system was down is claimed once on recovery with its next occurrence computed forward from now, since advancing occurrence by occurrence would fire repeatedly and, with keep-last retention, prune away the history the downtime was meant to preserve.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md",
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
+          "version": "repo-file-v1:sha256:0c6d10784d924be28dedcc79e583cc9d99eecb8d1d977238decb6c93e2fe0679"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts",
+          "version": "repo-file-v1:sha256:2cd46a583032e283997020ec500f22c329134b00676899dbf497a762fca79f8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b4f4a9d77974e9d858ff4d2c40d5e2a",
+      "statement": "Revoking the standing permission through the consent route also switches every one of the user's remaining schedules off, and only after the revocation itself has succeeded — a schedule left on could only ever produce a failed run, and the settings screen would report backups off over a switch still reading On. The jobs themselves are kept: they still run on demand and still own the versions at the destination.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts",
+          "version": "repo-file-v1:sha256:69727ded7edaa739285e4e189cd620ff702e8ce1bc93801ffdc3d0b40b242516"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-job-store.ts",
+          "version": "repo-file-v1:sha256:2cd46a583032e283997020ec500f22c329134b00676899dbf497a762fca79f8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4173cf25f1e4fc9aeb59cd227bca694",
+      "statement": "The web E2E backups spec skips rather than fails when the backup destinations are absent, and escalates through its own flag E2E_REQUIRE_BACKUP_TARGETS=1 (which CI sets) rather than MCM_REQUIRE_BACKUP_TARGETS; the values it needs — BACKUP_TICK_SECRET and the BACKUP_TEST_* pair — live in .env.local, which Playwright does not load, so they must be passed explicitly, since supplying only the e2e env file once produced a green run whose backup specs had silently skipped.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:23d5edc253c34016ff0e749a57c599c435908b1025ae4f70088af484a91a719d"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts",
+          "version": "repo-file-v1:sha256:7a387da36d2d54dee33f5e9cc5e08e5d4ef47dcb645181caa900000a40ec320f"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T16:15:01.685Z"
+    "at": "2026-10-26T03:45:38.439Z"
   }
 }

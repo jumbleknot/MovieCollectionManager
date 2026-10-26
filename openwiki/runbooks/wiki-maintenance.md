@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the five slice-verification causes, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the six slice-verification causes that the OKF and governance gates both feed, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -73,10 +73,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T16:15:01.685Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T16:15:01.685Z
+    at: 2026-10-26T03:45:38.439Z
 ---
 
 
@@ -155,7 +155,7 @@ stateDiagram-v2
     DeadlineStop --> RevertUnrequested: restore what the slice did not ask for
     RevertUnrequested --> Verify: requested pages, their sidecars and index, plus any submitted forced page, kept
     Invocation --> Verify: pages counted from the working tree
-    Verify --> Partial: failure attributable to particular pages, conformance and policy clean
+    Verify --> Partial: failure attributable to particular pages, conformance, policy and governance clean
     Partial --> Proposal: the landed pages are proposed, forced pages too
     Partial --> RestoreFailedPage: only the failed pages return
     Verify --> Confined: the only other violation is conformance
@@ -191,15 +191,18 @@ or wall clock, or a job deadline that leaves too little time to *start* a genera
 the remainder carried forward (exit 3),
 while two consecutive slice failures end it as a failure (exit 1). A run that
 generated pages but could not get them onto a proposal undoes the marker advance rather than certifying
-work that only exists on a runner about to be thrown away. Six of those edges are the newer machinery: a
+work that only exists on a runner about to be thrown away. Seven of those edges are the newer machinery: a
 generator the job deadline stops is first cleaned of everything the slice never asked for (a forced page
 whose worker already *submitted* is kept, because that submission is durable and paid for), an
 invocation that fails only on *some* of its pages proposes the pages that verified instead of discarding
 them with the failed ones, the pages that did *not* land are restored to their committed bytes so they
 cannot ride along on that proposal, a conformance break that turns out to belong only to those failed
 pages — or a V16 break the gate names on a requested page left mid-edit (run 5145) — is repaired by that
-restore and the rest are judged again, a deadline stop is also what tags the pages that did not land, and
-the next run takes those tagged pages first and alone at a lower reasoning effort.
+restore and the rest are judged again, a deadline stop is also what tags the pages that did not land, the
+next run takes those tagged pages first and alone at a lower reasoning effort, and the verifier now runs
+the governance gate alongside the OKF gate (PR #857), so a page that is OKF-conformant but has lost its
+`resource:` fails the whole invocation — a concept with no determinable home has nowhere for a learning
+to go.
 
 ## The provider is configuration (feature 078)
 
@@ -360,7 +363,7 @@ egress host costs one token, not a slice.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
-| `1` | A slice **failed verification** — a requested page missing, left stale, or left mid-edit by its worker and restored, the bundle became non-conformant, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
+| `1` | A slice **failed verification** — a requested page missing, left stale, or left mid-edit by its worker and restored, the bundle became non-conformant or broke openwiki governance, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, a forge that cannot be reached for the pre-plan reconcile, or a policy file that will not load | **Yes** |
 | `3` | Stopped with work outstanding — the run budget was reached, the job deadline left too little time to start a generator, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |
 
@@ -381,7 +384,9 @@ flowchart TD
     C -->|"no - anything else"| F["Whole invocation failed, exit 1 - every page returns"]
     C -->|yes| D{"Every written path permitted by policy.yaml?"}
     D -->|no| F
-    D -->|yes| E{"A requested page left stale?"}
+    D -->|yes| M{"Governance gate still passes, G0 to G12?"}
+    M -->|"no - a page lost its resource (run 6049)"| F
+    M -->|yes| E{"A requested page left stale?"}
     E -->|"yes - its source commit is newer than its stamp"| P
     E -->|no| G["Slice verified"]
     P --> K["The pages that landed are still proposed, forced pages too"]
@@ -394,8 +399,8 @@ flowchart TD
 
 The independent checks a finished slice must clear before its marker may advance, and how it
 resolves. Only the page-attributable ones are attributable to a *page* of a multi-area invocation: a
-conformance or policy failure is the whole invocation's, so it proposes nothing and returns every page —
-with one exception, the conformance break that turns out to be a failed page's own.
+conformance, policy or governance failure is the whole invocation's, so it proposes nothing and returns
+every page — with one exception, the conformance break that turns out to be a failed page's own.
 
 Verification never consults the generator's own exit status; it looks only at what landed in the working
 tree and at the bundle's gates. The contract is the pages the slice *requested*, not "some page
@@ -407,14 +412,20 @@ its bytes changed: on proposal #615 a run deleted a `verified:` block from
 `runbooks/ci-diagnostics.md`, left the body and its `generated` stamp alone, and the page counted as
 written — so a check that skipped written pages never looked, and the marker moved past the source
 change exactly as in #587. Cause 2's conformance includes **V16**, the Markdown/Claims durability rule,
-because a bundle that breaks it stops every *later* run. The ways a slice can fail, and what each
-one means, are enumerated in the gotchas below. The two stamp-reading checks this flow shares with
-`okf-lint` — the stale-page cause here and the gate's V12 drift warning — both go through
-`scripts/openwiki-stamp.mjs`, so they resolve the same page to the same date.
+because a bundle that breaks it stops every *later* run. **Cause 6 is the governance gate (PR #857)**:
+the verifier used to run `check-openwiki-okf.mjs` alone, so on run 6049 a regenerated
+`projects/bff.md` that had lost its `resource:` stayed OKF-conformant, passed the verifier, and was
+proposed — and guardrails then failed the pull request on **G11** ("neither derived nor authoritative"),
+because a concept with no determinable home has nowhere for a learning to go. `verifySlice` now runs
+`check-openwiki-governance.mjs --root` too (skipped, out loud, only for a fixture bundle with no
+`protected.yaml`), and a governance break is a whole-invocation failure like policy. The ways a slice
+can fail, and what each one means, are enumerated in the gotchas below. The two stamp-reading checks
+this flow shares with `okf-lint` — the stale-page cause here and the gate's V12 drift warning — both go
+through `scripts/openwiki-stamp.mjs`, so they resolve the same page to the same date.
 
 Four refinements the diagram shows that the causes alone do not. A failure that is attributable
 *only* to particular pages — a requested page missing, still stale, or named by V16 as left mid-edit,
-with conformance and policy otherwise clean —
+with conformance, policy and governance otherwise clean —
 is recorded per page (`failedPages`, `landedParts`), so the pages that verified are proposed and only
 the failed pages return to the backlog; the failed pages are also restored to their committed bytes
 first, so they cannot ride along on that proposal (items #685 and #720). A conformance break is a
@@ -731,7 +742,7 @@ The figures in the example are illustrative.
   pin. The pinned-version checks skip wherever the pinned generator is not installed, which is why the
   wiki-maintain job — the one place it *is* installed — runs this guard before any paid call and fails
   the step on a skip.
-- **A slice fails when any of five things is true, and the generator's own exit status is not one of
+- **A slice fails when any of six things is true, and the generator's own exit status is not one of
   them:** a **requested page does not exist after the run** (an `index.md`-only refresh counts as
   nothing — this is exactly what produced feature 043's false-green run: 12 minutes of paid work, one
   `index.md`, exit 0, reported as success), the bundle stopped being conformant
@@ -739,8 +750,9 @@ The figures in the example are illustrative.
   described under Claims sidecars below, because a bundle that breaks it stops every later run rather
   than failing one page), a written path was not permitted by
   `openwiki/policy.yaml` — which includes a write into `docs/runbooks/`, a path that *is* `regenerate`
-  but is governed by an **agent**, not the generator — or a **requested page was left stale** (items
-  #587, #616):
+  but is governed by an **agent**, not the generator — the bundle broke openwiki **governance**
+  (`check-openwiki-governance.mjs`, rules G0–G12 — see the governance gotcha below) — or a
+  **requested page was left stale** (items #587, #616):
   a requested page that cites a `resource` whose last **commit**
   is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
   longer passes because *some* of its pages were written. **Whether or not the run changed the file**,
@@ -762,20 +774,35 @@ The figures in the example are illustrative.
   checkout stamps every file's mtime with the checkout time and an mtime read would mark every concept
   stale. The failed work returns to the backlog and **the marker does not advance** — for the
   page-attributable causes only the pages that failed do, even when area-mates of theirs landed in the
-  same invocation, while conformance and policy violations carry the whole invocation back (except a
-  conformance break confined to the pages that already failed — see the gotcha below).
-  **A fifth, page-attributable cause was added by run 5145 (2026-10-11): a requested page a worker left
-  mid-edit.** openwiki 0.7.1 finalizes a page's Claims on `submit_page`, so a worker stopped at the
-  deadline or killed mid-edit leaves bytes its sidecar no longer certifies — a V16 break — while the
-  page's stamp is fresh, which makes it neither missing nor stale. V16 names the page, so it is
-  attributed to itself: restored to its committed bytes (the same page/sidecar/manifest triple), counted
-  as failed, and carried forward even when its committed bytes are current. On that push run
-  `projects/sast.md` was the page, and five submitted pages — `runbooks/wiki-maintenance.md` among them —
-  were discarded with it.
+  same invocation, while conformance, policy and governance violations carry the whole invocation back
+  (except a conformance break confined to the pages that already failed — see the gotcha below).
+  Two of the six are newer than the original four. **A page-attributable cause added by run 5145
+  (2026-10-11): a requested page a worker left mid-edit.** openwiki 0.7.1 finalizes a page's Claims on
+  `submit_page`, so a worker stopped at the deadline or killed mid-edit leaves bytes its sidecar no
+  longer certifies — a V16 break — while the page's stamp is fresh, which makes it neither missing nor
+  stale. V16 names the page, so it is attributed to itself: restored to its committed bytes (the same
+  page/sidecar/manifest triple), counted as failed, and carried forward even when its committed bytes
+  are current. On that push run `projects/sast.md` was the page, and five submitted pages —
+  `runbooks/wiki-maintenance.md` among them — were discarded with it. **A whole-invocation cause added
+  by PR #857 (run 6049): a page that breaks the governance gate.** See the governance gotcha below.
   A generator the job deadline stopped is judged on what landed, like any other: the stop is recorded,
   the run **still commits its record, usage and digest**, and nothing about the generator's own exit
   status changes the verdict — a stopped generator usually leaves a requested page stale, which fails
   the slice.
+- **A page that passes the OKF gate can still be refused by the governance gate, so the verifier runs
+  both (PR #857, run 6049).** On that run the generator rewrote `projects/bff.md` *without* its
+  `resource:` — and without its `description` and `tags`. The page stayed OKF-conformant, so
+  `verifySlice` passed it and the run opened a pull request that guardrails then failed on **G11**
+  ("neither derived nor authoritative"). The gate that would have refused it already existed; the
+  verifier simply never called it. `verifySlice` now also runs
+  `node scripts/check-openwiki-governance.mjs --root <root>`, because those rules span the whole
+  repository — the bundle, `CLAUDE.md`/`AGENTS.md` and the two governance files — and not just the
+  bundle the OKF gate is pointed at. A governance break is a **whole-invocation** failure, like policy:
+  it proposes nothing and returns every page. The one exception is a fixture bundle with no
+  `protected.yaml` (a pre-governance test fixture, not a weakened production run), where the check is
+  skipped and says so out loud rather than silently passing. This is the same family as the canonical-home
+  rule below: a concept with no determinable home has nowhere for a learning to go, which is why G11
+  refuses it.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.
@@ -826,8 +853,8 @@ The figures in the example are illustrative.
   area to create, which a paid run cannot satisfy.
 - **One invocation can carry several slices, and a failure in one page no longer discards the others.**
   When an invocation's failure is attributable only to particular pages — a requested page missing, still
-  stale, or left mid-edit and named by V16 — while conformance (V16 included) and policy are clean,
-  `verifySlice` splits the invocation by
+  stale, or left mid-edit and named by V16 — while conformance (V16 included), policy and governance are
+  clean, `verifySlice` splits the invocation by
   page: `failedPages` names the pages that did not land, `failedParts` holds only those pages, and
   `landedParts` holds every other requested page, area-mates of a failed page included. The landed pages
   are proposed (`proposableSlices`: verified invocations plus landed parts), and only the failed pages
@@ -841,10 +868,10 @@ The figures in the example are illustrative.
   V16 door: five of six workers submitted, but `projects/sast.md` was mid-edit at the deadline, so its
   fresh-stamped but uncertified bytes were neither missing nor stale and nothing landed — V16 named the
   page, which is what makes it attributable. A **whole-invocation** failure
-  (conformance or policy) still proposes nothing and returns every page, **except** the conformance break
-  that turns out to be a failed page's own — see the next gotcha. A proposal is created or updated
-  whenever **any** page landed — including a run that stopped at its budget (exit 3) or had a failed
-  slice (exit 1). **Pages openwiki forced in are proposed too when they verified on their own (item
+  (conformance, policy or governance) still proposes nothing and returns every page, **except** the
+  conformance break that turns out to be a failed page's own — see the next gotcha. A proposal is created
+  or updated whenever **any** page landed — including a run that stopped at its budget (exit 3) or had a
+  failed slice (exit 1). **Pages openwiki forced in are proposed too when they verified on their own (item
   #707):** openwiki forces every page with a stale or unresolved Claim into every run, and runs 4960
   (~$2.39) and 4972 (~$1.80) paid for five such pages and discarded them both times, because only
   requested pages counted — so each issue survived into the next run and was paid for again. Under the
@@ -875,8 +902,8 @@ The figures in the example are illustrative.
   mid-edit, and its uncertified bytes discarded all 13 (~$2.66). Run 5145 added the other half: when V16
   names a **requested** page, that page is itself the attributable failure — restored, counted as failed
   and carried forward — so the submitted pages beside it are not discarded with it (that run lost five
-  submitted pages, this page among them, to `projects/sast.md`). A policy violation, or a break the
-  restore does not repair, still fails the whole invocation.
+  submitted pages, this page among them, to `projects/sast.md`). A policy or governance violation, or a
+  break the restore does not repair, still fails the whole invocation.
 - **After a deadline stop, the slice keeps what it requested and what openwiki already submitted.**
   openwiki forces every page with a
   Claims issue into a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after

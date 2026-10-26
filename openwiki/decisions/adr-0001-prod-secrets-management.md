@@ -15,8 +15,12 @@ sources:
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-23175e1d10427daa3344d3ec
+    resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-3b86829117dd0577834407fc
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
   - id: openwiki-source-8ada931f45dbc32482cecf9f
@@ -29,14 +33,16 @@ sources:
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-2c24e272c750d36f7963e28d
     resource: repo://specs/026-prod-data-auth-vault/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-13T10:46:04.907Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-26T03:45:38.439Z
 ---
 
 # ADR-0001: Production secrets-management standard
@@ -89,14 +95,22 @@ non-secret operational values — bare image digests in the committed `.env.depl
 values, which are `[[Variable]]` tokens rather than inline literals — travel by their own channels and
 sit outside the ADR's coverage map.
 
-Seeding is a precondition of the sync, not part of it. A masked `[[Variable]]` that does not exist in
-Komodo yet interpolates **empty** into `.env.prod`, so the stack's fail-fast `${VAR:?}` reference
-aborts the deploy — the intended failure, and the reason the TOML names the Variables that must exist
-before the first sync referencing them: `LANGFUSE_RUSTFS_SECRET_KEY` for `prod-observability`, and
-`BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` and `mcm_backup_consent_client_secret` for
-`prod-mcm-bff` (the last of those created in the Keycloak admin console, because `kcadm`'s password
-login cannot satisfy the admins' 2FA). The same block records that the destination allow-list is an
-exact host match with no port.
+Seeding is a precondition of the ResourceSync, not part of it, and the TOML names the Variables that
+must exist before the first sync referencing them: `LANGFUSE_RUSTFS_SECRET_KEY` for
+`prod-observability`, and, for `prod-mcm-bff`, the masked `mcm_backup_credential_enc_key`,
+`mcm_backup_tick_secret` and `mcm_backup_consent_client_secret` alongside the plain
+`mcm_backup_allowed_destination_hosts` — the four lowercase Variable keys behind that block's
+uppercase `BACKUP_*` environment names. The consent client's secret is created in the Keycloak admin
+console, because `kcadm`'s password login cannot satisfy the admins' 2FA. What an unseeded token
+actually produces is recorded two ways, and the difference is worth knowing. The newest measurement
+(item 843, 2026-10-25) is that
+Komodo writes the **literal `[[…]]` placeholder** into the generated env, so the deploy proceeds
+carrying a wrong value. The feature-025-era notes in `stacks.toml` and the control-tower runbook
+describe the other symptom: the token interpolating **empty**, so the stack's fail-fast `${VAR:?}`
+reference aborts the deploy. Both are records of one rule — seed the Variable before the sync that
+first references it, never after. The same block records that the destination allow-list is an exact
+host match with no port, and that it is a *plain* Variable rather than a masked one because it is LAN
+topology: it stays out of git for the same reason `[[BASE_DOMAIN]]` does.
 
 The coupling that makes this safe to change: Komodo writes a stack's `environment` block into that
 stack's `env_file_path`, so a variable absent from the block is absent at `docker compose config`
@@ -182,9 +196,13 @@ source supplies it. In production today those two env vars are unset, so the rea
   fine-grained secret-access audit are named, explicit non-goals until the ADR's §7 revisit trigger
   fires (dynamic short-lived DB credentials wanted, mandated rotation/audit, or a move to multiple
   hosts/operators) — do not treat their absence as a gap to silently fix. Blast radius is per
-  credential and the declared-input list records the worst case: rotating `mcm_backup_credential_enc_key`
-  orphans every stored backup destination secret and offline token, which is why that line is
-  accompanied by an explicit "never rotate casually" warning.
+  credential and the declared-input list records the worst case: `BACKUP_CREDENTIAL_ENC_KEY` is
+  deliberately a **separate** key from `AGENT_CONFIG_ENC_KEY` so the blast radius is not widened from
+  "the user's assistant credentials" to "every destination the user's whole collection can be written
+  to", and the line is accompanied by an explicit "never rotate casually" warning because rotating it
+  orphans every stored destination secret and offline token — each user must re-enter their
+  destination and consent again. The same reasoning reaches the dev and CI generators: they **seed**
+  that key rather than syncing it, because a re-run must not orphan existing secrets.
 - **The `komodo-stack-env` guard checks one direction only.** It proves every required variable is
   *supplied*; it says nothing about a declared input no compose reads any more, or a Komodo Variable no
   longer referenced by any `environment` block. Both happen, and neither is self-cleaning: the
@@ -194,6 +212,16 @@ source supplies it. In production today those two env vars are unset, so the rea
   because reverting that change restores the lines that reference them. Removing a consumer is not the
   same edit as removing the input — see
   [Infrastructure stacks](../projects/infrastructure-stacks.md) for the retired-variable record.
+- **A capability whose keys are *optional* has no `${VAR:?}` for the guard to see, so it can be
+  silently off in production and CI will stay green.** Feature 073's scheduled backups are the worked
+  example: `BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` and `BACKUP_ALLOWED_DESTINATION_HOSTS` are
+  all read through the BFF's optional-env path and none of them is a fail-fast reference, so nothing
+  forced them into `prod-mcm-bff`'s declared-input list. They were absent until 2026-10-25, and the
+  symptoms were runtime rather than deploy-time — "That address is not allowed" on a LAN destination
+  and `backup scheduler disabled` at boot (item 843, spec 083 T009). The guard stayed green throughout.
+  The lesson generalizes: an optional feature's switches must be reviewed into the declared-input list
+  by hand, and a sync that only changes the environment does not recreate the container — a **Redeploy**
+  is required before the new value reaches the running service.
 
 Because B-opt-1 was selected, feature 026's US3 migration plan was never executed and no migration
 artifact exists; it would become the first deliverable of a follow-up Vault-adoption feature if the

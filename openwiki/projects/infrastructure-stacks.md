@@ -23,6 +23,8 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
     resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
     resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
@@ -107,10 +109,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/research.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T18:33:06.357Z
+    at: 2026-10-26T03:45:38.439Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -349,9 +351,16 @@ follow-up, 2026-10-25) added `BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` a
 and the boot log read `backup scheduler disabled`. Two properties of this group are worth carrying:
 the allow-list is an **exact** host match with no port and is a plain Variable rather than a masked one
 (it is LAN topology, so it stays out of git like `[[BASE_DOMAIN]]`), and `BACKUP_CREDENTIAL_ENC_KEY`
-must never be rotated casually — it orphans every stored destination secret and offline token. This is
-also the clearest instance of a rule the gotchas below state in full: the addition was invisible to CI,
-because a capability whose keys are *optional* has no `${VAR:?}` for a guard to see. See
+must never be rotated casually — it orphans every stored destination secret and offline token.
+
+Every key in this group is *optional* in the BFF's env reader, which is why neither of these two
+additions could move a CI gate: the consent pair falls back to the login client's id and secret, so
+spec 083 T008's stated verification was that the coupling guard "stays green before and after — both
+values are optional (`env.ts` falls back to the login client), so no `${VAR:?}` guard applies". The one
+backup switch deliberately **absent** from the block is `BACKUP_TICK_ALLOW_TIME_OVERRIDE`: it is dev/CI
+only, and since the tick's `?now=` override is read deny-by-default (`=== '1'`), leaving it out is what
+keeps a production tick pinned to the wall clock. That is the rule the gotchas below state in full: a
+capability whose keys are *optional* has no `${VAR:?}` for a guard to see. See
 [the backups runbook](../../docs/runbooks/backups.md) for the production section and
 [the BFF page](./bff.md) for what the switches do at runtime.
 

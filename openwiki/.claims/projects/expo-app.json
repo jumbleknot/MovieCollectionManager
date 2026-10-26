@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:81fea3a6e7f426d5fdac02978910c28dfd2a7c219ba0ba67587f9e1fa3eaa7ec",
+  "pageVersion": "sha256:63f4d25fd3eeca7721470225147cf01b2e6768f2b502d91e1056ba13c3f6d73d",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -88,15 +88,15 @@
     },
     {
       "id": "claim_a9584ae4998649f6bd6868577545ed7b",
-      "statement": "The client-side Backups settings area (feature 073 / backlog #236, src/screens/settings/backups-settings-screen.tsx) lets a user configure backup destinations (create/edit/test/delete), create/edit backup jobs and schedules, run a job on demand, view run history and stored versions, restore a version, and manage the standing consent for unattended scheduled runs, composed from src/components/backups/ (destination-form, destination-list, job-form, schedule-editor, run-history, version-list) and the use-backup-destinations/use-backup-jobs/use-backup-consent hooks, whose calls are all session-scoped server-side so no userId is passed.",
+      "statement": "The client-side Backups settings area (feature 073 / backlog #236, src/screens/settings/backups-settings-screen.tsx) lets a user configure backup destinations (create/edit/test/delete), create/edit backup jobs and schedules, run a job on demand, view run history and stored versions, restore a version, and manage the standing consent for unattended scheduled runs; it is composed from src/components/backups/ (destination-form, destination-list, job-form, schedule-editor, run-history, version-list) and the use-backup-destinations/use-backup-jobs/use-backup-consent hooks, whose calls are all session-scoped server-side so no userId is passed and the API has nowhere to put one.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-consent.ts#L21-L29",
-          "version": "repo-lines-v1:sha256:06dc6e1350845a0046731b372ebb76834ca33f6299864503c6a27739a4d50533:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1NzVmOTVlZTA3N2ZjYTJmZGQ1ZWNlOWYyODUwMDAzYzAxMmI2MjA3NDUxYmRlZWMyYjM1MzlhOTkzNTE3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQ1YzI3YzVkMTZjNjBmZDkwYTE1ZmFkODkzYWZhYWU5NjgyMDc1ZDliNWE4NWZlYjJkNjhjNWQ4ZTEyZDA0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBkMzk2ZTdmZmM0Njk0ODEwZDJjNmI1N2I1YzM3YTc3ZmMwN2M2NDMxNDkyMDM4NTgwNDlmOWIwNTdkNTM0ZiJ9"
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts#L1-L10",
+          "version": "repo-lines-v1:sha256:b819143d8d0a17e7593fd551eb2b6595bdc53ee934e8fc10a1946996dc5c35f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjUyYTBjYjU2N2Y3ZTYzM2JjOTA0MDY3NjE4OTA3MDQwODU0ZmQwZTg5OWE1ZTc1MTdkZGM3NjRjYjk5OWMifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L32-L46",
-          "version": "repo-lines-v1:sha256:d69758e09c462798edb9619e1e223c5176eab957b7cc2d1b2fb9fc4afcd31140:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NzMwYzE3NTgyMzRhMmI4YWQyMDNlYjg3OThmZGQ3N2VlYzg0YTM4NGQ2YjBiZTNjY2ZmZDRiNjZhNzcwMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MzZhZjkyMzkwY2RjYWZmOTI5Zjg2ZjM3ZTM3NjNlNjQwNDAxMWI4NzYzNWJiN2JiZTNmZjE5ZmQ0Yjc4NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1OTlkYjBkMjljOWZkZTM0Y2ZmMjQxOGM5MjM3MTlmNzgzNmRjMmRkMTBhMWNkZjE0OWFhNzE5Zjg3Y2I2OTYifQ"
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L1-L6",
+          "version": "repo-lines-v1:sha256:2f71e59747be25e0eaa57504133cbb34855630a5a74d252d0174786cf9ff14b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFiNTJhMGNiNTY3ZjdlNjMzYmM5MDQwNjc2MTg5MDcwNDA4NTRmZDBlODk5YTVlNzUxN2RkYzc2NGNiOTk5YyJ9"
         },
         {
           "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L15-L48",
@@ -457,7 +457,7 @@
       "statement": "Backups run history is rendered in the JOB's time zone rather than the device's (RunHistory receives job.schedule?.timeZone), so a user who scheduled 03:00 in London still reads 03:00 after opening the app in New York.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L288-L295",
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L291-L298",
           "version": "repo-lines-v1:sha256:07a2d2c6558c9fbc306a68d1ae33dec0439e0a0bb9fd7cb399332262551c72c5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ2Njc2NjMwNzEzODI3MTRhNmY1MmNkNTdmNzRmNjY1ZTgzYjQ5ODViN2IxZDY4OWIyOWJjZjRhYzhlOWRlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JlYjA1OGUyNjJiNmYwYWRhNjZkZjA3Nzk2M2Q1NGVmNmE4Yjc5NmY1ZTM5Mjc2N2E5OGMzMDhlMDU5NWY4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZlN2NjY2RiMzRiM2IzNzgyYjNmMTcyMzVjOTc5MmY1ZGE2MTc1NWU3YzY0NjJlNGJiZTBkNmI0MDAxZDA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFjNmExZGRhNGI2OTRmOTlkZjI4M2FmODNmNDY0MTBjNmU0NzQ1ODExNmMzZDIyMzY5Y2JmOThhOTZjY2ViOCJ9"
         }
       ]
@@ -655,7 +655,7 @@
           "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L31-L50",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L32-L51",
           "version": "repo-lines-v1:sha256:b5a7eb9c25c6c02a80c23736f875b1eac357642faa18dde23432ac2b36d6239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OTZmODM4NTlkMWJkMzZhMmFmNGE4OTMwMjkyMmE2ZjA4OWQxNjU5OTU2MmVmNWMxNTU1ZjExN2ExYTkyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYzQ2NTY0YmQyYmY0ODJlN2I5M2YzOTZlYTg2NDcwZTc3ZTFkYzZlZGE0MmRhM2JhMzc0NDM0YTY3MGVlOTEifQ"
         },
         {
@@ -667,10 +667,154 @@
           "version": "repo-lines-v1:sha256:cfca5807d90f55a67289bf6f0da93d39771d2fa192c7b5ac363ca6ca67f448d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZWYwNjVkZjJlZDg4MDdiMGNkOTg3MDZjNzAxNjI2M2M3N2JlZTE3NWVhNWVmYWJjNGU3OGZjZDU5ZjhiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a99214e6f9f7447194493ce7c42b6d8c",
+      "statement": "Turning a backup job's schedule off must PATCH `schedule: null`, never `undefined`: JSON drops an absent field and the route reads a PATCH without `schedule` as \"leave it alone\", so the old shape left the switch reading On over a job with no schedule (spec 083 T011, measured in production). The distinction is spelled out in the `JobPatch` type in use-backup-jobs.ts, asserted by the screen's unit test, and after such a PATCH the screen re-reads the consent status because turning the LAST schedule off gives the standing permission up (FR-023) and the server decides whether any other job still needs it.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L140-L144",
+          "version": "repo-lines-v1:sha256:d857a7c93b3e8f4e007026da131f33b89b60d8452be246472a332a4a3fde6f4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWFlZTY0MmUwOTljMzYxYWI2MGVhMTEzMjYzZGZjOGJkZmI5OTIyMzhiN2UwMGY3YmM4Yzk4YjBjMTc0YjRiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI3MTUxNTg3YTUxZmQ0NjhiYzEzZDYwNWEzNTliMjc2YzJlY2RkYWJiODAwMjAyNjQyNmEyZWFmMTZjZDI4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFiNTMwMGZhMGYyMGFjYTE5MTYzY2JlNjhmYjNiZWY2MjRmMTkzOTVmYTc2NzA5NzYzMTc3NWQ4Mzc2MjQzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAxYmYyYTU2OGRiZjYyYzRlNDgwY2IxOWI4ZmMzZDE1M2MzMjMyZGNiNzVlZDVkMTkxYjBkYzE4MThjNjczMiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L26-L31",
+          "version": "repo-lines-v1:sha256:56fb145e0c70dd417bf93a0b84a2bf567c65e7441ad94db2fff62dbaa2a61bef:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVlM2I5MTQ5OTRlZGVhMTcxZDk4NDBmNGE1YjY2M2MxZjlhODQ0OTRhM2JhOWIyYTE5M2MwZDcyNGVlZmYxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQzNTU4M2RjZjQ1MjViYTc4YTJiYjI3N2VkMDhmZWVjOWU4NDQ5NGIxNmU0MjBmZjJjMDIzNTA1OTg2NjMzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODhkNTRhNzBkZjljY2YyNzIzMDIxZGE5NjJlNmFlOWNjMzRlNmExYmFmMzc0ZDIwNjA2OGQ5MGYxNzlhNTY5NCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx#L48-L71",
+          "version": "repo-lines-v1:sha256:03501e1c0bbc70a5c3331b8a76bc2a1e114b2d596c84e6ae30448708ab2fd6b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MGRjYWI4NDNhZjBiMTg3OWE0ZWM5NTBhZDUzMzAyYjViMDg3NDBmODU3YzY5ZDM2YmM4NTQ5YTc3NGE5ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MGFkMDg0NDhkYmI0NjVhNDRkMDg0NTY2NjI3NmYzMmQzY2EzYzVkOWM1ZDZkNWNkMTFmNWE3YTBiZmQ5ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L267-L276",
+          "version": "repo-lines-v1:sha256:3b743a7658da3c2bac70c8183e895dcd58ab4e12ce25988c83343ece2028c555:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMjU3YzJhYzlkYjM3ODRmMzk5MzEwMDM5YTdkOGYwYjNiNmU0Y2UwNzNlNWRlYWU2MmRkYTkyOTc3NzNjMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZDNkODQ5MTNmZDc2ODgxODhkNDRhMjIzMGZhZjE2OWJmZDM4OTM0NjE1NjliNTUxY2MwZGFmNzUxYWNjYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxZmQ2MjI2N2M5MjQ5YTZlNGVhODAwMDc5MjE0YTJiNDVmOWY0NThhNzc1ODkyNjBmNTUwNDYyYWZkMTNjNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5ZDFmYjI1MTY1ZmEzZDcxM2VmNTAwZmIxNjQ1Zjc1Yjg1MWI4MzQwN2UyNTUwODlkZTdhM2U0YWMxODcyYTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_62cae333fbdf4a65b9d6de28f250d68a",
+      "statement": "A backup destination's `type` is immutable once created — the S3-compatible and WebDAV chips are disabled in the edit form — and the form's submit stays disabled until a label, an endpoint, the type-specific required fields (bucket plus accessKeyId for s3, username for webdav) and, for a NEW destination only, a secret are all present; an edit may legitimately submit with no secret, which is how \"save without retyping the credential\" works.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/destination-form.tsx#L53-L79",
+          "version": "repo-lines-v1:sha256:1c7132bc905d24ae3cd77d70c4a03ee73717d0b19d330a2685cfdafe2e8570ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiNDIzMjlmYjg2ZTQ0OWQwODhmMTM5ZjE3Yjk4MzMxYWNlYjZlNWU3MDc4MmEwYWFmOTQwMjhjNGM3MTEyOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZDVmMzBhNzZjNmRkY2YxYmUxYjc0MDFlNDM4ZWRkN2FiMWY1ZWIwZjQxZDhiNTllNzIyMTM1N2ZiN2ViZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYmQ4ZGU5ZTMxODcxYjViMDU2YmZkNTgyYmZmNjdmYmFlZTU1NTQzYTM4ZDg2MWJiYTdhODRmOGY0ZDI2MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYTg0NWRmOTkyYzJiZjRmN2M2NmM0NjQxN2Y2YThiZGFlYjQ1ZWYwYmE4Yzc2NjlmNGY5NGVkZTZmZWNkOWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/destination-form.tsx#L88-L100",
+          "version": "repo-lines-v1:sha256:de1e358dd8b8bdcb5846146ddcfc99daa12f1d78da8107c7cc975788201447b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZjE5NDJlYzE5ZDFkYzNlMTk1ODdkMjNhMzg5NWFhYzQyMmVkMzdmMWRhYjliOTcyNjYyNWM1MmQ4ZGUxM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmM2Y0YTU1MzJkOTkyNTczMjAxOTEyNmFlNzAyZGNhNDBlN2JlOTkzZDlmMmFjOTY0YmM0ZWIwNzQzMDVmNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxMjJhNjU0ZTgxNzAzYjk4YWY5Mzk2NjllMWQwMGI5ZGY3OTUxYjMyNGI1ZjA2NzM2NWE4YmVmMmFlZjQ2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjOTgwOTFmNTQxOGQ2ZTk1YzcwNWEyNGE0ZGNiNzY0MzRmN2I4MWJiNTNmZmNlZjcyZjk0NmQ3NWFmYWE5NGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de34ae88c7cb4921a7cffd326182f9b4",
+      "statement": "A backup job with an empty `collectionIds` means \"every collection I own, at the time each run happens\" rather than \"the collections I own today\", and the job form states this explicitly because the second reading is the one a user assumes; the form also bounds `keepLast` to 1–365 and keeps submit disabled until a label, a destination and a valid retention count are present.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/job-form.tsx#L1-L7",
+          "version": "repo-lines-v1:sha256:ea5612cc0c7e6169addcaea8397647243d472f875a384190988017c806fd5de5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ2YWY4MzVhMzNhNGFmNDQ1ZmExYWUzZDQ5NDc3NzZmZDVmZDFmZDljYWU3NTQzYWJkY2EzOWJkMmJhNDJmYyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/job-form.tsx#L34-L45",
+          "version": "repo-lines-v1:sha256:407ea4ab40df4324b7ebaa9f25245b886e4dd4ad4308903c5641f8940fc88f2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMmVmNTg2NDRkNzE2YTRlMjVmMDE1YTM1Zjk5OTkwMTE3NWU2YmJjYmRmYTI3ZWJmMmNkMmI3MDI2YmJjODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3M2Q5Yzg5Zjg2YjcyNWY5YTY5Nzk5ODE1MmMyMmUzNmJiZGM4MzAxMzdjMzIxZWY1YzVkZThmYjE1ZWE1ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YTg2NjM0MjcxYzgyODMyYzQ0NWU3YjNhODZiNjYwZWE1ZjNhYmI1MTJjOGFkMWFhZjZmMmNhYjJjYTM1NmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e71d18706da14780bfd260a6c8efd2f3",
+      "statement": "The run-history failure banner is derived from the NEWEST run's status rather than held as dismissable client state, so it survives a reload by construction and only a later successful run clears it; `failed`, `partial` and even `running` all keep it up (a later run in progress has not succeeded yet), and a prune failure deliberately never raises it because the backup the user asked for did happen.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/run-history.tsx#L62-L75",
+          "version": "repo-lines-v1:sha256:f4ff22f92819020c1f0c004d5b1f63eeb550f08fa102d6513666376c94f5b202:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDhlYWM3NTAyNTk5ODkwZDNkYWVmMjI3ODU4OGEzZTIwYTVlYWJiYTA3YTZkNTU2MjQ0YjNkYjhkOWZlZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ODY1OTgwOTU2MzY5M2I0YTI3NjJiODc5YmMzNTVkN2RkNzM5NGJjOGQyMjU2YWM5MzU3ZjQxODZmMjkwYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3ZGM0OTg5MzIzNjAyNjAxNmY5YTY2ODE4ZDIwY2EzNTFjZGMxNDBiYjZlMDk4N2E1MjgxYjNlZDNhZjczMzYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/backup-run-summary.ts#L99-L115",
+          "version": "repo-lines-v1:sha256:3d4bfe7faed36e2a012517e261f0b3931524b0f2bce0c13feef19c9b4b83310d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjM2JjYzA5NmRmNzc5ZjFmZjhhYWJjOWI4OTMxYzY0YWM1ZTE2Y2NiY2UxNmIxN2FkNGE5MWQxNTc5ZTRjZTMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L588-L632",
+          "version": "repo-lines-v1:sha256:8770b0467eadb4352642dd369252a707df1b884708e21f2c7d52f8d7c31e87c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhOTY2NmU0Y2QwZjcyODlhNmMwOTI3YzQ1NDU0NWU2Yzc4MGNjOGExZGI1MWUwZTU4MDBiZWIzZDc3ZDY0OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMGM1OGE5MTcwNWFhODYzZTdmZDIzOTJkZGE0ZGNhYzM0YjQwODQ0ZjQ2NzgxZGNjOWI2M2VlYTM3ZmRjMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTcwYjBlNTVkNWIwZmViZmJiM2JjZjBmMzY4NGFmMmNmZTg1YmM2YjE4MWU2NmYyODQxZjcyMWUzODMzMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4893b19bddd84c80aa6a5216ce3f16b2",
+      "statement": "All run-history/next-run derivation lives in the pure module src/utils/backup-run-summary.ts (formatRunDuration, formatArtifactSize, formatNextRun, describeCollectionCounts, shouldShowFailureBanner) so the rules that go wrong quietly are testable without a rendered tree: `formatNextRun` always passes the job's `timeZone` and `en-GB`/`hour12: false` explicitly and appends the zone name, returns 'Not scheduled' for an absent or unparseable instant, and catches the `RangeError` `Intl.DateTimeFormat` throws for an unrecognised stored zone — the one behavioural difference from the `luxon` implementation it replaced, which had returned an invalid DateTime instead of throwing.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/run-history.tsx#L82-L91",
+          "version": "repo-lines-v1:sha256:a8b5088b60ffbcc25a149a332a55297d32fc37b3d57e8f975b069a6aa57c0a91:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViMWM2YzczNjA1MjAyMmRiOWMzYjExNWQwY2E2YjYyMWE0NTUyNDU4YmZiZGIxNzM4N2NkYTYwMWYyOGE1NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzJiZWQ4ZmFlNWViMTc2ZmViZjM3ZmRhYzc0NmNjYzVmMzg5Mzg3MjM5M2M1MDUyNzk2MjNkYzRmN2IxNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzYjg5Zjg4MDQxZTFmY2Q5MWExMjg1NGMyOWE1NTc2MjgzZjg4MjUzMDU1MWE0ZTZhNzU0OTJhZWNlNDMzY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NmQzNzAxMjI2MjdlZGFkYmVhZmQ0MzBlZTRjOTJiNjlkZDZiMDAyMWE1NGQ4MGE0OWExNzhlNTQ5ZjFhOTIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/backup-run-summary.ts#L1-L27",
+          "version": "repo-lines-v1:sha256:35edc3b5d80fcbecdf1f2deb2870110e547ab8878b4a4c41e88fb3c0b762f6eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMWRlMWZhMjEwYWY2MWQwYzNjNDBjYjhhMzhkM2Y1ZGNmYTdkOTgwZjMwYWVhOGM5OTIyZjMwZWZjYmE5NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYjk4YWNmMTU5NDE2Yzc0ZDk3NjExMGIwZDM5Y2I4MTMwNmQ4YmE2NWIzN2YwZWMzYjkzMGExNTRkNGJjNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNzk0M2QyYmQ5MWIxZjIzZjY0ZmViYjFiYmIxYmVlMGMzMzJlNWM0NzNiNzJjOTI1ODRhZTdmMmEwZDc1M2IifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/backup-run-summary.ts#L65-L97",
+          "version": "repo-lines-v1:sha256:df28b73aca274222ac59dede68aeeb491781ff8eaf2f8bfd3a937d484a5d7498:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYmQ5MjlmMDU5Yjc1ZjU3MzQyZWNiMjI4NzY2NmFiMTU3MTM3ODRmNzQ5ZTg5YTc4YzhkZjRhMDI3YTdjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMjE5MDk2YTY1ZDIyNDQyN2U1Y2IzYzVmYmUwNGEwODQxOGNiOTliMDQ0ODM2ODVmNjcxNDc3ZjQ2YzMyZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b710082337747d381de464a0ff7bca6",
+      "statement": "Backups errors are rendered through src/hooks/backup-error-message.ts, which reads the RFC 9457 Problem Details `detail` (the specific, actionable half, e.g. which address is not permitted), falls back to `title`, and only then to the shared `getErrorMessage`; the override is scoped to backups deliberately rather than widened inside `getErrorMessage`, because that function backs the code-mapped and separately tested auth flows, so the general gap for any RFC 9457 error from a proxied route remains.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/backup-error-message.ts#L1-L39",
+          "version": "repo-lines-v1:sha256:c9a7dbdd48554dd33940540351a53d6b3164200d1908d16e82a127dcf9ec83f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92503c12d492478db91b1b392583e8da",
+      "statement": "Two Backups client affordances are deliberately UX only rather than the guarantee: \"Back up now\" is disabled while a run is in flight (the real single-run guarantee is the server's 409, so a user who could double-click is not told the feature is broken when it is working), and a version download URL's `key` is not a capability — the link is a plain browser navigation to /bff-api/backups/jobs/{id}/download?key=… and the server re-checks ownership from the session on every request.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L125-L127",
+          "version": "repo-lines-v1:sha256:27467e71df59b73c390b3028dd4fd84cb18608df23bbe265d4c30f5f4c8f8f00:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTllZDE5MjExMzNlMGRlODIzMDUyYjk1Mjg1Y2JkZjI1YjM5MTA0ODZlN2NiZDgxOTg2NjA3NTc0MWFiODlkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM3NDEwNjIzY2Q3MmJiMjZiYWU0Y2NhOWNlMTljZDQ2ZDEyMWY0MmJhY2Y5NzY4MTI2NWIyM2FmNzY5MzMxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDdkN2ZhODI5NjY4ZWNkNzM5MjJlM2QwZDY3OWFmMGFhYWIwODE3MTY5MTc2ZDRiN2M0ZmZiOGNmMmFmODZiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGI0NDYyZDA3MjJmZGZjMDZiYTdiZmU1YzIxMDllOGEzZGVkNjQ3ZTcwY2NhNjgxNTU3MGE5ZTgzMTVkMGQzYiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx#L220-L238",
+          "version": "repo-lines-v1:sha256:fc4d6512053890f8190692189c22e9a9f4aeb70cb7a1e95d19ca155bede1c6be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMjU4ZmYyY2ViNWFiNzI3ZTRmYzhlM2NmZGYyYmUwMWYyODYxNzFhZmFlYjNlMzE5ODdkM2I1M2E3NzljNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZWIwNThlMjYyYjZmMGFkYTY2ZGYwNzc5NjNkNTRlZjZhOGI3OTZmNWUzOTI3NjdhOThjMzA4ZTA1OTVmODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMGMxM2Y3MzNlOGJkMzFjZmJiMmI3NzEyZmNhNGM2ZmQzYTRkMGUzNTI1N2U5MTAxZWYyNzYwM2M1N2ZiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNjZmZjJkMjlhNmIxNGEyYzQyZjFjOGFjYWIwOTRiNDA0ZDE0MWZkZGU2ZmQ3MDZiNDcwYmI3NTEwNjUxZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c9418caf3d974eed8f4aec972883d7c6",
+      "statement": "A backup version that is present at the destination but unusable is still listed, greyed, with an \"Unreadable\" badge and Restore DISABLED rather than hidden — hiding it would misdescribe the user's own storage (the object really occupies space) and offering it would send them to a failure at the worst moment — while Download stays enabled even for an unusable version, because the bytes are the user's and a corrupt file is sometimes worth recovering by hand.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/version-list.tsx#L1-L9",
+          "version": "repo-lines-v1:sha256:4aea720bb2801b83ca8f38ca2c3b81e36e90e4ef9d3a6579c6ae7dab53d1ba59:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjQ5ZTIzYmNkZWIwYmZiYzU3ZTI0ZTIzNjIxYmQwY2Y1ZGQwZWVmMmZjNTMzZGU4Yzg1YWM1ZDJiYTNlMzkzMCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/version-list.tsx#L54-L82",
+          "version": "repo-lines-v1:sha256:1e2a90663556d8e809c7b8347ddc413f0270fb7e9be31f893874533f84a2439d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YzZmYWI3MTRjNWM2ODEzZjczNGNmOTU4Yzg0NGQwY2ZiZWE0ODQyNzBhNWZlNDgyZTU3NDAwYWNjMTQ2ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1NzU1NGY0NjAxZTMwYjU3NDZmYzg0OWQ1NDM2ZmU5OTM1YjE2ZDFkZDhiYmM0ZTJmMWU1NDA5ZmFhM2VhYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMmVhZTBhZmFmYjUxNGFjM2I1NTRjZDNlMTU2ZTc0NDVhNjA3Y2I4MzA3MTc4YTRkMmEwOWI2MDA2ODAzZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NWM4MzhjYjU0OWRlMDMyZDY3NTMzMjBjMTFlZjNiYzliM2Y4MjY3ZGY4MWI0M2QyNjgyMDBiMDVmYjdiMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0137d3aa124a43288e55f3162b8c6c43",
+      "statement": "tests/e2e/web/backups.spec.ts starts and ends every case from a known-empty state, and the ORDER inside that cleanup is load-bearing: it deletes backup JOBS before destinations because deleting a destination only DISABLES its jobs (FR-006) and would otherwise leave disabled jobs and a non-empty job list behind, it revokes the standing consent because that case grants a real non-expiring Keycloak offline token on a shared test account, and it deletes the collections its restore case creates — a test that mutates shared state without restoring it fails something else later, as a leftover restore collection once did by turning an assistant movie lookup into a disambiguation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L91-L151",
+          "version": "repo-lines-v1:sha256:7313e7740ef3340fbed076f7e8e75f0583d6d68f6938ac90333a5e8b82c1fc86:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZmUyNzZmYzRhYTM3ZjVjMWFjMzU1ZTExZDhkODk1MzcxZGU5ZWQyODFiZDMwY2FmOTFjY2E2NDBiMjg1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNDY5MTFhZjIxNTZlMDY4NGJiNjI4MjdjMzBjNGM1MmU4YjRlMDFmYmQ0MjI4M2VkNzY5YWZlNGZjMzk4M2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a86fd7692814b4283dc95a68b119134",
+      "statement": "The unattended-scheduling case in tests/e2e/web/backups.spec.ts proves scheduling rather than a run: after turning the schedule on it reads back the SERVER's own `nextRunAt` instead of computing an instant, clears every cookie so the run cannot be succeeding on the session, and then posts TWO simultaneous ticks from an anonymous context holding only the tick secret, asserting that exactly one of them claims the job and that exactly one artifact exists.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L432-L483",
+          "version": "repo-lines-v1:sha256:132c26e6bc3c6c9f6be8651714b75453a45f44ff7482f4d2e83cd42107ea7855:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZDU5MDViMDk1ODczZGM4ZDBkY2VkYThmMGY1MTJlYzU5YTBmN2VhM2UxMjhmODk5YzZjYWU0MWE3MDY3ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzRmMWQ2NWE2YmQ4NGVkYzNmYWUwYzJjMmJiODNmMDU1ZTllY2ZkMDAwZjNlZWUzZTEzYWEyZGIzNzY5MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkM2FmNjQzMGZlYjA3NjI3N2RhNmYwZTA2NDExNTA0OWQ4MDY5ZTM4ZjBjMDM4YmRiMjAxOGI3ZTA5MDMzZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1OGY3ZGU4OTUxYmE0ZDhiZjVkNzE1YWJhMTY3NTVlYjdhNTI1OTZhNGUzYTE3MTM0MTA5OGUwNDdiZDU1ZWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T18:33:06.357Z"
+    "at": "2026-10-26T03:45:38.439Z"
   }
 }
