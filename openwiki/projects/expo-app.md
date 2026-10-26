@@ -51,6 +51,14 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts
   - id: openwiki-source-8407640b2cb0f7b864657883
     resource: repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx
+  - id: openwiki-source-1ee0ca5607fd919ecc13d256
+    resource: repo://frontend/mcm-app/src/components/backups/destination-form.tsx
+  - id: openwiki-source-d0e32cc95cdea263ea08fe08
+    resource: repo://frontend/mcm-app/src/components/backups/job-form.tsx
+  - id: openwiki-source-c71f50fd5ec6b430e2f80b42
+    resource: repo://frontend/mcm-app/src/components/backups/run-history.tsx
+  - id: openwiki-source-b42495b0da0a5f6a616900af
+    resource: repo://frontend/mcm-app/src/components/backups/version-list.tsx
   - id: openwiki-source-d53ec28679ddaca47c22d5ba
     resource: repo://frontend/mcm-app/src/components/movie-count-line.test.tsx
   - id: openwiki-source-edbbf2f1de81041ebb56adf3
@@ -59,6 +67,8 @@ sources:
     resource: repo://frontend/mcm-app/src/components/register-form.tsx
   - id: openwiki-source-820baf1f5bc3988fd0753bfe
     resource: repo://frontend/mcm-app/src/components/settings/settings-nav.tsx
+  - id: openwiki-source-ef24b6b5e3c8860863d47d11
+    resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
   - id: openwiki-source-570a958599bcf5038114a6fc
     resource: repo://frontend/mcm-app/src/hooks/use-account-deletion.ts
   - id: openwiki-source-3470392bd8be4b3899ff3adb
@@ -69,14 +79,20 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
   - id: openwiki-source-f2f814b694fbf226c91ce910
     resource: repo://frontend/mcm-app/src/hooks/use-ui-state.tsx
+  - id: openwiki-source-245b2f99a75861724c4026de
+    resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx
   - id: openwiki-source-a2cf9da271335518572da652
     resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
   - id: openwiki-source-9542968841d15eaafd16ac7b
     resource: repo://frontend/mcm-app/src/test-support/render.tsx
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
+  - id: openwiki-source-4e2d6488af045e50c1eb17f0
+    resource: repo://frontend/mcm-app/src/utils/backup-run-summary.ts
   - id: openwiki-source-d67eac1e98649691c637d9c0
     resource: repo://frontend/mcm-app/tamagui.config.ts
+  - id: openwiki-source-2d7a83a560ab6dec0daf8651
+    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
   - id: openwiki-source-6815e02bc96aebf5b9adb612
@@ -111,10 +127,10 @@ sources:
     resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T18:33:06.357Z
+    at: 2026-10-26T03:45:38.439Z
 ---
 
 # Expo/React Native universal app
@@ -184,23 +200,76 @@ labels:
   `destination-list.tsx`, `job-form.tsx`, `schedule-editor.tsx`, `run-history.tsx`,
   `version-list.tsx`) and the `src/hooks/use-backup-destinations.ts`, `use-backup-jobs.ts`,
   `use-backup-consent.ts` hooks, all of which call the BFF's `bff-api/backups/*` routes through the
-  same cookie-authenticated `api-client.ts` as everything else — no destination secret is ever
-  held by the client beyond the moment it is submitted (an edit form always starts with an empty
-  secret field; omitting the field on an update preserves the stored secret server-side). Two
-  details of the client half are deliberate rather than incidental: the screen's container testID
-  (`settings-backups-screen`) and the route's reported `current_screen` (`settings-backups`) are
-  unchanged from the feature-062 placeholder that preceded it, because the agent gateway's
-  `current_screen` vocabulary is a contract (`test_current_screen_contract.py`) and the E2E tier
-  selects on those testIDs; and `ScheduleEditor`/`RunHistory` render times in the **job's** time
-  zone, not the device's, so a 03:00 schedule set in London still reads 03:00 in New York.
+  same cookie-authenticated `api-client.ts` as everything else. Every one of those calls is
+  session-scoped server-side, so no `userId` is passed and the API has nowhere to put one; the only
+  state the screen owns is view state (which destination is being edited, which job's versions are
+  open, the last notice).
+
+  Three details of the client half are deliberate rather than incidental. First, the screen's
+  container testID (`settings-backups-screen`) and the route's reported `current_screen`
+  (`settings-backups`) are unchanged from the feature-062 placeholder that preceded it, because the
+  agent gateway's `current_screen` vocabulary is a contract (`test_current_screen_contract.py`) and
+  the E2E tier selects on those testIDs. Second, `ScheduleEditor`/`RunHistory` render times in the
+  **job's** time zone, not the device's, so a 03:00 schedule set in London still reads 03:00 in New
+  York — the schedule editor only defaults a *new* schedule's zone from the device, and the
+  rendering rules behind both are pure functions in `src/utils/backup-run-summary.ts`
+  (`formatNextRun`, `formatRunDuration`, `formatArtifactSize`, `describeCollectionCounts`,
+  `shouldShowFailureBanner`), which is what makes them testable without a rendered tree. Third, the
+  run-history failure banner is *derived* from the newest run's status rather than held as
+  dismissable client state, so it survives a reload by construction and only a later **successful**
+  run clears it (`partial` and `running` do not).
+
+  A destination's secret is write-only throughout: nothing the server returns contains one, an edit
+  form always starts with an empty secret field (deliberately not a row of dots, which would claim a
+  credential had been fetched into the page), and the field is put on the wire only when the user
+  typed a value — an empty string is rejected server-side rather than read as "clear", while
+  omitting it preserves the stored secret. A destination's `type` is fixed once created: the
+  S3/WebDAV chips are disabled in the edit form. A job whose `collectionIds` is empty means "every
+  collection I own, at the time each run happens" rather than "the ones I own today", and the form
+  says so because the second reading is the one a user assumes; `keepLast` is bounded to 1–365 and
+  the job's submit button stays disabled until a label, a destination and a valid retention count
+  are all present. Backups errors are surfaced through `src/hooks/backup-error-message.ts`, which
+  reads the RFC 9457 Problem Details `detail` (the specific, actionable half), falls back to `title`,
+  and only then to the shared `getErrorMessage` — scoped to backups rather than widening that shared
+  function, whose auth messages are code-mapped and separately tested.
+
+  Turning a schedule **off** must send `schedule: null`, never `undefined`: JSON drops an absent
+  field, and the route reads a PATCH without `schedule` as "leave it alone", which is how the switch
+  once stayed On over a job with no schedule (spec 083 T011). After that PATCH the screen re-reads
+  the consent status, because turning the *last* schedule off gives the standing permission up
+  (FR-023) and the server decides whether any other job still needs it. Two version-list behaviours
+  matter before changing it: a version that is present but unreadable is listed greyed with Restore
+  **disabled** and a reason (hiding it would misdescribe the user's own storage; offering it would
+  send them to a failure at the worst moment), and Download stays available even for an unusable
+  version. Download is a plain browser navigation to
+  `/bff-api/backups/jobs/{id}/download?key=…`, and that key is *not* a capability — the server
+  re-checks ownership from the session on every request. Likewise, "Back up now" disables its button
+  while a run is in flight, but that is UX only: the real single-run guarantee is the server's 409.
+
   Granting the standing consent is a round trip through the identity provider, not a local toggle:
   `useBackupConsent().startGrant()` only asks the BFF for an authorization URL, the caller navigates
   the user there, Keycloak returns them to a BFF-owned callback, and the BFF is what actually
   records the grant — the client only ever polls the resulting status. `revoke()` mirrors this
   asymmetry: if the identity provider refuses the revocation the BFF answers 502 and *keeps* the
   permission, and the hook surfaces an error rather than optimistically clearing it, because
-  telling the user "done" here would be a lie. See [BFF](./bff.md) for the server-side
-  scheduling/storage half of this feature; the backup procedure itself is not restated here.
+  telling the user "done" here would be a lie.
+
+  The area's tests are a component unit suite and one `@gate` web E2E spec.
+  `backups-settings-screen.test.tsx` pins the unchanged container testID and the explicit-`null`
+  schedule PATCH; `tests/e2e/web/backups.spec.ts` drives destination add/edit/test/delete, watches
+  the wire to assert no response body carries the secret or `secretEnc`, checks that a blocked
+  address is refused with a reason the user can act on, runs and restores (asserting a restore
+  *adds* collections rather than replacing any), proves retention prunes the **oldest** version, and
+  shows the failure banner surviving a reload. Its unattended-run case is the one that proves
+  scheduling rather than a run: it clears every cookie, then posts two simultaneous ticks from an
+  anonymous context holding only the tick secret and asserts exactly one of them claims the job.
+  That spec also starts and ends every case from a known-empty state, and the order there matters —
+  it deletes backup **jobs before** destinations (deleting a destination only *disables* its jobs,
+  so clearing destinations alone would leave disabled jobs and a non-empty list), revokes the
+  standing consent, and deletes the collections its restore case creates, because a test that
+  mutates shared state and does not restore it fails something else later. See
+  [BFF](./bff.md) for the server-side scheduling/storage half of this feature; the backup procedure
+  itself is not restated here.
 - **Account** (`account-settings-screen.tsx`, feature 076) — currently a single destructive
   action, account deletion, driven by `use-account-deletion.ts`. It sits last among the
   non-admin rows by design: an area whose only purpose is an irreversible action does not belong

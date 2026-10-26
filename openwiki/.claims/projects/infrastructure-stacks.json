@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:66e6ec2547acd702bb865a2c7ab6cc17ee316ef19fa30ffbf8a023d6e67dd13a",
+  "pageVersion": "sha256:70f01d1d79e44dd8e12d9a026e11b2847264e204a72fc0716f2086c2135ecb9e",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -760,7 +760,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:8d5fffc67126a66652dd50af989152018deb94bf8c003e1c1f946d72cd9ecf15"
+          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
         },
         {
           "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs",
@@ -768,7 +768,7 @@
         },
         {
           "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md",
-          "version": "repo-file-v1:sha256:d85765df8bf5038ac2b70d93e3d2fee2240fa08de1333b91ae4a2229e9c4999a"
+          "version": "repo-file-v1:sha256:747250568a369b80d3393689a3ef4e904ebcc01e85444ba9c7db03c9f33a6a6a"
         }
       ]
     },
@@ -829,10 +829,54 @@
           "version": "repo-lines-v1:sha256:60b1297909d80d163c76768ddc455addcd9895240adf03da14a96fce2b5b4610:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY3NDY1YzBlODQwYjBhMmNkYWExNDI0YWUzMTBmYzgzMmM1YzRjYjY3ZjNkZWExYzI0YmNjMDg2MDBjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGMwMmJkYTA0ZWE4YTFmMzg0NTU3OWYzZjJlOTVhNWY4ZjNiMGMwMmI0ZGZmYzU1YzYxZGIwZTYwYzY1ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyOWMwYjBjYjQ1MzMyYTlmZDg3NGZlOTkwY2IzMTRkOTM4ZGRlODQxODRlNjg4OWVmZDViZWJhMjg2NDY2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_078d4d8a00fc448c956dff706565f509",
+      "statement": "Every key prod-mcm-bff's environment block adds for the backup capability is optional in the BFF's env reader — BACKUP_CONSENT_CLIENT_ID / BACKUP_CONSENT_CLIENT_SECRET fall back to the login client's id and secret, and the three scheduled-backup switches default to the empty string — so spec 083's stated verification for both additions (T008, T009) was that scripts/__tests__/komodo-stack-env.guard.test.mjs stays green before and after, because nothing becomes required and no ${VAR:?} guard applies; the real check is on the host after the deploy or redeploy, not in CI.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L118-L134",
+          "version": "repo-lines-v1:sha256:f693c99efc34b5dde1ff75f3994dfd7493762ff88099199a2516a040ad579898:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiM2Q5YzFlNjhiNGFkODc3ZTZkYjRiMWQzZTU0MjEwZTBhM2E2NjFmYzExOTNmNGEwYzgwODQwYTVmMDU1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NWYxOWRhMDlmMjVkNmE0ODhkODU0NzljZGRhMzU0OTM5YzUxYjNiOTc2NmI3ZTJiNGEzZGZmODk0Y2VhNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2YmZjN2IyYmM2NWIwMTZiOGExYjAxYmQ2ZTgzMjIxNmQxNTc4YjQ3ZDdiZWQ3MzA1NzdiNTMzMTMyNGQxMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1YjlkMmZjZDJkZGYxZThhZDdjZDdlZTBkMDRhYmNkNGM2NWI5YzMzNjk1NWUxYjkyZWE1YjAxNDQzMDM2NjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L44-L47",
+          "version": "repo-lines-v1:sha256:5484e676a61e359b304a3547f825f45ebb38f9c321a1297458df400a58fae419:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE4N2Q1NjFjODEwY2QyM2FmMGU2MjYwN2FkMDk4Y2I2NTAwZWE0MDJkOGE1OTc5YjFlNWY0NjY4NjExMGJiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIyZTAxMGM4NGFhMjM3ODNiZDY1MWQ1ZGIzYzllZTVhZmMyNzE1YjA2MmQ4NDcxMmY1NTlmYzFhZjE5N2EwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODliNmEwMTZjZDQ1MDA2MDI5YjhlN2ViMjNlMWUxN2Q3MzgxNmVhZTQ0YzIzNzVhN2ZmMGU0MTI3NWU4MGY5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzMyMTZmODQ1OTI3MmY5ZjZhYjE3MjRiNzA3ZDhiMTQ4MGU0OTk3MzRlNzI1ZTllYjM2YWIwYmY4ZjY3YzBjOCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L60-L74",
+          "version": "repo-lines-v1:sha256:c90e798bbb679ae27ce92a47763afa4f4ad66a070478255b0d56a256d7c6ce6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MTVhMzg1NmE5ZDMxZTg1YTQ2MzBkZGUxMmU4Zjg0YTE5ZTBjOTcyNDUyNWY1OTQyZDA2Mjk1NTc4N2Y2NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNTJkZmQ4MTg5YjUyNzJkOGU4YzU0NGNlZDYwODk5ZTUxOGM4NWNlNTc2YjUwNmM1NDM2MDc0MzEyMmQ0YmUifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L113-L156",
+          "version": "repo-lines-v1:sha256:e413efa2fe68ff47e2a8df51042eda1b6a5f8c887a01368b46d072145b9bcdd3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYWYwYTYyZjg1ZWMwYjYxZGJhOGM0MDNiNWY3N2YwYWM1YWFkY2Q0MGZlZDZhZjllYTVjYmU0YWQ1MDZjYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzc1M2EwNzlhMjJhZGFlY2U3Yzc0ZDIxMjFlNTk3OGUyNjM0ZjJmMWNiOTkyZGI1MzBhMzZjZjFiNjAzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYzliMTEwZmJjMzRkOWUzOTEwYmIwMjBhM2I5NzliNjliM2ZlMmQ1ZWJlMDk4ODAyMGU1NDQ2Mzc2MWU3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZmY3MGEyY2QwMmM2OWMyODMyYzNiYWM5ZDBkMjZmZjk4YjZhYzMyNDEwOTQ5ZmE1ZjhiZWQ3NGVmNGI1OGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbbd905dc552486aa81c7ef86ffa0292",
+      "statement": "BACKUP_TICK_ALLOW_TIME_OVERRIDE is deliberately absent from prod-mcm-bff's environment block even though the other backup switches are declared there: the tick reads the ?now= override deny-by-default (only the exact string '1' enables it, an explicit opt-in rather than an inference from NODE_ENV), and the operator manual marks the flag dev/CI only, so leaving it out of the stack is what keeps a production tick pinned to the wall clock.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L37-L45",
+          "version": "repo-lines-v1:sha256:35cf6a8512db6faf4794e81528cb6058f7f9dd28f806b209ca19361325377235:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTg4NWFkMDRkMGViYzllOTZkZjE3NjUxNzc0MjdjMTBjZDE1ODc3OGI0NzUwMjNjMzRhYjU4Y2RiMzZkN2E0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVhMWYxZDVjNDE1YTRmMDI0ZjlkOWFkNzg4M2RhMmZjNDA2ZjY2N2EwZjQ2MGEyNGIyOTk4ZmIwOGRhYzk3ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdkN2FmMzgwYzBkNmU2OGI3ZjRhOWFlYzVjMzA5M2QzMTc5YWQ2M2RkZDNiZDJiYTE1M2JlNmEwMTBlNjI2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFhOTZkYTdmMzU0ZWMxZDczNjU4NWYzODlkZGY3ZjU0YjI3ZWRlNzBkMTg3Y2FhZDgxOGE2NmUxZjJkNTVjNyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L143-L150",
+          "version": "repo-lines-v1:sha256:80e6056f72ce1a9552e064657d7abab5047e9392ead65353936af4d4f4362e75:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRlNGU2Zjk2N2Q5ZTE4MDk3YzdhNTI3MDljNTMzZWM2MDYxNmVlYzI5NTVhZTUxN2RmNjZlMTRmMmY3MGYzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2QwZTI0MjY5Yzg3MWRmMmZiZTYxNzhmYjQwNzZjODM5MjQ1ZTJhNDI3N2Y1YTY0MzNjNmY3MzA3YzE0NjM3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTdkMGQ2M2Q4N2YxN2Q4NzFiZjZmMTk5ZTUxZGQ3OTk1ZDUwYTE3MmQ5OGVjNTA3YmE3ZWNiZWUyOTBjZTcyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ZjM2E2NTgyZDM1YTEwMDA4Mzc1NTYzOWU0NGQzMzg4Y2E2MmMwZDU1ZTA2N2M1MDY1OGQyZjU3OWNiYjI3MCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L79-L104",
+          "version": "repo-lines-v1:sha256:1ec342b9fd508cc3005fcbe04ad8b3e8d31917d245df35a46e7cc1386bd9a4e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNDZlZDlhZjQ0MzgxOGFmZTQwYzQzMzU3ZjAxODBhYTA0OGJlMDk2NzhhOGU5MWY4NDcwNDBlNzM3MDAzNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzgwYThkZDNjYzQ0ZmFhNzFjYWZlNWY1ZTlhYWY1NDE5MzAwZjVmNzE3NDEzNzZiZWFkZDAzNTgwNTc1NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlMDVmY2VlZGQyNmExMGVjNjEyZjBmMmY4Y2MwMzBhYTA3MTg4MGY4MzY1YmJjNjQ5MTE0ZDIwZmI1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYTlmMDAzYWFlMmE1OTgwOGJjMmY3OTdiOGM0Njg0OTY4MWQ0NjEyMGVhMDNhYzA1OTE4NWE0ZTJjNDAwODkifQ"
+        },
+        {
+          "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L135-L156",
+          "version": "repo-lines-v1:sha256:7b76d1808fbd73a1d97f7247fa569306091bc54ac35be492b01e8f99730e32f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNTY3OThhNGM3OTg0Y2QxMjdkZTA3MTFkM2UwYWJkYzcxNGVhMGFkMDljNDMyMDkzMWM3N2RhYzQ1MTc1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzc1M2EwNzlhMjJhZGFlY2U3Yzc0ZDIxMjFlNTk3OGUyNjM0ZjJmMWNiOTkyZGI1MzBhMzZjZjFiNjAzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwM2EzMWZhOGJlNjI0NjkxOTg5M2M2NWJkN2VhNzE0ZDQwN2YwODY2ZDRiYWM2ODlkYTZlZTIyMmRmOTE0YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZmY3MGEyY2QwMmM2OWMyODMyYzNiYWM5ZDBkMjZmZjk4YjZhYzMyNDEwOTQ5ZmE1ZjhiZWQ3NGVmNGI1OGYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T18:33:06.357Z"
+    "at": "2026-10-26T03:45:38.439Z"
   }
 }

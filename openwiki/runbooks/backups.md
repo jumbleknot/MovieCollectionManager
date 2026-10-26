@@ -7,8 +7,10 @@ tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T16:15:01.685Z
+    at: 2026-10-26T03:45:38.439Z
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -17,10 +19,14 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
     resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
+  - id: openwiki-source-98d68c854e7c7955c9f2546f
+    resource: repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts
   - id: openwiki-source-8ff4ea0c4e9c1b88a4c0eee7
     resource: repo://frontend/mcm-app/src/bff-server/audit-sink.ts
   - id: openwiki-source-f3703151c1ce1fae30ed6c7b
@@ -41,6 +47,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-2d7a83a560ab6dec0daf8651
+    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-53aa23c014c1f05d94e82617
@@ -49,6 +57,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
   - id: openwiki-source-f873d74e3a5ee524df98c4b4
     resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-60cf9a830f0ca275ffed94d7
+    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-864993a079e6e4df052ac4ea
@@ -59,7 +69,7 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
   - id: openwiki-source-511cf70d08e685e1be0170b8
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T16:15:01.685Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -78,10 +88,19 @@ this page distills the load-bearing gotchas an operator needs before touching th
 - **The user owns the credentials and the artifacts, not the operator.** Destination secrets (S3
   secret key, WebDAV app password) are sealed at rest and never echoed back, logged, or returned
   in an error — a destination-probe failure can only report *which kind* of failure occurred,
-  never the server's actual reply. The corollary an operator must not "fix": **account deletion
-  does not delete the user's stored backup artifacts**, even now that feature 076 wires deletion
-  into the app (see Known gaps below). They live at storage the user controls; removing them
-  would mean deleting data the system was only trusted to copy.
+  never the server's actual reply. They are sealed under the feature's **own** AES-256-GCM master
+  key, `BACKUP_CREDENTIAL_ENC_KEY`, deliberately separate from `AGENT_CONFIG_ENC_KEY` so the blast
+  radius is not widened from "the user's assistant credentials" to "every store the user's whole
+  collection can be written to"; the key is read at first use rather than at boot, so a deployment
+  with no destinations still starts, and rotating it makes every stored destination secret and
+  offline token unreadable, so each user must re-enter their destination and consent again. The
+  blobs are additionally bound by AAD to their owner *and* their field — the destination id for a
+  destination secret, the user id alone for the offline grant — so a store-layer mixup fails the
+  GCM authentication check loudly instead of decrypting one destination's credential into another.
+  The corollary an operator must not "fix": **account deletion does not delete the user's stored
+  backup artifacts**, even now that feature 076 wires deletion into the app (see Known gaps below).
+  They live at storage the user controls; removing them would mean deleting data the system was
+  only trusted to copy.
 - **A destination address is denied by default, the inverse of the Ollama guard.** Loopback,
   private (including the carrier-grade-NAT range a tailnet uses), link-local and cloud-metadata
   addresses are refused, and an unresolvable name is treated as unsafe rather than as "nothing
@@ -96,6 +115,12 @@ this page distills the load-bearing gotchas an operator needs before touching th
   account and no privileged fallback. The run mints access from a Keycloak **offline token** the
   user granted through an explicit, separate consent round trip. If that grant is revoked or
   missing, the run **fails** — it does not fall back to any other identity.
+- **Consent also needs the realm's `offline_access` role, and its absence does not look like a
+  role problem.** Keycloak grants the role through the realm's `default-roles` composite, so a user
+  created through the Admin API inherits it; a user created by a realm-JSON import gets it only if
+  that import grants the default role. This is how the seeded `e2e-test-user` once ended up unable
+  to consent at all, with the failure surfacing as a **blank page after sign-in** rather than an
+  error — so "the consent screen does nothing" is a realm-role question before it is a BFF one.
 - **The BFF's MongoDB is a standalone `mongod`: no replica set, no multi-document transactions.**
   Exactly-once scheduling therefore rests on a single-document atomic claim (an atomic
   find-and-update against one job document), not a transaction. The companion Redis leader lock is
@@ -118,6 +143,16 @@ this page distills the load-bearing gotchas an operator needs before touching th
   the comparison is constant-time — so "the tick 404s" means the caller and the BFF hold *different*
   secrets. A supplied `?now=` is refused with 400 unless `BACKUP_TICK_ALLOW_TIME_OVERRIDE=1`, which
   is dev and CI only. `leader: false` is a normal 200: another instance took the lock.
+- **A silent tick is normal, and the two triage answers do not look like errors.** The tick logs
+  nothing when nothing is due — by design, since a line a minute saying "nothing happened" is a log
+  nobody reads — so its liveness proof is the first Mongo connect one interval after boot, not a
+  per-tick log line. A job that never runs usually has **no `nextRunAt`**: a disabled job
+  deliberately carries none, so re-enabling does not fire for an occurrence that passed while it was
+  off. A job stuck with `claimedAt` set was claimed by an instance that died and **self-heals after
+  the 30-minute reclaim ceiling**. Catch-up is deliberate too: a job whose time passed while the
+  system was down is claimed **once** on recovery, with its next occurrence computed forward from
+  now — advancing occurrence by occurrence would fire repeatedly and, with keep-last retention,
+  prune away the very history the downtime was supposed to preserve.
 - **In production the feature is switched on entirely from `infrastructure-as-code/komodo/stacks.toml`,
   never from the Komodo UI**, whose edits the next ResourceSync overwrites. The `prod-mcm-bff`
   `[[stack]]` block carries the three switches — `BACKUP_CREDENTIAL_ENC_KEY` and
@@ -172,7 +207,11 @@ this page distills the load-bearing gotchas an operator needs before touching th
   so the suites are written to skip when `BACKUP_TEST_S3_SECRET_KEY` is unset. Run them with
   `MCM_REQUIRE_BACKUP_TARGETS=1` **alongside** `MCM_REQUIRE_LIVE_STACK=1`: the flag converts the
   skip into a hard failure that names the missing input, and the jest preflight then also probes
-  both destinations. Watch the skip count, not just the exit code. Bringing the destinations up and
+  both destinations. Watch the skip count, not just the exit code. The web E2E spec has the same
+  problem and its own escalation flag, `E2E_REQUIRE_BACKUP_TARGETS=1`, which CI sets — and the
+  values it needs (`BACKUP_TICK_SECRET` and the `BACKUP_TEST_*` pair) live in `.env.local`, which
+  Playwright does **not** load, so pass them explicitly: supplying only the e2e env file once
+  produced a green run whose backup specs had silently skipped. Bringing the destinations up and
   running the tiers are in [Local dev infrastructure & environment variables](./local-dev.md) and
   [E2E testing](./e2e-testing.md).
 
@@ -251,16 +290,25 @@ What an operator has to get right:
   `backup_consent_shared_client` once. `BACKUP_CONSENT_CLIENT_SECRET` is optional and defaults to
   the login client's secret; the BFF is the only custodian of both, so a second value adds no
   separation.
-- **The consent callback must be registered on the consent client too.** `/bff-api/auth/init` makes
-  a second `ensureClientRedirectUris` call when the configured consent client differs from the
-  login client, so the first app load after the variable is set registers it. The login client
-  keeps the URI as well, for a deployment that has not configured one.
+- **The consent callback must be registered on the consent client too, on every origin the app is
+  served from.** The BFF derives the URI from the request the callback arrived on rather than from
+  a build-time base URL, and that is a correctness fix rather than a preference: a fixed base URL
+  sends the browser to a port with no BFF on it after sign-in, so the callback never arrives, the
+  grant is never stored, and the schedule silently never turns on (measured against the dev
+  container). `/bff-api/auth/init` makes a second `ensureClientRedirectUris` call when the
+  configured consent client differs from the login client, so the first app load after the variable
+  is set registers the current one. The login client keeps the URI as well, for a deployment that
+  has not configured one.
 - **Grants are always used and revoked as the client that issued them**, read from the refresh
   token's `azp`. Grants made before the switch keep working with no migration of stored data — and
   revoking one of them still ends that member's session, that one last time. Re-enabling a schedule
   after the switch moves the member onto the dedicated client. An `azp` that is neither client
   falls back to the login identity, which Keycloak then refuses, so such a grant fails as unusable
   rather than being presented with a secret that does not belong to it.
+- **Revoking through the consent route also switches every remaining schedule off**, and only after
+  the revocation has succeeded — a schedule left on could only ever produce a failed run, and the
+  settings screen would be reporting backups off over a switch still reading On. The jobs
+  themselves stay: they still run on demand and still own the versions at the destination.
 - **To confirm a revocation really happened, use the token, not the database.** Present it to the
   refresh grant as the client it was issued to: a grant made on `mcm-backup-consent` is refused by
   the login client whether or not it was revoked. The runbook has the `curl` for this.
