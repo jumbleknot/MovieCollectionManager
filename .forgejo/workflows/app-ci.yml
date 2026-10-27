@@ -1258,6 +1258,9 @@ jobs:
           export MAESTRO_VERSION
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          # Mark this run's start: the maestro-debug upload takes only Maestro output newer than this,
+          # not the ci host's ~/.maestro/tests history (spec 084 FR-019b; scripts/ci-maestro-debug.sh).
+          bash scripts/ci-maestro-debug.sh start
           CI_LOG_STEP
 
       # NOTE: do NOT clear the web-seeded agent config here. The mobile `assistant-config-gating`
@@ -1347,13 +1350,19 @@ jobs:
           CI_LOG_STEP
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
+      # ~/.maestro/tests is the ci host's persistent home (runs-on: kvm), ~14 days of every run; the
+      # upload used to take it whole — 330,497 rows / 11 GB by 2026-10-26. Stage this run's only.
+      - name: Collect this run's Maestro output on failure
+        if: ${{ failure() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full')) }}
+        run: bash scripts/ci-log-step.sh app-e2e-collect-maestro-debug bash scripts/ci-maestro-debug.sh collect
+
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
         # Only meaningful when the mobile half actually ran (see the MOBILE GATE above).
         if: ${{ failure() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full')) }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: maestro-debug
-          path: ~/.maestro/tests/**
+          path: maestro-debug/tests/**
           if-no-files-found: ignore
 
       - name: Upload Playwright report on failure
