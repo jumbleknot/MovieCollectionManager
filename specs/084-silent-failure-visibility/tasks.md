@@ -159,7 +159,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
     `PGPASSWORD=` or `Authorization:` is dropped.
   **Verify RED**: `node --test scripts/__tests__/backup-alert.test.mjs`. Expected: all failing,
   `backup-alert.sh: No such file`.
-- [ ] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
+- [x] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
   `backup-staleness.sh`). The `restic` shim returns `snapshots --json` fixtures:
   - newest snapshot 2 h old: exit 0, no alert;
   - 37 h old: exit 1 and `backup-alert.sh stale`;
@@ -220,7 +220,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   missing token.
   **Verify GREEN**: `node --test scripts/__tests__/backup-alert.test.mjs`. All pass. **Mutation**:
   drop the "search first" call, and the "never a second create" case fails.
-- [ ] T016 [P] [US1] Implement `infrastructure-as-code/backup/backup-staleness.sh`. It sets the same
+- [x] T016 [P] [US1] Implement `infrastructure-as-code/backup/backup-staleness.sh`. It sets the same
   three exports as `backup.sh` (`DOCKER_HOST`, `RESTIC_REPOSITORY` and `RESTIC_PASSWORD_FILE`, from
   R14), runs `restic snapshots --tag homelab --latest 1 --json`, and computes the age with `python3`.
   The threshold is `${MCM_BACKUP_STALE_HOURS:-36}`.
