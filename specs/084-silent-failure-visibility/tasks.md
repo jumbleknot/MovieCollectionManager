@@ -43,7 +43,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ## Phase 1: Setup
 
-- [ ] T001 Commit the verbatim host baseline. The three files are already written in the spec
+- [x] T001 Commit the verbatim host baseline. The three files are already written in the spec
   worktree: `infrastructure-as-code/backup/backup.sh`, `infrastructure-as-code/backup/homelab-backup.service`
   and `infrastructure-as-code/backup/homelab-backup.timer`. Their sha256 must match the host exactly:
   `2ce6ffd0…`, `c068245d…` and `bbb8a3db…` (research R14). Move them to the PR A worktree, branch
@@ -55,7 +55,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `084-us4-backup-size` (B, from A's merge), `084-us2-ci-status-deploy` (C), `084-us3-app-image-scan` (D)
   and `084-us5-registry-retention` (E), all under `/home/coder/worktrees/`. Push each branch right
   after its first commit, because a worktree does not survive a container rebuild.
-- [ ] T003 Add the shared shim helper `scripts/__tests__/helpers/host-shims.mjs`:
+- [x] T003 Add the shared shim helper `scripts/__tests__/host-shims.mjs`:
   - `makeShimEnv({ fixtures })` creates a temp dir holding a fake HOME (with `backup/`,
     `backup/state/` and `.config/systemd/user/`) and a `bin/` holding executable shims for `docker`,
     `restic`, `curl`, `python3` and `systemctl`;
@@ -68,14 +68,14 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ## Phase 2: Foundational (blocks US1 and US4)
 
-- [ ] T004 [P] Test: `scripts/__tests__/backup-install-manifest.test.mjs` checks that
+- [x] T004 [P] Test: `scripts/__tests__/backup-install-manifest.test.mjs` checks that
   `infrastructure-as-code/backup/INSTALLED.sha256` lists **every** `*.sh`, `*.service`, `*.timer` and
   `*.sql` file in `infrastructure-as-code/backup/`, with its current sha256 and its install path
   (`backup/<f>` for scripts and SQL, `.config/systemd/user/<f>` for units). It fails on a missing,
   extra or stale line, and `--check` mode exits 1 on drift (FR-004).
   **Verify RED**: `node --test scripts/__tests__/backup-install-manifest.test.mjs`. Expected: fails,
   `INSTALLED.sha256 not found`.
-- [ ] T005 Implement `scripts/backup-install-manifest.mjs`, which takes `--write` or `--check`, and
+- [x] T005 Implement `scripts/backup-install-manifest.mjs`, which takes `--write` or `--check`, and
   rejects any other argument with exit 2 through the repository's shared rejecting parser. Generate
   `infrastructure-as-code/backup/INSTALLED.sha256` from the T001 baseline.
   **Verify GREEN**: the T004 command; all pass. **Mutation**: append a byte to `backup.sh`, then the
@@ -95,7 +95,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ### Tests
 
-- [ ] T006 [P] [US1] Test: `scripts/__tests__/backup-script.test.mjs`, case **"a failing forge dump
+- [x] T006 [P] [US1] Test: `scripts/__tests__/backup-script.test.mjs`, case **"a failing forge dump
   does not skip the others"** (US1-AC3, FR-003). The `docker` shim fails `forgejo dump` with exit 1.
   Assert:
   - the script exits 1, because a dump failed;
@@ -105,7 +105,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - the staging dir handed to `restic backup` contains `DUMP-FAILED-forge`.
   **Verify RED**: `node --test --test-name-pattern="forge dump does not skip" scripts/__tests__/backup-script.test.mjs`.
   Expected: 1 failing. Against the baseline, no later dump runs and restic is never called.
-- [ ] T007 [P] [US1] Test: in the same file, cases **"each dump is checked in its own format"**
+- [x] T007 [P] [US1] Test: in the same file, cases **"each dump is checked in its own format"**
   (US1-AC3a, FR-003a):
   - a plain-SQL dump missing its `-- PostgreSQL database dump complete` trailer gives verdict
     `failed-format`;
@@ -118,7 +118,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `dump-manifest.tsv` with the data-model columns.
   **Verify RED**: `node --test --test-name-pattern="checked in its own format" scripts/__tests__/backup-script.test.mjs`.
   Expected: 5 failing. The baseline has no checks and no manifest.
-- [ ] T008 [P] [US1] Test: cases **"shrink against the last good run"** (US1-AC3b, FR-003b):
+- [x] T008 [P] [US1] Test: cases **"shrink against the last good run"** (US1-AC3b, FR-003b):
   - with `state/last-good.tsv` giving Keycloak 381023 and a new dump of 100000, the verdict is
     `alert-shrink`, `backup-alert.sh shrink` is called with a detail naming `keycloak 381023 → 100000`,
     and the snapshot **is** still uploaded;
@@ -129,7 +129,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - `backup.sh --ack-shrink keycloak` writes the ack file and exits 0; `--ack-shrink nope` exits 2.
   **Verify RED**: `node --test --test-name-pattern="shrink against" scripts/__tests__/backup-script.test.mjs`.
   Expected: 6 failing.
-- [ ] T009 [P] [US1] Test: static and runtime guards **"measured failure modes stay fixed"** (FR-004):
+- [x] T009 [P] [US1] Test: static and runtime guards **"measured failure modes stay fixed"** (FR-004):
   1. The staging path is under `$HOME/backup`, not `/tmp`, `/dev/shm` or `$XDG_RUNTIME_DIR`, and
      `--check-staging` exits 1 when the `stat` shim reports `tmpfs`.
   2. Every `restic forget` line has `--tag homelab` and `--group-by host,tags`.
@@ -141,7 +141,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   **Verify RED**: `node --test --test-name-pattern="measured failure modes" scripts/__tests__/backup-script.test.mjs`.
   Expected: 1, 4 and 5 fail on the baseline. 2 and 3 already hold and **must** be shown RED by
   mutation: delete `--group-by host,tags`, and add `KPASS=hunter2-…`. Record both in the PR.
-- [ ] T010 [P] [US1] Test: `scripts/__tests__/backup-alert.test.mjs` (FR-001, R1, contract
+- [x] T010 [P] [US1] Test: `scripts/__tests__/backup-alert.test.mjs` (FR-001, R1, contract
   `backup-alert.sh`). The `curl` shim serves the issue search and create/comment endpoints. Assert:
   - with no open item titled `Prod backup: failed or stale`, it POSTs a create carrying labels
     `type/bug` and `priority/p1`;
@@ -155,10 +155,11 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - a missing token file, or one not mode 600, exits 3 with `alert NOT delivered`;
   - an HTTP 500 exits 4;
   - the token value never appears in stdout, stderr or `calls.jsonl` argv (it travels via `-H @file`);
-  - a detail line containing a secret-pattern match is dropped from the body.
+  - a detail line carrying `mongodb://u:p@h` is sent as `mongodb://***@h`, and a line containing
+    `PGPASSWORD=` or `Authorization:` is dropped.
   **Verify RED**: `node --test scripts/__tests__/backup-alert.test.mjs`. Expected: all failing,
   `backup-alert.sh: No such file`.
-- [ ] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
+- [x] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
   `backup-staleness.sh`). The `restic` shim returns `snapshots --json` fixtures:
   - newest snapshot 2 h old: exit 0, no alert;
   - 37 h old: exit 1 and `backup-alert.sh stale`;
@@ -167,7 +168,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - `MCM_BACKUP_STALE_HOURS=0` forces stale;
   - none of the unit files sets `MCM_BACKUP_STALE_HOURS`.
   **Verify RED**: `node --test scripts/__tests__/backup-staleness.test.mjs`. Expected: all failing.
-- [ ] T012 [P] [US1] Test: `scripts/__tests__/backup-units.test.mjs` parses the unit files as INI
+- [x] T012 [P] [US1] Test: `scripts/__tests__/backup-units.test.mjs` parses the unit files as INI
   (FR-001, FR-002, R2):
   - `homelab-backup.service` has `OnFailure=homelab-backup-alert@%n.service` and
     `TimeoutStartSec=2h`;
@@ -182,7 +183,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ### Implementation
 
-- [ ] T013 [US1] In `infrastructure-as-code/backup/backup.sh`, add:
+- [x] T013 [US1] In `infrastructure-as-code/backup/backup.sh`, add:
   - an argument parser at the top (no args | `--ack-shrink <name>` | `--check-staging`; anything
     else exits 2 before any side effect);
   - a tool check for `curl` and `python3`;
@@ -200,34 +201,36 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `node --test --test-name-pattern="forge dump does not skip|checked in its own format|measured failure modes" scripts/__tests__/backup-script.test.mjs`.
   All pass. **Mutation**: make the forge dump fatal again (`|| return 1` in `run_dump`), and T006
   fails.
-- [ ] T014 [US1] Implement the shrink comparison, `--ack-shrink`, the `last-good.tsv` rewrite on an
+- [x] T014 [US1] Implement the shrink comparison, `--ack-shrink`, the `last-good.tsv` rewrite on an
   `ok` run only, and the success-path `backup-alert.sh recovered` call (data-model, R5). All of these
   go in `backup.sh`.
   **Verify GREEN**: `node --test --test-name-pattern="shrink against" scripts/__tests__/backup-script.test.mjs`.
   All pass. **Mutation**: compare with `<=` against 0 instead of 0.5×, and the alert case fails.
-- [ ] T015 [P] [US1] Implement `infrastructure-as-code/backup/backup-alert.sh` per R1 and the
+- [x] T015 [P] [US1] Implement `infrastructure-as-code/backup/backup-alert.sh` per R1 and the
   contract. Use `curl -fsS -H @"$HOME/backup/forge-issue-token.header"`, where the header file is
   derived from the mode-600 token file at runtime in a `mktemp` that is removed on exit. Build JSON and
-  parse the search response with `python3`, and filter the detail through `scripts/secret-scan.mjs`'s `RULES`. Its regexes are carried into the
-  script by `backup-install-manifest.mjs --write` as `backup-secret-patterns.txt`, because the host
-  has no repository checkout; T004 also pins that file to `RULES`. The
+  parse the search response with `python3`, and redact the detail before it leaves the host. The redaction is host-specific, not
+  `scripts/secret-scan.mjs`'s `RULES`, which match repository-leak shapes (provider API keys,
+  dev-credential placeholders) and not what a backup journal can carry. It replaces URI user-info
+  (`scheme://user:pass@` becomes `scheme://***@`), and drops any line containing `PASSWORD`,
+  `PASSWD`, `SECRET`, `TOKEN` or `Authorization`, case-insensitively. The
   forge URL comes from `MCM_FORGE_URL`, which is **required, with no default**: the real host must never
   be committed (`check-topology-scrub`). The install block writes it into `~/backup/alert.env` on
   the host. The repo is `jumbleknot/mcm`. A test asserts that an unset `MCM_FORGE_URL` exits 3, like a
   missing token.
   **Verify GREEN**: `node --test scripts/__tests__/backup-alert.test.mjs`. All pass. **Mutation**:
   drop the "search first" call, and the "never a second create" case fails.
-- [ ] T016 [P] [US1] Implement `infrastructure-as-code/backup/backup-staleness.sh`. It sets the same
+- [x] T016 [P] [US1] Implement `infrastructure-as-code/backup/backup-staleness.sh`. It sets the same
   three exports as `backup.sh` (`DOCKER_HOST`, `RESTIC_REPOSITORY` and `RESTIC_PASSWORD_FILE`, from
   R14), runs `restic snapshots --tag homelab --latest 1 --json`, and computes the age with `python3`.
   The threshold is `${MCM_BACKUP_STALE_HOURS:-36}`.
   **Verify GREEN**: `node --test scripts/__tests__/backup-staleness.test.mjs`. All pass.
   **Mutation**: treat an empty list as age 0, and the unreadable case fails.
-- [ ] T017 [P] [US1] Edit `infrastructure-as-code/backup/homelab-backup.service` to add `OnFailure=`
+- [x] T017 [P] [US1] Edit `infrastructure-as-code/backup/homelab-backup.service` to add `OnFailure=`
   and `TimeoutStartSec=2h`. Add `homelab-backup-alert@.service`, `homelab-backup-staleness.service`
   and `homelab-backup-staleness.timer` alongside it.
   **Verify GREEN**: `node --test scripts/__tests__/backup-units.test.mjs`. All pass.
-- [ ] T018 [US1] Regenerate `infrastructure-as-code/backup/INSTALLED.sha256`
+- [x] T018 [US1] Regenerate `infrastructure-as-code/backup/INSTALLED.sha256`
   (`node scripts/backup-install-manifest.mjs --write`). Write `infrastructure-as-code/backup/README.md`
   with:
   - the paste-safe install block: create the two token files with mode 600 from a prompt-free source,
@@ -235,7 +238,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
     `systemctl --user enable --now homelab-backup-staleness.timer`;
   - the comparison command (quickstart US1-6).
   **Done when**: the T004 test passes, and the README's block names every file in `INSTALLED.sha256`.
-- [ ] T019 [US1] Rewrite the Backups section of `docs/runbooks/Server-Setup-Runbook.md` (lines
+- [x] T019 [US1] Rewrite the Backups section of `docs/runbooks/Server-Setup-Runbook.md` (lines
   ~1061–1070, now stale) to match the script, FR-005. Cover:
   - on-disk staging;
   - the forge registry and repository archives, which are excluded, and how to restore without them;
@@ -245,7 +248,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - the 2026-07-27..10-22 outage as a case study, quoting the measured baseline.
   **Done when**: `node scripts/check-openwiki-governance.mjs` and the docs link checks in preflight
   pass, and every claim in the section matches a line of `backup.sh`.
-- [ ] T020 [US1] Run the PR A gate: the full `node --test scripts/__tests__/*.test.mjs` run passes, and
+- [x] T020 [US1] Run the PR A gate: the full `node --test scripts/__tests__/*.test.mjs` run passes, and
   `node scripts/preflight.mjs --gates-only` passes. Open PR A with a body that lists the RED→GREEN
   results and the mutations from T006–T017.
 - [ ] T021 [US1] **(operator)** After PR A merges, run quickstart **0a** first if anything changed.

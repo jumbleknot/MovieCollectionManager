@@ -1,0 +1,5 @@
+[Unit]
+Description=Alert: %i failed (opens or comments on the prod-backup backlog item)
+[Service]
+Type=oneshot
+ExecStart=/home/prod/backup/backup-alert.sh failed %i

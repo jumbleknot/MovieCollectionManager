@@ -1050,23 +1050,46 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 
 - **Backups (restic or Borg), scheduled + encrypted + offsite (3-2-1):**
   - `mongodump` the replica set; `pg_dump` each Postgres (Forgejo, Keycloak, agent-db, Komodo).
-  - Snapshot Forgejo's data volume (repos + registry), Komodo config, and the **prod Keycloak realm export**.
+  - Snapshot Forgejo's data (repos, DB, config; the registry is rebuildable and excluded, see As-built below), Komodo config, and the **prod Keycloak realm export**.
   - Push at least one copy offsite (Backblaze B2 / S3 — cheap).
   - **Test restores on a schedule** — a backup you haven't restored isn't a backup.
 - **UPS + NUT.** A small UPS with **NUT** triggers a clean shutdown on power loss (prevents Mongo/Postgres corruption) and pairs with the BIOS "always on" so the box self-recovers.
 - **Retention/disk-fill guards.** Set Loki/OpenSearch retention and a scheduled `docker image prune` on the CI daemon, or Android builds + image layers will fill the SSD.
 
-> **As-built 2026-07-05 — implemented + hardened after a reboot exposed gaps.**
+> **As-built — the source of truth is [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/)** (moved into the repository by spec 084 on 2026-10-27; before that it lived only on the host). Install, update and verify it with that directory's [README](../../infrastructure-as-code/backup/README.md). The operator's one-line check that the host runs what the repo says is `cd ~ && sha256sum -c <checkout>/infrastructure-as-code/backup/INSTALLED.sha256`.
 >
-> **Backups.** `restic` → rclone remote, run by `/home/prod/backup/backup.sh` on a `prod`-user systemd timer (`homelab-backup.timer`, nightly 03:30). It stages dumps into a temp dir that restic captures, then prunes (7 daily / 4 weekly / 6 monthly). Dumps:
-> - **Forgejo** via `forgejo dump` (repos + registry + DB + config → one `forgejo-dump.tar.gz`).
-> - **Komodo** `pg_dumpall`.
-> - **Keycloak** Postgres (`pg_dump -d keycloak`) and **agent-db** Postgres (`pg_dump -d agent_db`) — `docker exec … pg_dump` over the container's local socket.
-> - **mc-service Mongo** (`mongodump` of `mc_db`, the movie data) and **BFF Mongo** (`bff_db`) — `docker exec … mongodump` inside each Mongo container. The Mongo connection URIs (which carry creds) are read **live from the running app containers** at backup time via a `cenv()` helper, so **no secret is stored in the script** (host rewritten to `127.0.0.1`).
-> - Each app-DB dump is best-effort and drops a `DUMP-FAILED-<name>` marker in the snapshot on error, so an incomplete backup is visible instead of silent.
-> - **Config directories, not data:** the `restic backup` line also takes `$HOME/forgejo`, `$HOME/komodo`, `$HOME/rustfs` and `$HOME/nx-cache` — compose files, `.env`s and the cache server's env file, enough to stand each service back up. `$HOME/rustfs` was added 2026-10-21 with the Nx-cache store move (spec 080 T044); until T047 the list also carries the previous store's directory, `/home/prod/minio/`, as the rollback.
-> - **Intentionally NOT dumped:** langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** (`nx-cache-rustfs-data`) — all rebuildable.
-> - ⚠️ **Gotcha that bit us:** the *original* `backup.sh` dumped only Forgejo + Komodo + the object-store/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`.**
+> **Backups.** `restic` → rclone remote (`rclone:nas:homelab/restic`), run by `~/backup/backup.sh` from the `prod`-user `homelab-backup.timer` (nightly 03:30, `Persistent=true`). A whole run takes 8–10 min (measured 2026-10-22..26).
+> - **Staging is on disk**, in `~/backup/stage.XXXXXX`, removed on exit. `/tmp` on this host is a 29 G **tmpfs** (RAM): the forge dump outgrew it, which started the outage below. The script refuses tmpfs staging, and `backup.sh --check-staging` shows the filesystem without backing anything up.
+> - **Dumps.** Each runs through `run_dump`. A failure leaves a `DUMP-FAILED-<name>` marker, **the remaining dumps and the upload still run**, and the run exits 1.
+>
+>   | Dump | How | Format check | Minimum |
+>   |---|---|---|---|
+>   | `forge` | `forgejo dump --type tar.gz --skip-package-data --skip-repo-archives` | `tar -tzf` | 10 MiB |
+>   | `komodo` | `pg_dumpall` (credentials read from `~/komodo/compose.env`) | ends `-- PostgreSQL database cluster dump complete` | 1 MiB |
+>   | `keycloak` | `docker exec … pg_dump` over the container socket | ends `-- PostgreSQL database dump complete` | 50 KiB |
+>   | `agent-db` | the same | the same | **1 byte** — `agent_db` has no tables by design (the gateway checkpoints in memory) |
+>   | `mc-service-mongo` | `docker exec … mongodump --archive --gzip`, URI read live from the app container | `gzip -t` | 100 KiB |
+>   | `bff-mongo` | the same | `gzip -t` | 1 KiB |
+>
+> - **`dump-manifest.tsv`** (name, file, bytes, minimum, format, previous bytes, verdict) is written into the staging dir, so it travels **inside** the snapshot. A copy becomes `~/backup/state/last-good.tsv` after a fully good run.
+> - **Shrink check.** A dump under **50 %** of its size in the last good run raises a `shrink` alert naming both sizes; the snapshot is still uploaded. When a shrink is expected (data deliberately deleted, a new exclusion), acknowledge it **before** the next run with `~/backup/backup.sh --ack-shrink <dump>`. An acknowledgement covers one run, and the threshold is never raised instead.
+> - **Config directories, not data:** the `restic backup` line also takes `$HOME/forgejo`, `$HOME/komodo`, `$HOME/rustfs` and `$HOME/nx-cache` — compose files and `.env`s, about 120 M in total (measured 2026-10-27), enough to stand each service back up.
+> - **Excluded on purpose, and how to restore without it:**
+>   - **The forge's package registry** (`--skip-package-data`; 109 G on 2026-10-26): the six app images and the dev-container image are rebuilt from git by `cd-deploy` and `devcontainer-image`. After a restore, re-run `cd-deploy` (deploy=false) once, then redeploy. Rollback to a digest older than the restore is not available until it has been rebuilt.
+>   - **Repository archives** (`--skip-repo-archives`): the forge regenerates them on demand.
+>   - langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** — all rebuildable.
+> - **Retention:** `restic forget --prune --tag homelab --group-by host,tags --keep-daily 7 --keep-weekly 4 --keep-monthly 6`. **Group by tag, never by path:** the staging dir's name is random, so restic's default `host,paths` grouping put every snapshot in a group of one and pruned nothing (41 snapshots on 2026-10-22, 11 after the fix).
+> - ⚠️ **Gotcha that bit us (2026-07):** the *original* `backup.sh` dumped only Forgejo + Komodo + the object-store/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`** — with a minimum and a format check.
+>
+> **Alerting (spec 084).** Every backup problem lands on **one** backlog item, titled `Prod backup: failed or stale` (`type/bug`, `priority/p1`). It is opened the first time; every later event comments on it, and only a human closes it.
+> - **A failed run** exits 1, and `OnFailure=homelab-backup-alert@%n.service` runs `backup-alert.sh failed homelab-backup.service`, attaching the journal tail with credentials redacted.
+> - **A hung run** hits `TimeoutStartSec=2h`, which systemd treats as a failure; it is reported as `hung`.
+> - **A run that never happens**, or an upload that silently did nothing, fires no `OnFailure`. `homelab-backup-staleness.timer` (every 6 h, `Persistent=true`) runs `backup-staleness.sh`. It reads the newest `homelab` snapshot **from the repository itself** and alerts `stale` past **36 h**, or `staleness-unreadable` if it cannot tell. "Could not tell" is never "fresh".
+> - **A fully good run** comments `recovered` on the open item, if there is one.
+> - The alert needs `~/backup/forge-issue-token` (mode 600, an **issues-only** token for this host alone) and `MCM_FORGE_URL` in `~/backup/alert.env`. An undeliverable alert exits 3 (not configured) or 4 (forge API failed) and says `alert NOT delivered` in the journal. The staleness check is the independent second path.
+> - **Accepted gap:** if the whole host, or the `prod` user's systemd manager, is down, both timers stop. That also stops the forge, the app and CI, so it is not silent.
+>
+> **Case study — the backup failed every night for ~3 months (2026-07-27 → 2026-10-22).** Dumps were staged in a temp dir on the RAM-backed `/tmp`. The forge dump, then still including the 100 G+ registry, outgrew it (`write /dev/stdout: no space left on device`). The forge dump was the **only** step with no fallback, so under `set -e` it took every database dump and the off-site upload down with it. Every night the journal recorded `Failed with result 'exit-code'`, and nothing read it. The last good snapshot was 2026-07-26 03:31; the failure was found by chance on 2026-10-22. On 2026-10-22/23 the host was fixed (on-disk staging, registry and archives skipped, tag-grouped retention). Spec 084 then brought the script into the repository and added what would have caught it on night one: per-dump isolation, format, minimum and shrink checks, the `OnFailure` alert, the hang timeout and the independent staleness check.
 >
 > **Restore (Forgejo Postgres — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
 >

@@ -27,7 +27,7 @@ The script needs these environment variables, as today. It never echoes a value,
   script exits 3 and logs `alert NOT delivered: token file …`. The journal still holds the failure,
   and the staleness check is the second path.
 - **HTTP**: a non-2xx response exits 4 and logs the status code. The body is printed only after
-  passing through the secret-pattern filter.
+  passing through the redaction filter (URI user-info masked; credential-bearing lines dropped).
 - **`recovered`** with no open item does nothing and exits 0.
 
 ## `backup-staleness.sh`

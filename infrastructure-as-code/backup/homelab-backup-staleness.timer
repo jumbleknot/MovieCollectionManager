@@ -1,0 +1,7 @@
+[Unit]
+Description=Check homelab backup freshness every 6 h (independent of the backup run)
+[Timer]
+OnCalendar=*-*-* 00/6:15:00
+Persistent=true
+[Install]
+WantedBy=timers.target
