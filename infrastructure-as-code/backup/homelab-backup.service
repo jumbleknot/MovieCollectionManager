@@ -1,5 +1,9 @@
 [Unit]
 Description=Homelab restic backup
+# A failure — including the timeout below — opens or comments on the backlog alert (spec 084 FR-001).
+OnFailure=homelab-backup-alert@%n.service
 [Service]
 Type=oneshot
 ExecStart=/home/prod/backup/backup.sh
+# A whole run takes 8-10 min (measured 2026-10-22..26): a run still going at 2 h is hung.
+TimeoutStartSec=2h

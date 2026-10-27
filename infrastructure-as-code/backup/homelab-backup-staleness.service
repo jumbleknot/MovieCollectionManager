@@ -1,0 +1,5 @@
+[Unit]
+Description=Alert if the newest homelab backup snapshot is over 36 h old
+[Service]
+Type=oneshot
+ExecStart=/home/prod/backup/backup-staleness.sh

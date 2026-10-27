@@ -168,7 +168,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - `MCM_BACKUP_STALE_HOURS=0` forces stale;
   - none of the unit files sets `MCM_BACKUP_STALE_HOURS`.
   **Verify RED**: `node --test scripts/__tests__/backup-staleness.test.mjs`. Expected: all failing.
-- [ ] T012 [P] [US1] Test: `scripts/__tests__/backup-units.test.mjs` parses the unit files as INI
+- [x] T012 [P] [US1] Test: `scripts/__tests__/backup-units.test.mjs` parses the unit files as INI
   (FR-001, FR-002, R2):
   - `homelab-backup.service` has `OnFailure=homelab-backup-alert@%n.service` and
     `TimeoutStartSec=2h`;
@@ -226,7 +226,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   The threshold is `${MCM_BACKUP_STALE_HOURS:-36}`.
   **Verify GREEN**: `node --test scripts/__tests__/backup-staleness.test.mjs`. All pass.
   **Mutation**: treat an empty list as age 0, and the unreadable case fails.
-- [ ] T017 [P] [US1] Edit `infrastructure-as-code/backup/homelab-backup.service` to add `OnFailure=`
+- [x] T017 [P] [US1] Edit `infrastructure-as-code/backup/homelab-backup.service` to add `OnFailure=`
   and `TimeoutStartSec=2h`. Add `homelab-backup-alert@.service`, `homelab-backup-staleness.service`
   and `homelab-backup-staleness.timer` alongside it.
   **Verify GREEN**: `node --test scripts/__tests__/backup-units.test.mjs`. All pass.
