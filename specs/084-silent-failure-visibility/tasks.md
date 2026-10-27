@@ -43,7 +43,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ## Phase 1: Setup
 
-- [ ] T001 Commit the verbatim host baseline. The three files are already written in the spec
+- [x] T001 Commit the verbatim host baseline. The three files are already written in the spec
   worktree: `infrastructure-as-code/backup/backup.sh`, `infrastructure-as-code/backup/homelab-backup.service`
   and `infrastructure-as-code/backup/homelab-backup.timer`. Their sha256 must match the host exactly:
   `2ce6ffd0…`, `c068245d…` and `bbb8a3db…` (research R14). Move them to the PR A worktree, branch
@@ -55,7 +55,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `084-us4-backup-size` (B, from A's merge), `084-us2-ci-status-deploy` (C), `084-us3-app-image-scan` (D)
   and `084-us5-registry-retention` (E), all under `/home/coder/worktrees/`. Push each branch right
   after its first commit, because a worktree does not survive a container rebuild.
-- [ ] T003 Add the shared shim helper `scripts/__tests__/helpers/host-shims.mjs`:
+- [x] T003 Add the shared shim helper `scripts/__tests__/host-shims.mjs`:
   - `makeShimEnv({ fixtures })` creates a temp dir holding a fake HOME (with `backup/`,
     `backup/state/` and `.config/systemd/user/`) and a `bin/` holding executable shims for `docker`,
     `restic`, `curl`, `python3` and `systemctl`;

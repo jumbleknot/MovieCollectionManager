@@ -145,7 +145,7 @@ scripts/
 ├── registry-retention.mjs                # NEW — US5
 ├── ci-maestro-debug.sh                   # PR #864 (FR-019b)
 └── __tests__/
-    ├── helpers/host-shims.mjs            # NEW — fake docker/restic/curl/systemctl on PATH (T003)
+    ├── host-shims.mjs                    # NEW — fake docker/restic/curl/systemctl on PATH (T003)
     ├── host-shims.test.mjs               # NEW — the helper's own tests
     ├── backup-install-manifest.test.mjs  # NEW — INSTALLED.sha256 and secret-pattern copy pinned
     ├── backup-staleness.test.mjs         # NEW
