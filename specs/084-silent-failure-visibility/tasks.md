@@ -141,7 +141,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   **Verify RED**: `node --test --test-name-pattern="measured failure modes" scripts/__tests__/backup-script.test.mjs`.
   Expected: 1, 4 and 5 fail on the baseline. 2 and 3 already hold and **must** be shown RED by
   mutation: delete `--group-by host,tags`, and add `KPASS=hunter2-…`. Record both in the PR.
-- [ ] T010 [P] [US1] Test: `scripts/__tests__/backup-alert.test.mjs` (FR-001, R1, contract
+- [x] T010 [P] [US1] Test: `scripts/__tests__/backup-alert.test.mjs` (FR-001, R1, contract
   `backup-alert.sh`). The `curl` shim serves the issue search and create/comment endpoints. Assert:
   - with no open item titled `Prod backup: failed or stale`, it POSTs a create carrying labels
     `type/bug` and `priority/p1`;
@@ -206,7 +206,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   go in `backup.sh`.
   **Verify GREEN**: `node --test --test-name-pattern="shrink against" scripts/__tests__/backup-script.test.mjs`.
   All pass. **Mutation**: compare with `<=` against 0 instead of 0.5×, and the alert case fails.
-- [ ] T015 [P] [US1] Implement `infrastructure-as-code/backup/backup-alert.sh` per R1 and the
+- [x] T015 [P] [US1] Implement `infrastructure-as-code/backup/backup-alert.sh` per R1 and the
   contract. Use `curl -fsS -H @"$HOME/backup/forge-issue-token.header"`, where the header file is
   derived from the mode-600 token file at runtime in a `mktemp` that is removed on exit. Build JSON and
   parse the search response with `python3`, and redact the detail before it leaves the host. The redaction is host-specific, not
