@@ -175,6 +175,7 @@ jobs:
               - 'scripts/maestro-run.sh'
               - 'scripts/ci-mobile-full-flows.sh'
               - 'scripts/ci-mobile-lib.sh'
+              - 'scripts/ci-maestro-debug.sh'
               - 'scripts/mobile-flows.mjs'
             # `mobile` gates ONLY the emulator half of app-e2e (APK build + Maestro agent flows,
             # ~35 min of the run). It is a STRICT SUBSET of `app`: everything that can change what
@@ -210,6 +211,7 @@ jobs:
               - 'scripts/maestro-run.sh'
               - 'scripts/ci-mobile-full-flows.sh'
               - 'scripts/ci-mobile-lib.sh'
+              - 'scripts/ci-maestro-debug.sh'
               - 'scripts/mobile-flows.mjs'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
