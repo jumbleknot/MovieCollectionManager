@@ -1,0 +1,5 @@
+[Unit]
+Description=Homelab restic backup
+[Service]
+Type=oneshot
+ExecStart=/home/prod/backup/backup.sh
