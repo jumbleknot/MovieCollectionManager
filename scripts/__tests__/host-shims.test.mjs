@@ -58,3 +58,17 @@ test('an unshimmed tool is the real one (python3 is not faked unless asked)', ()
   assert.equal(r.stdout.trim(), '42');
   assert.deepEqual(env.calls(), []);
 });
+
+test('a directory argument is captured with its file sizes and any dump-manifest.tsv (staging is deleted on exit)', () => {
+  const env = makeShimEnv();
+  const r = env.run(script(env, [
+    'd=$(mktemp -d "$HOME/backup/stage.XXXXXX"); trap \'rm -rf "$d"\' EXIT',
+    'printf abc > "$d/a.sql"; printf "keycloak\\t3\\n" > "$d/dump-manifest.tsv"',
+    'restic backup --tag homelab "$d"',
+  ].join('\n')));
+  assert.equal(r.status, 0, r.stderr);
+  const [call] = env.calls();
+  const [dir] = Object.keys(call.dirs);
+  assert.deepEqual(call.dirs[dir], { 'a.sql': 3, 'dump-manifest.tsv': 11 });
+  assert.equal(call.manifests[dir], 'keycloak\t3\n');
+});
