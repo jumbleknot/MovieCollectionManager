@@ -147,7 +147,7 @@ scripts/
 └── __tests__/
     ├── host-shims.mjs                    # NEW — fake docker/restic/curl/systemctl on PATH (T003)
     ├── host-shims.test.mjs               # NEW — the helper's own tests
-    ├── backup-install-manifest.test.mjs  # NEW — INSTALLED.sha256 and secret-pattern copy pinned
+    ├── backup-install-manifest.test.mjs  # NEW — INSTALLED.sha256 kept in step with the directory
     ├── backup-staleness.test.mjs         # NEW
     ├── backup-units.test.mjs             # NEW
     ├── komodo-cron-retention.test.mjs    # NEW

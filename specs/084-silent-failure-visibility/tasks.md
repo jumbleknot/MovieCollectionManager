@@ -68,14 +68,14 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ## Phase 2: Foundational (blocks US1 and US4)
 
-- [ ] T004 [P] Test: `scripts/__tests__/backup-install-manifest.test.mjs` checks that
+- [x] T004 [P] Test: `scripts/__tests__/backup-install-manifest.test.mjs` checks that
   `infrastructure-as-code/backup/INSTALLED.sha256` lists **every** `*.sh`, `*.service`, `*.timer` and
   `*.sql` file in `infrastructure-as-code/backup/`, with its current sha256 and its install path
   (`backup/<f>` for scripts and SQL, `.config/systemd/user/<f>` for units). It fails on a missing,
   extra or stale line, and `--check` mode exits 1 on drift (FR-004).
   **Verify RED**: `node --test scripts/__tests__/backup-install-manifest.test.mjs`. Expected: fails,
   `INSTALLED.sha256 not found`.
-- [ ] T005 Implement `scripts/backup-install-manifest.mjs`, which takes `--write` or `--check`, and
+- [x] T005 Implement `scripts/backup-install-manifest.mjs`, which takes `--write` or `--check`, and
   rejects any other argument with exit 2 through the repository's shared rejecting parser. Generate
   `infrastructure-as-code/backup/INSTALLED.sha256` from the T001 baseline.
   **Verify GREEN**: the T004 command; all pass. **Mutation**: append a byte to `backup.sh`, then the
@@ -155,7 +155,8 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - a missing token file, or one not mode 600, exits 3 with `alert NOT delivered`;
   - an HTTP 500 exits 4;
   - the token value never appears in stdout, stderr or `calls.jsonl` argv (it travels via `-H @file`);
-  - a detail line containing a secret-pattern match is dropped from the body.
+  - a detail line carrying `mongodb://u:p@h` is sent as `mongodb://***@h`, and a line containing
+    `PGPASSWORD=` or `Authorization:` is dropped.
   **Verify RED**: `node --test scripts/__tests__/backup-alert.test.mjs`. Expected: all failing,
   `backup-alert.sh: No such file`.
 - [ ] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
@@ -208,9 +209,11 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 - [ ] T015 [P] [US1] Implement `infrastructure-as-code/backup/backup-alert.sh` per R1 and the
   contract. Use `curl -fsS -H @"$HOME/backup/forge-issue-token.header"`, where the header file is
   derived from the mode-600 token file at runtime in a `mktemp` that is removed on exit. Build JSON and
-  parse the search response with `python3`, and filter the detail through `scripts/secret-scan.mjs`'s `RULES`. Its regexes are carried into the
-  script by `backup-install-manifest.mjs --write` as `backup-secret-patterns.txt`, because the host
-  has no repository checkout; T004 also pins that file to `RULES`. The
+  parse the search response with `python3`, and redact the detail before it leaves the host. The redaction is host-specific, not
+  `scripts/secret-scan.mjs`'s `RULES`, which match repository-leak shapes (provider API keys,
+  dev-credential placeholders) and not what a backup journal can carry. It replaces URI user-info
+  (`scheme://user:pass@` becomes `scheme://***@`), and drops any line containing `PASSWORD`,
+  `PASSWD`, `SECRET`, `TOKEN` or `Authorization`, case-insensitively. The
   forge URL comes from `MCM_FORGE_URL`, which is **required, with no default**: the real host must never
   be committed (`check-topology-scrub`). The install block writes it into `~/backup/alert.env` on
   the host. The repo is `jumbleknot/mcm`. A test asserts that an unset `MCM_FORGE_URL` exits 3, like a

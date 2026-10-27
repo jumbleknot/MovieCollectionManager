@@ -30,7 +30,7 @@ the tests pin.
 | title | `Prod backup: failed or stale` — the dedupe key (exact match) |
 | labels | `type/bug`, `priority/p1` |
 | body (on create) | reason, host, time (UTC), runbook link, the first event's detail |
-| comment (each later event) | `reason` ∈ `failed`, `hung`, `stale`, `staleness-unreadable`, `shrink`, `komodo-oversize`, `recovered`; plus detail (journal tail ≤ 40 lines with secrets never present — the script logs no secret; the alert additionally drops any line matching the repo's secret patterns) |
+| comment (each later event) | `reason` ∈ `failed`, `hung`, `stale`, `staleness-unreadable`, `shrink`, `komodo-oversize`, `recovered`; plus detail (journal tail ≤ 40 lines with secrets never present — the script logs no secret; the alert additionally masks URI user-info and drops credential-bearing lines) |
 
 State transitions: none open → **created**; open → **commented**; `recovered` only comments, never
 closes. Two events in one night (failure, then staleness 6 h later) comment twice on the same item.
