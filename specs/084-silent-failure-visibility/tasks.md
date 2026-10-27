@@ -95,7 +95,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ### Tests
 
-- [ ] T006 [P] [US1] Test: `scripts/__tests__/backup-script.test.mjs`, case **"a failing forge dump
+- [x] T006 [P] [US1] Test: `scripts/__tests__/backup-script.test.mjs`, case **"a failing forge dump
   does not skip the others"** (US1-AC3, FR-003). The `docker` shim fails `forgejo dump` with exit 1.
   Assert:
   - the script exits 1, because a dump failed;
@@ -105,7 +105,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - the staging dir handed to `restic backup` contains `DUMP-FAILED-forge`.
   **Verify RED**: `node --test --test-name-pattern="forge dump does not skip" scripts/__tests__/backup-script.test.mjs`.
   Expected: 1 failing. Against the baseline, no later dump runs and restic is never called.
-- [ ] T007 [P] [US1] Test: in the same file, cases **"each dump is checked in its own format"**
+- [x] T007 [P] [US1] Test: in the same file, cases **"each dump is checked in its own format"**
   (US1-AC3a, FR-003a):
   - a plain-SQL dump missing its `-- PostgreSQL database dump complete` trailer gives verdict
     `failed-format`;
@@ -118,7 +118,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `dump-manifest.tsv` with the data-model columns.
   **Verify RED**: `node --test --test-name-pattern="checked in its own format" scripts/__tests__/backup-script.test.mjs`.
   Expected: 5 failing. The baseline has no checks and no manifest.
-- [ ] T008 [P] [US1] Test: cases **"shrink against the last good run"** (US1-AC3b, FR-003b):
+- [x] T008 [P] [US1] Test: cases **"shrink against the last good run"** (US1-AC3b, FR-003b):
   - with `state/last-good.tsv` giving Keycloak 381023 and a new dump of 100000, the verdict is
     `alert-shrink`, `backup-alert.sh shrink` is called with a detail naming `keycloak 381023 → 100000`,
     and the snapshot **is** still uploaded;
@@ -129,7 +129,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - `backup.sh --ack-shrink keycloak` writes the ack file and exits 0; `--ack-shrink nope` exits 2.
   **Verify RED**: `node --test --test-name-pattern="shrink against" scripts/__tests__/backup-script.test.mjs`.
   Expected: 6 failing.
-- [ ] T009 [P] [US1] Test: static and runtime guards **"measured failure modes stay fixed"** (FR-004):
+- [x] T009 [P] [US1] Test: static and runtime guards **"measured failure modes stay fixed"** (FR-004):
   1. The staging path is under `$HOME/backup`, not `/tmp`, `/dev/shm` or `$XDG_RUNTIME_DIR`, and
      `--check-staging` exits 1 when the `stat` shim reports `tmpfs`.
   2. Every `restic forget` line has `--tag homelab` and `--group-by host,tags`.
@@ -183,7 +183,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 
 ### Implementation
 
-- [ ] T013 [US1] In `infrastructure-as-code/backup/backup.sh`, add:
+- [x] T013 [US1] In `infrastructure-as-code/backup/backup.sh`, add:
   - an argument parser at the top (no args | `--ack-shrink <name>` | `--check-staging`; anything
     else exits 2 before any side effect);
   - a tool check for `curl` and `python3`;
@@ -201,7 +201,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `node --test --test-name-pattern="forge dump does not skip|checked in its own format|measured failure modes" scripts/__tests__/backup-script.test.mjs`.
   All pass. **Mutation**: make the forge dump fatal again (`|| return 1` in `run_dump`), and T006
   fails.
-- [ ] T014 [US1] Implement the shrink comparison, `--ack-shrink`, the `last-good.tsv` rewrite on an
+- [x] T014 [US1] Implement the shrink comparison, `--ack-shrink`, the `last-good.tsv` rewrite on an
   `ok` run only, and the success-path `backup-alert.sh recovered` call (data-model, R5). All of these
   go in `backup.sh`.
   **Verify GREEN**: `node --test --test-name-pattern="shrink against" scripts/__tests__/backup-script.test.mjs`.

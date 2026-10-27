@@ -280,7 +280,10 @@ test('measured failure modes: retention groups by tag, never by the randomised s
 
 test('measured failure modes: the script holds no secret (credentials are read live)', () => {
   assert.deepEqual(scanText('infrastructure-as-code/backup/backup.sh', SOURCE), []);
-  assert.doesNotMatch(SOURCE, /(PASSWORD|TOKEN|SECRET)=['"]?[A-Za-z0-9]/, 'no inline credential assignment');
+  // A credential-named variable may only ever be assigned an expansion ($…), never a literal.
+  // Names, not values: `kpass=`, `PGPASSWORD=`, `RESTIC_PASSWORD_FILE=` all qualify.
+  const literal = /\b\w*(PASS|TOKEN|SECRET|KEY)\w*=(?!['"]?\$)['"]?[^\s'"]/i;
+  assert.doesNotMatch(SOURCE, literal, 'no credential assigned a literal');
 });
 
 test('measured failure modes: an unknown argument is rejected before anything runs', () => {
