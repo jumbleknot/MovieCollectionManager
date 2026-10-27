@@ -1,28 +1,59 @@
 {
-  "coveredCommit": "d0ebd87ee8b55910062405eca48319f361f8d4c2",
-  "coveredAt": "2026-10-27T11:40:13.808Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [],
-  "proposal": null,
+  "coveredCommit": "a4b1cdfa3dbb13984c7c7bcf056719e2455188d2",
+  "coveredAt": "2026-10-27T23:53:21.978Z",
+  "lastOutcome": "completed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "server-setup.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    }
+  ],
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 868,
+    "headCommit": "d5dc9b581fba8b0a634c3e6f1950e89ce814550f",
+    "markerBefore": "d0ebd87ee8b55910062405eca48319f361f8d4c2",
+    "slices": [
+      {
+        "area": "projects",
+        "pages": [
+          "backup.md"
+        ],
+        "kind": "create",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "new source, not yet covered: infrastructure-as-code/backup/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/backup.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-10-27T23:53:22.367Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
-    "stoppedAtBudget": false
+    "pagesWritten": 5,
+    "elapsedSeconds": 2684,
+    "stoppedAtBudget": true
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 386,
+    "calls": 313,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1730570,
-    "cached": 42325184,
+    "uncached": 1557063,
+    "cached": 30293108,
     "cacheWrite": 0,
-    "output": 730503,
-    "reasoning": 639105,
-    "ms": 5800843,
-    "estCostUsd": 1.6497,
+    "output": 600969,
+    "reasoning": 524800,
+    "ms": 4266071,
+    "estCostUsd": 1.37,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -32,11 +63,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/backups.md"
+        "projects/backup.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 1.6497,
+      "estCostUsd": 1.37,
       "rateLimited": null
     }
   ],
