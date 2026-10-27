@@ -69,8 +69,7 @@ is the manifest digest.
    `systemctl --user list-timers 'homelab-backup*'` should show two timers.
 2. **Induced failure.**
    ```bash
-   systemctl --user start homelab-backup.service \
-     --setenv=RESTIC_REPOSITORY=rclone:nas:homelab/does-not-exist
+   systemctl --user set-environment RESTIC_REPOSITORY=rclone:nas:homelab/does-not-exist; systemctl --user start homelab-backup.service; echo "exit=$?"; systemctl --user unset-environment RESTIC_REPOSITORY
    ```
    Expected:
    - the unit ends `failed`;

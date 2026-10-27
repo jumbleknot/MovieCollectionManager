@@ -8,7 +8,7 @@
 # MCM_BACKUP_STALE_HOURS exists for tests only; no unit sets it.
 set -euo pipefail
 export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
-export RESTIC_REPOSITORY=rclone:nas:homelab/restic
+export RESTIC_REPOSITORY=${RESTIC_REPOSITORY:-rclone:nas:homelab/restic}   # overridable only to induce a failure (README)
 export RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
 
 THRESHOLD_HOURS=${MCM_BACKUP_STALE_HOURS:-36}

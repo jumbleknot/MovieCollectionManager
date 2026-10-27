@@ -12,7 +12,7 @@
 #   backup.sh --check-staging      refuse a RAM-backed staging dir, without backing anything up
 set -euo pipefail
 export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
-export RESTIC_REPOSITORY=rclone:nas:homelab/restic
+export RESTIC_REPOSITORY=${RESTIC_REPOSITORY:-rclone:nas:homelab/restic}   # overridable only to induce a failure (README)
 export RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
 
 BACKUP_DIR="$HOME/backup"

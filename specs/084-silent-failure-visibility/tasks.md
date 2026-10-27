@@ -230,7 +230,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   and `TimeoutStartSec=2h`. Add `homelab-backup-alert@.service`, `homelab-backup-staleness.service`
   and `homelab-backup-staleness.timer` alongside it.
   **Verify GREEN**: `node --test scripts/__tests__/backup-units.test.mjs`. All pass.
-- [ ] T018 [US1] Regenerate `infrastructure-as-code/backup/INSTALLED.sha256`
+- [x] T018 [US1] Regenerate `infrastructure-as-code/backup/INSTALLED.sha256`
   (`node scripts/backup-install-manifest.mjs --write`). Write `infrastructure-as-code/backup/README.md`
   with:
   - the paste-safe install block: create the two token files with mode 600 from a prompt-free source,
@@ -238,7 +238,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
     `systemctl --user enable --now homelab-backup-staleness.timer`;
   - the comparison command (quickstart US1-6).
   **Done when**: the T004 test passes, and the README's block names every file in `INSTALLED.sha256`.
-- [ ] T019 [US1] Rewrite the Backups section of `docs/runbooks/Server-Setup-Runbook.md` (lines
+- [x] T019 [US1] Rewrite the Backups section of `docs/runbooks/Server-Setup-Runbook.md` (lines
   ~1061–1070, now stale) to match the script, FR-005. Cover:
   - on-disk staging;
   - the forge registry and repository archives, which are excluded, and how to restore without them;
@@ -248,7 +248,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - the 2026-07-27..10-22 outage as a case study, quoting the measured baseline.
   **Done when**: `node scripts/check-openwiki-governance.mjs` and the docs link checks in preflight
   pass, and every claim in the section matches a line of `backup.sh`.
-- [ ] T020 [US1] Run the PR A gate: the full `node --test scripts/__tests__/*.test.mjs` run passes, and
+- [x] T020 [US1] Run the PR A gate: the full `node --test scripts/__tests__/*.test.mjs` run passes, and
   `node scripts/preflight.mjs --gates-only` passes. Open PR A with a body that lists the RED→GREEN
   results and the mutations from T006–T017.
 - [ ] T021 [US1] **(operator)** After PR A merges, run quickstart **0a** first if anything changed.
