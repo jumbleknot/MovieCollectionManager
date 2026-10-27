@@ -29,6 +29,8 @@ sources:
     resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
   - id: openwiki-source-2c4ab3ecf382cf5390cc484c
     resource: repo://scripts/__tests__/ci-log-step.test.mjs
+  - id: openwiki-source-85895d0ff4bd77f9e7c359df
+    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-bba8fcebaba450eb74159c23
@@ -39,14 +41,16 @@ sources:
     resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
     resource: repo://scripts/ci-log-step.sh
+  - id: openwiki-source-13872023ae5e43aa417073f0
+    resource: repo://scripts/ci-maestro-debug.sh
   - id: openwiki-source-70875ab1853f42b7c7d4b78a
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-23T11:13:11.115Z
+    at: 2026-10-27T23:08:42.159Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -221,6 +225,26 @@ the real run. What the fixture could not test was the *interaction* between real
 allocation order — a fixture whose ordering does not reproduce the ordering that caused the bug tests
 nothing.
 
+### Maestro's own debug tree is staged per RUN, not per host (spec 084 FR-019b)
+
+`app-e2e` runs on the `kvm` host, so `~/.maestro/tests` is the `ci` user's **persistent** home and
+Maestro prunes it only at ~14 days — the `maestro-debug` artifact upload used to take it whole, which by
+2026-10-26 meant **330,497 rows / 11 GB** of every earlier run re-shipped on each failure. That is why
+the upload is now fed from a staging directory that holds **this run's output only**, in two halves of
+one script (`scripts/ci-maestro-debug.sh`):
+
+- **`start`** runs inside the `app-e2e-install-maestro` step: it wipes `./maestro-debug`, recreates
+  `maestro-debug/tests`, and touches the mark file `.run-start`.
+- **`collect`** runs on the failure path, before the upload, and copies only `~/.maestro/tests/*`
+  directories **newer than the mark** into the staging directory — a `find -newer` + `cp -r`, not a
+  whole-tree move.
+
+Two invariants are load-bearing. A diagnostic must never change the job's outcome, so `collect` exits 0
+on every path — including **no start mark**, where it stages *nothing* rather than falling back to the
+host's whole history — and only a bad invocation exits 2. And the staging path is the artifact's, not a
+Maestro convention: the old digest check looked for a `maestro-debug` directory in the workspace, which
+is why it reported `maestro debug output — not present` on runs that had captured a full tree.
+
 ### `logs/mc-service.log` is ordered by completion, not by start (item #568)
 
 **mc-service logs its domain event at the END of the handler**, in the same emit as the response, so a
@@ -296,13 +320,28 @@ at least **10 observed (non-killed) samples**:
 no calibrated row, so a table miss can never fall through to unbounded and restore the hang-kills-the-job
 defect. It stays at 2700 s because an uncalibrated step's legitimate duration is by definition unknown,
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
-a slow **true** failure costs only the difference between that bound and the job's ceiling. The table's
-commented `ON THE BACKSTOP` block currently lists five steps — `app-e2e-collect-container-logs` (n=2),
-`app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of
-`app-e2e-bring-up-keycloak` by feature 073), and the opt-in full mobile suite's `maestro-full-flows` and
-`maestro-full-results`. None has the 10 observations a calibration needs, and the last two run only on
-`mobile-e2e-full` / `mobile_suite=full` runs, so they will take a while to accumulate — the job ceiling
-is raised to 110 min in full mode so the backstop plus the digest step still fit.
+a slow **true** failure costs only the difference between that bound and the job's ceiling.
+
+The table's commented `ON THE BACKSTOP` block currently lists **six** steps, while the `app-e2e`
+workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
+the inventory:
+
+- **`app-e2e-build-images`** and **`app-e2e-bring-up-backup-destinations`** — split out of
+  `app-e2e-bring-up-keycloak` by feature 073, with no observations yet under their new names. The first
+  is the cache-dependent half: ~0 s when the Docker layer cache hits, and a full Expo web export when a
+  PR touches frontend source. The second exists as its own step *because* folding it back into
+  `app-e2e-bring-up-keycloak` pushed that step past its calibrated 300 s and killed the job.
+- **`app-e2e-collect-container-logs`** (n=2) — the only backstop row with a measured sample, still far
+  under the 10 a calibration needs, because it runs only on the failure path.
+- **`app-e2e-collect-maestro-debug`** — new in spec 084 (FR-019b); no observations yet, and it too runs
+  only when the mobile half fails. A `find` + `cp` of this run's Maestro output.
+- **`maestro-full-flows`** and **`maestro-full-results`** — the opt-in full mobile suite
+  (`mobile-e2e-full` label / dispatch `mobile_suite=full`). These run only on opt-in runs, so ~10 samples
+  will take a while to accumulate; `maestro-full-flows` is ~24 non-agent flows × 2 attempts.
+
+None has the 10 observed samples a calibration needs, so all six are bounded by the 2700 s backstop —
+which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode: the
+backstop plus the digest step still have to fit inside it.
 
 The wrapper resolves the row with a **whole-name match on field 1** (`web-e2e` and `web-e2e-model` differ
 only by a suffix, and several steps share an `app-e2e-install` prefix, so a substring match would hand one

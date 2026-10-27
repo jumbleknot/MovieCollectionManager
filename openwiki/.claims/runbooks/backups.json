@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6035fb9714dc5626c0dbf8adbad5e9edc5a87f4432f148a347c5489391554b8f",
+  "pageVersion": "sha256:2198c1dd13e87b2515e3e175f2a863c3b3034c074fdd5d69e029ec499b1f3a77",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -498,21 +498,33 @@
     },
     {
       "id": "claim_b4173cf25f1e4fc9aeb59cd227bca694",
-      "statement": "The web E2E backups spec skips rather than fails when the backup destinations are absent, and escalates through its own flag E2E_REQUIRE_BACKUP_TARGETS=1 (which CI sets) rather than MCM_REQUIRE_BACKUP_TARGETS; the values it needs — BACKUP_TICK_SECRET and the BACKUP_TEST_* pair — live in .env.local, which Playwright does not load, so they must be passed explicitly, since supplying only the e2e env file once produced a green run whose backup specs had silently skipped.",
+      "statement": "The web E2E backups spec skips rather than fails when the backup destinations are absent (it gates on BACKUP_TEST_S3_SECRET_KEY being set) and escalates through its own flag E2E_REQUIRE_BACKUP_TARGETS=1, which the app-e2e Playwright invocation sets, rather than through MCM_REQUIRE_BACKUP_TARGETS; locally the values it needs — BACKUP_TICK_SECRET and the BACKUP_TEST_* credentials — live in .env.local, which Playwright does not load (loadE2eEnv reads only .env.e2e.local), so they must be passed explicitly, since supplying only the e2e env file once produced a green run whose backup specs had silently skipped; in CI they are not read from a file at all — the app-e2e bring-up step mints the S3/WebDAV credentials per run and exports them through $GITHUB_ENV, and it reads BACKUP_TICK_SECRET back out of the generated .env.docker rather than minting a second value, because a second random secret is just as valid-looking and would 404 against the BFF holding the first.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:23d5edc253c34016ff0e749a57c599c435908b1025ae4f70088af484a91a719d"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1043-L1076",
+          "version": "repo-lines-v1:sha256:9c1ba98b10bcb443e862562d8c5ab8edc56a5b4ac27741f434120863c84dae8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NTY1YjljMTk2MzllMDYzMjY4MWFlYjdiODRlMjYyYjM4OWY0ZGRjMWI3NWRkNmUwMmUxNTU2YmRjZTBhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YmU3ZTFhNTYwYWY4YjU3Nzg1NWVmMjU4NTU2NTkyYmYyNDEwNTg3YTEzMTEzNGNiZmU4ZWMxYzc4NzI5YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkYjlmYWJkMzI2NTY4ZGY2OWM1Njg5ZjhiODZmZWY5NTY1NjBiMGRlOWE1NDk0YWFkMTc4ZjkxNmM5MWFlZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNDFkYTc4Yjk5M2RiMDBmMjlhNzhhYjA5Y2E5MzNlYzdjOTJhOWQxM2ZhMDFkNWFlNWI1NjRlM2M2OGE0NjgifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts",
-          "version": "repo-file-v1:sha256:7a387da36d2d54dee33f5e9cc5e08e5d4ef47dcb645181caa900000a40ec320f"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L719-L790",
+          "version": "repo-lines-v1:sha256:e60a56f6523e78ef010ed59851fa0839c0586a6e2a752525eb7d64386e364ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTJiMTBjNTgxNzRlYjRlNjVmNzM2MjZiOWMwNDk3NWFiYjAyMmU5YTFjYmE0NmRhMjc3NWQ5OTFlZTRiMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzU3NWQ2MzY4NWY2ZjkwYTc1MDk0MDUwNGM1MDhiMDg3ZTJkYWIxODNmMWQ1ZjJhZTE0MjFkYzdiYzU1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NzhhZjE2N2FhZmVhNjExZjQwMzNmYzdhODg1NmZhOTM0MWExMjFlY2NhN2QxMTNkNWE4NjNmODk2MGY5MDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L19-L30",
+          "version": "repo-lines-v1:sha256:f62f6177d6a1a55ccb6e74feaa241ea1f7984f744659db4bfebec5e9b894c25c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNDcxNTRlOWNhNzgyOGI2MWI2NzkzZWFmMGVhYmVhYThkZDRkZmNhNDQ5OTM4NzQwOTZmMDBlZDg5ODFlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MWUwMTNiN2Y2NmEzYzJjZTVlMTRhYWRmNTRmNWE0ZGJiOTJiYzNiZTY2ODA4MjFlZDhiOWU3ZWFiN2NlZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5NjcwNDZiNWY4MWI4OWQ1MTQ2ODU5NzBhZDE5YTg2OTA2MTQ1N2M2MTQ4MzYwYzExNDUxNjMxMjRhMWMzZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1ZWQ0MjNmMmM2OTg2MGFiN2M2YjU1NWZkMjU5NWUyOTg3ZWY5NmY1MmZmZDRhYzBiMTIzN2E4ZmM5MmVhNjIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts#L72-L85",
+          "version": "repo-lines-v1:sha256:2f4aa2271efdd97ea4a87fd3445f592b2ba20ded00e4477154739b6a16e209c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYmZhOGEyYmFmYTU5M2NmNzNiNzlmYjBiZmE1MGY3MWMxYjZiZGZiMDEzMTExOTM5ZGQ3YjA0MDExODdlZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MTVjZGZlYTllZTRmMmJmODcyZjg4ODc0N2U3NjlkZTgwZTMwNTNlODMwMGJkMTU5NTlkODg1MmUyODc3YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNTU2NzBhOWJkMGNiY2RjNjdkZGZlYmZlNzgzMzkyYTI3ZmZhYjBkY2FjNDE4YmQxNWVkMzgwMDczZDMxZmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/load-e2e-env.ts#L31-L37",
+          "version": "repo-lines-v1:sha256:c91ab4f24571355d9dc009ef72992398307c5dd163977e5f9dc024107787792a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0YmEzOTVjODY4ZWIwMTBiZjZkNzYyNjc2MWJhMTVlZWMzODM2MWUyZmE1YWU4Zjg2ZjgzYmY3YWI3NjM3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRmY2MxYWI0NzUxMDVkZTA4NmZkYjYzZmFjM2QzNmY5NDRjMGVkOGQ3ZWJhMjM4OTNkYTRiNDU2OTYxM2ZjNCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-26T03:45:38.439Z"
+    "at": "2026-10-27T23:08:42.159Z"
   }
 }
