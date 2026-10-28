@@ -18,9 +18,11 @@ const DEFAULT_SHIMS = ['docker', 'restic', 'curl', 'systemctl'];
 // Runs inside each shim. A fixture matches when every `match` string occurs in the space-joined
 // argv; the first match answers. An `@file` argument is captured as data unless it follows -H /
 // --header: that is how a token reaches curl, and recording it would put the secret in the log.
-// An absolute directory argument is captured with its file sizes (and any dump-manifest.tsv),
-// because backup.sh deletes its staging dir on exit: what restic was handed is otherwise gone.
+// An absolute directory argument is captured with its file sizes (and any dump-manifest.tsv, and the
+// listing of any *.tar), because backup.sh deletes its staging dir on exit: what restic was handed
+// is otherwise gone.
 const RUNNER = String.raw`
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 const [cmd, ...argv] = process.argv.slice(2);
@@ -28,16 +30,24 @@ const fixtures = JSON.parse(readFileSync(process.env.SHIM_FIXTURES, 'utf8'));
 const dataFiles = {};
 const dirs = {};
 const manifests = {};
+const tars = {};
 argv.forEach((a, i) => {
   if (a.startsWith('/') && existsSync(a) && statSync(a).isDirectory()) {
     dirs[a] = Object.fromEntries(readdirSync(a).map((f) => [f, statSync(join(a, f)).size]));
     if (existsSync(join(a, 'dump-manifest.tsv'))) manifests[a] = readFileSync(join(a, 'dump-manifest.tsv'), 'utf8');
+    for (const f of readdirSync(a).filter((f) => f.endsWith('.tar'))) {
+      try {
+        tars[join(a, f)] = execFileSync('tar', ['-tf', join(a, f)], { encoding: 'utf8' }).split('\n').filter(Boolean);
+      } catch {
+        tars[join(a, f)] = null;
+      }
+    }
   }
   if (!a.startsWith('@') || ['-H', '--header'].includes(argv[i - 1])) return;
   const p = a.slice(1);
   if (existsSync(p)) dataFiles[p] = readFileSync(p, 'utf8');
 });
-appendFileSync(process.env.SHIM_CALLS, JSON.stringify({ cmd, argv, dataFiles, dirs, manifests }) + '\n');
+appendFileSync(process.env.SHIM_CALLS, JSON.stringify({ cmd, argv, dataFiles, dirs, manifests, tars }) + '\n');
 const joined = argv.join(' ');
 const f = fixtures.find((x) => x.cmd === cmd && (x.match ?? []).every((m) => joined.includes(m))) ?? {};
 if (f.stdoutFile) process.stdout.write(readFileSync(f.stdoutFile));
@@ -50,7 +60,7 @@ process.exitCode = f.exit ?? 0;
  * @param {{ fixtures?: object[], shims?: string[] }} [opts]
  * @returns {{ root: string, home: string, bin: string, env: object,
  *   run: (script: string, args?: string[], extraEnv?: object) => import('node:child_process').SpawnSyncReturns<string>,
- *   calls: () => {cmd: string, argv: string[], dataFiles: object, dirs: object, manifests: object}[], rawCalls: () => string,
+ *   calls: () => {cmd: string, argv: string[], dataFiles: object, dirs: object, manifests: object, tars: object}[], rawCalls: () => string,
  *   setFixtures: (fixtures: object[]) => void }}
  */
 export function makeShimEnv({ fixtures = [], shims = DEFAULT_SHIMS } = {}) {
