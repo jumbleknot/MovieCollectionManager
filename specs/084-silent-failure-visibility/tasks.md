@@ -251,7 +251,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
 - [x] T020 [US1] Run the PR A gate: the full `node --test scripts/__tests__/*.test.mjs` run passes, and
   `node scripts/preflight.mjs --gates-only` passes. Open PR A with a body that lists the RED→GREEN
   results and the mutations from T006–T017.
-- [ ] T021 [US1] **(operator)** After PR A merges, run quickstart **0a** first if anything changed.
+- [x] T021 [US1] **(operator)** After PR A merges, run quickstart **0a** first if anything changed.
   Create the issue-scoped host token in the forge UI (scope: issues only), and install per the README.
   Then run quickstart US1 steps 1–2 and 5–6, and paste the output:
   - two timers listed;
@@ -260,6 +260,10 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - checksums all `OK`.
   **Done when**: the item exists with ≥ 3 comments from the induced events. The operator then
   comments, and the item stays open until T040.
+  **Done 2026-10-27**: every `sha256sum` line `OK`; both timers listed; staging on ext4. The induced
+  failure opened item #867 (`type/bug`, `priority/p1`, the journal tail, no secrets), and the forced
+  staleness commented on #867 instead of opening a second item. The operator has since closed #867,
+  so T040 closes #830 only.
 
 **Checkpoint**: US1 alerting is live on the host. US1-AC5, the restore drill, runs against the
 **new** dump format in US4 (T040).
@@ -278,12 +282,15 @@ retention.
   plus their listings, and paste the output. Record the sizes and the keep/exclude decision for each
   directory in research.md R14. A rebuildable build cache is excluded; object-store data is kept.
   **Done when**: R14 has the four sizes and a decision for each.
-- [ ] T023 [US4] Confirm that PR #864 (FR-019b, the Maestro scope) is merged, and that the first
+- [x] T023 [US4] Confirm that PR #864 (FR-019b, the Maestro scope) is merged, and that the first
   failing mobile run after the merge uploads `maestro-debug` under 50 MB. Check with
   `node scripts/ci-status.mjs` or the forge database query from Block 5a. Record the size in the spec
   baseline.
   **Done when**: one post-merge `maestro-debug` artifact has been measured. If no mobile failure has
   occurred yet, record "pending first failure" and continue; it does not block PR B.
+  **Done 2026-10-28**: #864 is merged (0776cfef). Size: **pending**. `ci-status.mjs` has no artifact
+  view, and the forge's `GET …/actions/artifacts` route answers 404 on Forgejo 15, so the only
+  measurement is the Block 5a database query on the host. It runs with T036's 0e re-run.
 
 ### Tests
 
