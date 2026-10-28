@@ -399,6 +399,7 @@ jobs:
         with:
           name: sast-report
           path: security/sast/reports/
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

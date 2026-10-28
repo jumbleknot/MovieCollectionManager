@@ -72,3 +72,18 @@ test('a directory argument is captured with its file sizes and any dump-manifest
   assert.deepEqual(call.dirs[dir], { 'a.sql': 3, 'dump-manifest.tsv': 11 });
   assert.equal(call.manifests[dir], 'keycloak\t3\n');
 });
+
+test('a *.tar in a captured directory is captured with its listing; one that does not list is null', () => {
+  const env = makeShimEnv();
+  const r = env.run(script(env, [
+    'd=$(mktemp -d "$HOME/backup/stage.XXXXXX"); trap \'rm -rf "$d"\' EXIT',
+    's=$(mktemp -d); mkdir -p "$s/release-apks/1.2.0" && printf x > "$s/release-apks/1.2.0/a.apk"',
+    'tar -cf "$d/good.tar" -C "$s" release-apks; printf junk > "$d/bad.tar"',
+    'restic backup --tag homelab "$d"',
+  ].join('\n')));
+  assert.equal(r.status, 0, r.stderr);
+  const [call] = env.calls();
+  const [dir] = Object.keys(call.dirs);
+  assert.deepEqual(call.tars[join(dir, 'good.tar')], ['release-apks/', 'release-apks/1.2.0/', 'release-apks/1.2.0/a.apk']);
+  assert.equal(call.tars[join(dir, 'bad.tar')], null);
+});

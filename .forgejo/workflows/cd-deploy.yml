@@ -528,6 +528,7 @@ jobs:
           # (not Gradle's generic app-release.apk) so the artifact carries the descriptive filename.
           name: MovieCollectionManager-release-${{ github.sha }}
           path: frontend/mcm-app/android/app/build/outputs/apk/release/MovieCollectionManager-*.apk
+          retention-days: 7   # spec 084 FR-019c: the APK also lives in the mcm-app-android package
           if-no-files-found: error
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can

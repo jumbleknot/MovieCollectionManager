@@ -442,6 +442,7 @@ jobs:
         with:
           name: infra-image-scan-report
           path: security/infra-images/reports/
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
 
       # When no infra image ref changed on a PR, every step above skips and the job succeeds → the
       # required `infra-image-scan / infra-image-scan` context is posted as success, so the PR merges

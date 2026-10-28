@@ -124,7 +124,7 @@ Expected:
 ## US4 — backup size
 
 1. After install, read the next nightly's journal in a prod session:
-   `journalctl --user -u homelab-backup --since today | grep -E 'Added to the repository|dump-manifest'`.
+   `journalctl --user -u homelab-backup --since today --no-pager | grep -E ' [a-z-]+: [0-9]+ bytes, |Added to the repository'`.
    Expected:
    - `forge-data` + `forge-db` are about 1.5 GB in total, and Komodo is under 250 MB;
    - on the **second** night, `Added to the repository` is under 2 GiB (SC-008).
