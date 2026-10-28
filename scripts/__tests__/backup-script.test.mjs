@@ -57,11 +57,15 @@ function pgCustomDump(path, bytes, { magic = true } = {}) {
 // What a restore cannot do without (R7); `forge-data`'s check fails on a listing that lacks any.
 const FORGE_DATA_REQUIRED = ['git/repositories/jumbleknot/mcm.git/HEAD', 'gitea/conf/app.ini', 'gitea/jwt/private.pem'];
 
-/** A real, uncompressed tar of `/data`'s layout, with roughly `bytes` of repository content. */
+/**
+ * A real, uncompressed tar of `/data`'s layout. The `bytes` of bulk sit in gitea/actions_log (the
+ * real bulk, 447 M): kept, and never one of the required paths, so omitting one cannot trip the size
+ * check before the content check.
+ */
 function forgeDataTar(path, bytes, { omit = [] } = {}) {
   const d = `${path}.src`;
-  sh(`mkdir -p "${d}/git/repositories/jumbleknot/mcm.git" "${d}/gitea/conf" "${d}/gitea/jwt"`);
-  sh(`head -c ${bytes} /dev/urandom > "${d}/git/repositories/jumbleknot/mcm.git/pack"`);
+  sh(`rm -rf "${d}" && mkdir -p "${d}/git/repositories/jumbleknot/mcm.git" "${d}/gitea/conf" "${d}/gitea/jwt" "${d}/gitea/actions_log"`);
+  sh(`head -c ${bytes} /dev/urandom > "${d}/gitea/actions_log/run.log"`);
   for (const f of FORGE_DATA_REQUIRED.filter((p) => !omit.some((o) => p.startsWith(o)))) sh(`echo x > "${d}/${f}"`);
   for (const o of omit) sh(`rm -rf "${d}/${o}"`);
   sh(`tar -cf "${path}" -C "${d}" gitea git`);
@@ -486,7 +490,12 @@ test('release APKs are dumped from the package API: every version, every file, i
     assert.ok(listing.includes(`release-apks/${v}/${file}`), `release-apks/${v}/${file} not in ${row.file}: ${listing}`);
   }
   assert.equal(apkDownloads(h).length, Object.keys(APK_VERSIONS).length, 'one download per file');
-  assert.ok(!h.env.rawCalls().includes('mcm-app-android-symbols/'), 'q= is a substring match: other packages are filtered out');
+  // q= is a substring match: page 1's 49 mcm-app-android-symbols rows must never be fetched.
+  const fetched = new Set(h.env.calls().filter((c) => c.cmd === 'curl')
+    .flatMap((c) => c.argv.map((a) => a.match(/\/generic\/mcm-app-android\/([^/]+)\//)?.[1]).filter(Boolean)));
+  assert.deepEqual([...fetched].sort(), Object.keys(APK_VERSIONS).sort(), 'only mcm-app-android versions are fetched');
+  assert.deepEqual(listing.filter((p) => /^release-apks\/[^/]+\/?$/.test(p)).map((p) => p.replace(/\/$/, '')).sort(),
+    Object.keys(APK_VERSIONS).map((v) => `release-apks/${v}`).sort());
 
   for (const c of h.env.calls().filter((x) => x.cmd === 'curl')) {
     const url = c.argv.find((a) => /^https?:\/\//.test(a));
@@ -496,6 +505,14 @@ test('release APKs are dumped from the package API: every version, every file, i
     assert.ok(!header.slice(1).startsWith(dir), 'the header file is never staged: it would be uploaded');
   }
   assert.ok(!h.env.rawCalls().includes(PACKAGE_TOKEN), 'the token never appears in argv');
+});
+
+test('release APKs are dumped from the package API: a version whose file list is unreadable fails the dump, not skipped', () => {
+  const h = host({ overrides: [{ cmd: 'curl', match: ['/generic/mcm-app-android/1.3.0/files'], stdout: '<html>502</html>' }] });
+  assert.equal(h.run().status, 1);
+  const { files, manifest } = stagingOf(h);
+  assert.ok('DUMP-FAILED-release-apks' in files);
+  assert.equal(manifestRows(manifest)['release-apks'].verdict, 'failed-command');
 });
 
 test('release APKs are dumped from the package API: a missing or loose token file fails that dump only', () => {
