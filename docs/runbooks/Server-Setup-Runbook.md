@@ -335,6 +335,8 @@ services:
       - FORGEJO__server__ROOT_URL=http://server.tailnet.ts.net:3000/
       - FORGEJO__packages__ENABLED=true          # enables the OCI registry
       - FORGEJO__actions__ENABLED=true           # enables Forgejo Actions
+      # Backstop for any upload without retention-days (default 90); this repo's set 14 or 7 (spec 084 FR-019c)
+      - FORGEJO__actions__ARTIFACT_RETENTION_DAYS=30
     volumes:
       - forgejo-data:/data
     ports:

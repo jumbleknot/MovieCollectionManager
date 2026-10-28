@@ -1365,6 +1365,7 @@ jobs:
         with:
           name: maestro-debug
           path: maestro-debug/tests/**
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
           if-no-files-found: ignore
 
       - name: Upload Playwright report on failure
@@ -1373,6 +1374,7 @@ jobs:
         with:
           name: playwright-report
           path: frontend/mcm-app/playwright-report/**
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
           if-no-files-found: ignore
 
       # Full, timestamped per-service logs written to FILES and uploaded as an artifact — not just the
@@ -1440,6 +1442,7 @@ jobs:
         with:
           name: agent-e2e-container-logs
           path: container-logs/**
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
           if-no-files-found: ignore
 
       # feature 029 (FR-011): a leftover CI app-e2e stack held prod's 8099 for 6h and blocked every
@@ -1665,6 +1668,7 @@ jobs:
         with:
           name: dast-report
           path: security/zap/reports/**
+          retention-days: 14   # spec 084 FR-019c: a diagnostic, not a record
           if-no-files-found: ignore
 
       - name: Gate on un-allowlisted High findings
