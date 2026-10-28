@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:fbe1e2d2212f8042a1aaa9030cad238e9c3608a4abb898bcc46a569356b58852",
+  "claims": [
+    {
+      "id": "claim_fb99a132195d426bb1f78d4948851875",
+      "statement": "The prod host backup is the operator's host-level disaster recovery: a restic snapshot of every stateful prod service (Forgejo, Komodo, Keycloak, agent-db and both Mongo instances) plus the service config directories, pushed to a remote the operator controls. It is explicitly not the same system as feature 073's per-user collection backups, and neither replaces the other: a user's own backup does not protect the host, and the host snapshot cannot be restored per user.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md",
+          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+        }
+      ]
+    },
+    {
+      "id": "claim_2901e50171bb4165813d064feb5cd162",
+      "statement": "The backup is config-as-code: the scripts, systemd units and a checksum manifest live in infrastructure-as-code/backup/, and the host runs copies installed at ~/backup/*.sh and ~/.config/systemd/user/homelab-backup*; that directory's README is the canonical install/update/verify contract.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md",
+          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        }
+      ]
+    },
+    {
+      "id": "claim_e78d24a547ae4c28bbfa14f6de8d0ce2",
+      "statement": "Every dump runs through a single run_dump path that never fails the script: a failed dump leaves a DUMP-FAILED-<name> marker inside the snapshot, the remaining dumps and the restic upload and retention still run, and the run's exit status reports the failure so the unit's OnFailure= alert fires. This isolation exists because the original script's Forgejo step was the only step without a fallback, so under set -e its failure skipped every database dump and the off-site upload.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        }
+      ]
+    },
+    {
+      "id": "claim_21f35f4eba0a4cde90e3e968b3c29d25",
+      "statement": "Each dump is validated after it is written, in its own format (a plain Postgres dump must end at the pg_dump/pg_dumpall completion marker, a gzip/Mongo archive must pass gzip -t, the forge tar must list) and against a per-dump minimum size; a dump that fails either check is treated exactly like a failed dump command. The minimum may legitimately be near zero — agent-db's is 1 byte because agent_db has no tables by design, the gateway checkpointing in memory — so a non-empty test alone would be wrong.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        }
+      ]
+    },
+    {
+      "id": "claim_48653face1404092b0f39625abcc7072",
+      "statement": "A dump whose size falls below 50% of the same dump in the last good run raises a shrink alert naming the dump and both sizes, but the snapshot is still uploaded and the run still succeeds. An expected shrink is accepted once with backup.sh --ack-shrink <dump>, which writes a state file the next run consumes and deletes; the threshold is never raised instead, and only a fully good run rewrites the last-good manifest that the comparison is based on.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md",
+          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        }
+      ]
+    },
+    {
+      "id": "claim_e161225148da4de0a1bdef851114c17d",
+      "statement": "Dump staging must be on disk: /tmp on the prod host is a 29 G tmpfs, the Forgejo dump outgrew it, and the original script staged there, so backups failed every night from 2026-07-27 to 2026-10-22 and the outage was found by chance. backup.sh therefore stages under ~/backup/ and refuses a tmpfs staging filesystem before dumping anything, and backup.sh --check-staging reports the filesystem without backing anything up.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d72d7b4af66473c80950aaf59e678d8",
+      "statement": "restic retention must group by tag, not by path: the call carries --tag homelab --group-by host,tags because the staging directory's name is random, so restic's default host,paths grouping put every snapshot in a group of one and pruned nothing. The same randomness is why the staleness check lists all homelab snapshots rather than using --latest, which is per path group.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
+          "version": "repo-file-v1:sha256:403ac4d20a966bbca9362c734d8b6d1bcc577c299bfaf43613499b0afddcfe78"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        }
+      ]
+    },
+    {
+      "id": "claim_b33f5d6092f5444993d723b3d263edff",
+      "statement": "Alerting has two independent paths onto one backlog item, titled 'Prod backup: failed or stale'. Path one is the run's own failure: backup.sh exits 1 and OnFailure=homelab-backup-alert@%n.service on homelab-backup.service runs backup-alert.sh failed <unit>, with a run killed by TimeoutStartSec=2h reported as hung rather than failed (a whole run measures 8-10 min). Path two is a separate 6-hourly staleness timer and service running backup-staleness.sh, which reads the newest homelab snapshot from the backup repository itself and alerts stale past 36 h, or staleness-unreadable when it cannot read the age at all — 'could not tell' is never reported as fresh. Neither the alert unit nor the staleness service declares OnFailure=, so a failing alert does not recurse and a stale check is not double-reported.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
+          "version": "repo-file-v1:sha256:403ac4d20a966bbca9362c734d8b6d1bcc577c299bfaf43613499b0afddcfe78"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/homelab-backup-alert%40.service",
+          "version": "repo-file-v1:sha256:ade24029942fc6b948dfadcaae376e6e30c45c8b37be5cc127e4bf9bb55e171a"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/homelab-backup-staleness.timer",
+          "version": "repo-file-v1:sha256:1282fb391fb4c651c49b68e174052eaefa711fc037d63e843424a8796571e9fe"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/homelab-backup.service",
+          "version": "repo-file-v1:sha256:bf7ac8f429b7a731e3cbbd964f29ab4edaa5a00f7ec97afecdaefd5ec0a08071"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-units.test.mjs",
+          "version": "repo-file-v1:sha256:f871cfec98ab4739bc5e06aa6f1fa4003c3bf07f6ef04d6c36b3df5ad9d06b6e"
+        }
+      ]
+    },
+    {
+      "id": "claim_4df3f23a8d494da286afc1250a52f748",
+      "statement": "The second alerting path exists precisely because a run that never happens, a hung run, or an upload that silently did nothing fires no OnFailure; a heartbeat written by the run being checked would not be independent, and a CI-hosted check would need the restic password that decrypts every backup in Actions secrets. MCM_BACKUP_STALE_HOURS exists for tests only and no unit sets it.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
+          "version": "repo-file-v1:sha256:403ac4d20a966bbca9362c734d8b6d1bcc577c299bfaf43613499b0afddcfe78"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-staleness.test.mjs",
+          "version": "repo-file-v1:sha256:3f08c16b42a06e094511d2a0fed2a5e41a0378b5369abf30b82bb6af9a7fe474"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/research.md",
+          "version": "repo-file-v1:sha256:1ae6f9d6330e8b1549f29ba520265e97bf20adc0e24fe4d01ca06e8f227fb746"
+        }
+      ]
+    },
+    {
+      "id": "claim_854a4a3a343f4e6aa73e4c26e7c768c4",
+      "statement": "backup-alert.sh puts every backup event on exactly one backlog item: it searches open issues for the exact title 'Prod backup: failed or stale' (no label filter, since an unknown label name is silently ignored), comments when the item exists and creates it labelled type/bug and priority/p1 by label id when it does not, never closes it, and a fully good run posts a recovered comment that no-ops when nothing is open.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-alert.sh",
+          "version": "repo-file-v1:sha256:40515729d8b80dfb7455a6ed6c0199658a97081772d270167bb66c5e5cda502a"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-alert.test.mjs",
+          "version": "repo-file-v1:sha256:ab7a06a840fbe50bcb22f828e520bc75719d7ef9dec53e647ab7cbc66bf1099d"
+        }
+      ]
+    },
+    {
+      "id": "claim_abb56ad9b938473087ff0c670374edd1",
+      "statement": "The alert needs an issues-scoped token in a mode-600 file and the forge's local URL (MCM_FORGE_URL) in an env file beside it; the token is passed to curl through a header file rather than argv so ps and the journal never see it. A missing or loose token or an unset URL exits 3 and an HTTP failure exits 4, each printing 'alert NOT delivered' to the journal rather than failing silently, and the posted detail is redacted — URI user-info masked and any line naming a credential dropped.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-alert.sh",
+          "version": "repo-file-v1:sha256:40515729d8b80dfb7455a6ed6c0199658a97081772d270167bb66c5e5cda502a"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-alert.test.mjs",
+          "version": "repo-file-v1:sha256:ab7a06a840fbe50bcb22f828e520bc75719d7ef9dec53e647ab7cbc66bf1099d"
+        }
+      ]
+    },
+    {
+      "id": "claim_2151d3f4cd504d69a7597dc26fc14135",
+      "statement": "INSTALLED.sha256 is the artefact that lets an operator with no repository checkout prove the host runs what the repository says: it lists every installable file as <sha256>  <path relative to $HOME> at the path the README's install block puts it, sorted so a regenerated list diffs cleanly. It is regenerated by scripts/backup-install-manifest.mjs --write and verified with --check, and a guard fails when the committed list disagrees with the directory or omits a new installable file — a stale list is worse than none, because the operator's sha256sum -c would then pass against an old script.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/INSTALLED.sha256",
+          "version": "repo-file-v1:sha256:783133888cea5c2b0492796e41b1b0662456ba30c272a14d46a47015ce727de5"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-install-manifest.test.mjs",
+          "version": "repo-file-v1:sha256:090eb20bf1bcfd590ffccbbc322bf97448d9cf8419b0918ffe5f5d1fe29881ea"
+        },
+        {
+          "resource": "repo://scripts/backup-install-manifest.mjs",
+          "version": "repo-file-v1:sha256:4a7bc2f4705f8668de0711c3371d6f3c5711d1975537d2512724bff626fb171d"
+        }
+      ]
+    },
+    {
+      "id": "claim_793015c5a7d84281bc64b2b811ba4afc",
+      "statement": "backup.sh holds no secret: the restic password comes from RESTIC_PASSWORD_FILE outside the script, and every other credential (the Komodo Postgres user and password, the Mongo URIs) is read live from a compose env file or a running container, so no credential is ever assigned a literal in the committed script.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd380e745f7b442cbb6ea3e3f1a7859b",
+      "statement": "The dump list is the part that must grow with the host: the original script dumped only Forgejo, Komodo and the object-store/nx-cache config directories and no application database, so a reboot that corrupted Forgejo's Postgres left Forgejo the only stateful service with a real backup. The standing rule is that adding a stateful service means adding its dump to backup.sh, with a minimum size and a format check.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+        }
+      ]
+    },
+    {
+      "id": "claim_c059613feef8458884f30790fd2357bb",
+      "statement": "The accepted gap in the alerting is that if the whole host, or the prod user's systemd manager, is down, both timers stop and the staleness check goes down with the backup. That is accepted rather than engineered around because the same state stops the forge, the application and every CI run, so it is loud rather than silent; what the two paths cover is the case that went unseen for three months, where the host is up and the backup is broken.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/spec.md",
+          "version": "repo-file-v1:sha256:5c65876cbd40fc41759d2722c30ff528f71c3504bf8baa9efd7b574d4c935a1e"
+        }
+      ]
+    },
+    {
+      "id": "claim_9791198156314d7c836c02b4822603fc",
+      "statement": "The backup scripts are guarded behaviourally rather than by inspection: backup-script.test.mjs runs backup.sh against a fake host (docker, restic, curl and df shimmed; tar, gzip and python3 real) and pins the measured failure modes, including that a failing forge dump still runs every other dump and still calls restic backup, the per-dump format and minimum verdicts, shrink and ack-shrink, staging under ~/backup with tmpfs refused, and --group-by host,tags on forget. These suites run in guardrails.yml's naming job.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
+          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+        },
+        {
+          "resource": "repo://scripts/__tests__/host-shims.mjs",
+          "version": "repo-file-v1:sha256:7c376e992eb17efae878807ef5350294f73e19d119e2ce64cac9ef8fb4c9c837"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-27T23:08:42.159Z"
+  }
+}

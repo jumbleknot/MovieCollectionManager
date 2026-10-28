@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
-tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, runbook]
+tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, backups, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -17,14 +17,22 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-78ec32b51a25a8fb66d5b292
+    resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
+    resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-62d227af87c6a9ae6df49e2f
+    resource: repo://scripts/__tests__/backup-install-manifest.test.mjs
   - id: openwiki-source-482173336861a06249bf1372
     resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-1bce6b78afa7160b5f9a9d66
+    resource: repo://scripts/backup-install-manifest.mjs
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
     resource: repo://scripts/cd/publish-apk.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
@@ -39,10 +47,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-27T23:08:42.159Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -175,12 +183,24 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   stateful service on a timer, a *proven* restore procedure, a graceful-shutdown drain unit that stops
   containers cleanly before the runtime is killed, and UPS + NUT for power loss. The runbook warns
   explicitly that this host-level DR is not the same thing as the application's per-user collection
-  backups.
-  - **The dump list is the part that has to grow with the host.** The original script captured only
-    the service config directories and no application database at all, so a reboot that corrupted
-    Forgejo's Postgres left Forgejo the only stateful service with a real backup. The standing rule
-    the runbook draws from that is that adding a stateful service means adding its dump — the same
-    obligation that put the Nx-cache store's config directory on the `restic backup` path list.
+  backups — [Prod host backup](../projects/backup.md) is the snapshot side of that pair, and
+  [Per-user collection backups](./backups.md) the application side.
+  - **The script is no longer host-only state.** Spec 084 (2026-10-27) moved the whole backup into
+    [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/), which is now the source of
+    truth: `backup.sh`, `backup-alert.sh`, `backup-staleness.sh`, the five systemd units, a README with
+    the install/update/verify contract, and `INSTALLED.sha256`. The host runs copies, and
+    `cd ~ && sha256sum -c <checkout>/infrastructure-as-code/backup/INSTALLED.sha256` is the operator's
+    one-line proof that the copies match the repository — so a change to what gets dumped, what is
+    excluded, or when the alert fires is a reviewed commit rather than an edit made on the host.
+  - **The dump list is the part that has to grow with the host — and it is now a tracked file.** The
+    original script captured only the service config directories and no application database at all, so
+    a reboot that corrupted Forgejo's Postgres left Forgejo the only stateful service with a real
+    backup. The standing rule the runbook draws from that is that adding a stateful service means
+    adding its dump — with a minimum size and a format check — and since spec 084 (2026-10-27) that
+    edit lands in
+    [`infrastructure-as-code/backup/backup.sh`](../../infrastructure-as-code/backup/backup.sh), so it
+    is reviewed and the host copy is checked against the repository rather than drifting. The same
+    obligation is what put the Nx-cache store's config directory on the `restic backup` path list.
 - **15 — Wire the pipeline.** The trigger ordering, digest-by-git promotion and Komodo ResourceSync
   deploy; the current shape is documented in
   [CI/CD pipeline](../projects/ci-cd-pipeline.md) and
@@ -261,17 +281,22 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
   while the tracked observability compose has moved to `1.0.3`; every git-tracked RustFS service must
   share one digest-pinned Alpine tag). The store's volume and network names are host state
-  too, so confirm them by ownership *and* contents before running the migration copy — and if the
-  backup script captures the previous store's directory, it has to be pointed at the new one as well.
+  too, so confirm them by ownership *and* contents before running the migration copy — and the backup
+  script's path list has to name each store's config directory, which is why the new store's directory
+  is on it. Whether the retired store's directory should still be on that list is the one point where
+  the runbook and the tracked script disagree (below).
   The guard that fails on any *live* reference to the retired object store — with a closed list of
   reasoned exemptions, and the history blocks under `docs/runbooks/` that may keep a case study —
   belongs to [Infra-image CVE scanning](./infra-image-scanning.md).
-  - **The cutover landed as a copy, and the previous store's config directory is still in the backup
-    list.** The move was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a
-    recreate, with `verify` reporting 1360 → 1360 objects. The host backup script's `restic backup`
-    path list therefore carries the new store's config directory beside the previous store's, and the
-    old directory stays on that list only until the deferred cleanup (spec 080 T047) removes it —
-    taken off the list in that same step, because until then it is the rollback.
+  - **The cutover landed as a copy, and the tracked backup list disagrees with the runbook about the
+    retired store's directory.** The move was performed on prod on 2026-10-21 (spec 080 T044) as a copy
+    rather than a recreate, with `verify` reporting 1360 → 1360 objects. The tracked `restic backup`
+    path list is now `"$HOME/forgejo" "$HOME/komodo" "$HOME/rustfs" "$HOME/nx-cache"` — it does **not**
+    name the retired store's directory, while the runbook's Phase 8 says that directory stays on the
+    list until the deferred cleanup (spec 080 T047) deletes it. The retired store is still the
+    documented rollback (its volume and directory names remain exempt in the object-store guard as
+    resources that exist until M7), so treat the runbook's Phase 8 sentence as the rule and the tracked
+    script as what the host actually runs.
   - **The store's credentials live in two files and both must change together.** The cache server's
     own env file carries the store's access/secret pair as its `AWS_ACCESS_KEY_ID` /
     `AWS_SECRET_ACCESS_KEY`, while the store's compose reads the same pair from the store's own `.env`.

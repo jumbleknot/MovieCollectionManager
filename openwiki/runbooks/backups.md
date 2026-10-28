@@ -5,9 +5,6 @@ description: Feature 073's per-user scheduled and on-demand collection backups t
 resource: docs/runbooks/backups.md
 tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-26T03:45:38.439Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -49,6 +46,8 @@ sources:
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-20919697827cd36ef7f9b62b
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/load-e2e-env.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-53aa23c014c1f05d94e82617
@@ -69,7 +68,10 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
   - id: openwiki-source-511cf70d08e685e1be0170b8
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-27T23:08:42.159Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -208,11 +210,17 @@ this page distills the load-bearing gotchas an operator needs before touching th
   `MCM_REQUIRE_BACKUP_TARGETS=1` **alongside** `MCM_REQUIRE_LIVE_STACK=1`: the flag converts the
   skip into a hard failure that names the missing input, and the jest preflight then also probes
   both destinations. Watch the skip count, not just the exit code. The web E2E spec has the same
-  problem and its own escalation flag, `E2E_REQUIRE_BACKUP_TARGETS=1`, which CI sets — and the
-  values it needs (`BACKUP_TICK_SECRET` and the `BACKUP_TEST_*` pair) live in `.env.local`, which
-  Playwright does **not** load, so pass them explicitly: supplying only the e2e env file once
-  produced a green run whose backup specs had silently skipped. Bringing the destinations up and
-  running the tiers are in [Local dev infrastructure & environment variables](./local-dev.md) and
+  problem and its own escalation flag, `E2E_REQUIRE_BACKUP_TARGETS=1`, which the app-e2e Playwright
+  invocation sets — and the values it needs (`BACKUP_TICK_SECRET` and the `BACKUP_TEST_*`
+  credentials) live in `.env.local`, which Playwright does **not** load, so pass them explicitly:
+  supplying only the e2e env file once produced a green run whose backup specs had silently
+  skipped. CI does not read them from a file at all. The step that brings the destinations up
+  (`app-e2e-bring-up-backup-destinations`) mints the S3/WebDAV credentials per run and exports them
+  through `$GITHUB_ENV`, and it **reads `BACKUP_TICK_SECRET` back out of the generated
+  `.env.docker`** instead of minting a second value — a second random secret is just as
+  valid-looking and would 404 against the BFF holding the first, which is the same failure wearing
+  a convincing disguise. Bringing the destinations up and running the tiers are in
+  [Local dev infrastructure & environment variables](./local-dev.md) and
   [E2E testing](./e2e-testing.md).
 
 ## The consent runs on its own Keycloak client (feature 083)

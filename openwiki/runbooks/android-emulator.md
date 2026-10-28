@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -27,6 +27,8 @@ sources:
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-900e4fa48a3671f4d583c11d
     resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
+  - id: openwiki-source-85895d0ff4bd77f9e7c359df
+    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
@@ -39,6 +41,8 @@ sources:
     resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
     resource: repo://scripts/ci-log-step.sh
+  - id: openwiki-source-13872023ae5e43aa417073f0
+    resource: repo://scripts/ci-maestro-debug.sh
   - id: openwiki-source-b6eb0909d8d068c6d6d9dab4
     resource: repo://scripts/ci-mobile-agent-flows.sh
   - id: openwiki-source-8f0b3b9c2764324c22056c4b
@@ -53,10 +57,10 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T17:22:52.674Z
+    at: 2026-10-27T23:08:42.159Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -121,8 +125,9 @@ Three details of that step are load-bearing when editing it:
   `pull_request` only when the diff touches the job's `mobile` filter (`frontend/**`, `agents/**`,
   `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the Maestro/selection scripts
   `scripts/ci-mobile-agent-flows.sh`, `scripts/ci-mobile-full-flows.sh`, `scripts/ci-mobile-lib.sh`,
-  `scripts/mobile-flows.mjs` and `scripts/maestro-run.sh`) or the PR carries the `mobile-e2e` **or**
-  `mobile-e2e-full` label. Otherwise the PR still gets the web E2E and integration tiers from the same
+  `scripts/ci-maestro-debug.sh`, `scripts/mobile-flows.mjs` and `scripts/maestro-run.sh`) or the PR
+  carries the `mobile-e2e` **or** `mobile-e2e-full` label. Otherwise the PR still gets the web E2E and
+  integration tiers from the same
   job and skips the ~35-minute emulator half. That filter must stay a strict subset of the job's `app`
   filter — a path in `mobile` but not in `app` can never fire, because `mobile` gates only steps
   *inside* `app-e2e` while `app-e2e` itself requires `app == 'true'`; two entries violated exactly that
@@ -256,9 +261,11 @@ floored at 300 s, applied only to a step with at least 10 observed (non-killed) 
 largest retry bound any wrapped step has (`ci-mobile-agent-flows.sh` runs each flow under `max=3`,
 Playwright is `retries: 1`), so a run where every retry fires still has headroom. Today
 `maestro-agent-flows` is the loosest calibrated row at 2580 s (n=27, max 844 s), `web-e2e` is 840 s, and
-most steps sit on the 300 s floor. `maestro-full-flows` and `maestro-full-results` have **no
-observations yet**, so they are bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop** —
-which is exactly why full mode raises the job ceiling: backstop plus digest still have to fit.
+most steps sit on the 300 s floor. `maestro-full-flows`, `maestro-full-results` and the mobile
+failure-path captures (`app-e2e-collect-maestro-debug`, `app-e2e-collect-container-logs`) have **no
+calibrated row** — the first two run only on opt-in runs, the last two only when the mobile half fails —
+so they are bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop**, which is exactly why
+full mode raises the job ceiling: backstop plus digest still have to fit.
 
 The reason this exists rather than one job-wide number: `always()` does not survive a job kill. When the
 runner enforced the 75-minute ceiling, the `Publish failure digest` step never ran, so a **hang** — the
@@ -413,6 +420,21 @@ through `adb reverse`.
   non-ephemeral `kvm` runner those files are the post-mortem channel for a session that cannot read
   workflow logs or artifacts through this forge's API; the trap re-returns the original exit code and
   never fails the run itself.
+- **The uploaded `maestro-debug` artifact carries only *this* run's Maestro output, because the job's
+  home directory is persistent.** `app-e2e` runs on the ci host (`runs-on: kvm`), so `~/.maestro/tests`
+  is the ci user's home and Maestro prunes it only at ~14 days; the upload step used to take that
+  directory whole, so every failure re-shipped every earlier run (measured 2026-10-26: rows per upload
+  climbing 6, 9, 12, 15, 18 … 5,819 over 154 uploads, reaching **330,497 rows / 11 GB** — half of all
+  Actions artifacts and half of the nightly backup, with 967 entries / 5.8 GB on the host). The fix is
+  `scripts/ci-maestro-debug.sh` with two subcommands: `start` runs inside the **`Install Maestro`**
+  step, clears the `maestro-debug/` staging directory and touches a `.run-start` mark before any flow
+  can write output; `collect` runs just before the upload, under the same `failure()` condition, and
+  copies only `~/.maestro/tests/*` entries **newer than the mark** into `maestro-debug/tests/` — which
+  is what the upload's `path` reads (`maestro-debug/tests/**`, never `~/.maestro`). A missing mark
+  stages nothing rather than falling back to the host history, and every path exits 0, because a
+  diagnostic must never change the job's outcome; an unknown subcommand exits 2 instead of being
+  treated as one of the two. Pinned by `scripts/__tests__/ci-maestro-debug.test.mjs`, which runs the
+  script against a fixture home and asserts the workflow is wired to it.
 - **Two emulator-state traps that look like app bugs.**
   - **A second MCM build steals the OAuth redirect.** `frontend/mcm-app/app.json` sets
     `"scheme": "mcm-app"`, so *every* installed build claims `mcm-app://native-auth-callback`

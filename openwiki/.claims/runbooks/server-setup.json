@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bfb080770e5552bb868d6130be46ee5b9485fcd946d0efd0e16b2db36ca9e813",
+  "pageVersion": "sha256:c1d57565c4b2c79af687b958f6abed6a5238e7b4f74f4601e40ba93ed68210ef",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -29,7 +29,7 @@
       "statement": "The host runs two unprivileged service users (`ci` and `prod`), each with its own rootless dockerd at its own socket and its own data root under its home, and the rootful docker.service is disabled — this is the isolation boundary that keeps a CI breakout from reaching prod or the host as root. The prod daemon hosts the long-lived services (Forgejo, Komodo, the RustFS-backed Nx cache, monitoring), while the CI daemon runs build/test jobs.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1163-L1165",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1186-L1188",
           "version": "repo-lines-v1:sha256:d3e14c490f0560db8b733f4bd55bcbae2f2f21e4a6b5c5f121e6b2d00b65bd60:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZiYzk4YmEwOWViYjEyZTdkZTlkMmZmZThjNjZiMzkyNDc0MGEzNzY2ZTM3ZTcxZjNiMGI1YTY1ZGFmZmExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY2YWNlNzYzMGY0NTM0N2Y3NjIxOTlhMTU0YzliYmFiM2Y4MGYwYmYyYTk2ODg0OTA0YmQ0NWU0OTYzZDcyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQ4YTE4YjUyZDZjNTYyY2VjNTA5MTkxYTRhYWIzMzE3YTk2ODRmODcxNDQzZjE3ZTQ1Njg4YTA1NWVkMmNhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNkNWQxMThjZTdkNTA4NTdjZWU3YmFiNGU5YmE5MWM3Mzc3MmEyYjEyYjdhZTI4NWEwOWI1ZmRjZGE3YTdjYSJ9"
         },
         {
@@ -243,7 +243,7 @@
       "statement": "Forgejo runs on the prod daemon (a long-lived service, with Postgres behind it) as the source-of-truth forge, with Actions and the OCI/generic package registry enabled by env; GitHub is a downstream push mirror rather than the source. Every automated consumer authenticates with its own minimally-scoped named personal access token — registry push and pull are split, CD's git write uses a whitelisted-user PAT rather than the runner's auto token (which the pre-receive hook declines on protected `main`), and the debug dispatch token is revoked when idle.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1081-L1101",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1104-L1124",
           "version": "repo-lines-v1:sha256:cdfaa8642899c280dfe2e99349bf87845caadc1110fe63562d25e421e99ac24b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYTA1NmMyMmE1NzNjYWI4M2JlMDEyZDE1ZmJkMTczYTMxOGZiZDRmOTM2NDhiMTU5MzdjM2Q1MGRlZTc1OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNTdlYjc5ODMwMDhiNjllMmU4NjMyNWY5YWI1MjU2MDY3ZTFmMGU3OGE4OGZjNjU0MjljN2IyOTYwZjEwNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmOGVlNzRmNzNmMTRiODIzNmZiNGY5MTRmN2JjNjQyMTgzMWZjMjU3OWIzNmE5MjMwMWQ3ODBlNjkwMzEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGUwMWZmMjVhMGYwOWQ3ZTA4OTIwYjIwMmViOWIxMTNhMDhhNmQ1MjdkNDFhNjZjOGRlZWM2NDI5NGZjMGUifQ"
         },
         {
@@ -295,16 +295,16 @@
           "version": "repo-lines-v1:sha256:9f0830dccac5c56fcf71d1e9b15683b5981b3c8945b6541d3a6fa77e50f6f020:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyOWU0OTE1Y2M4ZmFmMjVlOTU5YzYyYzUyOTljYmY5NDJiYjk3MzkwNWNmOWRlNGY0YzBmOWI0Y2Q2ZDg5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODVmMDU4ZTJmOGE5ZmVhMGI0ZDY0NDI5ZjdkZmJjNzk3NTA0MTQ1YTgyMzdiN2U3YzE4MDdiZTRkYjZkNDFiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViMzU5YjFmMzI1YWQzODRkYTVmMzAyOTZjZWRhYmYxZTFkZDE3MDk3MTY5OWFkN2YzOGMzNWE3YWFkZTllNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmY1NTM2NTEyNWY4Zjk5YTBiMjFlYWY3Y2NjZmVlOWMxZTRmYzg0MGUwOGZkN2VjZTJlZTY2NDYwNTU4YjM3MSJ9"
         },
         {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1043-L1049",
+          "version": "repo-lines-v1:sha256:0627a73162505a82c840466faca9cea8cdcd3567345df3340d6b32931f625e60:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhiMzc2OGEwYTUyZGU0YzI3NzQ0YmZiNGVlMGJkYTg3MjZhNWEwNTdmYWRlYTBhZjU3OWVlZjA5YzcyMTFlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmZjExNTMzY2E1ODUxNDAyY2VhNmRlNzZkZWVlN2ZlNDEyNmUwZjU5NmRlOGZjYjkxMzNlNWUzYTFkNTQ2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjg3ZDRjMmYyZmE4NGJlYzlmNWUzMDViZGJjNjczN2I1NWQ5ZGRiNjMxNmVhYzZlMjg4MWE3NWIyMDRmYzc2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVhMTYyNTIzMTdhNWVkYzFhYzEzMjczZmFmNjZjNDE3Y2ViYzJlN2Q3ODJkMmFmMjA1OWNkZTRjOWMyYzcwZSJ9"
+        },
+        {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L7-L7",
           "version": "repo-lines-v1:sha256:c19a89e87444f6c5627c0c40ee952005cffeb48a3847290aff8bb59fb4932d93:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5YTg5ZTg3NDQ0ZjZjNTYyN2MwYzQwZWU5NTIwMDVjZmZlYjQ4YTM4NDcyOTBhZmY4YmI1OWZiNDkzMmQ5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMxOTYyOTNmYjhkMTIzMWVjNDZiYTQ5NGFlMmE5NTNjZWRjOGM1MzNjMDUyMjkxZmNhMWZhYjdlZDc0MTQ3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1039-L1057",
-          "version": "repo-lines-v1:sha256:04abbd07d1158978c91373f47542bf49f39b085fd219df51fd0473f7ec36a38d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMWVmZmUxNGNkZmFkZDY3NjQxZDg1ODg5MWRkNDdhNGE0M2U3ZTY0ZTIwYzc0NDBjY2FlZThmZGM2MTQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MTc4OWNlMGQ0OGZhMzI1NDE4MjdjMGY1NTZlMDE0NTA5YTZmZTBjMmEyNTU5NDVmNDAyZDc0YmVmNzE5ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYWQzNTlhNDBlMTZmMGMyZGNmMTc5ODU5NjMwNTIxYTg4ZjdmZmZmZjM0YzI2ZGM0NGMyMzk0ZjMzNGJiNDUifQ"
-        },
-        {
-          "resource": "repo://scripts/check-topology-scrub.mjs#L75-L86",
-          "version": "repo-lines-v1:sha256:d0de232a6ae5c7178950ef459a7116220d3f4e20dc7bf52d74b162ecd3c40849:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjU0YTRlYmMzMDRhNTM2ZTM5MGZlNDFkMWMxYTliODk5ODVmNzg3YzFhYjI3YTZkOTliMWRlMDQ4OTZlMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ZDVhNzY5YWUxMzU5NWNmODJjNGVjNDNhNzgzYzZlZmZhYjZjYWE2YTkyNjc0OGYzNTA5NDAzOGJmMjE0MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkN2U4Y2QxYWMxYTJlY2U3NzYzODA2YWNmZGIwZTI1YTYxMGVmYmMyZWQ4YzJlMDAxMDIxZmEzMGZmZGM1N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNTI5Mjg1NWJjZTUxOTczMjIwZDEwODMxN2M4YmVmMzVmYWEzOTZhZTc5MDI4YzJiOWM3ZTdkMzY0ZjFmMzcifQ"
+          "resource": "repo://scripts/check-topology-scrub.mjs#L80-L86",
+          "version": "repo-lines-v1:sha256:ab107b39369af5ef7233b6c1c714529e2b2ea969929a99a7496edd410056e90d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdmODU0N2ZkYWQyNDBlZjgxYzRhYjBmZjc2ZTU5ZDVhYjYwNzIxNzY1NWU4MGQ5MWI3MWFkMWQ4Y2Y3ZTA2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdkNWE3NjlhZTEzNTk1Y2Y4MmM0ZWM0M2E3ODNjNmVmZmFiNmNhYTZhOTI2NzQ4ZjM1MDk0MDM4YmYyMTQyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM2OGI0OGIyMDViN2YwMTM1OGFmMTI1MTZkOWNjYzMzOGE4MGUxMDBkODBjNzUxZmE3NmJmZmRlNzkxY2M3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI1MjkyODU1YmNlNTE5NzMyMjBkMTA4MzE3YzhiZWYzNWZhYTM5NmFlNzkwMjhjMmI5YzdlN2QzNjRmMWYzNyJ9"
         }
       ]
     },
@@ -335,15 +335,15 @@
           "version": "repo-lines-v1:sha256:4b062bd22ea6fcd113b5247c363812c1cef3c61ef9d0213d345a0dac0e6c03e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzNiNzViOGZjMjhiZjZiMDY1ZDI5MTU0OGY2OWE2ZTdjNjA0MTdhYzk2M2ZmM2I3MzU2ODRhM2VlYmMwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlOTY3NGI5NmE3YjVhMWU1MGViMTgzNjI1MjM0ZDM2NjA5MjY5NjJmZTM0NTNkMzRlZjk3YjU3ZDUwYTRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYjQ5Mzk0NTFhZTg1ZDM2NDQ3ZmRhNWM0MWEyZTk2N2VjZjcxZGU2ZGE2OWYwZTllNzQwOGU5NDM5ZmFhZWMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L128-L142",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L157",
           "version": "repo-lines-v1:sha256:0e082fe2c20f2dbe505e885dc98d379aa57566241142a0ef88d3e3fed0e58450:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZTgxMDRlNTE1MmM2ZmRmMTNkZDE5NWYyYmVkNWZiMzg3NTM2M2RiYTBiMGQxYjk0OTVhNWI4Yzc2Y2YxNDMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L169",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L158-L184",
           "version": "repo-lines-v1:sha256:dfabb013911724a85aa52c8563427790a85e2a85a99fa56ae4c7794538690442:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxY2JhZmVmNzhhY2U2OWEwMmIyNGEyZGQ2NDA2YzVkM2NlZDUxZDMzYjAzYmIzYWUyNzIwYjU2ZjE3YTM1YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYjEwNjUwOGU4YjViYjRhYzNiMGVmNmVkNDVjNjYxNjIxZTk2NjQ3MGEyNjE5NjdhYmZhZDI1MTMyZDgxZGMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L177-L188",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L192-L203",
           "version": "repo-lines-v1:sha256:b366239985df7c8c747d37667d5d8fadc21ecbcba176dd8a8ecd2a01b5bc1687:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZjlkNDZiMmMyZTM3ZDQ2MTg3NzBhMmM1YWZiNWY3MTJmZjIwZWQzZjIzNDQzYjUzMGRkZTRlOGQ2MTk0MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNWRhNjg1ODgyNTMwNjRlM2FjZGJmMTE1Zjk4ZjIxZjk1ZjMxNzNlODQyZGY0NGYyMjIwOTYwOTkyOTU4NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIifQ"
         },
         {
@@ -355,7 +355,7 @@
           "version": "repo-lines-v1:sha256:e3a9ecec0a97ee09d281a814e795eac290dff4ce6538bcb2315d08dd5e1a9e32:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZjc2ZGQ3NjA3ZjcyMTNhNjlkNGZiNDNkOTE0Y2FjMWYwMzZkYzI4NTQ0YjE1MTAyMDVkMmExNmRiMzA3MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwOTdkZmMyM2E5ZWVkNmRkZjBiM2FlNTVhM2MwYmQ3MDRkMWY1NzIxNmEyYTZiNTFhZWExMmVkN2ZiODhjNWMifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L96-L120",
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L111-L135",
           "version": "repo-lines-v1:sha256:cb871893c25570f90d5418de37c5dedda23a25958e46583ec6322cc1a0757c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMDhiOGY4YzRlZjA1Y2FlYjRhYTVkZWIwYWIwNjhhNTljYzRmMTIxMTY3MThkNDU4MDgwNzE3NGFmZWFhZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDNhMTEwNmMwOGIxODEwNmU2OWZlNjVlYjJjMTk0MjZiY2MwOTk4YWI1MWZhMjhiZGEyNzNkOGZkNGYzMTgifQ"
         }
       ]
@@ -379,7 +379,7 @@
       "statement": "The Android-emulator job and the Docker-image-building jobs reach `/dev/kvm` by executing directly on the ci host through a host-type Forgejo runner label defined as `kvm:host` (`runs-on: kvm` uses the label *name*), not by passing the device into a job container — that was the setup only until commit `235f2f4c`. What must therefore hold is host state: KVM enabled on the host, the `ci` user in the `kvm` group, and the runner still advertising the label. On this host `/dev/kvm` is mode 666 (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option, and the group membership is what keeps the job working if it is applied. A host job must also provision its own Docker CLI and prove it reaches the `ci` rootless daemon at the job's `DOCKER_HOST` with no fallback socket, and a missing `/dev/kvm` fails the job loudly rather than skipping the mobile suite.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L521-L532",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L523-L534",
           "version": "repo-lines-v1:sha256:0d8a876cec77767185c38231e422045b49751fcfab70e72f0164bcf29ff94670:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZDAzMDRlZjM1MjRjMDI1MjU2ZGJiZWE0YTFiMWJhZmMzZjdmMzZhZGNkYjU3ZWY5ZTM2YjBlM2NjZTIyMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYjFmYjlkY2U4NWIxY2IyMjI3NzQ3N2NmZmFjNTY2NDk1NDQzMTlhYWU2ZjBiZWJlY2RiMTk0ZGFlMjU0MTgifQ"
         },
         {
@@ -416,7 +416,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         }
       ]
     },
@@ -426,7 +426,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         },
         {
           "resource": "repo://scripts/object-store-migration.sh",
@@ -440,7 +440,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         },
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
@@ -454,17 +454,21 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         }
       ]
     },
     {
       "id": "claim_0eb13a2a04474d12b73c2c96ed3ce433",
-      "statement": "The host backup script's `restic backup` path list now carries the new Nx-cache store's config directory alongside the previous store's directory, and the previous store's directory stays on that list only until the deferred cleanup (spec 080 T047) removes it — taken off in that same step, because until then it is the rollback. The store's data volume is deliberately never captured: it is rebuildable, and only the config directory is needed to stand the service back up.",
+      "statement": "The tracked host backup script's `restic backup` path list names the service config directories `\"$HOME/forgejo\" \"$HOME/komodo\" \"$HOME/rustfs\" \"$HOME/nx-cache\"` — the new RustFS Nx-cache store's directory is on it, and the retired object store's directory is **not**, even though the runbook's Phase 8 says that directory stays on the list until the deferred cleanup (spec 080 T047) deletes it, and the retired store is still the documented rollback. The tracked script and the runbook therefore disagree about the retired store's config directory, and the store's data volume is deliberately never captured by either: it is rebuildable, and only the config directory is needed to stand the service back up.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L760-L768",
+          "version": "repo-lines-v1:sha256:78afd641d9bac4ea455ade9c7813248e892ee15121921f0b95eeece665bfc369:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdiZjIwMzAxNjcwOTRmMWI2Y2MxNDJiNmM5YzdmMjA3Mjc4ZGUwOTZhMDhjMDk2NGU3NTAwYTUxOTYyYmZjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I3MTRkMGFiYzQ5NjBkMzIwYTI1MDQyNWM3ZGIwZTY1NmVmM2ViMmY4YTYyOTJmMjE1MzFhYjY0ZWZmNmQxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWRmMjY5NTNkM2QzYWU3Njc3MzI0NzMwZTNkYTcxNDg2NThhYTlhMmU5YmU2MWViZjllYTBhM2M1M2E2MDU2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzgwM2ZmM2I4NGQzMzNhYzBmYWZjY2Y0YTUwN2U0YWFmMWI0M2VjNjc2NTY3MDFmNTMxYmNmZjAzM2RmNTBlNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L161-L166",
+          "version": "repo-lines-v1:sha256:5d2c02f5235859a2d0412549c01f385aee845ce35fd05debbaed27a92d937fba:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2RjOTEzOTBkZjI0YzRmMDAxMTkwYjg1ZDhiZDY4ZmYwOTJiYzBlMzI5NjU3ZmJjZTMxOGEyMjVhMGQ3NDMxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI4MzYzYmRmMWU3NGQxNThlODk0NDcxM2ZhOGI4ZGQ4OWU5YTYyMGUxYWFiZDYzNzg2Y2Y2NmZlMTc5ODI3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNmOGI3YmNjOWUxMWZlYmYxODNmNTAxZmVhN2E3YmQ4ZmQ5OGYxYzBkZGI2NGQyOGIyZmZlYjQ1YmQ3ZjMzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc0OWNhYTMwOGZiNzI4ZTM0YWEwNzJjYThhMmQ4MDM0MGM3ODQ0ZjcyODU0YjFmOGU0MGRiMWU1NmFmOWQ2NyJ9"
         }
       ]
     },
@@ -474,7 +478,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         }
       ]
     },
@@ -484,7 +488,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
@@ -498,7 +502,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:a3e1f2628ca45d9b5ac029be85e769c0d7a0e62a045ff000bcdc34c2566aa747"
+          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
         }
       ]
     },
@@ -521,8 +525,8 @@
       "statement": "The host backup script's dump list is the part of Phase 14 that must grow with the host: the original script captured only Forgejo, Komodo and the object-store/cache config directories and no application database at all, so a reboot that corrupted Forgejo's Postgres left Forgejo the only stateful service with a real backup. The standing rule drawn from that incident is that whenever a stateful service is added its dump must be added to `backup.sh` — the same obligation that put the Nx-cache store's config directory on the `restic backup` path list.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1059-L1069",
-          "version": "repo-lines-v1:sha256:32e20f68b79fe42bfa59b1d7cb5f4e57d23fe66ee6ff9da4e19175697b14b6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZjQ3ZGI5NDFmNTdmOTM4ZDZkZjRlZWVlZTFhZTM1OTRhMzkyYzk2MDVkOTIyZGI5MWVlZmMxMmVjNWYwNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDVkNjljM2VhZTFkNmNjYmIxMTY1NTU0NjM4OWY5NmRjYmJhNDk0ZDUyN2I3NjMyYzY1Mjg5OGEzMWQ1ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NzhkMmM1ODVjNTc2M2Y4YmQ4Y2ZlN2M5MGE0ZDY2NDEwMTE5NWYxOWNkYmI3ZDEwMGIwZjUzMmIzMWI3ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmY2NmNTI0YzQ3M2IzOTZkZjJmZDUxYzA1MWY2YzA0OGMwNzg4YmEyNDI4YTYxNDU0ZTVjZTg5NDRkYmFmODUifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1059-L1092",
+          "version": "repo-lines-v1:sha256:b6df0bdd7da88bfbaa1fc9d8f1ca687616f4e05517a4bcff93ece5edaa87f774:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0OGQ4YWIxZjI1NmIyODI3MzdiODI0ZGMyYmQzNGNkNzBhZjAyY2Q2ZDMyOTczMzdiYmNlZDY3MGY5ZWZiZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzZTM5NTQwYmMxZWJhMTI5NzE3YTViYjQzYjQ0ZjNkODMxMzA5MTEzMGU2YzUyNmE3MTJiYzFhYTg5Nzg1YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NzhkMmM1ODVjNTc2M2Y4YmQ4Y2ZlN2M5MGE0ZDY2NDEwMTE5NWYxOWNkYmI3ZDEwMGIwZjUzMmIzMWI3ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmY2NmNTI0YzQ3M2IzOTZkZjJmZDUxYzA1MWY2YzA0OGMwNzg4YmEyNDI4YTYxNDU0ZTVjZTg5NDRkYmFmODUifQ"
         }
       ]
     },
@@ -633,10 +637,32 @@
           "version": "repo-lines-v1:sha256:fedd364050a3021a9d190018d31b79dd151696cb932b2eb3a49f3e96370efc3a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjNGI3Y2YzYjhhNTE5N2Q2NTRlMGY5YmI2MjNlZjJhM2VkZTQ3NGEzOWJjODQxNTJhMzY0MGJjNmMzYjQxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI2ZDA4ZmM2ZTkwMjA1MWNlYWYzYzlhZDEwOGJhMTdjOWViMTMxM2MwOWJhNGZiZmI4NmEyMDY1YzQwNjBjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZiYmVmYTA3ZTU1YTJkZWNmNWU1ZjhkN2UwNDdiZWFlMzY0NmQ4MWRlNDQwYThiNTFkZTg5YTVkNzY1ZjVlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRmMzkwNzRhMmY0ZGJjYWY5MzMzM2UzYmFkMTdmOTMzZDIxNDczMmE2NDg4NTRmOTA5ODliZjFlZmJiMzFlOCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_9ba5b2bcb1684267af82237505c63c74",
+      "statement": "The prod host backup is no longer host-only state: spec 084 (2026-10-27) moved it into `infrastructure-as-code/backup/`, which is now the source of truth (`backup.sh`, `backup-alert.sh`, `backup-staleness.sh`, the five systemd units, a README carrying the install/update/verify contract, and `INSTALLED.sha256`), while the host runs copies installed at the README's `$HOME`-relative paths. `cd ~ && sha256sum -c <checkout>/infrastructure-as-code/backup/INSTALLED.sha256` is the operator's one-line proof that the installed copies match the repository, and the manifest is regenerated by `scripts/backup-install-manifest.mjs --write` with a test asserting the committed list is not stale — so a change to what gets dumped, what is excluded, or when the alert fires is a reviewed commit rather than an edit made on the host.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1059-L1059",
+          "version": "repo-lines-v1:sha256:248d8ab1f256b282737b824dc2bd34cd70af02cd6d3297337bbced670f9efbe4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ4ZDhhYjFmMjU2YjI4MjczN2I4MjRkYzJiZDM0Y2Q3MGFmMDJjZDZkMzI5NzMzN2JiY2VkNjcwZjllZmJlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ4ZDhhYjFmMjU2YjI4MjczN2I4MjRkYzJiZDM0Y2Q3MGFmMDJjZDZkMzI5NzMzN2JiY2VkNjcwZjllZmJlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg3OGQyYzU4NWM1NzYzZjhiZDhjZmU3YzkwYTRkNjY0MTAxMTk1ZjE5Y2RiYjdkMTAwYjBmNTMyYjMxYjc4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUxMThjMDBmMWM0YjQ4ZDI0OGZiNmEzMGUyNzIyMjY4MjIwYzg4NjIwOWU5OWZhOTQ5OTNkZDQ4MzIyYjBiMyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L1-L18",
+          "version": "repo-lines-v1:sha256:f62bdca967424f70389ba682075752cd6d12c650df8821dc8d79e97646a468a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ODcxMjFkZWY2MzJlMDE5MGYzYTEzNzEwYjY1ZjY2ZmZiYjFmNjg3MjM1YjQ0MzBmMGQwYzY3YTlkOGU2MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjU5ZTZlZTM3MzJiZDY2MGIwMzQyMGE5MjlhYTlkYjhlODVlODc0ZGM0MWQ1ODkyYTFjOWJhNDQ4MDAyZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NTYwYTQzMmRjZThiMjIwMzAwY2RlMDU4NzMyYjNiYmM4NjE2NmRiMzgyOTZhYzk5NDE4MTdlM2MyNDI1M2QifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-install-manifest.test.mjs#L27-L40",
+          "version": "repo-lines-v1:sha256:307b48fd1031770b70b671275d9bc06c6ab3e0b10a7b57f9d38a0c9d3fba505f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NTdjNTc1NzNmNmQxZWU5ZmIzYzIyOWI4N2MxZGQzZGYwMjk0NjE0ZTNjNjZkZGY2OWRjMWY4Mzc5NGIyOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNjgxY2YzZjQ1NjhmYTliZjcxODU0ZWM1OWUwZjEwYWRmN2RiYWRlYWNiNmQ1N2M4NmI0ZWE5N2YzZmQwYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmODI5NTg5MmRiYzEzOWVlNzYyYjNjZGQ0NWU2Yzc4MzNkNDYyNWZlMDg0MDMyZTM3MDUxNTgyNDA2YjU4N2MifQ"
+        },
+        {
+          "resource": "repo://scripts/backup-install-manifest.mjs#L1-L7",
+          "version": "repo-lines-v1:sha256:f6b4d1dfcb263ce7342e5a6fb6b42a717e3e1d35214b4348a33924d9f0d88e68:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5YzQ3ODcyYjcxZjEyNTg5OTQyODkyNDY0ZTc2NGMwZGIzNTBjMjBiNzIyMjg2NDU2MTVjYzM2ZTBhMDcyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlmYzVhOTg1OGYyOWE2MWZiYzVmOGZlOGE4ZjVmYTZhMGU2NmIwMjBkMzc5ZWY5MWVkOWNlZDlkN2EyMWNmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEyMWRlYTYxOWMzNGFmMzJkNGEzMGQ4NmIyZTNjMjFjODI0MTcyOWI2N2I2YWQzMzY2NmRlNGM5YjU1ODAzMiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T01:38:05.401Z"
+    "at": "2026-10-27T23:08:42.159Z"
   }
 }
