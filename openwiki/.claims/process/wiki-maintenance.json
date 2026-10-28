@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5ce1c719f45646f99759644b0de215327c139613814b22a0e6e5cde91b521424",
+  "pageVersion": "sha256:fd0f05b6249b640da14eec548b7f516ad1daf80fb9e6a72301e8276a669640f2",
   "claims": [
     {
       "id": "claim_48336ae10f46486caf689e37d3d26063",
@@ -158,7 +158,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -298,7 +298,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
         }
       ]
     },
@@ -463,10 +463,46 @@
           "version": "repo-lines-v1:sha256:3d9c1f63bc9f2293f1a4f3f17679ab6a38109e5a2256543f70878a66c426f79e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYTdhNjFmNjUxZDI1NDZmOTY2OTc3OGEzN2Q2NGUwNTJlNTkyOTYwNTViNjRjOTY5MGFjYjJkNjFjNjE5MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4OTY0MGUyZGM0ODI4MmJkZWNlZjEwY2E3NDQzNzcwMjVkNDhlZjlhZmE0MDAwODE3MWNmNTI0ZDU4MTA3NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjOWI1OGYxODVkMzcxYThjNmFlMjZkYzc3YTc0NTM5YWM3NThmYzE0MDZiY2RkZjZiMWE0NWZhODNkZDU2MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZTUzNmUyMjJlZWZiOGM5ZDg3ODQxMTk4MWU1NTY4M2UyMzY3ZGYxOWFmZGUxZDBjNzBiYzlmYjdhYTI5ODQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_196f2dff79744817b9561adb3b4c7287",
+      "statement": "The always-on `okf` guardrails job installs the workspace (`pnpm install --frozen-lockfile`) before running either gate because both gates import the root `yaml` dependency, without which each dies on `ERR_MODULE_NOT_FOUND` before checking anything — and it deliberately does NOT run the gates' own unit tests, because the `naming` job's shell-expanded `node --test scripts/__tests__/*.test.mjs` glob already picks them up, so a broken gate test reddens `naming` rather than `okf`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L209-L233",
+          "version": "repo-lines-v1:sha256:34bd4db8b2006285add238b9c42b364c7aac76cc43f6a9e912dad9f607167ed6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOWYxODE0ZDI4YmI5YzlkZWU2ZDE4N2FlOGNjOGY0NmI2M2UwNTc3ODNjNmMzZmVhM2UxY2FiMTE2NDhlMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YzUzNWZlYWUwNGYwODBjZmUzYzMxN2ZhYzFjN2UyOTkwMzg5Y2FhYzJiOWFjNzU1YmRhNmMzNGE0N2JhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwOGM1YTQ5YmZlMjUyMzIzNWQxMTc0MGZiZDNhM2RmZDlmN2I4NGE3NWYxYjliN2UxZTk4MzA1NTFlM2U1MGUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L42-L42",
+          "version": "repo-lines-v1:sha256:e1c0a1fa70ed1a17ff4b01248e7afeb720dfc7236266fdfdcc5d9dbbe0bed6de:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFjMGExZmE3MGVkMWExN2ZmNGIwMTI0OGU3YWZlYjcyMGRmYzcyMzYyNjZmZGZkY2M1ZDlkYmJlMGJlZDZkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFjMGExZmE3MGVkMWExN2ZmNGIwMTI0OGU3YWZlYjcyMGRmYzcyMzYyNjZmZGZkY2M1ZDlkYmJlMGJlZDZkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVlYmMyNGE4YjY5Y2MxNzZlYzZkMGFlY2U4NjUzYWYzZDNmNDYwZTNhYmU3MTRiNzcyM2YxMzczZWFlZDFhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjc3NTU5YTM3NGNiZjNlYmQxMTY5YmNiOGE0OWY1MzBjMDkzMjM1YzY4NzdmNzhhNTNlOGIzMzY0YzI0NmI2MiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L27-L27",
+          "version": "repo-lines-v1:sha256:e1c0a1fa70ed1a17ff4b01248e7afeb720dfc7236266fdfdcc5d9dbbe0bed6de:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFjMGExZmE3MGVkMWExN2ZmNGIwMTI0OGU3YWZlYjcyMGRmYzcyMzYyNjZmZGZkY2M1ZDlkYmJlMGJlZDZkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFjMGExZmE3MGVkMWExN2ZmNGIwMTI0OGU3YWZlYjcyMGRmYzcyMzYyNjZmZGZkY2M1ZDlkYmJlMGJlZDZkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTI2Mjc5NTdkYjZiMjFkNWZlZTdmYTNiODYyNWI2MTM2ODQ3Y2Q2ZmQwYjk4MDc0MzllNzM2NWYzZDAxZjE0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ0ODA5YTJhNjE5ZmY4YjgxMzg2M2M0MDMwM2Q5NzUzNmYxNGRlOWQwMGJlNjEyNjA4MDJlNzVlNjY3OGY1OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a51cdb6540342329fc4b9c2a302df97",
+      "statement": "Because branch protection requires the `guardrails*` context glob, any job placed in `guardrails.yml` is a required merge context by construction — which is why the governance gate was added as steps inside the existing `okf` job (a new job would owe its own failure-digest step for no benefit), while the paid `wiki-maintain` workflow is deliberately never a required context and must not be added to branch protection, so the two gates block a merge but a stale bundle never does.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L234-L243",
+          "version": "repo-lines-v1:sha256:74916bfe65f98e07a58b0ad66685a47e929772e71353e28a41bbbcc289c49612:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYzY1YzlkMTkzMzVlODYwZDQ3YjViZjRmNzhlMzU1ZjMxNjExODQwNWUxM2ZjMDAyYzY3MmVkYjBmYjgxNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzODM2NGRkYmYwNTUwY2VlMDgwMTQ4NmM2ZmNhYTMxYjdiMzBlYWI5M2ExMTYyZmVlNDk1NjRiMzk0MzIzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L423-L436",
+          "version": "repo-lines-v1:sha256:47cc2c7387a9bea80c564e1484b50e1f5851542f5fd653b2bdf9e0a5a049b24e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MTJiNDBkZjJhYTllNjY5MGRjNjU3OTJmNGNlOGUzYzVjNjJjYzFiYWY0YjA4ZWVhZDlkYTI2NThjOTNkMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZjU5ZDhjZTI5NzY1MGRmMWY4YmU2NWU3NDdjNTk5YmZmNWY3NzUxYzcwY2QzNTRkNTI3NzViNjdjODc4ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzYmJlMWFhMzFkMTAzNjUzMTc4YjE3ZDBiZTU0ZjczNGIyY2M1NGUyYjFmMDBlMjE4YjAzMTdmNWM1ODgwZWMifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L19-L24",
+          "version": "repo-lines-v1:sha256:11eb4a934e4660eb7b73a5df5de2a95fbd5cce61e209b20157a88f22f02b7eab:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q0MzEyNDlmMjFlZjY3NTUxNWM3YjkzZjdmYzA5NDc0NzQ5ZTgxMzc5OWVhNDRjNDcyMzdmZmE2NTkxYTMyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZmNjQ1OGM5ZmU4OTNlYjFmMzhmZmJkMGY2YWJiMWZhZWQwODgxMWQzNzRiZDhiZTE5ZGVmMjNhMDQ4NTRiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQwNjNhZjBkY2JkYjNkNGFlMGE3MzE5MzYzZTcxMWYzYmE4MDc1N2ZiZDc2Mjk5YmU3ZjNjMGJhMjM0MzU0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2IwZTQzZmM5YzZiNDBmOGJlMzk1MDBiNGY1NTUxZTJkYmM1NTQwMDE4MzY1MjBhYWViZjJhZGY4NDZjN2JjMSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-16T20:39:10.335Z"
+    "at": "2026-10-28T02:33:05.629Z"
   }
 }

@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, and what the conformance and governance gates enforce versus deliberately refuse to enforce.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-10-28T02:33:05.629Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -130,7 +130,21 @@ proposal, and the always-on gates sit after it rather than inside it.
   checked for well-formedness, never fetched — so the always-on guardrails job cannot fail because a
   third-party host happens to be down. `okf-governance` has the identical posture, and both run as
   steps of the same always-on `okf` CI job, each preceded by its own `--selftest` so a rule that
-  silently stopped detecting its case turns the build red.
+  silently stopped detecting its case turns the build red. That job still installs the workspace
+  (`pnpm install --frozen-lockfile`) before either gate: both import the root `yaml` dependency, so
+  without it the gate dies on `ERR_MODULE_NOT_FOUND` before checking anything — a job red for its own
+  missing dependency rather than for anything about the bundle. The gates' own unit tests are *not*
+  run here; the `naming` job's shell-expanded `node --test scripts/__tests__/*.test.mjs` glob picks
+  them up, which is why a broken gate test reddens `naming` rather than `okf`.
+- **Both gates are required merge contexts; the paid maintenance job deliberately is not.** The
+  `okf` job lives in `guardrails.yml`, and branch protection requires the glob `guardrails*`, so a
+  gate placed in that file is required **by construction** — no operator step, and no required
+  context that never reports. That is why the governance gate was added as steps in the existing job
+  rather than as a job of its own: a new job would owe its own failure-digest step for no benefit,
+  and the two gates have exactly the same posture. `wiki-maintain` is the opposite and its own
+  header says so: it is paid and occasionally slow, it must never gate an unrelated merge, and it
+  must not be added to branch protection. So a red board and a stale bundle are independent signals
+  — the gates block the merge, the generator never does.
 - **Drift is report-only in the gate, but an input to the planner.** If a concept's cited source
   changed after the concept's stamp — the newest of `generated.at`, `verified.at` and `timestamp`
   (`scripts/openwiki-stamp.mjs`) — rule V12 lists it as a warning and never touches the exit code,
