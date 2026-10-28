@@ -294,7 +294,7 @@ retention.
 
 ### Tests
 
-- [ ] T024 [P] [US4] Test: in `scripts/__tests__/backup-script.test.mjs`, case **"the forge is backed
+- [x] T024 [P] [US4] Test: in `scripts/__tests__/backup-script.test.mjs`, case **"the forge is backed
   up as a database dump plus a data tar without diagnostics"** (FR-017–FR-019a, R7):
   - `forgejo dump` is **never** called;
   - `pg_dump -Fc` runs in `forgejo-forgejo-db-1` and produces dump `forge-db`, format `pg-custom`;
@@ -306,7 +306,7 @@ retention.
     `gitea/conf/app.ini` or `gitea/jwt/`.
   **Verify RED**: `node --test --test-name-pattern="database dump plus a data tar" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing, because `forgejo dump` is still called.
-- [ ] T025 [P] [US4] Test: case **"Komodo's dump excludes its scheduler history"** (FR-019d, R8):
+- [x] T025 [P] [US4] Test: case **"Komodo's dump excludes its scheduler history"** (FR-019d, R8):
   - `pg_dumpall` is called only with `--globals-only`;
   - for each database the `psql` shim lists (`postgres`, `komodo`), `pg_dump` runs with
     `--exclude-table-data=cron.job_run_details`;
@@ -317,7 +317,7 @@ retention.
   - no Komodo command redirects stderr to `/dev/null`.
   **Verify RED**: `node --test --test-name-pattern="scheduler history" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing on `pg_dumpall` without `--globals-only`.
-- [ ] T026 [P] [US4] Test: `scripts/__tests__/komodo-cron-retention.test.mjs` reads
+- [x] T026 [P] [US4] Test: `scripts/__tests__/komodo-cron-retention.test.mjs` reads
   `infrastructure-as-code/backup/komodo-cron-retention.sql`:
   - it unschedules `purge-cron-run-history` if it exists, then schedules it hourly;
   - it deletes `end_time < now() - interval '3 days'`;
@@ -325,7 +325,7 @@ retention.
   - it is idempotent: no bare `cron.schedule` without the preceding unschedule guard.
   **Verify RED**: `node --test scripts/__tests__/komodo-cron-retention.test.mjs`. Expected: failing,
   file not found.
-- [ ] T027 [P] [US4] Test: case **"release APKs are dumped from the package API"** (R10). The `curl`
+- [x] T027 [P] [US4] Test: case **"release APKs are dumped from the package API"** (R10). The `curl`
   shim lists the `mcm-app-android` generic package versions and files. Assert:
   - each file is downloaded with `-H @<package-token header>` into `release-apks/<version>/`;
   - a missing package token file gives `DUMP-FAILED-release-apks` and an alert, while the other dumps
@@ -333,7 +333,7 @@ retention.
   - the token never appears in argv.
   **Verify RED**: `node --test --test-name-pattern="release APKs" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing.
-- [ ] T028 [P] [US4] Test: `scripts/__tests__/upload-artifact-retention.test.mjs` parses every
+- [x] T028 [P] [US4] Test: `scripts/__tests__/upload-artifact-retention.test.mjs` parses every
   `.forgejo/workflows/*.yml` (FR-019c, R9):
   - every step using `actions/upload-artifact` has `with.retention-days`;
   - the value is at most 30;
@@ -344,7 +344,7 @@ retention.
 
 ### Implementation
 
-- [ ] T029 [US4] In `infrastructure-as-code/backup/backup.sh`, replace the `forge` dump with
+- [x] T029 [US4] In `infrastructure-as-code/backup/backup.sh`, replace the `forge` dump with
   `forge-db` + `forge-data` per R7, and the Komodo `pg_dumpall` with globals plus per-database
   `pg_dump` per R8. Add the `release-apks` dump per R10. Apply the T022 decision to the `restic backup`
   path list or its `--exclude` set.
@@ -352,15 +352,15 @@ retention.
   US1 cases. **Mutations**:
   - remove `--exclude=gitea/actions_artifacts`, and T024 fails;
   - remove `--exclude-table-data`, and T025 fails.
-- [ ] T030 [P] [US4] Write `infrastructure-as-code/backup/komodo-cron-retention.sql`.
+- [x] T030 [P] [US4] Write `infrastructure-as-code/backup/komodo-cron-retention.sql`.
   **Verify GREEN**: `node --test scripts/__tests__/komodo-cron-retention.test.mjs`. All pass.
-- [ ] T031 [P] [US4] Add `retention-days` to every `upload-artifact` step in
+- [x] T031 [P] [US4] Add `retention-days` to every `upload-artifact` step in
   `.forgejo/workflows/app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`, `guardrails.yml`, and any
   other workflow T028 lists. In the runbook's forge compose block, add
   `FORGEJO__actions__ARTIFACT_RETENTION_DAYS=30` as the server default.
   **Verify GREEN**: `node --test scripts/__tests__/upload-artifact-retention.test.mjs`. All pass. Also
   run the app-ci guards (`node --test scripts/__tests__/app-ci*.test.mjs`), which must still pass.
-- [ ] T032 [US4] Regenerate `INSTALLED.sha256`, and extend the README install block with:
+- [x] T032 [US4] Regenerate `INSTALLED.sha256`, and extend the README install block with:
   - the package token file;
   - the Komodo SQL apply step (`docker exec -i komodo-postgres-1 psql … < komodo-cron-retention.sql`);
   - the one-off purge and `VACUUM FULL`.
@@ -379,13 +379,15 @@ retention.
   3. Apply `komodo-cron-retention.sql`.
   4. Run the one-off `DELETE … WHERE end_time < now() - interval '3 days'` and
      `VACUUM FULL cron.job_run_details`, and paste the timing.
-  5. The next morning, paste `journalctl --user -u homelab-backup --since yesterday | grep -E 'Added to the repository|dump-manifest|verdict'`.
+  5. The next morning, paste `journalctl --user -u homelab-backup --since yesterday --no-pager | grep -E ' [a-z-]+: [0-9]+ bytes, |Added to the repository'`.
 
   Expected:
   - `forge-data` + `forge-db` total about 1.5 GB;
   - Komodo is under 250 MB;
-  - the first night's shrink alerts for `forge` and `komodo` show as `ack-shrink`, because the
-    operator acked both before the run with `backup.sh --ack-shrink`.
+  - the first night's `komodo` row shows `ack-shrink`, because the operator acked it before the
+    run with `backup.sh --ack-shrink komodo`. `forge-db`, `forge-data` and `release-apks` are new
+    names with no previous size, so they are not compared (no ack is needed), and the old `forge`
+    row in `last-good.tsv` is simply never matched again.
 - [ ] T035 [US4] **(operator)** On the **second** night, paste the same journal line. Expected:
   `Added to the repository` is under 2 GiB (SC-008, FR-019a). A day after T034, re-run quickstart 0c.
   Expected: `min(end_time)` is within 3 days, and the table is under 75 MB.

@@ -1066,20 +1066,60 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >
 >   | Dump | How | Format check | Minimum |
 >   |---|---|---|---|
->   | `forge` | `forgejo dump --type tar.gz --skip-package-data --skip-repo-archives` | `tar -tzf` | 10 MiB |
->   | `komodo` | `pg_dumpall` (credentials read from `~/komodo/compose.env`) | ends `-- PostgreSQL database cluster dump complete` | 1 MiB |
+>   | `forge-db` | `docker exec forgejo-forgejo-db-1 … pg_dump -Fc` (custom format: dependency-ordered, restored with `pg_restore`) | starts with the `PGDMP` magic | 1 MiB |
+>   | `forge-data` | `docker exec forgejo-forgejo-1 tar -cf - -C /data … gitea git`, **uncompressed**, with the eight `--exclude`s listed below | `tar -tf` must list `git/repositories/`, `gitea/conf/app.ini` and `gitea/jwt/` | 10 MiB |
+>   | `komodo` | `pg_dumpall --globals-only` (roles), then `pg_dump --exclude-table-data=cron.job_run_details` for each database `psql` lists (only `postgres` on 2026-10-28). Credentials come from `~/komodo/compose.env`; the password reaches `docker exec` by name, never in argv | ends `-- PostgreSQL database dump complete` | 1 MiB; **maximum 500 MB**, above which it alerts `komodo-oversize` and still uploads |
 >   | `keycloak` | `docker exec … pg_dump` over the container socket | ends `-- PostgreSQL database dump complete` | 50 KiB |
 >   | `agent-db` | the same | the same | **1 byte** — `agent_db` has no tables by design (the gateway checkpoints in memory) |
 >   | `mc-service-mongo` | `docker exec … mongodump --archive --gzip`, URI read live from the app container | `gzip -t` | 100 KiB |
 >   | `bff-mongo` | the same | `gzip -t` | 1 KiB |
+>   | `release-apks` | every file of every `mcm-app-android` version, read from the forge's generic-package API with `~/backup/forge-package-token` (mode 600, **`read:package` only**), as an uncompressed tar of `release-apks/<version>/<file>` | `tar -tf` | 10 MiB |
 >
-> - **`dump-manifest.tsv`** (name, file, bytes, minimum, format, previous bytes, verdict) is written into the staging dir, so it travels **inside** the snapshot. A copy becomes `~/backup/state/last-good.tsv` after a fully good run.
+> - **`dump-manifest.tsv`** (name, file, bytes, minimum, maximum, format, previous bytes, verdict) is written into the staging dir, so it travels **inside** the snapshot. A copy becomes `~/backup/state/last-good.tsv` after a fully good run.
 > - **Shrink check.** A dump under **50 %** of its size in the last good run raises a `shrink` alert naming both sizes; the snapshot is still uploaded. When a shrink is expected (data deliberately deleted, a new exclusion), acknowledge it **before** the next run with `~/backup/backup.sh --ack-shrink <dump>`. An acknowledgement covers one run, and the threshold is never raised instead.
 > - **Config directories, not data:** the `restic backup` line also takes `$HOME/forgejo`, `$HOME/komodo`, `$HOME/rustfs` and `$HOME/nx-cache` — compose files and `.env`s, about 120 M in total (measured 2026-10-27), enough to stand each service back up.
-> - **Excluded on purpose, and how to restore without it:**
->   - **The forge's package registry** (`--skip-package-data`; 109 G on 2026-10-26): the six app images and the dev-container image are rebuilt from git by `cd-deploy` and `devcontainer-image`. After a restore, re-run `cd-deploy` (deploy=false) once, then redeploy. Rollback to a digest older than the restore is not available until it has been rebuilt.
->   - **Repository archives** (`--skip-repo-archives`): the forge regenerates them on demand.
->   - langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** — all rebuildable.
+> - **What the forge backup keeps and excludes (spec 084 R7), and what a restore loses.** Every directory under `/data` is classified; `forge-data`'s `--exclude` set is pinned by `scripts/__tests__/backup-script.test.mjs`, so adding a path is a deliberate decision.
+>
+>   | Path under `/data` | Size (2026-10-26) | | What a restore loses |
+>   |---|---|---|---|
+>   | `gitea/actions_artifacts` | 21.8 G | **excluded** | CI diagnostic uploads (they expire in 14 days anyway, FR-019c). Release APKs are kept separately, as `release-apks`. |
+>   | `gitea/packages` | 109.1 G | **excluded** | The six app images and the dev-container image, rebuilt from git by `cd-deploy` and `devcontainer-image`. After a restore, re-run `cd-deploy` (deploy=false) once, then redeploy. Rollback to a digest older than the restore is not available until it has been rebuilt. |
+>   | `gitea/repo-archive` | — | **excluded** | Nothing: the forge regenerates archives on demand. |
+>   | `gitea/indexers`, `gitea/queues` | ≈ 15 M with sessions | **excluded** | Nothing lasting: rebuilt on start (code search re-indexes). |
+>   | `gitea/tmp`, `gitea/log`, `gitea/sessions` | small | **excluded** | Scratch, the forge's own log files, and web sessions (users sign in again). |
+>   | `git/repositories` | 138 M | kept | — the source of truth. |
+>   | `gitea/actions_log` | 447 M | kept | — run history in the UI; immutable once written, so it de-duplicates after the first night. |
+>   | `gitea/jwt`, `gitea/actions_id_token` | small | kept | — signing keys: without them every issued token and the Actions OIDC identity change. |
+>   | `gitea/conf`, `home`, `f3`, `avatars`, `repo-avatars`, `attachments`, `git/lfs` | small | kept | — needed to restore. |
+>
+>   The forge database's Actions tables (652 MB) stay in `forge-db`: they shrink as artifacts expire, and a restore needs run and job rows for the UI to stay consistent. The repositories are copied while the forge is live, so a push mid-copy can leave a ref ahead of its objects in the archive; `git fsck` reports it on restore. This is the same exposure `forgejo dump` had.
+>   - Also not backed up: langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** — all rebuildable.
+> - **Why uncompressed.** restic chunks content-defined and compresses on its own (repository v2, restic 0.18.1). A gzip stream changes after its first changed byte, so the old `forgejo dump --type tar.gz` de-duplicated nothing: **19.8–21.1 GiB added every night**. An uncompressed tar of mostly-unchanged files adds roughly the day's real change.
+> - **Komodo's scheduler history.** pg_cron logs every job run into `cron.job_run_details`, and nothing purged it (11.9 M rows, 2,147 MB on 2026-10-27; ~89,000 rows a day from DocumentDB's own jobs, two of which run every 2 s). The dump excludes the table's rows, and [`komodo-cron-retention.sql`](../../infrastructure-as-code/backup/komodo-cron-retention.sql) installs an hourly pg_cron job, `purge-cron-run-history`, that deletes runs older than 3 days. The table is a vendored extension's bookkeeping, not a service or audit log, so neither log-retention minimum applies (operator decision, 2026-10-27).
+> - **Size, before and after (FR-017, SC-008).** Before: the last old-format run (the induced run of 2026-10-27, 3 min 27 s, peak memory 10.4 GB). After: the first two nights after install (T034/T035).
+>
+>   | Component | Before (bytes) | After |
+>   |---|---|---|
+>   | forge (`forgejo dump`, tar.gz) → `forge-db` + `forge-data` | 22,495,835,451 | *pending* |
+>   | `komodo` | 2,069,604,185 | *pending* |
+>   | `keycloak` | 381,023 | *pending* |
+>   | `agent-db` | 670 | *pending* |
+>   | `mc-service-mongo` | 813,102 | *pending* |
+>   | `bff-mongo` | 3,022 | *pending* |
+>   | `release-apks` | — (not backed up) | *pending* |
+>   | `cron.job_run_details` in Komodo's database | 2,147 MB | *pending* |
+>   | `Added to the repository` per night | 19.8–21.1 GiB | *pending* (target under 2 GiB) |
+>
+>   **To measure again**, in a prod session: the dump sizes and verdicts are in each night's journal, and the forge's and Komodo's sources can be sized directly:
+>   ```bash
+>   journalctl --user -u homelab-backup --since yesterday --no-pager | grep -E ' [a-z-]+: [0-9]+ bytes, |Added to the repository'
+>   docker exec forgejo-forgejo-1 sh -c 'du -sh /data/gitea/* /data/git/*' 2>&1 | sort -h | tail -8
+>   KU=$(grep -E '^KOMODO_DATABASE_USERNAME=' ~/komodo/compose.env | cut -d= -f2-)
+>   export PGPASSWORD=$(grep -E '^KOMODO_DATABASE_PASSWORD=' ~/komodo/compose.env | cut -d= -f2-); echo "password length: ${#PGPASSWORD}"
+>   docker exec -e PGPASSWORD komodo-postgres-1 psql -U "$KU" -d postgres -Atc "select pg_size_pretty(pg_total_relation_size('cron.job_run_details')), count(*), min(end_time) from cron.job_run_details"
+>   unset PGPASSWORD
+>   ```
+>   Expected: one `<dump>: <bytes> bytes, <verdict>` line per dump, the largest `/data` directories, and the table's size, row count and oldest run (within 3 days once the purge job runs).
 > - **Retention:** `restic forget --prune --tag homelab --group-by host,tags --keep-daily 7 --keep-weekly 4 --keep-monthly 6`. **Group by tag, never by path:** the staging dir's name is random, so restic's default `host,paths` grouping put every snapshot in a group of one and pruned nothing (41 snapshots on 2026-10-22, 11 after the fix).
 > - ⚠️ **Gotcha that bit us (2026-07):** the *original* `backup.sh` dumped only Forgejo + Komodo + the object-store/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`** — with a minimum and a format check.
 >
@@ -1093,7 +1133,14 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >
 > **Case study — the backup failed every night for ~3 months (2026-07-27 → 2026-10-22).** Dumps were staged in a temp dir on the RAM-backed `/tmp`. The forge dump, then still including the 100 G+ registry, outgrew it (`write /dev/stdout: no space left on device`). The forge dump was the **only** step with no fallback, so under `set -e` it took every database dump and the off-site upload down with it. Every night the journal recorded `Failed with result 'exit-code'`, and nothing read it. The last good snapshot was 2026-07-26 03:31; the failure was found by chance on 2026-10-22. On 2026-10-22/23 the host was fixed (on-disk staging, registry and archives skipped, tag-grouped retention). Spec 084 then brought the script into the repository and added what would have caught it on night one: per-dump isolation, format, minimum and shrink checks, the `OnFailure` alert, the hang timeout and the independent staleness check.
 >
-> **Restore (Forgejo Postgres — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
+> **Restore the forge (the format since spec 084 US4).** *Unproven until the restore drill (FR-006) has run against it; the drill log records when it has.* In a prod session, with the same three exports `backup.sh` sets (`DOCKER_HOST`, `RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE`):
+> 1. Find the two dumps: `restic ls --tag homelab latest | grep -E '/(forge-db\.dump|forge-data\.tar)$'`.
+> 2. Stop the forge (not its database): `docker compose -p forgejo -f ~/forgejo/compose.yaml stop forgejo`.
+> 3. Database: `restic dump --tag homelab latest <path>/forge-db.dump | docker exec -i forgejo-forgejo-db-1 sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner'`. The custom format is dependency-ordered, so one pass suffices (unlike the old xorm SQL below).
+> 4. Data: `restic dump --tag homelab latest <path>/forge-data.tar | docker run --rm -i -v forgejo_forgejo-data:/data alpine tar -xf - -C /data`.
+> 5. Start the forge: `docker compose -p forgejo -f ~/forgejo/compose.yaml start forgejo`. It rebuilds the indexes and queues on start (code search re-indexes), users sign in again, and CI artifacts from before the restore show as missing.
+>
+> **Restore (Forgejo Postgres from an old `forgejo dump` snapshot, before spec 084 US4 — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
 >
 > **Graceful shutdown (root-cause fix for the corruption).** On reboot the rootless containers were **SIGKILL'd** (the user-manager teardown races the container processes), so DBs never flushed. Fix: a per-user drain unit `~/.config/systemd/user/docker-drain.service` — `Type=oneshot`, `RemainAfterExit=yes`, `After=docker.service`, `BindsTo=docker.service`, with `ExecStop=/bin/sh -c 'cids=$(docker ps -q); [ -n "$cids" ] && docker stop -t 30 $cids'`. On shutdown it stops **before** `docker.service`, so every container gets a clean SIGTERM + flush while the daemon is still up. Keeps `live-restore=true` (daemon restarts still don't bounce containers). Enable through the user bus: `machinectl shell prod@ /usr/bin/systemctl --user enable --now docker-drain.service` (plain `sudo -iu prod systemctl --user` can't reach the bus).
 >
