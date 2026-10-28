@@ -112,7 +112,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-26T03:45:38.439Z
+    at: 2026-10-28T02:33:05.629Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -391,12 +391,18 @@ Image digests are not in the TOML either. A tracked, host-free `.env.deploy` bes
 prod compose carries the bare `<SVC>_DIGEST` value per service and is passed as
 `additional_env_files` — last, so the digest interpolates from git while `REGISTRY_HOST` and the
 secrets interpolate from `.env.prod`. The compose assembles the pull reference as
-`${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}`.
+`${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}`, and guards the digest itself as
+`${<SVC>_DIGEST:?set in <dir>/.env.deploy (cd-deploy promotion)}`, so a run directory whose promotion
+never happened aborts the deploy rather than falling back to a floating tag.
 
 Only the three CI-built stacks receive it: `cd-deploy`'s promotion step copies the *same* generated
 `VAR=<bare sha256>` block into all three run directories it names
 (`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), so every Komodo Stack reads a local
-`.env.deploy` rather than a fragile `../` path. `.gitignore` keeps those files tracked with an
+`.env.deploy` rather than a fragile `../` path. All three files therefore carry all six
+`<REPO>_DIGEST` lines, and each stack consumes only the names its own images need —
+`MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
+`AGENT_GATEWAY_DIGEST` / `MOVIE_MCP_DIGEST` / `WEB_API_MCP_DIGEST` / `SPREADSHEET_MCP_DIGEST` for
+`agents`, which alone runs four CI-built images. `.gitignore` keeps those files tracked with an
 `!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
 ignore rule, because the file holds only digests — no host, no secret.
 
@@ -468,6 +474,12 @@ entrypoint by Compose, which would put them in the container's argv where `docke
 read them. Both destinations bind `127.0.0.1` only, and the URL guard denies loopback by default (the
 inverse of the Ollama guard), which is why `gen-dev-env.mjs` names them in
 `BACKUP_ALLOWED_DESTINATION_HOSTS`.
+
+**Host backup, not a stack at all** — do not confuse the file above with
+`infrastructure-as-code/backup/`, which is a *different* sense of the word: the prod host's nightly
+restic snapshot, its alerting scripts and its systemd units, tracked as config-as-code since spec 084
+and installed to the host by hand rather than deployed by Komodo. Nothing there is a compose file and
+no gate in this section reads it; [Prod host backup](./backup.md) owns that subject.
 
 **Static gates.** `scripts/check-resource-naming.mjs` — the `naming` CI job, also exposed as the
 `check-naming` Nx target — enforces the `<context>-<role>-<engine>` grammar on every declared volume
@@ -595,7 +607,10 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   `0.0.0.0` bind collides with a CI bind on that port whatever interface CI names. The gate scans only
   the compose `ports:` key, not secondary URL references — see
   [Published-port reservation](../invariants/published-port-reservation.md) for the collision this
-  convention exists to prevent and the secondary-reference trap.
+  convention exists to prevent and the secondary-reference trap. Like the secret, Komodo-sync,
+  topology-scrub and restart-policy gates, it runs selftest-then-scan in `guardrails.yml`'s `naming`
+  job (and through `scripts/preflight.mjs` locally), so a detector that quietly stopped flagging cannot
+  report green.
 - **Every long-running prod service must declare `restart: always`.** `restart: unless-stopped` does
   not bring a container back after a reboot on this host (a graceful-shutdown drain unit stops
   containers cleanly, and `unless-stopped` declines to restart an already-stopped container), and a

@@ -4,63 +4,9 @@ title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
-sources:
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-dbbd2a072603d7674a1530f2
-    resource: repo://docs/runbooks/android-emulator.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-30d3dc827bae5c1cb657fa31
-    resource: repo://frontend/mcm-app/app.json
-  - id: openwiki-source-a4c39fcf1686803a0f1b3a45
-    resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
-  - id: openwiki-source-57b4f1588cb74332de8a1a9a
-    resource: repo://frontend/mcm-app/scripts/build-apk.mjs
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-c138086948681bd36101354f
-    resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
-  - id: openwiki-source-900e4fa48a3671f4d583c11d
-    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
-  - id: openwiki-source-85895d0ff4bd77f9e7c359df
-    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-2d569134a872251a7d87c36a
-    resource: repo://scripts/build-apk-short-path.ps1
-  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
-    resource: repo://scripts/cd/publish-apk.mjs
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-13872023ae5e43aa417073f0
-    resource: repo://scripts/ci-maestro-debug.sh
-  - id: openwiki-source-b6eb0909d8d068c6d6d9dab4
-    resource: repo://scripts/ci-mobile-agent-flows.sh
-  - id: openwiki-source-8f0b3b9c2764324c22056c4b
-    resource: repo://scripts/ci-mobile-full-flows.sh
-  - id: openwiki-source-5b730a5e86c359beda7597f1
-    resource: repo://scripts/ci-mobile-lib.sh
-  - id: openwiki-source-7183777a95d300ed54250302
-    resource: repo://scripts/ci-step-ceilings.tsv
-  - id: openwiki-source-38de5a41429287f01c1b5bfd
-    resource: repo://scripts/devcontainer-android.sh
-  - id: openwiki-source-33d177ccb5008acd450b4d41
-    resource: repo://scripts/maestro-run.sh
-  - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
-    resource: repo://scripts/mobile-flows.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-27T23:08:42.159Z
+    at: 2026-10-28T02:33:05.629Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -133,7 +79,12 @@ Three details of that step are load-bearing when editing it:
   *inside* `app-e2e` while `app-e2e` itself requires `app == 'true'`; two entries violated exactly that
   until feature 058, which is why a guard test now enforces the subset instead of a comment claiming
   it. Note that `mobile-e2e` alone opens the mobile half but stays agents-only; only `mobile-e2e-full`
-  (or `mobile_suite=full`) adds the full suite.
+  (or `mobile_suite=full`) adds the full suite. The two sets are not identical, and the differences are
+  deliberate in both directions: `pnpm-lock.yaml` and `pnpm-workspace.yaml` select `app` but **not**
+  `mobile`, so a dependency bump buys the web+integration half and not the ~35-minute emulator half
+  (feature 058 accepted exactly that cost; the `mobile-e2e` label is the escape hatch), while
+  `infrastructure-as-code/docker/**` and the ZAP/DAST paths sit in `app` for the web/DAST leg the
+  mobile flows do not exercise beyond bring-up.
 - **The build guards its own bundle.** Before the emulator starts, `app-e2e` asserts that
   `localhost:8082` appears inside `assets/index.android.bundle` of the produced APK. The string is not a
   source literal anywhere, so its presence proves the `EXPO_PUBLIC_*` env was re-inlined in *this*

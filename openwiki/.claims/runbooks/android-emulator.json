@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b3e8f621a55dbf79025a403a93edfa32b6f637130afa97bcfe21b4b8528f245c",
+  "pageVersion": "sha256:96216db639c71032b6c7ac3e2f96ef37737e37a6ed512e896274f19670c0a706",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L70-L92",
@@ -143,11 +143,11 @@
       "statement": "The production APK is published by cd-deploy's prod-apk job to the forge's generic package registry as package mcm-app-android, version <expo.version>-<sha7>, with a sha256sum-format sidecar, because this forge exposes no Actions-artifact API (the endpoint is a missing route, not an empty result). publish-apk.mjs prunes at publish time to the newest five versions by created_at and never prunes a version ending in -keep, and it always exits 0 so a registry hiccup cannot fail the non-blocking job.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L507-L531",
-          "version": "repo-lines-v1:sha256:72fc31bc11da6ef458060d08cbec7f9c7f5e1f01b02d660802dd861da2b2996e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGFmNWYyNTgxMmM3MDViOTA4MzIyNTczOWE1MzFjZmY5NmM4MDE3M2UyMTJmMzAzZWZjYjg5ZWU0MDc3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L507-L532",
+          "version": "repo-lines-v1:sha256:a0491cd921028d23fa7f7eb52a9e7b3146259e364a2d4c71120bb975dfe0e62c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGFmNWYyNTgxMmM3MDViOTA4MzIyNTczOWE1MzFjZmY5NmM4MDE3M2UyMTJmMzAzZWZjYjg5ZWU0MDc3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L483-L525",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L485-L527",
           "version": "repo-lines-v1:sha256:80c3d7c29cb7da5276985d182b113d2f84c1f74be6d33c302691fd499caccc4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMmIzZjlkOWUwODEwMWZhNGNiNDExNzZlNzMxNWI5Y2I4OGRkY2VjYzBiZTg4NmM0ZmE4YjVlNmQ2ZmZmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YjEzNDcwZWEzYzViN2EzMTIyZmMxYTdmYTkxYTM0MmY1MDI4ZDgxNzgxNGE3MGUyODRjOTJmZmM4ZDJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMjhhMTY4ZTY1N2Q0MjBjYzAwYWM0YjI5OWRiMjNiMTg0Mjk2NmExMWRiZGUwYjNmYjljMzcxZjk2NjMwZTAifQ"
         },
         {
@@ -190,11 +190,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:b6d6b673591e1b0d44f37ee56ca13bee9d885af1c7cbec248293728cb47f5ede"
+          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
         },
         {
           "resource": "repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs",
@@ -261,7 +261,7 @@
           "version": "repo-lines-v1:sha256:93ad570bc15eafa6f9765fa44486b5aa8e6582d905e16ed0566848f2f9d362f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L617-L634",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L619-L636",
           "version": "repo-lines-v1:sha256:b4d4e75dc45fcd5f03b9fa30eee67fb734c7e911a9ccf9101451d247ca008128:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmVkMzYzZDk2ZDU2MzZkZjUxMmJkMTVhMWFhM2NjZGQyODU0YTIyMDU3Y2Y2ZmUyZTc0ZGY4ZWU5NjFlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YmRhZjk1ZWE5OTU5ZmE5OTMxYTMyOTU5MGQ1YTY1N2IyMTA1MGQ2NmQwM2I1OWZjZWFkMzI2OGNlMGY0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
         }
       ]
@@ -310,7 +310,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2968-L2992",
@@ -334,7 +334,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh",
@@ -412,7 +412,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L80-L136",
@@ -448,7 +448,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:0fd48f253e56dd1206c7d0f04afaf118d6595ec087c8b1c315e60e06396e4dd9"
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L138-L145",
@@ -493,26 +493,36 @@
       "statement": "The uploaded maestro-debug artifact carries only THIS run's Maestro output, because app-e2e executes on the ci host (runs-on: kvm) where ~/.maestro/tests is the ci user's persistent home that Maestro prunes only at ~14 days; the upload step used to take that directory whole, so each failure re-shipped every earlier run (measured 2026-10-26: rows per upload climbing 6, 9, 12, 15, 18 ... 5,819 over 154 uploads, reaching 330,497 rows / 11 GB — half of all Actions artifacts and half of the nightly backup). scripts/ci-maestro-debug.sh fixes this with two subcommands: `start` runs inside the `Install Maestro` step, clears the maestro-debug/ staging directory and touches a .run-start mark before any flow can write output, and `collect` runs immediately before the upload under the same failure() condition and copies only ~/.maestro/tests/* entries newer than that mark into maestro-debug/tests/, which is what the upload's path reads (maestro-debug/tests/**, never ~/.maestro). A missing mark stages nothing rather than falling back to the host history and every path exits 0, because a diagnostic must never change the job outcome; an unknown subcommand exits 2 instead of being treated as one of the two. The wiring is pinned by scripts/__tests__/ci-maestro-debug.test.mjs, which runs the script against a fixture home and asserts the workflow is bound to it.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1245-L1266",
-          "version": "repo-lines-v1:sha256:e198d845fd5e2d3c73a23f288b74ff0fbc9cd47e8f160f4fe5f5896ec5f32979:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYWY3YWIzMTg4NDIwOGM5YjZmODQ3MjRmOGUwMDViNzgyNmUwNzhkYzM3MDRhYjlhYTdhYzY1OTI0NzcwZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzM2YxZmNlMmFjZGU4ZDhiNDk4MjdlNGU3MjZhZDFkYjI4NDhkNzU4YTE1YTA2N2I1ZWJjZDQ1M2Q1MjQ0OGMifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1354-L1368",
-          "version": "repo-lines-v1:sha256:5eef211be13cc14d48f709ddde1a7e0fb8f02f5060296be5e20e1dc5650be4b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYjU3OTE5MGVjZWNlODc4MjFhNTkxODU5YjFiYjY2MjQzYmU4ZjI1ZThkMDM5NGM4NzMzZDdhMDk2YWFkN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNWE4OTM2ZTk5MTM1OGU0YmY5ODM4NDliODE2YzkzYTUwZjRhNWU2MTMxZWUyZTg2ZWE0N2FmNWNiZGQyOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYjc1MDUwMDNlOTNmMzM1NjNjZTAzNGM1ZWMwOTM0MDVmYWNjYWM0YTc0MmE5ZTljMmE2MDExZmEyZTQ2ZDEifQ"
+          "resource": "repo://scripts/__tests__/ci-maestro-debug.test.mjs",
+          "version": "repo-file-v1:sha256:9b0bb083f892872b2cf7baf48752a587e059697931849037751dc590709969c7"
         },
         {
-          "resource": "repo://scripts/__tests__/ci-maestro-debug.test.mjs#L103-L129",
-          "version": "repo-lines-v1:sha256:29334c8823bdb16c0ea8474721706bb7794354fa0f11b7198e9d1461f73cfdef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwN2M4MWE3YjE0Yjg3ZTcwNzVkYTNjNGE5YWY5OWY0NmE0YjYyZTU1YTM0ZTRhMDY2MTNkNjE1ZjkyODdlMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://scripts/ci-maestro-debug.sh",
+          "version": "repo-file-v1:sha256:42e3eb55347ad3924058a2bd048952c5f4ec269452d734e759c709d2c437a1eb"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e09c6f0c453449ea2ebc11d00038eaa",
+      "statement": "The job's `mobile` path filter and the `app` filter it must stay a subset of deliberately differ in both directions: `pnpm-lock.yaml` and `pnpm-workspace.yaml` select `app` but not `mobile`, so a dependency bump buys the web+integration half and not the ~35-minute emulator half (the `mobile-e2e` label is the escape hatch), while `infrastructure-as-code/docker/**` and the ZAP/DAST paths sit in `app` for the web/DAST leg the mobile flows do not exercise beyond bring-up. A guard test enforces the subset property rather than a comment claiming it.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
         },
         {
-          "resource": "repo://scripts/ci-maestro-debug.sh#L1-L45",
-          "version": "repo-lines-v1:sha256:42e3eb55347ad3924058a2bd048952c5f4ec269452d734e759c709d2c437a1eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YTJiZWNmZjhhZmIzNGRiMjYwZGFiYzk2OTE1ZmZlY2ZkZTg0ODkyOTU0MWM2MTkzZGU2ZDE2NGMyMWU4ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs",
+          "version": "repo-file-v1:sha256:c51a3ddc32211a17a8b48edf90ef359cb0e41e8b0485c91a8f06c96fc3fb4efb"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-27T23:08:42.159Z"
+    "at": "2026-10-28T02:33:05.629Z"
   }
 }

@@ -62,7 +62,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T20:44:33.459Z
+    at: 2026-10-28T02:33:05.629Z
 ---
 
 # SAST & SCA static security scanning
@@ -247,10 +247,16 @@ host is unreachable.
 `guardrails.yml`'s `sast` job has **no `paths:` filter** and runs on every pull request and every
 push to `main`. No scanner uses a credential: the only `${{ secrets }}` reference in the job belongs
 to the shared failure-digest step every job in the workflow carries, never to scanning. In order:
-install uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
+install native build deps (`build-essential`, `pkg-config`, `libssl-dev`, because cargo-audit compiles
+native code), uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
 four Python surfaces, `check-sast-findings.mjs --selftest`, `sast-scan.mjs --test-rules`,
 `sast-scan.mjs` (`--scope changed` on PRs, `--scope full` on push), `check-sast-findings.mjs` (the
-gate), then upload the `sast-report` artifact always. Reports land in `security/sast/reports/`
+gate), then upload the `sast-report` artifact — `always()`-guarded, and capped at
+`retention-days: 14` because it is a diagnostic rather than a record (spec 084 FR-019c). That cap is
+not left to memory: `scripts/__tests__/upload-artifact-retention.test.mjs` walks every
+`actions/upload-artifact` step in `.forgejo/workflows/` and fails any diagnostic upload kept longer
+than 14 days, so a triage artifact you cannot find three weeks later is a named defect rather than a
+surprise. Reports land in `security/sast/reports/`
 (gitignored): `findings.json` is the gate input; `findings.sarif`, `summary.txt` and
 `<scanner>-native.json` are for triage. The changed-scope run is preceded by a `git fetch` of the PR
 base ref, because the diff that builds the target list needs it.
@@ -274,6 +280,7 @@ alternative — a green that proves nothing — has already happened once:
 | `scripts/__tests__/sast-scan-retry.guard.test.mjs` | both directions of the transient classifier: the exact run-3328 output retries, a real fault (unsynced venv, unparseable lockfile, panic) fails on the first attempt, and an advisory *title* containing "error"/"timeout"/a status phrase does not |
 | `scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs` | the curl-pipe-shell rule's own regexes, applied to the real workflows — including that the pattern still *sees* at least six installers, so the acceptance assertions cannot pass vacuously |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs **and the absence of an event guard on it**, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
+| `scripts/__tests__/upload-artifact-retention.test.mjs` | that the `sast-report` upload — and every other diagnostic upload — stays inside its 14-day ceiling, with the walk asserted non-empty so the guard cannot pass by finding nothing |
 | `scripts/__tests__/check-override-consistency.test.mjs` | both directions of the half-bump, plain-pin scoping, the last-`@` split for scoped names, the exit-2 refusal of a half the gate cannot read, the cap rule against the six real Renovate widenings measured on 2026-10-18 (each failing by name, each entry's current value passing), that a genuine floor raise inside the major still passes, and that the **live** `pnpm-workspace.yaml` is green — every case driven through the `--dir` seam against a throwaway manifest rather than the real one |
 
 The retry guard's shape is worth copying: the usual outcome of a retry is that it silently never

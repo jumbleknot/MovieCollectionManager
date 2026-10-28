@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:70f01d1d79e44dd8e12d9a026e11b2847264e204a72fc0716f2086c2135ecb9e",
+  "pageVersion": "sha256:5c4409b89b58decaa2e574a70b1474398602845501cebef0b2765743b1ca84aa",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:b6d6b673591e1b0d44f37ee56ca13bee9d885af1c7cbec248293728cb47f5ede"
+          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -156,7 +156,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
@@ -873,10 +873,58 @@
           "version": "repo-lines-v1:sha256:7b76d1808fbd73a1d97f7247fa569306091bc54ac35be492b01e8f99730e32f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNTY3OThhNGM3OTg0Y2QxMjdkZTA3MTFkM2UwYWJkYzcxNGVhMGFkMDljNDMyMDkzMWM3N2RhYzQ1MTc1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzc1M2EwNzlhMjJhZGFlY2U3Yzc0ZDIxMjFlNTk3OGUyNjM0ZjJmMWNiOTkyZGI1MzBhMzZjZjFiNjAzZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwM2EzMWZhOGJlNjI0NjkxOTg5M2M2NWJkN2VhNzE0ZDQwN2YwODY2ZDRiYWM2ODlkYTZlZTIyMmRmOTE0YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkZmY3MGEyY2QwMmM2OWMyODMyYzNiYWM5ZDBkMjZmZjk4YjZhYzMyNDEwOTQ5ZmE1ZjhiZWQ3NGVmNGI1OGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_132e8793ff3149eaa5569a13d20d9573",
+      "statement": "All three tracked .env.deploy files carry the same generated six-line VAR=<bare sha256> block, and each CI-built stack consumes only the names its own images need — MCM_BFF_DIGEST for prod-mcm-bff, MC_SERVICE_DIGEST for prod-mc-service, and AGENT_GATEWAY_DIGEST / MOVIE_MCP_DIGEST / WEB_API_MCP_DIGEST / SPREADSHEET_MCP_DIGEST for prod-movie-assistant, the only stack that runs four CI-built images — with each reference guarded as ${<SVC>_DIGEST:?set in <dir>/.env.deploy (cd-deploy promotion)} so a run directory whose promotion never happened aborts the deploy instead of falling back to a floating tag.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L63-L67",
+          "version": "repo-lines-v1:sha256:0616cf877fa824e03e23cb310b484a0cac28eb1eade313eda5bae57d0e6ac836:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmYWNhYTkyMjA1MmFjZWE0ZTc5NzljMGI2MzNlNzE0ZDk5ZGQ0YTE2ODg0ZTVlOWM1ZmIxZjYxZDkwNTY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFiY2NjYjBmZWYzOWI1N2NhMWEzYmQ0ZWJjM2M3YzFlMTMyYjgyN2QwYjA4ODEyM2RiYTUxYzM4YTllOTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FkNDZhZDBjMGYwZGQyZDg5ZDUyYWM3MzFhNTUwZTU0YmNkNWYxY2NmZWE2NGIyMTFiN2ViYmQ3YjQ4MTM3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE0MGM3YWFiNWFkNzc1OTE2NjAxZWU0OTUyMGFiMDA3YmY0NzMzY2I3NTNlZTlmNTE3Nzg4MWFiNzc4NGZmMiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L120-L148",
+          "version": "repo-lines-v1:sha256:11fff933fa9f129b61017818e5e30f3488beb0464ebd821f0c85f9c0f520e05d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZWQ2OTk1MDA3ZjQ3YjQ2OTU5Y2IwODQ4ZTM5OGZkY2ZjMmVhZWJkMmQ0MjJkNzM0MmQ3ZjMyZjc5YjMyMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNTEwYjNlYzg0ZjUwZDdiYjA0MDI3OTA4MjA4ZGVhZmQ4YzhmYWYxYjczMzA0N2IxMjhmMmNhODM2NDUyMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NWY4Nzg3MDdjYTE4N2RlNzVmZmQ3ODA0NGUxMzc3YzcwMjQ0NzUxZjk5NTg5MGJlNDdhZWI0NTA2ZDg0M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmOTk4OTRiM2MzZTQ2NTQ4MDIyZTU2ZjQxZDkxZDdjNWQzYzIyZjhmMTMyNGUzNDY1ZGIwOTUxMmY4ZjA1NjEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/agents/compose.prod.yaml#L41-L41",
+          "version": "repo-lines-v1:sha256:c7a9256954fbfee66c7c6f5002f449ce7cac5384a3334880b629db28bebdc6cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdhOTI1Njk1NGZiZmVlNjZjN2M2ZjUwMDJmNDQ5Y2U3Y2FjNTM4NGEzMzM0ODgwYjYyOWRiMjhiZWJkYzZjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdhOTI1Njk1NGZiZmVlNjZjN2M2ZjUwMDJmNDQ5Y2U3Y2FjNTM4NGEzMzM0ODgwYjYyOWRiMjhiZWJkYzZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzU5MjVjOGU4NTc4YmVlZDliNDZkYTAyMmFmOTEzZGRjOGQzODg2NjFlZTVhYmNiNDFlZjNlYWZlNzgwNWVkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY0OTRhN2FiODIxOWVjOWNiZGNjODMxMTg0NzhmNGIwZmMxYjc3MTM0N2UwZmQ1NDIzNzBhNzI1ZWZmNTQzNiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L30-L33",
+          "version": "repo-lines-v1:sha256:1329c122a974869e20a1b1cb9759108da39dd982b0d40bf5deceb8fabe2be8d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRhZDVlYmI2OWJkYmM3Mzc0Njg2ODE2NTZhZTA3NjE5NzAwMmQzNzJhODZjNDlkNWQzYjI2NTBmNDZkN2I3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc2YTgwMTg1NGNmY2YzODlhYzkzMDNiNjFkOThhZWNkMzdiZmYyYjJkMzIzNjhiZTZlNzg5NDc0ZTZiNDkzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc0ODYwYjM4YzI1Nzc0MTFlYTM1ODE5NDkwYmM0MDZhNjlkNDdkZTk3NDM1ZTA0ZjBhYTM1MTU1ZGViNDVlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA0ZTgyOWFhMDJjM2I1M2M5YzExMTRkYjk1MmI1YWU3ZThhNGNkMjAwMTQ4MGViNTA4NWNmOThlZGI5MzBmMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L92-L94",
+          "version": "repo-lines-v1:sha256:01accfe8ee97015caec699bd49d110d4067c8f31d138ea8b0b8407e479036172:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGViYTE1YWUxNzJiYzYzYWE1Mjc5M2E5ZmNiNjZkN2IwOTlhNWJiODhhOGY1Y2NlZjk5ZmUxNmQzNjMxYWQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQwOGY3NmYxMjc1ZjUyMDdkYjExMTVkODBiODU5MWRhODVlZTMyNjdlYjA1MDA3MjgyOTFmZGNiMjRkY2JhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3Mjg4MzZiMDBhZGMwOGUzODRkMTVkNTlhYmMyNzUzNWI0NGU2NWExMTlmZDg2NjM1NjM4MWY1OGFjY2VhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmViOGM3ZWE3ZDY5YmU2MzI2NDRmYjU3MmVkZGMxMDExMTU2MTA3NmNlNTFkODYyZWFjNzMxMzNkMzc1NTk0OCJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/scan-push.sh#L69-L91",
+          "version": "repo-lines-v1:sha256:06bb9fdc35aa0708a013f087c47405036ed33a6ad522fb4d3bb0033e2c20d2e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDc4MTM4OGQ0NzEzYmNjOWQ2NzgzY2VmZjkxN2QwY2M5ZDQ1NTc2ZDEzNzBhNDUyMWNhODQ2NTQ0ODVmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzVhODNiYmE4OWNjMmI3OThiNGYzNThhODFiMDM0YTEwZjBmYWQwNDk4ZTU3OWU1ZDIxY2JjYjZlMWI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2U0NDYxYTRmZWE0NGY3MzFjOGZmYjk5NDUzZjE0YWU0MDYzZjI1ZDJlMGE4M2U3ZDhkMmZjMGUzN2U3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGU2ZmFlNWUwY2Y1ODJjYmYzZmY1MjU5ZjU5ZjA3MmZkZTA5MzBlYjg4MjAxMmExZWZhY2NmYjdiN2VmNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ada6d723b05647e5adc0b14451f48418",
+      "statement": "infrastructure-as-code/backup/ is a different sense of 'backup' from infrastructure-as-code/docker/backups/compose.yaml and belongs to no stack: it holds the prod host's nightly restic snapshot, its alerting scripts and its systemd units as config-as-code (spec 084), installed to the host by hand rather than deployed by Komodo, so no compose gate in the side-artifacts section reads it and the prod host backup page owns the subject.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L1-L19",
+          "version": "repo-lines-v1:sha256:a9ce7f1863a340c225995314ce8365a43128a2824b6eb64d05475d1851a04bce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ODcxMjFkZWY2MzJlMDE5MGYzYTEzNzEwYjY1ZjY2ZmZiYjFmNjg3MjM1YjQ0MzBmMGQwYzY3YTlkOGU2MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjU5ZTZlZTM3MzJiZDY2MGIwMzQyMGE5MjlhYTlkYjhlODVlODc0ZGM0MWQ1ODkyYTFjOWJhNDQ4MDAyZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NTYwYTQzMmRjZThiMjIwMzAwY2RlMDU4NzMyYjNiYmM4NjE2NmRiMzgyOTZhYzk5NDE4MTdlM2MyNDI1M2QifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L1-L33",
+          "version": "repo-lines-v1:sha256:b08a51d8092b6d7306042d5759c0e08e8f58796f6eae4fe30a60dbab3a9640ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWQwNjNhM2MyNjZjOTMzYTgzM2ZmN2YyMDUwNmIzNWY5ZjQyNTRlOGQyMjk3MjcxNWRmNjE2NzUzOWQ4NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YTY1ODJiN2EyYTYxZWZkYWI1MWY5OTAyNTRjZTkzODgzZTYxNDdjMTk1YTBlNjU1NGQ2MjU2Y2UyNGUxYWIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
+          "version": "repo-file-v1:sha256:e13409e51de26aef2a6d0f0a57c7bc04af98322c8e91f2a71a18b3cad227c0f7"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-26T03:45:38.439Z"
+    "at": "2026-10-28T02:33:05.629Z"
   }
 }

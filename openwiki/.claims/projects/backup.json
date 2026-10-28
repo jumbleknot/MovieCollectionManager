@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fbe1e2d2212f8042a1aaa9030cad238e9c3608a4abb898bcc46a569356b58852",
+  "pageVersion": "sha256:f1ee0cbfdabdcae46f22284fa79eb9293824266974f2fc483802b34762688bf4",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
-      "statement": "The prod host backup is the operator's host-level disaster recovery: a restic snapshot of every stateful prod service (Forgejo, Komodo, Keycloak, agent-db and both Mongo instances) plus the service config directories, pushed to a remote the operator controls. It is explicitly not the same system as feature 073's per-user collection backups, and neither replaces the other: a user's own backup does not protect the host, and the host snapshot cannot be restored per user.",
+      "statement": "The prod host backup is the operator's host-level disaster recovery: a restic snapshot of every stateful prod service (Forgejo, Komodo, Keycloak, agent-db and both Mongo instances), the service config directories, and the release APKs a rebuild cannot reproduce, pushed to a remote the operator controls. It is explicitly not the same system as feature 073's per-user collection backups, and neither replaces the other: a user's own backup does not protect the host, and the host snapshot cannot be restored per user.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1041-L1051",
+          "version": "repo-lines-v1:sha256:be3c602482a1ff37a3a3d405115e8388d7d1bbcff7d633b0420a6f35b01e2cfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMWVmZmUxNGNkZmFkZDY3NjQxZDg1ODg5MWRkNDdhNGE0M2U3ZTY0ZTIwYzc0NDBjY2FlZThmZGM2MTQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZmYxMTUzM2NhNTg1MTQwMmNlYTZkZTc2ZGVlZTdmZTQxMjZlMGY1OTZkZThmY2I5MTMzZTVlM2ExZDU0NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YTE2MjUyMzE3YTVlZGMxYWMxMzI3M2ZhZjY2YzQxN2NlYmMyZTdkNzgyZDJhZjIwNTljZGU0YzljMmM3MGUifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
         }
       ]
     },
@@ -22,11 +22,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         }
       ]
     },
@@ -36,33 +36,33 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         },
         {
           "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "version": "repo-file-v1:sha256:c0b18b4b2b60ec3ffe5343ffcc8bbe61affb986ce58dc115ba8114b87e3055e7"
         }
       ]
     },
     {
       "id": "claim_21f35f4eba0a4cde90e3e968b3c29d25",
-      "statement": "Each dump is validated after it is written, in its own format (a plain Postgres dump must end at the pg_dump/pg_dumpall completion marker, a gzip/Mongo archive must pass gzip -t, the forge tar must list) and against a per-dump minimum size; a dump that fails either check is treated exactly like a failed dump command. The minimum may legitimately be near zero — agent-db's is 1 byte because agent_db has no tables by design, the gateway checkpointing in memory — so a non-empty test alone would be wrong.",
+      "statement": "Each dump is validated after it is written, in its own format and against a per-dump minimum size, and a dump that fails either check is treated exactly like a failed dump command. The formats are per dump: a plain Postgres dump must end at the pg_dump/pg_dumpall completion marker, the forge's custom-format database dump must start with the PGDMP magic, a Mongo archive must pass gzip -t, and the forge data tar must list git/repositories/, gitea/conf/app.ini and gitea/jwt/ — the signing keys without which every issued token and the Actions OIDC identity change on restore. The minimum may legitimately be near zero — agent-db's is 1 byte because agent_db has no tables by design, the gateway checkpointing in memory — so a non-empty test alone would be wrong.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1067-L1076",
+          "version": "repo-lines-v1:sha256:00f5a7609fb00b5b301e9d0ee21345a5b8d1d72d6bf6278f92afb7130f8a8423:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMWE3OTkxNTYxM2U0MDQyOWVjNmI1MGIzMmVjZjUwNmQ4MjIzYzFkZmI0ZDYxYjc1Yjg3YjVhZmU4YzIwZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNTc5ZmVjNzdlMjcyYzhiODE1Y2JiNzE0NzM4OGMxYTY0NzY1ZWIwOWJlYzE1YjdmNDBlMzk5YjU2YmU0ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzQ1OTJlMmMxOGY1MTVmZTY4NmYwNjk5OGIwYjFiM2Q4NjhmM2RiMDEyYzZiZTgwNzNhOTNlZTExNTM4NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZDJhM2QzZDhkYzA1ZjVmNWJkMTEzNTkzZGU5OWQyMDE4YTZhNjA3YjAyN2ExYTgyY2FkZmQ3MmY3M2Y3ZGYifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L84-L110",
+          "version": "repo-lines-v1:sha256:36afacc28a4c87ecd08086276cc3a1ffef567b1bb73d14de0d5019cd8978242b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGE1ZDdmYWQ1NmMxNDA0YzFhMzEyZTkwMzdkOWY1MmQ0ZmY1NGE3Mzg3NjZkMWFhOTU4ZGEyOTk3NjUxODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMWQ4MzAwYzY0YmU0MzEwMmFiNGFiNDQ4M2ZlYjcxYTA0OTM3OGQxOGMzMGMwMzQ3M2FkZjdmNzEzMzUxOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNDgzMmZjZGM5YzJjOTVjZGIyNzUzMzg4YjJiM2VlODU2MTAxMzI1MjJiMTBiYzg1NGExYmRhMWMwYWYyNGIifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs#L201-L251",
+          "version": "repo-lines-v1:sha256:38512200fa63ad0bdacd2ed288bb77cd284070125e15511808cdb9660337006c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMmZlMzJkMTMwMmM4YjgwNmM1YTU5NDIxMjM5MGMxMjgxZmMzZjQwZTgyNmZiYjM2ZGFlNWU5YzAzYmQxNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZjRiZWQzNjI2NmIzMWEyM2RmZWI4MTgyZjk4OTA4ZDAyMDY3M2U1M2YzOThiNTE4Y2NmODNlMzQ2ZWRjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzODFiYTc1NWY2NTgzZDUzMzczYmI5OTVlZjY4OTFlNDU4N2Y1ZTMwNjBkYmFlYzlkMDZjNzJjM2EwNDVlOTAifQ"
         }
       ]
     },
@@ -72,15 +72,15 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:b1320d666c1f4d22b147dd2d8e3e39d216e6904b813631a995eef9fa0e01772f"
+          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         },
         {
           "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "version": "repo-file-v1:sha256:c0b18b4b2b60ec3ffe5343ffcc8bbe61affb986ce58dc115ba8114b87e3055e7"
         }
       ]
     },
@@ -90,15 +90,15 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         },
         {
           "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "version": "repo-file-v1:sha256:c0b18b4b2b60ec3ffe5343ffcc8bbe61affb986ce58dc115ba8114b87e3055e7"
         }
       ]
     },
@@ -108,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
@@ -116,7 +116,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         }
       ]
     },
@@ -197,8 +197,8 @@
       "statement": "INSTALLED.sha256 is the artefact that lets an operator with no repository checkout prove the host runs what the repository says: it lists every installable file as <sha256>  <path relative to $HOME> at the path the README's install block puts it, sorted so a regenerated list diffs cleanly. It is regenerated by scripts/backup-install-manifest.mjs --write and verified with --check, and a guard fails when the committed list disagrees with the directory or omits a new installable file — a stale list is worse than none, because the operator's sha256sum -c would then pass against an old script.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/backup/INSTALLED.sha256",
-          "version": "repo-file-v1:sha256:783133888cea5c2b0492796e41b1b0662456ba30c272a14d46a47015ce727de5"
+          "resource": "repo://infrastructure-as-code/backup/README.md",
+          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
         },
         {
           "resource": "repo://scripts/__tests__/backup-install-manifest.test.mjs",
@@ -212,15 +212,15 @@
     },
     {
       "id": "claim_793015c5a7d84281bc64b2b811ba4afc",
-      "statement": "backup.sh holds no secret: the restic password comes from RESTIC_PASSWORD_FILE outside the script, and every other credential (the Komodo Postgres user and password, the Mongo URIs) is read live from a compose env file or a running container, so no credential is ever assigned a literal in the committed script.",
+      "statement": "backup.sh holds no secret: the restic password comes from RESTIC_PASSWORD_FILE outside the script, the forge package token is read from a mode-600 file on disk, and every other credential (the Komodo Postgres user and password, the Mongo URIs) is read live from a compose env file or a running container, so no credential is ever assigned a literal in the committed script.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L18-L32",
+          "version": "repo-lines-v1:sha256:04d03ec16ff80d0d3c163916d188f7100c557e7fce0e9acad3e920be2f8166b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZmM2MzM2NjdkMDMwMDczMWJkZDg0NDcyZGM0MjRlMWY5YzY0MTc1ZWEyYmFkYjY2NjQ3MmQ5MWFlYjRlZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNjQ3NjMxNTUwZWU5OTNmZWRlMDY0ZjY3ODZmNmNhMWQxNTcxYTAxZWJhMGI1YWNlMTQwOThmNjkxNDk0MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NGFkNzFiYmJiY2Y2NjcwZDA5MWZlNmE0MmM3NjVlZmY5ZTAxNmI0YjBiZDA4OWE1ZWE3MTQzMzc0MDU3MjIifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs#L349-L355",
+          "version": "repo-lines-v1:sha256:1b1a6d3dc230c402706c64c26f6af2473af9ee3324df70393f24a1732de6fe62:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVmZWU1M2ZjYjlhZDFhYjY1MDI3ZWZkNDIxZWU2MGRiZWJjNDExMjBiYzhmMWU5NWU3Y2RmZmQ3YTllNTRkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjkwZjhkOTRhODZlYzhmNzM0NzFhMTlhOGFkMWE3MjY1ZWY5ZjdhNzM2NDJlYWVhMGE4N2IxNWNmOTA4ZmE3OSJ9"
         }
       ]
     },
@@ -230,11 +230,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
-          "version": "repo-file-v1:sha256:5e6ff066e28c89bfb546266688c72b1875d6bedde5ba78e086cbd885d1d7cd18"
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         }
       ]
     },
@@ -244,7 +244,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:72a377f7dc8a0454b830f5924092fc7e1d61a1a58e7733e600381cd796f623aa"
+          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
@@ -254,25 +254,197 @@
     },
     {
       "id": "claim_9791198156314d7c836c02b4822603fc",
-      "statement": "The backup scripts are guarded behaviourally rather than by inspection: backup-script.test.mjs runs backup.sh against a fake host (docker, restic, curl and df shimmed; tar, gzip and python3 real) and pins the measured failure modes, including that a failing forge dump still runs every other dump and still calls restic backup, the per-dump format and minimum verdicts, shrink and ack-shrink, staging under ~/backup with tmpfs refused, and --group-by host,tags on forget. These suites run in guardrails.yml's naming job.",
+      "statement": "The backup scripts are guarded behaviourally rather than by inspection, and the guards run in guardrails.yml's naming job, whose node --test scripts/__tests__/*.test.mjs step picks them up automatically. backup-script.test.mjs runs backup.sh against a fake host (docker, restic, curl, systemctl and df shimmed; tar, gzip and python3 real) and pins the measured failure modes, including that a failing forge dump still runs every other dump and still calls restic backup, the per-dump format and minimum verdicts, the eight forge-data excludes, shrink and ack-shrink, staging under ~/backup with tmpfs refused, --group-by host,tags on forget, and the absence of a literal credential; backup-units.test.mjs pins the unit wiring; backup-alert.test.mjs pins the exact forge API calls and the token never appearing in argv; backup-staleness.test.mjs pins 'unreadable is never fresh'; backup-install-manifest.test.mjs pins the committed manifest against the directory; and komodo-cron-retention.test.mjs pins the purge job as hourly, idempotent and touching only its own table.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-alert.test.mjs",
+          "version": "repo-file-v1:sha256:ab7a06a840fbe50bcb22f828e520bc75719d7ef9dec53e647ab7cbc66bf1099d"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-install-manifest.test.mjs",
+          "version": "repo-file-v1:sha256:090eb20bf1bcfd590ffccbbc322bf97448d9cf8419b0918ffe5f5d1fe29881ea"
         },
         {
           "resource": "repo://scripts/__tests__/backup-script.test.mjs",
-          "version": "repo-file-v1:sha256:a845a83c05b51cf86f6773ff745cc6a8038da7587d4c3043a9d1b0dec5624b98"
+          "version": "repo-file-v1:sha256:c0b18b4b2b60ec3ffe5343ffcc8bbe61affb986ce58dc115ba8114b87e3055e7"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-staleness.test.mjs",
+          "version": "repo-file-v1:sha256:3f08c16b42a06e094511d2a0fed2a5e41a0378b5369abf30b82bb6af9a7fe474"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-units.test.mjs",
+          "version": "repo-file-v1:sha256:f871cfec98ab4739bc5e06aa6f1fa4003c3bf07f6ef04d6c36b3df5ad9d06b6e"
         },
         {
           "resource": "repo://scripts/__tests__/host-shims.mjs",
-          "version": "repo-file-v1:sha256:7c376e992eb17efae878807ef5350294f73e19d119e2ce64cac9ef8fb4c9c837"
+          "version": "repo-file-v1:sha256:904cdbe07c3305a8865916b762ae399d0847d294fcab594d804c01272c89e71a"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-cron-retention.test.mjs",
+          "version": "repo-file-v1:sha256:941b5051a08b050d8deec5cd6aa8e97b877a722aa277417e80509d1b1caef4c4"
+        }
+      ]
+    },
+    {
+      "id": "claim_020975513a4b4742a643098f551a740c",
+      "statement": "The dump list is now eight dumps — forge-db, forge-data, komodo, keycloak, agent-db, mc-service-mongo, bff-mongo and release-apks. The single forge dump was split into a pg_dump custom-format database dump plus a tar of the forge's /data, and release-apks was added as the one registry artefact a rebuild cannot reproduce.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1067-L1076",
+          "version": "repo-lines-v1:sha256:00f5a7609fb00b5b301e9d0ee21345a5b8d1d72d6bf6278f92afb7130f8a8423:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMWE3OTkxNTYxM2U0MDQyOWVjNmI1MGIzMmVjZjUwNmQ4MjIzYzFkZmI0ZDYxYjc1Yjg3YjVhZmU4YzIwZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNTc5ZmVjNzdlMjcyYzhiODE1Y2JiNzE0NzM4OGMxYTY0NzY1ZWIwOWJlYzE1YjdmNDBlMzk5YjU2YmU0ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzQ1OTJlMmMxOGY1MTVmZTY4NmYwNjk5OGIwYjFiM2Q4NjhmM2RiMDEyYzZiZTgwNzNhOTNlZTExNTM4NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZDJhM2QzZDhkYzA1ZjVmNWJkMTEzNTkzZGU5OWQyMDE4YTZhNjA3YjAyN2ExYTgyY2FkZmQ3MmY3M2Y3ZGYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L222-L252",
+          "version": "repo-lines-v1:sha256:ec3fa5e91ee051b9a6d9c69c0dfaa081ae2d551a736ea034537312a96eae847d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZDM4YmVlNWJmMTUyNTBhNzQwODljOTRlOWE3OTI4ZjUzMjgwZjgwMzg1ZWFiYzc5YzBkNGYyMDNlNTRkYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMjg5ZmIwN2U5ODM3Y2U3ZTAyMjIwM2NiZjY1ZGU0ZDhjOGMyZmQ2N2Q4NTU5MThlYzA5N2NjNWYwM2I2NjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZmYxZWQ3ZGI3ZjU4MjhkYzIxZGI0NzE3NTdiMTdiYTRmMDYxMGVmNTJhOTI3OWU0NjY5ZWM5OGI0MTlhYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhNjJkM2MwMzdmYjQzZTE5MjliYWIzMDQ5OGEzOGRhZjYxYzRmMThiOThmNWY3Mjk0MDkzZTAwOTY0YjA0NmUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L28-L28",
+          "version": "repo-lines-v1:sha256:274277e74bd4c4c81fa6d707689cbd0e3880d4acd8d2f35ec4bf5a03f932c84f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc0Mjc3ZTc0YmQ0YzRjODFmYTZkNzA3Njg5Y2JkMGUzODgwZDRhY2Q4ZDJmMzVlYzRiZjVhMDNmOTMyYzg0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc0Mjc3ZTc0YmQ0YzRjODFmYTZkNzA3Njg5Y2JkMGUzODgwZDRhY2Q4ZDJmMzVlYzRiZjVhMDNmOTMyYzg0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDM4MjllOWJmZDYxNDYzYjQ2M2ZhNTE4MjJiOWNhMWQwNjBkMDQwZGFkMTVhNmQ1MmI5Nzg1Zjc0NDg5MDMyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDdjZGIwYTExOWI5YWM3MDg3MmZlMDZhMDhhNjk3MDU1NGYxYTQzZWY3MDA1MjM3Njc5YjQ4OWNiYmQ1MDI4MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f82968160de74a59a896906302f87b6c",
+      "statement": "The forge data tar is deliberately uncompressed: restic chunks content-defined and de-duplicates an unchanged file, so a mostly-unchanged tar costs roughly the day's real change, whereas the old forgejo dump --type tar.gz changed from its first changed byte onwards and de-duplicated nothing — 19.8-21.1 GiB added to the repository every night.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1097-L1097",
+          "version": "repo-lines-v1:sha256:f70b5d6d97629511a808d21b036c6e14a0cf9ce50c27c70a712802f7da7b206a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwYjVkNmQ5NzYyOTUxMWE4MDhkMjFiMDM2YzZlMTRhMGNmOWNlNTBjMjdjNzBhNzEyODAyZjdkYTdiMjA2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwYjVkNmQ5NzYyOTUxMWE4MDhkMjFiMDM2YzZlMTRhMGNmOWNlNTBjMjdjNzBhNzEyODAyZjdkYTdiMjA2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg0MGU1NTJhMjgwNjBhZTllNGNhNjVmOWVmNDRlNzUyNDliYjBiOWRhYjVkYjg0YTcwOTg4NTAzNWQ3NmRhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmMyZDY4NzVjMThlMTdhMWNhZjM4NmM2NmI5YWIzMGMxYTY3NWE1MmFkYjAxMDM0ZGUzYzM1MjQ1MTk4MDU0NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L225-L232",
+          "version": "repo-lines-v1:sha256:92e7fd9f3e829e3a50fc39764db75b9058ab4d627de4fe5f4b1524c75a32fe85:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFlZGM3OTJjNGIxZGFiNzA0YWUyN2UxMmQyNGU4MTM0NjY3Yzk2NGY5NjIwYWFiYjRmZjAwOGI4MjA1ZWFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzJiN2YxNjZhMjg0MGFjNGFiMGIwMDM1N2ZkYjU1NGRhYmY1NjJjNjZjYjNkYjllYzA1YTRhZWEyY2ZjYTBmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODIwMTk2ZjFhOGQ2NTk0OGM2ZmVjYjkxOTY0YjA5ZTdkZWI0OThmNzk3ZjdhYzc3NmFiMDRiYzUyZWJmOWY5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjUzMTQ1ZDk1MTQzNjVlYWFlNzEwOTFlOWNmNDk4NDlhZjJmZWFhYjczODdmN2IxYjg0OTU2MThhOTU3YjI1NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c45bfab41d04a80b6f8b02308d4a077",
+      "statement": "The forge-data format check is a content check rather than only a listing check: the tar must list git/repositories/, gitea/conf/app.ini and gitea/jwt/, because a restore without the JWT signing keys changes every issued token and the Actions OIDC identity. The eight --exclude paths are pinned by backup-script.test.mjs, so adding or removing one is a deliberate decision about what a restore loses.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1081-L1095",
+          "version": "repo-lines-v1:sha256:a3eceea0e2d9920cad376acd6e3649c7bdc8cac8f1e61aa7b4c42d28f60a809e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZDQ4MTdiN2ViZjA3NzlhNjI2MTlmNjA2MTA4NmEwZWZiYjk4YzkyN2FmMDg4MTY2OGUzZWUyMmQ5NjYxODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MjExODc0OTA0NzU0ZDU2ZDcyMGVjNmQ4YWViODE5NzA2Nzk1YjA1YzY1ZWIzNjNiMTM5MGVlODgzOWJiMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MDlhZGQ0NjFmODJhNWY4MGFhOGE5YTU1YTRhNjg4MjZkZWU3MWQ5OGJiZjRmMzA0N2EwNzg1ZGFjZjI3MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2OTY1YjM3NmIzMGUxODQyYzQ5NDdkMDFhNjI0OGQ2YTg3YWRkYjc5Zjk3YjcyM2VlMDgyNjBmMzA5NjVhYjEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L82-L88",
+          "version": "repo-lines-v1:sha256:9356e6dae89d6b0dfe06bcccabba5338f22702d05d7d30b91f3780e0ec370ec1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQzN2UyMGU2NTdjNGRlMjNkOGM2MWI1ZjNjM2U3YmEwYTU4YzkzOTk2OGVlMjMxZTkyZGE2YTNmNDgwNDQ5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ3MmJkOTE0NDAzMDhlODNiODVlYTQyZGIxMTJiM2Q1OGRjYjJmODU0ZmFhMGM0MjA4ZjJkOTBlZjliNWZkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmJkNjE0ZTA3ZmZjYWJmNWNkNDVjNTU5YTFjZTkyM2ExMjg1MGQ4MmNkNTU2MjI0NGU4YzM1NDc5YzMxMTU2YiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs#L369-L419",
+          "version": "repo-lines-v1:sha256:e8a94d391b7a862a08aec90ad2fa9a6c4bd6bcf9c8f589d82fac6f68eb8dcb16:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYjBjOGViM2QzN2U0YjUzOGM4NDQ3OGM2ODNkYWNjYzVjNmRmMTIzNzA3M2I3NWRlNWVmY2UxNDc1NWYwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjZjUzNWU4ZDFiM2JhMWQ1ZGZmZTg2MTUxNjM1NzQyYzQ0MzRkZTJiNzNlNGRhYmFkNTU1MjAxOWI3MzkyYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMDZhNjA0ZmE4NGYzODMwNWNkNDc5OGNmZTAxZDY0YWU2ZjY5YjVhOGUyNTE5ZmJlMmZhODM5N2EwZGMxOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_723f2581d00949f2b153c54d48eefb66",
+      "statement": "The komodo dump carries a maximum of 500 MB: exceeding it is not a failure but a warn-max verdict, which raises a komodo-oversize alert naming the dump and both sizes, still uploads the snapshot, and suppresses the recovered note so it cannot close the item the oversize alert just opened. The dump also excludes cron.job_run_details' rows (roles come from pg_dumpall --globals-only, each database psql lists from pg_dump --exclude-table-data). Separately, komodo-cron-retention.sql stops the table itself growing by installing the hourly pg_cron job purge-cron-run-history at 17 * * * *, which deletes runs older than 3 days; the file is applied by hand, safe to re-apply because it unschedules the job by jobid before creating it, and touches no other table.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L144-L159",
+          "version": "repo-lines-v1:sha256:6336a7d54377d65566e830fa6825d289cbae40beebdf462531b63e2e708a89a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YzdmYjgzNjI5NGNkZmZmOTRhMjAyM2E3ZTAxZjI0YTBiMjBiNWI5YWY1YWIxMDc2NTE5M2Y0ZjcwYTM2MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5N2U3YmRkNWM2ODE5NmRjYjQ3OWIwMTJkYzM4NjM5NTU1ZWFiMjY3ZDYxODBlMGU1NDM4MjUwYzQ1OWVlYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5MTAzZDlkMjcxM2Y1MjdiMmVkMjE5NmEyYWQ4ZTQ0NTk3NDBiYTIxNWNiYzY0OGIzZmZiYjgzMzZjNmFjODUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L234-L236",
+          "version": "repo-lines-v1:sha256:521ea367b8cc0a292a98852729315f13f6048e97b4780e2b2347c9b98fd9e2ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIyYzEwZmQyMzg2NWJiMGEzM2JlYjBlZDEwODA2YmQyNzMyN2JkYTczN2E0OWY3OTc2MWE4Mzg3NDA4ZWIwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwYzk0ZWRkZWQwNzIxYzUwY2MzNTMwODM0YjJiM2Q2ZWE0MDRlM2U3ODQ4NzM4Nzk4OGQwNzA2ODNmMzk3MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAyMGE5MjM0NjVhNzQ5OGVjYTMzM2YwOWIzYWZiMzg4OTdlN2JmZWQ1Y2Q4YTkyNGU0MjkwYjQ5NjI1NGI0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ5NTAwOTM1YmViN2ZjNTMwMzFjMjkzZTRiMjk4ZjIyZDQzODg3YTYyYzAyNzU4OGNmOGY4YTIwZDRkZjY5MCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L279-L292",
+          "version": "repo-lines-v1:sha256:853fb0ca80d22420505af8584bcce9da316b3cd4047e48ecb2f733319b6f2149:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYzZmYWU3NWYwMjJkMWM5MjhkNTZhODM2NzI4OTA0ZmRiMGRiNGZiYTMwZTIyZTA5N2M3M2Q3MDUxYjJkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4NjNjYjgxZWE3MGQxYjNkYzIyYmJjMWQyMjc4Y2ZkMGU5NDVkY2Q5N2U5Y2E4ZTExNDA5MGYyOWQ2ZjdhZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0M2NlOTg0ZDQyZTY2NDdjNzQ4OTAwZWJlNGExNDAyODRlMWMyMDBiZGQyMmYxZWMwNzVkMmMzOWFjNGVjNDcifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/komodo-cron-retention.sql",
+          "version": "repo-file-v1:sha256:0c42b827cb27dd623e87c26ad4400f6c0f5ff154711b68906279df9e47234d5b"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs#L430-L462",
+          "version": "repo-lines-v1:sha256:c3b7dee2751e5cb1623bb93150e834aa7dcd75ff27b95b2b60f3f3d9cf4d499b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMmU4ZTFiYTg5ZmZkNWRiYTAyNTUwZjljYWJiN2UwNDVlNGE1ZGFjYjllY2JiMGVlZjMyMTZlNzFmNDk3NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZDZiYzU5ZGI2ZTllYzI5ZmEzNDMwNWNkZWQ4MjcwNDRhYzFhNDU1MTg5NjNjMTI4NThlNDAyYzM5NjJlYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNWNiMDg2ZThlZjhmYWZiM2RlMzllNmNmYWNlOTcxOTU0NTY4YWE0ZDMwMjdkMTJiODgwM2U0YmQ2ODg5MTkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-cron-retention.test.mjs",
+          "version": "repo-file-v1:sha256:941b5051a08b050d8deec5cd6aa8e97b877a722aa277417e80509d1b1caef4c4"
+        }
+      ]
+    },
+    {
+      "id": "claim_92520b53d8054aeeb0ac99b4579af8ed",
+      "statement": "release-apks is dumped from the forge's generic-package API using ~/backup/forge-package-token (mode 600, package read only) and MCM_FORGE_URL, as an uncompressed tar of release-apks/<version>/<file> covering every version and every file, paginated in pages of 50 because q= is a substring match that an unpaginated read silently truncates. A missing or loose token, or a version whose file list cannot be read, fails that dump alone: every other dump and the retention prune still run.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L31-L31",
+          "version": "repo-lines-v1:sha256:25082602de90afe3ed0edd46a6a378fdc64b651b822a9c38bb5dc2af8fbabd38:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwODI2MDJkZTkwYWZlM2VkMGVkZDQ2YTZhMzc4ZmRjNjRiNjUxYjgyMmE5YzM4YmI1ZGMyYWY4ZmJhYmQzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUwODI2MDJkZTkwYWZlM2VkMGVkZDQ2YTZhMzc4ZmRjNjRiNjUxYjgyMmE5YzM4YmI1ZGMyYWY4ZmJhYmQzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc1MTYxZTdlYjI3NmYzODZiM2JlNGExZjE2MDM4MGUxNDQ3NjVjZTllZGExYmQzMjFkM2I2ZGQzODlmOThlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYwNTlmODc3ZWYyOTkwMWU1MWI1NmVhZGM0ODNiYzg0MGE0MzMyNzY2NjU2NGZkNjJjMzllZThlYWFkZjAyNiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L176-L217",
+          "version": "repo-lines-v1:sha256:898f62c4f1098e91fc740bff006cdb9cf7dea7f8f1c2b30ba7afc36066d2739c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4MTRkMTA0NDBmODMxNTJlNWY2YWNmODUwMWMxMTc0YWY2Njk0MmY5MzA1ZGU4YWNlZTIzMmJkMmJiM2Y3ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNDAwMWI3NjA4NWZhYWQ1MTE0YjZlYWY0ZDFiZDFkNWYyZDY0ZmI0YTkwZTkxMTNiYmJhYjE4ZmE1ZjM1NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NWJiNTgxMjBlNmU3MWIzNTljNjg4NDBiN2RlMWZkZWI1MGMxMWI3NDJjNjhkYzhhOGEyNTM1NDc0NGM4MGEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-script.test.mjs#L475-L533",
+          "version": "repo-lines-v1:sha256:5ee76f3c8bc3db9d0ac3ed2f75a0b3517a95b705ac7a8c35cb31fcb42aba426a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYzRiODllMmQ5ZTA2Mjc1YjZkYjE1ZTNlOTVhNzhkZWVmMTBlZDI3ZGQwODVkODIwMmFmN2JiZTI5MDk4YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhNmU5OWNmMjFmYzNlODA0NmRhZDg4NDBmZmZhNzllOTY2ZjI3YWE0ZmM0NjdmNmM4YTZjNTRiZGNiMTBkYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c52af8fbda14ff396f1bcb22871a8de",
+      "statement": "The install/verify contract rests on three host tokens, each created in the forge UI for this host alone with exactly one scope: ~/backup/forge-issue-token (issue read and write) for backup-alert.sh, ~/backup/forge-package-token (package read) for the release-apks dump, and ~/.config/mcm-forge-read-token (repository read) for the ~/mcm-main checkout, which clones through a credential helper so the token never enters the URL, argv or .git/config. MCM_FORGE_URL in ~/backup/alert.env names the forge as the host reaches it for both the alert and the APK dump, and the real host is never committed.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L25-L66",
+          "version": "repo-lines-v1:sha256:dbaaba88841029224f5faf09c97820e40d967f02ff9f43d21b861d645be44df2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYTI0MDNhNTZlNDVhOTlmNDJjMzAyOTNkZjRjMTgzY2I5Y2JiNjE4ZjViZTY2NDM2YjA5NjY5NTBiNzAzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MmU4ODQyMzI0OGMzMjRhZDAyNGUzMjg1ZGQ3OWJmNTc4ZjFlY2JkMTE4NjQ5NGM5M2QxN2Y4ZTRjZjdiM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjA0ODJkZTM2OWRkZjQ2OWNmNzFjMTNhMmNkMjdkZjRkYzYwY2JlMTQzOTU4YjRjZDY4NjkzYjMwMjFlNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4ZGM4MzVlNTgyYTNiYTRjMGRlNWYwZTUxNjdkNTBjNzI3ZGVlOGMzNTg4Yjg1YTk3YzVlYWU2ODFjYjEwYjIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-alert.sh#L35-L41",
+          "version": "repo-lines-v1:sha256:69e627403e89b64ec9f126f87ba21c3b0247076a37679a4343ff5ec1e085dda3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWIzZjcxNGRjNjNjOTNkOWNjM2E2MTQ0YmE4MTI0NDYzZTk0M2E1Nzk0NzZiZWFiNTRmMjQwMTRkYTM3MmExNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJhM2Y3M2M4MjZmMTIzMDBhMDgxYTU5OTljMzdjMWE4YzJhMzQzOTRkMjU5MzdiYThlZDBmNDI0OTZlYTE3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE2MDE3MDc5ZmYwNTllMWEyMzRiMzczMWU5YzZlM2Q5MmJhZGEwN2U0ZWIzODU3YzNlZjRmNjNkMjFmZmYzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2I4NzcxYzBlYTVlYzQyNWY3OWFkODZjYzBhNmE4YmJlMDZkYmE1YWFmNTkyZGIwNmZkNGJhZGZjZjQ4MDg4MCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L179-L189",
+          "version": "repo-lines-v1:sha256:6c29cafcc0f7c852ceee06361cecab4d67a49e030908f83428689958337625ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNmJhYTY2NzlkYTI4ODA5ZDZkNDY2ZGNkZjA4ODkwMDc1OTI1Y2JkNWE0M2FjNGY1Y2JjOGIxMzJkYjZiZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOGFkODBhNTFjOWVmYjRjOWQ3OTk3MWEzZGQ1OTU1ODZjNzQ4YzdkMzVhOTU4MDAxMzVkODc0YmQ5ZjljYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2YWIyMWJjOTAwOGNhYWM0YTI0MTFiNWRlM2NlNTMyMDdmZmM5ZTI1MDgxMmJlMjRlYTIxZjYyMDBkN2MzZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZjJiNDM5MzZlODRjYjMwZDA5MmIzYWYxMDhhOGZlZmQzOWEwNGYxN2I4MTM1ZGJhMTY2ZjNmMWI1ODg2ZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71a5072b23fa4e2f8db246b76bd7a0a5",
+      "statement": "backup-alert.sh's reason vocabulary is closed — failed, hung, stale, staleness-unreadable, shrink, komodo-oversize, recovered — and an unknown reason exits 2 before any network call. The exit contract is 0 for delivered or nothing to do, 2 usage, 3 not configured (missing or non-600 token file, unset MCM_FORGE_URL) and 4 for a failed forge API call; exits 3 and 4 print 'alert NOT delivered' to the journal instead of failing silently, and only the failed reason consults the unit state, reporting a unit whose Result= is timeout as hung.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-alert.sh#L15-L34",
+          "version": "repo-lines-v1:sha256:7fa1e97a30fbe40721a5d9bd531f7213ce7d98c68c26964314678c5d07faf7cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNjljMjFlMjk1MzliNzM3MzlkMzU0ZTY0YTNiMDMwMDkwYzM0N2IzMGUxNzgxOWY5OWUwOWE1Y2Q5Njc5OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MmFjYTAxZjU1NWUyOWFmYTQ0NDhlM2JiZmYyNDVjNDI5NWRhMjQyZWQ0ZjI5ODBjMTc2YjVhOTI0MzkzNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjOTJkMWVhMDNhN2Y3ZmU1NmQyOWJiNjA3Njg3ZDEzNGVkMTBjMjAyNjAzNzY5Yjg1Yjk3ODBjZTQzYzdiNmEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup-alert.sh#L59-L67",
+          "version": "repo-lines-v1:sha256:8d85358e24759beb37f6417f1ea934473420a44ea68986d28d842bde8b89a329:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY3YzMzNjcxNTYxM2UzMWJiOGUxYWY4ZTU5NDViM2IzNDZhNGQ0ZDFhYjRjMDJkODkxNWJkYzVkNWQ2YTc3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY4ZjcwNzJkMjg2NTczN2ViZjllMjA3YzMwYmRjOTZhY2E3M2RlMTYxNjM3MWM4YThlYzA3Y2YzYTFlYmQ5MiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/backup-alert.test.mjs#L96-L129",
+          "version": "repo-lines-v1:sha256:f5357f7b7d53ce7274d1d7331423d15ee8dad42dc317e61953a74002c8dc97e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjU4OTM1NDk5NzQ0ZmM4N2U3NTk0ZWM4M2ZlN2E2ZmI0ZmY3NTAzY2VkZjk0MTM2ZTZlOTgxODI2NjY3ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMjAyOWZhZTUxNmNlYzE4MWNjMTI5MTM2ZDEzNmMzYzJlNTQ5Zjk3YTliYTg1YTlhOGM4MTliYjQ2MjAzYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhOTNkMzAyMzJmMGJjOThkZmQ0ZTg2MjFmZjczNGQxNmE0NjIyNzA2OGJhZjBiMDNjMTM1YTE3YTk5ZDdmNDgifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
+          "version": "repo-file-v1:sha256:39518a88ef372e3ad84be3a346d956d308c4c3e42f9532f8e5ee8d682972d206"
+        }
+      ]
+    },
+    {
+      "id": "claim_b8dc115b7ef04935bc291dac3339d5ba",
+      "statement": "The once-after-install proof that the alerting works is an induced failure: point the run at a repository that does not exist with systemctl --user set-environment RESTIC_REPOSITORY=..., start homelab-backup.service, expect exit 1 and an 'alert delivered' line on the alert unit, and restore the default on the same line — an interrupted override stays set and every nightly fails until it is cleared with systemctl --user unset-environment RESTIC_REPOSITORY. The staleness path is exercised the same way with MCM_BACKUP_STALE_HOURS=0, which must produce an exit 1 and a stale comment on the same item.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L130-L152",
+          "version": "repo-lines-v1:sha256:6834d0ab73615f9bbbe18936f4de4792c5410c9fdb812cc2ac82a5e3d935cfc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTNmMTMyMTZhMjViOGQ1Y2E3MjdjMTI2Y2NmNjZmOTlhMDBiZDQwYjUxOTk3YmUyYzgwYmY2M2NkMTE3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlZTU3Y2Q1ZjNlYWFkODZiMTgzNzYwNzEwN2NhMTM4M2M2Y2RkMzRjNDMwODBmN2ZjZTY3MWEzZDMxZDY5MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNjhlOTUyMWFhZDRiM2EzNTgxYTMwOTk1MjdiYzY4ZjMwNGRiZjY2NTEzZjM1YTc3MDg0NjA4OTY0NjIzMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5MDdmY2U5N2E1NWE5NWQ4ZjFkZmE4NTMxYzZkOWU0OGM1YzIyODYxZmYwYzY0YzFjMTZhNGVjZjY1MDBhZDAifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/quickstart.md",
+          "version": "repo-file-v1:sha256:856a2e740280493a14b656a14748e150da3db6f2f7b968658452a03baf7fc2e2"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-27T23:08:42.159Z"
+    "at": "2026-10-28T02:33:05.629Z"
   }
 }
