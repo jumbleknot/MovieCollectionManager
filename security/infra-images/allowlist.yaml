@@ -375,3 +375,50 @@
 # netty-handler 4.1.138.Final (fix 4.1.137), bcprov-jdk18on 1.86 (fix 1.85), freemarker 2.3.35 (fix
 # 2.3.35). Deleted rather than re-keyed (item #303): they would match nothing and fail --check-expiring.
 # The comment blocks above each former entry are kept as the record of why they existed.
+
+# ── brotli CVE-2026-111497 on six unchanged pinned images (first blocked 2026-10-29) — TIME-BOXED ─────
+# An out-of-bounds write in the Brotli decoder (1.0.3–1.2.0). It reached the scanner's DB after main's
+# last sweep, so every PR went red on images it did not touch. Operator-approved 2026-10-29 (steve):
+# unblock PR work without stopping Renovate's fixes.
+# KEYED TO THE CURRENT DIGEST, on purpose. Renovate proposes from the registry, not from this file, so
+# it still offers every rebuild. Its PR changes the digest, and the new digest is scanned
+# UNSUPPRESSED, so the PR proves the rebuild clears the CVE rather than inheriting this acceptance. The
+# old entry then matches nothing. That is advisory on a PR (only the scheduled expiry check fails on
+# it), and is the cue to delete the entry.
+# Rebuild ages against renovate.json's 3-day minimumReleaseAge, measured from Docker Hub
+# tag_last_pushed on 2026-10-29, for the Friday 2026-10-30 window:
+#   postgres:18-alpine, postgres:18.6-alpine3.23 (pushed 10-26) and caddy:2.11.7-alpine (10-22): eligible.
+#   httpd:2.4 (10-28 04:52) and curlimages/curl:8.23.0 (10-28 18:01): too new, so the next window.
+#   rustfs/rustfs:1.0.3: no rebuild yet (the hub digest is the one pinned).
+# Whether each rebuild carries brotli 1.2.1-r0 / 1.1.0-2+deb13u1 is NOT verified here. The Renovate
+# PR's own scan answers that.
+- image: '^caddy:2\.11\.7-alpine@sha256:d8542f48d34a'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: '^curlimages/curl:8\.23\.0@sha256:11e64e28c5f5'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: '^httpd:2\.4@sha256:454942557d44'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (libbrotli1 1.1.0-2+b7; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: '^postgres:18-alpine@sha256:77f585114c32'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: '^postgres:18\.6-alpine3\.23@sha256:697c180dbf24'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'
+- image: '^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5'
+  id: '^CVE-2026-111497$'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
+  addedBy: 'claude (operator-approved, steve)'
+  expiry: '2026-11-20'

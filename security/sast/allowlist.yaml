@@ -268,6 +268,22 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-11-20"
 
+# ── graphql-scalars GHSA-x8rm-f576-gq67 (published 2026-10-28, operator-approved 2026-10-29) ───────
+# NOT REACHABLE, measured 2026-10-29 in the shipped dist of the exact versions the lockfile pins. The ReDoS
+# is in GraphQLPhoneNumber's regex, which graphql-js runs only for a value of THAT scalar type. Nothing in
+# our schema has one. @copilotkit/runtime@1.79.1 (npm pack, grep of package/dist) imports only GraphQLJSON
+# and GraphQLJSONObject, and type-graphql@2.0.0-rc.1 re-exports only GraphQLTimestamp and
+# GraphQLDateTimeISO. The fix exists ONLY in 2.0.1 (OSV: introduced 0, fixed 2.0.1). copilotkit declares
+# `graphql-scalars ^1.23.0` and type-graphql's peer range is ^1.22.4, so neither a lockfile refresh nor
+# Renovate can reach it. Forcing 2.x past both ranges would be a bigger risk than an unreachable regex.
+# Remediation is upstream (copilotkit moving to graphql-scalars 2).
+- scanner: "pnpm-audit"
+  id: "GHSA-x8rm-f576-gq67"
+  locationPattern: "^graphql-scalars@1\\.26\\.0$"
+  justification: "ReDoS in the GraphQLPhoneNumber regex only. Not reachable: @copilotkit/runtime@1.79.1 imports only GraphQLJSON/GraphQLJSONObject, and type-graphql@2.0.0-rc.1 only GraphQLTimestamp/GraphQLDateTimeISO (shipped dist grepped 2026-10-29), so no PhoneNumber type exists in our schema for graphql-js to parse. Fixed only in 2.0.1, outside both dependents' ^1 ranges. Version-keyed, so a different graphql-scalars version re-blocks. Time-boxed: re-check the copilotkit range by the expiry."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+
 # ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
 # Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
 # `^braces@` and so, correctly, does not reach this workspace's findings (`<workspace>:pkg@version`).
