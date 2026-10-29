@@ -371,9 +371,11 @@ retention.
   - the new restore procedure (`pg_restore` + untar, then a forge restart, which rebuilds the
     indexes).
   **Done when**: the T004 test and the preflight docs checks pass.
-- [ ] T033 [US4] Run the PR B gate: the full `node --test scripts/__tests__/*.test.mjs` run and
+- [x] T033 [US4] Run the PR B gate: the full `node --test scripts/__tests__/*.test.mjs` run and
   `preflight --gates-only` pass. Open PR B.
-- [ ] T034 [US4] **(operator)** After PR B merges:
+  **Done 2026-10-28**: 1846 pass, 0 fail, 0 skipped; preflight 24 checks passed. PR B is #869, merged
+  as 63bac179 with every required context green.
+- [x] T034 [US4] **(operator)** After PR B merges:
   1. Create the `read:package`-only host token.
   2. Install per the README.
   3. Apply `komodo-cron-retention.sql`.
@@ -388,6 +390,23 @@ retention.
     run with `backup.sh --ack-shrink komodo`. `forge-db`, `forge-data` and `release-apks` are new
     names with no previous size, so they are not compared (no ack is needed), and the old `forge`
     row in `last-good.tsv` is simply never matched again.
+  **Done 2026-10-29**:
+  - Install: 9/9 checksums `OK`, both timers listed, staging on ext4. The package token sees 5
+    `mcm-app-android` versions. `~/mcm-main` already existed and passed the checkout check; `~/mcm-080`
+    is removed.
+  - Komodo: purge job id 5 at `17 * * * *`. The one-off `DELETE` removed 11,816,620 rows in 8.9 s,
+    and `VACUUM FULL` took 1.7 s. `cron.job_run_details` went from 12,083,559 rows and 2180 MB to
+    267,135 rows and 46 MB.
+  - First night (`Result=success`, about 65 s against 8–10 min before):
+    - `forge-db` 188,797,590 and `forge-data` 585,413,120, so the forge totals 774 MB against
+      22,588,610,790 the night before (half the 1.5 GB estimate);
+    - `komodo` 84,853,276 `ack-shrink`;
+    - `release-apks` 639,047,680;
+    - the rest unchanged.
+    `Added to the repository: 937.531 MiB (793.949 MiB stored)`, against 21.107 GiB.
+  - The first package token was echoed into a chat by `cat >` and rotated the same day. The README
+    now uses `stty -echo`.
+
 - [ ] T035 [US4] **(operator)** On the **second** night, paste the same journal line. Expected:
   `Added to the repository` is under 2 GiB (SC-008, FR-019a). A day after T034, re-run quickstart 0c.
   Expected: `min(end_time)` is within 3 days, and the table is under 75 MB.
@@ -405,7 +424,7 @@ retention.
 
 ## Phase 5: US1 + US4 close-out: restore drill, item #830
 
-- [ ] T038 [US1] Write the restore-drill section of the runbook (FR-006, quickstart US1-7):
+- [x] T038 [US1] Write the restore-drill section of the runbook (FR-006, quickstart US1-7):
   - restore `forge-db` into a scratch `postgres:18-alpine`, then count the rows of `repository` and
     `user`;
   - untar `forge-data` into a scratch dir, then
@@ -415,6 +434,15 @@ retention.
   - delete every scratch container and directory afterwards;
   - add a drill log table: date, snapshot id, durations, counts.
   **Done when**: each block in the section is paste-safe (no secret pasted; bounded waits).
+  **Done 2026-10-29**: the runbook's Phase 14 **Restore drill** section has 7 blocks plus the drill log.
+  - The scratch containers use the live containers' own images, with `--network none`, and need no
+    credentials (trust auth, a bare `mongod`).
+  - Both waits give up after 2 minutes, and print the logs if the container exits.
+  - The newest snapshot is chosen by time, because `--latest` groups by path and the staging path is
+    random.
+  - The forge database counts are compared with the live forge's.
+  - `fsck` runs on every repository, not only `mcm.git`.
+  - It warns not to run between 03:00 and 04:00: an open read lock fails the nightly prune.
 - [ ] T039 [US1] **(operator)** Run the restore drill against the first post-PR-B snapshot, and paste
   the output.
   **Done when**: the forge database restores, `fsck` is clean, and the Mongo collection count is

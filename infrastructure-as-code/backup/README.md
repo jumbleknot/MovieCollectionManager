@@ -38,10 +38,12 @@ file empty and mode 600 first, then fill it with `cat`. For the issue token:
 install -m 600 /dev/null ~/backup/forge-issue-token
 ```
 
-Then run this line **on its own**, paste the token, press Enter, then Ctrl-D:
+Then run this line **on its own**, paste the token, press Enter, then Ctrl-D. `stty -echo` keeps the
+token off the screen, so a terminal transcript pasted anywhere afterwards does not carry it (a bare
+`cat >` echoed one into a chat on 2026-10-29, and it had to be rotated):
 
 ```bash
-cat > ~/backup/forge-issue-token
+stty -echo; cat > ~/backup/forge-issue-token; stty echo; echo "written"
 ```
 
 Check it:

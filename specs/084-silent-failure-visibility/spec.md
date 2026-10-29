@@ -66,6 +66,13 @@ front of a person.** None of them is a missing capability — in each case the e
   - **Per-dump sizes, latest snapshot (2026-10-26)**: forge 22,534,842,559 B; **Komodo 2,038,219,396 B
     (2.0 GB — the second-largest; explained below)**; mc-service Mongo 813,102 B; Keycloak 381,023 B;
     BFF Mongo 2,891 B; agent-db 670 B.
+  - **After US4 (first night, 2026-10-29, T034)**:
+    - forge 774,210,710 B (`forge-db` 188,797,590 + `forge-data` 585,413,120);
+    - Komodo 84,853,276 B;
+    - `cron.job_run_details` 46 MB, from 2,180 MB;
+    - `release-apks` 639,047,680 B (new);
+    - `Added to the repository` 937.5 MiB on the first night, from 21.107 GiB the night before.
+    The per-night figure on a typical day is the second night's (T035).
   - **agent-db is empty by design** (operator, 2026-10-27): `agent_db` has zero tables, and its
     7.7 MB size equals an empty `postgres` database. The gateway compiles its graph with an
     in-memory checkpointer (`MemorySaver`), and no Python code reads `AGENT_DB_URL`. The 670-byte
