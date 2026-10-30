@@ -126,7 +126,7 @@ services:
     logging: *obs-logging
 
   langfuse-clickhouse:
-    image: clickhouse/clickhouse-server:26.6@sha256:2c870d77ea76e955fb1c8dad536ad40a1236b6093db0c4966e22d21d4428982b
+    image: clickhouse/clickhouse-server:26.10@sha256:739e099abd1157390960a59e4532d21781d8fde57e6e4151cb920ea02c30b1ce
     container_name: langfuse-clickhouse
     profiles: [observability]
     restart: unless-stopped
@@ -174,7 +174,7 @@ services:
   # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
   # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
   langfuse-rustfs:
-    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     container_name: langfuse-rustfs
     profiles: [observability]
     restart: unless-stopped
@@ -203,7 +203,7 @@ services:
   # secret is referenced as `$$S3_SECRET_KEY` from the container's environment and fed to curl on
   # stdin — never interpolated into argv, where `docker inspect` and `ps` would show it.
   langfuse-rustfs-init:
-    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     container_name: langfuse-rustfs-init
     profiles: [observability]
     depends_on:
@@ -226,7 +226,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.37.0@sha256:57b5ab1ca6619beb180174e2fccce04762470750669d043f544b4726d0582d07
+    image: grafana/otel-lgtm:0.38.1@sha256:0df9bc14142000b161344bd24caf6ddd319b7319055aedaf9b0692b125730af7
     container_name: otel-lgtm
     profiles: [observability]
     restart: unless-stopped
@@ -246,7 +246,7 @@ services:
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
   opa-service:
-    image: openpolicyagent/opa:1.21.3@sha256:22a9db16423b94d2acbd4a94da3bebeb79583ed6a52ac15cad459d3de2dbbc4d
+    image: openpolicyagent/opa:1.21.4@sha256:12420358d3f22a0cd2424ddc44a16e292ecb42825d3dfbca779986006822a3f6
     container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
@@ -267,7 +267,7 @@ services:
 
   # ── Unleash — agent feature flags / kill-switch (config-gated layer, R16) ───────────────────
   unleash-service:
-    image: unleashorg/unleash-server:8.2.0@sha256:5020013b7a9a93c8ed3686d36b5025399714020b3fb5ef41afd84ba37a88c050
+    image: unleashorg/unleash-server:8.2.1@sha256:c6eaaede7242144f1674343ccd94224dab04a48723e8d94746288741f327fd5c
     container_name: unleash-service
     profiles: [observability]
     restart: unless-stopped
