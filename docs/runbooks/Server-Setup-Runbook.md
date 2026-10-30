@@ -1060,7 +1060,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 
 > **As-built — the source of truth is [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/)** (moved into the repository by spec 084 on 2026-10-27; before that it lived only on the host). Install, update and verify it with that directory's [README](../../infrastructure-as-code/backup/README.md). The operator's one-line check that the host runs what the repo says is `cd ~ && sha256sum -c <checkout>/infrastructure-as-code/backup/INSTALLED.sha256`.
 >
-> **Backups.** `restic` → rclone remote (`rclone:nas:homelab/restic`), run by `~/backup/backup.sh` from the `prod`-user `homelab-backup.timer` (nightly 03:30, `Persistent=true`). A whole run takes 8–10 min (measured 2026-10-22..26).
+> **Backups.** `restic` → rclone remote (`rclone:nas:homelab/restic`), run by `~/backup/backup.sh` from the `prod`-user `homelab-backup.timer` (nightly 03:30, `Persistent=true`). A whole run takes about 65 s (2026-10-29), against 8–10 min with the old `forgejo dump` (2026-10-22..26).
 > - **Staging is on disk**, in `~/backup/stage.XXXXXX`, removed on exit. `/tmp` on this host is a 29 G **tmpfs** (RAM): the forge dump outgrew it, which started the outage below. The script refuses tmpfs staging, and `backup.sh --check-staging` shows the filesystem without backing anything up.
 > - **Dumps.** Each runs through `run_dump`. A failure leaves a `DUMP-FAILED-<name>` marker, **the remaining dumps and the upload still run**, and the run exits 1.
 >
@@ -1096,19 +1096,19 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >   - Also not backed up: langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** — all rebuildable.
 > - **Why uncompressed.** restic chunks content-defined and compresses on its own (repository v2, restic 0.18.1). A gzip stream changes after its first changed byte, so the old `forgejo dump --type tar.gz` de-duplicated nothing: **19.8–21.1 GiB added every night**. An uncompressed tar of mostly-unchanged files adds roughly the day's real change.
 > - **Komodo's scheduler history.** pg_cron logs every job run into `cron.job_run_details`, and nothing purged it (11.9 M rows, 2,147 MB on 2026-10-27; ~89,000 rows a day from DocumentDB's own jobs, two of which run every 2 s). The dump excludes the table's rows, and [`komodo-cron-retention.sql`](../../infrastructure-as-code/backup/komodo-cron-retention.sql) installs an hourly pg_cron job, `purge-cron-run-history`, that deletes runs older than 3 days. The table is a vendored extension's bookkeeping, not a service or audit log, so neither log-retention minimum applies (operator decision, 2026-10-27).
-> - **Size, before and after (FR-017, SC-008).** Before: the last old-format run (the induced run of 2026-10-27, 3 min 27 s, peak memory 10.4 GB). After: the first two nights after install (T034/T035).
+> - **Size, before and after (FR-017, SC-008).** Before: the last old-format run (the induced run of 2026-10-27, 3 min 27 s, peak memory 10.4 GB). After: the first night after install (2026-10-29, T034); the per-night figure is the second night's (T035), because the first had nothing in the new formats to de-duplicate against.
 >
->   | Component | Before (bytes) | After |
+>   | Component | Before (bytes) | After (bytes, 2026-10-29) |
 >   |---|---|---|
->   | forge (`forgejo dump`, tar.gz) → `forge-db` + `forge-data` | 22,495,835,451 | *pending* |
->   | `komodo` | 2,069,604,185 | *pending* |
->   | `keycloak` | 381,023 | *pending* |
->   | `agent-db` | 670 | *pending* |
->   | `mc-service-mongo` | 813,102 | *pending* |
->   | `bff-mongo` | 3,022 | *pending* |
->   | `release-apks` | — (not backed up) | *pending* |
->   | `cron.job_run_details` in Komodo's database | 2,147 MB | *pending* |
->   | `Added to the repository` per night | 19.8–21.1 GiB | *pending* (target under 2 GiB) |
+>   | forge (`forgejo dump`, tar.gz) → `forge-db` + `forge-data` | 22,495,835,451 | **774,210,710** (188,797,590 + 585,413,120) |
+>   | `komodo` | 2,069,604,185 | **84,853,276** |
+>   | `keycloak` | 381,023 | 381,023 |
+>   | `agent-db` | 670 | 670 |
+>   | `mc-service-mongo` | 813,102 | 813,102 |
+>   | `bff-mongo` | 3,022 | 3,092 |
+>   | `release-apks` | — (not backed up) | 639,047,680 (5 versions) |
+>   | `cron.job_run_details` in Komodo's database | 2,147 MB (2,180 MB, 12,083,559 rows, on 2026-10-29 before the purge) | **46 MB**, 267,135 rows. The one-off `DELETE` took 8.9 s and `VACUUM FULL` 1.7 s |
+>   | `Added to the repository` per night | 19.8–21.1 GiB | first night 937.5 MiB (793.9 MiB stored); second night *pending* (T035, target under 2 GiB) |
 >
 >   **To measure again**, in a prod session: the dump sizes and verdicts are in each night's journal, and the forge's and Komodo's sources can be sized directly:
 >   ```bash
@@ -1139,6 +1139,78 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 > 3. Database: `restic dump --tag homelab latest <path>/forge-db.dump | docker exec -i forgejo-forgejo-db-1 sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner'`. The custom format is dependency-ordered, so one pass suffices (unlike the old xorm SQL below).
 > 4. Data: `restic dump --tag homelab latest <path>/forge-data.tar | docker run --rm -i -v forgejo_forgejo-data:/data alpine tar -xf - -C /data`.
 > 5. Start the forge: `docker compose -p forgejo -f ~/forgejo/compose.yaml start forgejo`. It rebuilds the indexes and queues on start (code search re-indexes), users sign in again, and CI artifacts from before the restore show as missing.
+>
+> **Restore drill (spec 084 FR-006). Run it after any change to what the backup carries, and at least quarterly.** It restores the three dumps that matter most into scratch containers and a scratch directory, and checks each one. It never touches a live service: the scratch containers run with `--network none`, and every block reads the live containers only to copy their image or count their rows. Run it in a prod session, **not between 03:00 and 04:00**: restic's `forget --prune` needs an exclusive lock, so a drill still reading at 03:30 fails that night's run (loudly, through the alert). It needs about 2 GB free under `~/backup` and downloads about 1.5 GB from the NAS. Each block sets its own variables, so a new shell is fine.
+>
+> 1. Pick the newest snapshot and find the three dumps in it. Expected: the free space, then `<short id> <time>`, then three paths under the same `stage.XXXXXX`.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock RESTIC_REPOSITORY=rclone:nas:homelab/restic RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
+>    D=~/backup/restore-drill; mkdir -p "$D"; df -h "$D" | tail -1
+>    restic snapshots --tag homelab --json | python3 -c 'import json,sys; s=max(json.load(sys.stdin), key=lambda x: x["time"]); print(s["short_id"], s["time"][:19])' | tee "$D/snapshot"
+>    restic ls "$(cut -d' ' -f1 "$D/snapshot")" | grep -E '/stage\.[^/]+/(forge-db\.dump|forge-data\.tar|mc-service-mongo\.archive\.gz)$' | tee "$D/paths"
+>    ```
+>    (`--latest 1` is no help here: it picks the newest snapshot per path, and the staging dir's name is random.)
+> 2. Start a scratch Postgres from the forge database's own image. The wait gives up after 2 minutes, and if the container exits it prints the container's log. It checks over TCP because the image's first-boot server listens only on the socket and then restarts. Expected: `image …`, then `127.0.0.1:5432 - accepting connections`.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+>    IMG=$(docker inspect -f '{{.Config.Image}}' forgejo-forgejo-db-1); echo "image $IMG"
+>    docker run -d --name drill-pg --network none -e POSTGRES_HOST_AUTH_METHOD=trust "$IMG" >/dev/null
+>    for i in $(seq 60); do docker exec drill-pg pg_isready -h 127.0.0.1 -U postgres -q 2>/dev/null && break; [ "$(docker inspect -f '{{.State.Running}}' drill-pg)" = true ] || { docker logs --tail 20 drill-pg; break; }; sleep 2; done; docker exec drill-pg pg_isready -h 127.0.0.1 -U postgres
+>    ```
+> 3. Restore `forge-db`, then compare its counts with the live forge. Expected:
+>    - `rc=0 0 secs=… errors=0`;
+>    - two `repositories|users|action runs` lines. `restored` equals `live`, except where something was created since the snapshot (action runs almost always are).
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock RESTIC_REPOSITORY=rclone:nas:homelab/restic RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
+>    D=~/backup/restore-drill; SNAP=$(cut -d' ' -f1 "$D/snapshot"); P=$(grep '/forge-db\.dump$' "$D/paths")
+>    docker exec drill-pg createdb -h 127.0.0.1 -U postgres forgejo
+>    t=$SECONDS; restic dump "$SNAP" "$P" | docker exec -i drill-pg pg_restore -h 127.0.0.1 -U postgres -d forgejo --no-owner --no-acl 2> "$D/pg_restore.err"; echo "rc=${PIPESTATUS[*]} secs=$((SECONDS-t)) errors=$(grep -c . "$D/pg_restore.err")"; head -5 "$D/pg_restore.err"
+>    Q='select (select count(*) from repository), (select count(*) from "user"), (select count(*) from action_run)'
+>    echo "restored: $(docker exec drill-pg psql -h 127.0.0.1 -U postgres -d forgejo -Atc "$Q")"
+>    echo "live:     $(docker exec forgejo-forgejo-db-1 sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"' sh "$Q")"
+>    ```
+> 4. Untar `forge-data`, then check every repository's history is complete. Expected:
+>    - `rc=0 0 secs=…`;
+>    - the three paths listed: `app.ini`, `jwt`, `mcm.git`;
+>    - `fsck ok=<n> bad=0`, where `<n>` is the restored repository count plus any wikis.
+>
+>    A `FAILED` line names a repository whose refs point past its objects. That is a push during the copy (the R7 exposure); a run on the next night's snapshot tells it from damage.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock RESTIC_REPOSITORY=rclone:nas:homelab/restic RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
+>    D=~/backup/restore-drill; SNAP=$(cut -d' ' -f1 "$D/snapshot"); P=$(grep '/forge-data\.tar$' "$D/paths"); F="$D/forge-data"; mkdir -p "$F"
+>    t=$SECONDS; restic dump "$SNAP" "$P" | tar -xf - -C "$F"; echo "rc=${PIPESTATUS[*]} secs=$((SECONDS-t))"
+>    ls -d "$F"/gitea/conf/app.ini "$F"/gitea/jwt "$F"/git/repositories/jumbleknot/mcm.git
+>    ok=0; bad=0; t=$SECONDS; for r in $(find "$F/git/repositories" -mindepth 2 -maxdepth 2 -type d -name '*.git'); do if git -C "$r" fsck --connectivity-only --no-progress >/dev/null 2>>"$D/fsck.err"; then ok=$((ok+1)); else bad=$((bad+1)); echo "FSCK FAILED: ${r#"$F"/}"; fi; done; echo "fsck ok=$ok bad=$bad secs=$((SECONDS-t))"
+>    ```
+> 5. Start a scratch Mongo from mc-service's own image. The wait is bounded the same way as step 2. Expected: `image …`, then `1`.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+>    IMG=$(docker inspect -f '{{.Config.Image}}' mc-service-store-mongo); echo "image $IMG"
+>    docker run -d --name drill-mongo --network none "$IMG" >/dev/null
+>    for i in $(seq 60); do [ "$(docker exec drill-mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' 2>/dev/null)" = 1 ] && break; [ "$(docker inspect -f '{{.State.Running}}' drill-mongo)" = true ] || { docker logs --tail 20 drill-mongo; break; }; sleep 2; done; docker exec drill-mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok'
+>    ```
+> 6. Restore `mc-service-mongo`, then count. Expected:
+>    - `rc=0 0 secs=…`;
+>    - `… document(s) restored successfully. 0 document(s) failed to restore.`;
+>    - one `<db>.<collection>: <documents>` line per collection, then `collections <n>` with `<n>` above 0.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock RESTIC_REPOSITORY=rclone:nas:homelab/restic RESTIC_PASSWORD_FILE=$HOME/.config/restic-password
+>    D=~/backup/restore-drill; SNAP=$(cut -d' ' -f1 "$D/snapshot"); P=$(grep '/mc-service-mongo\.archive\.gz$' "$D/paths")
+>    t=$SECONDS; restic dump "$SNAP" "$P" | docker exec -i drill-mongo mongorestore --archive --gzip 2> "$D/mongorestore.err"; echo "rc=${PIPESTATUS[*]} secs=$((SECONDS-t))"; tail -1 "$D/mongorestore.err"
+>    docker exec drill-mongo mongosh --quiet --eval 'let n = 0; db.adminCommand({listDatabases: 1}).databases.filter(d => !["admin", "local", "config"].includes(d.name)).forEach(d => { const s = db.getSiblingDB(d.name); s.getCollectionNames().forEach(c => { n++; print(d.name + "." + c + ": " + s.getCollection(c).countDocuments()); }); }); print("collections " + n)'
+>    ```
+> 7. Clean up, but only after the output above is recorded. Expected: no container names, `No such file or directory`, then `cleanup done`.
+>    ```bash
+>    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+>    docker rm -f drill-pg drill-mongo >/dev/null; rm -rf ~/backup/restore-drill
+>    docker ps -a --filter name=drill- --format '{{.Names}}'; ls -d ~/backup/restore-drill 2>&1; echo "cleanup done"
+>    ```
+>
+> **Drill log.** Add one row per drill. A drill passes when the forge database restores with no errors, `fsck` reports `bad=0`, and Mongo has more than 0 collections.
+>
+> | Date | Snapshot | forge-db: secs, repos/users | forge-data: secs, fsck ok/bad | mc-service-mongo: secs, collections | Result |
+> |---|---|---|---|---|---|
+> | — | — | — | — | — | no drill yet against the spec 084 US4 format |
 >
 > **Restore (Forgejo Postgres from an old `forgejo dump` snapshot, before spec 084 US4 — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
 >
