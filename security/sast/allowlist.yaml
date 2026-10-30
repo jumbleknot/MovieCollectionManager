@@ -268,6 +268,41 @@
   addedBy: "claude (operator-approved, steve)"
   expiry: "2026-11-20"
 
+# ── graphql-scalars GHSA-x8rm-f576-gq67 (published 2026-10-28, operator-approved 2026-10-29) ───────
+# NOT REACHABLE, measured 2026-10-29 in the shipped dist of the exact versions the lockfile pins. The ReDoS
+# is in GraphQLPhoneNumber's regex, which graphql-js runs only for a value of THAT scalar type. Nothing in
+# our schema has one. @copilotkit/runtime@1.79.1 (npm pack, grep of package/dist) imports only GraphQLJSON
+# and GraphQLJSONObject, and type-graphql@2.0.0-rc.1 re-exports only GraphQLTimestamp and
+# GraphQLDateTimeISO. The fix exists ONLY in 2.0.1 (OSV: introduced 0, fixed 2.0.1). copilotkit declares
+# `graphql-scalars ^1.23.0` and type-graphql's peer range is ^1.22.4, so neither a lockfile refresh nor
+# Renovate can reach it. Forcing 2.x past both ranges would be a bigger risk than an unreachable regex.
+# Remediation is upstream (copilotkit moving to graphql-scalars 2).
+- scanner: "pnpm-audit"
+  id: "GHSA-x8rm-f576-gq67"
+  locationPattern: "^graphql-scalars@1\\.26\\.0$"
+  justification: "ReDoS in the GraphQLPhoneNumber regex only. Not reachable: @copilotkit/runtime@1.79.1 imports only GraphQLJSON/GraphQLJSONObject, and type-graphql@2.0.0-rc.1 only GraphQLTimestamp/GraphQLDateTimeISO (shipped dist grepped 2026-10-29), so no PhoneNumber type exists in our schema for graphql-js to parse. Fixed only in 2.0.1, outside both dependents' ^1 ranges. Version-keyed, so a different graphql-scalars version re-blocks. Time-boxed: re-check the copilotkit range by the expiry."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+
+# ── decode-uri-component GHSA-qr28-fpjm-wq7f (published 2026-10-29 16:41Z, operator-approved the same day) ──
+# A quadratic-time DoS on malformed percent-encoded input. The only path to it is expo-router@57.0.29 >
+# query-string@7.1.3 > decode-uri-component@0.2.2. In the packed expo-router 57.0.29, query-string is
+# required only by the navigation linking code (fork/getStateFromPath*, fork/getPathFromState*,
+# react-navigation/core/getStateFromPath + getPathFromState), which turns a URL into navigation state.
+# That runs in the CLIENT (browser or device). Our app.json has `web.output: "server"` and no
+# server-rendering option, and nothing first-party imports query-string. So no BFF request reaches it,
+# by reading the code, not by a test: a crafted link can at worst stall the tab of whoever opens it.
+# The fix is 0.5.1 (2026-10-23). It is ESM-only ("type": "module"), and query-string@7 require()s it
+# and calls the export as a function. Even with Node 24's require(esm), that returns the module
+# namespace, not the function, so an override would break URL parsing in every client. Remediation is
+# upstream: Expo moving to a newer query-string. Renovate does not bump RN/Expo here.
+- scanner: "pnpm-audit"
+  id: "GHSA-qr28-fpjm-wq7f"
+  locationPattern: "^decode-uri-component@0\\.2\\.2$"
+  justification: "Quadratic-time DoS on malformed percent-encoded input. Only path: expo-router@57.0.29 > query-string@7.1.3, used solely by the client-side URL-to-navigation-state linking code. web.output is server with no server rendering, so no BFF request reaches it (by reading the packed expo-router 2026-10-29). Fix 0.5.1 is ESM-only and query-string@7 calls a CommonJS function export, so an override breaks client URL parsing. Version-keyed, so another version re-blocks. Time-boxed: re-check expo-router's query-string range by the expiry."
+  addedBy: "claude (operator-approved, steve)"
+  expiry: "2026-11-20"
+
 # ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
 # Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
 # `^braces@` and so, correctly, does not reach this workspace's findings (`<workspace>:pkg@version`).
