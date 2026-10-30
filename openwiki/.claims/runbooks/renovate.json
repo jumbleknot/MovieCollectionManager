@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:77c26cbada8a729e4f8ea50c3cb88b060a8b5b96ede3fb2d1b91ea89d085a142",
+  "pageVersion": "sha256:d9b9a0d5173f53e4f54be3c27352a3741c2322f3415e3d04b13614ef70cc288d",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -64,7 +64,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
+          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
@@ -82,7 +82,7 @@
         },
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:6c6f753e17bcee0e67fe00179538e8cecdf4893eeec74d967100ec8ef8d97905"
+          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
         },
         {
           "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml",
@@ -284,7 +284,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
         },
         {
           "resource": "repo://agents/movie-assistant/.python-version",
@@ -604,7 +604,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:e574a76a2f72c5adbb5f0a99d54d5e11fec51d9c758117c3aecc932b2b074407"
+          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
         },
         {
           "resource": "repo://.forgejo/workflows/renovate.yml",
@@ -725,6 +725,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T23:24:20.987Z"
+    "at": "2026-10-30T00:25:37.413Z"
   }
 }

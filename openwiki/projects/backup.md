@@ -24,8 +24,8 @@ sources:
     resource: repo://infrastructure-as-code/backup/homelab-backup-staleness.timer
   - id: openwiki-source-1be01bc0222d08bf89a6ee08
     resource: repo://infrastructure-as-code/backup/homelab-backup.service
-  - id: openwiki-source-54879e1de701bf435b3bc761
-    resource: repo://infrastructure-as-code/backup/INSTALLED.sha256
+  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
+    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-5560229e88c2aa91002a3238
@@ -40,8 +40,14 @@ sources:
     resource: repo://scripts/__tests__/backup-units.test.mjs
   - id: openwiki-source-95bfea7e625c030a4806299d
     resource: repo://scripts/__tests__/host-shims.mjs
+  - id: openwiki-source-715432c2fa445bfbb51b85ee
+    resource: repo://scripts/__tests__/komodo-cron-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66
     resource: repo://scripts/backup-install-manifest.mjs
+  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
+    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
+  - id: openwiki-source-75f8add1789d37f1c762c383
+    resource: repo://specs/084-silent-failure-visibility/quickstart.md
   - id: openwiki-source-e9740ee34eee91e33cfb77d0
     resource: repo://specs/084-silent-failure-visibility/research.md
   - id: openwiki-source-e4b41dde0467ae4ba999bc66

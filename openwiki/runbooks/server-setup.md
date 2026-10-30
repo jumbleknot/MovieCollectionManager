@@ -17,8 +17,14 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-c56aca4c7fefae967d931edd
+    resource: repo://infrastructure-as-code/backup/backup-staleness.sh
   - id: openwiki-source-78ec32b51a25a8fb66d5b292
     resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-1be01bc0222d08bf89a6ee08
+    resource: repo://infrastructure-as-code/backup/homelab-backup.service
+  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
+    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -47,10 +53,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-27T23:08:42.159Z
+    at: 2026-10-30T00:25:37.413Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -201,6 +207,31 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     [`infrastructure-as-code/backup/backup.sh`](../../infrastructure-as-code/backup/backup.sh), so it
     is reviewed and the host copy is checked against the repository rather than drifting. The same
     obligation is what put the Nx-cache store's config directory on the `restic backup` path list.
+    The list is now **eight** dumps — `forge-db`, `forge-data`, `komodo`, `keycloak`, `agent-db`,
+    `mc-service-mongo`, `bff-mongo` and `release-apks` — each written through `run_dump` so that one
+    failure cannot skip the rest, each checked in its own format against a minimum and against last
+    night's size, and each verdict recorded in a `dump-manifest.tsv` that travels **inside** the
+    snapshot. Two of the eight carry a shape that needs explaining: `forge-data` is an **uncompressed**
+    tar (a gzip stream changes from its first changed byte, so the old `forgejo dump --type tar.gz`
+    de-duplicated nothing and added 19.8–21.1 GiB to the repository every night), and `komodo`'s dump
+    excludes `cron.job_run_details` — pg_cron's own run history, 11.9 M rows and 2,147 MB by
+    2026-10-27 with nothing purging it — with `komodo-cron-retention.sql` installing an hourly job that
+    deletes runs older than 3 days and a **500 MB maximum** on the dump so the history's return alerts
+    (`komodo-oversize`) instead of silently re-inflating it.
+  - **A backup that fails silently is the failure mode this phase is now built against.** The original
+    script failed every night from **2026-07-27 to 2026-10-22** and nothing said so: dumps were staged
+    in `/tmp`, which on this host is a **29 G tmpfs** (RAM), and the forge dump — then still including
+    the 100 G+ registry — outgrew it with `write /dev/stdout: no space left on device`. The forge dump
+    was the only step with no fallback, so under `set -e` it took every database dump and the offsite
+    upload down with it, and the journal's `Failed with result 'exit-code'` was read by nobody; the
+    failure was found by chance on 2026-10-22. Staging is therefore on disk now — the script refuses a
+    tmpfs staging directory, and `backup.sh --check-staging` prints the filesystem without backing
+    anything up — and a silent failure is made impossible by two **independent** paths: the unit's
+    `OnFailure=` alert on a failed or hung run, and a separate 6-hourly staleness check that reads the
+    newest snapshot **from the repository itself** and alerts past **36 h**. Both open or comment on
+    one backlog item, titled `Prod backup: failed or stale`. The mechanics, the alerting and the
+    restore procedure are [Prod host backup](../projects/backup.md) and the
+    [Backups part of Phase 14](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups).
 - **15 — Wire the pipeline.** The trigger ordering, digest-by-git promotion and Komodo ResourceSync
   deploy; the current shape is documented in
   [CI/CD pipeline](../projects/ci-cd-pipeline.md) and

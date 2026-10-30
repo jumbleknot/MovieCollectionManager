@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
     resource: repo://.forgejo/workflows/renovate.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
@@ -37,6 +39,8 @@ sources:
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-0af8f352da052e268e893ea2
@@ -57,10 +61,10 @@ sources:
     resource: repo://security/infra-images/severity-map.yaml
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-30T00:25:37.413Z
 ---
 
 # Infra-image CVE scanning
@@ -138,6 +142,11 @@ the gate is red — and neither can gate anything.
 
 Exit codes are deliberate: `0` ok, `1` scan/gate-relevant failure (fail-closed), `2` bad args or
 config error — including the unresolved-`REGISTRY_HOST` refusal below.
+
+Reports land in the gitignored `security/infra-images/reports/`, and CI uploads that directory as the
+`infra-image-scan-report` artifact with a 14-day retention — a diagnostic, not a record (spec 084
+FR-019c). The upload is `always()`-guarded inside the scan path, so a red sweep still leaves its
+findings readable.
 
 ## Gotchas
 
@@ -293,7 +302,7 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   runs the wrapper against stubs so the assertion is about what it does rather than how it is spelled,
   and requires at least one matching service per file so a rename cannot make every assertion pass
   vacuously.
-- **What the allowlist actually holds today, and how to read the cohorts.** Nine entries in three
+- **What the allowlist actually holds today, and how to read the cohorts.** Fifteen entries in four
   cohorts. Two are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
   `postgres:18\.6-alpine3\.23` and `postgres:18-alpine` (the shipped binary carrying it is
   `usr/local/bin/gosu`) — kept because no reachable tag clears it, with the measurement recorded per
@@ -305,18 +314,29 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   PR #817 — and lives below with the rest of that cohort. With the ceiling gone, a mongodb MAJOR now
   rides the same successor gate as vault's — a dashboard tick — while patch and minor stay automatic
   and scan-gated.
-  Five are **time-boxed to `2026-11-20`** and are the ones that will red the weekly expiry check
-  first: the 2026-10-23 operator-approved `CVE-2026-114406` (ca-certificates) cohort on
-  `grafana/otel-lgtm:0\.37\.0`, `langfuse/langfuse:4\.68\.0`, `langfuse/langfuse-worker:4\.68\.0` and
+  Five are **time-boxed to `2026-11-20`** and are the 2026-10-23 operator-approved
+  `CVE-2026-114406` (ca-certificates) cohort on `grafana/otel-lgtm:0\.37\.0`,
+  `langfuse/langfuse:4\.68\.0`, `langfuse/langfuse-worker:4\.68\.0` and
   `mongodb/mongodb-community-server:9\.0-ubi9`, plus `@sentry/nextjs` `CVE-2026-114139` on
   `langfuse/langfuse:4\.68\.0`. All five flag EXPIRING from `2026-11-06`, which is the re-check date.
   Two more are time-boxed to `2026-12-01`:
   `opensearchproject/opensearch:3@sha256:bcc17975…` (CVE-2026-75595, netty) and
   `^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a` (CVE-2026-90711, proxy-addr). Both were
   re-measured, not re-dated, when renewed, and both are deliberately keyed so that a rebuild or an
-  upgrade discharges them. A comment block above an absent entry is the file's history, not a live
-  suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the
-  `next` pair) were deleted once a scan showed the fix had landed, and their prose was kept.
+  upgrade discharges them. The newest six are the **`CVE-2026-111497` brotli cohort** (operator-approved
+  2026-10-29), also time-boxed to `2026-11-20`, and they are the file's only entries keyed to the
+  **digest alone** with no version in the key: `^caddy:2\.11\.7-alpine@sha256:d8542f48d34a`,
+  `^curlimages/curl:8\.23\.0@sha256:11e64e28c5f5`, `^httpd:2\.4@sha256:454942557d44`,
+  `^postgres:18-alpine@sha256:77f585114c32`, `^postgres:18\.6-alpine3\.23@sha256:697c180dbf24` and
+  `^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5`. That keying is the point: Renovate proposes from the
+  registry, not from this file, so it still offers every rebuild, the new digest is scanned
+  **unsuppressed**, and the PR itself proves whether the rebuild carries the fixed brotli rather than
+  inheriting the acceptance — while the old entry stops matching. Reachability was not measured here;
+  the entry is time-boxed instead. An entry that then matches nothing is advisory on a PR and fails
+  only the scheduled expiry check, which is the cue to delete it. A comment block above an absent entry
+  is the file's history, not a live suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the
+  otel-lgtm amqp091-go trio, the `next` pair) were deleted once a scan showed the fix had landed, and
+  their prose was kept.
 - **The 2026-10-23 cohort is the file's normal shape: advisories landing on images nobody changed.**
   `CVE-2026-114406` (base-image `ca-certificates`), the `next` GHSAs and `CVE-2026-114139`
   (`@sentry/nextjs`) were published against images already running in prod, and turned

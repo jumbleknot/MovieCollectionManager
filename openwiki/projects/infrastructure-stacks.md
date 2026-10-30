@@ -25,10 +25,16 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-78ec32b51a25a8fb66d5b292
+    resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
+    resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
     resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - id: openwiki-source-34479801b303c2005c7d1de1
+    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
@@ -39,6 +45,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
