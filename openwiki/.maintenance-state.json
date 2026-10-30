@@ -1,79 +1,73 @@
 {
-  "coveredCommit": "a4b1cdfa3dbb13984c7c7bcf056719e2455188d2",
-  "coveredAt": "2026-10-27T23:53:21.978Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "3824ef4fc4c58f384c972aba9fbf47428780eb35",
+  "coveredAt": "2026-10-30T00:57:25.226Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
-      "area": "runbooks",
+      "area": "projects",
       "pages": [
-        "server-setup.md"
+        "backup.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md"
+      "reason": "source changed: infrastructure-as-code/backup/README.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/backup.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 870,
-    "headCommit": "c954029dfbbcf695fa94cab5c8311c9a7e9d0408",
+    "number": 873,
+    "headCommit": "c9f8884389a79545ef4c39b0e16807c8648ce06b",
     "markerBefore": "a4b1cdfa3dbb13984c7c7bcf056719e2455188d2",
     "slices": [
       {
-        "area": "projects",
+        "area": "runbooks",
         "pages": [
-          "backup.md"
+          "server-setup.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: infrastructure-as-code/backup/README.md"
+        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-28T03:09:44.949Z"
+    "updatedAt": "2026-10-30T00:57:25.643Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 5,
-    "elapsedSeconds": 2203,
-    "stoppedAtBudget": false
+    "pagesWritten": 8,
+    "elapsedSeconds": 1912,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-28T03:09:44.579Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 507,
+    "calls": 189,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2368028,
-    "cached": 49759874,
+    "uncached": 725408,
+    "cached": 17233452,
     "cacheWrite": 0,
-    "output": 918154,
-    "reasoning": 803313,
-    "ms": 7145178,
-    "estCostUsd": 2.1108,
+    "output": 391795,
+    "reasoning": 326407,
+    "ms": 3087767,
+    "estCostUsd": 0.7912,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/backup.md",
         "runbooks/server-setup.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 2.1108,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 0.7912,
       "rateLimited": null
     }
   ],
