@@ -67,11 +67,10 @@
 # for every compose / renovate.json PR (#836, #837). Keycloak is remediated by a same-version digest
 # refresh in PR #838; the rest have no clean upstream today (scan table in PR #838). Time-boxed on purpose:
 # the 14-day expiry warning makes the weekly sweep red from 2026-11-06 — that is the re-check date.
-- image: 'grafana/otel-lgtm:0\.37\.0'
-  id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream otel-lgtm 0.38.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Re-keyed 0.36.0 -> 0.37.0 with the Renovate bump (PR #836, 2026-10-24); same CVE, same expiry. Delete the entry once the image is bumped to a clean rebuild.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
+# grafana/otel-lgtm:0\.37\.0 CVE-2026-114406: entry DISCHARGED 2026-10-30 (PR #878), not re-keyed. The
+# Renovate bump to 0.38.1 (sha256:0df9bc14…730af7) is a clean rebuild: Trivy 0.74.0, gate pipeline
+# (run 6190), reports the CVE neither blocking nor allowlisted on it. A re-keyed entry would match
+# nothing and fail guard (063); if the advisory returns, it re-blocks.
 - image: 'langfuse/langfuse:4\.68\.0'
   id: 'CVE-2026-114406'
   justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
@@ -361,10 +360,13 @@
 # (item #711) after re-measuring the same digest: still no fixed release upstream, still the boolean
 # `trust proxy`. Its expiry moved to 2026-12-01, the same date as the other open cohorts, so they are
 # re-triaged together.
-- image: '^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a'
+# RE-KEYED 2026-10-30 8.2.0 -> 8.2.1 with the Renovate bump (PR #878), after re-measuring the NEW digest
+# (sha256:c6eaaede7242): still the boolean `trust proxy`, still proxy-addr 2.0.7 only. 8.3.0/8.3.1 exist
+# upstream but were inside the 3-day minimumReleaseAge at the 2026-10-30 window; same CVE, same expiry.
+- image: '^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242'
   id: 'CVE-2026-90711'
-  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in this exact image 2026-10-09 and RE-MEASURED 2026-10-10 (item #711): dist/lib/app.js line 43 sets `trust proxy` to the boolean true, unconditionally, and it is the only `trust proxy` in /unleash/dist, so Express never has proxy-addr compile a subnet. proxy-addr is 2.0.7 everywhere in the image. 8.2.0 (2026-09-08) is still the newest upstream release, so no fixed image exists; delete when Renovate proposes one, do not renew without re-measuring.'
-  addedBy: 'renovate-window-2026-10-09; renewed 2026-10-10 (item #711)'
+  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in 8.2.0 (sha256:5020013b7a9a) 2026-10-09, re-measured 2026-10-10 (item #711), and RE-MEASURED IN THIS EXACT 8.2.1 IMAGE 2026-10-30 (PR #878, operator-approved): dist/lib/app.js line 43 sets `trust proxy` to the boolean true, unconditionally, and it is the only `trust proxy` in /unleash/dist, so Express never has proxy-addr compile a subnet. proxy-addr is 2.0.7 everywhere in the image (node_modules/.pnpm/proxy-addr@2.0.7 is the only copy). 8.3.0 (2026-10-27) / 8.3.1 (2026-10-29) exist upstream but sat inside the 3-day minimumReleaseAge at the 2026-10-30 window; delete when Renovate moves unleash to a build that clears it, do not renew without re-measuring.'
+  addedBy: 'renovate-window-2026-10-09; renewed 2026-10-10 (item #711); re-keyed 2026-10-30 (PR #878, operator-approved)'
   expiry: '2026-12-01'
 
 
