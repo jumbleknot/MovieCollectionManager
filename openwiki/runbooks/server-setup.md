@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup whose post-spec-084 restore format stays unproven until the restore drill runs, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, backups, runbook]
 sources:
@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T01:33:31.256Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-30T00:25:37.413Z
+    at: 2026-10-30T01:33:31.256Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -186,11 +186,31 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   stacks themselves — and the one-time stateful cutovers they have carried, each with its own ordering
   and rollback window — are [Prod control tower](./prod-control-tower.md).
 - **14 — Backups, disaster recovery and UPS.** An encrypted, offsite, scheduled snapshot of every
-  stateful service on a timer, a *proven* restore procedure, a graceful-shutdown drain unit that stops
-  containers cleanly before the runtime is killed, and UPS + NUT for power loss. The runbook warns
-  explicitly that this host-level DR is not the same thing as the application's per-user collection
-  backups — [Prod host backup](../projects/backup.md) is the snapshot side of that pair, and
-  [Per-user collection backups](./backups.md) the application side.
+  stateful service on a timer, a restore procedure proven only for the pre-spec-084 dump format,
+  a graceful-shutdown drain unit that stops containers cleanly before the runtime is killed, and UPS +
+  NUT for power loss. The runbook warns explicitly that this host-level DR is not the same thing as the
+  application's per-user collection backups — [Prod host backup](../projects/backup.md) is the snapshot
+  side of that pair, and [Per-user collection backups](./backups.md) the application side.
+  - **Only the old restore is proven, and the drill log is the record.** What the host has actually
+    restored is the **old** `forgejo dump` format (2026-07-05) — xorm-generated SQL that is *not*
+    dependency-ordered, so it is loaded twice with errors ignored. The format the backup now writes,
+    `forge-db` (a `pg_dump -Fc` custom dump, dependency-ordered, so one `pg_restore` pass suffices) plus
+    `forge-data` (the uncompressed data tar), is **unproven**: the runbook's restore procedure for it is
+    explicitly marked as unproven until the restore drill has run against it, and the drill log's only
+    row says no drill has yet been done against the spec-084 format. Read the
+    [Phase 14 section of the runbook](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups)
+    for both procedures and for the drill log that records which is proven.
+  - **The drill has one hard ordering constraint and a measured cost.** It restores the three dumps that
+    matter most — `forge-db`, `forge-data` and `mc-service-mongo` — into scratch containers and a scratch
+    directory, and never touches a live service: the scratch containers run with `--network none`, and
+    every block reads the live containers only to copy their image or count their rows. It must **not**
+    run between **03:00 and 04:00**, because restic's `forget --prune` needs an exclusive lock, so a
+    drill still reading at 03:30 fails that night's backup run — loudly, through the alert. It wants
+    about 2 GB free under `~/backup` and downloads about 1.5 GB from the NAS, and the rule is to run it
+    after any change to what the backup carries and at least quarterly.
+  - **The new format is also much faster.** A whole nightly run takes about **65 s** (2026-10-29),
+    against **8–10 min** with the old `forgejo dump` (2026-10-22..26), because the forge is now a
+    custom-format database dump plus an uncompressed data tar instead of one large `tar.gz`.
   - **The script is no longer host-only state.** Spec 084 (2026-10-27) moved the whole backup into
     [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/), which is now the source of
     truth: `backup.sh`, `backup-alert.sh`, `backup-staleness.sh`, the five systemd units, a README with
@@ -229,8 +249,8 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     anything up — and a silent failure is made impossible by two **independent** paths: the unit's
     `OnFailure=` alert on a failed or hung run, and a separate 6-hourly staleness check that reads the
     newest snapshot **from the repository itself** and alerts past **36 h**. Both open or comment on
-    one backlog item, titled `Prod backup: failed or stale`. The mechanics, the alerting and the
-    restore procedure are [Prod host backup](../projects/backup.md) and the
+    one backlog item, titled `Prod backup: failed or stale`. The mechanics and the alerting are
+    [Prod host backup](../projects/backup.md); the restore procedures and the drill are the
     [Backups part of Phase 14](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups).
 - **15 — Wire the pipeline.** The trigger ordering, digest-by-git promotion and Komodo ResourceSync
   deploy; the current shape is documented in
