@@ -1028,6 +1028,18 @@ omitted it and `290-renovate-runbook-dispatch-and-stale-branches` survived the m
 deleted by hand. **So a session merging through the API must pass the flag every time** — the repo
 setting will not cover for it.
 
+**That rule did not hold, so it is no longer the mechanism (item #879).** By 2026-10-30, 33 fully
+merged branches with no open PR had accumulated on `origin`, back to 2026-09-26, and the four
+`renovate/lock-file-maintenance*` heads left by PRs #832–#835 produced four empty, red PRs
+(#874–#877) in that day's window. The backstop is now
+[`.forgejo/workflows/branch-reaper.yml`](../../.forgejo/workflows/branch-reaper.yml): on every push to
+`main` and daily at 02:30 UTC — ahead of Renovate's nightly and Friday runs — it deletes a branch only
+when its tip is an ancestor of `main`, it heads no open PR, it is not exempt (`main`,
+`openwiki-maintenance`), and its tip is older than 6 h. The open-PR read fails closed and each delete
+is leased to the classified sha. Still pass the flag: it removes the branch at once, where the reaper
+may take until the next run. To see what it would do, run
+`node scripts/reap-merged-branches.mjs` — a bare invocation deletes nothing.
+
 This is not housekeeping. A surviving `renovate/*` branch makes Renovate reuse a stale commit instead
 of regenerating, which is how an empty PR gets opened
 ([renovate.md §2](./renovate.md), item #290) — and `renovate/lock-file-maintenance` in particular is
