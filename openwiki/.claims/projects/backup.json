@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7793b48604edd4e4bb7de15a6bc95dc9f07746b63bfbe322358004739f6344be",
+  "pageVersion": "sha256:e8fac0d1d9ac5adec596438fd01c4363ed59606e070f8b45ad6ed8a58e9d4c9d",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
+          "version": "repo-file-v1:sha256:02d6797f0fd8b310fc69ffe8946eeaa22f639a106fcf4de547f19f88c05655fe"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -90,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
+          "version": "repo-file-v1:sha256:02d6797f0fd8b310fc69ffe8946eeaa22f639a106fcf4de547f19f88c05655fe"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -108,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
+          "version": "repo-file-v1:sha256:02d6797f0fd8b310fc69ffe8946eeaa22f639a106fcf4de547f19f88c05655fe"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
@@ -164,7 +164,7 @@
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/research.md",
-          "version": "repo-file-v1:sha256:1ae6f9d6330e8b1549f29ba520265e97bf20adc0e24fe4d01ca06e8f227fb746"
+          "version": "repo-file-v1:sha256:364b287dda230cbc7169377dac7d1947cc8ee53b30c62d015c3628b2c4f7a8f3"
         }
       ]
     },
@@ -234,7 +234,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
+          "version": "repo-file-v1:sha256:02d6797f0fd8b310fc69ffe8946eeaa22f639a106fcf4de547f19f88c05655fe"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -248,11 +248,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
+          "version": "repo-file-v1:sha256:02d6797f0fd8b310fc69ffe8946eeaa22f639a106fcf4de547f19f88c05655fe"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
-          "version": "repo-file-v1:sha256:9807738fed118c5af3a51fa23fb9d78734a398505a05e3ef17fbbf6f612babca"
+          "version": "repo-file-v1:sha256:cc1ff8c7abc13853f1a1d51f4f9e2d3150d59d8d725ec604652f041a17cfa7ed"
         }
       ]
     },
@@ -455,11 +455,11 @@
           "version": "repo-lines-v1:sha256:e590e688ca696323728c80ffc258076ae35e95b9bc0e86c3be8f9eb890b5b512:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYmJlY2FiYzJiODg4ODg5YWYyMWE0MjEwNjE4Nzg2YzQ0OTA0MzYzZDVjMDBmMDZlNmE5Y2QxMWU2Njk5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZDIwODNiOGYxMTliNjY3Zjk0ZWI5OTRmZjEyMGEwM2JlODU1ZWY3OGVjYjgxMDk0Y2RiYmZiZjI3NzM2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMGNjZGI5MjI3MWU2MTE0ZGJlZDFlMTA5ZjRiN2U4ZTRiYmY4YTQ5ZDc0ZmJhMzMzZTNkMDA0OGUxMTVkYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWQ3MWRhYmZjZDIwZTUyNTY4OTU2N2NkNmZlODBiM2FkZDBhMGFkZTA0ODQyZjUxMzQ0ZTM0MTE3Y2RlMGQifQ"
         },
         {
-          "resource": "repo://specs/084-silent-failure-visibility/spec.md#L370-L371",
+          "resource": "repo://specs/084-silent-failure-visibility/spec.md#L376-L377",
           "version": "repo-lines-v1:sha256:a416562680170a723ef4ab5917f178e0277662edff44706ffa87612c8399f8e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRhNTBhMTUyNTFmMjhkNzRkYzM1MjZlZmNiNGJlNDg5MDg2MzQyNmI5YTA2MmY2MGFmZjYzMWQxYzM5MDFmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjYTNiODY0M2Q0MzU5YTkwYWZkMjUwNTczZDE2ZjVjNDcxNTA4NGRmMDRmZTcwYWZmNzIzOWFhY2U0ZTg5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDRkMDMxODBiZGM4ZjMwYTk3YTZmZDhiYjMwMDFjNTllZTc0YzI0OWI5ZjllMDYyMmE1MDg4ODgwNzIyYzIwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhMTM2MjUyNzc2YjY2ZmZkZjhkOWVkZjQ1YjU1MjNlOGI1OWQ4Yzk3Yjc3NDY0YjcwZGY0MGJkNmYyYmZiNSJ9"
         },
         {
-          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L437-L445",
+          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L453-L461",
           "version": "repo-lines-v1:sha256:9876666c665e6523071e7e8dbc72cf9f5c2822d9bdc7db73cbc08c5a7057e49e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwODc2ZmNmMTZjNjI5NWJmNTMzNTkzNGNkNjg1NzQ4ZTAzMDdlY2M3YjNjMTM3MzBkMmIxOGUzYjNjYWNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUxYzcxMmQwNzhkMmRmMmFkODk5NTcyZTM0Y2FjYjJlYmQ4NjhhYzlkYTM1Yjc2NTg4ZWRiYjYyZmI5ZmQ3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQxY2EyYTZkYTkwYjUzNDFjMzg3MDBjM2NhMmI1YjdiNmJjNjM1NGJiZTYwNjQ4MmY4NmZiZWY5NGM4MGQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZhMjI1NjY0OWM3MDQxNzNmZTA4Zjg3ZjIyOWU1NDBjMjJiYjUzZTExYzhkYmUyNTQ2NGE5ZGQ4ZDI4OWM1ZSJ9"
         }
       ]
@@ -470,33 +470,37 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1160-L1213",
-          "version": "repo-lines-v1:sha256:2de4408eb15a973f3f5bfe6f6e583ab067fe0afb4f3f8ddf3cd1a296d40bd03b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YTA0ODBkNDE3ODNkY2U4ODVlMGZlNWRjN2YwNzY5Zjc0MDcwMGM4NmE4NDY5ZGYyMTk3YjVlYTdjMmRmNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2E0Nzg3MjdkMzk4MTViNzg3YTRmMzU5OWE5MWQ4ODJmMWM5NTkxMTllZTVlOTQzYTA1YzRlZTE0NTEwZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTU3MmU1ODA4ZjE1ZjY1NTMxZjFlYzNjZjE2NTFjZWIzMGQzM2JhYjM2MjhjZThmOWJjN2ZhNzQwNzA1OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Y2ZiMzZhMTJmMDgyMjVlNWRmMTRhMWVjNWFjZjQ2YWE4NWFjYWYzNmZlMWMzZTFjNDNhMTI0NDE4NmZlZTkifQ"
+          "version": "repo-lines-v1:sha256:64449030e211a5d28f9d4f30ac1d0c959ab39b9e1dccc4e1f38eebca7f2f6d8e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YTA0ODBkNDE3ODNkY2U4ODVlMGZlNWRjN2YwNzY5Zjc0MDcwMGM4NmE4NDY5ZGYyMTk3YjVlYTdjMmRmNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZjdjYWNiYjRkNzM1MWMzYTE3ZjQxYjI3NTUxM2UzYzFhMjVkNzEyZmNlZTUwZGIwZGNmNGFmYzkyYzE2MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTU3MmU1ODA4ZjE1ZjY1NTMxZjFlYzNjZjE2NTFjZWIzMGQzM2JhYjM2MjhjZThmOWJjN2ZhNzQwNzA1OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Y2ZiMzZhMTJmMDgyMjVlNWRmMTRhMWVjNWFjZjQ2YWE4NWFjYWYzNmZlMWMzZTFjNDNhMTI0NDE4NmZlZTkifQ"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/quickstart.md#L96-L101",
           "version": "repo-lines-v1:sha256:983c41b0918cb27af97789dd927666309155823964cfa99e0de9e45c73f41ff7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhMmNmOTA0MGJkNDIwMjEyM2U2OTNkNGMyODMwNGY2NWQ1NzdjMDY3N2YxODdkMjJhZDdkZmQ5NjJkOGZmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTYxMDNkYzI5NTQ3YWYwYWVkZjZlNTkxYmE1YWExMTk4NmIxNWVmZTcwZjEyMzBiYjZmZTQ4YTdhMzBmMzVjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM2NTg3ODA5NmY0NjY4MGNlNTcyMTdiMzQ4YzczZmI0Zjk4ZjFhOTFlOGRmNjA2MGYzZmRlMDY4ZGM3MDE4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA0YmFmMzQ1MTY4MzQyMzExMWJhNzM3ZDJjYzRmN2MxOGE4ZjgyMDdkNzFiZDllZDg0N2ZkZWMxNjY4YWQ1YyJ9"
         },
         {
-          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L427-L449",
-          "version": "repo-lines-v1:sha256:dac0a06bd4366385fc47bb0db47935d5298f711f740cd786081743a23314950e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZTc1MTljM2UzMWYwNTg1ZTdmNGIxYjcwZGFlNGUxOTlkNjkyYTM2MzQ5ODRmZWQ3ZGFkNjEwYWM4ZGViOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjNkMDRmYmE2NTZhMDVkZjQ1NjRjYmYxZDZlZjZjYTI1ZjBhOGVkNDE3ZmIwZmUwNDg3YjI1NWYzZDMyYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjZlNjRmODE5NjZhNWQxZGQxMWFjNmJiNDMwZDUyYzI4YWJlMzg1YWFiYWRjYmFlYjFjMzZjM2Q0OGE1MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ODE3ZDcyYzYyOTVmNDJhZWM4Mjg3YTVjNWExNzI0MGQyNDJhOTAxZDg0ZWUwNGNiNWE3MTllOWZmYWRkODYifQ"
+          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L443-L472",
+          "version": "repo-lines-v1:sha256:667ddbc49239c093cd5cd736b844f4344751f7c115b75840df67774ebda15a57:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZTc1MTljM2UzMWYwNTg1ZTdmNGIxYjcwZGFlNGUxOTlkNjkyYTM2MzQ5ODRmZWQ3ZGFkNjEwYWM4ZGViOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYzc3MjlkNzgwN2RkMTUwZTY0YzUyNTYyYWU0Njk1NjIwNDVhZGFlNGU3ODY5ZTg1YjJlZjlhZGZmZjc1ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjZlNjRmODE5NjZhNWQxZGQxMWFjNmJiNDMwZDUyYzI4YWJlMzg1YWFiYWRjYmFlYjFjMzZjM2Q0OGE1MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ODE3ZDcyYzYyOTVmNDJhZWM4Mjg3YTVjNWExNzI0MGQyNDJhOTAxZDg0ZWUwNGNiNWE3MTllOWZmYWRkODYifQ"
         }
       ]
     },
     {
       "id": "claim_fe9e292afeab443da65e679a078479c5",
-      "statement": "The post-spec-084 forge-db + forge-data restore is UNPROVEN: the runbook marks it unproven until the restore drill has run against it, and its drill log reads 'no drill yet against the spec 084 US4 format'. What was proven is the restore of the old forgejo dump SQL snapshot, on 2026-07-05. Until the drill passes, the fallback is retention itself - the old-format snapshots stay inside the 7-daily / 4-weekly / 6-monthly window and remain restorable.",
+      "statement": "The post-spec-084 forge-db + forge-data restore is PROVEN: the restore drill run on 2026-10-31 against snapshot 443ebb58 (the third night on the new format) restored forge-db in 14 s with 0 errors and 2 repositories / 1 user matching the live forge, untarred forge-data in 23 s with fsck ok=2 bad=0, and restored mc-service-mongo in 2 s with 2,315 documents in 2 collections — a pass, recorded as a row in the runbook's drill log. The old forgejo dump SQL restore, proven 2026-07-05, is now the historical record rather than the interim fallback, and because a change to what the backup carries invalidates the previous proof, the next such change needs a drill row of its own.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1136-L1136",
-          "version": "repo-lines-v1:sha256:77e0336e9f5ad4ebd57c724553c01c3f12e0348c98d04a22acf97e9184cac3d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
+          "version": "repo-lines-v1:sha256:8210c6b25eb39e8cdcb75ba67c4a08e698e4273c2cfe4400cdece1e024f3f2a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
         },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1209-L1215",
-          "version": "repo-lines-v1:sha256:024c4d1a34d8ce50fb45f4a13c68ea6da1d8a67f2507569cc9fb9005391ba833:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxMjIwMmM1Y2VmMTE1OTk2NTc0ODNhNWQ2OWFmMWMyMjgyMDgyMDg1N2Y3ZGRiMDI3NjZmNmFkMzVhNTAxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFkYjJhZjViYjRjMjczYTI1NTZjOGIyZDhkYzVjMmRjN2NhNWNmZDcyNmQ4ZTBhZjIxOWE4M2NkMjkwOTIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
+          "version": "repo-lines-v1:sha256:73a987acf256c4887b990b61ede97dd79d4e471863540d7ae9560d5ad9798cbd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxMjIwMmM1Y2VmMTE1OTk2NTc0ODNhNWQ2OWFmMWMyMjgyMDgyMDg1N2Y3ZGRiMDI3NjZmNmFkMzVhNTAxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFkYjJhZjViYjRjMjczYTI1NTZjOGIyZDhkYzVjMmRjN2NhNWNmZDcyNmQ4ZTBhZjIxOWE4M2NkMjkwOTIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
         },
         {
-          "resource": "repo://specs/084-silent-failure-visibility/plan.md#L198-L198",
-          "version": "repo-lines-v1:sha256:d2996f95e7e292857ef32f7b7d41fe98c662b724c84c87ac3a6a013bbc9eec67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI5OTZmOTVlN2UyOTI4NTdlZjMyZjdiN2Q0MWZlOThjNjYyYjcyNGM4NGM4N2FjM2E2YTAxM2JiYzllZWM2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI5OTZmOTVlN2UyOTI4NTdlZjMyZjdiN2Q0MWZlOThjNjYyYjcyNGM4NGM4N2FjM2E2YTAxM2JiYzllZWM2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmVmYjA2MWE4Y2JiYjNhZTY5NWExODBiMjEyNzIzZjQ1Zjk0ZjM4YzlmMmFlNjc0NTFmYjU3NDk1YjdlMDZkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjE2Mjk5NmQ2ZDY1MzJiYzY3YWUyZjg1ZjY2M2VjMTc2NDgxZDBhZWFlYmIzMGZhYmE1YzExM2NjMGIxOThiNSJ9"
+          "resource": "repo://specs/084-silent-failure-visibility/spec.md#L79-L81",
+          "version": "repo-lines-v1:sha256:44cafe13ac94be32ac5467578b3f9e02ecb67dc0dac9116fed02885ba1b9a8fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE5NWMzMzFhMmFjYjBmNDFjMDdiMzM2ZjNkN2M3OWM2MGQwYzY1OGIyYjQ0ZDMyODQwYmJhOTFlMDU5Y2UyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYwZDU3YWRiZWM3ZTA2YjQzZTcwODY5NmFhNzJjN2VkMzljNzU2ODZlYTA0NDYwNzg3YTZhOTY3ZGY0M2RjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY3ZDBhMjliZDA2NjRlMzczYzBiNzEyNjM5YjAxYzdlMTFhM2U1NjkxOGVhMWJlNDk5ZWY4MDBmZDA0MTJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQ1MDM0MzQ5N2Q5YjRiMzJiOWEyZWYyODdmYjJhMWViMTMzNDAyMWJlYmVhNjY0ZjJjYjc5YzI4M2JkMTlmMiJ9"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L462-L472",
+          "version": "repo-lines-v1:sha256:77914c98ce34526ca1a643e8557c20a466c5e0a4551bbe2b7a17ebeb720d6131:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZTNiOWVmYWRkYzEwNTQzNjZkNjc0YjVjMDQ5MTk4ODhlNWIwZDM4MjBmODVjYTRiNTMwYTc1ZjE2ZWZkMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYzc3MjlkNzgwN2RkMTUwZTY0YzUyNTYyYWU0Njk1NjIwNDVhZGFlNGU3ODY5ZTg1YjJlZjlhZGZmZjc1ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNWMwODkyM2VjZWI0MmRiZGFkODUzMmJlZmE2MDNhMTJhYTE5Zjg5YTkyZGU2MzNkODYwYjRmNGFkNjBjOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ODE3ZDcyYzYyOTVmNDJhZWM4Mjg3YTVjNWExNzI0MGQyNDJhOTAxZDg0ZWUwNGNiNWE3MTllOWZmYWRkODYifQ"
         }
       ]
     },
@@ -521,6 +525,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-30T01:33:31.256Z"
+    "at": "2026-10-31T09:46:49.753Z"
   }
 }
