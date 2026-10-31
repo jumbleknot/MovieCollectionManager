@@ -40,6 +40,7 @@ node scripts/ci-status.mjs durations                   # how long does each app-
 | `1` | A **required** context genuinely failed |
 | `2` | Bad arguments, missing token, or missing scope |
 | `3` | Still waiting when `watch` timed out — **runner starvation, not failure** |
+| `4` | `watch` only: mergeable, but the **dispatched deploy failed** (item #823) — prod did not get this commit |
 
 Exit `3` is deliberately distinct from `1`. There is one `kvm` runner; a poller that exits non-zero
 on `pending` reports a saturated queue as a broken build.
@@ -165,6 +166,7 @@ have believed it ran. The forge says `"Has been skipped"` and `"Has been cancell
 | `superseded` | **`failure`** | run cancelled by a newer push | Fails **LOUD** — announces a broken build that isn't |
 | advisory | `failure` on a non-required context | `dast`, `prod-apk`, `trigger-cd` | Either a false "blocked", or a silently dropped regression |
 | `cd-dispatch / trigger-cd` | `success` or `failure`, with the reason as the description | **not a CI result** — the deploy gate's own answer | Reading it as a check; it is the *only* place a declined deploy is visible |
+| `cd-deploy / build-deploy (dispatched)` | **nothing** — the dispatched run posts no commit status; the row is resolved from the runs listing | the deploy itself, on a `main` sha | Before item #823: invisible, so a failed deploy read as green (see below) |
 
 ### 🚨 A ⏳ is not a future pass — a context that has not reported has not committed to RUNNING
 
@@ -450,6 +452,40 @@ A red scheduled sweep is now also visible **on the commit**: `infra-image-scan.y
 branch protection requires the glob `infra-image-scan / infra-image-scan*` and this context has no
 ` / ` separator, the same reason `infra-image-scan/expiry` never has — and protection is evaluated on
 PR heads, while this posts only on the scheduled run's own commit.
+
+### The dispatched deploy posts NO commit status — so it is resolved from the runs (item #823)
+
+`trigger-cd` dispatches `cd-deploy.yml`, and the dispatched run posts no commit status for its
+outcome. So until 2026-10-31 a failed deploy was invisible to every command here. **Case study,
+2026-10-21:** cd-deploy run 5745 (the UI calls it 5744) on `fa79e611` failed at `scan-push`.
+
+- `failure --sha fa79e611…` said `No failed jobs on fa79e611 — checked every event's contexts`.
+- `failure --run 5745` said `posted NO commit status`, and fetched nothing.
+- A session watching for the `chore(cd): promote` commit timed out without learning anything.
+- The evidence existed all along, as the bundle `5745--build-deploy`, and was read by hand.
+
+Now, for a sha that has a dispatched cd-deploy run:
+
+- **`status`** shows an advisory row, `cd-deploy / build-deploy (dispatched)  failed  run 5745`, and
+  a `🚨 DEPLOY FAILED (advisory)` block above the VERDICT. The verdict line and the exit code are
+  exactly what they would be without the row: the deploy runs after the merge it would be gating.
+- **`watch`** waits for a running deploy, as for any advisory context. When the commit is mergeable
+  and the deploy failed, it exits **`4`**, which no verdict produces, so a caller can tell "the
+  deploy failed" from "keep waiting" (`3`) and "CI failed" (`1`).
+- **`failure --sha` / `--run`** prints the deploy's digest from its bundle,
+  `<run id>--build-deploy` or `<run id>--prod-apk`. With neither published it prints
+  `deploy run <id> FAILED; no evidence bundle published` and exits 1. It never says "No failed jobs".
+
+Two payload shapes make a resolver written from the GitHub docs match nothing, **silently**. A
+dispatched run carries **`event: ""`**, with the event in **`trigger_event`**; and it carries its sha
+as **`commit_sha`**. The bundle is named by the run's **`id`**, never by `index_in_repo`, which is the
+number the UI shows.
+
+> **The deploy runs on main's head AT DISPATCH TIME, which is not always the commit whose CI
+> dispatched it.** On 2026-10-21 `trigger-cd` passed on `7cc3c304`, and the deploy ran on
+> `fa79e611`, a `[skip ci]` marker commit pushed in between. `status` on the first says
+> `no deploy dispatched for this sha — trigger-cd passed …`; run `status` on the commits after it in
+> `git log --first-parent main`.
 
 ### Four measured quirks of `GET /actions/runs` (2026-09-19)
 

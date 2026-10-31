@@ -489,7 +489,7 @@ unchanged.
 
 **Independent test**: quickstart US2.
 
-- [ ] T041 [US2] Record fixtures in `scripts/__tests__/fixtures/ci-status/` from the real forge, using
+- [x] T041 [US2] Record fixtures in `scripts/__tests__/fixtures/ci-status/` from the real forge, using
   the `git credential fill` token (reads only):
   - `dispatched-failed.json`: the 2026-10-21 failed cd-deploy run, with its main sha's statuses (none
     for the run);
@@ -497,11 +497,16 @@ unchanged.
   - `dispatched-in-progress.json`: derived from success, with status `running`;
   - `dispatched-rerun.json`: two runs for one sha, the newer one failed;
   - the `ci-failures/<run_id>` bundle listing for the failed run.
+  **Done 2026-10-31**: recorded from the forge, trimmed to the fields ci-status reads (no
+  `trigger_user`, `event_payload`, `repository`, or `html_url`, which carries the forge host). Plus
+  `bundle-5745--build-deploy.json`, with digest.md cut to its header. Measured: a dispatched run has
+  `event: ""` with `trigger_event: workflow_dispatch`, and its sha in `commit_sha`. The tests use that
+  shape.
 
   Strip tokens and emails with the existing `cacheRawPayload` sanitiser.
   **Done when**: the files exist, and `grep -E 'token|@' fixtures/ci-status/dispatched-*` shows no
   secret or email.
-- [ ] T042 [P] [US2] Test: in `scripts/__tests__/ci-status.test.mjs`, the **`findDispatchedDeploy`**
+- [x] T042 [P] [US2] Test: in `scripts/__tests__/ci-status.test.mjs`, the **`findDispatchedDeploy`**
   cases (R11, data-model):
   - it selects by `cd-deploy.yml`, `workflow_dispatch` and `head_sha`;
   - the newest run by `id` wins (rerun fixture);
@@ -510,14 +515,19 @@ unchanged.
   - `run_number` is never used for the bundle name.
   **Verify RED**: `node --test --test-name-pattern="findDispatchedDeploy" scripts/__tests__/ci-status.test.mjs`.
   Expected: failing, `findDispatchedDeploy is not a function`.
-- [ ] T043 [P] [US2] Test: **"status shows the deploy as advisory and the verdict is unchanged"**
+  **Done**: RED was `does not provide an export named 'DEPLOY_BUNDLE_JOBS'`. Cases added: the
+  GitHub-shaped spelling, and a drift guard that `DEPLOY_BUNDLE_JOBS` equals the cd-deploy jobs
+  running `ci-failure-digest.mjs`.
+- [x] T043 [P] [US2] Test: **"status shows the deploy as advisory and the verdict is unchanged"**
   (US2-AC1, AC4, FR-008, FR-012):
   - `computeMergeVerdict` over the failed fixture includes the context
     `cd-deploy / build-deploy (dispatched)`, with `required: false`, in `advisory`;
   - `blocking` and the exit code are identical with and without the deploy context.
   **Verify RED**: `node --test --test-name-pattern="deploy as advisory" scripts/__tests__/ci-status.test.mjs`.
   Expected: failing.
-- [ ] T044 [P] [US2] Test: **"watch returns on a failed deploy"** (US2-AC2, FR-009):
+  **Done**, plus: `requiredGlobs: ['*']` cannot make the deploy required, and a running deploy is
+  outstanding in both the view and the gate.
+- [x] T044 [P] [US2] Test: **"watch returns on a failed deploy"** (US2-AC2, FR-009):
   - with required contexts terminal and the deploy `failed`, the watch-loop predicate says *stop* and
     the exit code is **4**, distinct from every value `exitCodeForVerdict` returns (0, 1, 3), which
     the test asserts by enumerating them;
@@ -525,7 +535,8 @@ unchanged.
   - with no deploy dispatched for a non-main sha, behaviour is unchanged.
   **Verify RED**: `node --test --test-name-pattern="watch returns on a failed deploy" scripts/__tests__/ci-status.test.mjs`.
   Expected: failing.
-- [ ] T045 [P] [US2] Test: **"failure falls back to the deploy's evidence bundle"** (US2-AC3, FR-010,
+  **Done**: end to end through `cmdWatch`, using a stub forge that serves the fixtures.
+- [x] T045 [P] [US2] Test: **"failure falls back to the deploy's evidence bundle"** (US2-AC3, FR-010,
   FR-011):
   - for the failed fixture with no failed status, the failure output contains the bundle digest for
     `ci-failures/<run_id>`, and never `No failed jobs`;
@@ -533,7 +544,8 @@ unchanged.
     and exits 1.
   **Verify RED**: `node --test --test-name-pattern="evidence bundle" scripts/__tests__/ci-status.test.mjs`.
   Expected: failing, output `No failed jobs`.
-- [ ] T046 [US2] Implement the changes in `scripts/ci-status.mjs`:
+  **Done**, plus the `--run 5745` path, and a passed deploy still reporting `No failed jobs`.
+- [x] T046 [US2] Implement the changes in `scripts/ci-status.mjs`:
   - export `findDispatchedDeploy(sha, runs)`;
   - add the advisory context in the status path, using the existing runs fetch (`buildRunsQuery`) —
     one extra filtered page, not a new endpoint;
@@ -542,9 +554,25 @@ unchanged.
   Add exit code 4 to `--help`, next to the existing meanings of 0, 1 and 3.
   **Verify GREEN**: `node --test scripts/__tests__/ci-status.test.mjs`. All pass. **Mutation (FR-011)**:
   delete the fallback branch, and T045 fails; restore it.
-- [ ] T047 [US2] Add to `docs/runbooks/ci-diagnostics.md`: the dispatched-deploy advisory row, exit
+  **Done**: 164/164 pass. The full suite is 1884 pass, 0 fail, 0 skipped. Each mutation was killed:
+  - no fallback (3 fail);
+  - `event` instead of `trigger_event` (11);
+  - `head_sha` only (11);
+  - the last match instead of the newest (1);
+  - the view not waiting (1);
+  - the gate not waiting (2);
+  - no exit 4 (1);
+  - glob-derived `required` (1);
+  - the missing-bundle message (1);
+  - the bundle named by `index_in_repo` (1);
+  - `prod-apk` dropped (2);
+  - no deploy lines (2).
+  `--selftest` also covers the real-shaped failed dispatch, and fails under the `event` mutant.
+- [x] T047 [US2] Add to `docs/runbooks/ci-diagnostics.md`: the dispatched-deploy advisory row, exit
   code 4 for `watch`, the bundle fallback, and the case study (2026-10-21).
   **Done when**: the preflight docs checks pass.
+  **Done**: the exit-code row, the state-table row, and a section with the 2026-10-21 case study,
+  the two payload shapes and the dispatch-time sha trap.
 - [ ] T048 [US2] Run the PR C gate and open PR C. After it merges, run quickstart US2 against the
   real 2026-10-21 sha and paste the output into the PR. Expected: `failed  run <id>`, and the digest
   is printed.

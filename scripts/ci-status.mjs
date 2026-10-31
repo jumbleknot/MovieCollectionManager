@@ -262,6 +262,56 @@ export function findRunForContext(context, runs = []) {
   );
 }
 
+// --- The dispatched deploy (item #823, spec 084 US2) ---------------------------------------------
+//
+// `trigger-cd` dispatches cd-deploy, and the dispatched run posts NO commit status for its outcome,
+// so a failed deploy was invisible to every command here. Measured 2026-10-21: run 5745 failed at
+// scan-push, `failure --sha` said "No failed jobs", `--run 5745` said "posted NO commit status",
+// and the evidence sat in the bundle `5745--build-deploy`, read by hand.
+//
+// It is resolved from the runs this tool already fetches by head_sha, and shown as one ADVISORY
+// row. It never gates merging (FR-012): the deploy runs after the merge it would be gating.
+//
+// Two measured payload shapes, both of which make a resolver written from the GitHub docs match
+// nothing and say nothing: a dispatched run has `event: ""` with the event in `trigger_event`, and
+// carries its sha as `commit_sha`. The GitHub spellings are accepted too.
+
+export const DEPLOY_CONTEXT = 'cd-deploy / build-deploy (dispatched)';
+const DEPLOY_WORKFLOW = 'cd-deploy.yml';
+
+/** The cd-deploy jobs that publish a bundle (guard-tested against the workflow). */
+export const DEPLOY_BUNDLE_JOBS = ['build-deploy', 'prod-apk'];
+
+// A cancelled or skipped deploy is NOT a failure, but neither is it a deploy, so it is not `passed`.
+const DEPLOY_RUN_STATE = { success: 'passed', failure: 'failed', cancelled: 'superseded', skipped: 'skipped' };
+
+/**
+ * The cd-deploy run dispatched for `sha`, as an advisory check — or null when there is none.
+ * The NEWEST run by id wins, so a re-run decides. Its bundles are named by the run's `id`, never by
+ * `index_in_repo` (the number the UI shows), which 404s for a bundle that exists.
+ */
+export function findDispatchedDeploy(sha, runs = []) {
+  const matches = runs.filter(
+    (r) =>
+      r.workflow_id === DEPLOY_WORKFLOW &&
+      (r.trigger_event || r.event) === 'workflow_dispatch' &&
+      (r.commit_sha ?? r.head_sha) === sha,
+  );
+  if (!matches.length) return null;
+  const run = matches.reduce((a, b) => (Number(b.id) > Number(a.id) ? b : a));
+  const outcome = String(run.conclusion || run.status || '').toLowerCase();
+  return {
+    context: DEPLOY_CONTEXT,
+    job: DEPLOY_CONTEXT,
+    description: `run ${run.id}`,
+    state: DEPLOY_RUN_STATE[outcome] ?? 'waiting',
+    runId: run.id,
+    required: false,
+    deploy: true,
+    bundleVersions: DEPLOY_BUNDLE_JOBS.map((job) => bundleVersion(run.id, job)),
+  };
+}
+
 /**
  * Classify one commit status into a `CheckState`.
  * @param {{status: string, description?: string}} status
@@ -604,7 +654,7 @@ function inferEvent(statuses) {
  */
 export function computeMergeVerdict(
   statuses,
-  { requiredGlobs = REQUIRED_CONTEXT_GLOBS, event, runs = [], needsGraph = defaultNeedsGraph() } = {},
+  { requiredGlobs = REQUIRED_CONTEXT_GLOBS, event, runs = [], needsGraph = defaultNeedsGraph(), deploy = null } = {},
 ) {
   const chosenEvent = event ?? inferEvent(statuses);
   const patterns = requiredGlobs.map(globToRegExp);
@@ -653,11 +703,17 @@ export function computeMergeVerdict(
     if (c.state === 'skipped') c.skip = classifySkipCause(c, gateChecks, needsGraph);
   }
 
+  // The dispatched deploy joins the ADVISORY lists and the table only. It is added after the lists
+  // the verdict is computed from, so `mergeable`, `noResults`, `superseded` and the exit code are
+  // exactly what they were without it (FR-012) — and `required` is forced, so no glob can claim it.
+  const deployCheck = deploy ? { ...deploy, required: false } : null;
+  const withDeploy = (list) => (deployCheck ? [...list, deployCheck] : list);
+
   const required = checks.filter((c) => c.required);
   const blocking = required.filter((c) => c.state === 'failed');
   const waiting = required.filter((c) => c.state === 'waiting');
   const superseded = checks.filter((c) => c.state === 'superseded');
-  const advisory = checks.filter((c) => !c.required && c.state === 'failed');
+  const advisory = withDeploy(checks).filter((c) => !c.required && c.state === 'failed');
 
   // An advisory context that has not reported yet (item #403). It gates nothing — that is what
   // `advisory` means — but the commit is not SETTLED while it is running, and `watch` used to
@@ -665,12 +721,12 @@ export function computeMergeVerdict(
   // `app-ci / trigger-cd` then failed in 3s on ERR_MODULE_NOT_FOUND, the CD dispatch never
   // happened, and nothing said so. `trigger-cd` is the ONLY place a declined or failed deploy
   // becomes visible, so dropping its row is dropping the deploy outcome.
-  const advisoryWaiting = checks.filter((c) => !c.required && c.state === 'waiting');
+  const advisoryWaiting = withDeploy(checks).filter((c) => !c.required && c.state === 'waiting');
 
   const gateRequired = gateChecks.filter((c) => c.required);
-  const gateAdvisoryChecks = gateChecks.filter((c) => !c.required);
+  const gateAdvisoryChecks = withDeploy(gateChecks.filter((c) => !c.required));
   const gate = {
-    all: gateChecks,
+    all: withDeploy(gateChecks),
     required: gateRequired,
     blocking: gateRequired.filter((c) => c.state === 'failed'),
     waiting: gateRequired.filter((c) => c.state === 'waiting'),
@@ -699,9 +755,10 @@ export function computeMergeVerdict(
     advisoryWaiting,
     superseded,
     required,
-    all: checks,
+    all: withDeploy(checks),
     gate,
     event: chosenEvent,
+    deploy: deployCheck,
   };
 }
 
@@ -1070,6 +1127,7 @@ const ANNOTATION = {
  * closes the question, one redirects it at the dependency, and one admits it is open.
  */
 export function annotateCheck(check) {
+  if (check?.deploy) return `run ${check.runId}${check.state === 'waiting' ? ' (queued or running)' : ''}`;
   if (check?.state !== 'skipped') return ANNOTATION[check?.state] ?? '';
   const skip = check.skip ?? { cause: 'undetermined', failed: [] };
   if (skip.cause === 'gate') return '(path-gated → satisfied)';
@@ -1141,7 +1199,7 @@ export function describeOffViewGating(verdict) {
  * to `pull_request` — otherwise this reports nothing in exactly the case it was written for.
  */
 export function describeAdvisoryFailures(verdict) {
-  const failed = verdict.gate?.advisory ?? verdict.advisory ?? [];
+  const failed = (verdict.gate?.advisory ?? verdict.advisory ?? []).filter((c) => !c.deploy);
   if (!failed.length) return [];
   return [
     '',
@@ -1151,6 +1209,33 @@ export function describeAdvisoryFailures(verdict) {
     '    ↳ the VERDICT below answers "may I merge", and it is not affected by these. It is also not',
     '      the same question as "did this commit do what it was supposed to" — a failed `trigger-cd`',
     '      means the CD dispatch did NOT happen, on a commit that is green everywhere else.',
+  ];
+}
+
+/**
+ * Say the deploy outcome where it cannot be missed (item #823). A failed deploy is named on its own
+ * — the VERDICT says `mergeable`, and prod did not get this commit. A `trigger-cd` that passed with
+ * no deploy on THIS sha is named too: main moved before the dispatch, so the deploy ran on a newer
+ * main commit (2026-10-21: trigger-cd on 7cc3c304, the deploy on the [skip ci] commit fa79e611).
+ */
+export function describeDeploy(verdict) {
+  const d = verdict.deploy;
+  if (d?.state === 'failed') {
+    return [
+      '',
+      `🚨 DEPLOY FAILED (advisory) — cd-deploy run ${d.runId}, dispatched by trigger-cd, failed. Merging is`,
+      '    not affected, but prod did NOT get this commit.',
+      `    ↳ \`ci-status failure --run ${d.runId}\` prints its digest from the bundle (${d.bundleVersions[0]}).`,
+    ];
+  }
+  if (d) return [];
+  const triggered = (verdict.gate?.all ?? []).some((c) => /\/ trigger-cd$/.test(c.job) && c.state === 'passed');
+  if (!triggered) return [];
+  return [
+    '',
+    'no deploy dispatched for this sha — trigger-cd passed, but no cd-deploy run carries this sha.',
+    'Usually main moved before the dispatch and the deploy ran on a LATER main commit: run `status` on',
+    'the next commits of `git log --first-parent main`.',
   ];
 }
 
@@ -1193,6 +1278,7 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, p
 
   for (const line of describeOffViewGating(verdict)) emit(line);
   for (const line of describeAdvisoryFailures(verdict)) emit(line);
+  for (const line of describeDeploy(verdict)) emit(line);
 
   emit('');
   emit(`VERDICT  ${verdictLine(verdict)}`);
@@ -1211,7 +1297,10 @@ export function verdictLine(v) {
   }
   if (blocking.length) return `NOT mergeable — ${blocking.length} required context(s) failed`;
   if (waiting.length) return `not yet mergeable — ${waiting.length} required context(s) still waiting`;
-  const advisory = v.advisory.length ? `; ${v.advisory.length} advisory failure(s) — not blocking` : '';
+  // Counted without the deploy, so the line reads exactly as it did before it existed (FR-012);
+  // a failed deploy has its own line above.
+  const advisoryCount = v.advisory.filter((c) => !c.deploy).length;
+  const advisory = advisoryCount ? `; ${advisoryCount} advisory failure(s) — not blocking` : '';
   return `mergeable — all required contexts satisfied${advisory}`;
 }
 
@@ -1475,7 +1564,17 @@ export function renderCeilingsTable(rows, { summary = [], runIds = [], job = 'ap
 // --- Subcommands ----------------------------------------------------------------------------------
 
 /** Exit codes: 0 mergeable · 1 required failure · 2 bad args/auth · 3 still waiting at timeout. */
-const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
+const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3, DEPLOY_FAILED: 4 };
+
+/**
+ * `watch`'s exit code: the verdict's, except that a MERGEABLE commit whose dispatched deploy failed
+ * returns 4 (item #823) — so a session waiting for the deploy learns it failed instead of timing
+ * out. 4 is no verdict's code, so it cannot be read as "keep waiting" (3) or "CI failed" (1).
+ */
+export function watchExitCode(verdict) {
+  const code = exitCodeForVerdict(verdict);
+  return code === EXIT.OK && verdict.deploy?.state === 'failed' ? EXIT.DEPLOY_FAILED : code;
+}
 
 async function loadVerdict(target, conn) {
   const { sha, pr, base, headRef, prState, run } = await resolveSha(target, conn);
@@ -1494,17 +1593,19 @@ async function loadVerdict(target, conn) {
       (await fetchCached(`/repos/${conn.owner}/${conn.repo}/branch_protections`, conn, `protections-${base.replace(/[^\w.-]/g, '_')}`)).data,
     base,
   );
+  const workflowRuns = runs.data.workflow_runs ?? [];
   const verdict = computeMergeVerdict(statuses.data.statuses ?? [], {
     // A commit can carry BOTH push and pull_request contexts, from separate runs whose outcomes
     // differ. --pr implies the PR view (that is what branch protection gates on); --event overrides.
     event: target.event ?? (target.pr ? 'pull_request' : undefined),
-    runs: runs.data.workflow_runs ?? [],
+    runs: workflowRuns,
     requiredGlobs: requiredGlobs.globs,
+    deploy: findDispatchedDeploy(sha, workflowRuns),
   });
   return { verdict, sha, pr, headRef, prState, run, requiredGlobs, cachePaths: [statuses.path, runs.path] };
 }
 
-async function cmdStatus(target, conn) {
+export async function cmdStatus(target, conn) {
   const { verdict, sha, pr, cachePaths, requiredGlobs, headRef, prState } = await loadVerdict(target, conn);
   renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
   return exitCodeForVerdict(verdict);
@@ -1521,7 +1622,8 @@ async function cmdStatus(target, conn) {
  */
 export function failuresToExplain(verdict) {
   const pool = verdict.gate?.all ?? verdict.all ?? [];
-  return pool.filter((c) => c.state === 'failed');
+  // The deploy has no context and no digest comment; `cmdFailure` reads its bundle directly.
+  return pool.filter((c) => c.state === 'failed' && !c.deploy);
 }
 
 /**
@@ -1570,6 +1672,9 @@ export async function cmdFailure(target, conn) {
     // the wrong commit", which is exactly how item #226 stayed invisible: `--run` silently
     // resolved local HEAD and the reassuring message was about the working copy.
     const where = `${sha.slice(0, 8)}${pr ? ` (PR #${pr})` : ''}`;
+    // Item #823 — FIRST: a failed dispatched deploy has no context, so everything below would call
+    // it "nothing failed" or a contextless run. Its evidence is the bundle, named by the run id.
+    if (verdict.deploy?.state === 'failed') return explainDeployFailure(verdict.deploy, conn);
     // Item #485 — BEFORE the reassuring messages below. A run that is itself `failure` must never
     // be reported as "nothing failed", and it must not be swallowed by the superseded branch
     // either: superseded is about CONTEXTS being cancelled, and a contextless run has none.
@@ -1610,6 +1715,7 @@ export async function cmdFailure(target, conn) {
       else emit(`  ✗ ${c.job} — bundle ${bundle.version} carries no digest.md`);
       emit(`   📦 extracted to: ${bundle.dir}`);
     }
+    if (verdict.deploy?.state === 'failed') await explainDeployFailure(verdict.deploy, conn);
     return EXIT.FAILED;
   }
 
@@ -1675,6 +1781,28 @@ export async function cmdFailure(target, conn) {
 }
 
 /**
+ * Print a failed deploy's digest from its bundle(s), or say that none was published (FR-010/011).
+ * Every cd-deploy job that publishes a bundle is tried, quietly: only one of them usually failed.
+ */
+async function explainDeployFailure(deploy, conn) {
+  let found = 0;
+  for (const job of DEPLOY_BUNDLE_JOBS) {
+    const bundle = await fetchBundle(conn, deploy.runId, job, { quietWhenAbsent: true });
+    if (!bundle) continue;
+    found += 1;
+    const digestPath = join(bundle.dir, 'digest.md');
+    if (existsSync(digestPath)) emit(readFileSync(digestPath, 'utf8'));
+    else emit(`  ✗ cd-deploy / ${job} — bundle ${bundle.version} carries no digest.md`);
+    emit(`   📦 extracted to: ${bundle.dir}`);
+  }
+  if (!found) {
+    emit(`deploy run ${deploy.runId} FAILED; no evidence bundle published (looked for ${deploy.bundleVersions.join(', ')}).`);
+    emit('  The job died before its digest step ran, or the publish failed. Read the run in the forge UI.');
+  }
+  return EXIT.FAILED;
+}
+
+/**
  * Resolve one bundle entry inside the bundle root, or throw.
  *
  * A bundle manifest is ATTACKER-CONTROLLED input for anyone holding `write:package` on the forge
@@ -1716,13 +1844,13 @@ export function safeBundleEntryPath(root, entryPath) {
  * Retrieve the full evidence bundle to disk and print its PATH, never its contents (FR-016).
  * At the measured ~135 KB/s the 5 MB cap is ~40 s, so progress is reported rather than appearing hung.
  */
-async function fetchBundle(conn, runId, job) {
+async function fetchBundle(conn, runId, job, { quietWhenAbsent = false } = {}) {
   const version = bundleVersion(runId, job);
   const url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${version}/bundle.json.gz`;
-  emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
+  if (!quietWhenAbsent) emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
   const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
   if (res.status === 404) {
-    emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
+    if (!quietWhenAbsent) emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
     return null;
   }
   if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
@@ -1849,7 +1977,7 @@ export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds, 
     const outstanding = outstandingContexts(verdict, { includeAdvisory: !requiredOnly });
     if (outstanding.settled) {
       renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
-      return exitCodeForVerdict(verdict);
+      return watchExitCode(verdict);
     }
     if (Date.now() >= deadline) {
       renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
@@ -1916,11 +2044,24 @@ function selftest() {
     failures.push('the off-view blocker was not named in the report (item #281)');
   }
 
+  // Item #823: a dispatched deploy that failed and posted no commit status, in the forge's real
+  // shape (`event: ""`, `trigger_event`, `commit_sha`). It must surface, and must not gate.
+  const deploySha = 'fa79e6118856130312039d1463bf4afceb5f39c9';
+  const dispatched = [{ id: 5745, index_in_repo: 5744, workflow_id: 'cd-deploy.yml', event: '', trigger_event: 'workflow_dispatch', commit_sha: deploySha, status: 'failure' }];
+  const deploy = findDispatchedDeploy(deploySha, dispatched);
+  if (deploy?.state !== 'failed' || deploy.bundleVersions[0] !== '5745--build-deploy') {
+    failures.push('a failed dispatched deploy with no commit status was not found by its run id (item #823)');
+  }
+  const deployVerdict = computeMergeVerdict(offView.slice(0, 1), { requiredGlobs: ['guardrails*'], deploy });
+  if (!deployVerdict.mergeable || watchExitCode(deployVerdict) !== 4) {
+    failures.push('a failed deploy changed the merge verdict, or watch did not return 4 (item #823)');
+  }
+
   if (failures.length) {
     console.error('✗ [ci-status --selftest] FAILED:\n  - ' + failures.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ [ci-status --selftest] traps classified, host redacted, short sha rejected, off-view gating caught.');
+  console.log('✓ [ci-status --selftest] traps classified, host redacted, short sha rejected, off-view gating caught, failed deploy seen.');
 }
 
 const USAGE = `Usage:
@@ -1938,7 +2079,11 @@ is the only place a declined or failed deploy is visible, so returning before it
 deploy outcome. --required-only narrows the wait to the merge question. Neither changes the exit
 code: that is decided by the required set alone, always.
 
-Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
+On a main commit, the cd-deploy run trigger-cd dispatched is shown as the advisory row
+\`cd-deploy / build-deploy (dispatched)\`; \`watch\` waits for it, and \`failure\` reads its bundle.
+
+Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure)
+      · 4 (watch only) mergeable, but the dispatched deploy FAILED.`;
 
 async function main(argv) {
   if (argv.includes('--selftest')) return selftest();
