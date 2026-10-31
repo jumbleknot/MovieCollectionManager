@@ -51,7 +51,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   `chore(backup): host backup script and units, verbatim (sha256 matches prod)`.
   **Done when**: `sha256sum infrastructure-as-code/backup/{backup.sh,homelab-backup.service,homelab-backup.timer}`
   prints the three host hashes.
-- [ ] T002 Create the PR worktrees as each PR becomes ready: `084-us1-backup-alerting` (A),
+- [x] T002 Create the PR worktrees as each PR becomes ready: `084-us1-backup-alerting` (A),
   `084-us4-backup-size` (B, from A's merge), `084-us2-ci-status-deploy` (C), `084-us3-app-image-scan` (D)
   and `084-us5-registry-retention` (E), all under `/home/coder/worktrees/`. Push each branch right
   after its first commit, because a worktree does not survive a container rebuild.
@@ -160,6 +160,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   **Verify RED**: `node --test scripts/__tests__/backup-alert.test.mjs`. Expected: all failing,
   `backup-alert.sh: No such file`.
 - [x] T011 [P] [US1] Test: `scripts/__tests__/backup-staleness.test.mjs` (FR-002, R3, contract
+  Acceptance scenarios covered: US1-AC2.
   `backup-staleness.sh`). The `restic` shim returns `snapshots --json` fixtures:
   - newest snapshot 2 h old: exit 0, no alert;
   - 37 h old: exit 1 and `backup-alert.sh stale`;
@@ -169,6 +170,7 @@ acceptance steps on the real host or forge, with the paste block and expected ou
   - none of the unit files sets `MCM_BACKUP_STALE_HOURS`.
   **Verify RED**: `node --test scripts/__tests__/backup-staleness.test.mjs`. Expected: all failing.
 - [x] T012 [P] [US1] Test: `scripts/__tests__/backup-units.test.mjs` parses the unit files as INI
+  Acceptance scenarios covered: US1-AC1, US1-AC2.
   (FR-001, FR-002, R2):
   - `homelab-backup.service` has `OnFailure=homelab-backup-alert@%n.service` and
     `TimeoutStartSec=2h`;
@@ -297,6 +299,7 @@ retention.
 ### Tests
 
 - [x] T024 [P] [US4] Test: in `scripts/__tests__/backup-script.test.mjs`, case **"the forge is backed
+  Acceptance scenarios covered: US4-AC2, US4-AC3.
   up as a database dump plus a data tar without diagnostics"** (FR-017–FR-019a, R7):
   - `forgejo dump` is **never** called;
   - `pg_dump -Fc` runs in `forgejo-forgejo-db-1` and produces dump `forge-db`, format `pg-custom`;
@@ -309,6 +312,7 @@ retention.
   **Verify RED**: `node --test --test-name-pattern="database dump plus a data tar" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing, because `forgejo dump` is still called.
 - [x] T025 [P] [US4] Test: case **"Komodo's dump excludes its scheduler history"** (FR-019d, R8):
+  Acceptance scenarios covered: US4-AC4.
   - `pg_dumpall` is called only with `--globals-only`;
   - for each database the `psql` shim lists (`postgres`, `komodo`), `pg_dump` runs with
     `--exclude-table-data=cron.job_run_details`;
@@ -320,6 +324,7 @@ retention.
   **Verify RED**: `node --test --test-name-pattern="scheduler history" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing on `pg_dumpall` without `--globals-only`.
 - [x] T026 [P] [US4] Test: `scripts/__tests__/komodo-cron-retention.test.mjs` reads
+  Acceptance scenarios covered: US4-AC4.
   `infrastructure-as-code/backup/komodo-cron-retention.sql`:
   - it unschedules `purge-cron-run-history` if it exists, then schedules it hourly;
   - it deletes `end_time < now() - interval '3 days'`;
@@ -328,6 +333,7 @@ retention.
   **Verify RED**: `node --test scripts/__tests__/komodo-cron-retention.test.mjs`. Expected: failing,
   file not found.
 - [x] T027 [P] [US4] Test: case **"release APKs are dumped from the package API"** (R10). The `curl`
+  Acceptance scenarios covered: US4-AC2 (APKs are classified as re-sourced from the package API, not dumped with the forge data).
   shim lists the `mcm-app-android` generic package versions and files. Assert:
   - each file is downloaded with `-H @<package-token header>` into `release-apks/<version>/`;
   - a missing package token file gives `DUMP-FAILED-release-apks` and an alert, while the other dumps
@@ -336,6 +342,7 @@ retention.
   **Verify RED**: `node --test --test-name-pattern="release APKs" scripts/__tests__/backup-script.test.mjs`.
   Expected: failing.
 - [x] T028 [P] [US4] Test: `scripts/__tests__/upload-artifact-retention.test.mjs` parses every
+  Acceptance scenarios covered: none: an FR-only guard (FR-019c is a CI artifact policy with no user-facing scenario).
   `.forgejo/workflows/*.yml` (FR-019c, R9):
   - every step using `actions/upload-artifact` has `with.retention-days`;
   - the value is at most 30;
@@ -604,6 +611,7 @@ PR CI built.
   **Done**: RED, because the job does not exist. The tag-loop list is also compared with
   `scan-push.sh`'s map.
 - [x] T051 [P] [US3] Test: **`scan-app-image.sh` exit meanings** (contract). With a shim `node` on
+  Acceptance scenarios covered: US3-AC1 (exit 11), and the scanner-error path that US3-AC1 must not be confused with (exit 10).
   `PATH` that answers per script name:
   - scan ok and findings ok: exit 0;
   - scan fails: exit 10 with `SCANNER ERROR`;
@@ -673,14 +681,14 @@ PR CI built.
   - an unconditional scan step;
   - a missing tag that does not fail;
   - no cleanup.
-- [ ] T055 [US3] Add to `docs/runbooks/ci-diagnostics.md` what an `app-image-scan` red means (exit 10
+- [x] T055 [US3] Add to `docs/runbooks/ci-diagnostics.md` what an `app-image-scan` red means (exit 10
   vs 11), the allowlist path, and the PR-green/deploy-red residual. Run the PR D gate and open PR D.
   The PR's own `app-image-scan` must be green and name six images (US3-AC1 and AC2, negative case).
   In PR D's body, record the measured cost behind FR-013's reuse claim:
   - `app-image-scan`'s wall time;
   - app-e2e's `app-e2e-build-images` step from `node scripts/ci-status.mjs durations --job app-e2e`,
     which is what a parallel job would have spent rebuilding.
-- [ ] T056 [US3] **Mutation PR (FR-015)**: open a throwaway branch from PR D that re-adds runtime pip
+- [x] T056 [US3] **Mutation PR (FR-015)**: open a throwaway branch from PR D that re-adds runtime pip
   to `movie-mcp`'s image on the pre-fix base. Do **not** merge it. Expected: `app-image-scan` is red
   with exit 11 naming `movie-mcp` and the CVE, and `app-e2e` is unaffected. Record the run id in PR D,
   then close the throwaway PR and delete its branch.
@@ -712,6 +720,7 @@ digest, and that keeps the `ci-failures` evidence window.
   - Two spec assumptions were wrong: `ci-failures` already has a deleter, and the dev-container pin
     is not in git.
 - [x] T060 [P] [US5] Test: `scripts/__tests__/registry-retention.test.mjs`, **config validation**
+  Acceptance scenarios covered: US5-AC1, US5-AC4.
   (data-model). The script refuses:
   - an unknown key;
   - a bad `mode`;
@@ -757,7 +766,7 @@ digest, and that keeps the `ci-failures` evidence window.
   - `--apply` with `mode: report` exits 2 naming the mismatch, with zero DELETEs;
   - `--apply` with `mode: apply` deletes only `delete` rows;
   - an unresolvable protected digest exits 5 with zero DELETEs;
-  - `--dry-run`, `--help` and `--package` without a value are rejected with exit 2;
+  - `--dry-run` and `--package` without a value are rejected with exit 2 (`--help` exits 0, see Done);
   - `--json` gives valid JSON with per-package totals.
   **Verify RED**: `node --test --test-name-pattern="CLI" scripts/__tests__/registry-retention.test.mjs`.
   Expected: failing.
@@ -820,10 +829,14 @@ digest, and that keeps the `ci-failures` evidence window.
 
 ## Phase 9: Polish and cross-cutting
 
-- [ ] T072 Merge the spec/plan/tasks branch `084-silent-failure-visibility` (docs only) before or with
+- [x] T072 Merge the spec/plan/tasks branch `084-silent-failure-visibility` (docs only) before or with
   PR A, so every implementation PR cites a merged spec.
-- [ ] T073 [P] Run `/speckit-analyze` over spec/plan/tasks, and fix any inconsistency it reports
+- [x] T073 [P] Run `/speckit-analyze` over spec/plan/tasks, and fix any inconsistency it reports
   before PR A opens.
+  **Done** 2026-10-31, after all five PRs merged rather than before PR A. Findings fixed in the
+  closeout PR: FRs made technology-agnostic, acceptance-scenario refs added to the test tasks (and
+  US4-AC4 for FR-019d), SC-008's alert line stated, the host `read:package` token marked required,
+  the CI-diagnostic retention justified in the Constitution Check, and terminology aligned.
 - [ ] T074 [P] After the last PR, re-run the spec's Measured Baseline queries (Blocks 1–6) and append
   an "After" column to the baseline tables in `spec.md`.
 - [ ] T075 Confirm that every SC has evidence linked from its item's closing comment: SC-001..003 and
