@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:00362666732a7e915ce6d225490fff289350bda54888095ac3de30b80f2eb6e2",
+  "pageVersion": "sha256:bd4f0f7894c8f85ff7eb0fe370c2d77902f8a68fea0da805c5e7ed2fd8d50549",
   "claims": [
     {
       "id": "claim_c7afeb250e0c4e5797ccafcbc6ed1594",
@@ -258,25 +258,47 @@
     },
     {
       "id": "claim_10c78403290747bea3c7f83ee3c8d376",
-      "statement": "main's required status checks are a glob list read live from branch protection, with a hand-maintained six-glob list (guardrails*, four app-ci / … globs, and infra-image-scan / infra-image-scan*) only as a reported fallback, because the hardcoded mirror once held five globs while main required six and reported VERDICT mergeable while the merge API answered 405 — the over-reporting direction that lets an automated status-and-merge wrapper 405.",
+      "statement": "main's required status checks are read live from branch protection for the target's base branch rather than hand-maintained, with the committed list in scripts/ci-status.mjs as a reported fallback only — currently seven globs: guardrails*, app-ci / changes*, app-ci / affected*, app-ci / mc-service-checks*, app-ci / app-e2e*, infra-image-scan / infra-image-scan*, and the later app-ci / app-image-scan* (spec 084 US3). The fallback is used when the read fails or when no status-check rule covers the branch, and its use is always named in the verdict header rather than silently substituted, because the hand-maintained mirror once held five globs while main required six — feature 035 had added infra-image-scan and nobody mirrored it — and ci-status printed VERDICT mergeable + exit 0 while the merge API answered 405, the over-reporting direction in which an automated status-and-merge wrapper attempts a merge that cannot succeed.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L839-L857",
-          "version": "repo-lines-v1:sha256:0f7ec5b97584cf37e0e6d1a52275195a06cb2d159d56225219da990adfaab22a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkN2JiMzc0OTUyNjA4ZmNkNjE3ZmYxZjgwMWRiZGYxMzM3MDU2MzcxZmIyMjhmNTdlODhjMDM5YWFkNTQwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTFiZDQ2MWRlYjE3NTA3ODczYjYyZmMyMmRiYWQwNGIzNTQ0Mjk2ZTcxMjgxZTM4M2YzYjg4NTk4MTQyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjFkZDA1ZDdhYmE0ZThjYmVlY2RmNWIzOWM4ZmQ0ZDhkZmQxYWU2NzQyYzMzY2RkNjQyNmQwY2E4ZTRmOGQifQ"
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L839-L858",
+          "version": "repo-lines-v1:sha256:be4690c608fb1de42a5b2ebb58c71dca7f0db43872e79655b85bc6ac22ab5466:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkN2JiMzc0OTUyNjA4ZmNkNjE3ZmYxZjgwMWRiZGYxMzM3MDU2MzcxZmIyMjhmNTdlODhjMDM5YWFkNTQwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTFiZDQ2MWRlYjE3NTA3ODczYjYyZmMyMmRiYWQwNGIzNTQ0Mjk2ZTcxMjgxZTM4M2YzYjg4NTk4MTQyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjFkZDA1ZDdhYmE0ZThjYmVlY2RmNWIzOWM4ZmQ0ZDhkZmQxYWU2NzQyYzMzY2RkNjQyNmQwY2E4ZTRmOGQifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L454-L472",
-          "version": "repo-lines-v1:sha256:dbd4bec668287ec9a6a5954c1c903579cbf35377d7aa72ab83ac1e5e3cdfc421:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNjk0Yjk3MzM1YmVmMzhlYjMwZjRjZDYzMjg0M2Y2ZDc2OTRiNDRiMjIyOGU5NTMxNTk0OTdlZWVjMDc1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
+          "resource": "repo://scripts/ci-status.mjs#L1258-L1266",
+          "version": "repo-lines-v1:sha256:5d50ccdb4d4e97561b8ff1c008f66113195dba8c1c6de31ed093b0f4c586dc94:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhNGZmYzM2NTU1ODQ1OTdlODNkZWEyMTAxYWY3OWI3ZjFiZjY5NmVhMWQ5NzRlOGY1MmIyMWY2NDgyMjcwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNDIwOGNkNmZmYjhjNGEzNTQ3YjJmNTRhZGExOTk3OGMzZjM2NWU3OGY5NTAyZWY1MTQ1Y2RkMmFhODU0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRlMTg0NDRhNTdhN2VjOGY1ODZhYzFhNDljMGNlMDM2NmZhY2E2NTYzOWFlNDE2YWRmNjFiMTVlZTdiZmZjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGUxOGFhN2MzZTlkOTBlODU3ODAxMzAwNDUxYWUxYzgxN2UwY2MxMzI0MjhlNjUyNWQ1MzgzNGEzMzdmMDk5MyJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L496-L520",
-          "version": "repo-lines-v1:sha256:65ca06bd4816f166ceb0f3039f857fb340e349fbdefe7d858c3fdaa8e86a8959:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MmUwNmZlNTdiMmMzOGM3MTAyMWNkNGEzNmMzZjVmZTFkZDAxOWE0OTE3MTgyNWM5ZjMwMmFkOTVkODUyNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ZGE3MTY0ZTcwNGJhYjIyZjkzZGZlZDNiY2NiZjRiM2JmZTg0YmYzZmFhNDJkYmY4OGIwOGY1NzI2NzgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGFlYzAzZGNmMDc2ODdlNzYzZjRjNTFkNGU3MjQyZDU0NjA4ODZjZjFhNWZlNWQzMTgxYWNmOWE2MWIzODgifQ"
+          "resource": "repo://scripts/ci-status.mjs#L504-L524",
+          "version": "repo-lines-v1:sha256:bd7bc07d6e21458c91fb1bdbe83487e774218d9b7a20ad982e6fbd134dd85053:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNjk0Yjk3MzM1YmVmMzhlYjMwZjRjZDYzMjg0M2Y2ZDc2OTRiNDRiMjIyOGU5NTMxNTk0OTdlZWVjMDc1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L548-L576",
+          "version": "repo-lines-v1:sha256:fd5657f244c9c77fda43ee67ee8b1e45984ccfc1ffa068d52266d3774c3d7050:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ZGE3MTY0ZTcwNGJhYjIyZjkzZGZlZDNiY2NiZjRiM2JmZTg0YmYzZmFhNDJkYmY4OGIwOGY1NzI2NzgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyM2ZiZTZjYzE3MTRiYmY4ZDUzZWM0YjQxNjM5MDAwYmRkNjQ0YWJhN2UyMjE3MTgyMWVjY2RmYmVkZGYwYzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e172e81588547c3800cec425b67004a",
+      "statement": "The committed fallback required-context list is constrained to be a SUBSET of what branch protection actually requires: a fallback glob that protection does not require would mark a check required that is not and block a mergeable PR, so lagging behind live protection is tolerable (the live fetch catches it) while over-claiming is not — asserted by a test that requires every fallback glob to appear in the live list, plus a belt-and-braces assertion that the fallback carries the very glob whose absence produced the 405. trigger-cd and dast are deliberately absent from it because branch protection does not require them, which is what keeps their failures advisory rather than blocking.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L324-L330",
+          "version": "repo-lines-v1:sha256:6b11f2ab5d2a2ffa0db89838ab6d885706f55eb86e669f627217f06ef3dd01d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzRiYTExODY4MmQ2OWUwOTgwZWIwYzFhYTVmMzkzMjY0YjlmMjg1YjFkZGFlYTQzMjE5NWI0NTdhNTY3OWFkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFmZTVkNzdkYTJlMjkwNmE3N2Q2MzIyMzQyZDJjZTU2ZDg0ZTM4MWI5OWM4MjE2Nzc2OTVhNGEzYjMwNWNlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjExZTVhNzM3YWIzZTcyOGY0MGU5NzU4MTk0YTg3OWRiMWFiYTI5MDBiY2NiYjJkY2VlNzdkZWNmMWYyZWVhNiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L880-L896",
+          "version": "repo-lines-v1:sha256:c1e6fe0394397e5f433e918a021f0ef193755f90b652981eb3786e4c30bf8aca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZWJmYWI4MDYwYTQ4OTI4ZWVmNGE5NTVmMGUzMjMzZjZiNmM1N2M0NzQxZjdlNjFjZTlmNzhlMDMxYTUzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNmI4M2RhY2E4ZGNhNWFjNmJlODQ5ODQ3OTViMTkyMGEyOGI5ODE2YmEwYTkzZDBlYmY1MTdkNGRjMTc1YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyMWMwZWMzYmJiNmZjZWVlMGQ4YjE4NWZiMTJiMjIwYWRjMWRkZWRjZjM1NmNjMjhmYWRkYjg3NTVkZGFjMjkifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L511-L513",
+          "version": "repo-lines-v1:sha256:4f3f1c83662afab63f59c0f3aa8bcfa7d82e09648966f5f4a0784676c986b1cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4ZDBmYWFmYWU0NDRkMWM4YmJiMGRjNzBlM2JmYTQ0OGQwMDg3M2YzNmViNmI2Y2RlNDIzYzc4YWQ0NDkwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc3ZWMzZDRmYjViMDNkNGI2ZTBkOWY0ZmM1MjVkNzFjMGUxMjA2OGY5ODczNjQ1N2U4N2Y2YzYwMzQzMjhjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDIxMjJkYWQzYTI1NzgzMDdhYzUzNGZmYWQ4MDk4NzhhMjQzNmEwNDI5MTBjZTRjMjUzNjUxMTkwYWQwOGEyOCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-10-31T16:05:45.295Z"
   }
 }

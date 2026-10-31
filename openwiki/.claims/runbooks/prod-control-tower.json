@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bc5493e6efa1eb7a91bda84a79668c4ef6a0c25dd4cf85648754c115a71cd84c",
+  "pageVersion": "sha256:e4c0f20ca77747d7f9634591b617e1d45a9918f56f4f8d235c7d05c69b7030cb",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -556,7 +556,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
@@ -697,10 +697,46 @@
           "version": "repo-lines-v1:sha256:dc0140a021de288a1dba62cee9f7baf44ca30fd9c8a367d2bfd6f738bfd15a59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNzljZTU2ZjdiODc3OTJkMWY0OThkMjI3NDI4ODdlZDE2Nzg2N2UyNDAxM2U3YWU4MTBkNWI2MmEzZDdjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NzViNjdlODA5OWEzZTVjMDQ2YWY3MDU1ZWVhZDg3YjgwZTc3ZGI2MzJjNGZmOTY0NmJlNTkzZjhmNmZlOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YzA2NGVjYTRjNmU5OTk0MzMwNTkxY2YxYzMzODc5MGVhOTExNmZlYWRjYmUyYzQ1NmQ4OWQyOWFjN2Y5OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNGQ0ZmY4MTg0ODZhYzg0NDMxNGVjMGI0YzExMzgwMDM1MDU1ZGVmMDExN2M2NWUzYWM5NmJiNDE2ZWI2YzIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_8f10914f4dbb427db7fcf4ef5af98263",
+      "statement": "`scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` is four assertions against both the dev and prod observability composes, one per failure shape of the shared Langfuse/Unleash Postgres pin: the two services reference one identical image (with an explicit non-vacuity check that each service still has an image at all), that shared pin is digest-pinned on the 18 line, both services mount the parent `/var/lib/postgresql` and not the pre-18 `/var/lib/postgresql/data`, and both mount a volume that is not the pre-18 one and whose name ends in `-v18-data`. Its comments record that the premise the second test originally protected — \"the shared pin stays on 16, because moving it migrates Unleash as a side effect\" — was updated at its cause by spec 081 US8b rather than deleted, so the test now reds a regression to 16 or an unreviewed move to 19 instead of a move off 16.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L111-L144",
+          "version": "repo-lines-v1:sha256:e0d081cd470e610fa78839a3be371b1374677e1099c54abfe0f35a1957f7e356:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNDliOWI5ODMxOTI0ZTljMTI0N2I2YTVmNGUxOTk3ZDU4MWY0OWJiNzIyMDQxM2UxNjU5ODBkMGZlYTQzYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L33-L52",
+          "version": "repo-lines-v1:sha256:f87d42a12bb865b9da1668aec65db7b641b0c633cbe422d1adc3b6db549b68e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMTJiZmIxZjc0NmI3M2UyYjI4YWQ0YWQyMWRkM2QzMDU5NWEzZGVhM2IyYTkyZWYyOWRkZGQ5MjE3MjY2N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNDQ1ZTIyMWVlYjNlODZmZDNjNTI4OTEwNWEyNmUzM2JhNWZjMDlmMzUzM2FiYjk4NmRkZWNjNjRhMzQwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1NzNiMzAwN2RjZjg4MmNjN2EyM2JjMWI0NDdmYjBmNzU2YzVkZjBkZDJjMWJlODA1NmExNTJhOWRjODMxMjYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L54-L84",
+          "version": "repo-lines-v1:sha256:daa8e8724e2112a58da11d41f2d88e1a3cc693123fa80dd88efeb1015fdadfa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNTExNTk2ZGQzOTJjMTYyNzg0MmE5MDZjZTIyYjEwYmYwMGZkNzYxZjFmOTA1NWI4ZjU1NTk2YWQ0Zjc3OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNGI0NzVhNzkzOGI0MjdmZGEzZTViODIxY2UwNzRmOGRmMDM3NjE5NDY3NjFlMDlhNDNkMmNkYzQ2NzAzZWMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L86-L109",
+          "version": "repo-lines-v1:sha256:25f5fb0983ed09cadf085b3a8da9a75e93ae6e3ec8a3074cb68e340f1740bfb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTkwNzg5Zjc2ZTFhZWMyYTNmOWJlZGU2ZWI1MWUxNmMyMDdjN2MwMjBjNzUyMzY1ZTMzNzU1OWZkYWJiNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZjAwODU4YzRjNDIyM2NiNTc1ODAxZmJjNjQ3ZjRiMDZiYWQwMWFjYjRhNGM1YzMyZmEwMDQxNzc5Yjk1M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45a697885d17421ab9c4dbbd6f0739f7",
+      "statement": "The Renovate side of the US8b hold discharge is asserted as its successor rather than as an absence, because a deliberately discharged hold and a deleted one are indistinguishable once `allowedVersions` is gone: `scripts/__tests__/renovate-workflow.guard.test.mjs` checks per observability compose file that no update track (patch, minor, major) carries a version ceiling — a `<17` left behind would block the 18 actually deployed — that a Postgres major on the shared pin requires `dependencyDashboardApproval`, and that the patch track requires no approval so the security patch stream stays automatic, plus a control asserting the observability postgres resolves identically to `keycloak`'s postgres so a surviving file-scoped rule reddens the gate.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1155-L1178",
+          "version": "repo-lines-v1:sha256:8fc0668dda83119d600c489d2a9d6db47e03951652783c658b061d53a8578c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3221-L3262",
+          "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T03:40:23.288Z"
+    "at": "2026-10-31T19:43:53.507Z"
   }
 }

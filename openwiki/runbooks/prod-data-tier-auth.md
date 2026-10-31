@@ -4,9 +4,6 @@ title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0
 description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, now deployed in production at FCV 8.0 with the FCV raise still pending after its soak.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-30T00:25:37.413Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -43,6 +40,9 @@ sources:
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -182,14 +182,18 @@ The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises
   the delay. The deploy order lives in
   [`stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml). Two qualifications matter to an
   operator reading this bullet as a promise:
-  - `trigger-cd` does **not** dispatch unconditionally. The decision is delegated to
-    [`cd-dispatch-gate.mjs`](../../scripts/cd-dispatch-gate.mjs), which declines a **superseded**
-    commit (a newer, non-`[skip ci]` commit is the effective tip), a merge where **nothing deployable
-    changed** since the last promotion commit, and a commit whose `guardrails*` contexts are not all
-    green — publishing the answer as a `cd-dispatch / trigger-cd` commit status, because `trigger-cd`
-    itself is advisory and a declined deploy would otherwise be invisible. The dispatch requests
-    `main`'s **tip**, not the merged sha, so a merge that a later push supersedes hands the deploy to
-    the newer commit. A docs-only merge to this runbook therefore does **not** deploy.
+  - `trigger-cd` does **not** dispatch unconditionally, on two levels. The job itself only exists on a
+    `push` to `main` that clears its `needs:` — `affected` and `mc-service-checks` must succeed,
+    `app-e2e` and `dast` may be `success` **or** `skipped` (a path-gated skip must not swallow a
+    config-only merge), and `app-image-scan` must be exactly `success` — and only then is the decision
+    delegated to [`cd-dispatch-gate.mjs`](../../scripts/cd-dispatch-gate.mjs), which declines a
+    **superseded** commit (a newer, non-`[skip ci]` commit is the effective tip), a merge where
+    **nothing deployable changed** since the last promotion commit, and a commit whose `guardrails*`
+    contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status,
+    because `trigger-cd` itself is advisory and a declined deploy would otherwise be invisible. The
+    dispatch requests `main`'s **tip**, not the merged sha, so a merge that a later push supersedes
+    hands the deploy to the newer commit. A docs-only merge to this runbook therefore does **not**
+    deploy.
   - `cd-deploy` serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false`,
     so a second merge never cancels an in-flight production deploy. It is also `workflow_dispatch`-only
     (no `push:` trigger), with `deploy=false` as the default: a manual run with `deploy=false` builds,

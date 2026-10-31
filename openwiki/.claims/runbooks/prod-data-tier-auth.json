@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e009dc41ea437e160b53f6f6b92d1c329e1435fa337ea728b9d45c92ecb8fe57",
+  "pageVersion": "sha256:d8273e8cafa76e04a198cc1f1670169aa0fd452a2097fcd554d121086f7c2bcf",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -360,11 +360,11 @@
     },
     {
       "id": "claim_2dae25c25a6c430abf49b9aee6dc1645",
-      "statement": "The deploy path a merge triggers is conditional, not automatic: `app-ci`'s `trigger-cd` job delegates the decision to `scripts/cd-dispatch-gate.mjs`, which declines a commit that is no longer the effective tip of `main` (a newer non-`[skip ci]` commit supersedes it), a range where nothing in `DEPLOYABLE_PATHS` changed since the last `chore(cd): promote …` commit, and a commit whose `guardrails*` contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status because `trigger-cd` is advisory; the dispatch itself requests `main`'s tip, not the merged sha. `cd-deploy` is correspondingly `workflow_dispatch`-only with no `push:` trigger (`deploy=false` default, so a manual mint builds/scans/pushes/promotes digests without firing the webhook or probe) and serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false` so a later merge never cancels an in-flight production deploy.",
+      "statement": "The deploy path a merge triggers is conditional at two levels, not automatic. First, `app-ci`'s `trigger-cd` job exists only for a `push` to `main` whose `needs:` are satisfied: `affected` and `mc-service-checks` must succeed, `app-e2e` and `dast` may be `success` or `skipped` (so a path-gated skip does not swallow a config-only merge), and `app-image-scan` must be exactly `success`. Second, the remaining decision is delegated to `scripts/cd-dispatch-gate.mjs`, which declines a commit that is no longer the effective tip of `main` (a newer non-`[skip ci]` commit supersedes it), a range where nothing in `DEPLOYABLE_PATHS` changed since the last `chore(cd): promote …` commit, and a commit whose `guardrails*` contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status because `trigger-cd` is advisory; the dispatch itself requests `main`'s tip, not the merged sha. `cd-deploy` is correspondingly `workflow_dispatch`-only with no `push:` trigger (`deploy=false` default, so a manual mint builds/scans/pushes/promotes digests without firing the webhook or probe) and serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false` so a later merge never cancels an in-flight production deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1747-L1819",
-          "version": "repo-lines-v1:sha256:17928ee8d83b8484a4691f7f990533865d2c85b7eec04b73e8f3373cfaff305c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMzg2ZDhlMThlZDMyYjhiYjlkNjcyYzY2YjI2Y2RiMzM5MjJhZjI3MDQwNmY5YzQ1YzM0ODVkMTYxZWJhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZDVjNDMzYjcwOWEyNjZiOWE3MWExMDNjYTViNDQwNTIzYWVkNTY2NTEyNWE3ZTQ5MjNhNWM0ZjNkYzkxMDQifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1906-L1993",
+          "version": "repo-lines-v1:sha256:ae09f0060240ced08920a0da7f1d651a9100f6e156335ea3b0b17aa4f0137ded:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml#L36-L56",
@@ -387,6 +387,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-30T00:25:37.413Z"
+    "at": "2026-10-31T19:43:53.507Z"
   }
 }

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules with version- or digest-keyed entries, the bounded retry, and the publish-versus-promote split.
+description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules with version- or digest-keyed entries, the bounded retry, the one shared per-image scan pipeline that both the PR and the deploy call, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # Infra-image CVE scanning
@@ -137,6 +137,7 @@ the gate is red — and neither can gate anything.
 |---|---|
 | `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact). |
 | `node scripts/check-infra-image-findings.mjs` | the gate: exit 1 on any `blocking` finding not suppressed by a live allowlist entry; `--check-expiring` is the report-only hygiene tier; `--selftest` proves fail/suppress/expiry without Trivy. |
+| `bash scripts/cd/scan-app-image.sh <local-tag>` | the SHARED per-image scan-and-verdict block (spec 084 US3): runs the scan then the gate on one local image and returns two exit codes — `0` clean, `10` scanner error (nothing was assessed), `11` blocking finding, `2` usage. Both consumers call it rather than reimplementing the pipeline: `scripts/cd/scan-push.sh` before each `docker push`, and app-ci's `app-image-scan` job on the six images `app-e2e` built. |
 | `pnpm nx infra-scan infrastructure-as-code` | the Nx target wrapping the orchestrator, alongside the `sast`/`dast` targets. |
 | `security/infra-images/severity-map.yaml` | Trivy severity → normalized scale. An unmapped native value is a hard error in the orchestrator (no silent default); `UNKNOWN` maps conservatively to `Low` so it can never block. |
 
@@ -166,7 +167,11 @@ findings readable.
   it; everything else belongs here. `cd-deploy` owns its six app images (see
   [CI/CD pipeline](../projects/ci-cd-pipeline.md)); nothing else builds an image any more, so
   `BUILT_IMAGE_NAMES` is exactly those six and every pulled third-party image — RustFS included — is
-  enumerated here. The exclusion rule used to be `if (ref.includes('jumbleknot/')) continue` — matching
+  enumerated here. Those six are not unscanned, though: since spec 084 US3 the same per-image pipeline
+  this page's gate uses runs on them at PR time through app-ci's `app-image-scan` job (see
+  [CI self-serve diagnostics](./ci-diagnostics.md)), because until then a Critical introduced by a
+  base-image bump passed every PR check and surfaced as a failed deploy on `main`, where nothing
+  blocks. The exclusion rule used to be `if (ref.includes('jumbleknot/')) continue` — matching
   "anything named like ours" rather than "anything already scanned by a builder". Feature 069 broke that
   coincidence by adding a `jumbleknot/*` image built outside cd-deploy; under the old rule it was
   excluded here and absent from cd-deploy's set — published and examined by neither gate, zero findings,
@@ -198,11 +203,18 @@ findings readable.
 - **A finding and a scanner fault are two different exit codes on two commands.** `scripts/infra-image-scan.mjs`
   invokes Trivy with `--format json` and **no** `--exit-code`, so a non-zero scan exit can only mean
   the scanner could not run; `scripts/check-infra-image-findings.mjs` then carries the verdict from the
-  normalized report. This split is what `cd-deploy` runs per image before the push, and it is why
-  accepted findings on the deploy path live in `security/infra-images/allowlist.yaml` rather than in a
-  `.trivyignore` nobody reviews. Pinned by
-  `scripts/__tests__/cd-scan-push-gate.guard.test.mjs`, which asserts the gate runs before
-  `docker push` and inside the per-image loop.
+  normalized report. The two meanings are split across two commands rather than one integer, and
+  `scripts/cd/scan-app-image.sh` is where they are wired together as a single per-image contract: it
+  maps a failed scan to exit `10` and a failed gate to exit `11`, and each caller turns those into its
+  own operator message. `cd-deploy`'s per-image loop calls the shared script **before** `docker push`,
+  and app-ci's `app-image-scan` job calls the same script on the six images `app-e2e` built — one
+  pipeline, so one Trivy pin, one set of flags and one allowlist for both the PR and the deploy. It is
+  also why accepted findings on the deploy path live in `security/infra-images/allowlist.yaml` rather
+  than in a `.trivyignore` nobody reviews. Pinned by
+  `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` (the gate runs before `docker push` and inside
+  the per-image loop, the bare `trivy image --exit-code` form stays gone, and an unexpected exit code
+  fails closed) and by `scripts/__tests__/app-image-scan.test.mjs`, whose drift guard fails if either
+  caller starts scanning on its own.
 - **A Trivy vulnerability-DB blip is bounded-retried, and the retry must not soften the gate.**
   Trivy fetches its DB over the network on every run and this scanner is fail-closed, so an upstream
   blip reds the required context — and recovery costs a full CI cycle, because `/rerun` and
@@ -480,19 +492,22 @@ findings readable.
   is reachable), and **record in the justification that this is an inference, not a scan**. Prefer the
   direction that fails safe: a key covering a ref that turns out clean suppresses nothing extra; a key
   that omits an affected ref blocks the board.
-- **The scanner itself is version-pinned, and Renovate is what keeps it from rotting.** `infra-image-scan.yml`
-  (like `cd-deploy.yml`) installs Trivy from a **version-tagged** `contrib/install.sh` and passes the same
-  tag as the script's positional argument — one `TRIVY_VERSION` assignment interpolated into both sites,
-  so a bump cannot move one and strand the other. The floating form this replaced (script from `main`,
-  no tag) had no digest underneath either, and it cost real comparability: during item #297 the local
-  sweep ran `aquasec/trivy:0.74.0` while CI ran an unknown version, so two scans of byte-identical
-  images could not be reconciled. A `customManagers` entry (`depNameTemplate: aquasecurity/trivy`,
-  datasource `github-releases`) covers both workflow files, and `renovate-workflow.guard.test.mjs`
-  asserts the *resolved* state rather than the presence of a version string: both files pinned, the
-  script ref equal to the installed tag, the two files agreeing on one version (a disagreement means one
-  gate can block what the other passes, with neither result explaining the other), and the manager's
-  `matchStrings` actually capturing a `currentValue` in each file — a manager whose regex misses is
-  indistinguishable from no manager at all.
+- **The scanner itself is version-pinned, and Renovate is what keeps it from rotting.** `infra-image-scan.yml`,
+  `cd-deploy.yml` and `app-ci.yml` all install Trivy from a **version-tagged** `contrib/install.sh` and
+  pass the same tag as the script's positional argument — one `TRIVY_VERSION` assignment interpolated
+  into both sites per file, so a bump cannot move one and strand the other. There are **three** such
+  sites since spec 084 US3: app-ci's `app-image-scan` job scans the PR's images with the scanner the
+  deploy will use, so a green PR that ran a different Trivy than the deploy would prove nothing. The
+  floating form this replaced (script from `main`, no tag) had no digest underneath either, and it cost
+  real comparability: during item #297 the local sweep ran `aquasec/trivy:0.74.0` while CI ran an
+  unknown version, so two scans of byte-identical images could not be reconciled. A `customManagers`
+  entry (`depNameTemplate: aquasecurity/trivy`, datasource `github-releases`) covers all three
+  workflow files, and `renovate-workflow.guard.test.mjs` asserts the *resolved* state rather than the
+  presence of a version string: all three pinned, the script ref equal to the installed tag in each,
+  all three agreeing on one version (a disagreement means one gate can block what another passes, with
+  neither result explaining the other), and the manager's `matchStrings` actually capturing a
+  `currentValue` in each file — a manager whose regex misses is indistinguishable from no manager at
+  all.
 - **Is the advisory still the severity you triaged it at?** The gate blocks on fixable **Critical**
   only, so an advisory re-rated Critical→High stops blocking without anything upstream changing — and
   in the gate's output that is indistinguishable from remediation. Read the installed package version
@@ -510,10 +525,11 @@ what matters here is that four of its lessons are about the *shape*, not about t
   builder base image as a security bump, the workflow rebuilt and published, and every compose ref
   still pinned the pre-#559 digest three weeks later (item #577). Anything a build scans is a claim
   about the image *as built* until a promotion repoints the pins. `cd-deploy` keeps the two acts
-  distinct for its own images: `scripts/cd/scan-push.sh` scans and gates the push, and
-  `scripts/cd/promote-digest.sh` writes the resulting digests into the tracked `.env.deploy` files as a
-  separate step. On a registry that drops a manifest once nothing tags it, a build must also be pushed
-  under an immutable per-run tag or a rebuild orphans the digest the compose refs pin — `cd-deploy`
+  distinct for its own images: `scripts/cd/scan-push.sh` scans and gates the push through the shared
+  `scripts/cd/scan-app-image.sh`, and `scripts/cd/promote-digest.sh` writes the resulting digests into
+  the tracked `.env.deploy` files as a separate step. On a registry that drops a manifest once nothing
+  tags it, a build must also be pushed under an immutable per-run tag or a rebuild orphans the digest
+  the compose refs pin — `cd-deploy`
   pushes each image as `${REGISTRY}/${NS}/<repo>:${GITHUB_SHA}`, and the promoter repoints the refs by
   digest. Without that, updating a pin would be a weekly breakage rather than a deliberate act.
 - **A count of things to repoint comes from the tree, never from a note.** The promoter's spec note
@@ -551,7 +567,8 @@ what matters here is that four of its lessons are about the *shape*, not about t
 |---|---|
 | `scripts/__tests__/infra-image-scan.test.mjs` | pure enumeration + normalization: the partition/completeness case against a **hypothetical** fixture, `BUILT_IMAGE_NAMES` being exactly cd-deploy's six, `${REGISTRY_HOST}` resolution and its loud unresolved-ref report, `isFloatingTag` `(fd1)`–`(fd4)`, set equality of floating refs against renovate's declared exceptions, the two-directional allowlist-key assertion, the digest-pin count and Renovate's compose-file visibility, and the RustFS ref being enumerated digest-pinned. Runs without Trivy, so it is Windows-friendly. |
 | `scripts/__tests__/infra-image-scan-retry.guard.test.mjs` | the retry: the exact measured stderr classifies transient, each measured string does so on its own, and the **control** cases — a real finding, a missing image, unparseable output — are never retried. |
-| `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, and a fixable Critical still blocks while an unfixable one does not. |
+| `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, `set -euo pipefail` still governs the step, both failure modes are reported in words rather than left to an exit code, and a fixable Critical still blocks while an unfixable one does not and is never classified transient. |
+| `scripts/__tests__/app-image-scan.test.mjs` | the shared per-image pipeline and its two callers (spec 084 US3): `scripts/cd/scan-app-image.sh` returns 0/10/11/2 with the right message, neither caller runs the scanner or the verdict itself, both scan exactly the six images `scan-push.sh` pushes, the job runs on `kvm` after `app-e2e` with `always()` and is not restricted to pull requests, a missing scan tag fails the job naming it, the run-scoped tags are removed under `always()`, and `app-ci / app-image-scan*` is in `ci-status`'s required globs with `scripts/cd/scan-app-image.sh` in the `app` path filter. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
 | `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. Also the discharged datastore holds, asserted as their **successors** rather than as absent ceilings (spec 081): no `allowedVersions` on any track for vault, opensearch, langfuse, the observability postgres or mongodb, a `dependencyDashboardApproval` gate on every major, an automatic patch stream, and — as the control — that neither hold has widened onto caddy or otel-lgtm. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |

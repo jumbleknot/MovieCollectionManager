@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
 resource: docs/runbooks/ci-diagnostics.md
-tags: [ci, forgejo, diagnostics, tooling, runbook]
+tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -33,8 +33,12 @@ sources:
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
     resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
+  - id: openwiki-source-85fc21a7b778685b168d8d3b
+    resource: repo://scripts/__tests__/ci-status.test.mjs
   - id: openwiki-source-02881b4039babfbc8f305d7c
     resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
+  - id: openwiki-source-b50d19f23836b85abeaed26d
+    resource: repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-2c2f0032bb5935673fca7b18
@@ -55,10 +59,12 @@ sources:
     resource: repo://scripts/e2e-failure-set.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T06:29:24.551Z" }
+  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
+    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T06:29:24.551Z
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # CI self-serve diagnostics
@@ -73,8 +79,10 @@ forge host from the `origin` remote **at runtime**, so no host literal exists to
 Two facts decide almost every reading:
 
 - **Exit `0` means mergeable, `1` a required context genuinely failed, `2` bad arguments/auth, `3` still
-  waiting when `watch` timed out.** The `3` is load-bearing — it is deliberately *not* a failure, because
-  there is one runner and a saturated queue is the normal state of this repository.
+  waiting when `watch` timed out, `4` (`watch` only) mergeable but the dispatched deploy FAILED.** The `3`
+  is load-bearing — it is deliberately *not* a failure, because there is one runner and a saturated queue
+  is the normal state of this repository. `4` is no verdict's code, so it cannot be misread as either of
+  the other two; see the item 823 bullet below.
 - **`watch` answers a different question from its exit code.** It waits for advisory contexts too
   (`app-ci / trigger-cd` is the only place a declined or failed deploy is visible), while the exit code is
   decided by the required set alone.
@@ -90,11 +98,15 @@ flowchart TD
   R --> ST
   L --> ST
   BP["GET branch_protections for the BASE branch"] --> V
+  RUNS["GET actions runs filtered by head_sha"] --> DD["findDispatchedDeploy — the cd-deploy run for this sha"]
+  DD --> V
   ST --> C["classifyCheckState per context"]
   C --> V{"verdict over the WHOLE commit"}
   C --> VIEW["single-event view, for the readable table"]
   V --> E["exit 0 mergeable, 1 required failed, 3 still waiting"]
   V --> ALSO["ALSO GATING names required contexts missing from the view"]
+  DD --> DEP["advisory row plus DEPLOY FAILED block"]
+  DEP --> W["watch exits 4 when mergeable and the deploy failed"]
 ```
 
 How a lookup flows: the target resolves to one commit, contexts are classified, and the whole-commit
@@ -114,10 +126,120 @@ stateDiagram-v2
 ```
 
 The five states `ci-status` reports, and how two of them are derived rather than read literally — the
-skipped branch then splits three ways on the `needs:` graph.
+skipped branch then splits three ways on the `needs:` graph. The dispatched-deploy row below is not one
+of the five: it has no commit status to classify at all, so it is resolved from the runs listing instead
+(item 823).
+
+Two things this page is not: it is not the digest/bundle producer (see
+[CI evidence pipeline](./ci-evidence-pipeline.md)), and it is not the image scanner itself (see
+[Infra-image CVE scanning](./infra-image-scanning.md)). What it owns is the *reading* of a CI board —
+which contexts exist, what each state means, and which of them are lying.
 
 ## Gotchas
 
+- **A dispatched `cd-deploy` run posts NO commit status — so its outcome is resolved from the RUNS
+  (item 823, fixed 2026-10-31).** `trigger-cd` dispatches `cd-deploy.yml`, and the dispatched run
+  attaches nothing to the commit. Until item 823 a **failed deploy was invisible to every command here**:
+  `failure --sha <sha>` answered `No failed jobs on <sha> — checked every event's contexts`,
+  `failure --run <id>` answered `posted NO commit status`, and a session watching for the
+  `chore(cd): promote` commit simply timed out. **Case study, 2026-10-21:** cd-deploy run **5745** (the UI
+  calls it 5744) on `fa79e611` failed at `scan-push`, and the evidence sat in the bundle
+  `5745--build-deploy` the whole time, read by hand. Now, for a sha that has a dispatched cd-deploy run:
+  - **`status`** adds the advisory row `cd-deploy / build-deploy (dispatched)  failed  run 5745` plus a
+    `🚨 DEPLOY FAILED (advisory)` block — and the verdict line and exit code are exactly what they would
+    be without the row, because the deploy runs *after* the merge it would be gating. `required` is
+    forced false, so no branch-protection glob can claim it.
+  - **`watch`** waits for a running deploy as for any advisory context, and exits **`4`** when the commit
+    is mergeable and the deploy failed. `4` is no verdict's code, so a caller can tell "the deploy
+    failed" from "keep waiting" (`3`) and "CI failed" (`1`).
+  - **`failure --sha` / `--run`** prints the deploy's digest from its bundle, `<runId>--build-deploy` or
+    `<runId>--prod-apk`. With neither published it prints
+    `deploy run <id> FAILED; no evidence bundle published` and exits 1. It never says "No failed jobs".
+
+  **Two payload shapes silently defeat a resolver written from the GitHub docs.** A dispatched run
+  carries **`event: ""`**, with the event in **`trigger_event`**; and it carries its sha as
+  **`commit_sha`**. A resolver keyed on `event`/`head_sha` matches nothing and stays silent — the
+  GitHub spellings are accepted too, so a payload that fills them still matches. And the bundle is named
+  by the run's **`id`**, never by `index_in_repo`, which is the number the UI shows: run 5745 is "5744"
+  in the UI, so a name constructed from the UI number 404s for a bundle that exists. The newest run by
+  `id` wins, so a re-run decides, and a `cancelled`/`skipped` deploy is not `passed` — it is not a deploy
+  either.
+
+  **The deploy runs on main's head AT DISPATCH TIME, which is not always the commit whose CI dispatched
+  it.** On 2026-10-21 `trigger-cd` passed on `7cc3c304`, and the deploy ran on `fa79e611`, a marker
+  commit pushed in between. `status` on the first therefore says
+  `no deploy dispatched for this sha — trigger-cd passed …`; run `status` on the commits after it in
+  `git log --first-parent main`. `scripts/__tests__/ci-status.test.mjs` pins all of this against the real
+  2026-10-21 payloads (`fixtures/ci-status/dispatched-failed.json` and its `success`/`in-progress`/
+  `rerun` siblings), including that a running deploy is outstanding in both the view and the gate while
+  still not holding the merge verdict, and that exit 4 is a code no verdict produces; a drift guard
+  asserts the two bundle jobs match the cd-deploy jobs that actually run a digest step, and
+  `ci-status --selftest` carries the case too so the trap is classified without a forge. The exit codes
+  themselves are stated in [the CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
+- **`app-ci / app-image-scan` is REQUIRED, and it moves the deploy gate onto the pull request (spec 084
+  US3).** Until spec 084 the six app images (`mc-service`, `mcm-bff`, `agent-gateway`, `movie-mcp`,
+  `web-api-mcp`, `spreadsheet-mcp`) were scanned in exactly one place — cd-deploy's `scan-push`, which
+  runs **after** the merge. A fixable Critical introduced by a base-image or dependency bump therefore
+  passed every PR check and surfaced as a failed **deploy** on `main`, where nothing blocks (cd-deploy
+  run 5745 on 2026-10-21 is that shape). `app-image-scan` closes it: a required app-ci job that runs
+  `scripts/cd/scan-app-image.sh` — the deploy gate's per-image scan-and-verdict block, extracted so the
+  PR and the deploy share one flag set and one allowlist
+  (`security/infra-images/allowlist.yaml`), with the Trivy version pinned **in each workflow that
+  installs it** (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) and
+  `renovate-workflow.guard.test.mjs` failing if those pins disagree or drift from the version-tagged
+  install script — over the images `app-e2e` already built. `app-e2e` tags
+  each of them `app-scan/<name>:run-<run id>` immediately after the build, so a later run rebuilding
+  `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to `main` too, and
+  `trigger-cd` now `needs:` it, so a vulnerability-database change shows as a red on `main` **before** a
+  dispatch. The exit codes are split because one code cannot carry two meanings: a scanner that could
+  not run is not a finding, and reporting it as one sends the reader to patch a CVE that was never
+  assessed.
+
+  ```mermaid
+  flowchart TD
+    A["app-e2e builds the six images"] --> B["tag app-scan/name:run-id straight after the build"]
+    B --> C{"did the changes job succeed"}
+    C -->|"no"| FAIL["fail closed — an unknown app diff is not nothing to scan"]
+    C -->|"yes"| D{"changes.outputs.app true"}
+    D -->|"no"| P["pass in seconds — nothing to scan"]
+    D -->|"yes"| E{"all six run tags present"}
+    E -->|"no"| M["missing scan tag(s) — fail, naming them"]
+    E -->|"yes"| F["scan each image through scan-app-image.sh"]
+    F --> G{"scanner completed"}
+    G -->|"no"| SCANERR["exit 10 SCANNER ERROR — no verdict"]
+    G -->|"yes"| H{"un-allowlisted fixable Critical"}
+    H -->|"yes"| BLOCKED["exit 11 BLOCKING FINDING — names the CVE"]
+    H -->|"no"| I["pass"]
+    I --> T["trigger-cd requires success before any dispatch"]
+  ```
+
+  The PR-time scan's outcomes and where each one leads — the tag check is what stops the job passing
+  on images it never found, and the `changes` guard is what stops it passing on a diff nobody could
+  evaluate.
+
+  | What you see | Meaning | What to do |
+  |---|---|---|
+  | `no app path changed — images identical to main's` | nothing to scan; passes in seconds | nothing |
+  | `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images | fix `app-e2e`; the job never passes on images it could not find |
+  | exit **10**, `✗ SCANNER ERROR for <image>` | Trivy could not complete (vulnerability DB or registry, after its bounded retries) — **nothing was assessed** | re-run the job |
+  | exit **11**, `✗ BLOCKING FINDING in <image>` | an un-allowlisted Critical with an upstream fix; the verdict's table above it names the CVE and the package | patch it (base image or dependency), or add a reviewed, justified, **expiring** entry to the allowlist |
+
+  Every image is scanned even after one fails, so one run names every blocking image. The job runs on
+  the same `kvm` runner and the same rootless daemon socket as `app-e2e` (that is where the images are),
+  it **fails closed** when the `changes` job did not succeed — an unknown app diff must not read as
+  "nothing to scan" — and it removes its six run tags at the end with `always()` while leaving the
+  `:latest` images in place, so the tags do not accumulate on the persistent daemon. An allowlist entry
+  works in both places at once, because the PR and the deploy read the same file — key it to the
+  **digest** (`^<image>:<tag>@sha256:<prefix>`) so a rebuild is scanned unsuppressed. **The residual is
+  real: a green PR can still meet a red deploy.** The vulnerability database moves between the PR's scan
+  and the deploy's (which is why `main` pushes re-scan before `trigger-cd`), and cd-deploy rebuilds the
+  images — its `mcm-bff` bakes the public Keycloak host into the web bundle, though the packages and the
+  base image are the same, so the CVE surface is too. `scan-push` therefore stays, unchanged in position,
+  as the gate on what is actually **pushed**; a fixable Critical in a PR still fails the PR first, which
+  is the whole point of the job. `scripts/__tests__/app-image-scan.test.mjs` pins the wiring (both
+  callers go through the shared script and neither runs the scanner itself, the two image lists agree,
+  exit 10 takes no verdict, `trigger-cd` requires a passed scan, and `ci-status`'s built-in fallback
+  lists the new glob).
 - **Two of the five reported check states are misreported by the raw API and must be derived, not
   trusted literally.** A skipped job reads `success` with description "Has been skipped" — but the
   payload does not say *why* it was skipped (see item 396 below); a cancelled-by-newer-push run
@@ -181,7 +303,11 @@ skipped branch then splits three ways on the `needs:` graph.
   `ci-log-step`) does not, because it cannot make the app wrong. Item #520 is the measured
   counter-example that produced the rule — `scripts/agent-stack.mjs` changed how the gateway receives
   its credentials, and `app-e2e`, the only job that would have proven the gateway still starts, was
-  skipped because nothing in the filter matched `scripts/**`.
+  skipped because nothing in the filter matched `scripts/**`. The same filter now also decides whether
+  `app-image-scan` has anything to scan: `scripts/cd/scan-app-image.sh` is in the `app` filter (spec 084
+  US3) precisely so that changing the shared scanner re-runs the job that calls it, and a
+  filter-gated-out PR makes the scan pass in seconds with `no app path changed` — a legitimate pass, not
+  a scan that found nothing.
 - **A ⏳ is not a future pass, and the filter — not the spinner — says whether a job will run.**
   `waiting` can still resolve to `skipped` (path-gated) or `superseded` (cancelled by a newer push);
   both are non-runs that a green board then presents as satisfied. Item 568 hit this twice in one
@@ -246,7 +372,10 @@ skipped branch then splits three ways on the `needs:` graph.
   wrong answer item #230 was filed for. `decide()` is a pure function so this can be tested without a
   runner; `scripts/__tests__/cd-dispatch-gate.test.mjs` pins it against the incident's own payloads,
   and `scripts/__tests__/app-ci-trigger-cd.guard.test.mjs` pins the workflow wiring (checkout with
-  `fetch-depth: 0` before the gate, dispatch conditional on the gate's `dispatch` output).
+  `fetch-depth: 0` before the gate, dispatch conditional on the gate's `dispatch` output). **Since spec
+  084 US3 `trigger-cd` also `needs: app-image-scan`** and requires its result to be exactly `success`,
+  so a red scan on `main` blocks the dispatch as well as the merge — while a scan that legitimately had
+  nothing to do posts `success` too, which is why that job is `always()` rather than skipped.
 - **The required-check list is fetched live from branch protection, never hand-maintained.** It
   previously drifted (a hardcoded array missed a check added by a later feature) and let the tool
   report "mergeable" for a PR the forge then rejected outright — measured 2026-07-26: `VERDICT
@@ -258,7 +387,9 @@ skipped branch then splits three ways on the `needs:` graph.
   the rule covering the target's **base** branch, since a PR is gated by its base, not its head; and
   the parser returns **null, never an empty array**, when no rule covers the branch — an empty
   required set would mark every context optional and render *everything* mergeable, the same
-  over-reporting bug in a louder disguise.
+  over-reporting bug in a louder disguise. **The built-in fallback list has since grown a seventh
+  glob**, `app-ci / app-image-scan*` (spec 084 US3) — and the fallback is a *subset* of the live
+  protection by design, so it may lag but must never over-claim; a guard test asserts exactly that.
 - **A context string carries an event suffix, and getting the event wrong goes wrong in both
   directions.** Ignoring the event over-reports failure (a green push run blocks a PR that was fine).
   Selecting *one* event over-reports **success** — the dangerous direction: a required job that
@@ -291,9 +422,11 @@ skipped branch then splits three ways on the `needs:` graph.
   checks. A filter that does nothing reads as "matched everything"; an empty array reads as "no CI
   ran". Treat "not found in the page" as **unknown**, never as a pass, and filter `trigger_event`
   client-side.
-- **A queued run's `started` is the EPOCH, so any time filter hides it (measured 2026-09-26).** A run
-  with `status: waiting` reports `started: "1970-01-01T00:00:00Z"` — not `null`. The natural narrowing
-  filter (`select(.started > "2026-09-25T23:20")`) therefore drops every queued run: three runs had
+- **A queued run's `started` is the EPOCH, so any time filter hides it (measured 2026-09-26).** The
+  fifth measured quirk of `GET /actions/runs`, and the one that bites hardest, because the obvious
+  narrowing filter is exactly the wrong one: a run with `status: waiting` reports
+  `started: "1970-01-01T00:00:00Z"` — not `null` — so
+  `select(.started > "2026-09-25T23:20")` drops every queued run: three runs had
   been created for a push and all three were invisible, which reads exactly like "the push triggered
   nothing". Filter on `status` or `id`, and read `started` only once you know the run has begun; a
   *sort* by `Date.parse(started)` is safe (a queued run sorts oldest), a *filter* on it is not.
@@ -332,10 +465,13 @@ skipped branch then splits three ways on the `needs:` graph.
   expected and must never be conflated with an actual build failure. An advisory context still
   running at the timeout does **not** change the exit code either: `exit 0 ⟺ mergeable` is
   load-bearing for a `ci-status … && merge` wrapper, so the verdict's own code stands and the
-  unfinished advisory row is named instead of silently dropped.
-- **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30`
-  reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed
-  `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
+  unfinished advisory row is named instead of silently dropped. Exit `4` is the one addition to this
+  table that is `watch`-only, and it exists for the same reason: a mergeable commit whose dispatched
+  deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3` (which reads as
+  "keep waiting").
+- **A pipe throws the exit code away — including exit 3, exit 1 and exit 4.** `ci-status … watch |
+  tail -30` reports **`tail`'s** status, so all three arrive as `0`. Measured 2026-09-06: a watch that
+  printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
   `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372
   --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on
   by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool —
@@ -545,6 +681,10 @@ skipped branch then splits three ways on the `needs:` graph.
   generated (never hand-edited) by `durations --propose`, with the rule `max(observed) x 3` rounded
   up to a minute and floored at 300 s. `CI_STEP_TIMEOUT_SECONDS` survives as the backstop for
   uncalibrated steps (n < 10 or failure-path-only); a table miss never falls through to unbounded.
+  The `app-image-scan` steps (spec 084 US3) are all on that backstop today — listed by name in the
+  table's `ON THE BACKSTOP` block with no observations yet — and the job carries its own
+  `CI_STEP_TIMEOUT_SECONDS: '900'` bound below its 30-minute job ceiling, so a hung scan fails its step
+  and the digest still runs.
   See
   [the evidence-pipeline runbook's ceiling section](../../docs/runbooks/ci-evidence-pipeline.md#recalibrating-the-table)
   for the full arithmetic and guard details.
@@ -705,14 +845,19 @@ skipped branch then splits three ways on the `needs:` graph.
 ## Where the procedures live
 
 This page is the distilled map plus the traps. The full exit-code table, the exact endpoints and
-payload measurements, the required-check fetch/fallback logic, the token-provisioning recipe with its
+payload measurements, the required-check fetch/fallback logic, the `app-image-scan` table with its
+allowlist and residual, the token-provisioning recipe with its
 read/write split and the degraded fallback, the PR-opening recipe, the branch-deletion rules and their
 reaper backstop, and the evidence-bundle hardening details are in
-[the source runbook](../../docs/runbooks/ci-diagnostics.md), whose
-[PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request)
-is the canonical statement of the AGit rule and of the `POST /pulls` credential split.
+[the source runbook](../../docs/runbooks/ci-diagnostics.md). Its
+[PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request) is the canonical
+statement of the AGit rule and of the `POST /pulls` credential split, and the item 823 exit codes and
+the `scan-app-image.sh` exit meanings are contracted in
+[spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
 
 Related: [CI evidence pipeline](./ci-evidence-pipeline.md) (the producing half — digest, bundle,
-durations, ceilings), [E2E testing](./e2e-testing.md), [Renovate](./renovate.md),
+durations, ceilings), [Infra-image CVE scanning](./infra-image-scanning.md) (the sweep over the
+third-party images, and the shared scanner this page's `app-image-scan` job runs),
+[E2E testing](./e2e-testing.md), [Renovate](./renovate.md),
 [SAST scanning](./sast-scanning.md), [Testing tiers](../invariants/testing-tiers.md), and
 [the CI/CD pipeline](../projects/ci-cd-pipeline.md).

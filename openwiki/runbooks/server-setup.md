@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a report-only registry-retention job, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
-tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, backups, runbook]
+tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -56,7 +56,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T09:46:49.753Z
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -117,7 +117,8 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   Postgres behind it; `packages` (the registry) and `actions` are enabled by env, the GitHub mirror is
   a push mirror so Forgejo stays SSOT, and every automated consumer gets its own minimally-scoped
   named access token. The same phase documents the generic package registry that carries the release
-  APK.
+  APK, and — since spec 084 US5 — the **registry retention** sweep that is the only thing that ever
+  deletes from the OCI registry; it runs report-only on a weekly schedule and its gotchas are below.
 - **7 — Forgejo Actions runner.** `forgejo-runner` v12 as a **binary** under the `ci` user's
   systemd-user manager (a container runner would fight container↔Forgejo networking), registered with
   the UUID + secret the web UI hands out — the older registration-token flow is deprecated. The runner
@@ -417,6 +418,89 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   - **The script always exits 0 and is `continue-on-error` on the workflow step.** `prod-apk` is
     non-blocking by design; a registry hiccup must not turn a deploy red. Every failure path emits
     `::error::` so it is visible in the job log without failing the job.
+- **Registry retention is a report-only script with a two-key apply, not the forge's cleanup rules
+  (spec 084 US5).** Until spec 084 nothing ever deleted from the OCI registry: every CI push of the six
+  app images and of the dev-container image since June was still there. Retention is
+  [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
+  [`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
+  and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC, after the Friday
+  Renovate window and outside the nightly backup). The forge's own cleanup rules are deliberately
+  unused: they match versions by name regex, so they **cannot protect a digest a git file names**; they
+  live only in the web UI; and they have no report-only run. The script instead computes every
+  protection from git **before** its first API call. The full procedure and the current report are the
+  [retention section of Phase 6](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5).
+  - **Each version is kept by its first reason, else deleted.** `keep:protected` — its digest is pinned
+    in an `infrastructure-as-code/docker/*/.env.deploy` at the newest promotion **or one of the 5 before
+    it** (the deployed set plus the rollback targets, because a rollback is a `git revert` of a
+    promotion commit). `keep:newest` / `keep:recent` — among the newest `keepNewest` tags, or younger
+    than `keepDays` (the app images 40 / 30 days; the dev-container image 4 / 21). `keep:referenced` — a
+    `sha256:` child a kept index points at, whatever its age. `keep:all` — `mcm-app-android`, whose
+    release APKs are not rebuildable. `keep:unconfigured` — a package not in the config: **reported,
+    never deleted**. The config is validated rather than half-read (an unknown key, a duplicate package,
+    `keepAll` together with a window, or a `mode` other than `report`/`apply` is refused), because a
+    config that is silently half-parsed keeps less than its author believes.
+  - **Children are kept by reference, not by age — measured 2026-10-31.** One push creates two kinds of
+    version: the tag `<sha>`, whose `manifest.json` *is* the digest `.env.deploy` pins (an OCI image
+    **index**), and the `sha256:` children that index references (the platform manifest, which owns the
+    layers, plus an attestation). An unchanged image **reuses** the previous push's platform manifest:
+    on `mc-service` the 07:48 deployed index pointed at a platform manifest created at 03:14 by an
+    earlier push. "Delete what is old" would therefore delete the layers of the image that is *running*.
+    A child is kept while any kept index references it, and when a kept index cannot be read **no** child
+    of that package is deleted (`keep:unverified`).
+  - **Three protections the script enforces.** It refuses a **shallow clone**, because the rollback
+    targets are read from git history — so the workflow checks out with `fetch-depth: 0`. When a
+    protected digest is not found in the registry it **exits 5** and deletes nothing: that is a real
+    alarm, meaning a deployed or rollback image is gone or the pin is wrong. Indexes are deleted
+    **before** their children, so no index that survives a partial run points at a deleted child.
+  - **Report → review → apply is two independent keys, held in two places.** The weekly schedule and any
+    dispatch are **report-only**; the report has one row per version, so the job summary carries only the
+    `delete` rows and the totals, and the full report is available as `--json` or locally as
+    `MCM_FORGE_URL=<forge> MCM_FORGE_TOKEN=… node scripts/registry-retention.mjs --json`
+    (`MCM_FORGE_URL` has no default — the script refuses without it). Applying takes a **one-line PR**
+    flipping `mode: report` → `mode: apply` that links the reviewed report, **and then** a
+    `registry-retention` dispatch with `apply: true`; the schedule never passes `--apply`, and the script
+    refuses `--apply` while the config still says `report`. What a reviewer checks is that no `delete`
+    row's `digest` appears in any `.env.deploy` of the last 6 promotions.
+  - **The freed-space figure is an upper bound, and the forge frees the storage — not the script.** A blob
+    shared with a kept version is not freed by deleting the version that named it, so the report's bytes
+    are an upper bound (its own output says so). Real space returns only when the forge's own
+    package-cleanup cron removes unreferenced blobs: check `du -sh` of the package store **after that has
+    run**, not right after an apply.
+  - **The apply uses its own `write:package` token.** The workflow reads `REGISTRY_CLEANUP_TOKEN` (token
+    `registry-cleanup`, §6.5 of the runbook) — deliberately separate from `actions-ci-push`, so rotating
+    either cannot break the other. A report is satisfiable with any read token.
+  - **The dev-container digest cannot be protected by git, and that is why its numbers differ.** The
+    `mcm-devcontainer` image's digest is pinned only in each developer's **gitignored**
+    `MCM_DEVCONTAINER_IMAGE`, so no `.env.deploy` names it and `keep:protected` can never cover it: the
+    newest **4** or **21 days** is what keeps a developer's pin alive, against the app images' 40 / 30. A
+    stale pin must be refreshed from the newest `devcontainer-image` run within 21 days.
+  - **`ci-failures` is pruned elsewhere, so the config only enforces a floor.** `ci-failure-digest.mjs`
+    already deletes its own bundles at **30 days** on every publish; the config's `ci-failures` entry
+    exists to keep the floor `ci-status durations` needs — 25 runs × every bundle-publishing job, rounded
+    up — and its `keepDays` may not fall below the config's `evidenceWindowDays` (45). The job count is
+    computed from the workflows, so a new job that publishes a bundle fails the config until the floor is
+    raised.
+  - **The Actions-artifact shelf is capped server-side as well.**
+    `FORGEJO__actions__ARTIFACT_RETENTION_DAYS=30` is the backstop for any upload without its own
+    `retention-days` (the Forgejo default is 90), while this repository's uploads set **14** (a
+    diagnostic, not a record) or **7** (the APK, which also lives in the `mcm-app-android` package) —
+    honoured by Forgejo 15, verified 2026-10-31.
+
+```mermaid
+flowchart TD
+  Schedule["Weekly schedule · Sundays 06:00 UTC"] --> Report["report-only run: one row per version"]
+  Dispatch["Manual dispatch, apply false"] --> Report
+  Report --> Review["review the delete rows against every .env.deploy"]
+  Review --> PR["one-line PR: mode report to mode apply"]
+  PR --> ApplyDispatch["dispatch with apply true"]
+  ApplyDispatch --> Gate{"config says mode apply?"}
+  Gate -->|"no"| Refuse["script refuses --apply"]
+  Gate -->|"yes"| Delete["delete indexes before their children"]
+  Delete --> Cron["forge package-cleanup cron frees unreferenced blobs"]
+  Report -.->|"a protected digest is missing"| Alarm["exit 5, nothing deleted"]
+```
+
+*The two keys: a report never deletes, and an apply needs both the merged config flip and the dispatch.*
 - **`ubuntu-latest` on this forge is `node:22-bookworm` — GitHub-hosted-runner recipes do not transfer
   (item #457).** The runner label maps `ubuntu-latest` to a plain Node image, not a GitHub-hosted
   Ubuntu runner. Two consequences bite copied workflow snippets:

@@ -1,10 +1,10 @@
 ---
 type: Runbook
 title: SAST & SCA static scanning
-description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
+description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -14,6 +14,8 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
+  - id: openwiki-source-f003db5a1a23dba30ccf3b03
+    resource: repo://docs/runbooks/ci-evidence-pipeline.md
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
@@ -22,6 +24,8 @@ sources:
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-ae915b1b987b44cca82fc6bf
     resource: repo://docs/runbooks/sast-scanning.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
@@ -38,12 +42,18 @@ sources:
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
   - id: openwiki-source-b24a848c671edad8616a78b0
     resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-3597b8f7b798d708bd7e75a1
     resource: repo://scripts/check-sast-findings.mjs
+  - id: openwiki-source-478a776ff0b75f2af5dc3190
+    resource: repo://scripts/ci-failure-digest.mjs
+  - id: openwiki-source-1edeb18757a8f02d496d8f2b
+    resource: repo://scripts/ci-log-step.sh
   - id: openwiki-source-70875ab1853f42b7c7d4b78a
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
@@ -64,7 +74,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T02:14:36.804Z
+    at: 2026-10-31T14:00:59.999Z
 ---
 
 # SAST & SCA static scanning
@@ -113,9 +123,30 @@ The blocking `sast` job in [guardrails.yml](../../.forgejo/workflows/guardrails.
 request and every push to `main`, with **no `paths:` filter**. It installs the toolchain, `uv sync`s all
 four Python surfaces, runs the gate's `--selftest` and the custom rules' fixtures *before* the scan, then
 the scan (`--scope changed` on a PR, `--scope full` on push) and the gate, and uploads the `sast-report`
-artifact unconditionally. The forge exposes no per-step logs, so a failed job is read from that artifact
-or from the failure digest — `node scripts/ci-status.mjs failure --sha <sha> --job sast` (see
-[CI self-serve diagnostics](./ci-diagnostics.md)).
+artifact unconditionally (14-day retention — a diagnostic, not a record).
+
+**Read a red `sast` from the failure digest, never from runner logs** — the forge API exposes no log,
+artifact or per-run-jobs endpoint at all, so there is nothing to hunt. Every `run:` step in this job is
+wrapped in `scripts/ci-log-step.sh`, which mirrors its combined stdout+stderr into a run- and
+job-scoped directory the digest collector reads at the highest priority; the digest therefore names
+the failing step (`sast-gate`, `sast-static-scan`, …) and carries its output tail as a `step:sast-…`
+excerpt:
+
+```bash
+node scripts/ci-status.mjs failure --pr <n> --job sast        # the digest comment (--job takes the bare
+                                                             # name or the `guardrails / sast` context form)
+node scripts/ci-status.mjs failure --pr <n> --job sast --full # + the full evidence bundle
+node scripts/ci-status.mjs failure --sha "$(git rev-parse origin/main)"   # push: no comment exists, so
+                                                             # each failed job's digest is read from its bundle
+```
+
+On a pull request the digest is upserted as a PR comment keyed by job, so a retry edits rather than
+stacks; a `main` push posts no comment at all and the digest lives only inside the bundle, named
+`<runId>--sast`, which is why the `--sha` form is the one to use after a merge. The `sast-report`
+artifact (`findings.json` plus `summary.txt`) is the other route, but it is reachable only from the
+forge web UI — the API has no artifact endpoint. See
+[CI self-serve diagnostics](./ci-diagnostics.md) for the digest's three-way published/broken/absent
+outcome and the bundle layout.
 
 ## Gotchas
 

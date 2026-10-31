@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:25951cf2972377a751eca62e11adef77cc7e0ac67e17a52ca10d53a3b802611a",
+  "pageVersion": "sha256:ac347471f40906574575c86b7ccf6304983246b7321f20a01e557e2ae80d7ff9",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -175,7 +175,7 @@
       "statement": "Semgrep resolves its five `p/*` community packs from its public registry at scan time, so with that host blocked it fails closed and leaves an empty `findings.json` that the gate passes vacuously; the host is in the committed egress allowlist but the host-side sandbox policy is per-sandbox and needs an operator re-application, so the committed entry alone does not establish reachability.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/egress-allowlist.json#L289-L291",
+          "resource": "repo://.devcontainer/egress-allowlist.json#L292-L294",
           "version": "repo-lines-v1:sha256:9e2bc7a46edf3fb7fcc60b59fdf479ad2a03cc7ae9697b1e4e756b4f11cc3ed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMzExOTZhMDU5NWNhMmE2NWNjZmMzNDk4NTY4YzMyMzJlMTIxNzc3MWVlMmE2ZGI4NmMzYzcwMzQwOWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ3NjExMmY3YjgzYmUzZjg2M2FmODkxNzM1NGYyNDU1Zjk2MTgxNDIzYTIxMWFlZWExNjRlMjcwYmU1ODgzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
@@ -659,7 +659,7 @@
           "version": "repo-lines-v1:sha256:97bc047ad19af17ec750baa6d9e120404bcdc92e08e214e902d7a2d2eb60d8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTFhMmYzNDI1ZWQxYjU3YzAzNDc5ZjU2ZDNiZmI5ZWI4YWE1M2VlZjNlZTA4NmVhOGFlY2MwMjI4NGM4ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWI0MWU2OWZjNWE1OWQ3NTM2NWZlMmQwNTQ5Mzg1MzgxMmNjODFiZmZlOTgxMzE0ZmQ3ODIyYjBjYTYwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1043-L1049",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1176-L1182",
           "version": "repo-lines-v1:sha256:79dcc7355f709be994d0674cdb5bceef97aaac7a7b14c6c1a56b4a9580d4e75a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NTdjOTg3NjQ4ZjIyNzRjMWUwYWVjN2E5NTIyNDA1NGI2OWI1MmUxMDUzODg4MjE5NTQ5MjMxZTU2Nzc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhMWY0NWY0ZGEyMzFjNmJhZmY5MDZhZWU4NjBjNDMwNDZiMjM2MGMwZjc4YzkzODFmNDJjOWVkZWRmMTNjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMzMjk5NjgyMTU3YTA2OTg1MzBiODg2NjkyNWQ3OWM3MmUyMzc1YjM0ZGRlMTI3MDg1MTAwNzhlMTUwYTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3Y2RmMmQ3NDc0NzQzYjgzMWI1YzNmMjZkNTAyNWRjODczZTE4ZWE2MzJiNGUyNTFhMjVjNzcxMGMwOTI4YSJ9"
         }
       ]
@@ -750,15 +750,27 @@
     },
     {
       "id": "claim_a2142a5b880a4f249de6f4b080e3fde3",
-      "statement": "The forge exposes no per-step logs for the `sast` job, so a failed run is diagnosed by reproducing the scan locally and reading the `sast-report` artifact (`findings.json` plus `summary.txt`) or by reading the published failure digest for the job rather than by hunting runner logs.",
+      "statement": "The forge exposes no log, artifact or per-run-jobs endpoint for the `sast` job, so a red run is read from the published failure digest rather than from runner logs: on a pull request the digest is upserted as a PR comment keyed by job, and on a push to `main` it exists only inside the evidence bundle `<runId>--sast`, which `node scripts/ci-status.mjs failure` reads by sha; because every `run:` step in the job is wrapped in `scripts/ci-log-step.sh`, the digest names the failing step (`sast-gate`, `sast-static-scan`, …) and carries its output tail as a `step:sast-…` excerpt rather than reporting `_not reported_`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L74-L75",
-          "version": "repo-lines-v1:sha256:446b8bf07b229651237ef6e056a588a235ea6ee0e466913bae8a348f819ba52a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVkMmRkMDAzZTBhZjlmYjQxYjhmMDQ3YWIwNWMyMTMzYzgzY2JkOWE3MDMyOTllYWU0NzM2ZGJlYTgxYjBmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhYjE5YWNjZDM0ZDY4YzM2ZTUyOGZiZDAxZmRlZjFkNDQ4OTczZWQ3MGEyNzY2NzUwMmM5OTJlZjZiNmEwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlMWZkNDhiZDNmMTZkMDFjYTdmNmNkZGQ5MGJiMDhlNGI3OGU5YzQ1MDhkZDcwNTc3ZTc3MDNhZmI1OTRlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMyYTJmNzZkMzQ3MzE5NzE4OTk0ODY0MzUxY2NiMjQ3YmQxMjA4NDU4NDYxNjRhNzAwYjI2ZjEwOGVmOGYyNSJ9"
+          "resource": "repo://docs/runbooks/ci-evidence-pipeline.md#L611-L634",
+          "version": "repo-lines-v1:sha256:4022c7cf860631eadc439cb0ad1caacd2029e55e54b611d3beb7d38c5f342a58:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMjA4YjhkMDcyMGNkYmVlZjY4ZTRkNzA0ZGQ3YTU3ZTA3M2E4ZWVjMjAyZjMyZjUxMWVhN2EwOWYzM2JlZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NjhhZGYyM2JhZDUxMGJkMTJkZjcyMzA5NzQwMjc1NGYxN2YyNGUyZjBiODUyOTBmNmRlMmQxNmU1NmJiYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0OWJjY2E4OWFkMGRiMmRhNTVlZWI4ZTg5ZjlkMTBlNWNjYzY0NmJjMDVhNmNkNTAwZDU0ODliNjcyNmY4ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzAxNjVhOWU4MDBlZTU0OTlhNjJiZmI5ZGU4MDAzODNiODVhN2I2MmVlM2JlZDY4NzhjNDhiYmEwZWExZDUifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "resource": "repo://scripts/ci-failure-digest.mjs#L512-L548",
+          "version": "repo-lines-v1:sha256:118dbd5fca2da8bd750efc57f5a73f04c455e301ffefff3fc8936fe8cc0c153e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzOTA0NGNiODNkZTFkMGRjMDc5MjA4NzM5ZmQ3M2I4ZjUwM2I4OGZmOTZiNDQxMGVhYmNhOTgwNjc5Y2JhZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNjBlZDViNTk2ZjFhOGRmYThkOWMzMTliYTkzOTk4NjUyODI3MTVjNzQzZGY1NDE3N2VmZTllODBlNzQ3ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NTI2NDYxZmFlZDdlOGY3Yzc1Mjk4Njk4OGVkM2YwZGRhNDI0NGY3NTcwZjk1YTk1MjE5MWJhMGY0MDQwOTUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L582-L597",
+          "version": "repo-lines-v1:sha256:dd5d5e994ebbf73c7abdb3551906bf98ad488f57a7f431c8c8464748335231fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjJlN2IwMDJmMDE0NjdhNGVjNTRlNjUwYmQ4NzExNmZmN2IyMDBlNjY2ZTJiMmYxNjBlYjkzYjY2ZWQ1ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxY2I1NzQwN2M2MzdjZGY2Mjg1OWY2NDc0ZGRhMzhiZWNmY2E0OTZiYmUxOTFiMWZkMThhYTJhMjkyOWVjMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4YjliNDMxMjczNjQyNDdmYzQyNDZhMTcwZjU4YWFhZjYxMTNlZTkxMTM1ODlhMjBjOTAwOTBlYjljNzhhNzkifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L39-L44",
+          "version": "repo-lines-v1:sha256:91b5f8251a2d92d950e3676295e2012c7a91d2b0e0afd033508a716b12c248b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVkYzEwZGRkZmYzNmU4MzUxMzI2YTE5NmMyMDYxMWRhN2IyYTUzMGQ2NmNiMTU3YjNiOTMxZDJiMGY4MGY5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmZGE3ZmFkNjk2MDkwOGFlODcyYzg2Yjk0MWNkMjY0MDc5ODA5MGUxNmU1NmYxNTA0MDVkODdmOTc5YTBjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhiMWI2YTkxNTZlMzU4YmViNmYwMGRhMjlmYzEzNmIyZTVhYzYzMjlmM2FjM2E5NDA2N2E5NWQwNTJjYWYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjY3NjMyMDAwMGNlZjkwNzVjMjg5MzI5M2VhOWM1MjdmMDFmZWNkNzk4MGZjZjBhNzNhZjMyMTQyYzgxM2I5OCJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1666-L1780",
+          "version": "repo-lines-v1:sha256:b2a160b30161c81a468d399578ec8d8967d0dc717e36b7bcc0126cbf9cb5f2e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNmU4MDM4OTdiOGU3YmZkZjNiZDlmYWYwYTU0ZjRiYjZjNDllZThjNDE3YWY1M2E3NjA3ZWVmMTU1NTE5MjhkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5ODMzY2YwNzEwNGUyOGJmOWM1NDVkYWM5OTFlMTAwYTA1ZjAzOWIwMjQxOTYyZjUzM2NjMjBlMjgzNDMxMGI1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOTRmYzBjMTczZDFlYzNmYzUwMWQ3ZGZhOTI4NTUwMWM1MjdjZmI0NzEyNTgzZGEzY2MzNjE4MDU2NmI0YmUzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzkyOWU5MWUwZjk5YzNlODI1ZGU2OWI0MzVmYjY0ODRkMWIwYTFkZjJmNDY1NjFhYmYxYTI5ZjA0MTg4Yjg4In0"
         }
       ]
     },
@@ -793,7 +805,7 @@
           "version": "repo-lines-v1:sha256:3334be56e27c9a1c8989ff068699d908514539d178bb7b4739db6a0e936f3a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY5OWZkNDM4YmRiNDAzM2VhMWQ1M2VmM2UwZWY3OGRkM2UxNTFjOTA0MTMwNDBlZmM3YmIzYTdkMTBmYzJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJjMTViY2I3MDBjNTRiY2IxZjcxMTM3YmM0MDYyNzdiZDA2ODhmMDcxY2NiYThiM2JhNzZjNjkwM2YwZTc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1183-L1195",
+          "resource": "repo://specs/081-major-dependency-upgrades/research.md#L1316-L1328",
           "version": "repo-lines-v1:sha256:ff8e44efed90c30ebbef312a7ff8b86e361a6e9318c281be288ed54e3313422b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDhjYjljNWY3NDZiNTI5NDYxODBkYTIzZjM2MjgyNGM1MzBlNTE1ZmIwZjI2MjlkNmJhMDkzYjNkMmM2MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwODQ0YmVkM2VmZjQwOGIyZjhmZDYwNTgxZDQ3ODM2NTI5MmVkM2FiNjEyNjIzYTRlM2M5MTM0Y2JlMTYxMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YzNhOTI2ODFjMmUwOTY0ZGI1ZDlmYTNhMzU2YjYyNDI3NTMwYTcwYWFmMTUzMjJjNjYxMTU1NzRlNTBkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhODIxYjA2YzA3NDZhY2JkNmY1YzJmYzRiNGM5NWNmMmJmZTIxMDAwMDBhN2Q3ZDg0OGVjZGQ2YTIxMTM5NWQifQ"
         }
       ]
@@ -835,7 +847,7 @@
       "statement": "The cap rule was added because six Renovate major-widening proposals for this file were pending on 2026-10-18, and the structural answer chosen was to disable `major` updates for `pnpm-workspace.yaml` in `renovate.json` outright (patch/minor stay enabled and ungated, since a genuine floor raise arrives on that track), with the cap rule as the second line of defence if a widening arrives by another route.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L832-L842",
+          "resource": "repo://docs/runbooks/renovate.md#L840-L850",
           "version": "repo-lines-v1:sha256:4f2d3c19d9b9068f97482ffde511698a37a2fbfa753040b51c398fc75a68ab40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjNmMmIzZDQ2MzdmMWEyNjg0ZmM4MTJlZDY3YjdmYzdkMTJlZDIxMWM2MTcwN2VmOGVhYzZhMWY4NjVmNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkODJlYThmMmU0ZjhiNDM3NWJhNThhOWJmMzc3ZGU1YmEyNTRlNmM2ZGZlZDQzZjI5N2VkNmQxNDE5YWY3YTcifQ"
         },
         {
@@ -879,10 +891,42 @@
           "version": "repo-lines-v1:sha256:d1e34cb70391099dd15b2af2314d883d2f943368cf8543d2f458437d0a8d9ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YmI3YTA0ZmQwMGVmZDU1Y2M4YWVkNWVhZThmOGE0ZmJhY2U4MmVmMGJmM2QxODEwNDM2MjVhNzJlMDI4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2Yjk0Y2Y4YjBiODJkNmRmMzEyZjEwMDVmMmRlMWNkYzc0NmRhZmYxYjQ2YTA2ODAxZjhjODJhOGIxNmM1MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OTBkZWM5MzY5ZGQxYzI0M2JkNjU4NjdlYmYzNDNhMWI3ZDlmZmFkYzhhMDNhODM1NDY4NWM0MTI1N2ZmN2EifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d6244a0ad8ef4b84813a093a482cf13a",
+      "statement": "The step-log directory that feeds the digest is scoped by run id AND by job name, because two jobs of one run can share `$HOME` on the same runner; a run-scoped directory let one job's `_failed-step` marker and logs be published as the other job's (measured on run #1683, where the `app-e2e` digest named a `dast` step), and there is deliberately no run-scoped fallback on the reader side so the defect cannot survive behind it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L719-L743",
+          "version": "repo-lines-v1:sha256:deef3af0b52b5ded14ef6d48def9776819df5fd0dea0db8cf07100fd7df7dd86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZjI1YjQ3NjY4ZWIwY2E2ZWM4OWU2MDg5MzkyYzM4NGMyMDYyNGIxMWY4OTdiOWFhZWFkMWRjZWY2OWE3ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2Yzk3MGJiZDc5NjE1ZWE2MmMxZWVkNzIwNGJmN2NlYWJjZDU3NGZhODg2NjMzNzQ5MmFmMGM1ZjUwMmM5YmQifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-log-step.sh#L27-L41",
+          "version": "repo-lines-v1:sha256:453cf1c96caf0db5a3706999b977ae4c4ad6288e26a8d9fd6e54b5502dcaeec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNjM0ZjM1NTQ0MWRhMjg5MjlhNzgzZTgzNTZmZGI3M2U0NjQxYzUxZjRmMmNhODMwM2Y1OWI2ODg2NDYxNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MjEyNGEzMWI4NTYyMjU0ZjBhNTg3ZGU0YzQyZGM3ZThhNTQ5OWMwYmIyOGYwZGIxZDA0Y2M4YzE4MzJjMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MDA3MWYyYmZiNTZhMzcwYzQyZjFjMGM1MjU5ZmZmOTFiMDUwNDE4NjdjMmFiOWE1OTZkNjdmMTc0ODlhZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlMmFhOTAxNzUwZjY0NzViNzkxODg3MDE5ZmFmZGViOTI2YTQ2Yzc3YmYyNDQ0ZGYyOWFkMjYyNTk1MTU3YjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d61da2a8231c40f3a40c302877967703",
+      "statement": "The `sast-report` artifact (`findings.json`, `findings.sarif`, `summary.txt` and per-scanner native output) is uploaded under an `if: ${{ always() }}` guard with a 14-day retention, pinned as the diagnostics class by `scripts/__tests__/upload-artifact-retention.test.mjs`; the forge exposes no artifact API, so retrieving it is a manual web-UI step — which is why the failure digest, not the artifact, is the primary channel for diagnosing a red `sast` run.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L396-L402",
+          "version": "repo-lines-v1:sha256:0fd2e5ad6dc4fa204c16c16a58d9ba61692be757673576a31f7b96e6dea791ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVjMjRhNWM0Yzg1MzI3NWE3MjFjNTkxY2VmNGVhMTQyY2YyNWQxMjg0MjQ4NzRhZDQ5Y2IxM2IwZmQ5OTAyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1NjVlY2IwNThmNDg2N2QxMTZhMzU1ZWFkYzJlOTlhODA4Yzg3NDBjZGU2ZWQxM2YxYzRiNTY4Y2NlMmQzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAwZTA4ZjBmNWQ0YmU5ZmRkNGYwYzM3OWIxODM5NjI1MmQxMWUxNTc1YzFjNjhlYWVjMDFkYTUwNTMzNmI1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU4NTZkNjBjYTU4MTU3YTRlMWQxNTQyYWMyNjU4ZTk5ZDcxNzBkM2IzMTMxNjYxYjUzMzNlOWNmNzdiZGUwZSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L487-L494",
+          "version": "repo-lines-v1:sha256:d90155d56b4ebce7a202d3cb3363945d7959dbd7756c2fba04682a8778f193ef:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiYTRkNjQzNzZjOTY4M2NiOTcwYzJmYzEwNTY3ODJjY2U3ZTViYmRmZTQ5YjIzYTlmNDNmN2VkZmM1ZDYxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2IzZTUyMGEzYjY1MmU0MDIyNThkYjJiOWIzODc0ZDUxYTE2MDhiYWM3NzMyODkwY2ZkZmQ3N2FiNzJkOTkyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzNmZjkwNDFkMTcwYzY2MTMxODExZjYzMWU4YjA4ODk3ZmRhN2ExMGUxM2ZiNWQ4NjBlN2Y0NDZhNTFlMGE3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU1NTFiOGI1MGEzMGIwMzUzNTU0OTE0MjNmOTM5MGZiOGZiMWFjODllMjk3M2FiMGRhNjU5YmVjZjY5MzdkNiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/upload-artifact-retention.test.mjs#L42-L61",
+          "version": "repo-lines-v1:sha256:10538abfb5a7dc81ec735e0d1173eed2b97067c101befb36aa78c357cad2d7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZjEzMTY1MDZhNGNhMDkzZTE3NmI4M2FkMjk0NDA1MGI3MmFjMGI3YjFkM2IwM2M1YTFiMWY2NGE1Yjk1YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMGI0MjliMWMxMDM5MDFiODUyZmNlY2IyMDdjMzdjN2YzYzM1NjE2Y2Y3Mjg1NGFiZWUzMDAzOGQ4ODRlYzUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T02:14:36.804Z"
+    "at": "2026-10-31T14:00:59.999Z"
   }
 }
