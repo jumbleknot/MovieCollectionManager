@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:83bba89e01071306847abc9cac6336b71e8992c174623d34df0b2201b99c0e00",
+  "pageVersion": "sha256:923b8de87cde5801cbacf458c8727ebfe81a642401d91f63caeb6156997e63d4",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -328,7 +328,7 @@
     },
     {
       "id": "claim_75a4a4f1ebd9429c8ccff429855c6b03",
-      "statement": "A merged branch is removed by the branch reaper, not by the merge: `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the web UI merge button ONLY, so an API merge that omits `delete_branch_after_merge: true` leaves the head branch behind (measured the same evening — PRs #287 and #293 passed the flag and their branches were gone, PR #291 omitted it and had to be cleaned up by hand), and that rule did not hold in the field: by 2026-10-30, 33 fully merged branches with no open PR had accumulated on origin back to 2026-09-26, and the four `renovate/lock-file-maintenance*` heads left by the API merges of PRs #832–#835 produced four empty, red PRs (#874–#877) because Renovate reuses a surviving branch's stale commit instead of regenerating. The backstop added by item #879 is `.forgejo/workflows/branch-reaper.yml`, which runs `scripts/reap-merged-branches.mjs --apply` on every push to main and daily at 02:30 UTC (ahead of Renovate's nightly 03:00 and its Friday window). Still passing the flag is worth doing because it removes the branch at once, but it is now a convenience rather than the guarantee; an open PR's head and automation-owned branches such as `openwiki-maintenance` must not be deleted.",
+      "statement": "A merged branch is removed by the branch reaper, not by the merge: `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the web UI merge button ONLY, so an API merge that omits `delete_branch_after_merge: true` leaves the head branch behind (measured the same evening — PRs #287 and #293 passed the flag and their branches were gone, PR #291 omitted it and had to be cleaned up by hand), and that rule did not hold in the field: by 2026-10-30, 33 fully merged branches with no open PR had accumulated on origin back to 2026-09-26, and the four `renovate/lock-file-maintenance*` heads left by the API merges of PRs #832–#835 produced four empty, red PRs (#874–#877) because Renovate reuses a surviving branch's stale commit instead of regenerating. The backstop added by item #879 is `.forgejo/workflows/branch-reaper.yml`, which runs `scripts/reap-merged-branches.mjs --apply` on every push to main, on a daily 02:30 UTC cron and on `workflow_dispatch` — the cron sits ahead of Renovate's nightly 03:00 and its Friday window, so a stale `renovate/*` branch is gone before Renovate decides whether to reuse it. Still passing the flag is worth doing because it removes the branch at once, but it is now a convenience rather than the guarantee; an open PR's head and automation-owned branches such as `openwiki-maintenance` must not be deleted.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/branch-reaper.yml",
@@ -541,10 +541,38 @@
           "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         }
       ]
+    },
+    {
+      "id": "claim_2d171303a7444ffb9e95d8db83e55753",
+      "statement": "Two pieces of the branch-reaper workflow's wiring are silent-disable hazards rather than tidiness, and both are pinned by guard tests: the checkout takes `fetch-depth: 0`, because the reaper decides by `git merge-base --is-ancestor origin/<branch> origin/main` and a shallow single-ref clone cannot answer it — every branch would then read 'ancestry unanswerable' and nothing would ever be reaped; and the job is handed the run-provisioned `GITHUB_TOKEN` rather than `CD_PUSH_TOKEN`, because a deletion job has no business holding a whitelisted-user PAT that can push protected `main`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
+          "resource": "repo://scripts/__tests__/reap-merged-branches.test.mjs",
+          "version": "repo-file-v1:sha256:e55374d65266ddeffb928d3c6323e152b0608a06dd55f4f4177beae894a269d4"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe8198a8a61c4b38ac1bd6224130e9dc",
+      "statement": "The branch reaper reports a decision for every remote branch rather than only acting: each kept branch is printed with the reason it was kept ('exempt', 'head of an open PR', 'ancestry unanswerable', 'not merged into main', 'tip date unreadable', 'inside grace period') and each deletion with the sha it was classified at, so a run is auditable instead of merely applied. Its argument contract is deliberately narrow — near-miss spellings such as `--aply`, `-apply`, `--Apply`, `--dry-run` or `--force` are rejected with an ArgvError rather than silently read as either a dry run or an apply, a positional argument is rejected, and `--help` wins outright even beside `--apply`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/reap-merged-branches.test.mjs",
+          "version": "repo-file-v1:sha256:e55374d65266ddeffb928d3c6323e152b0608a06dd55f4f4177beae894a269d4"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T00:28:11.002Z"
+    "at": "2026-10-31T06:29:24.551Z"
   }
 }

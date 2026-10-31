@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the branch-reaper backstop added by item 879.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
 sources:
@@ -55,10 +55,10 @@ sources:
     resource: repo://scripts/e2e-failure-set.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T06:29:24.551Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-10-31T06:29:24.551Z
 ---
 
 # CI self-serve diagnostics
@@ -85,7 +85,7 @@ flowchart TD
   T -->|"pr n"| P["PR head sha, plus head.ref and PR state"]
   T -->|"run id"| R["the run commit_sha, plus the run own status"]
   T -->|"branch, or HEAD"| L["git rev-parse"]
-  S --> ST["GET commits sha statuses — the contexts on that commit"]
+  S --> ST["GET commits sha status — the contexts on that commit"]
   P --> ST
   R --> ST
   L --> ST
@@ -487,18 +487,25 @@ skipped branch then splits three ways on the `needs:` graph.
 - **A merged branch is cleaned up by the branch reaper, not by the merge — the repo default never
   covered an API merge, and "always pass the flag" did not hold (item #879).** The mechanism is
   [`.forgejo/workflows/branch-reaper.yml`](../../.forgejo/workflows/branch-reaper.yml), running
-  `scripts/reap-merged-branches.mjs --apply`: on every push to `main` and daily at 02:30 UTC — ahead of
+  `scripts/reap-merged-branches.mjs --apply`: on every push to `main`, daily at 02:30 UTC — ahead of
   Renovate's nightly 03:00 and its Friday window, so a stale `renovate/*` branch is gone *before*
-  Renovate decides whether to reuse it — it deletes a branch only when its tip is an ancestor of
-  `origin/main`, it heads no open PR, it is not exempt (`main`, `openwiki-maintenance`), and its tip is
-  older than a 6 h grace period. The open-PR listing **fails closed** (a short read against its own
-  `x-total-count`, or any page error, deletes nothing), ancestry that cannot be answered keeps the
+  Renovate decides whether to reuse it — and on `workflow_dispatch`, so the first run can be proven
+  rather than waited for. It deletes a branch only when its tip is an ancestor of `origin/main`, it
+  heads no open PR, it is not exempt (`main`, `openwiki-maintenance`), and its tip is older than a 6 h
+  grace period; every branch it keeps is printed with the reason it was kept, so the decision is
+  auditable rather than merely applied. The open-PR listing **fails closed** (a short read against its
+  own `x-total-count`, or any page error, deletes nothing), ancestry that cannot be answered keeps the
   branch, and each delete is leased to the sha that was classified
-  (`git push --force-with-lease=<ref>:<sha>`) so a commit pushed meanwhile is never destroyed. Unlike the
-  comment-only jobs this one **goes red on failure**, because a reaper that silently stopped reaping is
-  exactly the absence it exists to end. **Still pass `delete_branch_after_merge: true` on an API merge**
-  — it removes the branch at once, where the reaper may take until its next run — but treat that as a
-  convenience, never as the guarantee. Why the reaper exists is the measurement worth keeping:
+  (`git push --force-with-lease=<ref>:<sha>`) so a commit pushed meanwhile is never destroyed. That
+  lease is why the delete goes through git at all: the forge's `DELETE /branches` endpoint has no such
+  precondition. The checkout takes `fetch-depth: 0`, which is load-bearing rather than tidy — a shallow
+  clone cannot answer `git merge-base --is-ancestor`, so every branch would read "ancestry
+  unanswerable" and nothing would ever be reaped. The job is handed the job's own token, deliberately
+  **not** `CD_PUSH_TOKEN`: a deletion job has no business holding a PAT that can push protected `main`.
+  Unlike the comment-only jobs this one **goes red on failure**, because a reaper that silently stopped
+  reaping is exactly the absence it exists to end. **Still pass `delete_branch_after_merge: true` on an
+  API merge** — it removes the branch at once, where the reaper may take until its next run — but treat
+  that as a convenience, never as the guarantee. Why the reaper exists is the measurement worth keeping:
   `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the **web
   UI merge button only**, so an API merge omitting the flag leaves the head branch behind
   (`--data '{"Do":"merge","delete_branch_after_merge":true}'` deletes it; `--data '{"Do":"merge"}'`
@@ -510,9 +517,10 @@ skipped branch then splits three ways on the `needs:` graph.
   by the API merges of PRs #832–#835 produced four empty, red PRs (#874–#877) in that day's window — each
   head already an ancestor of `main`, so each PR was empty and all four went red on `sast` against a
   week-old allowlist. To see what the reaper would do, run `node scripts/reap-merged-branches.mjs`: a bare
-  invocation is a dry run and deletes nothing (`--apply` is required). This is not housekeeping: a
-  surviving `renovate/*` branch makes Renovate reuse the stale commit instead of regenerating, which is
-  how an empty PR gets opened ([Renovate](./renovate.md), item #290) — and
+  invocation is a dry run and deletes nothing (`--apply` is required) — and a near-miss spelling such as
+  `--dry-run` or `--force` is **rejected** rather than silently read as either mode. This is not
+  housekeeping: a surviving `renovate/*` branch makes Renovate reuse the stale commit instead of
+  regenerating, which is how an empty PR gets opened ([Renovate](./renovate.md), item #290) — and
   `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own pruning, so nothing
   else will ever clean it up.
   **Two branches not to delete, and the reaper enforces both:** an open PR's head (deleting it is
