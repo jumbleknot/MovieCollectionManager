@@ -1,0 +1,65 @@
+# Item #879 — delete remote branches already merged into main that nothing is using.
+#
+# WHY THIS EXISTS. `default_delete_branch_after_merge` (item #290) covers the web UI merge button
+# ONLY; an API merge leaves the head branch unless the request passes `delete_branch_after_merge:
+# true`, and the rule "always pass the flag" did not hold — 33 merged branches had piled up by
+# 2026-10-30. A surviving `renovate/*` branch is not cosmetic: Renovate reuses it verbatim instead of
+# regenerating, which is how the 2026-10-30 window opened four EMPTY lock-file-maintenance PRs
+# (#874–#877) that all went red. This job removes the dependency on anyone remembering.
+#
+# WHAT IT WILL NOT DELETE — see scripts/reap-merged-branches.mjs: an unmerged branch, the head of an
+# open PR, main / openwiki-maintenance, or a branch whose tip is younger than 6 h (a concurrent
+# session's just-merged work). The open-PR listing FAILS CLOSED, and each delete is leased to the sha
+# that was classified, so a commit pushed meanwhile is never destroyed.
+#
+# THIS JOB GOES RED ON FAILURE, unlike the comment-only jobs (renovate-health, lockfile-refresh-check):
+# a reaper that silently stopped reaping is exactly the absence it exists to end.
+name: branch-reaper
+
+on:
+  # The usual trigger: a merge to main is what creates a reapable branch.
+  push:
+    branches: [main]
+  schedule:
+    # Daily 02:30 UTC — the backstop for branches still inside the grace period at their merge's push
+    # run. Ahead of renovate.yml's nightly 03:00 and its Friday 07:00 window, so a stale renovate/*
+    # branch is gone BEFORE Renovate decides whether to reuse it.
+    - cron: '30 2 * * *'
+  # Dispatchable so the first run can be proven now rather than on the next merge.
+  workflow_dispatch:
+
+concurrency:
+  group: branch-reaper
+  cancel-in-progress: false
+
+jobs:
+  branch-reaper:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 — the reaper decides by `git merge-base --is-ancestor origin/<b> origin/main`,
+      # which a shallow single-ref checkout cannot answer (it would keep every branch as
+      # "ancestry unanswerable" and reap nothing). checkout persists the job token for `git push`.
+      - name: Checkout (full history + all refs, for ancestry checks)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24.19.0
+      - name: Reap merged branches
+        env:
+          # The job's own token: reads open PRs (API) and deletes branches (git push, via checkout's
+          # persisted credential). Deliberately NOT CD_PUSH_TOKEN, which can push to protected main —
+          # a deletion job has no business holding that. If this token cannot delete on this forge
+          # build, the push fails, the job goes red, and the digest below says so.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/ci-log-step.sh branch-reaper node scripts/reap-merged-branches.mjs --apply
+      # Feature 042 — every job publishes a guarded failure digest; the forge has no log endpoint.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

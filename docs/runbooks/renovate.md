@@ -171,6 +171,14 @@ shared with Unleash), so it never reaches this list.
 >    script-driven merge can still create a stale ref while the setting reads `true`.
 > 2. A branch can predate the setting, or be pushed by hand.
 >
+> Reason 1 is what bit the 2026-10-30 window: PRs #832–#835 were API-merged without the flag, and their
+> four `lock-file-maintenance*` heads came back as empty PRs #874–#877, all red on `sast`. Since item
+> #879 the **branch reaper** (`.forgejo/workflows/branch-reaper.yml`, daily 02:30 UTC and on every push
+> to `main`) deletes merged branches that head no open PR, so a stale ref should not survive to a
+> window. It never touches a branch that heads an open PR — an empty PR still needs a `rebase-branch=`
+> tick, as it did that day. [ci-diagnostics.md § Deleting the branch on merge](./ci-diagnostics.md)
+> has the rules.
+>
 > Measured 2026-08-29 (item #290, PR #288). `renovate/lock-file-maintenance-cargo-deps` was merged as PR #260
 > and `renovate/lock-file-maintenance` as PR #261; both refs survived. An `unschedule-branch` tick on
 > the cargo one produced an **empty PR** that then queued a full CI cycle ahead of real work.
