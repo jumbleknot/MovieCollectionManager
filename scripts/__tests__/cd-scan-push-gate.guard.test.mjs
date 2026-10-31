@@ -47,13 +47,20 @@ const SCAN_PUSH = readFileSync(resolve(REPO_ROOT, 'scripts/cd/scan-push.sh'), 'u
  */
 const SCAN_PUSH_CODE = SCAN_PUSH.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
 
+// Spec 084 US3 moved the per-image scan-and-verdict block into scripts/cd/scan-app-image.sh, so the
+// PR-time `app-image-scan` job runs the same pipeline. These guards follow the commands to where they
+// now live: the PIPELINE is asserted in the shared script, and ITS PLACE in the deploy (inside the
+// loop, before the push) is asserted on scan-push.sh's call to it.
+const SHARED = readFileSync(resolve(REPO_ROOT, 'scripts/cd/scan-app-image.sh'), 'utf8');
+const SHARED_CODE = SHARED.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
+
 // ── The step's shape ─────────────────────────────────────────────────────────────────────────────
 
 test('(#499) the conflated bare `trivy --exit-code` form is gone from the deploy path', () => {
   // The whole defect in one line. --exit-code makes Trivy's FINDING code collide with its ERROR
   // code, and no amount of retry around it recovers the distinction.
-  assert.doesNotMatch(
-    SCAN_PUSH_CODE,
+  for (const text of [SCAN_PUSH_CODE, SHARED_CODE]) assert.doesNotMatch(
+    text,
     /trivy\s+image[^\n]*--exit-code/,
     'scan-push.sh is back to a bare `trivy image --exit-code` — findings and transport errors then ' +
       'share one exit status again',
@@ -61,8 +68,9 @@ test('(#499) the conflated bare `trivy --exit-code` form is gone from the deploy
 });
 
 test('(#499) the deploy path scans through the SHARED pipeline, so it inherits the retry', () => {
-  assert.match(SCAN_PUSH_CODE, /scripts\/infra-image-scan\.mjs --image/, 'no --image scan in scan-push.sh');
-  assert.match(SCAN_PUSH_CODE, /scripts\/check-infra-image-findings\.mjs/, 'no findings gate in scan-push.sh');
+  assert.match(SCAN_PUSH_CODE, /bash scripts\/cd\/scan-app-image\.sh "\$local_tag"/, 'scan-push.sh no longer calls the shared scan');
+  assert.match(SHARED_CODE, /scripts\/infra-image-scan\.mjs --image/, 'no --image scan in scan-app-image.sh');
+  assert.match(SHARED_CODE, /scripts\/check-infra-image-findings\.mjs/, 'no findings gate in scan-app-image.sh');
 });
 
 test('(#499) FAIL-CLOSED: the gate runs BEFORE the push, for every image', () => {
@@ -70,12 +78,14 @@ test('(#499) FAIL-CLOSED: the gate runs BEFORE the push, for every image', () =>
   // already shipped the image it was meant to stop; a gate that runs after it gates nothing.
   const lines = SCAN_PUSH_CODE.split(/\r?\n/);
   const idx = (re) => lines.findIndex((l) => re.test(l));
-  const scanAt = idx(/infra-image-scan\.mjs --image/);
-  const gateAt = idx(/check-infra-image-findings\.mjs/);
+  const callAt = idx(/scan-app-image\.sh/);
   const pushAt = idx(/^\s*docker push/);
-  assert.ok(scanAt >= 0 && gateAt >= 0 && pushAt >= 0, 'scan, gate and push must all be present');
-  assert.ok(scanAt < pushAt, 'the scan must precede the push');
-  assert.ok(gateAt < pushAt, 'the FINDINGS GATE must precede the push — otherwise it gates nothing');
+  assert.ok(callAt >= 0 && pushAt >= 0, 'the shared scan and the push must both be present');
+  assert.ok(callAt < pushAt, 'the scan AND its findings gate (both inside scan-app-image.sh) must precede the push');
+  // …and inside the shared script the verdict follows the scan it reads.
+  const scanAt = SHARED_CODE.indexOf('infra-image-scan.mjs --image');
+  const gateAt = SHARED_CODE.indexOf('check-infra-image-findings.mjs');
+  assert.ok(scanAt >= 0 && gateAt > scanAt, 'the findings gate must read the scan that just ran');
 });
 
 test('(#499) the scan and the gate are inside the per-image loop, not run once for six images', () => {
@@ -83,8 +93,7 @@ test('(#499) the scan and the gate are inside the per-image loop, not run once f
   // single scan outside the loop would gate only the last image — and silently.
   const body = SCAN_PUSH_CODE.slice(SCAN_PUSH_CODE.indexOf('for pair in $map; do'), SCAN_PUSH_CODE.indexOf('\ndone'));
   assert.ok(body.length > 0, 'the per-image loop has moved — re-check this guard');
-  assert.match(body, /infra-image-scan\.mjs --image/, 'the scan must be inside the per-image loop');
-  assert.match(body, /check-infra-image-findings\.mjs/, 'the gate must be inside the per-image loop');
+  assert.match(body, /scan-app-image\.sh "\$local_tag"/, 'the shared scan (scan + gate, per image) must be inside the per-image loop');
 });
 
 test('(#499) `set -euo pipefail` still governs the step', () => {

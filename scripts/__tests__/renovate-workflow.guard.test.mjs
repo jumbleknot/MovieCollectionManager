@@ -1996,7 +1996,13 @@ test('(080b) every compose file that pins rustfs/rustfs is VISIBLE to Renovate',
 // repository has four recorded cases (#194, #204, #225, PR #289) where a mechanism existed, looked
 // sufficient, and was silently overridden by something broader.
 
-const TRIVY_WORKFLOWS = ['.forgejo/workflows/infra-image-scan.yml', '.forgejo/workflows/cd-deploy.yml'];
+// Three since spec 084 US3: app-ci's `app-image-scan` scans the PR's images, and must use the scanner
+// the deploy gate will, or a green PR says nothing about the deploy.
+const TRIVY_WORKFLOWS = [
+  '.forgejo/workflows/infra-image-scan.yml',
+  '.forgejo/workflows/cd-deploy.yml',
+  '.forgejo/workflows/app-ci.yml',
+];
 
 /**
  * The Trivy install as configured in one workflow: { scriptRef, installedTag }.
@@ -2059,23 +2065,25 @@ for (const file of TRIVY_WORKFLOWS) {
   });
 }
 
-test('both workflows agree on the Trivy version, so the gate and the deploy scan agree', () => {
-  const [scan, deploy] = TRIVY_WORKFLOWS.map(trivyInstall);
+test('every workflow agrees on the Trivy version, so the gates and the deploy scan agree', () => {
+  const installs = TRIVY_WORKFLOWS.map(trivyInstall);
 
-  // Assert BOTH are pinned before comparing them. Without this the test passes vacuously while
-  // neither is pinned at all — `null === null` — which is the trivially-green shape the constitution
+  // Assert EVERY one is pinned before comparing them. Without this the test passes vacuously while
+  // none is pinned at all — `null === null` — which is the trivially-green shape the constitution
   // requires be fixed before implementing, not a check.
-  for (const [file, t] of TRIVY_WORKFLOWS.map((f, i) => [f, [scan, deploy][i]])) {
-    assert.ok(t.installedTag, `${file} pins no Trivy version, so "the two agree" would compare nothing to nothing.`);
-  }
+  TRIVY_WORKFLOWS.forEach((file, i) => {
+    assert.ok(installs[i].installedTag, `${file} pins no Trivy version, so "they agree" would compare nothing to nothing.`);
+  });
 
-  assert.equal(
-    scan.installedTag,
-    deploy.installedTag,
-    'infra-image-scan and cd-deploy install DIFFERENT Trivy versions. Both apply the same\n' +
-      '  CRITICAL-only criterion, so a disagreement means one can block what the other passes and\n' +
-      '  neither result explains the other.',
-  );
+  for (let i = 1; i < installs.length; i++) {
+    assert.equal(
+      installs[i].installedTag,
+      installs[0].installedTag,
+      `${TRIVY_WORKFLOWS[0]} and ${TRIVY_WORKFLOWS[i]} install DIFFERENT Trivy versions. All apply the\n` +
+        '  same CRITICAL-only criterion, so a disagreement means one can block what another passes and\n' +
+        '  neither result explains the other.',
+    );
+  }
 });
 
 test('Renovate tracks the Trivy pin, so pinning does not simply mean going stale', () => {

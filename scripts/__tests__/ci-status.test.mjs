@@ -853,6 +853,7 @@ test('(nn) the live protection payload is parsed into the required globs', () =>
     'app-ci / mc-service-checks*',
     'app-ci / app-e2e*',
     'infra-image-scan / infra-image-scan*',
+    'app-ci / app-image-scan*', // spec 084 US3
   ]);
 });
 
@@ -928,7 +929,7 @@ test('(tt) resolveRequiredGlobs falls back to the built-in list when the fetch f
   const ok = async () => fixture('branch-protections.json');
   const live = await resolveRequiredGlobs(ok, 'main');
   assert.equal(live.source, 'branch-protection');
-  assert.equal(live.globs.length, 6);
+  assert.equal(live.globs.length, 7);
 });
 
 // --- (uu) the EXIT PATH must actually return the contracted code -------------------------------

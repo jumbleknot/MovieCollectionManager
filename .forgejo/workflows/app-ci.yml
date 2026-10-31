@@ -160,6 +160,7 @@ jobs:
               - 'scripts/gen-ci-env.mjs'               # mints the env the E2E stacks come up on
               - 'scripts/gen-dev-secrets.mjs'          # mints the secrets those stacks authenticate with
               - 'scripts/mc-service-integration-guard.mjs'  # a gate that runs INSIDE app-e2e
+              - 'scripts/cd/scan-app-image.sh'         # spec 084 US3: app-image-scan runs it on app-e2e's images
               # Feature 058 / item #186. A lockfile bump changes transitive deps, and 057's FR-013 says
               # the E2E tier is the only one that sees a bad floor (`nx test` passes over it). The `push:`
               # filter above already said so; this one did not, and app-e2e reported `skipped` on PR #185
@@ -803,6 +804,21 @@ jobs:
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
         run: bash scripts/ci-log-step.sh app-e2e-bring-up-containerized-agent env MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+
+      # Spec 084 US3: hand the six images this job just built to `app-image-scan`. All six exist from
+      # here on: mc-service + mcm-bff from "Build mc-service + mcm-bff images", the four agent/MCP
+      # images from the bring-up above (which rebuilds them, feature 041). The tag is per RUN, so a
+      # later run that rebuilds `:latest` on this persistent daemon cannot change what is scanned.
+      # Placed straight after the build, not at the end, so a failing E2E step below still leaves
+      # the scan its images. The next run's `docker image prune -af` removes any tag left behind.
+      - name: Tag images for app-image-scan
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-tag-scan-images bash -e /dev/stdin <<'CI_LOG_STEP'
+          for name in mc-service mcm-bff agent-gateway movie-mcp web-api-mcp spreadsheet-mcp; do
+            docker tag "$name:latest" "app-scan/$name:run-${{ github.run_id }}"
+            echo "tagged app-scan/$name:run-${{ github.run_id }}"
+          done
+          CI_LOG_STEP
 
       # ── Agent LIVE integration suite (the layer no workflow ran until now) ───────────────────────
       # Until this step, NO project's `test:integration` executed anywhere in CI — only the `-m golden`
@@ -1744,19 +1760,165 @@ jobs:
   # jobs, so it only runs AFTER they succeed — then it dispatches cd-deploy (deploy=true). cd-deploy has
   # no push trigger, so this is the ONLY automatic deploy path. Runs only on a push to main (a merge);
   # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
+  # ── App-image CVE scan at PR time (spec 084 US3, item #822) ─────────────────────────────────────
+  # Until this job the six app images were scanned in ONE place: cd-deploy's scan-push step, which
+  # runs AFTER the merge. A fixable Critical that a base-image or dependency bump introduced passed
+  # every PR check and surfaced as a failed DEPLOY on main, where nothing blocks (2026-10-21, cd-deploy
+  # run 5745 failed at scan-push). This job runs that gate's exact pipeline, scripts/cd/scan-app-image.sh
+  # (one scanner pin, one set of flags, one allowlist), on the images app-e2e already built and tagged
+  # `app-scan/<name>:run-<run id>`. Building them again in a parallel job would double ~5 min of builds
+  # on the single kvm runner and contend with app-e2e; the price is that a red arrives after app-e2e.
+  #
+  # REQUIRED, so it must always post: `always()`, with an early pass when no app path changed (the
+  # images are then main's, which the deploy gate scanned). It NEVER passes on images it could not
+  # find: if app-e2e failed or was cancelled before tagging, "Verify the six scan tags" fails and names
+  # them. It runs on pushes to main too, deliberately: trigger-cd needs it, so a vulnerability-database
+  # change shows as a red on main BEFORE a dispatch, instead of as a failed deploy.
+  #
+  # Exit codes from scan-app-image.sh: 10 = SCANNER ERROR (nothing assessed; re-run), 11 = BLOCKING
+  # FINDING (patch, or a reviewed expiring entry in security/infra-images/allowlist.yaml). Every image
+  # is scanned even after one fails, so one run names every finding.
+  app-image-scan:
+    needs: [changes, app-e2e]
+    if: ${{ always() }}
+    runs-on: kvm
+    timeout-minutes: 30
+    env:
+      # The ci user's rootless daemon, where app-e2e left the images (same socket as app-e2e).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      # Per-step bound below the job's 30 min, so a hung scan fails its STEP and the digest still runs
+      # (item #326). None of these steps is calibrated yet; ci-step-ceilings.tsv lists them ON THE BACKSTOP.
+      CI_STEP_TIMEOUT_SECONDS: '900'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Decide whether there is anything to scan
+        env:
+          APP_CHANGED: ${{ needs.changes.outputs.app }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          APP_E2E_RESULT: ${{ needs.app-e2e.result }}
+        run: |
+          bash scripts/ci-log-step.sh app-image-scan-decide bash -e /dev/stdin <<'CI_LOG_STEP'
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "::error::the changes job did not succeed (result: $CHANGES_RESULT), so whether the app images changed is unknown. Failing closed."
+            exit 1
+          fi
+          if [ "$APP_CHANGED" != "true" ]; then
+            echo "no app path changed — images identical to main's, which the deploy gate already scanned. Nothing to scan."
+            echo "RUN_SCAN=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "app paths changed (app-e2e result: $APP_E2E_RESULT) — scanning the six images app-e2e built."
+          echo "RUN_SCAN=true" >> "$GITHUB_ENV"
+          CI_LOG_STEP
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        if: ${{ env.RUN_SCAN == 'true' }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: ${{ env.RUN_SCAN == 'true' }}
+        with: { node-version: 24.19.0, cache: pnpm }
+
+      - name: Install JS dependencies (the scanner + gate use the `yaml` package)
+        if: ${{ env.RUN_SCAN == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-install-js-dependencies pnpm install --frozen-lockfile
+
+      # The kvm runner executes as the unprivileged `ci` user — no sudo / no write to /usr/local/bin.
+      # Install Trivy to a user-writable dir and put it on PATH (same as cd-deploy's Trivy step).
+      - name: Install Trivy
+        if: ${{ env.RUN_SCAN == 'true' }}
+        run: |
+          bash scripts/ci-log-step.sh app-image-scan-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p "$HOME/.local/bin"
+          # PINNED — item #303, and the SAME version as cd-deploy and infra-image-scan: the PR must be
+          # scanned by the scanner the deploy will use, or a green PR proves nothing about the deploy.
+          # Renovate keeps all three current (customManagers in renovate.json, datasource
+          # github-releases); renovate-workflow.guard.test.mjs asserts all three stay pinned and agree.
+          TRIVY_VERSION=v0.74.0
+          curl -fsSL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
+            | sh -s -- -b "$HOME/.local/bin" "${TRIVY_VERSION}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/trivy" --version
+          CI_LOG_STEP
+
+      - name: Verify the six scan tags exist (app-e2e built and tagged them)
+        if: ${{ env.RUN_SCAN == 'true' }}
+        env:
+          APP_E2E_RESULT: ${{ needs.app-e2e.result }}
+        run: |
+          bash scripts/ci-log-step.sh app-image-scan-verify-tags bash -e /dev/stdin <<'CI_LOG_STEP'
+          missing=""
+          for name in mc-service mcm-bff agent-gateway movie-mcp web-api-mcp spreadsheet-mcp; do
+            docker image inspect "app-scan/$name:run-${{ github.run_id }}" >/dev/null 2>&1 \
+              || missing="$missing app-scan/$name:run-${{ github.run_id }}"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::missing scan tag(s):$missing. app-e2e (result: $APP_E2E_RESULT) did not build and tag them, so they cannot be scanned — and an image that was not scanned never passes. Fix app-e2e first."
+            exit 1
+          fi
+          echo "all six scan tags present"
+          echo "SCAN_READY=true" >> "$GITHUB_ENV"
+          CI_LOG_STEP
+
+      # One step per image, each `always()` once the tags are verified, so one run names EVERY
+      # blocking image rather than stopping at the first.
+      - name: Scan mc-service
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-mc-service bash scripts/cd/scan-app-image.sh "app-scan/mc-service:run-${{ github.run_id }}"
+      - name: Scan mcm-bff
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-mcm-bff bash scripts/cd/scan-app-image.sh "app-scan/mcm-bff:run-${{ github.run_id }}"
+      - name: Scan agent-gateway
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-agent-gateway bash scripts/cd/scan-app-image.sh "app-scan/agent-gateway:run-${{ github.run_id }}"
+      - name: Scan movie-mcp
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-movie-mcp bash scripts/cd/scan-app-image.sh "app-scan/movie-mcp:run-${{ github.run_id }}"
+      - name: Scan web-api-mcp
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-web-api-mcp bash scripts/cd/scan-app-image.sh "app-scan/web-api-mcp:run-${{ github.run_id }}"
+      - name: Scan spreadsheet-mcp
+        if: ${{ always() && env.RUN_SCAN == 'true' && env.SCAN_READY == 'true' }}
+        run: bash scripts/ci-log-step.sh app-image-scan-spreadsheet-mcp bash scripts/cd/scan-app-image.sh "app-scan/spreadsheet-mcp:run-${{ github.run_id }}"
+
+      - name: Remove the scan tags (always)
+        if: ${{ always() }}
+        run: |
+          bash scripts/ci-log-step.sh app-image-scan-remove-tags bash -e /dev/stdin <<'CI_LOG_STEP'
+          for name in mc-service mcm-bff agent-gateway movie-mcp web-api-mcp spreadsheet-mcp; do
+            docker image rm "app-scan/$name:run-${{ github.run_id }}" >/dev/null 2>&1 || true
+          done
+          echo "scan tags removed (the images themselves stay, under :latest)"
+          CI_LOG_STEP
+
+      # Feature 042 — publish an agent-readable failure digest, as every job does. `always()` +
+      # `continue-on-error`: a broken digest must never mask, replace or delay the real job result.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          # US4 fallback: an AGit-headed run has NO secrets, so the digest falls back to a commit
+          # status with this run-provisioned token. Without this line that fallback is dead code.
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
+
   trigger-cd:
-    needs: [affected, mc-service-checks, app-e2e, dast]
+    needs: [affected, mc-service-checks, app-e2e, dast, app-image-scan]
     # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
     # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and
     # app-e2e did not FAIL (success OR skipped). A skipped needs-dependency would otherwise cascade-skip
-    # this job, which would leave a legit config change undeployed.
+    # this job, which would leave a legit config change undeployed. app-image-scan is the exception:
+    # it is `always()` itself and posts `success` when there was nothing to scan, so only a
+    # `success` dispatches — a skipped or failed scan never reaches a deploy (spec 084 US3).
     if: >-
       ${{ always()
           && github.event_name == 'push' && github.ref == 'refs/heads/main'
           && needs.affected.result == 'success'
           && needs.mc-service-checks.result == 'success'
           && (needs.app-e2e.result == 'success' || needs.app-e2e.result == 'skipped')
-          && (needs.dast.result == 'success' || needs.dast.result == 'skipped') }}
+          && (needs.dast.result == 'success' || needs.dast.result == 'skipped')
+          && needs.app-image-scan.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       # FIRST, not last (item #230). The decision below is a repository script, and it diffs against the

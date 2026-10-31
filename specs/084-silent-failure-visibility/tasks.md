@@ -573,10 +573,17 @@ unchanged.
   **Done when**: the preflight docs checks pass.
   **Done**: the exit-code row, the state-table row, and a section with the 2026-10-21 case study,
   the two payload shapes and the dispatch-time sha trap.
-- [ ] T048 [US2] Run the PR C gate and open PR C. After it merges, run quickstart US2 against the
+- [x] T048 [US2] Run the PR C gate and open PR C. After it merges, run quickstart US2 against the
   real 2026-10-21 sha and paste the output into the PR. Expected: `failed  run <id>`, and the digest
   is printed.
-- [ ] T049 [US2] Verify item #823's criteria, comment the evidence, and close it.
+  **Done 2026-10-31**: PR #886 merged as 26c9d4ff. The quickstart output, from merged `main`, is
+  posted on #886:
+  - `status --sha fa79e611…` shows `failed  run 5745` with `VERDICT mergeable`, exit 0;
+  - `failure` prints the scan-push digest, exit 1;
+  - live `watch` exits 4.
+- [x] T049 [US2] Verify item #823's criteria, comment the evidence, and close it.
+  **Done 2026-10-31**: all three criteria were met. The evidence comment is on #823, and the item is
+  closed.
 
 ---
 
@@ -587,14 +594,16 @@ PR CI built.
 
 **Independent test**: quickstart US3.
 
-- [ ] T050 [P] [US3] Test: `scripts/__tests__/app-image-scan.test.mjs`, the **drift guard** (FR-014):
+- [x] T050 [P] [US3] Test: `scripts/__tests__/app-image-scan.test.mjs`, the **drift guard** (FR-014):
   - `scripts/cd/scan-push.sh` and app-ci's `app-image-scan` job both invoke
     `scripts/cd/scan-app-image.sh`;
   - neither contains `trivy`, `infra-image-scan.mjs` or `check-infra-image-findings.mjs` directly;
   - the job's image list equals `scan-push.sh`'s `map` repositories (six names).
   **Verify RED**: `node --test --test-name-pattern="drift" scripts/__tests__/app-image-scan.test.mjs`.
   Expected: failing, because `scan-app-image.sh` is not invoked.
-- [ ] T051 [P] [US3] Test: **`scan-app-image.sh` exit meanings** (contract). With a shim `node` on
+  **Done**: RED, because the job does not exist. The tag-loop list is also compared with
+  `scan-push.sh`'s map.
+- [x] T051 [P] [US3] Test: **`scan-app-image.sh` exit meanings** (contract). With a shim `node` on
   `PATH` that answers per script name:
   - scan ok and findings ok: exit 0;
   - scan fails: exit 10 with `SCANNER ERROR`;
@@ -602,7 +611,9 @@ PR CI built.
   - no argument, or two: exit 2.
   **Verify RED**: `node --test --test-name-pattern="exit meanings" scripts/__tests__/app-image-scan.test.mjs`.
   Expected: failing, script not found.
-- [ ] T052 [P] [US3] Test: **job wiring** (FR-013, FR-016, R12):
+  **Done**: RED, script not found. An empty argument also exits 2. The CVE line from the verdict
+  must reach the log.
+- [x] T052 [P] [US3] Test: **job wiring** (FR-013, FR-016, R12):
   - the `app-image-scan` job exists, with `runs-on: kvm`, `needs` including `changes` and `app-e2e`,
     and `if: always()`;
   - it has an early pass step when `changes.app != 'true'`;
@@ -617,13 +628,18 @@ PR CI built.
   - every new `ci-log-step` step name is in `scripts/ci-step-ceilings.tsv`.
   **Verify RED**: `node --test --test-name-pattern="wiring" scripts/__tests__/app-image-scan.test.mjs`.
   Expected: failing, job not found.
-- [ ] T053 [US3] Extract `scripts/cd/scan-app-image.sh <local-tag>` from `scan-push.sh`'s loop body,
+  **Done**: RED, job not found. Two more cases: the scan steps depend on the decision, and the tags
+  are removed under `always()`.
+- [x] T053 [US3] Extract `scripts/cd/scan-app-image.sh <local-tag>` from `scan-push.sh`'s loop body,
   moving the comments with it. Make `scan-push.sh` call it, mapping 10 and 11 to its existing two
   messages and `exit 1`.
   **Verify GREEN**: `node --test --test-name-pattern="drift|exit meanings" scripts/__tests__/app-image-scan.test.mjs`.
   All pass. Also `node --test scripts/__tests__/*scan*.test.mjs`, where the existing scan-push guards
   still pass, updated at the cause if they pinned the inline block.
-- [ ] T054 [US3] In `.forgejo/workflows/app-ci.yml`:
+  **Done**: the three `cd-scan-push-gate` guards that pinned the inline block were updated at the
+  cause. The pipeline is now asserted in `scan-app-image.sh`, and its place (inside the loop, before
+  the push) on `scan-push.sh`'s call. `scan-push.sh` fails closed on any code other than 0, 10 and 11.
+- [x] T054 [US3] In `.forgejo/workflows/app-ci.yml`:
   - add the app-e2e step `Tag images for app-image-scan` (`ci-log-step` name
     `app-e2e-tag-scan-images`), after the agent stack bring-up;
   - add the `app-image-scan` job (steps: changes short-circuit; verify the six tags; scan each through
@@ -635,6 +651,28 @@ PR CI built.
   `scripts/cd/scan-app-image.sh` to the `app` path filter.
   **Verify GREEN**: `node --test scripts/__tests__/app-image-scan.test.mjs scripts/__tests__/ci-status.test.mjs scripts/__tests__/ci-log-step.test.mjs`.
   All pass.
+  **Done**: the full suite is 1902 pass, 0 fail, 0 skipped; preflight 24. Design points:
+  - **Trivy:** pinned v0.74.0, the third pin. The Renovate Trivy manager and its guard now cover
+    `app-ci.yml`, and assert that all three pins agree.
+  - **Scan steps:** each is `always()` once the tags are verified, so one run names every blocking
+    image.
+  - **Cancellation:** handled as `infra-image-scan` does. A cancelled `app-e2e` leaves no tags, so the
+    job fails closed. It does not use `!cancelled()`, which has never been proven on this forge.
+  - **Also updated:** the branch-protection fixture, now with seven globs, and the CI/CD concept
+    (canonical).
+  13 mutations were killed:
+  - `scan-push` scanning on its own;
+  - exit 10 or 11 turned into 1;
+  - no usage check;
+  - the verdict taken after a scanner error;
+  - 11 unmapped in `scan-push`;
+  - push before scan;
+  - an image dropped from the job;
+  - `trigger-cd` ignoring the scan;
+  - no `always()`;
+  - an unconditional scan step;
+  - a missing tag that does not fail;
+  - no cleanup.
 - [ ] T055 [US3] Add to `docs/runbooks/ci-diagnostics.md` what an `app-image-scan` red means (exit 10
   vs 11), the allowlist path, and the PR-green/deploy-red residual. Run the PR D gate and open PR D.
   The PR's own `app-image-scan` must be green and name six images (US3-AC1 and AC2, negative case).
