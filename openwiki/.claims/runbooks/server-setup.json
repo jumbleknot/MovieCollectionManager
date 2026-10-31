@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1671210d5e27404a3cacae24a96eadbbaf442008ca586f7451789a39cf5f63b9",
+  "pageVersion": "sha256:334083427dfadf78b75c418971d5c2091391691c523ddfdc573c5bc1cec1d26e",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -756,15 +756,19 @@
     },
     {
       "id": "claim_4fd18ffa517e47828c4d45529c450ff3",
-      "statement": "Only the pre-spec-084 restore procedure is proven on this host: the old `forgejo dump` format, restored 2026-07-05, whose xorm-generated SQL is not dependency-ordered and is therefore loaded twice with errors ignored. The format the tracked backup now writes — `forge-db` (a `pg_dump -Fc` custom dump, dependency-ordered so one `pg_restore` pass suffices) plus `forge-data` (the uncompressed data tar) — is **unproven**: the runbook's restore procedure for it is explicitly marked unproven until the restore drill has run against it, and the drill log's only row records that no drill has yet been run against the spec-084 US4 format. The drill log is therefore the record of which format has actually been restored, and it is the reason the phase must not be summarized as having a proven restore procedure.",
+      "statement": "The post-spec-084 backup format is proven on this host, not pending: the runbook's \"Restore the forge (the format since spec 084 US4)\" procedure — `forge-db` as a `pg_dump -Fc` custom dump (dependency-ordered, so one `pg_restore` pass suffices) plus the uncompressed `forge-data` tar — is headed as *Proven by the restore drill of 2026-10-31 (FR-006)*, and the drill log carries the passing row for snapshot `443ebb58` (forge-db 14 s, 0 errors, 2 repos / 1 user matching live; forge-data 23 s with `fsck ok=2 bad=0`; mc-service-mongo 2 s, 2,315 documents across 2 collections). The only restore proven before that drill was the old `forgejo dump` format (2026-07-05), whose xorm-generated SQL is not dependency-ordered and is therefore loaded twice with errors ignored — that procedure stays documented because old-format snapshots remain inside restic's retention window — and the drill log, not CI, is what records which format has actually been restored.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1136-L1136",
-          "version": "repo-lines-v1:sha256:77e0336e9f5ad4ebd57c724553c01c3f12e0348c98d04a22acf97e9184cac3d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
+          "version": "repo-lines-v1:sha256:8210c6b25eb39e8cdcb75ba67c4a08e698e4273c2cfe4400cdece1e024f3f2a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1213-L1215",
-          "version": "repo-lines-v1:sha256:917851177fc4043c44b862364046c5ee2e661df3dfbe5bef9a499c394b79c3ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjYTQ3ODcyN2QzOTgxNWI3ODdhNGYzNTk5YTkxZDg4MmYxYzk1OTExOWVlNWU5NDNhMDVjNGVlMTQ1MTBlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FmYzFiYmUyMTQ2MjAyNTA0MWNmNWQyMWRjZmM0NTA5YzlhZmQ3NGZiOGY3NzU5NTdlNWVlNWE2NzdkM2E5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1209-L1213",
+          "version": "repo-lines-v1:sha256:963ca291fdc1ca4759db09bdb8a16f3ba91f7f76f7c9c2d94b7565073166be0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxMjIwMmM1Y2VmMTE1OTk2NTc0ODNhNWQ2OWFmMWMyMjgyMDgyMDg1N2Y3ZGRiMDI3NjZmNmFkMzVhNTAxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNmN2NhY2JiNGQ3MzUxYzNhMTdmNDFiMjc1NTEzZTNjMWEyNWQ3MTJmY2VlNTBkYjBkY2Y0YWZjOTJjMTYxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFkYjJhZjViYjRjMjczYTI1NTZjOGIyZDhkYzVjMmRjN2NhNWNmZDcyNmQ4ZTBhZjIxOWE4M2NkMjkwOTIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjZmIzNmExMmYwODIyNWU1ZGYxNGExZWM1YWNmNDZhYTg1YWNhZjM2ZmUxYzNlMWM0M2ExMjQ0MTg2ZmVlOSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1215-L1215",
+          "version": "repo-lines-v1:sha256:c1fccc8844818515b00ac00d2249d5c03864196af27479f7ac2663e50a2c60e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTAyMjE2YTZlNTgzNTUyZGY2YzQxYjU3YTQ0ZjhmY2QzMmEwNmUwYzIxNzY4NjgwOTM5YTUyYjRhNzQ2ZDY2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
         }
       ]
     },
@@ -803,6 +807,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T03:40:23.288Z"
+    "at": "2026-10-31T09:46:49.753Z"
   }
 }

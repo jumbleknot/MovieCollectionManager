@@ -1,12 +1,12 @@
 ---
 type: Service
 title: Prod host backup (restic) and its failure alerting
-description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof the new forge format can actually be restored.
+description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-30T01:33:31.256Z
+    at: 2026-10-31T09:46:49.753Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -46,8 +46,6 @@ sources:
     resource: repo://scripts/backup-install-manifest.mjs
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-  - id: openwiki-source-4060b23417ef72688755f3e3
-    resource: repo://specs/084-silent-failure-visibility/plan.md
   - id: openwiki-source-75f8add1789d37f1c762c383
     resource: repo://specs/084-silent-failure-visibility/quickstart.md
   - id: openwiki-source-e9740ee34eee91e33cfb77d0
@@ -56,7 +54,7 @@ sources:
     resource: repo://specs/084-silent-failure-visibility/spec.md
   - id: openwiki-source-5159dca913823c87d5dcf112
     resource: repo://specs/084-silent-failure-visibility/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-30T01:33:31.256Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
 ---
 
 # Prod host backup (restic) and its failure alerting
@@ -272,9 +270,9 @@ operating manual: the README's install/update block, its once-only credential se
 check, and the `--check-staging` and `--ack-shrink` steps; and the
 [Phase 14 Backups section](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups)
 for what a run includes, what is excluded on purpose and how to restore without it, the retention rule,
-and both restore procedures — the current `forge-db` + `forge-data` one (unproven until the drill
-passes) and the old `forgejo dump` one (proven 2026-07-05). The contract, at the level of what each
-piece achieves:
+and both restore procedures — the current `forge-db` + `forge-data` one, proven by the restore drill of
+2026-10-31, and the old `forgejo dump` SQL one, proven 2026-07-05 and now only historical. The
+contract, at the level of what each piece achieves:
 
 - **Three host tokens, each with exactly one scope.** They are created in the forge UI for this host
   alone, as files with mode 600, and each is used by exactly one caller:
@@ -321,7 +319,8 @@ proof.
 
 - **When to run it: after any change to what the backup carries, and at least quarterly.** That
   trigger is the whole point of the log: the forge's dump format changed under spec 084 US4, so the
-  restore that was proven before it no longer proves anything about what the host now writes.
+  restore that was proven before it no longer proved anything about what the host now writes — which
+  is exactly why the drill was run again against the new format.
 - **Do not run it between 03:00 and 04:00.** `restic forget --prune` needs an **exclusive lock**, and
   a drill still reading the repository at 03:30 blocks it — that night's run fails, loudly, through
   the alert. The window is excluded because a maintenance drill must not be able to break the nightly
@@ -338,13 +337,17 @@ proof.
   errors, `fsck` reports `bad=0`, and Mongo has more than 0 collections. The commands themselves are
   the runbook's, at
   [Phase 14 — Backups, disaster recovery & UPS](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups).
-- **The drill log is the record.** One row per drill — date, snapshot, each restore's seconds and
-  counts, result — and it is the artefact that says whether a format has been proven. The runbook's
-  log currently reads **"no drill yet against the spec 084 US4 format"**, which is the load-bearing
-  fact: the post-spec-084 `forge-db` + `forge-data` restore is **UNPROVEN**, while the restore of the
-  old `forgejo dump` SQL snapshot **was proven on 2026-07-05**. The fallback until the drill passes is
-  retention itself: the old-format snapshots stay inside the 7-daily / 4-weekly / 6-monthly window, so
-  an old-format restore remains available while the new format is unproven.
+- **The drill log is the record, and its newest row is a pass against the current format.** One row
+  per drill — date, snapshot, each restore's seconds and counts, result — and it is the artefact that
+  says whether a format has been proven. The **2026-10-31** row covers snapshot `443ebb58` (the third
+  night on the post-spec-084 format): `forge-db` restored in **14 s with 0 errors**, 2 repositories and
+  1 user matching the live forge (6,252 action runs against 6,274 live, created since the snapshot);
+  `forge-data` untarred in **23 s** with `fsck ok=2 bad=0`; `mc-service-mongo` restored in **2 s** with
+  2,315 documents and 2 collections — **pass**. So the post-spec-084 `forge-db` + `forge-data` format
+  is proven restorable, and the risk that made the old-format snapshots the interim fallback is
+  closed; the old `forgejo dump` SQL restore, proven 2026-07-05, is now the historical record rather
+  than a fallback. What the log also carries is why the drill repeats: **a change to what the backup
+  carries invalidates the previous proof**, so the next such change needs a row of its own.
 
 ### The live-copy exposure `git fsck` reports
 

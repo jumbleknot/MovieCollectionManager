@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup whose post-spec-084 restore format stays unproven until the restore drill runs, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, backups, runbook]
 sources:
@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T03:40:23.288Z
+    at: 2026-10-31T09:46:49.753Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -186,20 +186,26 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   stacks themselves — and the one-time stateful cutovers they have carried, each with its own ordering
   and rollback window — are [Prod control tower](./prod-control-tower.md).
 - **14 — Backups, disaster recovery and UPS.** An encrypted, offsite, scheduled snapshot of every
-  stateful service on a timer, a restore procedure proven only for the pre-spec-084 dump format,
+  stateful service on a timer, a restore procedure whose current format the 2026-10-31 restore drill
+  proved (and whose predecessor it still documents for snapshots inside the retention window),
   a graceful-shutdown drain unit that stops containers cleanly before the runtime is killed, and UPS +
   NUT for power loss. The runbook warns explicitly that this host-level DR is not the same thing as the
   application's per-user collection backups — [Prod host backup](../projects/backup.md) is the snapshot
   side of that pair, and [Per-user collection backups](./backups.md) the application side.
-  - **Only the old restore is proven, and the drill log is the record.** What the host has actually
-    restored is the **old** `forgejo dump` format (2026-07-05) — xorm-generated SQL that is *not*
-    dependency-ordered, so it is loaded twice with errors ignored. The format the backup now writes,
-    `forge-db` (a `pg_dump -Fc` custom dump, dependency-ordered, so one `pg_restore` pass suffices) plus
-    `forge-data` (the uncompressed data tar), is **unproven**: the runbook's restore procedure for it is
-    explicitly marked as unproven until the restore drill has run against it, and the drill log's only
-    row says no drill has yet been done against the spec-084 format. Read the
+  - **The restore drill is what proves the format, and the drill log is the record.** The tracked
+    backup's format — `forge-db` (a `pg_dump -Fc` custom dump, dependency-ordered, so one `pg_restore`
+    pass suffices) plus `forge-data` (the uncompressed data tar) — is **proven**: the runbook's
+    "Restore the forge (the format since spec 084 US4)" heading now reads *Proven by the restore drill
+    of 2026-10-31 (FR-006)*. The drill log carries the passing row: snapshot `443ebb58`, `forge-db`
+    restored in 14 s with 0 errors and 2 repos / 1 user matching live, `forge-data` untarred in 23 s
+    with `fsck ok=2 bad=0`, and `mc-service-mongo` in 2 s with 2,315 documents across 2 collections.
+    Before that drill, the only restore proven on this host was the **old** `forgejo dump` format
+    (2026-07-05) — xorm-generated SQL that is *not* dependency-ordered, so it has to be loaded twice
+    with errors ignored; that procedure is still documented, because old-format snapshots stay inside
+    restic's retention window. The drill log, not CI, is what records which format has actually been
+    restored. Read the
     [Phase 14 section of the runbook](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups)
-    for both procedures and for the drill log that records which is proven.
+    for both procedures and for the log.
   - **The drill has one hard ordering constraint and a measured cost.** It restores the three dumps that
     matter most — `forge-db`, `forge-data` and `mc-service-mongo` — into scratch containers and a scratch
     directory, and never touches a live service: the scratch containers run with `--network none`, and
