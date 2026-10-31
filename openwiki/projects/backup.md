@@ -6,7 +6,7 @@ tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T09:46:49.753Z
+    at: 2026-10-31T16:05:45.295Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
