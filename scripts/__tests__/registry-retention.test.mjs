@@ -56,9 +56,17 @@ const baseConfig = () => ({
 
 // ── config ────────────────────────────────────────────────────────────────────────────────────
 
-test('config: the committed file loads, is report-only, and keeps every release APK', () => {
-  const cfg = loadConfig(readFileSync(resolve(REPO_ROOT, CONFIG_PATH), 'utf8'));
-  assert.equal(cfg.mode, 'report', 'the first production run must be report-only (FR-023)');
+test('config: the committed file loads, cites its reviewed report before apply, and keeps every release APK', () => {
+  const text = readFileSync(resolve(REPO_ROOT, CONFIG_PATH), 'utf8');
+  const cfg = loadConfig(text);
+  // FR-023: report first. `mode: apply` is allowed only once the header names the report-only run
+  // that was reviewed and the item it was reviewed on, so apply never lands without a reviewed
+  // report behind it.
+  if (cfg.mode !== 'report') {
+    assert.equal(cfg.mode, 'apply');
+    assert.match(text, /^# `mode: apply` since the first report \(run \d+, reviewed on item #\d+\)/m,
+      'mode: apply without a cited, reviewed report-only run (FR-023)');
+  }
   const android = cfg.packages.find((p) => p.name === 'mcm-app-android');
   assert.equal(android?.keepAll, true, 'release APKs are not rebuildable');
   const apps = ['mc-service', 'mcm-bff', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
