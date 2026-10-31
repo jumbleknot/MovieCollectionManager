@@ -470,10 +470,15 @@ retention.
   - `mc-service-mongo` restored in 2 s: 2,315 documents, 0 failed, 2 collections.
   - Scratch containers and dir removed.
   The runbook's "Unproven" caveat on the forge restore is replaced by the drill log row.
-- [ ] T040 [US1] Verify item #830's acceptance criteria against T021, T034–T039 and the runbook. Post
+- [x] T040 [US1] Verify item #830's acceptance criteria against T021, T034–T039 and the runbook. Post
   the evidence as a comment with `node scripts/backlog.mjs comment 830 --body-file …`, then close it
   with `update 830 --state closed`. Also close the T021 alert item with a comment linking #830.
   **Done when**: #830 is closed with an evidence comment.
+  **Done 2026-10-31**: all five criteria were verified and the evidence comment is posted on #830.
+  - #830 itself was already closed: it closed at PR #869's merge on 2026-10-28, before verification.
+    It stays closed, with the comment as its evidence.
+  - The T021 alert item, #867, was closed earlier by the operator.
+  - The optional registry rule stays with item #863 (US5).
 
 ---
 
