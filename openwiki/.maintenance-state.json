@@ -1,23 +1,23 @@
 {
-  "coveredCommit": "26c9d4ffb09bb1bd264e8e6912678b0528fe5338",
-  "coveredAt": "2026-10-31T14:17:38.520Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "2caddd1ffe713ee9eb99812e96e623d0f7280ab1",
+  "coveredAt": "2026-10-31T20:35:32.552Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
-        "server-setup.md"
+        "ci-diagnostics.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md"
+      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 889,
-    "headCommit": "22aa45157c63f0c4425e9ffe63eaa785f0311982",
+    "headCommit": "2863a7506a800119dfc5d1dbadf365e2f83faf0a",
     "markerBefore": "843b781e937ec9799a021f4f047bec0b223a3541",
     "slices": [
       {
@@ -40,51 +40,53 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "server-setup.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md"
       }
     ],
-    "updatedAt": "2026-10-31T16:42:25.464Z"
+    "updatedAt": "2026-10-31T20:35:33.022Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 5,
-    "elapsedSeconds": 2204,
-    "stoppedAtBudget": false
+    "pagesWritten": 6,
+    "elapsedSeconds": 3104,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-10-31T16:42:25.021Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 517,
+    "calls": 325,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2136989,
-    "cached": 50198530,
+    "uncached": 1770062,
+    "cached": 30400550,
     "cacheWrite": 0,
-    "output": 983567,
-    "reasoning": 865254,
-    "ms": 6084286,
-    "estCostUsd": 2.1226,
+    "output": 506501,
+    "reasoning": 428373,
+    "ms": 2880158,
+    "estCostUsd": 1.3212,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/server-setup.md",
-        "runbooks/ci-diagnostics.md"
+        "runbooks/server-setup.md"
       ],
-      "effort": null,
+      "effort": "low",
       "deadlineStop": true,
-      "estCostUsd": 2.1226,
+      "estCostUsd": 1.3212,
       "rateLimited": null
     }
   ],
