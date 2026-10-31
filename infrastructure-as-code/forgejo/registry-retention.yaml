@@ -1,7 +1,7 @@
 # Package-registry retention (spec 084 US5, item #863). Read by scripts/registry-retention.mjs, run
 # weekly by .forgejo/workflows/registry-retention.yml. Runbook: Server-Setup-Runbook.md §6.4.
 #
-# `mode: report` until a report has been reviewed. --apply deletes only when this says `mode: apply`,
+# `mode: apply` since the first report (run 6350, reviewed on item #863). --apply deletes only when this says `mode: apply`,
 # and flipping it is its own one-line PR that links the reviewed report (FR-023).
 #
 # Per package, a version is kept by the FIRST reason that applies, else deleted:
@@ -11,7 +11,7 @@
 #   keep:recent      younger than `keepDays`
 #   keep:referenced  (container children) a kept index points at it — whatever its age
 # A package not listed here is reported and never deleted.
-mode: report
+mode: apply
 owner: jumbleknot
 # The evidence the ci-failures bundles must cover. A ci-failures window below it is refused.
 evidenceWindowDays: 45

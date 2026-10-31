@@ -808,11 +808,14 @@ digest, and that keeps the `ci-failures` evidence window.
   protections, report → review → apply), and §6.5 gains the `registry-cleanup` token row.
 - [ ] T067 [US5] **(operator)** Create the forge token scoped `write:package` only, and add it as the
   Actions secret `REGISTRY_CLEANUP_TOKEN`.
-- [ ] T068 [US5] After PR E merges, dispatch the workflow (report only) and review the report:
+- [x] T068 [US5] After PR E merges, dispatch the workflow (report only) and review the report:
   - no `delete` row's digest appears in any `.env.deploy` or in the dev-container pin, which
     `grep` over the JSON confirms;
   - per-package totals, and the bytes that would be freed.
   Post the summary to item #863 (FR-023, first run report-only).
+  **Done** 2026-10-31: run 6350 (report, success). 2,496 of 3,773 versions to delete, ≈138.7 GB upper
+  bound; 0 of the 6 pinned digests among the deletes; 36 protected rows, 0 unresolved. The
+  dev-container pin is not in git, so it is not checked here (see T059/T061). Summary on item #863.
 - [ ] T069 [US5] Open a one-line PR flipping `mode: apply`, with the reviewed report linked. After the
   operator approves and it merges, dispatch with `apply: true`.
 - [ ] T070 [US5] **(operator)** After the forge's next package-cleanup cron:
