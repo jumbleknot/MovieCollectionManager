@@ -1,0 +1,27 @@
+{
+  "_source": "Derived from dispatched-success.json: the run is still running (Forgejo reports status \"running\", no stopped time).",
+  "sha": "220c81c0e1bf6b7fffe40ec5d369c8322bdf3208",
+  "statuses": [
+    {
+      "context": "cd-deploy/prod-apk-disk",
+      "status": "success",
+      "description": "reclaimed=none step=success avail=585G used=34%",
+      "created_at": "2026-10-23T01:08:43Z"
+    }
+  ],
+  "workflow_runs": [
+    {
+      "id": 5812,
+      "title": "cd-deploy",
+      "workflow_id": "cd-deploy.yml",
+      "index_in_repo": 5811,
+      "commit_sha": "220c81c0e1bf6b7fffe40ec5d369c8322bdf3208",
+      "event": "",
+      "trigger_event": "workflow_dispatch",
+      "status": "running",
+      "started": "2026-10-23T01:06:44Z",
+      "stopped": "0001-01-01T00:00:00Z",
+      "created": "2026-10-23T01:03:45Z"
+    }
+  ]
+}
