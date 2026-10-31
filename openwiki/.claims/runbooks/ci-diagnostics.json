@@ -1,14 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:923b8de87cde5801cbacf458c8727ebfe81a642401d91f63caeb6156997e63d4",
+  "pageVersion": "sha256:ee0e23de2c510ee3bc2c4009945ae1fbfd0861df72486ce45f0ba7f38d1529e6",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
       "statement": "scripts/ci-status.mjs derives two check states that the raw Forgejo API misreports rather than trusting the literal payload: a path-gated job reads status=success with description \"Has been skipped\" (fails safe, since the payload never states why), and a run cancelled by a newer push reads status=failure on every context it touched even though nothing broke (fails loud, announcing a broken build that isn't); classifyCheckState checks the cancelled description or the owning run's own cancelled status before the success/failure branches to catch this.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-status.mjs#L193-L283",
-          "version": "repo-lines-v1:sha256:178a2a2576bc4b894a600b5f98c06a2d0e85968886a426a21fa8d414cb349c88:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYzc3OWNkZTAwMDczNDc3YzIwODY2YzQ0ODYxMjgzMTQ0N2YxYTljMzc2ODYxNTMzMWU2ZDI4Yjg0NmJlZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjgzYTMyMmE2NTgxOTcxN2NjZjc0ZGFhMTgwZmZkNGY3MGY3MjU5N2YyOWY5MWRlYTdlZjk1Y2Y2OTlmMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzFmNjRiMDhlYzJjNGM4MTExNmYyYjI3MzQxYmVlZGY2OGI0NzllZWY4NDAyNTZkOWNiMTZjODQxNWRiYzcifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -17,11 +21,11 @@
       "statement": "ci-status.mjs prints one of three skip-cause annotations derived by walking `needs:` edges parsed out of .forgejo/workflows/*.yml, because the commit-status payload for a skipped job never states why it was skipped: '(path-gated -> satisfied)' when every needs: dependency passed, '(NOT run - needs: X, which did not pass)' when a declared dependency failed, and '(skipped - cause not determined: ...)' when the workflow can't be parsed or the dependency hasn't reported yet.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-status.mjs#L285-L299",
+          "resource": "repo://scripts/ci-status.mjs#L335-L349",
           "version": "repo-lines-v1:sha256:8a611b1a99871920db10a30536310fd86819a95d23f71fb23b7582039048224d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZThiNzUyZWJkNmMwOGRhNDRhNTE1MWM5Yzc4ZmIxMDY3YzVlNzNhN2JmM2NkOTE3YTZkYjhiYzgzZjY2OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZDY2MzQzY2QyMDVmMThlNDc2MGY0MTEwYjU4MmE3M2IzZjhjOGY4MjI3MDU1MDc0YzczMzI3NjZlOWY3MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0YTg1OWQ4ZDdkOGQwMGViZjg0ZDU0NmIxOWUyYzI2OWJmNGQzOWFjNGI1OWQ2ZDQ1YzA5OWRjZTMyMzI3NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxZDAwZjNiMjAzNzViOGQ1OWE4YTU1NGQxNzA3NzAxZjU0MWNlZjFjOTQ5MGMyMDBlMGU3OWVkMTc1MTkzOTcifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L429-L429",
+          "resource": "repo://scripts/ci-status.mjs#L479-L479",
           "version": "repo-lines-v1:sha256:10976fa88c8115ce8b1ded9bb1352b3164e268cf19005299626560d76a947fff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzllNzJjMmM4N2EwZDY1OGIwZDYzODM1Nzg5NThkNmMxOWYyODI2MjBjODBhOTY3NmRjYzQ1NTFmY2QyMTA1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzZmVmNzlhMzEzZjIyYjRjNzllZDAyMTliM2MwMjM1Y2UyNDQ1MjZhZjU3NWM1ZmZmNWM2ZDZmYTliODIwYyJ9"
         }
       ]
@@ -134,11 +138,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -192,7 +196,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         }
       ]
     },
@@ -202,11 +206,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -216,25 +220,29 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
     {
       "id": "claim_12d6b9d4b9e849ce9295d0dc15e6a55f",
-      "statement": "ci-status.mjs distinguishes exit 0 (mergeable) / 1 (a required context genuinely failed) / 2 (bad arguments, missing token or scope) / 3 (watch timed out still waiting — runner starvation, not failure), and since item #403 watch waits for ADVISORY contexts by default because 'has this commit settled' is the question it is asked; --required-only narrows the wait back to the merge question, and an advisory context still running at the timeout does not change the exit code — exit 0 meaning mergeable is load-bearing for a `ci-status ... && merge` wrapper, so the unfinished advisory row is named instead of being silently dropped.",
+      "statement": "ci-status.mjs distinguishes exit 0 (mergeable) / 1 (a required context genuinely failed) / 2 (bad arguments, missing token or scope) / 3 (watch timed out still waiting — runner starvation, not failure) / 4 (watch only: mergeable, but the dispatched cd-deploy run FAILED, item 823). Since item #403 watch waits for ADVISORY contexts by default because 'has this commit settled' is the question it is asked; --required-only narrows the wait back to the merge question, and an advisory context still running at the timeout does not change the exit code — exit 0 meaning mergeable is load-bearing for a `ci-status ... && merge` wrapper, so the unfinished advisory row is named instead of being silently dropped. 4 is no verdict's code, so a caller can tell 'the deploy failed' from 'keep waiting' (3) and 'CI failed' (1).",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
+          "version": "repo-file-v1:sha256:39518a88ef372e3ad84be3a346d956d308c4c3e42f9532f8e5ee8d682972d206"
         }
       ]
     },
@@ -244,11 +252,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -258,11 +266,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -272,11 +280,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -289,7 +297,7 @@
           "version": "repo-lines-v1:sha256:f84cd7f10063117d8738a044c0ab98ca201d8e7473ad9acfe898ef940535474d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MjFmYWQ4MjliNDkyZjZiYTkxMTJkYzU4ZDg5NTZmMmRhMDI1MGQ5ODg3NjNlNGJmMWU4ZGM2ZDdiNDJhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGFkNjRhNzc2N2YyNmFjNDRhMjcxNzgwN2E4NjAzYzQ5ZmQxZTAwMDE1MWZhYzgzYjk1OWE4MDBlYjAzNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L220-L225",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L222-L227",
           "version": "repo-lines-v1:sha256:6493ae54d0caf52b885f8797577111e4495e504b28f3842c839edda6f6bdd872:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI0MGRkNWU1YjE4MzRjMTIyODVjMTFkZDE2OWRjM2NmYjUyNmFhMjFmYzA5YzU3NTQ3NGExNGI4ZjBkMWE1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjczNTY3NmQ5NGVlOGMzODVmYTA2ZGY3YTkyZmE5ODVjNzM1MWE4NWY4MDJiNWYzZTU3Yzc0ZTJlMDFjMzA2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2RhYjIxZDg1OGQ3ZjU4ZThkY2VlNDVhYTVlNjJiOTEyNTgxMDhiZjRkMGE2ZWQzMDdhODIxMmIzZmMyZTkxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMyOGU5NTQ4MzQxNTIxMzY5ZDdlNmEwZTUxZmQxZmIxMTA2MjlkZjFkMjMyZjhhMzc4MTU3NzQyMDkxNDM3MiJ9"
         },
         {
@@ -308,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         }
       ]
     },
@@ -318,11 +326,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -336,7 +344,7 @@
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/reap-merged-branches.mjs",
@@ -350,7 +358,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         }
       ]
     },
@@ -360,11 +368,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -374,11 +382,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:f244ace6747345fb4c8d76a5d5cb0985d6b9788d415dc3f92204d8016e00f8d6"
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
         }
       ]
     },
@@ -514,7 +522,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         },
         {
           "resource": "repo://scripts/ci-failure-digest.mjs",
@@ -524,11 +532,11 @@
     },
     {
       "id": "claim_98fd6a67cfcb44aabff2c1b9de2b13ab",
-      "statement": "A pipe throws ci-status.mjs's exit code away — `ci-status … watch | tail -30` reports tail's status, so exit 3 (still waiting, runner starvation) and exit 1 (a required context failed) both arrive as 0. Measured 2026-09-06: a watch whose own output said `still waiting after 5100s … (exit 3)` was recorded by the session as WATCH_EXIT=0. The workaround is to redirect and read the file (`… watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo \"EXIT=$?\"`), since `set -o pipefail` is not on by default in these sessions.",
+      "statement": "A pipe throws ci-status.mjs's exit code away — `ci-status … watch | tail -30` reports tail's status, so exit 3 (still waiting, runner starvation), exit 1 (a required context failed) and exit 4 (mergeable but the dispatched deploy failed) all arrive as 0. Measured 2026-09-06: a watch whose own output said `still waiting after 5100s … (exit 3)` was recorded by the session as WATCH_EXIT=0. The workaround is to redirect and read the file (`… watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo \"EXIT=$?\"`), since `set -o pipefail` is not on by default in these sessions.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         }
       ]
     },
@@ -538,7 +546,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
         }
       ]
     },
@@ -569,10 +577,100 @@
           "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
         }
       ]
+    },
+    {
+      "id": "claim_a30b31118be14581a20bd2863cd472f1",
+      "statement": "A dispatched cd-deploy run posts NO commit status for its outcome, so scripts/ci-status.mjs resolves the deploy from the runs listing it already fetches by head_sha (findDispatchedDeploy, item 823) and shows it as one ADVISORY row, `cd-deploy / build-deploy (dispatched)  <state>  run <id>`, plus a `🚨 DEPLOY FAILED (advisory)` block. The row is added after the lists the verdict is computed from and `required` is forced false, so no branch-protection glob can claim it and the verdict line and exit code are exactly what they were without it — the deploy runs after the merge it would be gating, which is why `status` keeps exit 0 ⟺ mergeable. A `cancelled` or `skipped` deploy is neither `passed` nor a failure, and the newest run by `id` wins so a re-run decides.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs",
+          "version": "repo-file-v1:sha256:f9b50e5571120a7a736e33289e2cc11f65de56142baa7ac2be0f8302807139f2"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
+          "version": "repo-file-v1:sha256:39518a88ef372e3ad84be3a346d956d308c4c3e42f9532f8e5ee8d682972d206"
+        }
+      ]
+    },
+    {
+      "id": "claim_66455e759caa46a2ab3048abb78f79dd",
+      "statement": "Two measured payload shapes silently defeat a deploy resolver written from the GitHub docs, because a match failure produces silence rather than an error: a dispatched run carries `event: \"\"` with the actual event in `trigger_event`, and it carries its sha in `commit_sha` rather than `head_sha`. The GitHub spellings are accepted too, so a payload that fills them still matches. The bundle is named by the run's `id`, never by `index_in_repo` (the number the UI shows), so a name built from the UI number 404s for a bundle that exists — run 5745 is \"5744\" in the UI and its bundle is `5745--build-deploy`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json",
+          "version": "repo-file-v1:sha256:d1d8592a4072e335e56ad271356a744c31832c13f7cd0fb1018bdf67cc6fda3e"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f7cc9cc69e643368d3a2162d2974800",
+      "statement": "When a sha has a failed dispatched cd-deploy run, `failure --sha` / `--run` prints the deploy's digest from the bundle `<runId>--build-deploy` or `<runId>--prod-apk` (every cd-deploy job that publishes a digest is tried quietly, since usually only one failed), and with neither published it prints `deploy run <id> FAILED; no evidence bundle published` and exits 1 — it never answers \"No failed jobs\". `watch` waits for a running deploy as for any advisory context and exits 4 when the commit is mergeable and the deploy failed, which no verdict produces.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
+          "version": "repo-file-v1:sha256:39518a88ef372e3ad84be3a346d956d308c4c3e42f9532f8e5ee8d682972d206"
+        }
+      ]
+    },
+    {
+      "id": "claim_a09512c41b1e4ab4bd780b50f87b4c72",
+      "statement": "The dispatched deploy runs on main's head AT DISPATCH TIME, which is not always the commit whose CI dispatched it, so a sha whose `trigger-cd` passed can legitimately carry no cd-deploy run: measured 2026-10-21, `trigger-cd` passed on 7cc3c304 while the deploy ran on fa79e611, a marker commit pushed in between. ci-status.mjs names that case explicitly — `no deploy dispatched for this sha — trigger-cd passed, but no cd-deploy run carries this sha` — and the remedy is to run `status` on the commits after it in `git log --first-parent main`, not to conclude the deploy was lost.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        }
+      ]
+    },
+    {
+      "id": "claim_3dd42d2529ec48a1a8fff3a6ac1f7ef0",
+      "statement": "Item 823's case study is what the resolver exists for: on 2026-10-21 cd-deploy run 5745 (the UI calls it 5744) on fa79e611 failed at scan-push, `failure --sha` said `No failed jobs on fa79e611 — checked every event's contexts`, `failure --run 5745` said `posted NO commit status`, a session watching for the `chore(cd): promote` commit timed out, and the evidence existed all along as the bundle `5745--build-deploy`, read by hand. scripts/__tests__/ci-status.test.mjs pins the whole path against the real payloads in fixtures/ci-status/, and `ci-status --selftest` carries the case so the trap is classified without a forge.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:04305ac14f9f1206e43165bcc6d749a7194259ab41d84031f41082cea5f346c3"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs",
+          "version": "repo-file-v1:sha256:f9b50e5571120a7a736e33289e2cc11f65de56142baa7ac2be0f8302807139f2"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs",
+          "version": "repo-file-v1:sha256:55d7ec44ad1638c669560fc088590372134fb01ea8d8f1dc90950c8434d86dd6"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T06:29:24.551Z"
+    "at": "2026-10-31T14:00:59.999Z"
   }
 }

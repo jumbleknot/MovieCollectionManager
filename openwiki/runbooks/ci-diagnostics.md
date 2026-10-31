@@ -1,9 +1,9 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the measured quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
 resource: docs/runbooks/ci-diagnostics.md
-tags: [ci, forgejo, diagnostics, tooling, runbook]
+tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -33,8 +33,12 @@ sources:
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
     resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
+  - id: openwiki-source-85fc21a7b778685b168d8d3b
+    resource: repo://scripts/__tests__/ci-status.test.mjs
   - id: openwiki-source-02881b4039babfbc8f305d7c
     resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
+  - id: openwiki-source-b50d19f23836b85abeaed26d
+    resource: repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-2c2f0032bb5935673fca7b18
@@ -55,10 +59,12 @@ sources:
     resource: repo://scripts/e2e-failure-set.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T06:29:24.551Z" }
+  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
+    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T06:29:24.551Z
+    at: 2026-10-31T14:00:59.999Z
 ---
 
 # CI self-serve diagnostics
@@ -73,8 +79,10 @@ forge host from the `origin` remote **at runtime**, so no host literal exists to
 Two facts decide almost every reading:
 
 - **Exit `0` means mergeable, `1` a required context genuinely failed, `2` bad arguments/auth, `3` still
-  waiting when `watch` timed out.** The `3` is load-bearing — it is deliberately *not* a failure, because
-  there is one runner and a saturated queue is the normal state of this repository.
+  waiting when `watch` timed out, `4` (`watch` only) mergeable but the dispatched deploy FAILED.** The `3`
+  is load-bearing — it is deliberately *not* a failure, because there is one runner and a saturated queue
+  is the normal state of this repository. `4` is no verdict's code, so it cannot be misread as either of
+  the other two; see the item 823 bullet below.
 - **`watch` answers a different question from its exit code.** It waits for advisory contexts too
   (`app-ci / trigger-cd` is the only place a declined or failed deploy is visible), while the exit code is
   decided by the required set alone.
@@ -90,11 +98,15 @@ flowchart TD
   R --> ST
   L --> ST
   BP["GET branch_protections for the BASE branch"] --> V
+  RUNS["GET actions runs filtered by head_sha"] --> DD["findDispatchedDeploy — the cd-deploy run for this sha"]
+  DD --> V
   ST --> C["classifyCheckState per context"]
   C --> V{"verdict over the WHOLE commit"}
   C --> VIEW["single-event view, for the readable table"]
   V --> E["exit 0 mergeable, 1 required failed, 3 still waiting"]
   V --> ALSO["ALSO GATING names required contexts missing from the view"]
+  DD --> DEP["advisory row plus DEPLOY FAILED block"]
+  DEP --> W["watch exits 4 when mergeable and the deploy failed"]
 ```
 
 How a lookup flows: the target resolves to one commit, contexts are classified, and the whole-commit
@@ -114,10 +126,51 @@ stateDiagram-v2
 ```
 
 The five states `ci-status` reports, and how two of them are derived rather than read literally — the
-skipped branch then splits three ways on the `needs:` graph.
+skipped branch then splits three ways on the `needs:` graph. The dispatched-deploy row below is not one
+of the five: it has no commit status to classify at all, so it is resolved from the runs listing instead
+(item 823).
 
 ## Gotchas
 
+- **A dispatched `cd-deploy` run posts NO commit status — so its outcome is resolved from the RUNS
+  (item 823, fixed 2026-10-31).** `trigger-cd` dispatches `cd-deploy.yml`, and the dispatched run
+  attaches nothing to the commit. Until item 823 a **failed deploy was invisible to every command here**:
+  `failure --sha <sha>` answered `No failed jobs on <sha> — checked every event's contexts`,
+  `failure --run <id>` answered `posted NO commit status`, and a session watching for the
+  `chore(cd): promote` commit simply timed out. **Case study, 2026-10-21:** cd-deploy run **5745** (the UI
+  calls it 5744) on `fa79e611` failed at `scan-push`, and the evidence sat in the bundle
+  `5745--build-deploy` the whole time, read by hand. Now, for a sha that has a dispatched cd-deploy run:
+  - **`status`** adds the advisory row `cd-deploy / build-deploy (dispatched)  failed  run 5745` plus a
+    `🚨 DEPLOY FAILED (advisory)` block — and the verdict line and exit code are exactly what they would
+    be without the row, because the deploy runs *after* the merge it would be gating. `required` is
+    forced false, so no branch-protection glob can claim it.
+  - **`watch`** waits for a running deploy as for any advisory context, and exits **`4`** when the commit
+    is mergeable and the deploy failed. `4` is no verdict's code, so a caller can tell "the deploy
+    failed" from "keep waiting" (`3`) and "CI failed" (`1`).
+  - **`failure --sha` / `--run`** prints the deploy's digest from its bundle, `<runId>--build-deploy` or
+    `<runId>--prod-apk`. With neither published it prints
+    `deploy run <id> FAILED; no evidence bundle published` and exits 1. It never says "No failed jobs".
+
+  **Two payload shapes silently defeat a resolver written from the GitHub docs.** A dispatched run
+  carries **`event: ""`**, with the event in **`trigger_event`**; and it carries its sha as
+  **`commit_sha`**. A resolver keyed on `event`/`head_sha` matches nothing and stays silent — the
+  GitHub spellings are accepted too, so a payload that fills them still matches. And the bundle is named
+  by the run's **`id`**, never by `index_in_repo`, which is the number the UI shows: run 5745 is "5744"
+  in the UI, so a name constructed from the UI number 404s for a bundle that exists. The newest run by
+  `id` wins, so a re-run decides, and a `cancelled`/`skipped` deploy is not `passed` — it is not a deploy
+  either.
+
+  **The deploy runs on main's head AT DISPATCH TIME, which is not always the commit whose CI dispatched
+  it.** On 2026-10-21 `trigger-cd` passed on `7cc3c304`, and the deploy ran on `fa79e611`, a marker
+  commit pushed in between. `status` on the first therefore says
+  `no deploy dispatched for this sha — trigger-cd passed …`; run `status` on the commits after it in
+  `git log --first-parent main`. `scripts/__tests__/ci-status.test.mjs` pins all of this against the real
+  2026-10-21 payloads (`fixtures/ci-status/dispatched-failed.json` and its `success`/`in-progress`/
+  `rerun` siblings), including that a running deploy is outstanding in both the view and the gate while
+  still not holding the merge verdict, and that exit 4 is a code no verdict produces; a drift guard
+  asserts the two bundle jobs match the cd-deploy jobs that actually run a digest step, and
+  `ci-status --selftest` carries the case too so the trap is classified without a forge. The exit codes
+  themselves are stated in [the CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
 - **Two of the five reported check states are misreported by the raw API and must be derived, not
   trusted literally.** A skipped job reads `success` with description "Has been skipped" — but the
   payload does not say *why* it was skipped (see item 396 below); a cancelled-by-newer-push run
@@ -332,10 +385,13 @@ skipped branch then splits three ways on the `needs:` graph.
   expected and must never be conflated with an actual build failure. An advisory context still
   running at the timeout does **not** change the exit code either: `exit 0 ⟺ mergeable` is
   load-bearing for a `ci-status … && merge` wrapper, so the verdict's own code stands and the
-  unfinished advisory row is named instead of silently dropped.
-- **A pipe throws the exit code away — including exit 3 and exit 1.** `ci-status … watch | tail -30`
-  reports **`tail`'s** status, so both arrive as `0`. Measured 2026-09-06: a watch that printed
-  `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
+  unfinished advisory row is named instead of silently dropped. Exit `4` is the one addition to this
+  table that is `watch`-only, and it exists for the same reason: a mergeable commit whose dispatched
+  deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3` (which reads as
+  "keep waiting").
+- **A pipe throws the exit code away — including exit 3, exit 1 and exit 4.** `ci-status … watch |
+  tail -30` reports **`tail`'s** status, so all three arrive as `0`. Measured 2026-09-06: a watch that
+  printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
   `WATCH_EXIT=0`. Redirect and read the file instead: `node scripts/ci-status.mjs watch --pr 372
   --timeout 5100 > /tmp/watch.log 2>&1; echo "EXIT=$?"`. `set -o pipefail` also works, but is not on
   by default. The general form of this trap — that `cmd | tail` reports `tail`'s status for any tool —
@@ -708,9 +764,11 @@ This page is the distilled map plus the traps. The full exit-code table, the exa
 payload measurements, the required-check fetch/fallback logic, the token-provisioning recipe with its
 read/write split and the degraded fallback, the PR-opening recipe, the branch-deletion rules and their
 reaper backstop, and the evidence-bundle hardening details are in
-[the source runbook](../../docs/runbooks/ci-diagnostics.md), whose
-[PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request)
-is the canonical statement of the AGit rule and of the `POST /pulls` credential split.
+[the source runbook](../../docs/runbooks/ci-diagnostics.md). Its
+[PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request) is the canonical
+statement of the AGit rule and of the `POST /pulls` credential split, and the item 823 exit codes are
+contracted in
+[spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
 
 Related: [CI evidence pipeline](./ci-evidence-pipeline.md) (the producing half — digest, bundle,
 durations, ceilings), [E2E testing](./e2e-testing.md), [Renovate](./renovate.md),
