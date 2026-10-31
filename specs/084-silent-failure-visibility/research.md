@@ -344,6 +344,28 @@ about the prod or ci host that the repository cannot show; each one has a paste-
   - that deleting a version frees blobs only after the forge's `cleanup_packages` cron (the 122 MB of
     unreferenced blobs measured suggests it runs);
   - that a deleted version cannot be pulled by digest.
+- **Answered on the forge (0g, 2026-10-31, T059)**. Fixtures are in
+  `scripts/__tests__/fixtures/registry-retention/`.
+  - **Listing**: `GET /api/v1/packages/{owner}?page&limit=50`, ordered by name, with
+    `X-Total-Count` (3,739 on the day). `q=` is a substring match, so filter by exact name.
+  - **The digest**: a tag version's `GET …/container/<name>/<tag>/files` has one `manifest.json`,
+    and its `sha256` is the digest `.env.deploy` pins. That digest is an OCI image **index**.
+  - **Children**: one push also creates `sha256:<digest>` versions, the platform manifest that owns
+    the layers, plus an attestation. They are read from the index via `GET /v2/{owner}/<name>/manifests/<tag>`
+    (basic auth). **An unchanged image reuses the previous push's platform manifest**: the 07:48
+    `mc-service` index pointed at a child created at 03:14. So children are kept by reference, never
+    by age. This is the design change from the decision above.
+  - **Delete**: `DELETE /api/v1/packages/{owner}/{type}/{name}/{version}`, from the forge's swagger.
+    It was not exercised here; T068/T069 run it.
+  - **`ci-failures` already has a deleter**: `ci-failure-digest.mjs` prunes at `RETENTION_DAYS`
+    (30) on every publish, so the oldest bundle was 2026-10-01. The retention config only enforces
+    the `durations` floor: 25 × 23 publishing jobs = 575, set to 600.
+  - **The dev-container pin is not in git.** It is only in each developer's gitignored
+    `MCM_DEVCONTAINER_IMAGE`. `devcontainer.json` holds the placeholder. So it has no git
+    protection, and the newest 4 / 21 days is what keeps a pin alive.
+  - **The first report (read-only, 2026-10-31)**: 2,496 deletes of 3,739, up to 138.6 GB. That is an
+    upper bound, since shared blobs are counted per version. 36 protected digests, all resolved.
+    0 pinned digests among the deletes, and 0 unsafe among the 72 children of protected indexes.
 - **Alternatives rejected**: the forge's built-in package cleanup rules. They match names by regex, so
   they cannot protect a digest named in a git file. They are configured only in the web UI, which
   conflicts with FR-024. And they have no report-only run besides an interactive preview.

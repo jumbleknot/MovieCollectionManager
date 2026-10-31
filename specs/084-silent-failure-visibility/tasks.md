@@ -698,13 +698,20 @@ digest, and that keeps the `ci-failures` evidence window.
 
 **Independent test**: quickstart US5.
 
-- [ ] T059 [US5] Run quickstart **0g** with the `git credential fill` token: for one `mc-service`
+- [x] T059 [US5] Run quickstart **0g** with the `git credential fill` token: for one `mc-service`
   version, `GET /api/v1/packages/jumbleknot/container/mc-service/<sha>/files`, plus the version list
   pagination (`x-total-count`). Record in research R13 which field carries the manifest digest, and
   the endpoint and verb that delete a version.
   **Done when**: R13's "verify on forge" bullets are answered with the observed payloads, saved as
   fixtures in `scripts/__tests__/fixtures/registry-retention/`.
-- [ ] T060 [P] [US5] Test: `scripts/__tests__/registry-retention.test.mjs`, **config validation**
+  **Done 2026-10-31** with the read-only credential (the `git credential fill` token lacks
+  `read:package`, so it answered 403). Answers are in R13, and the fixture is `mc-service-slice.json`.
+  - The index digest is the tag version's `manifest.json` `sha256`.
+  - Children are read from `/v2/.../manifests/<tag>`, and **are shared between pushes**.
+  - Delete is `DELETE /packages/{owner}/{type}/{name}/{version}`.
+  - Two spec assumptions were wrong: `ci-failures` already has a deleter, and the dev-container pin
+    is not in git.
+- [x] T060 [P] [US5] Test: `scripts/__tests__/registry-retention.test.mjs`, **config validation**
   (data-model). The script refuses:
   - an unknown key;
   - a bad `mode`;
@@ -715,7 +722,9 @@ digest, and that keeps the `ci-failures` evidence window.
     `.forgejo/workflows/` by the test), so `durations` can always read its full sample.
   **Verify RED**: `node --test --test-name-pattern="config" scripts/__tests__/registry-retention.test.mjs`.
   Expected: failing, module not found.
-- [ ] T061 [P] [US5] Test: **protected set from git** (FR-021). In a temp git repo, the fixture writes
+  **Done**: RED was `Cannot find module`. Duplicate package names and mixing `keepAll` with a
+  window are also refused. The bundle-job count is 23, and 24 once PR D's job lands.
+- [x] T061 [P] [US5] Test: **protected set from git** (FR-021). In a temp git repo, the fixture writes
   `.env.deploy` files through 7 promotion commits and a `.devcontainer/devcontainer.json` pin. Assert:
   - `protectedDigests()` returns the digests at HEAD plus those at the previous 5 commits touching
     `.env.deploy`;
@@ -723,7 +732,13 @@ digest, and that keeps the `ci-failures` evidence window.
   - it does **not** include the 7th-oldest.
   **Verify RED**: `node --test --test-name-pattern="protected set" scripts/__tests__/registry-retention.test.mjs`.
   Expected: failing.
-- [ ] T062 [P] [US5] Test: **decisions** (US5-AC1, AC2, AC3, AC5). Over a version list from the T059
+  **Done**, with these differences:
+  - **No dev-container pin case.** No dev-container digest is in git (R13), so there is nothing to
+    read.
+  - **A shallow clone is refused.**
+  - **The repository's own six deployed digests resolve.**
+  - **Unrelated commits between promotions don't use up the window.**
+- [x] T062 [P] [US5] Test: **decisions** (US5-AC1, AC2, AC3, AC5). Over a version list from the T059
   fixtures:
   - per version, the decision is the first keep reason, else `delete`;
   - deployed and rollback digests older than every window are `keep:protected`;
@@ -733,7 +748,11 @@ digest, and that keeps the `ci-failures` evidence window.
   **Mutation**: dropping the protected filter turns the protected case red.
   **Verify RED**: `node --test --test-name-pattern="decisions" scripts/__tests__/registry-retention.test.mjs`.
   Expected: failing.
-- [ ] T063 [P] [US5] Test: **CLI contract** (FR-023, contract `registry-retention.mjs`):
+  **Done**, built around the measured shared child:
+  - a child is kept while any kept index references it;
+  - an unreadable index blocks every child deletion in its package (`keep:unverified`);
+  - a protected digest survives under 9 window combinations.
+- [x] T063 [P] [US5] Test: **CLI contract** (FR-023, contract `registry-retention.mjs`):
   - no args gives a report and **zero** DELETE calls (fake `fetch` injected);
   - `--apply` with `mode: report` exits 2 naming the mismatch, with zero DELETEs;
   - `--apply` with `mode: apply` deletes only `delete` rows;
@@ -742,14 +761,26 @@ digest, and that keeps the `ci-failures` evidence window.
   - `--json` gives valid JSON with per-package totals.
   **Verify RED**: `node --test --test-name-pattern="CLI" scripts/__tests__/registry-retention.test.mjs`.
   Expected: failing.
-- [ ] T064 [US5] Implement `scripts/registry-retention.mjs` (config loader, `protectedDigests`,
+  **Done**. Deviation: **`--help` prints usage and exits 0** with zero calls, which is the shared
+  argv-contract convention (asking never acts). Unknown flags, a missing value and a flag-shaped
+  value exit 2 before any call. With `--apply`, indexes are deleted before children.
+- [x] T064 [US5] Implement `scripts/registry-retention.mjs` (config loader, `protectedDigests`,
   decision engine, paginated API client with injectable `fetch`, report and apply) and
   `infrastructure-as-code/forgejo/registry-retention.yaml` with `mode: report` and the R13 values,
   except `ci-failures.keepNewest`. Set that to the floor T060's test computes
   (`DEFAULT_DURATION_RUNS` × the number of jobs that publish bundles), rounded up to the next 50,
   and never below 400.
   **Verify GREEN**: `node --test scripts/__tests__/registry-retention.test.mjs`. All pass.
-- [ ] T065 [US5] Add `.forgejo/workflows/registry-retention.yml`:
+  **Done**: `ci-failures.keepNewest` is 600 (25 × 23 = 575, rounded up), with a note that
+  `ci-failure-digest.mjs` is the real deleter. Rows carry `digest`, so the T068 grep can be run.
+  - **Live report-only run (19 s)**: exit 0; 36 protected digests, all resolved; 2,496 of 3,739
+    versions would be deleted, up to 138.6 GB; 0 pinned digests among the deletes; all 72 children of
+    the protected indexes kept.
+  - **Mutations, 11 killed**: no protected filter; children judged by age; an unreadable index
+    ignored; `--apply` ignoring the mode; no exit 5; 4 promotions of history; shallow accepted;
+    unconfigured packages deletable; children before indexes; no `ci-failures` floor; unknown keys
+    accepted. Two of them first survived, and their tests were tightened.
+- [x] T065 [US5] Add `.forgejo/workflows/registry-retention.yml`:
   - `schedule` weekly, plus `workflow_dispatch` with input `apply` (boolean, default false);
   - checkout with `fetch-depth: 0`, because protection reads git history;
   - run the script, with `--apply` passed **only** when `inputs.apply == true`;
@@ -758,9 +789,14 @@ digest, and that keeps the `ci-failures` evidence window.
   Add a guard case to `registry-retention.test.mjs`: the schedule trigger can never pass `--apply`,
   and checkout depth is 0.
   **Verify GREEN**: same command; all pass.
-- [ ] T066 [US5] Run the PR E gate and open PR E. Document the rule, the protections and the
+  **Done**: Sundays 06:00 UTC. A guard checks that `--apply` appears once, behind
+  `workflow_dispatch && inputs.apply == true`, that `fetch-depth` is 0, and that the token is the
+  secret. The job summary gets the delete rows and the totals.
+- [x] T066 [US5] Run the PR E gate and open PR E. Document the rule, the protections and the
   report → review → apply flow in `docs/runbooks/Server-Setup-Runbook.md`, in the registry section
   (FR-024).
+  **Done**: runbook §6.4 "Retention" (the rule, why children are kept by reference, the
+  protections, report → review → apply), and §6.5 gains the `registry-cleanup` token row.
 - [ ] T067 [US5] **(operator)** Create the forge token scoped `write:package` only, and add it as the
   Actions secret `REGISTRY_CLEANUP_TOKEN`.
 - [ ] T068 [US5] After PR E merges, dispatch the workflow (report only) and review the report:
