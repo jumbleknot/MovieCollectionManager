@@ -1,12 +1,23 @@
 {
   "coveredCommit": "7d27f72f840008639e44b17ffee5e26c741044e8",
   "coveredAt": "2026-10-30T01:51:35.245Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "renovate.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/renovate.md"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 873,
-    "headCommit": "83f24497328013ec92c87905ad0fe002cbbca4a3",
+    "headCommit": "e4a9a164bc15c2f26a89da24788da1f7a3f7f491",
     "markerBefore": "a4b1cdfa3dbb13984c7c7bcf056719e2455188d2",
     "slices": [
       {
@@ -41,29 +52,46 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "ci-diagnostics.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/renovate.md"
       }
     ],
-    "updatedAt": "2026-10-30T01:51:35.687Z"
+    "updatedAt": "2026-10-31T01:19:53.305Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 1088,
+    "pagesWritten": 9,
+    "elapsedSeconds": 3106,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/renovate.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-10-31T01:19:52.783Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 133,
+    "calls": 717,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 639107,
-    "cached": 13325592,
+    "uncached": 2603522,
+    "cached": 73561210,
     "cacheWrite": 0,
-    "output": 172285,
-    "reasoning": 133255,
-    "ms": 1315140,
-    "estCostUsd": 0.4784,
+    "output": 1527264,
+    "reasoning": 1360408,
+    "ms": 9171448,
+    "estCostUsd": 3.0551,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -73,12 +101,12 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/backup.md",
-        "runbooks/server-setup.md"
+        "runbooks/ci-diagnostics.md",
+        "runbooks/renovate.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 0.4784,
+      "deadlineStop": true,
+      "estCostUsd": 3.0551,
       "rateLimited": null
     }
   ],
