@@ -391,6 +391,59 @@ $ echo "<forgejo-token>" | docker login server.tailnet.ts.net:3000 -u steve --pa
 
 > If you keep the registry on plain HTTP over Tailscale, add `"insecure-registries": ["server.tailnet.ts.net:3000"]` to the `ci` and `prod` `daemon.json`, or front Forgejo with TLS (Caddy/Tailscale serve) and skip that.
 
+#### Retention — what the registry keeps (spec 084 US5)
+
+Until spec 084 nothing deleted from the registry: on 2026-10-31 it held 3,739 versions, every CI push
+of the six app images and of the dev-container image since June. Retention is
+[`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
+[`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
+and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC). The forge's
+built-in cleanup rules are **not** used: they match names by regex, so they cannot protect a digest a
+git file names, they live only in the web UI, and they have no report-only run.
+
+**The rule.** Each version is kept by its first reason, else deleted:
+
+| Reason | What it keeps |
+|---|---|
+| `keep:protected` | every digest pinned in an `infrastructure-as-code/docker/*/.env.deploy` at the newest promotion **and the 5 before it** (the deployed set plus the rollback targets: a rollback is a `git revert` of a promotion), read from git **before** any API call |
+| `keep:newest` / `keep:recent` | the newest `keepNewest` tags, and anything younger than `keepDays` (app images 40 / 30 days, `mcm-devcontainer` 4 / 21 days) |
+| `keep:referenced` | a `sha256:` child that a kept index points at, **whatever its age** |
+| `keep:all` | `mcm-app-android` (not rebuildable) |
+| `keep:unconfigured` | any package not in the config: reported, never deleted |
+
+**Why children are kept by reference, not age (measured 2026-10-31).** One push creates two kinds of
+version: the tag `<sha>`, whose `manifest.json` *is* the digest `.env.deploy` pins (an OCI image
+**index**), and its `sha256:` children (the platform manifest, which owns the layers, plus an
+attestation). An unchanged image **reuses** the previous push's platform manifest. On `mc-service`, the
+07:48 deployed index pointed at a platform manifest created at 03:14 by an earlier push. So
+"delete what is old" would delete the layers of the image that is running. If any kept index cannot be
+read, no child of that package is deleted (`keep:unverified`).
+
+**Protections the script enforces.**
+- It refuses a shallow clone, so the workflow checks out with `fetch-depth: 0`.
+- When a protected digest is missing from the registry, it **exits 5** and deletes nothing. That is a
+  real alarm: a deployed or rollback image is gone, or the pin is wrong.
+- Indexes are deleted before their children.
+
+`ci-failures` bundles are pruned by `ci-failure-digest.mjs` itself (30 days). The config only
+enforces the floor that `ci-status durations` needs: 25 runs × every bundle-publishing job.
+
+The dev-container digest is pinned only in each developer's gitignored `MCM_DEVCONTAINER_IMAGE`, so git
+cannot protect it. Refresh your pin from the newest `devcontainer-image` run within 21 days.
+
+**Report → review → apply.** Two independent keys, in two places:
+1. The weekly run, and any dispatch, is a **report**. The job summary lists the `delete` rows and the
+   totals per package. Locally: `MCM_FORGE_URL=<forge> MCM_FORGE_TOKEN=… node scripts/registry-retention.mjs --json`.
+   The first report (2026-10-31): 2,496 of 3,739 versions to delete, up to 138.6 GB. That is an upper
+   bound, since a blob shared with a kept version is not freed. 0 pinned digests were among the deletes,
+   and all 72 children of the 36 protected indexes were kept.
+2. Review it. No `delete` row's `digest` may appear in any `.env.deploy` of the last 6 promotions.
+3. Open a one-line PR flipping `mode: report` → `mode: apply`, and link the report. After it merges,
+   dispatch `registry-retention` with `apply: true`. The schedule never passes `--apply`, and the script
+   refuses it while the config says `report`.
+4. Storage is freed only by the forge's own package-cleanup cron, which removes unreferenced blobs. Check
+   `du -sh` of the package store after it has run.
+
 ### 6.5 Forgejo access-token inventory (least-privilege)
 
 Every automated consumer authenticates to Forgejo with a **named personal access token**. Keep them
@@ -406,6 +459,7 @@ Current inventory (rotated + split to least-privilege 2026-07-01; `actions-cd-pu
 | `actions-cd-push` | `write:repository` | Forgejo Actions CD — repo → Settings → Actions → secret `CD_PUSH_TOKEN` | Digest-promote push to **protected** `main` + `app-ci`→`cd-deploy` dispatch (owner `jumbleknot`, on `main`'s push allowlist) |
 | `komodo-git-read` | `read:repository` | Komodo (Settings → Providers → Git) | Clone the repo on every Stack/ResourceSync deploy |
 | `komodo-registry-read` | `read:package` | prod daemon `docker login` that Komodo's `compose up` pulls with | Pull images from the registry to deploy to prod |
+| `registry-cleanup` | `write:package` | Forgejo Actions — repo → Settings → Actions → secret `REGISTRY_CLEANUP_TOKEN` | `registry-retention` reads the registry weekly and, on an apply dispatch, deletes versions (spec 084 US5). Separate from `actions-ci-push`, so rotating either cannot break the other |
 | `workstation-git` | `write:repository` | The workstation's git credential manager (`origin` remote) | Local `git push`/`pull` — used by **all** git on the box, incl. Claude Code's pushes, not just interactive use |
 | `claude-ci-monitor` | `read:repository` | Claude Code (read-only), `~/.mcm/forgejo-ci-token` | Poll `/actions/tasks` for CI status |
 | `claude-cicd-debug` | `write:repository` | Claude Code (debug), not stored on the box by default | POST `workflow_dispatch` to trigger `cd-deploy`; standing full-write → **revoke when not actively debugging** (if Claude needs it, drop it in `~/.mcm/forgejo-write-token` for the session, then revoke) |

@@ -1,0 +1,36 @@
+# Package-registry retention (spec 084 US5, item #863). Read by scripts/registry-retention.mjs, run
+# weekly by .forgejo/workflows/registry-retention.yml. Runbook: Server-Setup-Runbook.md §6.4.
+#
+# `mode: report` until a report has been reviewed. --apply deletes only when this says `mode: apply`,
+# and flipping it is its own one-line PR that links the reviewed report (FR-023).
+#
+# Per package, a version is kept by the FIRST reason that applies, else deleted:
+#   keep:protected   its digest is pinned in an infrastructure-as-code/docker/*/.env.deploy at the
+#                    newest promotion or one of the 5 before it (the deployed set + rollback targets)
+#   keep:newest      among the newest `keepNewest` tags
+#   keep:recent      younger than `keepDays`
+#   keep:referenced  (container children) a kept index points at it — whatever its age
+# A package not listed here is reported and never deleted.
+mode: report
+owner: jumbleknot
+# The evidence the ci-failures bundles must cover. A ci-failures window below it is refused.
+evidenceWindowDays: 45
+packages:
+  # The six app images: R13's newest 40 or 30 days, whichever keeps more, plus the protected set.
+  - { name: mc-service, type: container, keepNewest: 40, keepDays: 30 }
+  - { name: mcm-bff, type: container, keepNewest: 40, keepDays: 30 }
+  - { name: agent-gateway, type: container, keepNewest: 40, keepDays: 30 }
+  - { name: movie-mcp, type: container, keepNewest: 40, keepDays: 30 }
+  - { name: web-api-mcp, type: container, keepNewest: 40, keepDays: 30 }
+  - { name: spreadsheet-mcp, type: container, keepNewest: 40, keepDays: 30 }
+  # The dev-container toolchain image. Its digest is pinned only in each developer's gitignored
+  # MCM_DEVCONTAINER_IMAGE, so git cannot protect it: the newest 4 (about a month of the weekly
+  # rebuild) or 21 days is what keeps a developer's pin alive. Refresh the pin from the newest run.
+  - { name: mcm-devcontainer, type: container, keepNewest: 4, keepDays: 21 }
+  # Evidence bundles. ci-failure-digest.mjs ALREADY prunes these at its RETENTION_DAYS (30) on every
+  # publish, so this rule is the floor `ci-status durations` needs, not the deleter: 25 runs × 23
+  # bundle-publishing jobs = 575, rounded up to 600. The script refuses anything below the product,
+  # so a new job that publishes a bundle fails the config until this is raised.
+  - { name: ci-failures, type: generic, keepNewest: 600, keepDays: 45 }
+  # Release APKs are not rebuildable.
+  - { name: mcm-app-android, type: generic, keepAll: true }
