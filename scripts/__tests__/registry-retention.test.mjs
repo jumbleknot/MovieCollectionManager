@@ -143,8 +143,24 @@ test('protected set: HEAD plus the previous 5 promotions, and not the 7th-oldest
   assert.ok(!p.has(digestOf(1)), 'the 7th-oldest promotion is protected — the window is not 6 commits');
 });
 
-test('protected set: the repository itself yields the six deployed digests', () => {
-  const p = protectedDigests({ cwd: REPO_ROOT });
+// The REAL .env.deploy files, committed into a fresh repository: CI checks out shallow, so reading
+// this checkout's own history is refused (correctly) and would prove nothing about the file format.
+test('protected set: the repository\'s .env.deploy files yield the six deployed digests', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'retention-real-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, encoding: 'utf8' });
+  git('init', '-q', '-b', 'main');
+  git('config', 'user.email', 'test@example.invalid');
+  git('config', 'user.name', 'test');
+  const docker = join(REPO_ROOT, 'infrastructure-as-code/docker');
+  for (const stack of readdirSync(docker)) {
+    let body;
+    try { body = readFileSync(join(docker, stack, '.env.deploy'), 'utf8'); } catch { continue; }
+    mkdirSync(join(dir, 'infrastructure-as-code/docker', stack), { recursive: true });
+    writeFileSync(join(dir, 'infrastructure-as-code/docker', stack, '.env.deploy'), body);
+  }
+  git('add', '-A');
+  git('commit', '-q', '-m', 'promote');
+  const p = protectedDigests({ cwd: dir });
   const packages = new Set([...p.values()].map((x) => x.package));
   for (const name of ['mc-service', 'mcm-bff', 'agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp']) {
     assert.ok(packages.has(name), `no protected digest for ${name}`);
@@ -412,9 +428,12 @@ test('workflow: the schedule can never pass --apply, and protection reads full h
   assert.equal(checkout?.with?.['fetch-depth'], 0, 'protection reads git history; a shallow clone protects nothing');
   const run = steps.find((s) => /registry-retention\.mjs/.test(s.run ?? ''));
   assert.ok(run, 'the workflow does not run the script');
-  // --apply appears ONLY behind a dispatch with apply == true.
-  const applies = [...run.run.matchAll(/--apply/g)];
-  assert.equal(applies.length, 1, 'more than one --apply in the run step');
-  assert.match(run.run, /github\.event_name == 'workflow_dispatch' && inputs\.apply == true\) && '--apply'/);
+  // --apply appears ONLY behind a dispatch with apply == true, carried through env (an expression
+  // interpolated into `run:` is a shell-injection finding) and passed on by that variable alone.
+  const applies = [...JSON.stringify(run).matchAll(/--apply/g)];
+  assert.equal(applies.length, 1, 'more than one --apply in the step');
+  assert.doesNotMatch(run.run, /\$\{\{/, 'an expression is interpolated into run:');
+  assert.match(run.env?.RETENTION_ARGS ?? '', /^\$\{\{ \(github\.event_name == 'workflow_dispatch' && inputs\.apply == true\) && '--apply' \|\| '' \}\}$/);
+  assert.match(run.run, /registry-retention\.mjs \$\{RETENTION_ARGS:\+"\$RETENTION_ARGS"\}/);
   assert.match(JSON.stringify(run.env ?? {}), /secrets\.REGISTRY_CLEANUP_TOKEN/);
 });

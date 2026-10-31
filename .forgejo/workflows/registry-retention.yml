@@ -49,10 +49,13 @@ jobs:
           MCM_FORGE_URL: ${{ github.server_url }}
           REGISTRY_CLEANUP_TOKEN: ${{ secrets.REGISTRY_CLEANUP_TOKEN }}
           REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+          # Through env, never interpolated into `run:` (semgrep run-shell-injection). Empty unless
+          # a dispatch asked for apply.
+          RETENTION_ARGS: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply == true) && '--apply' || '' }}
         run: |
           bash scripts/ci-log-step.sh registry-retention bash -e /dev/stdin <<'CI_LOG_STEP'
           set -o pipefail
-          node scripts/registry-retention.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.apply == true) && '--apply' || '' }} \
+          node scripts/registry-retention.mjs ${RETENTION_ARGS:+"$RETENTION_ARGS"} \
             | tee registry-retention-report.txt
           CI_LOG_STEP
 
