@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-26
 
-**Status**: Draft
+**Status**: Implemented (all five stories merged; operator evidence tasks T057, T067–T071, T074–T075 outstanding)
 
 **Input**: Backlog items #830, #823, #822 and #863 — three failures that currently happen without anyone
 being told. Make each one visible somewhere already watched, with a check that proves it. Extended
@@ -278,6 +278,9 @@ was excluded.
 3. **Given** the exclusions are applied, **When** the next nightly runs, **Then** its forge dump is
    smaller by roughly the excluded components' measured size, and a restore drill (US1 scenario 5)
    still succeeds against it.
+4. **Given** the deployment controller's scheduler run history, **When** a day passes with no operator
+   action, **Then** history older than the retention is purged by itself, and the controller's dump
+   carries the controller's own state but not that history (FR-019d).
 
 ---
 
@@ -332,7 +335,7 @@ version count is back within its bound and a deploy and a rollback both still wo
 - **US5**: A cleanup rule deletes something still needed — deletion is not undoable, so the rule is
   first run in a report-only mode and its would-delete list reviewed before it acts.
 - **US2**: More than one deploy run exists for a sha (a re-run) — the newest run's outcome wins.
-- **US2**: The deploy is still running — reported as pending, and `watch` keeps waiting.
+- **US2**: The deploy is still running — reported as waiting, and `watch` keeps waiting.
 - **US2**: A deploy failed but its evidence bundle is missing — say so explicitly; never report
   "no failed jobs".
 - **US2**: The bundle is named by run id, not run number — the lookup must use the id (a constructed
@@ -355,7 +358,7 @@ version count is back within its bound and a deploy and a rollback both still wo
   item FR-001 uses), from a scheduled check that does not depend on the backup run reporting its own
   failure — it reads the snapshot age itself. When the next good snapshot lands, the item says so;
   closing it stays a human act.
-- **FR-003**: A failing Forgejo dump MUST NOT prevent the database dumps or the off-site upload; it
+- **FR-003**: A failing forge dump MUST NOT prevent the database dumps or the off-site upload; it
   MUST leave a failure marker in the snapshot like the other dumps do.
 - **FR-003a**: Every dump MUST be checked after it is written: complete and readable in its own
   format (the archive lists, the database dump runs to its end marker), and at least a per-dump
@@ -379,10 +382,10 @@ version count is back within its bound and a deploy and a rollback both still wo
 
 **US2 — deploy visibility (#823)**
 
-- **FR-008**: `ci-status status --sha` on a `main` commit whose deploy was dispatched MUST report the
-  deploy job's outcome as an advisory context.
-- **FR-009**: `ci-status watch --sha` MUST return when that deploy has failed.
-- **FR-010**: `ci-status failure` MUST fall back to the evidence bundle for a failed run that posted no
+- **FR-008**: The CI-status tool's per-commit status, on a `main` commit whose deploy was dispatched,
+  MUST report the deploy job's outcome as an advisory context.
+- **FR-009**: The CI-status tool's watch MUST return when that deploy has failed.
+- **FR-010**: The CI-status tool's failure view MUST fall back to the evidence bundle for a failed run that posted no
   commit status, and print its digest; when no bundle exists it MUST say so rather than report health.
 - **FR-011**: A selftest fixture MUST cover a dispatched run with no commit status, and removing the
   fallback MUST fail it.
@@ -393,8 +396,8 @@ version count is back within its bound and a deploy and a rollback both still wo
 
 - **FR-013**: PR CI MUST scan all six application images it builds and fail a required check on any
   un-allowlisted fixable Critical. The scan is its **own required job**, separate from app-e2e, so a
-  red names the scan and app-e2e's runtime is unchanged; it reuses images PR CI already builds rather
-  than building them a second time where that is measurably cheaper.
+  red names the scan and app-e2e's runtime is unchanged; it reuses the images PR CI already builds
+  rather than building them a second time.
 - **FR-014**: The PR scan and the deploy-time scan MUST share one scanner version, one set of flags and
   one allowlist — one pipeline, not a copy — and a guard MUST fail if they diverge.
 - **FR-015**: A mutation test MUST show the check red: re-adding runtime pip to a Python image on the
@@ -412,13 +415,13 @@ version count is back within its bound and a deploy and a rollback both still wo
 - **FR-019a**: The data a nightly backup newly stores MUST be roughly proportional to what actually
   changed that day, not a full copy of the forge each night.
 - **FR-019b**: A CI diagnostic upload MUST contain only the files of the run that produced it.
-  The Maestro accumulation was confirmed 2026-10-27 and is fixed by PR #864.
+  The mobile-test diagnostic accumulation was confirmed 2026-10-27 and is fixed separately (see plan).
 - **FR-019c**: Diagnostic artifacts MUST have a documented retention, set deliberately rather than
   inherited from the 90-day default; release artifacts that are also published as packages need not
   be kept twice.
-- **FR-019d**: The Komodo database's scheduler run history (`cron.job_run_details`, 2,147 MB of a
+- **FR-019d**: The deployment controller database's scheduler run history (2,147 MB of a
   2,284 MB database) MUST be bounded by a retention that runs without an operator, and the existing
-  backlog purged once, so the Komodo dump reflects Komodo's own state (~120 MB). Explained 2026-10-27;
+  backlog purged once, so its dump reflects the controller's own state (~120 MB). Explained 2026-10-27;
   the 670-byte agent-db dump is explained too: an empty database by design.
 
 **US5 — registry retention (item #863)**
@@ -427,8 +430,10 @@ version count is back within its bound and a deploy and a rollback both still wo
   count and/or age.
 - **FR-021**: The rule MUST never delete the digest any app is deployed at or the prior promoted
   digest rollback would use; a check MUST prove both survive a run.
-- **FR-022**: `ci-failures` bundles within a documented evidence window MUST be kept, and that window
-  MUST cover what `ci-status` reads (including its duration-history sample).
+- **FR-022**: Failure-evidence bundles within a documented evidence window MUST be kept, and that window
+  MUST cover what the CI-status tool reads (including its duration-history sample). As built, the
+  failure-digest publisher already deletes bundles at 30 days, so the retention rule never deletes a
+  bundle inside that window; its own 45-day setting is a backstop, and 30 days is the effective window.
 - **FR-023**: The rule MUST support a report-only run, and its first run in production MUST be
   report-only and reviewed before it deletes anything.
 - **FR-024**: The rule MUST be configuration recorded in the repository (or a documented setting with
@@ -469,8 +474,9 @@ version count is back within its bound and a deploy and a rollback both still wo
   it — zero such dumps uploaded silently.
 - **SC-008**: The forge's share of a nightly snapshot falls from ~21.5 GiB to under 2 GiB, and the new
   data stored per night falls from ~20 GiB (measured 2026-10-22..26) to under 2 GiB on a typical day;
-  both before and after figures are recorded. The Komodo dump falls from 2.0 GB to under 250 MB and
-  stays there.
+  both before and after figures are recorded. The deployment controller's dump falls from 2.0 GB to under 250 MB; a regrowth
+  past 500 MB (the size check's alert line, 2× headroom over the steady state) alerts on the night it
+  happens.
 - **SC-009**: The registry's version count and on-disk size stop growing month on month and stay
   within the rule's bound (from 109 G measured 2026-10-26), with zero deploys or rollbacks failing for
   a missing image.
@@ -490,5 +496,6 @@ version count is back within its bound and a deploy and a rollback both still wo
   bit-for-bit rebuildable.
 - The posting of a native deploy commit status by the deploy workflow itself is optional; US2 is
   satisfied by `ci-status` resolving the dispatched run.
-- Delivery is five pull requests, one per story; each closes its backlog item when that item's
-  acceptance criteria are verified, not when the PR merges.
+- Delivery is one pull request per story, plus the mobile-diagnostic fix and the retention `apply`
+  flip; each backlog item closes when its acceptance criteria are verified, not when the PR merges
+  (#830 was auto-closed by a merge and re-verified by comment — recorded in tasks T029).

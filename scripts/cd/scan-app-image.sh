@@ -3,8 +3,9 @@
 #
 # The per-image body of scan-push.sh, extracted so the PR and the deploy run the SAME pipeline:
 # cd-deploy's scan-push.sh calls it before each push, and app-ci's `app-image-scan` job calls it on
-# the six images app-e2e built. One script means one scanner pin (inside infra-image-scan.mjs), one
-# set of flags and one allowlist (security/infra-images/allowlist.yaml). The drift guard in
+# the six images app-e2e built. One script means one set of flags and one allowlist
+# (security/infra-images/allowlist.yaml). The Trivy version is pinned where each workflow installs it,
+# and renovate-workflow.guard.test.mjs fails if those pins disagree. The drift guard in
 # scripts/__tests__/app-image-scan.test.mjs fails if either caller starts scanning on its own.
 #
 #   scan-app-image.sh <local-tag>

@@ -36,8 +36,9 @@ found:
   `app-e2e` already built, which are handed over through run-scoped tags. A guard fails if the two
   gates diverge.
 - **Registry (US5)**: a repository script with a committed YAML config, report-only by default and
-  run weekly. It protects every deployed and rollback digest (read from git) and the dev-container
-  pin, and keeps the `ci-failures` evidence window.
+  run weekly. It protects every deployed and rollback digest (read from git), and keeps the
+  `ci-failures` evidence window. The dev-container pin is not in git, so `mcm-devcontainer` is kept by
+  count and age (newest 4, 21 days) instead; recorded in tasks T059/T061.
 
 Design decisions and their rejected alternatives: [research.md](./research.md) R1–R13.
 
@@ -80,7 +81,8 @@ service code.
 - No secret in the repository.
 - Every new credential is single-scope:
   - a host issue token (issues);
-  - an optional host `read:package` token;
+  - a host `read:package` token (required: without it the release-APK dump fails, and every nightly
+    alerts `DUMP-FAILED-release-apks`);
   - `REGISTRY_CLEANUP_TOKEN` (`write:package`).
 - Every host step is done by the operator, through paste-safe blocks.
 - Destructive tools are report-only by default and reject unknown arguments.
@@ -102,7 +104,7 @@ service code.
 | Security: no clear-text secrets; least privilege | Credentials are read live, or from mode-600 files. Each new token has one scope, and none decrypts backups (R3 rejects putting the restic password in CI). Alert bodies are passed through the repository's secret patterns. |
 | TDD (NON-NEGOTIABLE) | Every task pairs a Verify RED with a Verify GREEN and a mutation. The host steps that cannot run in CI (installing, inducing a failure, the restore drill) are operator acceptance steps with expected output (quickstart), not substitutes for the tests. |
 | Test Type Integrity | Shim-based bash tests and fixture-based `ci-status` tests are **unit** tests, and are named so. The restore drill and the PR mutation runs are real end-to-end checks against the real host and forge. |
-| Logging & Monitoring: actionable ERRORs, no secrets in logs | Each alert is an actionable item, and the journal tail is filtered. Komodo run-history retention is 3 d. That table is bookkeeping a vendored extension writes inside its own database, not a service log stream and not an audit log, so neither the 30-day operational nor the 90-day audit minimum applies. Confirmed by the operator 2026-10-27: internal bookkeeping, 3-day purge. |
+| Logging & Monitoring: actionable ERRORs, no secrets in logs | Each alert is an actionable item, and the journal tail is filtered. Komodo run-history retention is 3 d. That table is bookkeeping a vendored extension writes inside its own database, not a service log stream and not an audit log, so neither the 30-day operational nor the 90-day audit minimum applies. Confirmed by the operator 2026-10-27: internal bookkeeping, 3-day purge. CI diagnostic artifacts (container logs and reports uploaded by test jobs) are kept 14 days under FR-019c: they are test-run evidence for a PR, not logs of a running service, and the failure digest of every failed job is kept 30 days in `ci-failures` regardless. |
 | Logging & Monitoring: structured format for production services | The backup, alert and staleness scripts are operator tooling run by systemd, not services. Their plain-text journal output is read by the operator, and their machine-read record is the `dump-manifest.tsv` table. The structured-log rule for production services therefore does not apply. |
 | Docker-native operations | Dumps run `docker exec` inside the existing containers. The pg_cron job lives in Komodo's own Postgres. |
 | Guard rules (CLAUDE.md) | Changing scan-push gets the drift guard updated at the cause, never removed. New CI steps are calibrated, or listed ON THE BACKSTOP, in `ci-step-ceilings.tsv`. Mobile scripts appear in both path filters. |
