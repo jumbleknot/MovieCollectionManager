@@ -1,24 +1,13 @@
 {
-  "coveredCommit": "2caddd1ffe713ee9eb99812e96e623d0f7280ab1",
-  "coveredAt": "2026-10-31T20:35:32.552Z",
+  "coveredCommit": "280ddf314ba3ffea0c92f833648cb3b262535894",
+  "coveredAt": "2026-10-31T23:44:35.736Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "ci-diagnostics.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 889,
-    "headCommit": "2863a7506a800119dfc5d1dbadf365e2f83faf0a",
-    "markerBefore": "843b781e937ec9799a021f4f047bec0b223a3541",
+    "number": 893,
+    "headCommit": "c0f2ea56164bcb2b3fccf23e5701b72ba3da496c",
+    "markerBefore": "2caddd1ffe713ee9eb99812e96e623d0f7280ab1",
     "slices": [
       {
         "area": "runbooks",
@@ -28,65 +17,45 @@
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
+        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-diagnostics.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "server-setup.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md"
       }
     ],
-    "updatedAt": "2026-10-31T20:35:33.022Z"
+    "updatedAt": "2026-10-31T23:44:36.081Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 6,
-    "elapsedSeconds": 3104,
-    "stoppedAtBudget": true
+    "pagesWritten": 2,
+    "elapsedSeconds": 2203,
+    "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 325,
+    "calls": 258,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1770062,
-    "cached": 30400550,
+    "uncached": 1571412,
+    "cached": 31003080,
     "cacheWrite": 0,
-    "output": 506501,
-    "reasoning": 428373,
-    "ms": 2880158,
-    "estCostUsd": 1.3212,
+    "output": 432348,
+    "reasoning": 371025,
+    "ms": 2517189,
+    "estCostUsd": 1.1763,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/server-setup.md"
+        "runbooks/ci-diagnostics.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 1.3212,
+      "estCostUsd": 1.1763,
       "rateLimited": null
     }
   ],
