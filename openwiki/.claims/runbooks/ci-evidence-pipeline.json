@@ -1,14 +1,22 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fc4f0d8f26f599bbf1a7aceae7f8157d0963ae6238bd3315be1a10c0a2532f3c",
+  "pageVersion": "sha256:af02153a22d1a6764b9facfa14048ce841935dbbf3eb68c15c2d17ca0038a734",
   "claims": [
     {
       "id": "claim_95cb33eaf9164a0bb4732cc9977a5b54",
-      "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Counted 2026-10-22: 21 such steps, one per job, across the nine `.forgejo/workflows/*.yml` files — the same figure `check-ci-digest-coverage.mjs`'s header states, so header and tree agree today. The count is not monotonic: it was 22 across ten files before feature 080 retired `minio-image.yml` and its `build-publish` job, and the `16 jobs` figure in the gate's test file is prose from an earlier, much smaller tree rather than an assertion, so it fails nothing.",
+      "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Counted today: 24 such steps, one per job, across the eleven `.forgejo/workflows/*.yml` files — including the newest job, `app-ci / app-image-scan`, and the two scheduled reporting jobs `registry-retention` and `renovate-health`. The count is not monotonic, which matters if you are counting to check coverage: it was 22 across ten files before feature 080 retired `minio-image.yml` together with its `build-publish` job. The `21 jobs in 9 workflows` figure in `check-ci-digest-coverage.mjs`'s own header is a 2026-10-22 snapshot and the `16 jobs` figure in its test file is an older one, so header and tree no longer agree — both are prose rather than assertions and neither fails anything.",
       "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1893-L1904",
+          "version": "repo-lines-v1:sha256:229af94af8c210eaec3d8935425456ce0be69500761ebfbccd8d2a893b253e35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Y2RiM2FjOGNhYzVkYmRkYTQ4Y2M4ZTViMTczMTkwOTYwM2QwNGY2Y2FiOGI0ZmNkMWFiODJiMmQ1NzZmYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNWJmNjI5ZmU0ZGIwYmVmYjA1ZmViNTYwZjdjMDJhZjE4YmYxMGUzYjQ3YTU2NmQxODRkZWVlM2JlOGQ1OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOTM4MjczNTNlNTYyNTAwMGZlZDgzM2EzNGM0YjI5ODFmYWQ3MGVmNzcxNWM3OTRiNDJkZjU1OTk3YmI3YWYifQ"
+        },
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L71-L89",
           "version": "repo-lines-v1:sha256:e88fc56f2495ea8a5ff489ecd30077aa0c0e017b223372d2cd18c9b098415514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTU0OWNlNTFiMTEwZGFlYjEzMzkwZDdmZDYxYThkZDQ5YTdiM2RhZTdmODkyZDUxYWU5ZDQ4MzQ1NDdjZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMWI1ODI1YmJkNWEyODM0NmRiNTY4NDRkY2Y2ODVkNzRmNDkzODA2OWU5OWZkMmUwMmU4YWNkY2MyYjFhOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMTA2YWY0NDlkMTkyNGJlYjE3NDViMDdlMTgwYzY2MTIwOWI5NmUzN2MwNjFiNDBiNjQyNzRjNWJhMzlkYmQifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L77-L86",
+          "version": "repo-lines-v1:sha256:9dd8a57363026d8db0aee831f6377e2fe273f4a5bd13876da9fd0072960452a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiOGE0MmY5MjM3ZjgzNjFlYmI5YjY5NGU3YzY4ZGI2Y2JkYzJjNzE1MWQ0YWE4NGE0OWUzMWNiMDBmMDUxZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1N2QxMWM2MTc4YmQ4Mjc0YjJiMzAwYWMyNzZkOTllYzA2ZWM0ZmYxOGI2NTdjYThkODdjMWMwNDI5Yjk1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://scripts/__tests__/check-ci-digest-coverage.test.mjs#L1-L5",
@@ -37,7 +45,7 @@
           "version": "repo-lines-v1:sha256:c07f7766c1a423a0d46c93b6627a627d5a2880560766ca4cd5970339c9564621:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzIyZTFkZGU2YWU5NGNiNzNkY2Q0YWY0NzBiN2M5ODRmNzBmODE1ZTMzOWRjNWIxZmMxNDI5M2I5NTBjOGJkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM5ZWNmMzdmZjVmNDYxY2I3ODI3ZWI4ZmJkMmIyNDA5NjNiMjBhNDliMWIyNTg2NTMwYzkzZGZiMzgzOTEyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThmZWZmNjZiZGE2ZDQ3YzU4YjA3NjcyMTUzYTJiYTNiNmE0OTJhNWJlNDI4Yzg0ODk2NjMzZTgxNWY2YmRiMyJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L877-L877",
+          "resource": "repo://scripts/ci-status.mjs#L936-L936",
           "version": "repo-lines-v1:sha256:af85a7b3e8272e407418e8dfc8a5b19dfc79846bf0908e1dc62516a6bf665891:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTUzOWUyOTc0NThmMWM0YzhhODNmMjI5NzVkZTM2ZDRkNWU5Mjc3ZTliZDk4ZTliYjQ2NzE2Yzc4YTI2MzBjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZhMTg2YjA1ZjNhYTQ2NDY3ZWIzNjdjZGUzYTgwOTA3OTI3MTc5OTJkZmJkNTlkM2MxNTlkY2RkNmJmZmNiNCJ9"
         }
       ]
@@ -183,7 +191,7 @@
       "statement": "The wrapper resolves a ceiling by whole-name match on the table's first field (suffixes and shared prefixes make a substring match unsafe), skips comment rows (a `# web-e2e` row parsed as a ceiling of 0 would mean no limit), locates the table relative to itself rather than `$PWD`, falls through to the `CI_STEP_TIMEOUT_SECONDS` backstop on a missing or unreadable row, and warns naming the source of the value when `timeout` is not on PATH instead of silently running unbounded.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L433-L433",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L434-L434",
           "version": "repo-lines-v1:sha256:82dc2e17f68abd745c79bc4205d4bf4bbb662044069074824682136ae4bf5e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmYzE2MDI3YWM1YzU0NWM2ZGViMDA5NTViNzg5NWNhMDM5MTk1NjE3MzRkNzdjMmIyYTAwNzE1NzBkMWVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAzODAzNTFjNzg5ZjY3MDNlOThhNzRmNjgxNDRiOGZiZDFjMmI4NTE4ZTk1ZTk2ZThmOTZhMWQ1ODQ1ZThiOSJ9"
         },
         {
@@ -209,7 +217,7 @@
           "version": "repo-lines-v1:sha256:157050282bd850dd95a0281969015b7fd95bd64651652c2059f18bfd4f6a44c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMDViZGM3NDNjNmEyZGExZjUxMmFmYjNjM2IyY2U3OTJhMTdlMzNiODg0NmMwYTNlNDY0YmJjZjY2ZDgwNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWE4Mzg3MWNiNzZiMGQ2N2Y3MzVlYjUxODJhOTY2ODNkYzllMzVkMmE4YjBhZWI1OTg4ZDlhMWJlYzFhNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNTNiNjYwN2FkNzAwMzZkOTgwYjU0YjBiOWNjZTNlOTUwN2FmMDYwYmIxMWI5NjA0NGVkMzgxODE2NzVmNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1398-L1409",
+          "resource": "repo://scripts/ci-status.mjs#L1489-L1500",
           "version": "repo-lines-v1:sha256:3688204822921c84bc44149a128a35f6c71e565ea62fd21be4518497af6a20df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YmIwZmI5N2Y2NTUxYjQ2MjA4MTBhYzk1OThkM2I4MjllYzhmZDFjZDI3MWJkMzY4YTI1ZTIzYmM1MWJhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NGM1M2IwNjRhZWFiYjllYzUwZjU3ZWZlNzhmZWNjYTc0NGYxYzEzZDZhZTgwMmIwOGYzM2FhZTBjMGRlNGEifQ"
         }
       ]
@@ -459,7 +467,7 @@
       "statement": "A green run has a third publication mode: `shouldPublish` keys on an explicit `success` and returns `counts`, which uploads a small counts-only bundle on the same `{runId}--{jobSlug}` version a failure bundle would use — no PR comment, no health block, no container logs, no `digest.md` — and which requires the purpose-scoped credential because the run-provisioned token can only write a commit status. What it carries is `selectCountsSources`: the `[e2e-gate]` counts, the model tier's own gate log (feature 056), the `[e2e-contention]` tally, the `[e2e-turns]` verdict, the opt-in full mobile suite's per-flow table, and the `web-e2e` log reduced to its `[global-setup]` / `[playwright]` lines rather than carried whole. The source list is self-limiting BY CONSTRUCTION to steps only `app-e2e` produces, so every other green job finds nothing and publishes nothing (`digest-outcome=not-needed`); an unknown job status publishes nothing at all rather than falling into counts mode, because a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious digest on a green run and treating unknown as cheaply-publishable would resurrect that bug. Retention prunes on this path too, since publishing on every green run is what makes unbounded growth reachable, and a transport failure here still exits 0.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1337-L1352",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1353-L1368",
           "version": "repo-lines-v1:sha256:67a1ae082cb5109cc97d3814a28328a29d83e9ff2583811de70d435cc3b072b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOGFlZGE3NGQxZmYyMmZjNmQyYWIxYjFjZTliMDZhNDRmZmQwNDE3YWU4MGRjNzBkNzVhYjlmN2ZjOWQ1NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmEyZjU2ZjlhOGE3NDY1MmEzMzFkZWNjOGU1OGU0NDE4MDgxNjExODkzMjAxNmQxNGY0MmI0MmUyZGJhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
         },
         {
@@ -513,34 +521,38 @@
       "statement": "The digest's own absence message still claims only `app-ci / app-e2e` writes `~/mcm-ci-last-failure/`, and that is stale: `app-ci / dast` captures into the same directory too (item #645), overwriting it with its own per-container `docker logs`/`docker inspect` captures plus an owner stamp, because the digest had been presenting the previous `app-e2e` failure's logs as dast's own.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1673-L1696",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1693-L1716",
           "version": "repo-lines-v1:sha256:6b4d6adbace00993069ac79b412cdfd7db114663d25c2f4689eeee2a572e110b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0N2MwOTU4MDg1MjZkMjE2OWY3MzM5NDM0MWVhZGU2MjJiZmI1M2Y3ZDkwOTFlMDcyNGIwNTQ0ZjYxNzAzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNjE1YTRhZGM3OTU1NDAwZTM4NTRiYzIyZmZkYWE4NmFmOGUwOWExZWMyN2JlMzMwOGI0NDUyNmFlOTIyNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYjJiNjY1NmM3YjhiYWQ4ZjExZjA2ZjlmOTkyOWRiMDQ1MmMxZjkyZDgyYTE0YTI0YTJjNWY5MjkxMDkxZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYThmNmQyYTc2NGZhNDI2MWQ5MzkyMWI4NTcxOTlhNTQzMmMxNmUxMTQyOTBjOGJhODQwMDRiNjNlZTk0M2YifQ"
         }
       ]
     },
     {
       "id": "claim_7258852d45df4cdb8e8e85fd0b9cd5b7",
-      "statement": "The ceiling table's commented `ON THE BACKSTOP` block lists SIX steps, not the single one the `app-e2e` workflow comment still claims (\"today exactly one step is on it\" — read that line as stale): `app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of `app-e2e-bring-up-keycloak` by feature 073, no observations yet under their new names, the first being the cache-dependent half and the second existing precisely because folding it back killed the job), `app-e2e-collect-container-logs` (n=2, the only backstop row with a measured sample, because it runs only on the failure path), `app-e2e-collect-maestro-debug` (new in spec 084 FR-019b, a find+cp of this run's Maestro output, also failure-path only), and the opt-in full mobile suite's `maestro-full-flows` and `maestro-full-results`. None has the 10 observed samples a calibration needs, so all six are bounded by the 2700 s backstop; the last two run only on `mobile-e2e-full` / `mobile_suite=full` runs and so accumulate samples slowly, and the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode so the backstop plus the digest step still fit inside it.",
+      "statement": "The ceiling table's commented `ON THE BACKSTOP` block lists EIGHTEEN steps, not the single one the `app-e2e` workflow comment still claims (\"today exactly one step is on it\" — read that line as stale). Twelve are the spec 084 US3 image-scanning family: `app-e2e-tag-scan-images` (which tags the six images inside `app-e2e`) and the eleven `app-image-scan-*` steps of the `app-image-scan` job, recorded rather than calibrated because they have no observations yet, and bounded by that job's own `CI_STEP_TIMEOUT_SECONDS` of 900 s rather than by `app-e2e`'s backstop — `scripts/__tests__/app-image-scan.test.mjs` fails if any of them is neither calibrated nor listed on the backstop, so the family cannot be added silently. The other six are `app-e2e`'s own and all bounded by the 2700 s backstop: `app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of `app-e2e-bring-up-keycloak` by feature 073, no observations yet under their new names, the first being the cache-dependent half and the second existing precisely because folding it back killed the job), `app-e2e-collect-container-logs` (n=2, the only backstop row with a measured sample, because it runs only on the failure path), `app-e2e-collect-maestro-debug` (new in spec 084 FR-019b, a find+cp of this run's Maestro output, also failure-path only), and the opt-in full mobile suite's `maestro-full-flows` and `maestro-full-results`. None of the six has the 10 observed samples a calibration needs; the last two run only on `mobile-e2e-full` / `mobile_suite=full` runs and so accumulate samples slowly, and the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode so the backstop plus the digest step still fit inside it.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1332-L1347",
-          "version": "repo-lines-v1:sha256:3b22cbbc79ef39b4ad93b1e0158230a589fa35cb662d7992e2457120b46e5563:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMjVjMTFhMDZkNWUyMWMyZWQ5NTllODkyZTg1MDM0MDFlZDYzODk0NzBiNGFlM2Y1OTAyYjJiODI2NmU4ZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYTlkYjg0ZjExODIzZWU0MWQyZGNiMjFmZTg1NmFiZTVlODg3MzA1MzA4ZDc2ZWM0NDZiMmM5NTQ2NjY2YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMDQzOTI5MThjZjRjZGE0NDBmOGJmNmNmOTAxN2M3Mzc3NGNhMDQyN2NlNmE5MGQxZjRmOWYzMDMyMTA5ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NDhjNTkyODMyODk3ZGIwMTkwMjY4OTNkM2U4YmE1MjJlZmFkNjY0Mjk1NjczMjEyMzVkYjRkMTUwMWNjNTkifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1789-L1791",
+          "version": "repo-lines-v1:sha256:c08353cc42a886242b4dfe62ee9b7ae45a9cf696e42f6aeeb9747263029b8bb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJjZjUyYjZmYzQzYjgwMGFlMzNiNWFkYTkzMWY1ZDdhMmM2NTI3MWZlYTIwOTE4NDNmYWI1ZmRmZjE3NTViOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZDdiZDljZWMxZDY5NzJkMTBjYzRkMWMwOGQ1M2YwNzNlMWYwNzc0MjEyOWIzMDhiNTA2MjI3NTRmN2NjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMwOWZlYjBhYjJjMGM5OWUyZDY4NGFiZWNhOWZkOGEzNjllMjU3NjIyNmViNTQwMThkZTI3MzAzNWMxZTA1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjE2MzFhZDExYzhiODI2ZjQ5ZGZjYzM0N2I3ZGYzYzg5OWZjYjBjY2EzNDMxZjE5ZGQyMWU4NzY0YzIyYzBhOSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L376-L381",
-          "version": "repo-lines-v1:sha256:a030bf6a4a14e33a3218d1e655707233123712909d66bb7157f2d11a7e1f85e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU1MjY1NjczODcxMDUyNTQ3NGYxNjExMzM5NGNkM2I0ZDNjYmVmOTBkY2Y3ZWM5MDdlYzM4OWQ3MWE0MDQ3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE3OTMwNzE4MTFkZjBkNjBiNmFmNTM5NDVkYzg2YmZkNjJkYzM0OGFmYWNkZTZjZDQyZGM2MjgyOTI2MjRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODVkNWEyODFmNjlmM2M2YjE3ZTViYmRkOGY1YmNlOWM3ODY5NmY2ZmFjMjRmZWU4NTMxMTZkMTM0MGViZmY0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRlOGMxZmQ5NTBlZjkxMzk1NjkxMWVmZTYzMjkwYmY2ZTBiZjQxYTU1N2Q3ZDE2ZmE2MmYwOTA5YThjMGMwOCJ9"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L376-L382",
+          "version": "repo-lines-v1:sha256:124be6b22c0670e73523f468a7f5b9e257c300137d56af689ed244b0d659f9f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE3OTMwNzE4MTFkZjBkNjBiNmFmNTM5NDVkYzg2YmZkNjJkYzM0OGFmYWNkZTZjZDQyZGM2MjgyOTI2MjRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAwMDNlOTM3NDc1Y2Y2ZTMwOTE4Y2M4NjE3MzdiMWYyYjk5OWE3NTZiNTM1MTU1YjYyM2QxMTQxNjEwMzYxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRlOGMxZmQ5NTBlZjkxMzk1NjkxMWVmZTYzMjkwYmY2ZTBiZjQxYTU1N2Q3ZDE2ZmE2MmYwOTA5YThjMGMwOCJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L405-L408",
-          "version": "repo-lines-v1:sha256:c7a87e606a88ac4cb97b34d0efd48b8cfd253cd66530920dddeb4828467985fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY1MWNkMmZkZTUxOTYyZDBjMjBlM2VhNzI3OTQ4NmNiNmUxOGVkM2YzZmMzNzIwZTIwZTI5YTQ3Yzc5ZTVkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM4NmZhMjc2NmRlZWJhYWY4NTA2ZDY1YWQ0MzdmMjc1ODA0NGY5MmExM2E4ZjkwMjFkOTMxNzc2ZWMwNTZmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ4YTVhYjg2YmNhOWZkYTYxNDgyMDRiYTUxZGFjNzk5ZjIzZTExYmNiNDZlNzcxZWMzM2NhYTdkYzA3OTg4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYwNzhjMGY4N2NmNTZkM2NmMzRhMWJhOThiOTlkNzhiNGNlNTE3YWQwYWQ2YWIyYzdhNWQ1NmM3YzJlN2Q1OCJ9"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L405-L409",
+          "version": "repo-lines-v1:sha256:b7dc3d1ddaf504d1aabcdf106910c3ae1e880a93c0daeb7b8e02f80793ec1186:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUwOTg5NzFhMjE1YzgzNmEyOWUzMzY0YmMwY2IwNWY5NGI2MmIwZWI0YWM0ODU3ZWFjNjIyNmUyMmYwNTRiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM4NmZhMjc2NmRlZWJhYWY4NTA2ZDY1YWQ0MzdmMjc1ODA0NGY5MmExM2E4ZjkwMjFkOTMxNzc2ZWMwNTZmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDg4OTg4ZGEzNjRjMTgzMzRkZWQxNjUyNTAxYTA3NGU4NzdkZTBhMzFhMjUyNDQzZjU4NTgzMDZlOThjYjNhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYwNzhjMGY4N2NmNTZkM2NmMzRhMWJhOThiOTlkNzhiNGNlNTE3YWQwYWQ2YWIyYzdhNWQ1NmM3YzJlN2Q1OCJ9"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L110-L114",
           "version": "repo-lines-v1:sha256:a10f9d2afd7e85ff65a858c68a245b817f2f47f53cab6adc3e8fc763b5bfdf48:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdmYzdkNGVhOGVjM2NlNmJmYzgzNzBlZjg1NTBmOTNkMmE5YWE0NjZjYTk0MDcwNjZkMjRkMTM2ZDNjMzQwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNiZDliMDFhNmJiZWFmZWFhOTBiMzIxOTc1MTFhMGM3OTFkYjFhYjZhMTAxMmJmOTU4NjVmNTk5YzM2OWVlMCJ9"
         },
         {
-          "resource": "repo://scripts/ci-step-ceilings.tsv#L40-L59",
-          "version": "repo-lines-v1:sha256:3451567453896deca273478e024f403d93c4fc54f60674666dcf3a9317ba5ba7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYmY2ZDQ1MDQxNzFhN2UzZmUzOWVhYTg5OWE4OWM0NjU3OTg2YjY4YWI4NDVkMDEwOTg2NGM5MTZkOTc0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L220-L228",
+          "version": "repo-lines-v1:sha256:1042d35b5a44478b1dc50e63711a5a59e8d439b7ae6ab20841f9d40cb3be84e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdiYWQxOWUxYzAzYmNlOWIwMjFhYjMwMmVhNzI0Y2NmY2FmNDk2MjBkNTcwNmFjMzY3MjNhMWM4NWUzMWY1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGFlZDE0NDRkN2ZlNjNjZjIxOTg1Y2EyY2M1NDdlZjUxNDM5MzI5ZGQ4ZmEyMmI2N2VlNTgxNTdlYWNiMDZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv#L40-L72",
+          "version": "repo-lines-v1:sha256:a13988d380ab5b65870f8339cacb169c8dc152681fcb4da99e5e7ca0b3da772c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYmY2ZDQ1MDQxNzFhN2UzZmUzOWVhYTg5OWE4OWM0NjU3OTg2YjY4YWI4NDVkMDEwOTg2NGM5MTZkOTc0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -549,7 +561,7 @@
       "statement": "The `CI_STEP_TIMEOUT_SECONDS` backstop is itself guarded: #338o fails the build if the value disappears from `app-e2e` (an uncalibrated step would then run unbounded, restoring the defect where a hang kills the job and `always()` never publishes) or if the surrounding comment stops pointing at `ci-step-ceilings.tsv` and stops reading as a backstop/fallback rather than as the ceiling.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L433-L433",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L434-L434",
           "version": "repo-lines-v1:sha256:82dc2e17f68abd745c79bc4205d4bf4bbb662044069074824682136ae4bf5e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJkYzJlMTdmNjhhYmQ3NDVjNzliYzQyMDVkNGJmNGJiYjY2MjA0NDA2OTA3NDgyNDY4MjEzNmFlNGJmNWU0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmYzE2MDI3YWM1YzU0NWM2ZGViMDA5NTViNzg5NWNhMDM5MTk1NjE3MzRkNzdjMmIyYTAwNzE1NzBkMWVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAzODAzNTFjNzg5ZjY3MDNlOThhNzRmNjgxNDRiOGZiZDFjMmI4NTE4ZTk1ZTk2ZThmOTZhMWQ1ODQ1ZThiOSJ9"
         },
         {
@@ -563,11 +575,11 @@
       "statement": "The `maestro-debug` artifact upload is fed from a staging directory holding THIS run's Maestro output only, in two halves of `scripts/ci-maestro-debug.sh`: `start` (run inside the `app-e2e-install-maestro` step) wipes `./maestro-debug`, recreates `maestro-debug/tests` and touches the `.run-start` mark, and `collect` (run on the failure path, before the upload) copies only `~/.maestro/tests/*` directories newer than that mark via `find -newer` + `cp -r`. The staging is required because `app-e2e` runs on the `kvm` host, where `~/.maestro/tests` is the `ci` user's persistent home pruned only at ~14 days, so uploading it whole re-shipped every earlier run — measured at 330,497 rows / 11 GB by 2026-10-26.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1262-L1265",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1278-L1281",
           "version": "repo-lines-v1:sha256:8e89676510fc35a52eab1b031fb224c6ae420838cad5732dee4e3dc658c3fba0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFhNDdhOWIzM2IyOThhZjcwNjk0Mjg0YTE2NjE4ZmY4MWUzN2MyMDI4YjFiOWJiZTEwMjM1NmU4ZTg4YzNjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY5YjExZDAxMjI5NGU5ZDYxMmJkMjhjYTQ5NzM5Mjg2MWNhZjg4OWE0OTViZWQ5MjFjNWEyOWJhMjliYzU0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmMwMmY0ZGRhYjdlMGVkOTYyYTdiZjA1MWM3N2IzN2MwMTUyMDZjMGE0OGNmMzgyZGVkM2JhOTQ5ZjlkMjg0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEwYzJiMzA1Yjg3MTYxMWE2YThmMmYxY2NkMDVmYTJlNDc5YTVjZjk5OTBmZDU4OGM1MzY0MDMxZjU2ZGY4YSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1354-L1359",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1370-L1375",
           "version": "repo-lines-v1:sha256:72f7c9ab3f1e2dbb35515625d8a2120aa83ed225c5742408732083af1d42129e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFiNTc5MTkwZWNlY2U4NzgyMWE1OTE4NTliMWJiNjYyNDNiZThmMjVlOGQwMzk0Yzg3MzNkN2EwOTZhYWQ3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDYwMTAyODViOWE0YjZkYTU1N2RjOWMzM2E5ZmZhZjYyMmEzNzE5ODM5NGE5MDQzNDg3YzQ0OTExNzBiZThiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZiYWNmOTkyZmNkNzM1YjQyYjllZTljNWUwZWJiNTIzNjg4NzlkMGUxOTY0MWFiOTJkMzdkOGMyMDEzNDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDlkYzI0N2ZhMmI4YTg2YmNjMDNlMjJiOGRkN2ExY2NmYjRhMGZlNmJmOTI2ZjQzNmZhNDE4ZDY2MGQ2ZjBkNSJ9"
         },
         {
@@ -595,7 +607,7 @@
       "statement": "The digest's device-capture check used to look for a `maestro-debug` directory in the workspace — a name that is the ARTIFACT's and never a path on disk — so it reported `maestro debug output — not present` on every run, including ones that had captured a full debug tree; the corrected check distinguishes three states (carried as `_mobile-diagnostics`, captured on the runner at `~/.maestro/tests` but not folded in, genuinely not present), because \"the capture did not happen\" and \"the capture happened and this bundle could not carry it\" demand opposite next steps from a reader.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1415-L1420",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1433-L1438",
           "version": "repo-lines-v1:sha256:cb8b69da8b55b8b534bfaf237563c5261973e32a05f602d6f0bc835fa81f021f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxODJmYWNjZGEwNDI0YjJmODE0YTJhMDU2YWNlOGEwZDZmMmFlN2Y5NmUzNjkzOTA3NDJlZGJkYjI2ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUwYTdiMmI0ZTBhYTBlZmYwZWQzOWI4YzkwYmYwMmI1MzQ5ZTE5MGVmNTAzZGJlM2YyMWNlNzcwN2E0NTU2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E4OGY5ODQ0YmJjYjg2YmI4ZDk0YTMzOTBmYTNmM2Q5YzY0Y2Q2Y2U4NjA1Nzg0ZjczNjkzOGQ3ZDg3OTNhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDAxM2ZhYTNmMjA1Yzk2YzZiYjY3MjdhZDgzZjQyMWJhZTMyN2JkMDNlYmNjOGQ4OWQyMzBiMzQ0ZjhkODc0ZSJ9"
         },
         {
@@ -607,6 +619,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-27T23:08:42.159Z"
+    "at": "2026-10-31T16:05:45.295Z"
   }
 }

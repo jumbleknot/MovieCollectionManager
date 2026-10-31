@@ -50,7 +50,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-27T23:08:42.159Z
+    at: 2026-10-31T16:05:45.295Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -91,13 +91,15 @@ that never touches a comment.
 ## The digest
 
 One `if: always()` + `continue-on-error: true` step per job — `Publish failure digest`, running
-`scripts/ci-failure-digest.mjs`. Counted 2026-10-22: **21 such steps across the nine
-`.forgejo/workflows/*.yml` files**, one per job in every workflow that has jobs — the same figure the
-gate's own header states, so header and tree agree today. The count is not monotonic, which matters if
-you are counting to check coverage: it was 22 across ten files before feature 080 retired
-`minio-image.yml` together with its `build-publish` job. Only the *rule* is invariant. The `16 jobs`
-figure in `check-ci-digest-coverage.mjs`'s test file is a snapshot from an earlier, much smaller tree,
-and it is prose rather than an assertion, so it does not fail anything.
+`scripts/ci-failure-digest.mjs`. Counted today: **24 such steps across the eleven
+`.forgejo/workflows/*.yml` files** — one per job in every workflow that has jobs, `app-ci /
+app-image-scan` and the two scheduled reporting jobs (`registry-retention`, `renovate-health`)
+included. The `21 jobs in 9 workflows` figure in the gate's own header is a 2026-10-22 snapshot, so
+header and tree no longer agree; the count is not monotonic anyway, which matters if you are counting
+to check coverage — it was 22 across ten files before feature 080 retired `minio-image.yml` together
+with its `build-publish` job. Only the *rule* is invariant. The `16 jobs` figure in
+`check-ci-digest-coverage.mjs`'s test file is an even older snapshot, and it is prose rather than an
+assertion, so it does not fail anything.
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -322,9 +324,18 @@ defect. It stays at 2700 s because an uncalibrated step's legitimate duration is
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling.
 
-The table's commented `ON THE BACKSTOP` block currently lists **six** steps, while the `app-e2e`
+The table's commented `ON THE BACKSTOP` block currently lists **eighteen** steps, while the `app-e2e`
 workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
-the inventory:
+the inventory.
+
+**Twelve rows are the spec 084 US3 image-scanning family**: `app-e2e-tag-scan-images` (which tags the
+six images inside `app-e2e`) plus the eleven `app-image-scan-*` steps of the `app-image-scan` job. They
+are recorded here rather than calibrated because they have no observations yet, and the table notes that
+the `app-image-scan` steps run in their **own job, bounded by that job's own `CI_STEP_TIMEOUT_SECONDS` of
+900 s** — not by `app-e2e`'s 2700 s. `scripts/__tests__/app-image-scan.test.mjs` fails if any of them is
+neither calibrated nor listed on the backstop, so the family cannot be added silently.
+
+The other **six** are `app-e2e`'s own, all bounded by the 2700 s backstop:
 
 - **`app-e2e-build-images`** and **`app-e2e-bring-up-backup-destinations`** — split out of
   `app-e2e-bring-up-keycloak` by feature 073, with no observations yet under their new names. The first
@@ -339,9 +350,9 @@ the inventory:
   (`mobile-e2e-full` label / dispatch `mobile_suite=full`). These run only on opt-in runs, so ~10 samples
   will take a while to accumulate; `maestro-full-flows` is ~24 non-agent flows × 2 attempts.
 
-None has the 10 observed samples a calibration needs, so all six are bounded by the 2700 s backstop —
-which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode: the
-backstop plus the digest step still have to fit inside it.
+None of the six has the 10 observed samples a calibration needs, so all six are bounded by the 2700 s
+backstop — which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode:
+the backstop plus the digest step still have to fit inside it.
 
 The wrapper resolves the row with a **whole-name match on field 1** (`web-e2e` and `web-e2e-model` differ
 only by a suffix, and several steps share an `app-e2e-install` prefix, so a substring match would hand one

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:09301bf432f0b22e1dcadff9b0d7f64b3ca57d61540c1584e614b95b72028666",
+  "pageVersion": "sha256:180a86051bb36fe43ceb80324148ccb128912aace5bd4d511bebaf1905cfd3e8",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L70-L92",
@@ -39,7 +39,7 @@
       "statement": "The release APK build is self-guarded two ways: the CI step asserts that the string localhost:8082 appears inside assets/index.android.bundle (a string that is not a source literal, so its presence proves the EXPO_PUBLIC_* env was re-inlined in this build), and the build disables the Gradle daemon because a reused daemon keeps the environment it started with and would bake a stale backend URL.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1219-L1241",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1235-L1257",
           "version": "repo-lines-v1:sha256:3e96b5f320f53bcc5e6f1ae11ff0f88e6a3b9f423e1bbbbb89de8419a7077ce3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlZDdhOTJlYWNkNmFhMTdhODZlOTI4ZjI1MzI4NWJmMGRkNzZiYzNhOGZhYTQyYTNhM2IzYTQ2NGYyMWZjNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
         },
         {
@@ -53,7 +53,7 @@
       "statement": "The CI emulator runs an API-34 google_apis_playstore x86_64 image rather than an AOSP one, because the Play Store image ships Chrome, whose Custom Tabs service hands Keycloak's mcm-app:// custom-scheme redirect to the OS; the AOSP WebView shell drops that redirect so native-auth-callback never mounts and login never completes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1276-L1294",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1292-L1310",
           "version": "repo-lines-v1:sha256:ed4d87120819be2a93c0d7d9c792f8a1f68f56499766430aa713e4a5d5ab0b27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZTNmOTEzMzIwOWE1Y2FhNmRiNmZhMzBlNDA2ZmU2YzExY2FhODg3ZTc5OTIwMmM2OTBjODYyZGM4NWU5MDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNWM5MTU1MjZiMmMwMjlkNGQyZjE3ZjhmNGFmODMwODk1MzE2NzFiMzBlMDc3YmRhM2QzM2ViNDYzYjA1NzYifQ"
         }
       ]
@@ -77,7 +77,7 @@
       "statement": "The mobile half of app-e2e is gated by a `mobile` path filter (frontend/**, agents/**, mcp-servers/**, backend/**, packages/**, the workflow itself, and the Maestro runners and shared flow selection: ci-mobile-agent-flows.sh, ci-mobile-full-flows.sh, ci-mobile-lib.sh, ci-maestro-debug.sh, mobile-flows.mjs, maestro-run.sh) that must remain a strict subset of the job's `app` filter, plus `mobile-e2e` / `mobile-e2e-full` PR label overrides; on a pull_request that matches neither, the job still runs the web E2E and integration tiers but skips the ~35-minute emulator half, and only `mobile-e2e-full` (or a dispatch with mobile_suite=full) additionally selects the opt-in full suite.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L203-L215",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L204-L216",
           "version": "repo-lines-v1:sha256:dbcd511bdd76860aa8d09b9ec3315ae10ac34a0978e2c3188233668a82a917f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYWY4ZDIwYmVlZThmMjFlZWRlYzM1MTFjYjdkZWM3YTA5ZTZlMDIwYmMxMGM0ZDFkYjZjZGM2NjdhNzMwZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YzVhMTIwNTYwYmVkYWI2OGQxOGJlMDA2MzhiZTFlOGM3ZmRkMDc5ZjY1ODY3MzI0NmNmYTA0NGE5NTlkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZjkwYjBmNTBkMDc3ZjYzNzgwYjJiY2JkZjdhOTIxYzEwM2EzZWI2ZDYwMmU2N2RjMDU2YWIyMWYzMzc0YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
@@ -91,7 +91,7 @@
       "statement": "QEMU's 10.0.2.2 host alias works for TCP from the emulator on this machine; the earlier claim that it was broken was refuted with a negative control on 2026-08-23. The real rule is per-service: an RN 0.85 debug build resolves Metro to 10.0.2.2:8081 and does not consult adb reverse tcp:8081 for the bundle fetch, while Keycloak and the BFF must be reached at localhost through adb reverse tcp:8082 and tcp:8099, re-established after every emulator restart.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L436-L441",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L437-L442",
           "version": "repo-lines-v1:sha256:15636d748427b67b34bd73013c8a077e4545d5995bd442e26a8c99bd231fc19d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjY2FkNmFmNjdjNWU3MmY0ZmM0Y2JiN2VmZTViMzdhMGMxYTk0ZjI2MWMyZTQ2ZDBkY2M0OTAwYWIwYzY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U4Y2M1MGE5OTRkZjhlY2VjZjBhMzViOGJhMGY2N2FjNGZiNmQwNTk0Y2RlMzMyYzIxMzY2NjQ3ZjUyMDI2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY2MzdmZDFjOTFjOGRiMjIwOWZmY2Y1YjVlOWMzZjc4ZjM5NzBjN2ZjOGU2YmFkNzZkZDJmMzMzYzk1ZGIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZlZjYzMmI1MTBiMGMzNWY0Mzc1ODg5Zjk0OTYzYTBhN2FhNTcyZmQwMzIxYzQwMzAwN2EyZmMxYzE0ZjljYiJ9"
         },
         {
@@ -105,7 +105,7 @@
       "statement": "Keycloak is pinned with KC_HOSTNAME=http://localhost:8099, so it issues its issuer and session cookies for localhost; reaching the same server at 10.0.2.2:8099 loses the cookies and login dies mid-flow with cookie_not_found and an app-side no-code-param abort. CI bakes localhost URLs and tunnels both ports for exactly this reason.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L436-L441",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L437-L442",
           "version": "repo-lines-v1:sha256:15636d748427b67b34bd73013c8a077e4545d5995bd442e26a8c99bd231fc19d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjY2FkNmFmNjdjNWU3MmY0ZmM0Y2JiN2VmZTViMzdhMGMxYTk0ZjI2MWMyZTQ2ZDBkY2M0OTAwYWIwYzY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U4Y2M1MGE5OTRkZjhlY2VjZjBhMzViOGJhMGY2N2FjNGZiNmQwNTk0Y2RlMzMyYzIxMzY2NjQ3ZjUyMDI2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY2MzdmZDFjOTFjOGRiMjIwOWZmY2Y1YjVlOWMzZjc4ZjM5NzBjN2ZjOGU2YmFkNzZkZDJmMzMzYzk1ZGIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZlZjYzMmI1MTBiMGMzNWY0Mzc1ODg5Zjk0OTYzYTBhN2FhNTcyZmQwMzIxYzQwMzAwN2EyZmMxYzE0ZjljYiJ9"
         },
         {
@@ -147,7 +147,7 @@
           "version": "repo-lines-v1:sha256:a0491cd921028d23fa7f7eb52a9e7b3146259e364a2d4c71120bb975dfe0e62c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGFmNWYyNTgxMmM3MDViOTA4MzIyNTczOWE1MzFjZmY5NmM4MDE3M2UyMTJmMzAzZWZjYjg5ZWU0MDc3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L485-L527",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L539-L581",
           "version": "repo-lines-v1:sha256:80c3d7c29cb7da5276985d182b113d2f84c1f74be6d33c302691fd499caccc4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMmIzZjlkOWUwODEwMWZhNGNiNDExNzZlNzMxNWI5Y2I4OGRkY2VjYzBiZTg4NmM0ZmE4YjVlNmQ2ZmZmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YjEzNDcwZWEzYzViN2EzMTIyZmMxYTdmYTkxYTM0MmY1MDI4ZDgxNzgxNGE3MGUyODRjOTJmZmM4ZDJiYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMjhhMTY4ZTY1N2Q0MjBjYzAwYWM0YjI5OWRiMjNiMTg0Mjk2NmExMWRiZGUwYjNmYjljMzcxZjk2NjMwZTAifQ"
         },
         {
@@ -190,7 +190,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
@@ -253,15 +253,15 @@
       "statement": "app-e2e runs ON the ci host rather than in a job container: it declares `runs-on: kvm`, the name of a host-type runner label defined as `kvm:host`, precisely because the web-E2E leg's `localhost:8082` and the emulator leg's `10.0.2.2:8082` must resolve like a single host, and because KVM and the ci user's Docker daemon are both unavailable from a rootless job container. `/dev/kvm` is therefore the host's own device, and the invariants that matter are host state — KVM enabled on the host (kvm_intel/kvm_amd loaded), the ci user in the `kvm` group, and the runner still registering the `kvm:host` label. On this host `/dev/kvm` is mode 666, measured 2026-10-12 as `crw-rw-rw- root kvm`; the step's `::error::` text names `660 or 666`, and 660 via a udev rule is the tighter option whose group membership is what keeps the job working. The job's `Verify KVM is available` step (wrapped by ci-log-step.sh as `app-e2e-verify-kvm-available`, and so named in the failure digest) runs before the emulator step, `ls -l`s `/dev/kvm`, and exits 1 with that `::error::` when it is absent — never silently skipping the mobile suite. The earlier statement that `/dev/kvm` came from the runner config's `container.options: --device /dev/kvm` described the pre-235f2f4c job-container setup; the workflow itself records that correction (2026-10-04).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L364-L375",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L365-L376",
           "version": "repo-lines-v1:sha256:446638a7050d8644aef8ebd81ac3355a96ac5145cd717c3f47158a599eff000a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNDFhNzExOTM0MGViODdhM2Q4MzZhOTg3ODdlMDZkYjk2NmZmYzQ3OTdhNzNhYzJkYzRhOTcwNGNiMmM4ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NmY5ZDhlMzYxNjhmODE2NDE0OGY5MjNiZGE1OGI0NjM2YWZjYTNhOTZlYWEzNWEyMzUwMjQwOTAwYjc2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwODRjODBmMzc0NGIzOGEyMmQ0ZGU0MjRlNDMzNThiMjI4NjE1ZTQxMjJkZDNmOGM2NjZkNmY3MzU5YjI5OTcifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L523-L537",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L524-L538",
           "version": "repo-lines-v1:sha256:93ad570bc15eafa6f9765fa44486b5aa8e6582d905e16ed0566848f2f9d362f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L619-L636",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L673-L690",
           "version": "repo-lines-v1:sha256:b4d4e75dc45fcd5f03b9fa30eee67fb734c7e911a9ccf9101451d247ca008128:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmVkMzYzZDk2ZDU2MzZkZjUxMmJkMTVhMWFhM2NjZGQyODU0YTIyMDU3Y2Y2ZmUyZTc0ZGY4ZWU5NjFlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YmRhZjk1ZWE5OTU5ZmE5OTMxYTMyOTU5MGQ1YTY1N2IyMTA1MGQ2NmQwM2I1OWZjZWFkMzI2OGNlMGY0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
         }
       ]
@@ -271,11 +271,11 @@
       "statement": "Because app-e2e executes on the ci host and has no job container to supply a working Docker, its first step installs the Docker CLI only if the host lacks one (`command -v docker`; otherwise the static docker-27.5.1 tarball into /usr/local/bin) and then asserts that `docker info` actually reaches the ci user's rootless daemon at the job's `DOCKER_HOST` (`unix:///run/user/<uid>/docker.sock`). A CLI that is present but cannot reach that daemon exits 1 with an `::error::` naming the daemon and the socket — there is no fallback to another socket or to a container-provided daemon — so a container stack that did not come up on the expected daemon cannot read as a passing run. This is the same never-skip-loudly principle as the KVM check and the APK bundle guard.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L434-L435",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L435-L436",
           "version": "repo-lines-v1:sha256:ec8d581daad38d7af2a946f62e0384d27628d1970e0b67cd6a2e6091f592aede:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg4ZGFlYWIyNTYxMDBmOWNmOTgyM2NjN2Q3MWYyOTI4NjQyMDlmYjc3Mjk5ZWUwOWRjOTcyZGU1MmVmOGI0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAyZmM2Njc1YjM0Y2Y2ZWE4YTE5OGQxOTgwYjhjNmM3ZWYyOWYyNWQ3ZTY3ODE4ZjZlZjk4MDMyYWQxZGY3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdiZjI4YWFmODdlMTVkNzAxYmNlMmNkYWNiMjJmNDFhZmM0ZGQ3NDIwMzJjMjRmMDY5MDg3ZjRkMDdiNjY3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmYyNjdiZDQwNmI3MGM0ZDVkZWY0MTgwODc0NDJmY2RjMmYzZjM4OGVmOTlhZGU3MWM5MWVmYTBlYjQ3NDVmNSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L489-L508",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L490-L509",
           "version": "repo-lines-v1:sha256:205f8473f7685cbf8d8eb3d3e830c45697f9764831db01a95aec313cf4570832:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZTBhZWE4YTU2ZWJhMWJkYTExZTA1ODQ3NTc5ZjRlZDc0ZjlhOWIwMjFiYjk5Nzc5YWI3ZTUyZDE4OTYzNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1YjNkODkzNDgxYTdkNDdkNTlmOWE1OTE2MTEzYmMzMjhlZmJlYzY4MzA2MjkzZjAxOWI1MzY2MDIzMmEzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYjNjYTkwZjEyZGNlYzYwZGJkOThiYmE1NzdjZjk4MGZhMTA3YWM1MDZlNzhmZjhiOWVjMTg4ZGU4NDI5NzQifQ"
         }
       ]
@@ -285,7 +285,7 @@
       "statement": "The CI emulator's AVD is deliberately oversized for Chrome — 4 GB guest RAM, a 576 MB heap and 3 cores — because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat: CustomTabActivity 'WIN DEATH … app died'), which surfaced as a flaky login rather than as a crash.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1276-L1295",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1292-L1311",
           "version": "repo-lines-v1:sha256:08f5a4fdd421fea3cfe6cf60c0cb0c2df45e403bd40a4c959191af320a64fed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTQwNDA3MDM5ZjlhZjY3NzM3YWYwNGY3YWQ5OTU2YjgwMzJmNDdmZTMzYzljODg0Zjc0NjY0MTEyOWU2ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDMwN2M2MzgxZWJjZWRlY2FlN2Y0ODI5OGJmM2M3MGE2YzdmMWU5NzVhNDQ4MDdiM2U5NjkxYjUwM2NjNGUifQ"
         }
       ]
@@ -295,7 +295,7 @@
       "statement": "The reactivecircus/android-emulator-runner `script:` block is executed line-by-line in separate shells, so multi-line constructs such as a for loop with backslash continuations fail there; that is why the whole per-file Maestro flow loop lives in scripts/ci-mobile-agent-flows.sh and the workflow step is a single bash invocation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1296-L1304",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1312-L1320",
           "version": "repo-lines-v1:sha256:da06e821284269f7dcfdafcda24c975dd3d37d1592e29ddee33e461512b2deb7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZiZTAwNDQ4MTAyNmZmNzExNGNiZDA1ZWE0NTU4NDRkMmQ2M2Q2NGZhZGYwZGNhMDI4NjM2ZTBjMTk3ZmNhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjZmFiZWNlZGQyOGFlMDE1Y2I3MTI1NGQ1YTFiZmYxN2M2N2IxNDNkYjdlOGYxZjZhZDRkNDc1MGU2NDNhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmViZDJlNTIyMDBiZTNhYTZkOGExZTNiZDJjZTliYWJiOGVmMTY5ZjhmNGU3ODlhOTY3ZTE1ZTg2YWZmNGM3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdiZWFlMzAzNDc4NGIyOTA1MjZhNmRiMWVhMGIwNjRhZjcyM2Y3MGI3N2E1NTFiMWJmNTRhYmU0OGUwOTM1MSJ9"
         },
         {
@@ -310,10 +310,10 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2968-L2992",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2976-L3000",
           "version": "repo-lines-v1:sha256:dc5b04efbcdc2f8d919c28046c493bb14489dd821cb6fd511ce874ecf92ee3d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOTdkZDc3ZjMzYTQ1MjdlMGVlNTc0YTM4NThkMGYxZTIzZmI0NDNmMDJlZDdlM2UyMzBiODE3ZGQxMGIzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxODljYmVlMzEyZjA1YjdmMGQ3NGQ3OTYyZTllMDBhYzFmNGY5MDM5NDhlOTVjNTRhYmFiMGEyNTIyOGIzZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ODI4MTFlOTFlNDBiYjQ3MzJiYzhlMTI3YWZhMzIzNjdjNWUyOGM3ODM0OWIyZmY4NjFmNDdmMTk5NDY5ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiODZhNzE0ZjQ5NjExMmQyNzk1MDMyM2FkYjdkYmQ0ZjFjZjRkYjEyZjI0MTVkNzBhOGU5ODRhYTg2YWI1NzQifQ"
         }
       ]
@@ -334,7 +334,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh",
@@ -412,7 +412,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L80-L136",
@@ -448,7 +448,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L138-L145",
@@ -462,19 +462,23 @@
     },
     {
       "id": "claim_090bb763655e47cdbfead49134406473",
-      "statement": "app-e2e's step time budget is enforced in two layers. The job ceiling is 75 minutes by default and 110 only in full mode, because the opt-in suite's maestro-full-flows step (measured at 1748 s / 29 min on app-ci run 5502 for 24 flows, plus a ~2-3 min second emulator boot, roughly +30-35 min over an agents-only run) plus its results step and the digest still have to fit. Below that, scripts/ci-log-step.sh bounds each wrapped step from the generated scripts/ci-step-ceilings.tsv (regenerated with `node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose`, never hand-edited), where each row states its sample and the rule is max(observed) x 3, rounded up to a minute, floored at 300 s, applied only to a step with at least 10 non-killed samples — x3 being the largest retry bound any wrapped step has (ci-mobile-agent-flows.sh max=3, Playwright retries:1). maestro-agent-flows is the loosest calibrated row at 2580 s, web-e2e is 840 s, and most steps sit on the 300 s floor; the steps with no calibrated row — maestro-full-flows and maestro-full-results (which run only on opt-in runs) and the mobile failure-path captures app-e2e-collect-maestro-debug and app-e2e-collect-container-logs (which run only when the mobile half fails) — are bounded instead by the job-wide CI_STEP_TIMEOUT_SECONDS=2700 backstop, which is why full mode raises the job ceiling: backstop plus digest still have to fit. The reason is that always() does not survive a job kill: under a single job-wide ceiling a hang produced no digest at all (PR #322, task 8317: 75.1 min against 75 min versus a ~29 min healthy baseline), whereas a per-step ceiling fails the step, keeps the job alive, names it in _failed-step and lets the digest report a TIMEOUT instead of an assertion failure that never happened.",
+      "statement": "app-e2e's step time budget is enforced in two layers. The job ceiling is 75 minutes by default and 110 only in full mode, because the opt-in suite's maestro-full-flows step (measured at 1748 s / 29 min on app-ci run 5502 for 24 flows, plus a ~2-3 min second emulator boot, roughly +30-35 min over an agents-only run) plus its results step and the digest still have to fit. Below that, scripts/ci-log-step.sh bounds each wrapped step from the generated scripts/ci-step-ceilings.tsv (regenerated with `node scripts/ci-status.mjs durations --job app-e2e --runs 40 --propose`, never hand-edited), where each row states its sample and the rule is max(observed) x 3, rounded up to a minute, floored at 300 s, applied only to a step with at least 10 observed (non-killed) samples — the x3 being the largest retry bound any wrapped step has (ci-mobile-agent-flows.sh runs each flow under max=3, Playwright is retries:1), so a run where every retry fires still has headroom. maestro-agent-flows is the loosest calibrated row at 2580 s, web-e2e is 840 s, and most steps sit on the 300 s floor. A wrapped step with NO calibrated row does not run unbounded: it is bounded by the job-wide CI_STEP_TIMEOUT_SECONDS=2700 backstop, the script's own warning names which of the two sources the value came from, and the table records every such app-e2e step as a commented backstop row so a guard (#338n) can tell 'seen, not calibrated' from 'nobody decided' — today app-e2e-build-images (the cache-dependent image build split out of app-e2e-bring-up-keycloak), app-e2e-bring-up-backup-destinations, app-e2e-tag-scan-images, the mobile failure-path captures app-e2e-collect-maestro-debug and app-e2e-collect-container-logs (n=2), and the opt-in maestro-full-flows and maestro-full-results — which is exactly why full mode raises the job ceiling: backstop plus digest still have to fit. The reason is that always() does not survive a job kill: under a single job-wide ceiling a hang produced no digest at all (PR #322, task 8317: 75.1 min against 75 min versus a ~29 min healthy baseline), whereas a per-step ceiling fails the step, keeps the job alive, names it in _failed-step and lets the digest report a TIMEOUT instead of an assertion failure that never happened.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L376-L433",
-          "version": "repo-lines-v1:sha256:378fa37f496814a1783ea222a8a2595e76b86a67bf2ac44ad3ae8f2eb5802898:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NTI2NTY3Mzg3MTA1MjU0NzRmMTYxMTMzOTRjZDNiNGQzY2JlZjkwZGNmN2VjOTA3ZWMzODlkNzFhNDA0NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZGMyZTE3ZjY4YWJkNzQ1Yzc5YmM0MjA1ZDRiZjRiYmI2NjIwNDQwNjkwNzQ4MjQ2ODIxMzZhZTRiZjVlNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1ZDVhMjgxZjY5ZjNjNmIxN2U1YmJkZDhmNWJjZTljNzg2OTZmNmZhYzI0ZmVlODUzMTE2ZDEzNDBlYmZmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMzgwMzUxYzc4OWY2NzAzZTk4YTc0ZjY4MTQ0YjhmYmQxYzJiODUxOGU5NWU5NmU4Zjk2YTFkNTg0NWU4YjkifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L376-L434",
+          "version": "repo-lines-v1:sha256:fdabc5050e8d72fbef966d5a2836778e9de9abf125512797090cab28c1a7f900:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NmY5ZDhlMzYxNjhmODE2NDE0OGY5MjNiZGE1OGI0NjM2YWZjYTNhOTZlYWEzNWEyMzUwMjQwOTAwYjc2NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZGMyZTE3ZjY4YWJkNzQ1Yzc5YmM0MjA1ZDRiZjRiYmI2NjIwNDQwNjkwNzQ4MjQ2ODIxMzZhZTRiZjVlNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMDAzZTkzNzQ3NWNmNmUzMDkxOGNjODYxNzM3YjFmMmI5OTlhNzU2YjUzNTE1NWI2MjNkMTE0MTYxMDM2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMzgwMzUxYzc4OWY2NzAzZTk4YTc0ZjY4MTQ0YjhmYmQxYzJiODUxOGU5NWU5NmU4Zjk2YTFkNTg0NWU4YjkifQ"
         },
         {
-          "resource": "repo://scripts/ci-log-step.sh#L50-L94",
-          "version": "repo-lines-v1:sha256:31a18a72c7fd2f90b79c1bcfcb9c77e578467b27bb0068e8372af61a5e74e089:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2IyNWI4ZjU1MzAxYTIyNTAwNmRmODAxZDU5Y2YwZGFkZmJiN2MwNDM4MGY5MjNhOTQ0MDkyNjhjODYzOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YzdlYjUwN2RmOTU1ZTA3OTIwNjY5OGM3ZmU3OTEwYjExZWFjZTFmZDU0ZDM4NGEzYzI3NzE5ZTA1Y2UyMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyN2QxNGE3OTYzYmIwNjU3ZGY5MzFjZjA0NDJkM2MxMzljMzUzODU2ZTU0MmY2N2QyNTQ0ZjgzOTM0ODgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZTVkY2VlMzkwZDg5NzkxODI4ZGY4ZGNmZmY3NDg3NWVlZWYwZTljOTYyMTQyMmY2NjMxMjQxMzlhNzgzYWUifQ"
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L564-L592",
+          "version": "repo-lines-v1:sha256:7007be66ac636827e0bcb606ba346dd5a1711b5018db1207ee2e04a4fc8919b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMTk0NWYyNTZkZjc5ZGE1ZmVmODYyMmI3OWI4ZjFjNzY3OWRiYjgzODg1NzZkZjRmNWM3OWQ2ZDA4ODkxYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNzQzMWU5YWUzNjAzMTdmOGFiY2VkNmZhZGZhYTUwMzgyMTU3ZDJlMGRkNWExMzQ4M2ZlY2U2Y2NmZmYzOWMifQ"
         },
         {
-          "resource": "repo://scripts/ci-step-ceilings.tsv#L1-L59",
-          "version": "repo-lines-v1:sha256:cdb14afead6e055da27a3051257d10966afc1c238f37fef74cef6d00be62c76d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzgwMzNhMmIxZjQ0Y2YyMWFiYWY2NjFhNWEyN2RjNmIxYTg2MmNhMzgzMjM0MjAxZTVjNDgzNGMzMDljNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTRlODc5MjZhZDVjZTU5ZjdhMTg3NDE2ZGFiMTNlMDYzN2JkMWIzOGJjZWViODlmZmJiMmVlODJjNjYzYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://scripts/ci-log-step.sh#L50-L105",
+          "version": "repo-lines-v1:sha256:73d3b92443206dbb0aa843baf6b10cfd56218bd69d5cffb25422e2a365a41eac:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2IyNWI4ZjU1MzAxYTIyNTAwNmRmODAxZDU5Y2YwZGFkZmJiN2MwNDM4MGY5MjNhOTQ0MDkyNjhjODYzOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyN2QxNGE3OTYzYmIwNjU3ZGY5MzFjZjA0NDJkM2MxMzljMzUzODU2ZTU0MmY2N2QyNTQ0ZjgzOTM0ODgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5N2ZlNDY3MDNmNGM5NDk5MzBkMzJlMzBmMGY2YTM3OGE2MDEwMGFiOWUyZjU2NzJhMDg2N2FkMDc2NmY5MWMifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv",
+          "version": "repo-file-v1:sha256:67537673607ade0b534ac1c511da9b3f72c32d5f4df6e11664ec45bc49eb4b08"
         }
       ]
     },
@@ -494,7 +498,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://scripts/__tests__/ci-maestro-debug.test.mjs",
@@ -512,17 +516,39 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:992a48d943eb876fbbfd83a5234f94ded20564e140737d777f96224b2476a41c"
+          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs",
           "version": "repo-file-v1:sha256:c51a3ddc32211a17a8b48edf90ef359cb0e41e8b0485c91a8f06c96fc3fb4efb"
         }
       ]
+    },
+    {
+      "id": "claim_d49bb4afe7de4bcea947b7a695fdd633",
+      "statement": "The per-step ceilings are guarded for arithmetic and not merely for presence: scripts/__tests__/ci-log-step.test.mjs asserts that every committed row's ceiling equals what its own printed basis derives — calling the same ceilingForMax the table generator uses rather than restating the rule, so a row hand-tightened to a value its stated sample does not support fails instead of producing a false red on a capacity-1 runner — that every row leaves at least 15 minutes of the job ceiling free for the digest step, and that a backstop row stays commented and is never read as calibrated. It also requires every wrapped app-e2e step to be either calibrated or recorded as deliberately on the backstop, so an uncalibrated step cannot go unnoticed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L539-L562",
+          "version": "repo-lines-v1:sha256:f05f0688c105355bf741b2fd04c5e98c89a39e6462cf9a39de829e7d65e1b382:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZTAxOGIyZGQ0NzYyM2YwMjVhNTUyOWIzMzAwZGQ1OTZjNGZjMGZjOTI2YjRhNmMxNDdlYmIxYjBlZWNiZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllZjY1NDNjNTVmYzk5NDhhMzFmMmJhMGMwOTc2MDI1MDQxMzc2NDg4YTJmMjliNjBmNDY5ZmM3NDFjOGQzODEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-log-step.test.mjs#L624-L657",
+          "version": "repo-lines-v1:sha256:3a470088121a90b98035f886fe34c6f542fe8c23d316ca6da748329a985e2761:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMzZkMmFhNWQ3MjQ2ZmIyODc0MTkxMGZmZDhlN2Q1NTQ3YmQ5NGU3NGNiMTc1MTBjNjlkZDMwYzAzZTM4YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWE4Mzg3MWNiNzZiMGQ2N2Y3MzVlYjUxODJhOTY2ODNkYzllMzVkMmE4YjBhZWI1OTg4ZDlhMWJlYzFhNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZjEwYWIwNzZmODJmZjYzM2YzYjM3NWRiOGZjNzFiNGEzYzY0NWI3NGE1MzYzYWQwM2U0ZGIwYmU1NjYzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1489-L1500",
+          "version": "repo-lines-v1:sha256:3688204822921c84bc44149a128a35f6c71e565ea62fd21be4518497af6a20df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YmIwZmI5N2Y2NTUxYjQ2MjA4MTBhYzk1OThkM2I4MjllYzhmZDFjZDI3MWJkMzY4YTI1ZTIzYmM1MWJhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NGM1M2IwNjRhZWFiYjllYzUwZjU3ZWZlNzhmZWNjYTc0NGYxYzEzZDZhZTgwMmIwOGYzM2FhZTBjMGRlNGEifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-step-ceilings.tsv",
+          "version": "repo-file-v1:sha256:67537673607ade0b534ac1c511da9b3f72c32d5f4df6e11664ec45bc49eb4b08"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-28T02:33:05.629Z"
+    "at": "2026-10-31T16:05:45.295Z"
   }
 }

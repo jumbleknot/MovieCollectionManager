@@ -4,9 +4,6 @@ title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-28T02:33:05.629Z
 sources:
   - id: openwiki-source-7e1c4d46c53be9bf32311e06
     resource: repo://.devcontainer/toolchain.Dockerfile
@@ -60,6 +57,9 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-31T16:05:45.295Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -265,11 +265,16 @@ floored at 300 s, applied only to a step with at least 10 observed (non-killed) 
 largest retry bound any wrapped step has (`ci-mobile-agent-flows.sh` runs each flow under `max=3`,
 Playwright is `retries: 1`), so a run where every retry fires still has headroom. Today
 `maestro-agent-flows` is the loosest calibrated row at 2580 s (n=27, max 844 s), `web-e2e` is 840 s, and
-most steps sit on the 300 s floor. `maestro-full-flows`, `maestro-full-results` and the mobile
-failure-path captures (`app-e2e-collect-maestro-debug`, `app-e2e-collect-container-logs`) have **no
-calibrated row** — the first two run only on opt-in runs, the last two only when the mobile half fails —
-so they are bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop**, which is exactly why
-full mode raises the job ceiling: backstop plus digest still have to fit.
+most steps sit on the 300 s floor. A wrapped step with **no calibrated row** does not run unbounded: it
+is bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop**, and `ci-log-step.sh` says in
+its own warning which of the two sources the value came from. Every `app-e2e` step in that state is
+recorded as a commented backstop row in the table, so a guard can tell *seen, not calibrated* from
+*nobody decided* (`#338n` in `scripts/__tests__/ci-log-step.test.mjs`); today that set is
+`app-e2e-build-images` (the cache-dependent image build split out of `app-e2e-bring-up-keycloak`),
+`app-e2e-bring-up-backup-destinations`, `app-e2e-tag-scan-images`, the two failure-path captures
+(`app-e2e-collect-maestro-debug`, and `app-e2e-collect-container-logs` at n=2), and the two opt-in
+full-suite steps `maestro-full-flows` and `maestro-full-results`. That backstop is exactly why full mode
+raises the job ceiling: backstop plus digest still have to fit.
 
 The reason this exists rather than one job-wide number: `always()` does not survive a job kill. When the
 runner enforced the 75-minute ceiling, the `Publish failure digest` step never ran, so a **hang** — the
@@ -280,7 +285,11 @@ only say the job may have died before the digest step ran). A per-step ceiling t
 rather than an assertion failure that never happened. The symmetry to keep in mind when raising any
 value: raising one past ~60 min puts a hung step back into job-kill territory and silently restores the
 defect. Pinned by `scripts/__tests__/ci-log-step.test.mjs` and
-`scripts/__tests__/app-ci-mobile-full.guard.test.mjs`.
+`scripts/__tests__/app-ci-mobile-full.guard.test.mjs`. The guards also check the arithmetic rather than
+just the presence of a number: every row must equal what its own printed basis derives
+(`max(observed) × 3` through the same `ceilingForMax` the generator uses, so a row hand-tightened to a
+value its basis does not support fails), every row must leave the job ceiling at least 15 minutes of
+room for the digest, and every ceiling must stay below the job ceiling.
 
 ## Gotchas
 

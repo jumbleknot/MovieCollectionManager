@@ -42,7 +42,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-31T16:05:45.295Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)
@@ -56,7 +56,8 @@ config-as-code Komodo ResourceSync.
 **Phase 15 is complete, and this is a historical working log, not a live checklist.** Its `[ ]` items
 and "Remaining" notes describe the state at the time of writing; for current state read the
 [server-setup runbook](./server-setup.md), the [CI/CD pipeline page](../projects/ci-cd-pipeline.md),
-[prod reboot resilience](./prod-reboot-resilience.md) and [prod control tower](./prod-control-tower.md).
+[CI diagnostics](./ci-diagnostics.md), [prod reboot resilience](./prod-reboot-resilience.md) and
+[prod control tower](./prod-control-tower.md).
 Reach for the owner document only for the history of *why* the production topology looks the way it
 does — not for a procedure to run today.
 
@@ -110,10 +111,19 @@ The historical arc the checklist records: two sequential paths, not an either/or
 - **Token hygiene and branch protection were finished here**: the registry push/pull token split, the
   `main` required status checks, the 022 branch merge, and the final smoke against the merged `main`.
   The two required checks named at the time (`guardrails` + `app-ci`) were the starting pair, not the
-  final list — the current set is a wider glob list (`guardrails*`, four `app-ci / …` globs and
-  `infra-image-scan / infra-image-scan*`), read live from branch protection rather than hand-maintained,
-  because the hand-maintained mirror drifted once and reported `VERDICT mergeable` while the merge API
-  answered 405. The per-token inventory and rotation procedure live in the
+  final list. Today the set is read **live from branch protection** for the pull request's base branch,
+  so it is never mirrored by hand; the committed fallback in `scripts/ci-status.mjs` is a seven-glob
+  list — `guardrails*`, four `app-ci / …` globs (`changes*`, `affected*`, `mc-service-checks*`,
+  `app-e2e*`), `infra-image-scan / infra-image-scan*` and the later `app-ci / app-image-scan*` (spec 084
+  US3) — used only when that read fails or yields no status-check rule for the branch, and always
+  *reported* rather than silently substituted. The live
+  read exists because of a measured drift: the hand-maintained mirror once held five globs while `main`
+  required six, and ci-status printed `VERDICT mergeable` + exit 0 while the merge API answered 405 —
+  the over-reporting direction, in which an automated status-and-merge wrapper attempts a merge that
+  cannot succeed. The fallback is therefore constrained to be a *subset* of live protection (it may lag,
+  never over-claim), and `trigger-cd` / `dast` stay deliberately absent because branch protection does
+  not require them, which is what keeps their failures advisory. Mechanism and the remaining traps:
+  [CI diagnostics](./ci-diagnostics.md). The per-token inventory and rotation procedure live in the
   [server-setup runbook](./server-setup.md).
 
 ## Superseded detail
