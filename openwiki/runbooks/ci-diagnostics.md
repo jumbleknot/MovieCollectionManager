@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states, the skip-cause annotation model, the live-fetched required-check set, the query shape that keeps a lookup fast, the event-versus-trigger_event split, the per-step durations ceiling table, and the AGit detached-head trap that silently empties every secret.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the two-dot-versus-three-dot diff question, the event-versus-trigger_event split and the quirks of GET /actions/runs, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the branch-reaper backstop added by item 879.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
 sources:
@@ -52,7 +52,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-18T03:00:26.889Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # CI self-serve diagnostics
@@ -428,8 +428,24 @@ skipped branch then splits three ways on the `needs:` graph.
 - **`GET /pulls/{n}` reports `head.sha` as the branch's current tip, not the commit that was
   merged.** After a PR is merged, further pushes to the same branch update `head.sha`, so
   `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
-  though it shipped those commits, but `main` does not contain them. Use
-  `git merge-base --is-ancestor <sha> origin/main` to verify, not the API `merged` flag.
+  though it shipped those commits, but `main` does not contain them. Measured 2026-08-01 on PR #119:
+  `head.sha` was created **47 minutes after** the merge, because two further commits had been pushed to
+  the same branch afterwards. Use `git merge-base --is-ancestor <sha> origin/main` to verify, not the
+  API `merged` flag.
+- **A PR's `head.sha` is a claim about the BRANCH, never about the merge — only the merge commit's own
+  parents are evidence.** The worse shape has no tell at all, because the API is self-consistent and
+  wrong: measured 2026-09-19 on PR #498, `state`/`merged` were `closed`/`true`, `head.sha` was
+  `a58e4802` (the second commit, pushed *before* the merge), `merge_commit_sha` was `9b394ba4`, and that
+  merge commit's parents were `ebbaab71` and `270174d9` — the **first** commit. The forge merged a stale
+  snapshot of the branch while reporting a head it had not merged, so one of two commits silently did
+  not ship and `git merge-base --is-ancestor a58e4802 origin/main` answered **no**. Run **both** checks
+  after any merge you did not watch land:
+  `git merge-base --is-ancestor <your-sha> origin/main` **and**
+  `git log -1 --format='parents: %P' "$(git rev-parse origin/main)"` — your commit must appear in that
+  parent list. Then confirm the **content**, not just the graph
+  (`git show origin/main:<path> | grep <what you changed>`); a `0` from that grep is what turned this
+  from "the PR merged" into "half of it did". A stranded commit is not lost: rebase it onto the new
+  `main` and open a fresh PR — do not reuse the merged branch, since that compounds with the trap above.
 - **A scheduled run posts NO commit status — `failure --run <id>` used to exit 0 and say "no failed
   jobs" for a truly failed run (item 485, fixed 2026-09-19).** A `schedule`-triggered run posts **no
   `<workflow> / <job>` commit status at all**. Its red is visible only in the runs listing, the job log
@@ -462,16 +478,43 @@ skipped branch then splits three ways on the `needs:` graph.
   (a dead runner starves everything; a skip marker starves exactly one commit). Fix: reword the
   message with `git commit --amend`, then force-push. Quote the marker as `` `skip`-`ci` `` or name
   it in prose when a commit needs to discuss one — never disable the feature.
-- **A session merging through the API must pass `delete_branch_after_merge: true` every time — the
-  repo setting does not cover API merges.** `default_delete_branch_after_merge: true` (enabled
-  2026-08-29) is the default for the **web UI merge button only**. An API merge omitting the flag
-  leaves the branch behind regardless. Measured the same evening: PRs #287 and #293 passed the flag
-  and their branches were gone; PR #291 omitted it and had to be cleaned up by hand. This is not mere
-  housekeeping: a surviving `renovate/*` branch makes Renovate reuse the stale commit instead of
-  regenerating — `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own
-  pruning, so nothing will ever clean it up. Two branches **not** to delete: an open PR's head (same
-  consequence as hand-closing it), and automation-owned branches like `openwiki-maintenance` (their
-  workflow recreates them each scheduled run; a lingering ref is normal working state, not debris).
+- **A merged branch is cleaned up by the branch reaper, not by the merge — the repo default never
+  covered an API merge, and "always pass the flag" did not hold (item #879).** The mechanism is
+  [`.forgejo/workflows/branch-reaper.yml`](../../.forgejo/workflows/branch-reaper.yml), running
+  `scripts/reap-merged-branches.mjs --apply`: on every push to `main` and daily at 02:30 UTC — ahead of
+  Renovate's nightly 03:00 and its Friday window, so a stale `renovate/*` branch is gone *before*
+  Renovate decides whether to reuse it — it deletes a branch only when its tip is an ancestor of
+  `origin/main`, it heads no open PR, it is not exempt (`main`, `openwiki-maintenance`), and its tip is
+  older than a 6 h grace period. The open-PR listing **fails closed** (a short read against its own
+  `x-total-count`, or any page error, deletes nothing), ancestry that cannot be answered keeps the
+  branch, and each delete is leased to the sha that was classified
+  (`git push --force-with-lease=<ref>:<sha>`) so a commit pushed meanwhile is never destroyed. Unlike the
+  comment-only jobs this one **goes red on failure**, because a reaper that silently stopped reaping is
+  exactly the absence it exists to end. **Still pass `delete_branch_after_merge: true` on an API merge**
+  — it removes the branch at once, where the reaper may take until its next run — but treat that as a
+  convenience, never as the guarantee. Why the reaper exists is the measurement worth keeping:
+  `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the **web
+  UI merge button only**, so an API merge omitting the flag leaves the head branch behind
+  (`--data '{"Do":"merge","delete_branch_after_merge":true}'` deletes it; `--data '{"Do":"merge"}'`
+  leaves it behind even with the repo default ON). Measured the same evening: PRs #287 and #293 passed
+  the flag and their branches were gone; PR #291 omitted it and
+  `290-renovate-runbook-dispatch-and-stale-branches` survived the merge and had to be deleted by hand.
+  That rule then failed in the field: by 2026-10-30, **33** fully merged branches with no open PR had
+  accumulated on `origin`, back to 2026-09-26, and the four `renovate/lock-file-maintenance*` heads left
+  by the API merges of PRs #832–#835 produced four empty, red PRs (#874–#877) in that day's window — each
+  head already an ancestor of `main`, so each PR was empty and all four went red on `sast` against a
+  week-old allowlist. To see what the reaper would do, run `node scripts/reap-merged-branches.mjs`: a bare
+  invocation is a dry run and deletes nothing (`--apply` is required). This is not housekeeping: a
+  surviving `renovate/*` branch makes Renovate reuse the stale commit instead of regenerating, which is
+  how an empty PR gets opened ([Renovate](./renovate.md), item #290) — and
+  `renovate/lock-file-maintenance` in particular is hard-exempt from Renovate's own pruning, so nothing
+  else will ever clean it up.
+  **Two branches not to delete, and the reaper enforces both:** an open PR's head (deleting it is
+  hand-closing by another route, with the same consequence — for a `lockFileMaintenance` branch it marks
+  the channel rejected) and an automation-owned branch such as `openwiki-maintenance`, whose workflow
+  re-creates it each scheduled run, so a lingering ref there is its normal working state rather than
+  debris. `scripts/__tests__/reap-merged-branches.test.mjs` pins each keep-reason with a mutation test,
+  so deleting any one check turns the suite red.
 - **`durations` — per-step timing exists now, but three traps prevent a naive reading from being
   useful.** `ci-log-step.sh` writes one row per wrapped step into `_step-durations.tsv` (step ·
   seconds · exit · ceiling) on **every** run — success or failure — so a distribution can be built
@@ -537,14 +580,28 @@ skipped branch then splits three ways on the `needs:` graph.
   failing OPEN (timestamp comparison silently skipped) because `.split('\n')` left `\r` on
   values, making `Date.parse` return `NaN`. **A false green is the worse failure; it merges.**
   Fix: split on `/\r?\n/`, normalize at the point of reading, not per-pattern.
-- **When `CI_DIGEST_TOKEN` is empty the digest degrades, not fails.** `CI_DIGEST_TOKEN` is an
-  Actions secret, so it is blank exactly when a run is most confusing (e.g. an AGit-headed push
-  where every `${{ secrets.* }}` arrives empty). The digest now falls back: if the run-provisioned
-  token is present it posts a commit status `ci-digest/<job>` with the failing step name and a
-  truncated excerpt (`published`, `degraded: true`); if both are absent, `failed:no-credential`.
-  **Residual:** T034 proved the run token *can* write statuses but did NOT prove it is populated on
-  a secretless run — that requires an AGit-headed push, which is forbidden. If a secretless run
-  still publishes nothing, check this first.
+- **The two tokens are deliberately different, and the write side degrades rather than fails when
+  its token is empty.** `MCM_FORGE_TOKEN` is the READ side (`read:repository` + `read:issue` +
+  `read:package`); `CI_DIGEST_TOKEN` is the WRITE side (`write:issue` + `write:package` +
+  `read:repository`), stored as an Actions secret. It is deliberately **not** `CD_PUSH_TOKEN` — that
+  is a whitelisted-user PAT able to push protected `main`, and spreading it across ~20 jobs to publish
+  diagnostics would be a real privilege expansion — and not the run-provisioned `GITHUB_TOKEN` either,
+  which cannot write issues or packages. Missing scopes fail loudly naming the scope: a bare 401/403
+  is indistinguishable from an expired credential and cost this design a full revision cycle.
+  `CI_DIGEST_TOKEN` is an Actions secret, so it is blank exactly when a run is most confusing (e.g. an
+  AGit-headed push where every `${{ secrets.* }}` arrives empty — the run of 2026-08-01 collected its
+  evidence, could not publish it, printed it to a job log the API cannot serve, and exited 0: zero
+  comments, no error, no signal). The digest now falls back: if the run-provisioned token is present it
+  posts a commit status `ci-digest/<job>` carrying the failing step name and a truncated excerpt
+  (`published`, **`degraded: true`**); if both are absent, `failed:no-credential`. The fallback is
+  recorded as `published` rather than `failed` on purpose — `failed` means the evidence did *not* reach
+  a channel, and the reader's question is "did the diagnosis get to me?" — so both facts are carried
+  instead of collapsed. It publishes no bundle and no PR comment, since the run token has neither
+  scope, and truncation never splits a `<redacted-…>` placeholder.
+  **Residual:** T034 proved the run token *can* write statuses (a temporary probe on guardrails run
+  #1627 left a real status behind) but did NOT prove it is populated on a secretless run — that
+  requires an AGit-headed push, which is forbidden. If a secretless run still publishes nothing,
+  check this first.
 - **A green `app-e2e` publishes a counts-only bundle — a green job of any OTHER kind publishes nothing,
   and the in-job gates are how CI judges its own counts.** `shouldPublish` is three-way: a cancelled run
   publishes nothing, `failure` publishes the full digest, and an **explicit `success`** publishes
@@ -634,8 +691,9 @@ skipped branch then splits three ways on the `needs:` graph.
 ## Where the procedures live
 
 This page is the distilled map plus the traps. The full exit-code table, the exact endpoints and
-payload measurements, the required-check fetch/fallback logic, the PR-opening recipe with its
-credential split, and the evidence-bundle hardening details are in
+payload measurements, the required-check fetch/fallback logic, the token-provisioning recipe with its
+read/write split and the degraded fallback, the PR-opening recipe, the branch-deletion rules and their
+reaper backstop, and the evidence-bundle hardening details are in
 [the source runbook](../../docs/runbooks/ci-diagnostics.md), whose
 [PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request)
 is the canonical statement of the AGit rule and of the `POST /pulls` credential split.

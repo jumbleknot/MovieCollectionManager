@@ -88,7 +88,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -461,6 +461,10 @@ documents it — this is a pointer, not a restatement:
 
 - **Instrument-before-belief checks** — a tool's "no" is about the tool, not your question, and a
   skipped test reads as a pass: [E2E testing](../runbooks/e2e-testing.md).
+- **"It can't run in this environment" needs the same proof as "it passes"** — a credential-driven
+  skip is almost always a missing *file* rather than a missing capability, so name the specific
+  missing input and check whether a generator or a documented command supplies it before retiring a
+  tier to CI: [Local dev infrastructure & environment variables](../runbooks/local-dev.md).
 - **The E2E gate / model-decision tier split** — `@gate` blocks a merge, `@model-decision` does not,
   and an unclassified agent test fails rather than defaulting into a tier:
   [Testing tiers and what gates a merge](../invariants/testing-tiers.md).

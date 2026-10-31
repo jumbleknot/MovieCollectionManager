@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 sources:
@@ -110,7 +110,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T14:53:13.584Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -151,7 +151,7 @@ See [Authentication and authorization chain](../invariants/auth-chain.md) and
 ## The service head
 
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
-carries four facts worth reading directly, because none of them is visible in a realm file:
+carries five facts worth reading directly, because none of them is visible in a realm file:
 
 - **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`, the
   identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
@@ -164,6 +164,20 @@ carries four facts worth reading directly, because none of them is visible in a 
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
+- **The realm store is Postgres 18 (`postgres:18.6-alpine3.23@sha256:697c180d…`, the same digest in
+  `compose.prod.yaml`), and its volume is mounted at the parent `/var/lib/postgresql`** —
+  not the pre-18 `/var/lib/postgresql/data`. Postgres 18 moved `PGDATA` to
+  `/var/lib/postgresql/18/docker` and declares its `VOLUME` at the parent, so a mount left on the old
+  `/data` path makes the entrypoint **exit 1 even on an empty volume** ("there appears to be
+  PostgreSQL data in … (unused mount/volume)") and leaves an anonymous volume behind. Both compose
+  files mount the parent and carry the reason as a comment; the pairing of *pin and mount path* is
+  asserted by `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` for the observability
+  pair, and that guard's own note records keycloak and agent-db as already mounting the parent for the
+  same reason. A `postgres` **major** for this store is not a routine PR: `renovate.json` puts
+  `dependencyDashboardApproval` on `matchUpdateTypes: ["major"]` for `postgres`, and
+  `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the keycloak pin resolves the same way
+  as the observability one — so the tick is the migration decision while patches, minors and digest
+  refreshes stay automatic.
 - **The command differs by environment.** The base, dev and CI files run `command: start-dev`; only
   `compose.prod.yaml` runs `start` (production mode) plus `--import-realm` declared in its own file.
 - **Prod runs `restart: always` on both Keycloak and its Postgres** (feature 030), not the base file's

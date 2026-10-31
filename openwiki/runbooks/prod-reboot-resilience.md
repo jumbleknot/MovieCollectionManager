@@ -38,7 +38,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T17:33:57.993Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # Prod reboot resilience
@@ -172,8 +172,13 @@ Proven on Docker 29.6.0: a `docker stop` plus a user-daemon restart leaves an `u
 `Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Every service in every
 prod compose now declares `restart: always` (27 services across the seven `compose.prod.yaml` files), and
 every host-managed compose — Forgejo, Komodo itself, cloudflared, and the host side services (the
-monitoring stack plus the RustFS Nx-cache object store) — was set to `always` as host state. The one-shot
-init containers idle on `sleep infinity` after an idempotent init so they too stay eligible. Do not
+monitoring stack plus the RustFS Nx-cache object store) — was set to `always` as host state. The three
+one-shot containers — `agent-audit-init` (provisions the write-only audit user), `langfuse-rustfs-init`
+(creates LangFuse's object-store bucket) and `unleash-seed` (seeds the default-off flags) — provision
+idempotently and then `exec sleep infinity`, so they too declare `restart: always` and stay eligible for
+the daemon's start-at-boot rather than exiting and being counted unhealthy
+([`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml),
+[`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). Do not
 reintroduce `unless-stopped` on a prod or host-managed service expecting a reboot to bring it back.
 
 The immediate fix on the host was an interim `docker update --restart always` over the running
@@ -344,6 +349,12 @@ procedure.
   declines to restart a container that was already stopped when the daemon starts — the two remediations
   defeat each other. Every prod and host-managed compose service is `restart: always`; do not reintroduce
   `unless-stopped` on a prod service expecting a reboot to bring it back.
+- **A one-shot container in a prod compose idles instead of exiting.** Komodo counts any exited
+  container as unhealthy, so the three shipped one-shots — `agent-audit-init`, `langfuse-rustfs-init`
+  and `unleash-seed` — provision idempotently, then `exec sleep infinity`, and declare `restart: always`
+  like every other service. The restart-policy gate's `no`/`on-failure` exemption for init/seed names is
+  therefore currently unused in prod: a one-shot that really exits `0` satisfies the gate but reports the
+  whole stack unhealthy, and giving it `always` would restart-loop it.
 - **An interim `docker update --restart always` is not a fix.** It rewrites the restart policy of the
   containers that exist right now and is lost the moment one is recreated — by a Komodo redeploy, a
   compose `up`, or a host rebuild. Only the value in the compose file (or the host-managed compose file)
@@ -423,8 +434,10 @@ failure:
   regression) and a missing `restart:` is forbidden because it defaults to `no`. `no` / `on-failure` are
   allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket`
   pattern, since `always` would restart-loop them
-  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)). Its scan globs only
-  `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
+  ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)). That exemption is
+  narrow by construction and currently unused: all 27 services in the seven prod composes declare
+  `always`, the three init/seed containers included, because they idle instead of exiting. Its scan globs
+  only `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
   host-managed composes above.
 
 Both run selftest-then-scan in the `naming` job of

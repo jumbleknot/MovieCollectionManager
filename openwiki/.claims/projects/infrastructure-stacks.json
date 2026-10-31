@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:193fd33d19e79b6f57a161cad1b993915023608a39f80dae7b37f805b4319735",
+  "pageVersion": "sha256:cceba813d5696e6c84230e3c29c8e6dc4c5c72a6f3275550a6d139b2dd3b3357",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
+          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -212,7 +212,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:e13409e51de26aef2a6d0f0a57c7bc04af98322c8e91f2a71a18b3cad227c0f7"
+          "version": "repo-file-v1:sha256:a7ba804559ef40cdab5b2206d3504e394e4df3e5af38f03915f339c12a5d9b7c"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -304,11 +304,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
+          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
         }
       ]
     },
@@ -318,11 +318,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:26380ddc0e9ef0c65e318b3391df798013f73ef11ca95760244dc6c4f76af45b"
+          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -336,7 +336,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
-          "version": "repo-file-v1:sha256:4159d6b0482a8394efab040b401c68fff3277afb20fc505683ae5131c81b6446"
+          "version": "repo-file-v1:sha256:4996665a9dd7b95a6c908db339ab25f97e036912caffe9a1ed0f2df78ad4fcb0"
         }
       ]
     },
@@ -497,20 +497,20 @@
       "statement": "Feature 080 changed prod-observability's declared inputs in both directions: REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left the stack's environment block because it no longer pulls a ${REGISTRY_HOST}/jumbleknot/… image, and LANGFUSE_RUSTFS_SECRET_KEY was added for the upstream RustFS store (its access key being the literal langfuse, the non-secret public half of the key pair). The Komodo Variables for the two departed names are deliberately kept until the rollback window closes, because reverting the merge restores the lines that need them and a revert cannot recreate a Komodo Variable.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L49-L60",
-          "version": "repo-lines-v1:sha256:7dd942fe64c09bd72e949ea58620262c62997955215a3738f232be094172ac7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZjZmOWEyNjdiY2ZmNDQ5MDFlMmQwMWNjOWEzMWRmNDRmOTE2MGYwZWEyNDg0N2JkZmU0MzRjYmMxN2M0NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTUyYmJhNzNjMWQ4ZDliZDllMGUxMGI1MGQ0ZDVhNjBhMjBlYjc0NTY0YjY3ZmExMDI0NGNhM2M1NjY0MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTk4YTBmOWNiNmNkODQxNzBiN2NjMTgzZDY1ZmI0NmYzYWUxNDM4ZjgzNGZjMmY3NmRkODVkM2Q1NzU2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZDdjNjU1ZDNlOTNmZjliMTEwNTY4NTYzY2M3YWFmNjE3NTI5NDA0ZWI0ZDIzZjcyY2YwMjBmMzcyMzVlODkifQ"
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L184-L194",
-          "version": "repo-lines-v1:sha256:47a07cf623daa757b89c46b222f1a318c0e08505b3d123e636eff06ef3bd2695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNWVkMGRmYzdlZDIzZDRmMzJjOWRiMTJkMWIzM2ZkZDBmZjIyMDhiMDU3MTM2ZjAxOWQyNTdlZmIxNTU3MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2IxMTQzZTUyMzk3MTAzYzg4Yzk5MjM4YTY5NmU3ZGE4OGI3MmUwMDQ3N2IzYjljMzlkODhhOWFmNzQwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNDYwZDhhZTcwMmY1NWM1OWRmZjI0ZWY4NTY0NWEzYTQxMjU4MTk3ZjIzMDg2NDdkNzE5NjYxODQyYzlmMjcifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L159-L190",
-          "version": "repo-lines-v1:sha256:71d93e6ace7f82d49357baa504ac4fbaffb3d190bf780f6ea53f0b422e9ebbf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNTRiYWNlMGQ3N2E1NjE1ZjRiZDdiNGFiNDViMWVlYmY3ZTMyMGQ0MTc3NmE4MGZiNzlhM2I2YzJkNGU2MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MjdjZjJhZjk4NzcwNjQyOGQwZmM0OTU4MWQ2ZDQ3MTcwZTE0OGQ5Njg5ODc3MmE2ZDNlNzE5MTMxYTFhMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMDQzNjc4NTViMzczZWM4ODdiNjIzMDUwNTVkODVkOTUzNmJiZjViYTcwYjRiN2M0NDI1NzI5NDY4MmUxZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
+          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/research.md#L242-L265",
-          "version": "repo-lines-v1:sha256:41b6fcf61752dc93bf99ac9a932de10dba5cc5f9f76a82cfd4c4a3dc64bb9705:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTc5MTk3OTIwY2YxZWNjMGUwNWViMGNiNDcxMTYwYWQwZjI3NDBlOGY2NDA1OWVhZWI2OTRlOGJlMWY4N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MzdjNzVlMjAwNWUxZDgyZjg0NGZjOTBjZjU3ZDY0YWNiODMxZDY2MTI4MjQ5NGY2MTNkNzA3MjE4NmY2YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNTZkN2YzMjhjZDYxNDVlYTRkOTViY2ZiMDBkOWJmMDI5ZmYxMTllYzUyZGRhOTJkZTA3YTIwMjkwYmJlMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMTNhODlhMjg2N2U4MTcxNGQwOTVhMWQwOTJjYTUxMWY5ZmFiNzYzYmNlY2ZjODU3NjRhMTg2OGVkNmM5ZDkifQ"
+          "resource": "repo://specs/080-minio-to-rustfs/research.md",
+          "version": "repo-file-v1:sha256:0de0addd136d27fd4ae8729318345cd274c9eb98cf8f1d1ce78bde4bc9cd4c2e"
         }
       ]
     },
@@ -605,12 +605,12 @@
       "statement": "The prod observability compose caps langfuse-clickhouse where the dev file does not — mem_limit: 4g, memswap_limit: 4g (no swap beyond the cap, since Docker's default memswap is 2x mem_limit) and cpus: 2 — because prod observability shares the physical host with the CI runner and on 2026-10-02 this container ran at ~725% CPU with swap full and slowed every CI job 2-3x; the ClickHouse image is cgroup-aware, so the container limit also bounds its internal max_server_memory_usage. The capacity check recorded in the prod control-tower runbook retained that 4g cap deliberately rather than lowering it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L655-L661",
-          "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY1N2U1MTRhNWU4ODg2NDA4ZGNkOTJiMzQ5YTRlOTA3NDg0ZTliYTdiYzBiZGM2YzYwYzNjNDA1M2UwZGJmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
+          "resource": "repo://docs/runbooks/prod-control-tower.md",
+          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L134-L145",
-          "version": "repo-lines-v1:sha256:0e9dd25a9b4de5d048c0f0f6b1c4e0a686bd2b24df18de36f324b6f1b1239b10:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Yjk4N2M5ZTY3OGExM2U0NjQ3MmE3NjNhOGIyZGU3MDdmYjZlYTU1NDc3MWFkOTY0ZDcyYzExOTY3MjUzODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjZDA2OWE3NTVjYzY3NTQwMzk2NjNiMWFmN2QzYjllNGNlYjg2Zjk2M2JmMzljODY4ZjkyMWUwZGE5OTZjNzcifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         }
       ]
     },
@@ -691,20 +691,16 @@
       "statement": "The gate's one-shot exemption is a safety valve rather than the shape production uses: the one-shot init/seed containers that exist in the prod composes (langfuse-rustfs-init, unleash-seed, agent-audit-init) are themselves restart: always and idle on `sleep infinity` after an idempotent init, deliberately so Komodo's stack health never counts an exited container as unhealthy.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-reboot-resilience.md#L106-L108",
-          "version": "repo-lines-v1:sha256:383648e737ed285fb38a3f9b63032b7c392db44235b2e157a5bfeb1bbb89b470:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdhMmNlNmJiNTVlZDBjY2ViZWU5N2Y3MDlkNzYzOTQ4MTBlODhmNTZjY2ZmZjE3OGFkMWIzNDMxMjJjY2FhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2ZmI2NWRkZDEzNjczNjZkYjlkYTRkOWZhYTdmMTZmZDMzMDliODU4MWUyYTI5NmQ5NTVlMjU4NjAyMTY1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM5MGFjMmQ5OThhODE4MjQ1N2Q4MjVmY2ViZWY5ODJmYTJkN2U1ODMxMmIzN2U2NGRjNWMxMjEyZjVlMmI5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGM5NzI2MDU0YWU3ZmI3YmM3ODBiNGNmZTczNGI1YWZmYTQ2ZjNjMWJiMGZlZWFiY2NkNWJlYTRkZWQxZWJlYyJ9"
+          "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
+          "version": "repo-file-v1:sha256:ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
-          "version": "repo-lines-v1:sha256:066adfbba0dc09da0b73c692163cb2ede4678cc094fd80f8e22b9f8755a27815:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L348-L374",
-          "version": "repo-lines-v1:sha256:6468815fd0f0916e0cf29ff605c97bdbf5b1d2cf0e41940ba5d0de953da739df:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzRhMmVmMjVmNmRmMmJhMzUxMDAwODIwNDBjMGY5Y2Y1YTM4MWQ3NmY3NDYyMzM3ZDhkMzFiNzViODlmYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
-        },
-        {
-          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L109",
-          "version": "repo-lines-v1:sha256:d4464a6c827148098b04947d00ec52ab7a27fa40e42e1f4473cface8e7342fb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk0MTJkNzc1ZTI4Y2I3YzgwYjM5M2IzM2EzZjIxMjc4Y2RkYjdkN2VkZmZkMjA1NTA1ZWJiNzY4MjE3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZjVjZmZkNzJiOWJkZjNjMTJlYThjY2U1ZDBhZjg0MTE5MWMwMzRjZDUzZDFiMWZlODJkMDhiNzE5OTE1ZjcifQ"
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:b16518b8f60611f2ea5ddfaf3286b5a041b4f8d01ed0f07d2dcc0e9d20efe4be"
         }
       ]
     },
@@ -727,12 +723,12 @@
           "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L275-L303",
-          "version": "repo-lines-v1:sha256:38790f82e7a59cd4b2599d670aebcbf5c303db40a4de43d093210533e267df0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYzc4Yzk2MGUwMmY3Y2JkM2M2MzFlNTYyZjliNGViY2E3N2Y2NmJhZTkwZjhmN2NiZjU0MDMwMGEwYmRhZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYjA1MmIwMjQ1ZmQ1ZGYwYzQyYmFlZGU1YTEzM2VlN2E2NTY3ZTlkNGMyMGQ4MWJkM2E0NTdlYjU4NWFmMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMTQ0ZjEyZjVjN2M5NGE3YWViMjk3ODhlZGU3ZjQ1ZTA1ZjJmZTJkOGRlMWQ5ZjBjMTY3ZWQ1YTcyM2U3NzYifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L247-L266",
-          "version": "repo-lines-v1:sha256:118db7a7a026f69fb9502bdfbeccff6a3a8603258237e017877e857e442432e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYzYyYTExOTY1Njk0NTk5MDMxN2FkZGQxNjJjNDhkMDczYWE4Y2UwMjZiYzMwZGQ1ZDM1NTVmZjQ5NjA5YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OTU2MWZlZjZiZDU3NDM3OGJiMWUyN2YxZTVhYWQ1N2QwYzdmNzllMmRkMGU4OTFmNzUyM2E4NDlkZDk2ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MzRmN2JlZGNiZjgwMmI1ODQ5YTI3ZmEzYWNhNjljMjJiMGZlNDczZjRmOTRiZDkyMmQ1ZTMzYjA0YzEyZDMifQ"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
+          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
         }
       ]
     },
@@ -918,13 +914,31 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:e13409e51de26aef2a6d0f0a57c7bc04af98322c8e91f2a71a18b3cad227c0f7"
+          "version": "repo-file-v1:sha256:a7ba804559ef40cdab5b2206d3504e394e4df3e5af38f03915f339c12a5d9b7c"
+        }
+      ]
+    },
+    {
+      "id": "claim_99c75e5b23f641f1ab040d3803cb379e",
+      "statement": "Three further details in infrastructure-as-code/docker/backups/compose.yaml are load-bearing rather than cosmetic. The S3 side pairs the RustFS server with a one-shot mcm-bff-backup-rustfs-init that PUTs the mcm-backups-test bucket only once the server is healthy, because the store auto-creates nothing and a driver suite failing on NoSuchBucket looks exactly like a driver bug. The WebDAV server is the Debian httpd:2.4 and not httpd:2.4-alpine, because mod_dav_fs consults its DavLockDB on every write even though this driver never issues LOCK, and Alpine's apr-util ships no apr_dbm_*.so so mod_dav_fs answers AH00576: The DBM driver could not be loaded and every write 500s; that container's healthcheck therefore asserts the 401 an unauthenticated request earns, probed over bash's /dev/tcp because the slim Debian base carries no wget, curl or nc, since probing with credentials would make health depend on the very auth the driver suite exists to exercise. The ruled-out predecessor ghcr.io/hacdias/webdav is worth remembering for two reasons that still hold: the infra-image CVE sweep is fail-closed and cannot read ghcr.io at all (Trivy's anonymous token request is answered DENIED: denied, so an unreadable image is a red required check rather than a skipped one), and it carried nine fixable High CVEs that only an upstream toolchain rebuild could discharge.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L102-L126",
+          "version": "repo-lines-v1:sha256:bce6411a069d39427efe65db3bc4cf3b4b0967f32394c90e4345c836302b9c3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMDE5ODg1YjZlMGJlOGE3NzJkMzhjZWU1YWY0MWZkNzlkZjRlYWU5YmU5NDQwZGM1NzQ1N2NhNjRkOTYyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2NhNzRjYjY3MmMwZTE5ZGM4Njg5MzIwMTllMzZiNWQ3YTU3Mjk2YjBlZDU1N2Q4ZDFjM2ExZmQ0YmQ3MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMTlhYTg5OGRiMzI0MTJlZjY1MDRlYzdlZmRiNmQ0YmQ5Y2UxMWVhMGI1MWRhYmZiZGI5NGY1ZTRiMGE1YjUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L219-L234",
+          "version": "repo-lines-v1:sha256:d770c277998690c705b0daab58d01c6b25e1d77bb60be11d9df681f45b615234:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YzFlZjJhMGRkMDMzYTk2MTA2MDQzZmY0NjQ0Nzc5ZDMyODRlYWNlZWZhZWRhOWQzOWI1MjU2MDExYWFmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MmQ0MzgzZWYzMzkwZTUyOWYzZWJmMzBiODg3NDFkMmNjNzU2NzA2MzIwMTdjODkyMmM2MzRkOTFlODdlZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllNTkxNjk4YmI4ZDlmNzE5MzUyYWE1OGMwMDhkZWE5NzliZjRjNDY1NzllMGE1Y2I4YzhmYmNiYjM0NzdlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMWE5MzRmZTY1M2I3MDVhMjhmZjBkOGU4MmJlYmI5NWU3NWNlNThhYjA5M2YwYTI2ZjFmZGNkM2NiMjkwYTAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L67-L93",
+          "version": "repo-lines-v1:sha256:6abb00ee482d03b738b834156c0ea4fb6526cddc3988ea3ccecef19211c529a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNmZjOTZjNDM0NzBjMGQwNmE0NTBmNjNkYjNlZjNmZTZmMzRkNDRlMjA1OWY3ZTQxZGFjMmFiODBjNjQzYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjN2VlMzgzYWQ5N2Y4NDM2NjMxY2MxNDMzYWU4YWI2MzYzZGVkZDkzMmU2YWFlNTUwOWI3YzNmYmRhZjZlNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDkzOTE0ZmZkNWIwYzQ3ZjU3MDdiNGIwNjY3YzYxZjg2MTIzN2UzZGJiYzkzNmIzMTc4NGM4MDUzNjZjODYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-28T02:33:05.629Z"
+    "at": "2026-10-31T00:28:11.002Z"
   }
 }

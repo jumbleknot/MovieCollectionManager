@@ -4,68 +4,9 @@ title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
-    resource: repo://backend/mc-service/src/api/router.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-16c2f372398849e8eff53877
-    resource: repo://backend/mc-service/tests/integration/common/mod.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-e201e686a785f09b6d899f0b
-    resource: repo://compose.yaml
-  - id: openwiki-source-c1146bc275906084150591a5
-    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-c22d81a0331031d61ad2c7e3
-    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
-  - id: openwiki-source-1c2acc0a72ab64fd663510a9
-    resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-2d7a83a560ab6dec0daf8651
-    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
-  - id: openwiki-source-fe13721a7608b6a93a9e93f2
-    resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
-  - id: openwiki-source-7459d01be6fee66a2e45ca1c
-    resource: repo://frontend/mcm-app/tests/integration/backup-driver-webdav.integration.test.ts
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-60cf9a830f0ca275ffed94d7
-    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-18dcf2373667222e1bc520c1
-    resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-803bcd8d160132605ee08429
-    resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-864993a079e6e4df052ac4ea
-    resource: repo://scripts/gen-ci-env.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-c1c739d605caccb56fa33851
-    resource: repo://specs/073-scheduled-backups/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # System overview (MCM)
@@ -301,6 +242,16 @@ common source of confusion when reasoning about "why can't this user do X":
   and password file arrive in a named **volume** written by a one-shot, not a bind mount — the dev
   container's Docker is a sandbox microVM that shares only `/workspaces`, so a source path outside it
   does not exist in the VM and the daemon silently creates an empty directory there and mounts that.
+  The RustFS half of the same file is held to a written contract by
+  `scripts/__tests__/object-store-service.guard.test.mjs`, which enumerates the three git-tracked
+  compose files carrying a RustFS server — this one plus the dev and prod observability files —
+  asserts it *found* a server and an init in each so the rest cannot pass vacuously, and then
+  requires one digest-pinned `rustfs/rustfs` image shared by all of them, **no `user:` key** (the
+  image runs as its own uid 10001 and a fresh volume inherits `/data` from it, so any other uid dies
+  at startup with `Permission denied`), `RUSTFS_*` credentials with a fail-fast secret, the
+  `/health/ready` probe, bucket-init credentials read from the container's environment rather than
+  argv, and the console closed — with the backups file publishing exactly `127.0.0.1:9100:9000` and
+  no `:9001`. A destination container that violates one of these is a red guard, not a style note.
 - **Bringing the destinations up is two servers plus two one-shots, and CI asserts all four.** The
   store does not auto-create a bucket, and a driver suite failing on `NoSuchBucket` looks exactly
   like a driver bug, so `mcm-bff-backup-rustfs-init` PUTs the test bucket;

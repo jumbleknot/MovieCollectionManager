@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2d15a066cc270f322c6e7274079f081f1db28acfc1f48619ab81777475ecebf2",
+  "pageVersion": "sha256:50096c565d8e5db1cb11d4444ae9c51eb4513185f54af1e52b2190d55c6cd43d",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -438,19 +438,19 @@
     },
     {
       "id": "claim_c4aba1e35f254ca083a6032c0c5f41fd",
-      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run); a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch; and Renovate's silence is not idleness — routine branch work only happens inside the Friday window (`* 2-4 * * 5`), the nightly cron runs outside it and carries only schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a single dashboard line while producing nothing, every run.",
+      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: instrument-before-belief checks (a tool's \"no\" is about the tool, and a skipped test reads as a pass) belong to the E2E testing runbook, and \"it can't run in this environment\" needs the same proof as \"it passes\" — a credential-driven skip is almost always a missing file rather than a missing capability, so the missing input must be named before a tier is retired to CI; the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run) and a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch; and Renovate's silence is not idleness — routine branch work only happens inside the Friday window (`* 2-4 * * 5`), the nightly cron runs outside it and carries only schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a single dashboard line while producing nothing, every run.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L13-L15",
-          "version": "repo-lines-v1:sha256:a8edb336d741089b59b26446165087d4e2d50ba29790de5799e134297c1b1c49:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjYTNiMzc1MjZiNjYwNjU2ODYxOWU1NTI5Yzc3YmQxNDg2ZTZjMDM5YjA0OWJlMWFiY2ZlMDBhOWQyZGQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJhZjJkOTQ2ZmE2ZTYxMDE5Mzk5ZmI4MDc4ZjY5YTkyNWQ2YWQwY2Q3NDhlYmU2ZGViMzE4NTc1ZDZiZTNmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVlOTE2M2EzYWQ0N2IxYjlkMTBhNGE4OGVmNDZlZGNmZjdmYTI4ODFlNTI5MGQ3ZmFlMDg0ODY2ZTk2N2RiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMwMjZmOTc5OGI0NmU3ZTgxZGNmNjY5MjYwNTQzNjM1YTc4MmFkYzhjMmI3NjM3M2Y3NmMzNjhhMGYzOWU2ZSJ9"
-        },
-        {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "resource": "repo://CLAUDE.md#L9-L15",
+          "version": "repo-lines-v1:sha256:1f8586a1b3d4452eb5dbbd6ce7216369a88261b134bbeb63e7dec7f717d4b7a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzOGU3ZjVmNzQ1ZjEyN2ZkZWVjYTM3NmMxYTI2NTMyY2MxNTk5MmNlYWY2ZWFmYWI4MGNlNTlhZGYwOGIxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJhZjJkOTQ2ZmE2ZTYxMDE5Mzk5ZmI4MDc4ZjY5YTkyNWQ2YWQwY2Q3NDhlYmU2ZGViMzE4NTc1ZDZiZTNmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNmMDI4YmUzN2RiMjJmOWYxMmMxY2Q1NGZjMTQzNWNhZWQ2OTZiNTQ2NmI5MWUwOGIxYzY2NTdhODAwOWQ1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMwMjZmOTc5OGI0NmU3ZTgxZGNmNjY5MjYwNTQzNjM1YTc4MmFkYzhjMmI3NjM3M2Y3NmMzNjhhMGYzOWU2ZSJ9"
         },
         {
           "resource": "repo://docs/runbooks/e2e-testing.md",
           "version": "repo-file-v1:sha256:92333b985d6cb2b08ed3ef4afad8c49009f2a71c607d4f969b979f3e9770a89a"
+        },
+        {
+          "resource": "repo://docs/runbooks/local-dev.md",
+          "version": "repo-file-v1:sha256:ce0ef3af4604961a17ac1e05235df620c7cc692f1f75a24444e90c919b3bf6fb"
         },
         {
           "resource": "repo://docs/runbooks/renovate.md#L13-L49",
@@ -567,7 +567,7 @@
           "version": "repo-lines-v1:sha256:0ca6ac61c780e51255e2010ce77b3e1b9f326ca874d8b053b804eadc161c6554:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGZlZmRmNDI5ZDA4OTc5MzRmMzA2ZTJiYWIzOWQxYjZiZTI3Y2FhMzZmODM0YWIzYWFkNmMzZWNlOTk3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOWQ1MDk0Mjc5NjM1MDZiNmYyMmVkNjdiYzYwZWQxMDI0YTU3NjY1ZTc2ZTM2MGZkNTUxOGM3ZDBmNGM1ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L971-L980",
+          "resource": "repo://docs/runbooks/renovate.md#L979-L988",
           "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
         },
         {
@@ -665,7 +665,7 @@
       "statement": "Feature 081 takes every major dependency the bot proposes to a decided end state — upgraded, or held with a measured reason and a re-check rule — one stage per pull request in a fixed order. Majors that cannot land are stopped in `renovate.json` rather than left to propose weekly: keyed security overrides in `pnpm-workspace.yaml` have `major` updates disabled because the npm manager reads the override value as a direct range and would widen its cap to the newest major, and each SDK- or lint-pinned held toolchain major gets its own group behind a `dependencyDashboardApproval` tick, since renovate@44 sets a branch's approval flag from `upgrades.some(...)` and one tick would otherwise release every held js major at once.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L832-L854",
+          "resource": "repo://docs/runbooks/renovate.md#L840-L862",
           "version": "repo-lines-v1:sha256:74eeb7d5d84230360c2ae4fe77db6a965c25fc2f74cb49b5012954dc87fdc23a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODQxMDk0ZGMzZDRjN2UyMTEyYjBlMzQwOTc0ZGMwYTlhOTI3OTgyMzEwYzVmZmZjMjIyN2Q3MmZhYzk4OWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjMwY2Q2YzE1NzIzMWMwMDNmMzFjY2QwNzE4ZjQzYmRmOGYyODJkZTUyYTZlNWJlOTM1YzdmZmRmZDlkZGEifQ"
         },
         {
@@ -743,7 +743,7 @@
           "version": "repo-lines-v1:sha256:e83dfb5c7260364ed7ef1ed22b24ff2601c039fa17b0817bb9a475a3e0fd9813:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZjExYjI0ZmNkNjdhMTYzNTc2MDI3NGY2MmJlMzA0OTNlNWQ4NDJiNzIzYzVlYWMwMzVjNzYyYmViOTQ4MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2Y2Q0MDI2ZmUwZmZmZGU3ZjJkNTAyOTliMWFhOGQ5ZTc2ZDRlM2MwZTNjNGM3OWNhYzc1MjZlNTliYjFhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhODdhODA4NjlmNzczM2MxOTQ4MzA2MTJiOWM1Y2Y5OGYyNmNkNGQ1NDc0Y2Q5ZDA0Yzc0NGQ5ZDdhNTQ3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNjY2ODI0NWQyYjc2NTA0MzE0YmRjMTIyNDMxYWYyZGJjNWVkNjkzMmY2YmRkOWY5ZmJiMzBhYmI2MzE1MGUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L971-L980",
+          "resource": "repo://docs/runbooks/renovate.md#L979-L988",
           "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
         },
         {
@@ -759,6 +759,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T14:53:13.584Z"
+    "at": "2026-10-31T00:28:11.002Z"
   }
 }
