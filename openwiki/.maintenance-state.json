@@ -1,13 +1,13 @@
 {
-  "coveredCommit": "be48d1b4919c070d18eade348cece74980adfada",
-  "coveredAt": "2026-10-31T06:50:41.797Z",
+  "coveredCommit": "a1aec01851e1c1b75a702c447bb9dc480c9e5fd1",
+  "coveredAt": "2026-10-31T09:58:14.511Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 873,
-    "headCommit": "c8255b28b294b20387f1e11ba6ee4183b2bc147f",
-    "markerBefore": "a4b1cdfa3dbb13984c7c7bcf056719e2455188d2",
+    "number": 885,
+    "headCommit": "a2782ed165aa9e3c4d4b728beb66ad11414c4dfe",
+    "markerBefore": "be48d1b4919c070d18eade348cece74980adfada",
     "slices": [
       {
         "area": "runbooks",
@@ -19,66 +19,13 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "backup.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: infrastructure-as-code/backup/README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/backup.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "server-setup.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-diagnostics.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/renovate.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "renovate.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/ci-diagnostics.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "ci-diagnostics.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/ci-diagnostics.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-31T06:50:42.326Z"
+    "updatedAt": "2026-10-31T09:58:14.879Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 1282,
+    "pagesWritten": 2,
+    "elapsedSeconds": 689,
     "stoppedAtBudget": false
   },
   "escalations": {},
@@ -88,13 +35,13 @@
     "calls": 106,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 533979,
-    "cached": 12755832,
+    "uncached": 428680,
+    "cached": 8941734,
     "cacheWrite": 0,
-    "output": 209021,
-    "reasoning": 185027,
-    "ms": 1210878,
-    "estCostUsd": 0.4876,
+    "output": 151179,
+    "reasoning": 119776,
+    "ms": 884993,
+    "estCostUsd": 0.3637,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -104,11 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/ci-diagnostics.md"
+        "runbooks/server-setup.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.4876,
+      "estCostUsd": 0.3637,
       "rateLimited": null
     }
   ],
