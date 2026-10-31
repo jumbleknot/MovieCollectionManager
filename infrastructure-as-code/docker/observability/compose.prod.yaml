@@ -132,7 +132,7 @@ services:
     logging: *obs-logging
 
   langfuse-clickhouse:
-    image: clickhouse/clickhouse-server:26.6@sha256:2c870d77ea76e955fb1c8dad536ad40a1236b6093db0c4966e22d21d4428982b
+    image: clickhouse/clickhouse-server:26.10@sha256:739e099abd1157390960a59e4532d21781d8fde57e6e4151cb920ea02c30b1ce
     container_name: langfuse-clickhouse
     restart: always
     # #PROD hard memory cap (R5) — ClickHouse is the biggest RAM consumer; 24.3 is cgroup-aware, so a
@@ -186,7 +186,7 @@ services:
   # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
   # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
   langfuse-rustfs:
-    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     container_name: langfuse-rustfs
     restart: always
     environment:
@@ -216,7 +216,7 @@ services:
   # PUT of an existing bucket answers 200. The secret is referenced as `$$S3_SECRET_KEY` from the
   # container's environment and fed to curl on stdin — never interpolated into argv.
   langfuse-rustfs-init:
-    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     container_name: langfuse-rustfs-init
     restart: always
     depends_on:
@@ -247,7 +247,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.37.0@sha256:57b5ab1ca6619beb180174e2fccce04762470750669d043f544b4726d0582d07
+    image: grafana/otel-lgtm:0.38.1@sha256:0df9bc14142000b161344bd24caf6ddd319b7319055aedaf9b0692b125730af7
     container_name: otel-lgtm
     restart: always
     ports:
@@ -276,7 +276,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:1.21.3-debug@sha256:9ddaf23fbe4c8bf72b4c05ffc833cd4a68aebf33a86883b4a1f510df1f1d878f
+    image: openpolicyagent/opa:1.21.4-debug@sha256:249d68cce8e26346f22318a7b17058fe6be9702bf8e78402a770d913029e943d
     container_name: opa-service
     restart: always
     command:
@@ -304,7 +304,7 @@ services:
 
   # ── Unleash — agent feature flags / kill-switch ─────────────────────────────────────────────
   unleash-service:
-    image: unleashorg/unleash-server:8.2.0@sha256:5020013b7a9a93c8ed3686d36b5025399714020b3fb5ef41afd84ba37a88c050
+    image: unleashorg/unleash-server:8.2.1@sha256:c6eaaede7242144f1674343ccd94224dab04a48723e8d94746288741f327fd5c
     container_name: unleash-service
     restart: always
     depends_on:
