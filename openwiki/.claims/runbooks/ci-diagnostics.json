@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c1db3149ec874b1643d5c221189d5231e5b9fa0383b80e68db89591a1edb1878",
+  "pageVersion": "sha256:e10fb860e9d9cd9612ea5d64e46727f6ca1237af402f9a7bdc5a850402b01d3a",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -855,10 +855,194 @@
           "version": "repo-lines-v1:sha256:b707b9e8cae36cf3212ab623e2dd99f70e6408c506aed181c9093aea29405e82:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMDJhMWMxMDNiYTUxZmQ1NTQxNTQ2ODliMmQ4Njc3MjlmNGE3YzczMjE0Yzc1NWM0Mjk3MmZmZWM4ZGNiMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZGI2ZWZmNWZjZmZmNjYzOWZkMDg1MDljMWI4ODliMGY4M2UzNjExNDcwNWNlMTgzMmNiOGM3MWNiYTQyNjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_516ab5357cf4415c90f31dfb59124b9a",
+      "statement": "The container registry is a third scope behaviour on the same forge, and the Docker CLI hides it in the direction that reads as a publish failure: `docker manifest inspect <forge registry>/<owner>/<image>:<sha>` answers `no such manifest` — NOT `unauthorized` — when the CLI is not logged in, so it reads as \"this image was never published\" for an image that exists (measured 2026-08-22, on a tag whose image was already pulled and listed in local `docker images`). The instrument is therefore unauthenticated and has said nothing about the tag in question. The rules that follow are: always run the control first by inspecting a tag known to exist, probe the registry API with `curl` against `/v2/<owner>/<image>/manifests/<sha>` instead, and use the read token `MCM_FORGE_TOKEN` there, because the `git credential fill` credential returns 401 on the registry (alongside its 403 on `issues/{n}/comments` and its empty package list).",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
+          "version": "repo-file-v1:sha256:736bb8970614aa87599386e3dc6768b2c7d842dc2242f5e05d008552c431e2fe"
+        }
+      ]
+    },
+    {
+      "id": "claim_3388be0081ca4f998f2c75ca27bbeb0c",
+      "statement": "A digest pinned from this registry request is the only trustworthy source for pinning an image: the packages API's newest row for a build is the provenance **attestation** (the `unknown/unknown` entry in the OCI index), and pinning it fails at pull time, while `manifests/<tag>` returns the index under every `Accept` header. Walking index → platform manifest → config blob and reading `history[].created_by` proves what is inside a published image without pulling it, and doubles as the check that an image did not accidentally end as `USER root`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
+          "version": "repo-file-v1:sha256:736bb8970614aa87599386e3dc6768b2c7d842dc2242f5e05d008552c431e2fe"
+        }
+      ]
+    },
+    {
+      "id": "claim_9beacf8bd7ba4e8694dd6003d92697da",
+      "statement": "Package-registry retention (spec 084 US5) is `scripts/registry-retention.mjs`, configured by `infrastructure-as-code/forgejo/registry-retention.yaml` and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC, after the Friday Renovate window and outside the nightly backup). It is the only thing in this repository that ever deletes from the forge registry, and the forge's own name-regex cleanup rules are deliberately unused because they cannot protect a digest a git file names, they live only in the web UI, and they have no report-only run.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml",
+          "version": "repo-file-v1:sha256:d6447d21b60359f3e4df5f211ee3b18aaa7019bf25a977c28d4711cdfeaf12c5"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs",
+          "version": "repo-file-v1:sha256:26cdf425bfce9039f624b123f40768515f3893b2cff479113a609b813b655f28"
+        }
+      ]
+    },
+    {
+      "id": "claim_be45518a272c41448a9b981584ffa1a0",
+      "statement": "Registry retention is report-only by default and a delete requires two independent keys held in two places: `--apply` is passed only by a `workflow_dispatch` whose `apply` input is true, and the script refuses it with exit 2 (naming the mismatch) unless the committed config also says `mode: apply` — so the schedule can never delete, and the path to deleting is report → review → a one-line PR flipping `mode: report` to `mode: apply` that links the reviewed report → a dispatch with `apply: true`. A bare local invocation reports, and `--json` / `--package <name>` narrow the report without changing the mode.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L1-L29",
+          "version": "repo-lines-v1:sha256:3f2a354a3c46937bc25cd67ed9fc99618a0af571a00931278eec03bf3ee35670:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZTA0ZjY3YzRjNmE1OWNmMjJlYTFhODYwYjlhN2Y3OThlNWFjZmUxYzRhN2ZhNDg5YTc0MGJhODFlYjJlY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0YTAxZjI4YjZiMDRkNDVjYWQwZmU2Yjg2MmQxYTgwMmQ3YzFiYzVlNzdlYjg4NTgwMGI4ZDkxY2Y3ZjQ0ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMmZiOGJlZDBiZmNkZTQ1Y2RiYjZkMjI5Nzg1ZGVmZmJlNjM1NDllMzZlMmQ5ZGJlMWY0NmViZTUxYzQzZDkifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L378-L400",
+          "version": "repo-lines-v1:sha256:ffb5ef8faf3c6f9c4d8ec83683170a1b7dfd18e297132a31791d89c50104cfad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMzY5ODBlNmNkZmMyZTg3ZTg2OTNlZjYyNGU2NzE4NDBlMTg1ZTEyMjRkZGNjZDNkZWRjNzYzOGEzNzNlMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZWIwN2UwZDJlODY3ZmFhZjU1MzBlZDUyOGI4YTJiMzg0ZGExZTNiNzBhNjU0MWJiYmVjODZmZjdjY2E4YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1NjhkOWJhYmNiMDE1OWMxZWY0ZDNlZGQ2ZTMwNmU3NTM4YTgzOTI5NzA0YTEyY2I2M2FlMmVhOTM5MmEwOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MGQzZTUzMmYyN2JhOTgwZmI5ODQxODk1YjRjZGZjZTAxNGE3NmI4N2UxODc0Y2M3Y2MyMmY3MGQxMzhiMmIifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md#L66-L76",
+          "version": "repo-lines-v1:sha256:6f80fdcc73ec90a9082432c0725ef34b6d20e27b2e722a2151520a4b17c83383:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2Njc4NjY5ZTQ2NzhiOGQwZWQ1NzZiMGM4ZDMxMWRkZTZiMTFiOTZiM2FhODI2Y2Y0ZmE5MDgyNTdkNTI2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZjM5YmFiMGYxYmMyZWUwNDNiMDVmODJmZjA0YWIxYjNhYjFhZWE5ODQyNGZhMGYwMWFiZTcwNDUyZWNlNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MjhkNjAwYWRlMjA5ZWVhNDVmOTNlNGIyODhhYzFiZjE3N2NmMGRjZTg0MzVhNDIwODhjZjFiOWY1MDVlYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04a8b341999d495d815582566ee450fd",
+      "statement": "Retention decides each version by its FIRST applicable keep reason, else deletes it, and the ordering differs between the two kinds of version a push creates: a **tag** (the index, i.e. the head) is judged `keep:protected`, then `keep:newest` (among the newest `keepNewest` tags), then `keep:recent` (younger than `keepDays`), while a **`sha256:` child** is judged `keep:protected`, then `keep:referenced` (a KEPT index points at it, whatever its age), then `keep:unverified` (some kept index could not be read), then `keep:recent`, and only then deleted. Packages with unrebuildable artefacts use `keep:all`, and a package absent from the config is `keep:unconfigured` — reported, never deleted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L7-L36",
+          "version": "repo-lines-v1:sha256:97885b5ed612d899eb2c1d1457100a7d33e157e30551296c01e62de23e0e7860:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5OWY5ODQzYzJmZDQ2MjMyNDc1N2ZmYjU3MmNmNTE1ZjBkNzVjZmZiYTFkODgzMTZhNTUyNDYzOTdlNGVkZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MjFhYTEwNzFmMDdiYThmMzA2YTlhN2JhODFiYTAyNGM5YjFmNzdmNmY0N2IzYzk2NDcyNjNjNTdiOGJlNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZThkOTAyMjkxMWQ0N2UzZWM0OTliYzViMzNjZDM5NWU0ZDJjNGY4ZTkwZmI4ODczYTg4YWI5OGQ0YmJlYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L164-L211",
+          "version": "repo-lines-v1:sha256:2e705df9ea3ddc2e2950b86dd1f4e14eb8eca978bef2a5a63662feddcc41d9f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzgwMDMxNTEyMzE5Zjk5OTEwN2Y1YTg2ZmUyY2IzOGNiMjU3Mjg4MzRjNGI4NWZjM2VkNmY2NzJlY2E0MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5OTc3NTAyOWIwMzAwMWRlMGI0MTkxMTEyZmQ4OTk0ZWQyYjIyYmRhOTBiZjUxYzZkN2RjOTlhNTVlMDg2NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiMzk4MzdiNzM4ZTRiYWMwNGI1MWM5N2U0ZGI5MzRkZjQ1MzY5Y2U3ZDIxNTJmMmIwZTU3YTk2ZjI0OTg1MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_01ada09a35b14ff293e0e12843816eb3",
+      "statement": "Children are kept by reference rather than by age, because an unchanged image REUSES the previous push's platform manifest: one push creates the tag `<sha>`, whose `manifest.json` is the digest a `.env.deploy` pins (an OCI image INDEX), plus the `sha256:` children that index references (the platform manifest, which owns the layers, and an attestation), so a child can be older than the newest tag that needs it — measured 2026-10-31 on `mc-service`, where the 07:48 deployed index pointed at a platform manifest created at 03:14 by an earlier push. \"Delete what is old\" would therefore delete the layers of the running image. If any kept index cannot be read, no child of that package is deleted at all (`keep:unverified`), and a child younger than `keepDays` is also kept as possibly a push in progress.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L199-L208",
+          "version": "repo-lines-v1:sha256:dbe6f292e747a1f1176162f36e38ae25b5117904c6e92001de0f3243cad0acfa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZGUzNjM1MjA1NTFiZTUwOWE2MzU4NmM1ZGI5NWYwYjQ1ZjM4OWRmOWJiMWZlZWFlMGNiMTAyM2ExNDQ1ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZDZlOTI2OGI5YTY1MTlmYmE1YjVmMGZhNTkyM2IyMWVlOGEzZjUxOGUyOGUwZGMyYjQ3MDBkZTJjMzY2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNzgxNGYyOWQ3Nzg3MjA1ODYyYmUzZGM4M2UwOThiZDE5M2RhYTg4OGVkYTgyOTljYzkwNDc0NDQ4YTdjYjAifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L20-L26",
+          "version": "repo-lines-v1:sha256:223bf64f4fd84d13e9dd0e6e85d02b1612325f222ae120288058fb5e0918a9df:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFkY2NiMTBmMzAzNGY3NmU3NDBlYTIxMWIzMTBiYTE5MDdlMzZjNDUzOTFhNmNmOTBhMjc5YjdjYjE5MmE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMWJmNTY4NmNlNDc2ZWM0NWFiMTViMjg1ZmU2MjMxYjI5ZDQyN2ZhZTkxN2FlMmNiMjc3NDI2MjgwNWI0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWZjM2U2MTZmNzAyZGEyZGJmYzk4ZDE3Y2ZhNjk1YTU5NWQ5ODM0Y2YyZmVmNjVlNDkyZmViM2E3ZTAzYzUxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGY4ZjU2MWIzYTQxNGIyYzA0ZjY2NTNkMTg3YTFhZTRjMDE1NTNkNjU5YjRlNTg2OGMxNmI4NzgxYmU2M2RhZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e188f065e63c42a1b534561337edbd9e",
+      "statement": "Every protection is computed from git BEFORE the first API call, and a shallow clone is REFUSED rather than protecting only HEAD (`fetch-depth: 0` in the workflow is load-bearing for that reason): `protectedDigests` reads the digest lines out of every `infrastructure-as-code/docker/*/.env.deploy` at the newest promotion and the 5 commits before it, so the protected set is the deployed images plus the rollback targets (a rollback being a `git revert` of a promotion). A shallow checkout would read as \"nothing but HEAD to protect\", a protection set that is silently too small.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L9-L11",
+          "version": "repo-lines-v1:sha256:c0b61aa718339875f66b7ac407d0477eb6e6895a8a90045476a4820225790979:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhYTdkNmU3ZGI4ZDliMjRmM2RjYjY3MzRmZTBmOTY0NmY5N2E3NmU5MTU0MTRlMjYwYzg5ZTRjM2M0ZTJkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdiNTQ0ZDA4Yjc3NjAxNjkzZmFjMDZhZDg2MDk0MmI1OGM2OTE0YTlkNjg0M2YwZGM5NTAyZTBlMjA5ODJlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjgxODhkYzcyZDgxZTc4YjA4ZTQ4MGE3Zjk4Mzg4ZTQwOTVkOTE4NjM3NTI3N2IxZjI3MWFlNWEwNDdiYmQ3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjZhNjllNDcxMjhiMWUwM2NmMjFjZWJkOWFlMjRmMDI0YTU4MzBkZDAyMjAyNGM2MDUxNmI2M2E4N2RkNDJmMCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/registry-retention.test.mjs#L428-L437",
+          "version": "repo-lines-v1:sha256:52ad987291e2afbe2209ef5d26195bd37a5b37641d07a2e2fe457a177c3e1354:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwZTIwZDY5MDY3MTg5NWJmMDhiMDAxN2UzZmQ0YzE0OTA3MjU2OWRkYTY3NTAyMTExMWZiNGRjMjc1MDMwNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMDJkYjIxYjg0YzVmMTYxNTA4NmMzYmI2ZDM2ZTUzMWVlMGM1MjBlOGE4YjcxZjk4MDM1OGNiZjA4MWM0ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZmE3ZmQwYjI4Y2QxNGFiY2QxYjM2ZmUxOTQwNzFlNWRmNTA2MmY5NjY4ZjEwY2NhOGI1NTFmZmNlMmVhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNzU4ODM4MDk4MGNlMTY0OGMwZDAwNjk1MDc4YzVkM2VjNzc3YjRkNTY4OGIwMWE0YjU1NmZjZGMzNmIwYzIifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L121-L150",
+          "version": "repo-lines-v1:sha256:55c21e8d64b991b2bdddd948bdaead878e18619cf20bc4dd818f5ed017454703:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjFkNTBkOWZjNDFkYzZkMDA0ZjAwYTU3MWQzYjUyZTgzYjcxZjFmN2RmZWQ0ZjAyY2I2NWRmYjY2NzdkZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNWZmZDA4Y2I3NWJkNjdkMGFlNGYwNWExNTk3NDQzMjg1MGY3NjRhY2JlNjliZmI4NzMyYjYzYmMwNTdlNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMzVkZGI3YmJhOGU4ZjFmZWE4ZTY0ZWI1MTc5NGQ4MmU5ZTI0MmExNmE4MDU0YTVlNWI2M2U0NTQwMjZmMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4fd002a8e344d268596ee52fbc3a6e7",
+      "statement": "Registry retention has a preflight that can only stop it: if a protected digest cannot be resolved to a registry version of a configured, listed package, the script exits 5 and deletes nothing, naming the digest and the `.env.deploy` it is pinned in — a real alarm meaning a deployed or rollback image is gone or the pin is wrong. When it does delete, indexes are deleted before children, so no index surviving a partial run points at a child that has already been removed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/registry-retention.test.mjs#L384-L390",
+          "version": "repo-lines-v1:sha256:87950ffebf7214ac18c1450f287097671c77f9f9268293e9a749508905929394:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRmODNhNDU2Yzk2YWVmODNiYjE1Zjc3ZGZlMGNmMWVmZDJhMTRiNmNlY2IwNTRkZGVlYTc4OGQxNTNkMTQ2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDYyOTZmODM0MTQ2MTI3YmRiNTIyYjFkODZiNDkzMzczYzRhODNiZjU4OTI1MTUyZTdlZDQ1MTg3NjM5NjQ4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQwZmU3YTIyMjkwYjMyNzZmOWEyNzQ1YzU4MTNmMmI0MWE0ZTk1NDE2OTM4ZGZiMDVkM2FkM2M0YWJiYTM2MSJ9"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L213-L223",
+          "version": "repo-lines-v1:sha256:6274d188fd40efe17a2d7f83a6439fb33e699d1b854156ba61043e9a85e033d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ODBkNzhjOTRiODBlZDBhMjAyMTQ1Y2E1NTkxMDQ4MTA2ZjJjYzEwZWNiZjljOTU4N2ZjZjhlZDA5ZjYxMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MTY5YjI4ZGNjZWY1ZDc3ZWZhMzY3MDMzM2U3OTU2MjU0NzU5M2U3M2VkYjljMWZlZWYwOGQ3OGI5OThkOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmFlYzIxMTdjYTA1NDljNWNlY2ZlNjc4NTU0MzgwZWRmNGRiMGY2NjQ4NmNlYjMwYjM3ZDhlYTQ0YWEwODgifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L404-L425",
+          "version": "repo-lines-v1:sha256:8c1f8fc8e798cdd35e5428b77ef1b19af0989423355ce361fb726f733a6bc6a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOTVmYTM5M2RmYTg2ZWI3ODBiZDcyZDE3MTRmZGIwZGI1OTRhODE3YTYyN2Q0NTBiN2IwNWRiOWMzMmQ2YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MGQzZTUzMmYyN2JhOTgwZmI5ODQxODk1YjRjZGZjZTAxNGE3NmI4N2UxODc0Y2M3Y2MyMmY3MGQxMzhiMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3NjM5ODZiYjk0ZDdjNWUxYTRlMjE5MGRkMTA1ZGIxZGY5OWEwODEwYjEwYjhiMWM4ZmZjZWIyNWFiZDVlNzIifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md#L75-L76",
+          "version": "repo-lines-v1:sha256:609b5ac2141759dcdd06eac99ab2b876539af09698fa5dc678c0979e127ba905:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZkNDU3ZTU0NGJlMWIxMTk0NjI4OTg2YzgzNDYzOGUwNjA5MzE0ZWQ1YTI2YzRlMmM0YjE3OTcyOGNmNTBlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjdmMzliYWIwZjFiYzJlZTA0M2IwNWY4MmZmMDRhYjFiM2FiMWFlYTk4NDI0ZmEwZjAxYWJlNzA0NTJlY2U1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkMGUyMGEyMjcxZTUwNjBlMTZmODA3NzhhMDE5MmQ3YWJlZjQyMzI4ZTM1N2E1MjgzZTgzZWVlMmJkNWMzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a02448659aeb4dcfa8286a34bab084f4",
+      "statement": "The retention config is validated rather than half-read — an unknown top-level or per-package key, a duplicate package, a `mode` other than `report`/`apply`, `keepAll` combined with a window, a package that keeps nothing by rule, or a `ci-failures` window below `evidenceWindowDays` is refused naming the key — because a config that is silently half-parsed keeps less than its author believes. It also enforces the floor `ci-status durations` needs on the `ci-failures` bundles (`DEFAULT_DURATION_RUNS` × the number of bundle-publishing jobs, counted from the workflows themselves), so a newly added job that publishes a bundle fails the config until the floor is raised; the bundle publisher `ci-failure-digest.mjs` already prunes those at 30 days, so this rule is a backstop rather than the deleter.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L30-L34",
+          "version": "repo-lines-v1:sha256:1a648a2b9c3930e9894a2bd11c8c608bfb20e1b0651e1f6f72116237f4ffdcd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU0YzdjY2FiMWExY2Y1ZmZkMjk3MGQ1NzhjNGNkZDdkMmQ4ZjcwYjUwM2EyNDBlMzE1OTM1ODhhZDA0NjE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVmMzEwYmZiMGQ0ZGYzMDc3ZjhiM2IwYjc1ZmNmNGM4MDBmM2EwYTY3NmY3MjJlNTc0MzdmNWMyZjU2MzkxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmUzOWFhNzhiY2ZkNTcxYWVlMGJjMmIzOTU4ZmFlMDBlM2QzMWY1ODc2ZGE3Y2YwYzY0NDY1MmYxZWQ2ZmMzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgwNjJlNjgyYWQyZGEwMDU1NTFiMTllYzBhODcxYjMwMGE0MzkwOGYwOTdkMmIwZDY0NWUyZDE1OTU4NTE0NCJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/registry-retention.test.mjs#L97-L113",
+          "version": "repo-lines-v1:sha256:2264e904c7682f2deb6682ab97c67e390bef18d867c331a315f7ec84a3d15b3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYzBkOGE2YjE5MWFhZTY2MWJmNjQwNDhlNDdlMmM5MWFlNjMyMTUyZTE4Y2QyOWUzODA4MTU0ZTJlYjY4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMjg4YmYzNjFkOTgxNGIxZjIzNGUyNzc5NzE4YjNiMDEwMmUyMDgzY2U0NGJjY2YxM2I2M2U0MjNjYTNhYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYmM0ZDY3M2M5MDUyOTcxOTg0ODMzZGQ5NDQ2OWQ0OTU3Y2JkYTFhYWVjOTRjN2U4MDRlOTM5YTBiODZjMjUifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L58-L68",
+          "version": "repo-lines-v1:sha256:b1253cbd8a391ac8e28406079f1de23da492a5adc3fe8814c6111ff012c3ccb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MjVkMjQyYTFkODgxNDAwMDdkMmY3NGJjYzc4MDI3YmY3Y2RiOTNhYWRhOGUxNDZlZWZiNTk1NWE2ZGY0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjM2I5ODcwNzMwNmQyNWExZGE1YWNmMjA4NWE4ZjQ3Y2QyMzczNWJkZGExZjhjYzYxMWRjNTdjMWE3ZDcwYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMjVlYzQ2MzJkYmQ0ODQ4ZDczYTdlNjlmYTcyNzEzOGVhMmRmZDc4MzIwZDQxMTQ4ZDQ3OGJkZjcwZDhjYWEifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L74-L117",
+          "version": "repo-lines-v1:sha256:0a58310cdf0bafb63c1567a0f0d7784948a40cbe0bbbbee049321452cddd8d8a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMjZlNTdkZmIzZjEwYzEyOTc4NjdlNGY0NmU3NGEyMzI0Nzk0OWJhZDk5YzM0MWY2MzZjMmYwMmU1YmIzZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5OTY1YTkxZThkMzQ2NWIwOWZlYTgyNGFjYjhjNTdmZGEyNmM1ZWE4MDkxYmRhZGY3ZmYxNmQ3MDI4OTVlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhNWZmZDA4Y2I3NWJkNjdkMGFlNGYwNWExNTk3NDQzMjg1MGY3NjRhY2JlNjliZmI4NzMyYjYzYmMwNTdlNjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8dbe5b4ce7eb49e583c531510ba0a217",
+      "statement": "The retention sweep authenticates with its own `REGISTRY_CLEANUP_TOKEN`, scoped `write:package` only and stored as an Actions secret, deliberately separate from the CI push token (`actions-ci-push`) so that rotating either cannot break the other; a report can also run with the read-only `MCM_FORGE_TOKEN`, and `MCM_FORGE_URL` has no default, so a missing URL or token is a usage error rather than a guess at a host.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L13-L13",
+          "version": "repo-lines-v1:sha256:d62157a564162335a718282e3fa74656e01e9c51219ce2d6e609f14bcb344a44:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYyMTU3YTU2NDE2MjMzNWE3MTgyODJlM2ZhNzQ2NTZlMDFlOWM1MTIxOWNlMmQ2ZTYwOWYxNGJjYjM0NGE0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYyMTU3YTU2NDE2MjMzNWE3MTgyODJlM2ZhNzQ2NTZlMDFlOWM1MTIxOWNlMmQ2ZTYwOWYxNGJjYjM0NGE0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFiMGQxYjM3MDQ2ZTg1NWI4Mjc4OGMzYmQyMWZiMjM1MjNlY2U0OGE4MTBiNTZhNGE4YTljMGY3NzEwMDRiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzhjZDU0OTM3ODFjMzZlZDRiZjcwZGM2MzZjODhiZDMwMjQwMDc3YWZjNjgwMWRiY2ZhZDlmNzhlNzNmYmQ4ZCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
+          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L367-L376",
+          "version": "repo-lines-v1:sha256:06035ac6da433062e178628045346a419173a9943a59ebb778bdb8f60f9e1a4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYzgzN2M4YmMzODI1NDgxYjE4M2IzOWE1NWEwYTAwNDM5NGFlZjA3MzA2MGFmZTc3YzE5ZTE5Yzk0NzNlNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkMmMyYmY4MDk0NDQ0YWIzOWJkNDdmOTFkZmY5ZmVjZTA3ODk3NGJlM2VmMzVhZWJjYzVjMGExZjZkOTFhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NTlmOTI2MmJkYmQxMGQ1MTcxMGUyMWY2YTgxOGE2MzM0YzBlMTA0MWVhYzhkZjgyNmQ1YTIyYjQxNTA0NmYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-10-31T23:07:57.553Z"
   }
 }

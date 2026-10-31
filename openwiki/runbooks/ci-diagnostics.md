@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the AGit detached-head rule, the merge-verification traps, and the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, and the two keys that gate a delete.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T19:43:53.507Z
+    at: 2026-10-31T23:07:57.553Z
 ---
 
 # CI self-serve diagnostics
@@ -133,7 +133,9 @@ of the five: it has no commit status to classify at all, so it is resolved from 
 Two things this page is not: it is not the digest/bundle producer (see
 [CI evidence pipeline](./ci-evidence-pipeline.md)), and it is not the image scanner itself (see
 [Infra-image CVE scanning](./infra-image-scanning.md)). What it owns is the *reading* of a CI board —
-which contexts exist, what each state means, and which of them are lying.
+which contexts exist, what each state means, and which of them are lying. The one lifecycle it also
+covers is the other end of `app-image-scan`: what the registry is allowed to **forget**, in
+*What the registry keeps* below.
 
 ## Gotchas
 
@@ -756,6 +758,32 @@ which contexts exist, what each state means, and which of them are lying.
   #1627 left a real status behind) but did NOT prove it is populated on a secretless run — that
   requires an AGit-headed push, which is forbidden. If a secretless run still publishes nothing,
   check this first.
+- **The same credential split hits the CONTAINER REGISTRY, and there it lies in the other direction —
+  `docker manifest inspect` is not a publish check.** The identical command
+  `docker manifest inspect <forge registry>/<owner>/<image>:<sha>` answers **`no such manifest`** — not
+  `unauthorized` — when the Docker CLI is not logged in, which reads as "this image was never
+  published" for an image that is sitting right there. Measured 2026-08-22: the command returned
+  `no such manifest` for a tag whose image was **already pulled and listed in `docker images`
+  locally**. So the instrument is unauthenticated and has told you nothing about the tag you care
+  about — the wrong conclusion to draw about a build you have just dispatched. **Run the control
+  first:** inspect a tag you KNOW exists; if that also reports missing, the instrument is
+  unauthenticated and the answer about your tag is unknown. **Probe the registry API with `curl`
+  instead, using the read token `MCM_FORGE_TOKEN`** — the `git credential fill` credential returns
+  **401** here, a third scope behaviour on the same forge alongside its 403 on `issues/{n}/comments`
+  and its empty package list:
+
+  ```bash
+  ACCEPT='application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json'
+  curl -sS -o /dev/null -w 'HTTP %{http_code}  digest=%header{docker-content-digest}\n' \
+    -u "$OWNER:$MCM_FORGE_TOKEN" -H "Accept: $ACCEPT" \
+    "$FORGE/v2/$OWNER/<image>/manifests/$SHA"
+  ```
+
+  To prove **what is in** a published image without pulling it, walk index → platform manifest →
+  config blob and read `history[].created_by` — the same technique that confirmed a toolchain layer
+  was present in a CI-built image, and the check that an image did not accidentally end as
+  `USER root`. Take a pinned digest from this registry request, never from the packages API: its
+  newest row for a build is the provenance **attestation**, and pinning that fails at pull time.
 - **A green `app-e2e` publishes a counts-only bundle — a green job of any OTHER kind publishes nothing,
   and the in-job gates are how CI judges its own counts.** `shouldPublish` is three-way: a cancelled run
   publishes nothing, `failure` publishes the full digest, and an **explicit `success`** publishes
@@ -842,18 +870,103 @@ which contexts exist, what each state means, and which of them are lying.
   the same second, which is consistent with any number of independent writers.
 - **A green job that is not `app-e2e` emits nothing — use a commit status recorder when the output must survive (item 457 AC4).** Every other job's green publication finds nothing and uploads nothing. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items 418, 268, 485, 457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
 
+## What the registry keeps (spec 084 US5)
+
+`app-image-scan` decides whether a *new* image may merge; registry retention decides which images the
+registry still **holds**, and it is the only thing in this repository that ever deletes from the forge
+registry. It is [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
+[`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
+and run weekly by [`.forgejo/workflows/registry-retention.yml`](../../.forgejo/workflows/registry-retention.yml)
+(Sundays 06:00 UTC). The forge's own cleanup rules are deliberately **unused**: they match versions by
+name regex, so they cannot protect a digest a git file names; they live only in the web UI; and they
+have no report-only run.
+
+**Report-only is the default, and a delete needs two keys in two places.** A bare invocation, the
+weekly schedule and any dispatch all produce a **report**; `--apply` is passed only by a
+`workflow_dispatch` whose `apply` input is `true`, and the script refuses it (exit 2, naming the
+mismatch) unless the committed config also says `mode: apply`. So the sequence is report → review → a
+one-line PR flipping `mode: report` to `mode: apply` that links the reviewed report → a dispatch with
+`apply: true`. Neither key alone deletes anything, and the schedule never passes `--apply`. Each
+version is kept by its **first** reason, else deleted:
+
+| Keep reason | What it keeps |
+|---|---|
+| `keep:protected` | a digest pinned in an `infrastructure-as-code/docker/*/.env.deploy` at the newest promotion **or one of the 5 before it** — the deployed set plus the rollback targets |
+| `keep:newest` / `keep:recent` | among the newest `keepNewest` tags, or younger than `keepDays` (app images 40 / 30 days, the dev-container image 4 / 21) |
+| `keep:referenced` | a `sha256:` child that a kept index points at, **whatever its age** |
+| `keep:unverified` | a `sha256:` child of a package whose kept index could not be read — the conservative answer, since an unreadable index may point at anything |
+| `keep:all` | a package whose artefacts are not rebuildable, such as the release APK |
+| `keep:unconfigured` | a package not in the config: **reported, never deleted** |
+
+```mermaid
+flowchart TD
+  V["one registry version"] --> P{"its digest is pinned in a .env.deploy at the newest promotion or the 5 before"}
+  P -->|"yes"| KP["keep:protected — wins over every other reason"]
+  P -->|"no"| T{"is it a container child, named sha256:…"}
+  T -->|"no — a tag, the head"| N{"among the newest keepNewest tags"}
+  N -->|"yes"| KN["keep:newest"]
+  N -->|"no"| R{"younger than keepDays"}
+  R -->|"yes"| KR["keep:recent"]
+  R -->|"no"| DEL["delete — indexes before children, so a partial run never orphans a child"]
+  T -->|"yes — a child"| C{"a KEPT index points at it"}
+  C -->|"yes"| KF["keep:referenced — whatever its age"]
+  C -->|"no"| U{"any kept index could not be read"}
+  U -->|"yes"| KU["keep:unverified — delete no child of this package"]
+  U -->|"no"| RC{"younger than keepDays"}
+  RC -->|"yes"| KR2["keep:recent — possibly a push in progress"]
+  RC -->|"no"| DEL
+```
+
+The two halves are the whole design: a **tag** is judged by count and then by age, while a **child**
+is judged by reference before age, because an unchanged image reuses the previous push's platform
+manifest and so can be older than the tag that needs it.
+
+The load-bearing properties, each of which is a way the sweep could destroy something:
+
+- **Protections are computed from git before the first API call**, and a shallow clone is
+  **refused** rather than protecting only `HEAD` — which is why the workflow checks out with
+  `fetch-depth: 0`. The refusal is the point: a shallow checkout would read as "nothing but HEAD to
+  protect", a protection set that is silently too small.
+- **Children are kept by reference, not by age.** One push creates two kinds of version: the tag
+  `<sha>`, whose `manifest.json` *is* the digest `.env.deploy` pins (an OCI image **index**), and the
+  `sha256:` children that index references (the platform manifest, which owns the layers, plus an
+  attestation). An unchanged image **reuses** the previous push's platform manifest, so a child can be
+  older than the newest tag that needs it — "delete what is old" would delete the layers of the
+  running image. A child is therefore never judged by age alone, and if any kept index cannot be read,
+  no child of that package is deleted at all.
+- **A protected digest missing from the registry exits 5 and deletes nothing.** That is a real alarm —
+  a deployed or rollback image is gone, or the pin is wrong — and the preflight runs before any delete.
+- **Indexes are deleted before their children**, so no index surviving a partial run points at a child
+  that has already been removed.
+- **The config is validated rather than half-read** (an unknown key, a duplicate package, `keepAll`
+  alongside a window, or a `mode` other than `report`/`apply` is refused), and it enforces the floor
+  that `ci-status durations` needs on the `ci-failures` bundles — which `ci-failure-digest.mjs` itself
+  already prunes at 30 days.
+
+The sweep uses its own `write:package`-only credential (`REGISTRY_CLEANUP_TOKEN`), separate from the CI
+push token so rotating either cannot break the other. The full procedure, the review criteria for a
+report and the report itself are the
+[retention section of the server-setup runbook](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5);
+the CLI contract (including exit 2 on a `--apply` against `mode: report`) is in
+[spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
+
 ## Where the procedures live
 
 This page is the distilled map plus the traps. The full exit-code table, the exact endpoints and
 payload measurements, the required-check fetch/fallback logic, the `app-image-scan` table with its
 allowlist and residual, the token-provisioning recipe with its
-read/write split and the degraded fallback, the PR-opening recipe, the branch-deletion rules and their
-reaper backstop, and the evidence-bundle hardening details are in
+read/write split and the degraded fallback, the container-registry probe with its control-tag rule, the
+PR-opening recipe, the branch-deletion rules and their reaper backstop, and the evidence-bundle
+hardening details are in
 [the source runbook](../../docs/runbooks/ci-diagnostics.md). Its
 [PR-opening section](../../docs/runbooks/ci-diagnostics.md#opening-a-pull-request) is the canonical
 statement of the AGit rule and of the `POST /pulls` credential split, and the item 823 exit codes and
 the `scan-app-image.sh` exit meanings are contracted in
-[spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md).
+[spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md). The
+registry-retention procedure itself — how to read a report and what to check before flipping `mode` —
+lives in
+[the server-setup runbook](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5),
+not here.
 
 Related: [CI evidence pipeline](./ci-evidence-pipeline.md) (the producing half — digest, bundle,
 durations, ceilings), [Infra-image CVE scanning](./infra-image-scanning.md) (the sweep over the
