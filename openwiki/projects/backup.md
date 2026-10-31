@@ -1,12 +1,12 @@
 ---
 type: Service
 title: Prod host backup (restic) and its failure alerting
-description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, and the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible.
+description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof the new forge format can actually be restored.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-28T02:33:05.629Z
+    at: 2026-10-30T01:33:31.256Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -24,8 +24,8 @@ sources:
     resource: repo://infrastructure-as-code/backup/homelab-backup-staleness.timer
   - id: openwiki-source-1be01bc0222d08bf89a6ee08
     resource: repo://infrastructure-as-code/backup/homelab-backup.service
-  - id: openwiki-source-54879e1de701bf435b3bc761
-    resource: repo://infrastructure-as-code/backup/INSTALLED.sha256
+  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
+    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-5560229e88c2aa91002a3238
@@ -40,13 +40,23 @@ sources:
     resource: repo://scripts/__tests__/backup-units.test.mjs
   - id: openwiki-source-95bfea7e625c030a4806299d
     resource: repo://scripts/__tests__/host-shims.mjs
+  - id: openwiki-source-715432c2fa445bfbb51b85ee
+    resource: repo://scripts/__tests__/komodo-cron-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66
     resource: repo://scripts/backup-install-manifest.mjs
+  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
+    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
+  - id: openwiki-source-4060b23417ef72688755f3e3
+    resource: repo://specs/084-silent-failure-visibility/plan.md
+  - id: openwiki-source-75f8add1789d37f1c762c383
+    resource: repo://specs/084-silent-failure-visibility/quickstart.md
   - id: openwiki-source-e9740ee34eee91e33cfb77d0
     resource: repo://specs/084-silent-failure-visibility/research.md
   - id: openwiki-source-e4b41dde0467ae4ba999bc66
     resource: repo://specs/084-silent-failure-visibility/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+  - id: openwiki-source-5159dca913823c87d5dcf112
+    resource: repo://specs/084-silent-failure-visibility/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T01:33:31.256Z" }
 ---
 
 # Prod host backup (restic) and its failure alerting
@@ -61,7 +71,7 @@ WebDAV storage *they* own, scheduled by the BFF — and they have their own page
 backup does not protect the host, and the host snapshot cannot be restored per user.** That
 disambiguation is the source runbook's own, at
 [Phase 14 — Backups, disaster recovery & UPS](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups),
-which is also where the restore procedure lives.
+which is also where both restore procedures, the restore drill and its log live.
 
 The whole thing is **config-as-code** in [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/),
 moved into the repository by spec 084 on 2026-10-27 — before that it existed only on the host. Its
@@ -160,8 +170,11 @@ the repository itself — so a run that never happened still raises it.*
   `OnFailure=homelab-backup-alert@%n.service` on `homelab-backup.service` runs
   `backup-alert.sh failed <unit>`, which attaches the journal tail with credentials redacted. A run
   still going at `TimeoutStartSec=2h` is a failure too, and is reported as `hung` (the script reads the
-  unit's `Result=` property to tell the two apart). A whole run measures 8–10 minutes, so 2 h is
-  unambiguous. The alert unit itself has no `OnFailure=` — an alert that fails must not recurse.
+  unit's `Result=` property to tell the two apart). The measured run time makes 2 h unambiguous: about
+  **65 s** for the eight-dump format (2026-10-29), against **8–10 min** for the old single `forgejo
+  dump` (2026-10-22..26) — so the timeout sits two orders of magnitude above a healthy run, and only a
+  genuinely wedged one reaches it. The alert unit itself has no `OnFailure=` — an alert that fails must
+  not recurse.
 - **Path 2 — a check that does not depend on the run.** `homelab-backup-staleness.timer` fires every
   6 h (`Persistent=true`) and runs `backup-staleness.sh`, which lists the `homelab` snapshots **from
   the repository** and computes the newest one's age. Past **36 h** it alerts `stale`; if it cannot
@@ -259,8 +272,9 @@ operating manual: the README's install/update block, its once-only credential se
 check, and the `--check-staging` and `--ack-shrink` steps; and the
 [Phase 14 Backups section](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups)
 for what a run includes, what is excluded on purpose and how to restore without it, the retention rule,
-and the proven Forgejo-Postgres restore procedure. The contract, at the level of what each piece
-achieves:
+and both restore procedures — the current `forge-db` + `forge-data` one (unproven until the drill
+passes) and the old `forgejo dump` one (proven 2026-07-05). The contract, at the level of what each
+piece achieves:
 
 - **Three host tokens, each with exactly one scope.** They are created in the forge UI for this host
   alone, as files with mode 600, and each is used by exactly one caller:
@@ -294,6 +308,58 @@ achieves:
 - **A restore is a Phase 14 procedure, not a script here.** The registry and repository archives are
   excluded on purpose because they are rebuildable; after a restore, `cd-deploy` must be re-run once
   before a rollback to an older digest is available.
+- **A dump that passes its format check is still not a proven backup.** The checks prove the file was
+  written and is the right shape; only a restore proves the content. That is what the drill below is
+  for.
+
+## The restore drill, and what is actually proven
+
+The rule the phase states and the page above keeps returning to is "a backup you haven't restored
+isn't a backup". Phase 14 makes that concrete with a **restore drill** (spec 084 FR-006), and with a
+log that records which *format* has been proven — because a format change invalidates the previous
+proof.
+
+- **When to run it: after any change to what the backup carries, and at least quarterly.** That
+  trigger is the whole point of the log: the forge's dump format changed under spec 084 US4, so the
+  restore that was proven before it no longer proves anything about what the host now writes.
+- **Do not run it between 03:00 and 04:00.** `restic forget --prune` needs an **exclusive lock**, and
+  a drill still reading the repository at 03:30 blocks it — that night's run fails, loudly, through
+  the alert. The window is excluded because a maintenance drill must not be able to break the nightly
+  backup it exists to validate.
+- **Its resource cost is small but real:** about **2 GB free under `~/backup`**, and about **1.5 GB
+  downloaded** from the NAS. It runs in a prod session and never touches a live service — the scratch
+  containers start with `--network none` and need no credentials (trust auth, a bare `mongod`), and
+  the live containers are read only to copy their image or count their rows.
+- **What it restores, and what it checks.** The three dumps that matter most: `forge-db` into a
+  scratch Postgres, with its repository/user/action-run counts compared against the live forge;
+  `forge-data` into a scratch directory, with `git fsck --connectivity-only` run over **every**
+  restored repository, not only the main one; and `mc-service-mongo` through `mongorestore --archive
+  --gzip`, with the collections counted. A drill **passes** when the forge database restores with no
+  errors, `fsck` reports `bad=0`, and Mongo has more than 0 collections. The commands themselves are
+  the runbook's, at
+  [Phase 14 — Backups, disaster recovery & UPS](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups).
+- **The drill log is the record.** One row per drill — date, snapshot, each restore's seconds and
+  counts, result — and it is the artefact that says whether a format has been proven. The runbook's
+  log currently reads **"no drill yet against the spec 084 US4 format"**, which is the load-bearing
+  fact: the post-spec-084 `forge-db` + `forge-data` restore is **UNPROVEN**, while the restore of the
+  old `forgejo dump` SQL snapshot **was proven on 2026-07-05**. The fallback until the drill passes is
+  retention itself: the old-format snapshots stay inside the 7-daily / 4-weekly / 6-monthly window, so
+  an old-format restore remains available while the new format is unproven.
+
+### The live-copy exposure `git fsck` reports
+
+Repositories are copied **while the forge is live** — there is no forge stop at 03:30, and the drill
+does not introduce one. A push that lands mid-copy can leave a ref ahead of the objects it points at
+in the archive, so a restore can show a `FSCK FAILED: <repo>` line naming a repository whose refs
+point past its objects. Two things follow, and they are the reason this is documented rather than
+engineered around:
+
+- **It is the same exposure the old `forgejo dump` had**, so the format change neither introduced nor
+  removed it; what changed is that the drill now surfaces it explicitly.
+- **A drill against the next night's snapshot distinguishes it from damage.** A missing-object error
+  that disappears on a later snapshot was a push caught mid-copy; one that persists is real
+  corruption. That is why the drill is repeatable and why its result is logged per snapshot rather
+  than treated as a one-off.
 
 ## The accepted gap
 
@@ -319,7 +385,9 @@ pins "unreadable is never fresh"; `scripts/__tests__/backup-install-manifest.tes
 committed manifest against the directory; and `scripts/__tests__/komodo-cron-retention.test.mjs` pins
 the purge job as hourly, idempotent and touching nothing but its own table. All of them run in
 `guardrails.yml`'s `naming` job, whose `node --test scripts/__tests__/*.test.mjs` step picks them up
-automatically.
+automatically. The one thing no guard covers is the **restore drill**: it needs the real host, the
+real repository and the restic password, so it is an operator acceptance step with expected output
+rather than a test, and the drill log — not CI — is what records its result.
 
 Related: [Homelab server setup](../runbooks/server-setup.md) for the phase that owns this,
 [Prod reboot resilience](../runbooks/prod-reboot-resilience.md) for the graceful-shutdown drain unit

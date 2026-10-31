@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-6e3646982d72c64cb5e2486d
     resource: repo://.forgejo/workflows/renovate.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
@@ -37,6 +39,8 @@ sources:
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-0af8f352da052e268e893ea2
@@ -57,10 +61,10 @@ sources:
     resource: repo://security/infra-images/severity-map.yaml
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T01:38:05.401Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # Infra-image CVE scanning
@@ -138,6 +142,11 @@ the gate is red — and neither can gate anything.
 
 Exit codes are deliberate: `0` ok, `1` scan/gate-relevant failure (fail-closed), `2` bad args or
 config error — including the unresolved-`REGISTRY_HOST` refusal below.
+
+Reports land in the gitignored `security/infra-images/reports/`, and CI uploads that directory as the
+`infra-image-scan-report` artifact with a 14-day retention — a diagnostic, not a record (spec 084
+FR-019c). The upload is `always()`-guarded inside the scan path, so a red sweep still leaves its
+findings readable.
 
 ## Gotchas
 
@@ -238,8 +247,10 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   the dischargeable half: the OpenSearch entry is keyed to `opensearchproject/opensearch:3@sha256:bcc17975…`
   rather than to `opensearch:3`, so an upstream rebuild — not a tag move — ends it, and it was
   re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did **not** clear the
-  advisory. The Unleash entry names both (`^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a`),
-  so any image change re-blocks.
+  advisory. The Unleash entry names both (`^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242`),
+  so any image change re-blocks — and it has already been re-keyed once, 8.2.0 → 8.2.1 in the
+  2026-10-30 Renovate window (PR #878), after the new digest was re-measured and still carried
+  proxy-addr 2.0.7 with the boolean `trust proxy` that keeps the CVE unreachable.
   `scripts/__tests__/infra-image-scan.test.mjs` asserts both directions for every formerly-floating
   repository: the key still matches today's pin **and** stops matching a later version derived by
   incrementing the pin's last number (a hand-written "next version" literal silently stopped meaning
@@ -293,7 +304,7 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   runs the wrapper against stubs so the assertion is about what it does rather than how it is spelled,
   and requires at least one matching service per file so a rename cannot make every assertion pass
   vacuously.
-- **What the allowlist actually holds today, and how to read the cohorts.** Nine entries in three
+- **What the allowlist actually holds today, and how to read the cohorts.** Fourteen entries in four
   cohorts. Two are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
   `postgres:18\.6-alpine3\.23` and `postgres:18-alpine` (the shipped binary carrying it is
   `usr/local/bin/gosu`) — kept because no reachable tag clears it, with the measurement recorded per
@@ -305,43 +316,69 @@ config error — including the unresolved-`REGISTRY_HOST` refusal below.
   PR #817 — and lives below with the rest of that cohort. With the ceiling gone, a mongodb MAJOR now
   rides the same successor gate as vault's — a dashboard tick — while patch and minor stay automatic
   and scan-gated.
-  Five are **time-boxed to `2026-11-20`** and are the ones that will red the weekly expiry check
-  first: the 2026-10-23 operator-approved `CVE-2026-114406` (ca-certificates) cohort on
-  `grafana/otel-lgtm:0\.37\.0`, `langfuse/langfuse:4\.68\.0`, `langfuse/langfuse-worker:4\.68\.0` and
-  `mongodb/mongodb-community-server:9\.0-ubi9`, plus `@sentry/nextjs` `CVE-2026-114139` on
-  `langfuse/langfuse:4\.68\.0`. All five flag EXPIRING from `2026-11-06`, which is the re-check date.
+  Four are **time-boxed to `2026-11-20`** and are what remains of the 2026-10-23 operator-approved
+  `CVE-2026-114406` (ca-certificates) cohort on `langfuse/langfuse:4\.68\.0`,
+  `langfuse/langfuse-worker:4\.68\.0` and `mongodb/mongodb-community-server:9\.0-ubi9`, plus
+  `@sentry/nextjs` `CVE-2026-114139` on `langfuse/langfuse:4\.68\.0`. All four flag EXPIRING from
+  `2026-11-06`, which is the re-check date. The cohort's fifth entry, on `grafana/otel-lgtm:0\.37\.0`,
+  is **discharged rather than re-keyed**: the 2026-10-30 Renovate window moved otel-lgtm to
+  `0.38.1@sha256:0df9bc14…730af7`, a clean rebuild on which the advisory is reported neither blocking
+  nor allowlisted (PR #878), so a re-keyed entry would have matched nothing and failed the expiry
+  check.
   Two more are time-boxed to `2026-12-01`:
   `opensearchproject/opensearch:3@sha256:bcc17975…` (CVE-2026-75595, netty) and
-  `^unleashorg/unleash-server:8\.2\.0@sha256:5020013b7a9a` (CVE-2026-90711, proxy-addr). Both were
+  `^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242` (CVE-2026-90711, proxy-addr). Both were
   re-measured, not re-dated, when renewed, and both are deliberately keyed so that a rebuild or an
-  upgrade discharges them. A comment block above an absent entry is the file's history, not a live
-  suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the
-  `next` pair) were deleted once a scan showed the fix had landed, and their prose was kept.
+  upgrade discharges them; the Unleash key was itself re-keyed 8.2.0 → 8.2.1 in the same 2026-10-30
+  change, after the new digest was re-measured.
+  The newest six are the **`CVE-2026-111497` brotli cohort** (operator-approved
+  2026-10-29), also time-boxed to `2026-11-20`, and they are the file's only entries keyed to the
+  **digest alone** with no version in the key: `^caddy:2\.11\.7-alpine@sha256:d8542f48d34a`,
+  `^curlimages/curl:8\.23\.0@sha256:11e64e28c5f5`, `^httpd:2\.4@sha256:454942557d44`,
+  `^postgres:18-alpine@sha256:77f585114c32`, `^postgres:18\.6-alpine3\.23@sha256:697c180dbf24` and
+  `^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5`. That keying is the point: Renovate proposes from the
+  registry, not from this file, so it still offers every rebuild, the new digest is scanned
+  **unsuppressed**, and the PR itself proves whether the rebuild carries the fixed brotli rather than
+  inheriting the acceptance — while the old entry stops matching. Reachability was not measured here;
+  the entry is time-boxed instead. The RustFS entry is that design mid-flight: the tree now pins
+  `rustfs/rustfs:1.0.4@sha256:ed9210d6…`, so the `1.0.3` digest key matches none of the images a run
+  actually scans — and because unmatched detection is scoped to the scanned set (item #423), it is
+  therefore **silent** rather than reported. The `EXPIRING`/`EXPIRED` tiers are not scoped, so the
+  `2026-11-06` window is what will surface it: a digest-keyed entry whose digest has moved is
+  invisible until its own expiry window opens, which is the price of keying to content rather than to
+  a version. Five of the six keys still match a reference the sweep actually scans; delete each as its
+  digest bump lands rather than renewing it without re-scanning. A comment block above an
+  absent entry is the file's history, not a live suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the
+  otel-lgtm amqp091-go trio, the `next` pair) were deleted once a scan showed the fix had landed, and
+  their prose was kept.
 - **The 2026-10-23 cohort is the file's normal shape: advisories landing on images nobody changed.**
   `CVE-2026-114406` (base-image `ca-certificates`), the `next` GHSAs and `CVE-2026-114139`
   (`@sentry/nextjs`) were published against images already running in prod, and turned
   `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) — the same
-  unchanged-pin shape as the 2026-08-29 Keycloak case. Nothing upstream clears the survivors yet: the
-  newest `otel-lgtm` 0.38.0 and `langfuse`/`langfuse-worker` 4.68.0 still ship the pre-fix
-  `ca-certificates`, and on the newest `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index
-  `sha256:2cb58a8d…`) the same advisory is the image's **only** blocking finding, so no newer 9.0 UBI9
-  build clears it today — while Keycloak cleared the *same* CVE by a same-version digest refresh
-  (PR #838), which is what this cohort is expected to follow. Every survivor is **version-keyed to the
-  pin the run actually scans**, so a bump re-blocks and forces a fresh scan rather than inheriting the
-  suppression, and each justification states that the entry is deleted once a clean rebuild ships — a
-  time-box to force a re-check, not an accepted risk without one. Three of the original seven have
-  already been through such a bump, and each time the entry was **re-keyed** in the same change — same
-  CVE, same expiry — rather than deleted, because the new pin still ships the pre-fix CA bundle: the
-  window moved otel-lgtm `0.36.0` → `0.37.0` (PR #836, 2026-10-24); spec 081 US8a moved the mongo
-  store `8.0.8-ubi9` → `9.0-ubi9` (PR #817), which also deleted the 8.0.8 entry it replaced so it
-  could not fail as UNMATCHED; and spec 081 US8 PR 8d moved web and worker `4.56.0` → `4.68.0`
-  (item #839, 2026-10-25), re-keying the `CVE-2026-114406` and `CVE-2026-114139` entries after a
-  **verify-RED** run on the new digests confirmed both still block. That same change **deleted** the
-  two `next` GHSAs instead — a discharge, not a re-key: 4.68.0 ships next 16.4.2 and neither advisory
-  appears on either image at any severity, so a re-keyed entry would have matched nothing and failed
-  `--check-expiring` (item #303). Re-keying is what keeps the discharge property live: the next bump
-  (otel-lgtm 0.38.0 or later, a newer 9.0 UBI9 build, a Langfuse release past 4.68.0) stops matching
-  and re-blocks, which is the whole point of keying on the version rather than on the repository.
+  unchanged-pin shape as the 2026-08-29 Keycloak case. Nothing upstream cleared the survivors at the
+  time: `langfuse`/`langfuse-worker` 4.68.0 still ship the pre-fix `ca-certificates`, and on the
+  newest `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index `sha256:2cb58a8d…`) the same advisory
+  is the image's **only** blocking finding, so no newer 9.0 UBI9 build clears it — while Keycloak
+  cleared the *same* CVE by a same-version digest refresh (PR #838), which is what this cohort is
+  expected to follow. Every survivor is **version-keyed to the pin the run actually scans**, so a bump
+  re-blocks and forces a fresh scan rather than inheriting the suppression, and each justification
+  states that the entry is deleted once a clean rebuild ships — a time-box to force a re-check, not an
+  accepted risk without one. Three of the original seven have already been through such a bump, and
+  each time the entry was **re-keyed** in the same change — same CVE, same expiry — rather than
+  deleted, because the new pin still shipped the pre-fix CA bundle: the window moved otel-lgtm
+  `0.36.0` → `0.37.0` (PR #836, 2026-10-24); spec 081 US8a moved the mongo store `8.0.8-ubi9` →
+  `9.0-ubi9` (PR #817), which also deleted the 8.0.8 entry it replaced so it could not fail as
+  UNMATCHED; and spec 081 US8 PR 8d moved web and worker `4.56.0` → `4.68.0` (item #839, 2026-10-25),
+  re-keying the `CVE-2026-114406` and `CVE-2026-114139` entries after a **verify-RED** run on the new
+  digests confirmed both still block. The cohort has now produced both endings, and the difference is
+  measured rather than assumed: that same change **deleted** the two `next` GHSAs instead — a
+  discharge, not a re-key: 4.68.0 ships next 16.4.2 and neither advisory appears on either image at
+  any severity, so a re-keyed entry would have matched nothing and failed `--check-expiring`
+  (item #303) — and the 2026-10-30 window **discharged** the otel-lgtm entry the same way, because
+  `0.38.1@sha256:0df9bc14…730af7` is a clean rebuild that reports the CVE neither blocking nor
+  allowlisted (PR #878). Re-keying is what keeps the discharge property live for the entries that
+  remain: the next bump (a newer 9.0 UBI9 build, a Langfuse release past 4.68.0) stops matching and
+  re-blocks, which is the whole point of keying on the version rather than on the repository.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count

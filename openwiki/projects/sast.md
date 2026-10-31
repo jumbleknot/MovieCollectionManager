@@ -19,6 +19,8 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
+    resource: repo://rust-toolchain.toml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
   - id: openwiki-source-cf7a80239370178114067d03
@@ -29,6 +31,8 @@ sources:
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
   - id: openwiki-source-b24a848c671edad8616a78b0
     resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e

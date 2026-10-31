@@ -4,6 +4,9 @@ title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-31T00:28:11.002Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -57,15 +60,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/stacks/README.md
   - id: openwiki-source-9718a90a7733637f39e0b867
     resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
+  - id: openwiki-source-482173336861a06249bf1372
+    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-864993a079e6e4df052ac4ea
     resource: repo://scripts/gen-ci-env.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-c1c739d605caccb56fa33851
     resource: repo://specs/073-scheduled-backups/spec.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
 ---
 
 # System overview (MCM)
@@ -301,6 +303,16 @@ common source of confusion when reasoning about "why can't this user do X":
   and password file arrive in a named **volume** written by a one-shot, not a bind mount — the dev
   container's Docker is a sandbox microVM that shares only `/workspaces`, so a source path outside it
   does not exist in the VM and the daemon silently creates an empty directory there and mounts that.
+  The RustFS half of the same file is held to a written contract by
+  `scripts/__tests__/object-store-service.guard.test.mjs`, which enumerates the three git-tracked
+  compose files carrying a RustFS server — this one plus the dev and prod observability files —
+  asserts it *found* a server and an init in each so the rest cannot pass vacuously, and then
+  requires one digest-pinned `rustfs/rustfs` image shared by all of them, **no `user:` key** (the
+  image runs as its own uid 10001 and a fresh volume inherits `/data` from it, so any other uid dies
+  at startup with `Permission denied`), `RUSTFS_*` credentials with a fail-fast secret, the
+  `/health/ready` probe, bucket-init credentials read from the container's environment rather than
+  argv, and the console closed — with the backups file publishing exactly `127.0.0.1:9100:9000` and
+  no `:9001`. A destination container that violates one of these is a red guard, not a style note.
 - **Bringing the destinations up is two servers plus two one-shots, and CI asserts all four.** The
   store does not auto-create a bucket, and a driver suite failing on `NoSuchBucket` looks exactly
   like a driver bug, so `mcm-bff-backup-rustfs-init` PUTs the test bucket;

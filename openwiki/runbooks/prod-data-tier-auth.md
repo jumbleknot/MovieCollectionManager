@@ -6,8 +6,10 @@ resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-30T00:25:37.413Z
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
@@ -22,10 +24,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-fa3a87df52d837aa49b86894
+    resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
   - id: openwiki-source-a6996cae4bd83db81e823602
     resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-9718a90a7733637f39e0b867
     resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
+  - id: openwiki-source-f8f2427f127614b5db674fca
+    resource: repo://scripts/cd-dispatch-gate.mjs
   - id: openwiki-source-91fe8d515f906bfe802750e0
     resource: repo://scripts/cd/health-probe.sh
   - id: openwiki-source-f7c18c5bafd858a90cb17c5d
@@ -36,6 +42,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -48,8 +55,8 @@ One runbook covers two operator procedures on the same two production MongoDB st
 2. **Feature 081 US8a — move both stores from `8.0.8-ubi9` to `9.0-ubi9` (9.0.4) in place**, on their
    existing volumes, with the movie data preserved.
 
-Both are deployed the same way as everything else in prod: **merging to `main` triggers a Komodo
-ResourceSync**, not a manual `docker` command against the host. The source runbook,
+Both are deployed the same way as everything else in prod: **merging to `main` starts the CD path that
+ends in a signed Komodo redeploy**, not a manual `docker` command against the host. The source runbook,
 [`docs/runbooks/prod-data-tier-auth.md`](../../docs/runbooks/prod-data-tier-auth.md), is authoritative
 for the exact commands, the `Expected` output of every block, the baseline/verification counts and the
 rollback drills; this page explains what each procedure achieves and when to reach for it.
@@ -173,7 +180,20 @@ The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises
   `trigger-cd` job → `cd-deploy` (deploy=true) → the signed Komodo webhook → the changed stacks
   redeploy in `after` order: **`prod-mc-service`, then `prod-mcm-bff`**. Main's CI runs first, which is
   the delay. The deploy order lives in
-  [`stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml).
+  [`stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml). Two qualifications matter to an
+  operator reading this bullet as a promise:
+  - `trigger-cd` does **not** dispatch unconditionally. The decision is delegated to
+    [`cd-dispatch-gate.mjs`](../../scripts/cd-dispatch-gate.mjs), which declines a **superseded**
+    commit (a newer, non-`[skip ci]` commit is the effective tip), a merge where **nothing deployable
+    changed** since the last promotion commit, and a commit whose `guardrails*` contexts are not all
+    green — publishing the answer as a `cd-dispatch / trigger-cd` commit status, because `trigger-cd`
+    itself is advisory and a declined deploy would otherwise be invisible. The dispatch requests
+    `main`'s **tip**, not the merged sha, so a merge that a later push supersedes hands the deploy to
+    the newer commit. A docs-only merge to this runbook therefore does **not** deploy.
+  - `cd-deploy` serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false`,
+    so a second merge never cancels an in-flight production deploy. It is also `workflow_dispatch`-only
+    (no `push:` trigger), with `deploy=false` as the default: a manual run with `deploy=false` builds,
+    scans, pushes and promotes the digests **without** firing the webhook or the probe.
 - **The post-deploy health probe does NOT notice a broken Mongo.** It polls only the Keycloak OIDC
   issuer and the public app host for a 200 (`scripts/cd/health-probe.sh`, invoked by
   [`.forgejo/workflows/cd-deploy.yml`](../../.forgejo/workflows/cd-deploy.yml)), so a store that failed

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a48ccafdbb4bed578edfb1ed73e20cbcc65396e6bb8a3c2594b19fcddc628a39",
+  "pageVersion": "sha256:826970548c5a61ef3cb46bbb46e3e24911be3543ec4d6cdde287c1bca384d331",
   "claims": [
     {
       "id": "claim_9226997034364eb9b148a34270defeae",
@@ -121,7 +121,7 @@
           "version": "repo-lines-v1:sha256:10057f2bc65bff64d8d2d36b37309f0f9a5a246885e25d2a925f077504147c26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjk4YzI1MDE0YjNkMDc3NmQzZDc0MWI2MTU3ZmJjMGQ1ODRhMWVjNGQyNjI2MWMyNTUwZWEwOWM4YWQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMTQ4YjEyYjY4ZTQ0MWNkMmE1NDhkMTFkYTUwYmNjMTM0OTk5ZjUwZDE2NGFkNDMzNjkyODQ1MWVkYzYwN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWE3OWUxMjRmNzliYzNmYTNhYzIzODI0NTZiMWUwYjIxMjc1Y2EzYzkxYjJmNmViZjdhZmRlYjlhOWU3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiN2JiNDJlZGE0YzMyOTcxZjU5YjU1MzYxMGI2MjliZGJkYzg3ZjRiZTIyZTA0ODU1YTlkYzJjNzM2MDhiNDYifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L43-L44",
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L66-L67",
           "version": "repo-lines-v1:sha256:d0e8898c0de25dba988845769e5edfa6703b2424007361afbfbb7614f131e6c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzNDk0MGI1YzRiMzFiMzY4YTQzOWZlM2ZjMjkzNmNlY2Y5NjYxMWJjZWU0MzMwMDJkMmI2OTM5Zjk2YWFhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3YTI2N2I4NTIwOGQ0MjhlZmJhYjcwOGIwZjU1OGViZjgwZGQ0OWVkNzkzYmExM2Q5MzVlNmY5NTYwMTNkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWMzOGZkZGYxMGZmOWZkYmM4ODkwM2E2NWUyYWFlOTI4ZmJlMTk5ZDgwMTYxN2QyODY2OTc2MWRjOTVjNDY4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI2MzkyODRmYjhhMjAzZjBiMGUyNmQxNmQ5ODg4ZTE0YWZhMDdhMzU0NjliYWIxYjNjY2E1NmZhYzBmZTE0YyJ9"
         }
       ]
@@ -131,7 +131,7 @@
       "statement": "The periphery root fix is host state: `PERIPHERY_ROOT_DIRECTORY` must point at a path on persistent disk and periphery must be recreated, and the server-setup runbook Phase 9 now bootstraps that value so a host rebuild cannot reintroduce `/etc/komodo`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L861-L867",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L863-L869",
           "version": "repo-lines-v1:sha256:e97a152aa2dee73d2e4909e4687ba19a29338ecb19a68bd98b176e6a4c0314c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkNWI4NmFjYjg4OWU1Mjg0NzBlZjkyNzNlMjI5NzI4ODkxOWQzMTZmYmY4MjIyNTQyYmNkYjMyZTAxNDVjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1Mjk3NmNhODBmYzg2YzJhY2E5NjVjNDFkNTAwYTk4YTQwMGIyY2EwOTNlOGE5OTRkNWI5MWEwNzRlODM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTViOWY3NzhkMzQwMTM4YWExNzYyYmNlMmQ5OGU3ZmMxNmQyYTE2YjIyZDFiZDkwNTViZTY2MTRmZDYyODVmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZmE0OWRlY2VhZDQwZGVhNzNhZDRhNDA5MTBhMGY0NDE5ZDc2MmE0ZTY5YWQ2M2NhMzJmNjQxYmU4NGU4MyJ9"
         },
         {
@@ -274,7 +274,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
-          "version": "repo-lines-v1:sha256:066adfbba0dc09da0b73c692163cb2ede4678cc094fd80f8e22b9f8755a27815:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+          "version": "repo-lines-v1:sha256:219ca97909e054ab9f713506fa022ad9224e42620154bdd9ffeb4557ceff3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L69-L103",
@@ -399,10 +399,28 @@
           "version": "repo-lines-v1:sha256:cc404da751e934b8c2dca3271950bbb37899dc4573558fdc341b5f6712b2d9c4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdhNWQyZjdiOTk1YjIzNDI1YmQ1MjZjNDZjNjk0M2I5Y2RjM2UyZTkyNmU2NmMyYmUxMjJjNjhiYTRiNTA3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg5NDBkN2M2N2RiOTMyZTc0Zjk1NmQzZmE1ZDFlZmYxNWI0NGRlNTYyMWRkY2Q5NDMwZjc5Yzc1M2U3ZWY4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjExZDFhOTJjNzFiMmY4M2NlOTFjYzNhMzA1MTkyYjYwMTRkYWIzYWZmNTMwMjhmYTczYWMzNmY4M2YzMWEyNyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a071d47ed05d41aab63dda0609f0fc43",
+      "statement": "The three one-shot containers in the prod composes — `agent-audit-init` (provisions the write-only audit user), `langfuse-rustfs-init` (creates LangFuse's object-store bucket) and `unleash-seed` (seeds the default-off flags) — provision idempotently and then `exec sleep infinity`, so they declare `restart: always` like every other prod service; a container that exits makes Komodo count the whole stack unhealthy, which leaves the restart-policy gate's `no`/`on-failure` exemption for init/seed names currently unused in production.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:b16518b8f60611f2ea5ddfaf3286b5a041b4f8d01ed0f07d2dcc0e9d20efe4be"
+        },
+        {
+          "resource": "repo://scripts/check-prod-restart-policy.mjs#L33-L56",
+          "version": "repo-lines-v1:sha256:0b0d517271a5ba81886166ab56157817a8af12aa64ca1c7f6f682d04b0ecb962:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZWM0NGM2ZTI2NzMyODMxMzhmNmZhZjI4MDBhNTFlNzc4ZmI2NTc2NzIwZDliYjc0NjE4NzlkM2EyZDM3M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTNlNDBhYjQyMTc3M2M2YjMyOTAxOTQyMDc1ZmY1NzM0ZGFiZWU4MzZlZjQ5MTczMmQ4M2JhZDQxNjFjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MzFkNDQ3NTc4NTQ0NTEyNmRlY2QwNWNhM2RkMjRjMmYxMGFjZTkxMjZkMmRkMzA5ZmQ3Mjk0OTAzMDQ3NjQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T17:33:57.993Z"
+    "at": "2026-10-31T00:28:11.002Z"
   }
 }

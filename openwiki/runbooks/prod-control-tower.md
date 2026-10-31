@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.3 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration, both of them completed in production — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration, both of them completed in production — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
@@ -63,10 +63,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-10-31T03:40:23.288Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -254,7 +254,7 @@ Full failure-symptom table and the reproduction recipe:
 The Langfuse event/media store was a from-source MinIO image built by this repository until feature 080
 replaced every instance with upstream `rustfs/rustfs`, digest-pinned and pulled rather than built. Every
 shipped instance — the dev and prod observability composes and the backups compose — pins the **same
-1.0.3 line on one shared index digest**; the digest itself lives in the compose files and moves only
+1.0.4 line on one shared index digest**; the digest itself lives in the compose files and moves only
 through Renovate, and `scripts/__tests__/object-store-service.guard.test.mjs` is what holds the shape
 (the contract it enforces is `specs/080-minio-to-rustfs/contracts/object-store-service.md`, S1–S9). The
 prod instance runs as the image's own uid (`10001`) with **no** compose `user:` key — a fresh named
@@ -419,8 +419,8 @@ UNMATCHED entry (the `langfuse/langfuse:3` suppressions are deleted by the merge
 re-blocks if the advisory ever returns).
 
 **Since the cutover, the ClickHouse pin has moved further — and that is not the same free lunch.** Both
-observability composes now pull `clickhouse/clickhouse-server:26.6`, two majors past the `24.3` this
-cutover started from, arriving through a routine Renovate image update *after* the cutover and over live
+observability composes now pull `clickhouse/clickhouse-server:26.10`, two majors past the `24.3` this
+cutover started from, arriving through routine Renovate image updates *after* the cutover and over live
 production traces. §4's "recreate the volumes" ratification applied at this cutover only; it does not
 make later majors data-free, and the observability stack is not started by the end-to-end CI job, so a
 green CI says nothing about a ClickHouse major. Stateful datastore majors (ClickHouse, Postgres, Redis,

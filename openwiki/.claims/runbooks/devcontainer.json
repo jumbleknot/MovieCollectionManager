@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3f652b4159356190744063265302e3c061e6706b4533087f951367f73d78ec81",
+  "pageVersion": "sha256:2046638c5c8c814595898b5288b02d129e34a56d16240fc9093ba233d39e19d0",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -134,7 +134,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L27",
-          "version": "repo-lines-v1:sha256:3a93ecf160d73ab4a2cf174abad8b501f2b536f82950506e6a5ff1b1a52bb7bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
+          "version": "repo-lines-v1:sha256:b6358ad28409a7cdca64700b80e5ea22919177acf64d76b820b6c8ca1c2d3884:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-ollama.sh#L1-L15",
@@ -380,11 +380,11 @@
     },
     {
       "id": "claim_fee2a793adf84f078f7a3d5e26375ae1",
-      "statement": "The dev-ollama compose file pins its image by tag AND digest (currently ollama/ollama:0.40.6@sha256:265409e1…, bumped deliberately rather than floating), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
+      "statement": "The dev-ollama compose file pins its image by tag AND digest (currently ollama/ollama:0.40.11@sha256:dea72d1e…, bumped deliberately rather than floating), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L36",
-          "version": "repo-lines-v1:sha256:e1b0373fe621a8199046bc6b29721eec0276290c1e9f05bbdc62bf26e8807bff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:8e300117c1b300e89110f42d81aea30b57512c206385b325afaeaa4912698bb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -573,10 +573,24 @@
           "version": "repo-lines-v1:sha256:ad8976b5c4a0477cb3633ff2f5cb5ac92337566f57d84c4524e6cac21f8900be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OTIyOTE4MDc0NTE2YzBkYzhmM2E4ZGU3NTRkZTBjMjIxZTYwMmUxYjFkZjM5YTA4NzgxMmFhY2ZhY2RhZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxM2JhOWZiMzg0Yjg4NDFjNmU1OTAzZGExYThmMmY3OGYwOWVhZjczNDNjMDU3NmFmMzE1N2Y1MTg2MDlhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZjlmYjE0YTAyOTI2MDMyYzA5OWE5MDk0MDU1OWU5OWUxZjQxMDUyZDg2YzczMjBkNDQ0NjBiMTgzMzliZjIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_05ea6a782210495cb135bce86d7e2938",
+      "statement": "infrastructure-as-code/docker/dev-ollama.compose.yaml is a dev-only helper, deliberately not part of the prod/homelab agent stack: feature 019 removed containerized Ollama from that stack, whose gateway serves via host Ollama. It exists only because nested DinD broke the host-Ollama path (host.docker.internal now resolves to the dev container rather than Windows), and it is brought up solely so heavy agent-flow iteration can run locally instead of on the paid Anthropic API.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L1-L13",
+          "version": "repo-lines-v1:sha256:0d7617668401ef75d26729f94d72679388e143e3c1bcf238fedb9b2ed04b880e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyMTVlZDBjZDMwODdjOWIzOGNmNjAwZTNjNmU4M2Y3ZjA4Nzg3MjdiYmRlODYwMmQ4ZDhhNmYyNDIxNDE2NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZWU1YWM4ZmY3OWM1NDBmMzMxZWI5MTEzNDQ0MjkzOTE1MmM2NWZjNWM5YjgxOWYxNjcyNThlMjY1OGFlOTUifQ"
+        },
+        {
+          "resource": "repo://scripts/devcontainer-ollama.sh#L1-L13",
+          "version": "repo-lines-v1:sha256:1fa34a7288903f90f1f2d7ae3e6dd9154e6e8526adc9aeef34e701a597bb2b1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjOTUwNWI4ZDY1NzdmZDNiNmM0MWJjNmNjMGNlMDBhMTNjMTUxNzE4YTU0NmQxOWE3MGU5NjI0NzQxZDhmNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDg0NWFhZjViOTk1YmZkNjRjYjU0ZDM0NGJjNzg2NTVjYzk1ZDY1M2U2NTgxOWFhYTM1ZGFmNmQwMmEwNDAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T20:35:10.714Z"
+    "at": "2026-10-31T00:28:11.002Z"
   }
 }

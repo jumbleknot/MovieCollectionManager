@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f1ee0cbfdabdcae46f22284fa79eb9293824266974f2fc483802b34762688bf4",
+  "pageVersion": "sha256:7793b48604edd4e4bb7de15a6bc95dc9f07746b63bfbe322358004739f6344be",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
+          "version": "repo-file-v1:sha256:16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094"
         }
       ]
     },
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
+          "version": "repo-file-v1:sha256:16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
+          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
+          "version": "repo-file-v1:sha256:16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -90,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
+          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -108,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
+          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
@@ -122,8 +122,12 @@
     },
     {
       "id": "claim_b33f5d6092f5444993d723b3d263edff",
-      "statement": "Alerting has two independent paths onto one backlog item, titled 'Prod backup: failed or stale'. Path one is the run's own failure: backup.sh exits 1 and OnFailure=homelab-backup-alert@%n.service on homelab-backup.service runs backup-alert.sh failed <unit>, with a run killed by TimeoutStartSec=2h reported as hung rather than failed (a whole run measures 8-10 min). Path two is a separate 6-hourly staleness timer and service running backup-staleness.sh, which reads the newest homelab snapshot from the backup repository itself and alerts stale past 36 h, or staleness-unreadable when it cannot read the age at all — 'could not tell' is never reported as fresh. Neither the alert unit nor the staleness service declares OnFailure=, so a failing alert does not recurse and a stale check is not double-reported.",
+      "statement": "Alerting has two independent paths onto one backlog item, titled 'Prod backup: failed or stale'. Path one is the run's own failure: backup.sh exits 1 and OnFailure=homelab-backup-alert@%n.service on homelab-backup.service runs backup-alert.sh failed <unit>, with a run killed by TimeoutStartSec=2h reported as hung rather than failed. The measured run time makes that timeout unambiguous: about 65 s for the eight-dump format (2026-10-29) against 8-10 min for the old single forgejo dump (2026-10-22..26). Path two is a separate 6-hourly staleness timer and service running backup-staleness.sh, which reads the newest homelab snapshot from the backup repository itself and alerts stale past 36 h, or staleness-unreadable when it cannot read the age at all - 'could not tell' is never reported as fresh. Neither the alert unit nor the staleness service declares OnFailure=, so a failing alert does not recurse and a stale check is not double-reported.",
       "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1063-L1063",
+          "version": "repo-lines-v1:sha256:4b2be711eb1c9d9d91cc5e6c89a836159ed9630554007fa78aa035108fe89483:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyYmU3MTFlYjFjOWQ5ZDkxY2M1ZTZjODlhODM2MTU5ZWQ5NjMwNTU0MDA3ZmE3OGFhMDM1MTA4ZmU4OTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyYmU3MTFlYjFjOWQ5ZDkxY2M1ZTZjODlhODM2MTU5ZWQ5NjMwNTU0MDA3ZmE3OGFhMDM1MTA4ZmU4OTQ4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMyZGVmODVjODhkOTMwZDRjMWYxMzA5M2FiZTIwNDJkMGQ5NWQyYTIxYTIzMmQzZGM1NTZlNTU4OTljMTIyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEzNDU5MmUyYzE4ZjUxNWZlNjg2ZjA2OTk4YjBiMWIzZDg2OGYzZGIwMTJjNmJlODA3M2E5M2VlMTE1Mzg0MyJ9"
+        },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
           "version": "repo-file-v1:sha256:403ac4d20a966bbca9362c734d8b6d1bcc577c299bfaf43613499b0afddcfe78"
@@ -141,8 +145,8 @@
           "version": "repo-file-v1:sha256:bf7ac8f429b7a731e3cbbd964f29ab4edaa5a00f7ec97afecdaefd5ec0a08071"
         },
         {
-          "resource": "repo://scripts/__tests__/backup-units.test.mjs",
-          "version": "repo-file-v1:sha256:f871cfec98ab4739bc5e06aa6f1fa4003c3bf07f6ef04d6c36b3df5ad9d06b6e"
+          "resource": "repo://scripts/__tests__/backup-units.test.mjs#L31-L60",
+          "version": "repo-lines-v1:sha256:c57441af3bda1d678f1301ade4f0a04d5d0f29b284e07747b9191507745e9324:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOWEyZTk4MTNjZjYzOWUwZWU5Y2RjNGIzYWMzOWZkM2QyYmQ1M2VmYThiZTBiNzQzNWJmNTYzNzkxYzhlZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OGY1NDYyMWY3M2JlZDQ4ZjgwZjFlMjkxMTgzZjc5YWQ4MjIyZmE3YWI2YTIzN2Y5M2MwZjNiMTg5NDYzNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
     },
@@ -198,7 +202,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/backup/README.md",
-          "version": "repo-file-v1:sha256:cbefd7777b9c4b5748cac2f00f4f8b2477de342bdd35dda977588c418f2976c5"
+          "version": "repo-file-v1:sha256:16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094"
         },
         {
           "resource": "repo://scripts/__tests__/backup-install-manifest.test.mjs",
@@ -230,7 +234,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
+          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -244,11 +248,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:f1cf1e65d23cd8dcc90f81b0493c287e91ff5b74ae0eab042c0a0f8800a8bf50"
+          "version": "repo-file-v1:sha256:f91a7eaea4a1fd786490593965a295997992d0800de6c3303fab6bb44b0cd57f"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
-          "version": "repo-file-v1:sha256:5c65876cbd40fc41759d2722c30ff528f71c3504bf8baa9efd7b574d4c935a1e"
+          "version": "repo-file-v1:sha256:9807738fed118c5af3a51fa23fb9d78734a398505a05e3ef17fbbf6f612babca"
         }
       ]
     },
@@ -393,8 +397,8 @@
       "statement": "The install/verify contract rests on three host tokens, each created in the forge UI for this host alone with exactly one scope: ~/backup/forge-issue-token (issue read and write) for backup-alert.sh, ~/backup/forge-package-token (package read) for the release-apks dump, and ~/.config/mcm-forge-read-token (repository read) for the ~/mcm-main checkout, which clones through a credential helper so the token never enters the URL, argv or .git/config. MCM_FORGE_URL in ~/backup/alert.env names the forge as the host reaches it for both the alert and the APK dump, and the real host is never committed.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/backup/README.md#L25-L66",
-          "version": "repo-lines-v1:sha256:dbaaba88841029224f5faf09c97820e40d967f02ff9f43d21b861d645be44df2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYTI0MDNhNTZlNDVhOTlmNDJjMzAyOTNkZjRjMTgzY2I5Y2JiNjE4ZjViZTY2NDM2YjA5NjY5NTBiNzAzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MmU4ODQyMzI0OGMzMjRhZDAyNGUzMjg1ZGQ3OWJmNTc4ZjFlY2JkMTE4NjQ5NGM5M2QxN2Y4ZTRjZjdiM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjA0ODJkZTM2OWRkZjQ2OWNmNzFjMTNhMmNkMjdkZjRkYzYwY2JlMTQzOTU4YjRjZDY4NjkzYjMwMjFlNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4ZGM4MzVlNTgyYTNiYTRjMGRlNWYwZTUxNjdkNTBjNzI3ZGVlOGMzNTg4Yjg1YTk3YzVlYWU2ODFjYjEwYjIifQ"
+          "resource": "repo://infrastructure-as-code/backup/README.md#L25-L68",
+          "version": "repo-lines-v1:sha256:401daad68d57694e56518bd31c7b01f637037a195868a4307f9934d123ebbff7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYTI0MDNhNTZlNDVhOTlmNDJjMzAyOTNkZjRjMTgzY2I5Y2JiNjE4ZjViZTY2NDM2YjA5NjY5NTBiNzAzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MmU4ODQyMzI0OGMzMjRhZDAyNGUzMjg1ZGQ3OWJmNTc4ZjFlY2JkMTE4NjQ5NGM5M2QxN2Y4ZTRjZjdiM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjA0ODJkZTM2OWRkZjQ2OWNmNzFjMTNhMmNkMjdkZjRkYzYwY2JlMTQzOTU4YjRjZDY4NjkzYjMwMjFlNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4ZGM4MzVlNTgyYTNiYTRjMGRlNWYwZTUxNjdkNTBjNzI3ZGVlOGMzNTg4Yjg1YTk3YzVlYWU2ODFjYjEwYjIifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-alert.sh#L35-L41",
@@ -433,7 +437,7 @@
       "statement": "The once-after-install proof that the alerting works is an induced failure: point the run at a repository that does not exist with systemctl --user set-environment RESTIC_REPOSITORY=..., start homelab-backup.service, expect exit 1 and an 'alert delivered' line on the alert unit, and restore the default on the same line — an interrupted override stays set and every nightly fails until it is cleared with systemctl --user unset-environment RESTIC_REPOSITORY. The staleness path is exercised the same way with MCM_BACKUP_STALE_HOURS=0, which must produce an exit 1 and a stale comment on the same item.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/backup/README.md#L130-L152",
+          "resource": "repo://infrastructure-as-code/backup/README.md#L132-L154",
           "version": "repo-lines-v1:sha256:6834d0ab73615f9bbbe18936f4de4792c5410c9fdb812cc2ac82a5e3d935cfc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTNmMTMyMTZhMjViOGQ1Y2E3MjdjMTI2Y2NmNjZmOTlhMDBiZDQwYjUxOTk3YmUyYzgwYmY2M2NkMTE3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlZTU3Y2Q1ZjNlYWFkODZiMTgzNzYwNzEwN2NhMTM4M2M2Y2RkMzRjNDMwODBmN2ZjZTY3MWEzZDMxZDY5MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNjhlOTUyMWFhZDRiM2EzNTgxYTMwOTk1MjdiYzY4ZjMwNGRiZjY2NTEzZjM1YTc3MDg0NjA4OTY0NjIzMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5MDdmY2U5N2E1NWE5NWQ4ZjFkZmE4NTMxYzZkOWU0OGM1YzIyODYxZmYwYzY0YzFjMTZhNGVjZjY1MDBhZDAifQ"
         },
         {
@@ -441,10 +445,82 @@
           "version": "repo-file-v1:sha256:856a2e740280493a14b656a14748e150da3db6f2f7b968658452a03baf7fc2e2"
         }
       ]
+    },
+    {
+      "id": "claim_d208834281474c7992be01e7a05dc526",
+      "statement": "A restore drill (spec 084 FR-006) is the only proof that a backup's contents can actually be restored, so it must be run after any change to what the backup carries and at least quarterly - a change to the dump format invalidates the previous proof. It must not be run between 03:00 and 04:00, because restic forget --prune needs an exclusive lock, so a drill still reading the repository at 03:30 fails that night's run loudly through the alert. It costs about 2 GB free under ~/backup and about 1.5 GB downloaded from the NAS, runs in a prod session, and never touches a live service: the scratch containers start with --network none and need no credentials, while the live containers are read only to copy their image or count their rows.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1143-L1159",
+          "version": "repo-lines-v1:sha256:e590e688ca696323728c80ffc258076ae35e95b9bc0e86c3be8f9eb890b5b512:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYmJlY2FiYzJiODg4ODg5YWYyMWE0MjEwNjE4Nzg2YzQ0OTA0MzYzZDVjMDBmMDZlNmE5Y2QxMWU2Njk5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZDIwODNiOGYxMTliNjY3Zjk0ZWI5OTRmZjEyMGEwM2JlODU1ZWY3OGVjYjgxMDk0Y2RiYmZiZjI3NzM2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMGNjZGI5MjI3MWU2MTE0ZGJlZDFlMTA5ZjRiN2U4ZTRiYmY4YTQ5ZDc0ZmJhMzMzZTNkMDA0OGUxMTVkYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWQ3MWRhYmZjZDIwZTUyNTY4OTU2N2NkNmZlODBiM2FkZDBhMGFkZTA0ODQyZjUxMzQ0ZTM0MTE3Y2RlMGQifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/spec.md#L370-L371",
+          "version": "repo-lines-v1:sha256:a416562680170a723ef4ab5917f178e0277662edff44706ffa87612c8399f8e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRhNTBhMTUyNTFmMjhkNzRkYzM1MjZlZmNiNGJlNDg5MDg2MzQyNmI5YTA2MmY2MGFmZjYzMWQxYzM5MDFmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjYTNiODY0M2Q0MzU5YTkwYWZkMjUwNTczZDE2ZjVjNDcxNTA4NGRmMDRmZTcwYWZmNzIzOWFhY2U0ZTg5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDRkMDMxODBiZGM4ZjMwYTk3YTZmZDhiYjMwMDFjNTllZTc0YzI0OWI5ZjllMDYyMmE1MDg4ODgwNzIyYzIwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNhMTM2MjUyNzc2YjY2ZmZkZjhkOWVkZjQ1YjU1MjNlOGI1OWQ4Yzk3Yjc3NDY0YjcwZGY0MGJkNmYyYmZiNSJ9"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L437-L445",
+          "version": "repo-lines-v1:sha256:9876666c665e6523071e7e8dbc72cf9f5c2822d9bdc7db73cbc08c5a7057e49e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwODc2ZmNmMTZjNjI5NWJmNTMzNTkzNGNkNjg1NzQ4ZTAzMDdlY2M3YjNjMTM3MzBkMmIxOGUzYjNjYWNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUxYzcxMmQwNzhkMmRmMmFkODk5NTcyZTM0Y2FjYjJlYmQ4NjhhYzlkYTM1Yjc2NTg4ZWRiYjYyZmI5ZmQ3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQxY2EyYTZkYTkwYjUzNDFjMzg3MDBjM2NhMmI1YjdiNmJjNjM1NGJiZTYwNjQ4MmY4NmZiZWY5NGM4MGQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZhMjI1NjY0OWM3MDQxNzNmZTA4Zjg3ZjIyOWU1NDBjMjJiYjUzZTExYzhkYmUyNTQ2NGE5ZGQ4ZDI4OWM1ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_60962d8a73c144db822d491c6fdb85a9",
+      "statement": "The drill restores the three dumps that matter most and judges each: forge-db into a scratch Postgres with its repository, user and action-run counts compared against the live forge; forge-data untarred into a scratch directory with git fsck --connectivity-only run over every restored repository, not only the main one; and mc-service-mongo through mongorestore --archive --gzip with the collections counted. A drill passes when the forge database restores with no errors, fsck reports bad=0, and Mongo has more than 0 collections. It cannot run in CI - it needs the real host, repository and restic password - so it is an operator acceptance step and the runbook's drill log (one row per drill: date, snapshot, each restore's seconds and counts, result) is the record of what has been proven, not a test.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1160-L1213",
+          "version": "repo-lines-v1:sha256:2de4408eb15a973f3f5bfe6f6e583ab067fe0afb4f3f8ddf3cd1a296d40bd03b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YTA0ODBkNDE3ODNkY2U4ODVlMGZlNWRjN2YwNzY5Zjc0MDcwMGM4NmE4NDY5ZGYyMTk3YjVlYTdjMmRmNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2E0Nzg3MjdkMzk4MTViNzg3YTRmMzU5OWE5MWQ4ODJmMWM5NTkxMTllZTVlOTQzYTA1YzRlZTE0NTEwZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTU3MmU1ODA4ZjE1ZjY1NTMxZjFlYzNjZjE2NTFjZWIzMGQzM2JhYjM2MjhjZThmOWJjN2ZhNzQwNzA1OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Y2ZiMzZhMTJmMDgyMjVlNWRmMTRhMWVjNWFjZjQ2YWE4NWFjYWYzNmZlMWMzZTFjNDNhMTI0NDE4NmZlZTkifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/quickstart.md#L96-L101",
+          "version": "repo-lines-v1:sha256:983c41b0918cb27af97789dd927666309155823964cfa99e0de9e45c73f41ff7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhMmNmOTA0MGJkNDIwMjEyM2U2OTNkNGMyODMwNGY2NWQ1NzdjMDY3N2YxODdkMjJhZDdkZmQ5NjJkOGZmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTYxMDNkYzI5NTQ3YWYwYWVkZjZlNTkxYmE1YWExMTk4NmIxNWVmZTcwZjEyMzBiYjZmZTQ4YTdhMzBmMzVjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM2NTg3ODA5NmY0NjY4MGNlNTcyMTdiMzQ4YzczZmI0Zjk4ZjFhOTFlOGRmNjA2MGYzZmRlMDY4ZGM3MDE4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA0YmFmMzQ1MTY4MzQyMzExMWJhNzM3ZDJjYzRmN2MxOGE4ZjgyMDdkNzFiZDllZDg0N2ZkZWMxNjY4YWQ1YyJ9"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/tasks.md#L427-L449",
+          "version": "repo-lines-v1:sha256:dac0a06bd4366385fc47bb0db47935d5298f711f740cd786081743a23314950e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZTc1MTljM2UzMWYwNTg1ZTdmNGIxYjcwZGFlNGUxOTlkNjkyYTM2MzQ5ODRmZWQ3ZGFkNjEwYWM4ZGViOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjNkMDRmYmE2NTZhMDVkZjQ1NjRjYmYxZDZlZjZjYTI1ZjBhOGVkNDE3ZmIwZmUwNDg3YjI1NWYzZDMyYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjZlNjRmODE5NjZhNWQxZGQxMWFjNmJiNDMwZDUyYzI4YWJlMzg1YWFiYWRjYmFlYjFjMzZjM2Q0OGE1MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ODE3ZDcyYzYyOTVmNDJhZWM4Mjg3YTVjNWExNzI0MGQyNDJhOTAxZDg0ZWUwNGNiNWE3MTllOWZmYWRkODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe9e292afeab443da65e679a078479c5",
+      "statement": "The post-spec-084 forge-db + forge-data restore is UNPROVEN: the runbook marks it unproven until the restore drill has run against it, and its drill log reads 'no drill yet against the spec 084 US4 format'. What was proven is the restore of the old forgejo dump SQL snapshot, on 2026-07-05. Until the drill passes, the fallback is retention itself - the old-format snapshots stay inside the 7-daily / 4-weekly / 6-monthly window and remain restorable.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1136-L1136",
+          "version": "repo-lines-v1:sha256:77e0336e9f5ad4ebd57c724553c01c3f12e0348c98d04a22acf97e9184cac3d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlMDMzNmU5ZjVhZDRlYmQ1N2M3MjQ1NTNjMDFjM2YxMmUwMzQ4Yzk4ZDA0YTIyYWNmOTdlOTE4NGNhYzNkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1209-L1215",
+          "version": "repo-lines-v1:sha256:024c4d1a34d8ce50fb45f4a13c68ea6da1d8a67f2507569cc9fb9005391ba833:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxMjIwMmM1Y2VmMTE1OTk2NTc0ODNhNWQ2OWFmMWMyMjgyMDgyMDg1N2Y3ZGRiMDI3NjZmNmFkMzVhNTAxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFkYjJhZjViYjRjMjczYTI1NTZjOGIyZDhkYzVjMmRjN2NhNWNmZDcyNmQ4ZTBhZjIxOWE4M2NkMjkwOTIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/plan.md#L198-L198",
+          "version": "repo-lines-v1:sha256:d2996f95e7e292857ef32f7b7d41fe98c662b724c84c87ac3a6a013bbc9eec67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI5OTZmOTVlN2UyOTI4NTdlZjMyZjdiN2Q0MWZlOThjNjYyYjcyNGM4NGM4N2FjM2E2YTAxM2JiYzllZWM2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI5OTZmOTVlN2UyOTI4NTdlZjMyZjdiN2Q0MWZlOThjNjYyYjcyNGM4NGM4N2FjM2E2YTAxM2JiYzllZWM2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmVmYjA2MWE4Y2JiYjNhZTY5NWExODBiMjEyNzIzZjQ1Zjk0ZjM4YzlmMmFlNjc0NTFmYjU3NDk1YjdlMDZkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjE2Mjk5NmQ2ZDY1MzJiYzY3YWUyZjg1ZjY2M2VjMTc2NDgxZDBhZWFlYmIzMGZhYmE1YzExM2NjMGIxOThiNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2976afc948f446e903f72e56f8f216e",
+      "statement": "The forge repositories are copied while the forge is live (there is no forge stop at 03:30), so a push that lands mid-copy can leave a ref ahead of the objects it points at in the archive; git fsck reports that on restore as a FSCK FAILED line naming the repository. It is the same exposure the old forgejo dump had, and it is documented rather than engineered around. A drill against the next night's snapshot distinguishes it from real damage: an error that disappears on a later snapshot was a push caught mid-copy, one that persists is corruption.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1095-L1095",
+          "version": "repo-lines-v1:sha256:97211874904754d56d720ec6d8aeb819706795b05c65eb363b1390ee8839bb18:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMTE4NzQ5MDQ3NTRkNTZkNzIwZWM2ZDhhZWI4MTk3MDY3OTViMDVjNjVlYjM2M2IxMzkwZWU4ODM5YmIxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMTE4NzQ5MDQ3NTRkNTZkNzIwZWM2ZDhhZWI4MTk3MDY3OTViMDVjNjVlYjM2M2IxMzkwZWU4ODM5YmIxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGVkYTIzNjIwMGY5MWMxZmJmYWY3MGZiYTY3MTVjZmNiZmI3ZmZmZmYwZDU1MTI4ZjdmYWExMjljNDA3NTEyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY5NjViMzc2YjMwZTE4NDJjNDk0N2QwMWE2MjQ4ZDZhODdhZGRiNzlmOTdiNzIzZWUwODI2MGYzMDk2NWFiMSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1172-L1184",
+          "version": "repo-lines-v1:sha256:35f329556976cd0bfc98d24da6c67155e4e37146d9e832300c4ed6be17d814c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0YTI4Nzk0NzFiMDIxNTU5M2I5NTU3MzViZTYwMzRmOWZmNmUwODdkOGJjZWQyMGMwOWE3N2M1MmFmZjFhOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZDIwODNiOGYxMTliNjY3Zjk0ZWI5OTRmZjEyMGEwM2JlODU1ZWY3OGVjYjgxMDk0Y2RiYmZiZjI3NzM2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0Y2U2MjA5MmI4MTY0NDk5Y2Y0ZDU1MGUwOWY5NmMyNTUwMjA5ZWZkYzY5ZjYwNzg1ODkxMzI5M2VkZTRkNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MWY2M2IxYzBhOWVlMjg2YTg2NjQ5MWI4MzhiYTdjZmQzMDAxNzJhMTkzNjQ3M2VlMjFiMDliNDhhMGY1NzMifQ"
+        },
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/research.md#L163-L166",
+          "version": "repo-lines-v1:sha256:681f5c6ed2cd404ab6db8d90a7484b95d546189899d5283a08375e0649cff477:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y1ZmU2NjEyYTA1Njg4NDc0YTQzMjA5OTNkN2I0ZTIxOGI1ZTVmNGI3YjU2MWI2OGQ2MjNmNmQ0YTVjMDE4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkwZjE5YTBlZjJkNjc1MGMwNDU5YzEwYzdhYWJhODk0NWMzMzkwMjEzMjIzYmE2ODhhZjY2YzUzN2U3MTUyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTE5NGFiMzhkMTM5MWEzN2E5MWQ0OWE0OWY4MzYwYzNkODJlN2NlMGRiNzhlNDhkMThlMWIyNDc3MDNjZTMwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY4ZTBiYzRkMmU1NWZhOGFhY2ZjMmRkNmIwNmVjMjM2Yzc3NjA2YmRlYWMwMDMxMzg4MzNlZjM3MWFiMTc3YSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-28T02:33:05.629Z"
+    "at": "2026-10-30T01:33:31.256Z"
   }
 }

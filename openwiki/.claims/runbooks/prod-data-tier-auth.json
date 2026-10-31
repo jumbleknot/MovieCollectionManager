@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:21a5c055e0ab6edd8b51e7d7b4e2c37e0ebd3e5bea2eeb2a4199de4ee256414b",
+  "pageVersion": "sha256:e009dc41ea437e160b53f6f6b92d1c329e1435fa337ea728b9d45c92ecb8fe57",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:b6d6b673591e1b0d44f37ee56ca13bee9d885af1c7cbec248293728cb47f5ede"
+          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
         },
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
@@ -357,10 +357,36 @@
           "version": "repo-file-v1:sha256:1b9f02a4af0aa60c0f3c719bf3d5d15bb82e43752151668627dc87b3853b992a"
         }
       ]
+    },
+    {
+      "id": "claim_2dae25c25a6c430abf49b9aee6dc1645",
+      "statement": "The deploy path a merge triggers is conditional, not automatic: `app-ci`'s `trigger-cd` job delegates the decision to `scripts/cd-dispatch-gate.mjs`, which declines a commit that is no longer the effective tip of `main` (a newer non-`[skip ci]` commit supersedes it), a range where nothing in `DEPLOYABLE_PATHS` changed since the last `chore(cd): promote …` commit, and a commit whose `guardrails*` contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status because `trigger-cd` is advisory; the dispatch itself requests `main`'s tip, not the merged sha. `cd-deploy` is correspondingly `workflow_dispatch`-only with no `push:` trigger (`deploy=false` default, so a manual mint builds/scans/pushes/promotes digests without firing the webhook or probe) and serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false` so a later merge never cancels an in-flight production deploy.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1747-L1819",
+          "version": "repo-lines-v1:sha256:17928ee8d83b8484a4691f7f990533865d2c85b7eec04b73e8f3373cfaff305c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMzg2ZDhlMThlZDMyYjhiYjlkNjcyYzY2YjI2Y2RiMzM5MjJhZjI3MDQwNmY5YzQ1YzM0ODVkMTYxZWJhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZDVjNDMzYjcwOWEyNjZiOWE3MWExMDNjYTViNDQwNTIzYWVkNTY2NTEyNWE3ZTQ5MjNhNWM0ZjNkYzkxMDQifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L36-L56",
+          "version": "repo-lines-v1:sha256:dd5ea6159fba8f3b11ff162aa05287920b14e0d5452dd42f5b1fc9f47a174406:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmOGUyYTI2MjhjYmY1NDg4Njk5OGJkYWUyYTU3Nzk4MzNkZjM3NDA5ZDJhZTliOGFlNTlmOTkyMTE2ODQ2MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYzEyNmViZWNlOWMxY2JhNzE5ZDBhNDRkNDQyNzlmYTI1YmJkZmI2OWZhMjRlODgwZTJjNjA0Y2M5NWM5NzEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs#L33-L83",
+          "version": "repo-lines-v1:sha256:b0bf6608e43e554e756d897061d5d653b03c1f6cce10f896594421ec506fb0b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MDc1NDM4MTAwNjMzMzEzMzM4YWZkNTJlZDZkNDEyNjA5MGM4MTBhYzZmN2NjOTNiMWNhNjhiZmFjNTc1ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNmM3YTBiODhhNjFkMDdiNjQ0MzQ0YmQ2N2UzYTQ3MmZmYjA2M2UwNWMzNWYzODIwMWVkZTc2OWUxODRkM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjYjAxN2Y4YWIwOTQwMjA1YjM3MDNmNDEwNTg4MmZkOTVmZmJkNzM0NzJiYjViODdkMzJkZmFmNDI0ZTc1MGUifQ"
+        },
+        {
+          "resource": "repo://scripts/cd-dispatch-gate.mjs#L154-L205",
+          "version": "repo-lines-v1:sha256:b14b0fe19c6edb4d9f391b1ff5839b9503c005b265305faf419aa1bb08ed8f82:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMjkyZGI2NmM1OGY5ZGZlNDZmODM4ZDEyMTUzODFjMmY2MTgzN2NjZWZiOThjMGUyZDgzYWY3ZWNmM2U4NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZDYxMjRhMjhkMTcxMmRkZjUzMTUwZTUyZjVhZWMyNTRkM2UyMDI1NzEzMTE5ODFhMzQxNGNjZjkxZjJkZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNTcyMmQ4MjJkMjUwNTc2NTBhZjk4OTI3ZGMxNjg5MWNhMTI3YThjZmZhMTNjNDRiMzQzMjA0ZDNiZGJjZGEifQ"
+        },
+        {
+          "resource": "repo://scripts/cd-dispatch-gate.mjs#L56-L111",
+          "version": "repo-lines-v1:sha256:eef2bc0733b2b6ebd4c1e6460f22a6c0c755fdebfad4a8c68eb6010e17ea6be8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzOWRkMjhiZDlmYWIwMGI1M2M1YzJhMTI2MjJkMjA1ZTZhMmJkY2MzMGY4Y2QyMTdkNjA1M2FkM2Y0NWNmNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MmVlYjYyNGZmZTlmYmVmNDJjNzgxNDEzNzQxMmI1ZjM4NzQ5YTgxMWNhMTcxZmNjYjVjODcyZTIyMjI1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlOGNhMzNhNDdiNDU0YTE4OTdjZDQ3MmUwYzYwNjQ3MDMzZmUzYTEwZGI3NTE3MGQ1MTA3MTk5YzgzYzJjYjYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-10-30T00:25:37.413Z"
   }
 }

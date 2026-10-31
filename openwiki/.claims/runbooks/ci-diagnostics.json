@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2b56afe2d30875968369bac42650757d3950e2d442c89aeff20737ff2afaf8db",
+  "pageVersion": "sha256:923b8de87cde5801cbacf458c8727ebfe81a642401d91f63caeb6156997e63d4",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -35,7 +35,7 @@
           "version": "repo-lines-v1:sha256:4e91770444403b1083d99af59a403cfc7a6aab18272b31d5b0866bc06e41dab1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWJmYjQ1MzhlNjIwZDE4Yzc3NjZlNjJhZjY5MGNiMDM0NjdkY2NjNWVmNTE2OGQ4ODhhMGJmYTAyZDI5MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhZmI2N2YyMGNlMjhmNmFkZjYwMjYxOTVmY2RhYzJkMmI2YWEzMmEwMGQ3NzYyZTk4MWVjOGFiMTc0NGU4ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMGE4NGQ2YjkyMTJkOWQ3MWIzYWY1ZmEwOTk3Mzc0NmUyY2E3YzA0MmVjYTE5Y2IyNTAyMzA0YTY5NWY5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzYTJkMjE2ZDQ4ZjFkZWUxNTMxNzczZGU3ODA1MWUyZWYxMTk4NzJkNTRkNzk5M2U2ZTYyNmUxYTIyNWE5NGMifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L363-L367",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L365-L369",
           "version": "repo-lines-v1:sha256:e60c7d830f3fef76fefea22ce545600c4c9811de0d922e7b44b76560f1b026a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcyODQwMGNjZDUzZWMyNmViNjVkOGY5NTEzODgxNzM3YWI1MzQyOTcyMGUzMzRiY2JjNjA2OTM1OTA0ZDk1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNiYjNhNjgyOTQ5ZGNlMzQzYzllNjUxMmYxMjRmNWVjZTY5NGYxNzU5MjdmZjM0N2M4YzE3NWY4MGJlZDIwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ0MTVjZTkyNzI4MWQwNTgwMDczNTZlNTJlOGQ5NjA4ZThhNjhiOGM3NzA4ZTYyY2UzYjg3YzI1YjM1MzkwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBlMmRlMWE1NWJiNDljMzNlMmQyOTE2ZDZjYzYyODFjZDQ4YzEzZTBlZWZiZmEyYTM5MDgyMGU3MWZhNjNjOCJ9"
         },
         {
@@ -134,7 +134,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -192,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         }
       ]
     },
@@ -202,7 +202,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -216,7 +216,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -230,7 +230,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -244,7 +244,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -258,7 +258,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -272,7 +272,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -285,7 +285,7 @@
       "statement": "cd-dispatch / trigger-cd is not a CI result: it is published by scripts/cd-dispatch-gate.mjs and is the only place a declined deploy is visible (before item #230 a run that declined to dispatch and a run that deployed looked identical from outside, and a merged commit went undeployed for a day — measured 2026-08-22 on PR #217). A superseded tip or 'nothing deployable changed since the last deploy' is published as success (a correct non-deploy), while a guardrails failure, an unfinished guardrails run or no guardrails at all is published as failure and also reds the job, so this status must be read before concluding a deploy was lost.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1764-L1783",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1779-L1798",
           "version": "repo-lines-v1:sha256:f84cd7f10063117d8738a044c0ab98ca201d8e7473ad9acfe898ef940535474d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MjFmYWQ4MjliNDkyZjZiYTkxMTJkYzU4ZDg5NTZmMmRhMDI1MGQ5ODg3NjNlNGJmMWU4ZGM2ZDdiNDJhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGFkNjRhNzc2N2YyNmFjNDRhMjcxNzgwN2E4NjAzYzQ5ZmQxZTAwMDE1MWZhYzgzYjk1OWE4MDBlYjAzNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -308,7 +308,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         }
       ]
     },
@@ -318,7 +318,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -328,11 +328,19 @@
     },
     {
       "id": "claim_75a4a4f1ebd9429c8ccff429855c6b03",
-      "statement": "A session merging through the API must pass delete_branch_after_merge: true on every merge: default_delete_branch_after_merge: true (enabled 2026-08-29) is the default for the web UI merge button only, so an API merge that omits the flag leaves the head branch behind (measured the same evening — PRs #287 and #293 passed it and their branches were gone, PR #291 omitted it and had to be cleaned up by hand). This matters beyond housekeeping because a surviving renovate/* branch makes Renovate reuse the stale commit instead of regenerating, and renovate/lock-file-maintenance is hard-exempt from Renovate's own pruning; an open PR's head and automation-owned branches such as openwiki-maintenance must not be deleted.",
+      "statement": "A merged branch is removed by the branch reaper, not by the merge: `default_delete_branch_after_merge: true` (enabled 2026-08-29, item #290) is the default for the web UI merge button ONLY, so an API merge that omits `delete_branch_after_merge: true` leaves the head branch behind (measured the same evening — PRs #287 and #293 passed the flag and their branches were gone, PR #291 omitted it and had to be cleaned up by hand), and that rule did not hold in the field: by 2026-10-30, 33 fully merged branches with no open PR had accumulated on origin back to 2026-09-26, and the four `renovate/lock-file-maintenance*` heads left by the API merges of PRs #832–#835 produced four empty, red PRs (#874–#877) because Renovate reuses a surviving branch's stale commit instead of regenerating. The backstop added by item #879 is `.forgejo/workflows/branch-reaper.yml`, which runs `scripts/reap-merged-branches.mjs --apply` on every push to main, on a daily 02:30 UTC cron and on `workflow_dispatch` — the cron sits ahead of Renovate's nightly 03:00 and its Friday window, so a stale `renovate/*` branch is gone before Renovate decides whether to reuse it. Still passing the flag is worth doing because it removes the branch at once, but it is now a convenience rather than the guarantee; an open PR's head and automation-owned branches such as `openwiki-maintenance` must not be deleted.",
       "evidence": [
         {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
         }
       ]
     },
@@ -342,7 +350,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         }
       ]
     },
@@ -352,7 +360,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -366,7 +374,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:b8ab82f87c01024c636f456005180c10b463a6d3a1b165af04381a38cd29c4b5"
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -379,7 +387,7 @@
       "statement": "The deploy gate decides on the EFFECTIVE TIP of main, not on the commit that triggered it: cd-dispatch-gate.mjs computes the newest commit that will actually run a workflow (skipping commits carrying a `[skip ci]`-family marker, because cd-deploy's own promotion commit is pushed with one and would otherwise make the commit that legitimately owns the deploy look superseded), reports `superseded` as a non-fatal success when an older commit hands off, and only dispatches when guardrails are green on the tip. The dispatch sends `{\"ref\":\"main\"}` rather than the verified sha, so dispatching from a superseded commit would deploy a tree whose CI was never checked; the tip question is therefore answered BEFORE guardrails are read, because a superseded commit's guardrails legitimately report `failure`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1785-L1804",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1800-L1819",
           "version": "repo-lines-v1:sha256:8fa5c97d9e1b631029bea02345f40f0a2701f23a35c09499df1424cae964752b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMDlhNGQyZGJiZDgzNDJiODJkMmJmNzUxMjAwY2E2YjkzNjllZDk4ZGM1YTc3YTQ3NDUwMWYyY2EzN2UzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YzIxMzFkOTFkNTAwNzFmOWZkYWQ4ODhjYmQyMDEzMmZkODM5ZTU5N2UyM2U2ZjcxODU1MGE2MDk3NTVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZDVjNDMzYjcwOWEyNjZiOWE3MWExMDNjYTViNDQwNTIzYWVkNTY2NTEyNWE3ZTQ5MjNhNWM0ZjNkYzkxMDQifQ"
         },
         {
@@ -411,7 +419,7 @@
       "statement": "The deploy gate's decision is a pure function (`decide()`), tested against the item #230 incident's own payloads in scripts/__tests__/cd-dispatch-gate.test.mjs, and its workflow wiring is separately pinned by scripts/__tests__/app-ci-trigger-cd.guard.test.mjs — which asserts the checkout (fetch-depth: 0, so `git diff <last promotion commit>..HEAD` can resolve its base) precedes the gate step and that the dispatch step is conditional on the gate's `dispatch` output, because a pure function nothing calls is decoration and a shallow clone would silently disable the redundant-deploy skip on every run.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1759-L1783",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1774-L1798",
           "version": "repo-lines-v1:sha256:448e25cf69f282ef2c4447202a33193272b9c063bc675eafbf4b05b361cbb6ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MjMyZTA0OWE3YjM0MmYxYmFiZGFmZTg4NGJmNDczNjAyNzlmNmU5ZTUzNjAxMDYxNjliODk5MDE2MDA0ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZGY1NThjOGM2MzEyZjhkYmUyNWViMjgzMjVlY2ZlNTRkZDE4ZmJjMmYxM2FjYWYyZTNlNDVmM2NmNmEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -465,11 +473,11 @@
       "statement": "On a green app-e2e the job judges its own counts rather than relying on someone reading the bundle: app-ci runs `node scripts/e2e-failure-set.mjs gate <web-e2e.log>` (and a separate non-blocking model-tier gate) which fails on `skipped > 0`, `did not run > 0` or a log with no summary at all — never re-failing on `failed > 0` — and runs `scripts/e2e-contention-tally.sh --gate`, which fails on `refresh_429 > 0` or `session_evicted > 0` but deliberately stays silent when the source is `unavailable`, since that implies bring-up already failed. Neither gate may carry `continue-on-error`: with it restored the step still runs and still prints its failure, so the log looks identical while the job passes regardless. The `flaky` count and the identities of the flaky tests reach no artifact on the green path except through this step's log, which is what the counts bundle publishes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1121-L1136",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1123-L1138",
           "version": "repo-lines-v1:sha256:669db90a16e88e27428d1b9099f8ae33b8cb84f1ea84b90a7e6905311d8e6404:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjVjMzJlNDQ2MDI2NzJlMmEyYzYxZmQwMTUzMTcxMzc4Y2EwY2IyNDkxNjNiYjhlY2IyYTljODY4ZGQxMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYWM4NjZlYzAwNjFhNTQ0NmFhZjBhNTNmYzQxYjdjZDM0ZWQ1ZjM4NTc4MWRjZTJlOGE4M2NjNDFlOTljZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0ZGM1OTI4YzViOTY2Y2UwMGM4OGQzMjdmMWRlNjNmYWZmNDA4MWE2YTE0YzhkODVmYmRjOGFjZjE0MTM0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZTEwZDUyYjJlOGEwMWFmZThhNWRhNzVhMWQ4YTA4M2Q1OGY1YWY1ZGM1ZThjNzMzMGU5N2RkYzU1YjJmZGUifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1165-L1167",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1167-L1169",
           "version": "repo-lines-v1:sha256:a22e0e16bf3dd4e722b271a5228c5ff20522a36a6fb3f0654d7c705ad46c52a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdhMWU3ZWEzOTI2MjcyMDc4MWY4NTlkOWZhMmE4MzRjZTI4ZGFlMzY1MmY4NmU3YjFhNmFlYWQ2ZWFmMmRjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiNGFiMWIzYmU0NTUwZGY1MjY5ZGJjMzU1YTE1NThiMzIxOGMxY2U5MDRhNWM0OGI3MTE4YTFkYzY3ZjZkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGFkZDBjZDFmYzk4NjQ3ZjllZWVlNTk1NzFlZDQyMWMzM2RlYjI1ZDRiMDczMjMxNGYwODg1NjBlZjM1OTViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNjNjA0NDg1MjkwNzUyOTVlYTM0OTJkM2MzNWMzM2NiNTNjMjFkYmE5OGFkMGRlYzU2YTM4MjYyOThmNjZkMSJ9"
         },
         {
@@ -481,10 +489,90 @@
           "version": "repo-lines-v1:sha256:33ca7a4782508bbe7ac28126562637fe34975c8dbcd02a73cc70336e61d09078:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMTRmYjUzYTIxZDMzOGFkMTg4YTAwZmRiNTk4YzkzZWFhMWJkMTg4NzAzNjRlY2M1ODE1MGZmZjE1NzJhZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2Zjc3OThkNWExYmEzMDk1ZjczODc0MDM4NzU2NTZiMzI1MzNiMjUxMGQ2ZDY0MWMwYzZhN2FlNjkxZDQ4MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3MzdiOTQ1MGYzNWE4NDIwMmYwMTExN2YwNGNjOTM5ZDcwY2NhMGFlNDQ1M2NhYjMwZDBlNjZjMzVhNDFjNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YmYxZGY4NWYxZDg2OTZhMzE2MTJkYTU1ZTViZTU1MDFkY2VlMGUzNDdiNDRjNWVmZTQ4MzM2MWNmYjI5MDcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_18afd40839314b44b8d4886240824000",
+      "statement": "selectReapable() in scripts/reap-merged-branches.mjs deletes a branch only when every one of four conditions holds — its tip is an ancestor of origin/main, it heads no OPEN pull request, it is not exempt (main, openwiki-maintenance), and its tip commit is older than a 6 h grace period — and every uncertain answer is fail-closed: ancestry that cannot be answered keeps the branch, an unreadable tip date keeps it, and collectOpenPrHeads throws rather than returning fewer rows when a page errors or comes back short of its own x-total-count, because 'I could not read the open PRs' must never read as 'there are no open PRs'. The delete is leased to the exact sha that was classified via `git push --force-with-lease=<ref>:<sha>` rather than the forge's DELETE /branches endpoint, which has no such precondition, so a commit pushed between classification and deletion is never destroyed; a bare invocation is a dry run and --apply is required; and unlike the comment-only jobs the workflow goes red on failure, because a reaper that silently stopped reaping is exactly the absence it exists to end.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
+          "resource": "repo://scripts/__tests__/reap-merged-branches.test.mjs",
+          "version": "repo-file-v1:sha256:e55374d65266ddeffb928d3c6323e152b0608a06dd55f4f4177beae894a269d4"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe941fd4d92e42b2b078c781a365068e",
+      "statement": "The two forge credentials have disjoint roles and each failure reads as a different problem: MCM_FORGE_TOKEN is the READ side (read:repository + read:issue + read:package) and CI_DIGEST_TOKEN the WRITE side (write:issue + write:package + read:repository), stored as an Actions secret and deliberately not CD_PUSH_TOKEN — a whitelisted-user PAT able to push protected main, which spreading across ~20 jobs to publish diagnostics would expand into a real privilege escalation — nor the run-provisioned GITHUB_TOKEN, which cannot write issues or packages. Missing scopes fail loudly naming the scope, because a bare 401/403 is indistinguishable from an expired credential and cost this design a full revision cycle. Because CI_DIGEST_TOKEN is an Actions secret it is blank exactly when a run is most confusing (an AGit-headed push empties every secrets.* — the 2026-08-01 run collected its evidence, could not publish it, printed it to a job log the forge API cannot serve, and exited 0 with zero comments and no signal), so the digest falls back to the run-provisioned token, which can write a commit status `ci-digest/<job>` carrying the failing step name and a truncated excerpt; that path is recorded as `published` with `degraded: true` rather than `failed`, because `failed` means the evidence did not reach a channel and the reader's question is whether the diagnosis got through, and when both credentials are absent the outcome is `failed:no-credential`.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs",
+          "version": "repo-file-v1:sha256:d70e9eb9720286c2ab27a1390e71d18c54e836ba73dbe2daf029ae9c8b5a076c"
+        }
+      ]
+    },
+    {
+      "id": "claim_98fd6a67cfcb44aabff2c1b9de2b13ab",
+      "statement": "A pipe throws ci-status.mjs's exit code away — `ci-status … watch | tail -30` reports tail's status, so exit 3 (still waiting, runner starvation) and exit 1 (a required context failed) both arrive as 0. Measured 2026-09-06: a watch whose own output said `still waiting after 5100s … (exit 3)` was recorded by the session as WATCH_EXIT=0. The workaround is to redirect and read the file (`… watch --pr 372 --timeout 5100 > /tmp/watch.log 2>&1; echo \"EXIT=$?\"`), since `set -o pipefail` is not on by default in these sessions.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+        }
+      ]
+    },
+    {
+      "id": "claim_274fc004d5844a16b52849c541c48444",
+      "statement": "'Does this branch still contribute?' is a two-dot diff question, not a three-dot one: `git diff main...branch` reports what the branch adds since the merge base, so changes main already has by another route still appear as live work, while `git diff main branch` shows what the trees actually differ by. Measured on PR #262: three-dot said three version moves remained unique to the PR, two-dot showed merging it would have downgraded crates, and Renovate autoclosed it minutes later.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:af570629f5991c143231ad5cd72d9899013b67ef26e25386974732ca308815fc"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d171303a7444ffb9e95d8db83e55753",
+      "statement": "Two pieces of the branch-reaper workflow's wiring are silent-disable hazards rather than tidiness, and both are pinned by guard tests: the checkout takes `fetch-depth: 0`, because the reaper decides by `git merge-base --is-ancestor origin/<branch> origin/main` and a shallow single-ref clone cannot answer it — every branch would then read 'ancestry unanswerable' and nothing would ever be reaped; and the job is handed the run-provisioned `GITHUB_TOKEN` rather than `CD_PUSH_TOKEN`, because a deletion job has no business holding a whitelisted-user PAT that can push protected `main`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
+          "resource": "repo://scripts/__tests__/reap-merged-branches.test.mjs",
+          "version": "repo-file-v1:sha256:e55374d65266ddeffb928d3c6323e152b0608a06dd55f4f4177beae894a269d4"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe8198a8a61c4b38ac1bd6224130e9dc",
+      "statement": "The branch reaper reports a decision for every remote branch rather than only acting: each kept branch is printed with the reason it was kept ('exempt', 'head of an open PR', 'ancestry unanswerable', 'not merged into main', 'tip date unreadable', 'inside grace period') and each deletion with the sha it was classified at, so a run is auditable instead of merely applied. Its argument contract is deliberately narrow — near-miss spellings such as `--aply`, `-apply`, `--Apply`, `--dry-run` or `--force` are rejected with an ArgvError rather than silently read as either a dry run or an apply, a positional argument is rejected, and `--help` wins outright even beside `--apply`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/reap-merged-branches.test.mjs",
+          "version": "repo-file-v1:sha256:e55374d65266ddeffb928d3c6323e152b0608a06dd55f4f4177beae894a269d4"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-18T03:00:26.889Z"
+    "at": "2026-10-31T06:29:24.551Z"
   }
 }

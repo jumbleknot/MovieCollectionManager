@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries, a RustFS-backed Nx remote cache, a now config-as-code nightly host backup whose post-spec-084 restore format stays unproven until the restore drill runs, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, rustfs, backups, runbook]
 sources:
@@ -17,8 +17,14 @@ sources:
     resource: repo://docs/runbooks/prod-reboot-resilience.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-c56aca4c7fefae967d931edd
+    resource: repo://infrastructure-as-code/backup/backup-staleness.sh
   - id: openwiki-source-78ec32b51a25a8fb66d5b292
     resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-1be01bc0222d08bf89a6ee08
+    resource: repo://infrastructure-as-code/backup/homelab-backup.service
+  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
+    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -47,10 +53,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-27T23:08:42.159Z
+    at: 2026-10-31T03:40:23.288Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -180,11 +186,31 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   stacks themselves — and the one-time stateful cutovers they have carried, each with its own ordering
   and rollback window — are [Prod control tower](./prod-control-tower.md).
 - **14 — Backups, disaster recovery and UPS.** An encrypted, offsite, scheduled snapshot of every
-  stateful service on a timer, a *proven* restore procedure, a graceful-shutdown drain unit that stops
-  containers cleanly before the runtime is killed, and UPS + NUT for power loss. The runbook warns
-  explicitly that this host-level DR is not the same thing as the application's per-user collection
-  backups — [Prod host backup](../projects/backup.md) is the snapshot side of that pair, and
-  [Per-user collection backups](./backups.md) the application side.
+  stateful service on a timer, a restore procedure proven only for the pre-spec-084 dump format,
+  a graceful-shutdown drain unit that stops containers cleanly before the runtime is killed, and UPS +
+  NUT for power loss. The runbook warns explicitly that this host-level DR is not the same thing as the
+  application's per-user collection backups — [Prod host backup](../projects/backup.md) is the snapshot
+  side of that pair, and [Per-user collection backups](./backups.md) the application side.
+  - **Only the old restore is proven, and the drill log is the record.** What the host has actually
+    restored is the **old** `forgejo dump` format (2026-07-05) — xorm-generated SQL that is *not*
+    dependency-ordered, so it is loaded twice with errors ignored. The format the backup now writes,
+    `forge-db` (a `pg_dump -Fc` custom dump, dependency-ordered, so one `pg_restore` pass suffices) plus
+    `forge-data` (the uncompressed data tar), is **unproven**: the runbook's restore procedure for it is
+    explicitly marked as unproven until the restore drill has run against it, and the drill log's only
+    row says no drill has yet been done against the spec-084 format. Read the
+    [Phase 14 section of the runbook](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups)
+    for both procedures and for the drill log that records which is proven.
+  - **The drill has one hard ordering constraint and a measured cost.** It restores the three dumps that
+    matter most — `forge-db`, `forge-data` and `mc-service-mongo` — into scratch containers and a scratch
+    directory, and never touches a live service: the scratch containers run with `--network none`, and
+    every block reads the live containers only to copy their image or count their rows. It must **not**
+    run between **03:00 and 04:00**, because restic's `forget --prune` needs an exclusive lock, so a
+    drill still reading at 03:30 fails that night's backup run — loudly, through the alert. It wants
+    about 2 GB free under `~/backup` and downloads about 1.5 GB from the NAS, and the rule is to run it
+    after any change to what the backup carries and at least quarterly.
+  - **The new format is also much faster.** A whole nightly run takes about **65 s** (2026-10-29),
+    against **8–10 min** with the old `forgejo dump` (2026-10-22..26), because the forge is now a
+    custom-format database dump plus an uncompressed data tar instead of one large `tar.gz`.
   - **The script is no longer host-only state.** Spec 084 (2026-10-27) moved the whole backup into
     [`infrastructure-as-code/backup/`](../../infrastructure-as-code/backup/), which is now the source of
     truth: `backup.sh`, `backup-alert.sh`, `backup-staleness.sh`, the five systemd units, a README with
@@ -201,6 +227,31 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     [`infrastructure-as-code/backup/backup.sh`](../../infrastructure-as-code/backup/backup.sh), so it
     is reviewed and the host copy is checked against the repository rather than drifting. The same
     obligation is what put the Nx-cache store's config directory on the `restic backup` path list.
+    The list is now **eight** dumps — `forge-db`, `forge-data`, `komodo`, `keycloak`, `agent-db`,
+    `mc-service-mongo`, `bff-mongo` and `release-apks` — each written through `run_dump` so that one
+    failure cannot skip the rest, each checked in its own format against a minimum and against last
+    night's size, and each verdict recorded in a `dump-manifest.tsv` that travels **inside** the
+    snapshot. Two of the eight carry a shape that needs explaining: `forge-data` is an **uncompressed**
+    tar (a gzip stream changes from its first changed byte, so the old `forgejo dump --type tar.gz`
+    de-duplicated nothing and added 19.8–21.1 GiB to the repository every night), and `komodo`'s dump
+    excludes `cron.job_run_details` — pg_cron's own run history, 11.9 M rows and 2,147 MB by
+    2026-10-27 with nothing purging it — with `komodo-cron-retention.sql` installing an hourly job that
+    deletes runs older than 3 days and a **500 MB maximum** on the dump so the history's return alerts
+    (`komodo-oversize`) instead of silently re-inflating it.
+  - **A backup that fails silently is the failure mode this phase is now built against.** The original
+    script failed every night from **2026-07-27 to 2026-10-22** and nothing said so: dumps were staged
+    in `/tmp`, which on this host is a **29 G tmpfs** (RAM), and the forge dump — then still including
+    the 100 G+ registry — outgrew it with `write /dev/stdout: no space left on device`. The forge dump
+    was the only step with no fallback, so under `set -e` it took every database dump and the offsite
+    upload down with it, and the journal's `Failed with result 'exit-code'` was read by nobody; the
+    failure was found by chance on 2026-10-22. Staging is therefore on disk now — the script refuses a
+    tmpfs staging directory, and `backup.sh --check-staging` prints the filesystem without backing
+    anything up — and a silent failure is made impossible by two **independent** paths: the unit's
+    `OnFailure=` alert on a failed or hung run, and a separate 6-hourly staleness check that reads the
+    newest snapshot **from the repository itself** and alerts past **36 h**. Both open or comment on
+    one backlog item, titled `Prod backup: failed or stale`. The mechanics and the alerting are
+    [Prod host backup](../projects/backup.md); the restore procedures and the drill are the
+    [Backups part of Phase 14](../../docs/runbooks/Server-Setup-Runbook.md#phase-14--backups-disaster-recovery--ups).
 - **15 — Wire the pipeline.** The trigger ordering, digest-by-git promotion and Komodo ResourceSync
   deploy; the current shape is documented in
   [CI/CD pipeline](../projects/ci-cd-pipeline.md) and
@@ -279,8 +330,8 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
   in the observability stack whenever that moves — so check the pin against that file rather than
   against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
-  while the tracked observability compose has moved to `1.0.3`; every git-tracked RustFS service must
-  share one digest-pinned Alpine tag). The store's volume and network names are host state
+  while the tracked observability compose has moved to `1.0.4@sha256:ed9210d6…`; every git-tracked
+  RustFS service must share one digest-pinned Alpine tag). The store's volume and network names are host state
   too, so confirm them by ownership *and* contents before running the migration copy — and the backup
   script's path list has to name each store's config directory, which is why the new store's directory
   is on it. Whether the retired store's directory should still be on that list is the one point where

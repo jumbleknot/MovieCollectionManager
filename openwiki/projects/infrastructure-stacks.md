@@ -25,10 +25,16 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-78ec32b51a25a8fb66d5b292
+    resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
+    resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-5cff57d66fb9a3d88a18a36e
     resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
   - id: openwiki-source-7a0ce0b0b1a10dd515633969
     resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - id: openwiki-source-34479801b303c2005c7d1de1
+    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
   - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
@@ -39,6 +45,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2
@@ -112,7 +120,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-28T02:33:05.629Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -474,6 +482,21 @@ entrypoint by Compose, which would put them in the container's argv where `docke
 read them. Both destinations bind `127.0.0.1` only, and the URL guard denies loopback by default (the
 inverse of the Ollama guard), which is why `gen-dev-env.mjs` names them in
 `BACKUP_ALLOWED_DESTINATION_HOSTS`.
+
+Three further details in that file are load-bearing rather than cosmetic. The S3 side pairs the server
+with a one-shot `mcm-bff-backup-rustfs-init` that PUTs the `mcm-backups-test` bucket once the server is
+healthy, because the store auto-creates nothing and a driver suite failing on `NoSuchBucket` looks
+exactly like a driver bug. The WebDAV server is the **Debian** `httpd:2.4` and not `httpd:2.4-alpine`:
+`mod_dav_fs` consults its `DavLockDB` on *every* write even though this driver never issues `LOCK`, and
+Alpine's `apr-util` ships no `apr_dbm_*.so`, so `mod_dav_fs` answers `AH00576: The DBM driver could not
+be loaded` and every write 500s; that container's healthcheck then asserts the **401** an
+*unauthenticated* request earns, probed over bash's `/dev/tcp` because the slim Debian base carries no
+`wget`, `curl` or `nc` — probing *with* credentials would make health depend on the very auth the driver
+suite exists to exercise. Its ruled-out predecessor `ghcr.io/hacdias/webdav` is worth remembering for
+two reasons that still hold: the CVE sweep is fail-closed and cannot read `ghcr.io` (Trivy's anonymous
+token request is answered `DENIED: denied`, so an unreadable image is a red required check rather than a
+skipped one), and it carried nine fixable High CVEs that only an upstream toolchain rebuild could
+discharge.
 
 **Host backup, not a stack at all** — do not confuse the file above with
 `infrastructure-as-code/backup/`, which is a *different* sense of the word: the prod host's nightly

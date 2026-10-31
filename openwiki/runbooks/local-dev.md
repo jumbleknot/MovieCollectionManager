@@ -37,10 +37,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/observability/compose.yaml
   - id: openwiki-source-7ad99116ef3a9756b7c06307
     resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
+  - id: openwiki-source-79878dc2da65b6b5c71034f7
+    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
+    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
   - id: openwiki-source-d951526f31e9f2cb4d68995b
     resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
@@ -68,7 +72,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-10-31T00:28:11.002Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -264,11 +268,13 @@ carries no secret values on any path.
   assumption: starting RustFS on a migrated drive with a different pair was readable by the new pair
   and not the old. **Recreate the consumers together, because the key reaches more than the server.**
   On the backup side that is the `mcm-bff-backup-rustfs` service **and its bucket-init one-shot**
-  (which passes the same pair to `curl`); on the Langfuse side the one `observability.env` key is
-  interpolated by four services in the same file — `langfuse-web` and `langfuse-worker` (each holding
-  two S3 upload keys, through a shared environment anchor), the `langfuse-rustfs` server, and
-  `langfuse-rustfs-init`. Recreate only the store and the uploaders keep the old key, so uploads fail
-  against a store that is healthy.
+  (which passes the same pair to `curl`) — plus the host-side backup suites, which read the value out
+  of `frontend/mcm-app/.env.local`, the file `gen-dev-env.mjs` re-projects from `stacks/mcm.env` on
+  every run, so re-run the generator after a rotation or those suites keep authenticating with the
+  retired pair. On the Langfuse side the one `observability.env` key is interpolated by four services
+  in the same file — `langfuse-web` and `langfuse-worker` (each holding two S3 upload keys, through a
+  shared environment anchor), the `langfuse-rustfs` server, and `langfuse-rustfs-init`. Recreate only
+  the store and the uploaders keep the old key, so uploads fail against a store that is healthy.
 - **MongoDB 9.0 runs `mongod` as uid 1000, where 8.0.8 ran it as 998 — so an older data volume is
   foreign-owned and 9.0 refuses to start on it.** The symptom is `Unable to read the storage engine
   metadata file ... storage.bson` (`FileNotOpen`, measured 2026-10-20), and nothing in the image
@@ -411,10 +417,11 @@ documented command supplies it — and if a credential skip does not name the va
 read from, and the command that fixes it, that message is itself the bug. Never print a secret's
 value to check it; compare **key names** only.
 
-**Which absences are still legitimate.** `--profile observability` (LangFuse, Vault, otel-lgtm,
-Unleash), `--profile audit` (OpenSearch) and OPA are not brought up by `app-e2e` either; those skips
-are expected and allow-listed. A healthy local run of the agent integration suite is **51 passed,
-11 skipped, 0 failed**. Confirm the stale-credential case separately with
+**Which absences are still legitimate.** `--profile observability` (LangFuse, otel-lgtm, Unleash and
+OPA), `--profile audit` (OpenSearch) and `--profile vault` (the dev-mode Vault, which lives in the
+`auth` stack rather than here — it was relocated out of observability in feature 020) are not brought
+up by `app-e2e` either; those skips are expected and allow-listed. A healthy local run of the agent
+integration suite is **51 passed, 11 skipped, 0 failed**. Confirm the stale-credential case separately with
 `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration movie-mcp` — a credential skip still reads as a
 pass without that flag, which is how it stayed invisible for as long as it did.
 
