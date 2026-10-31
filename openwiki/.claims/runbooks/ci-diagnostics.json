@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:66ac6dc1b887ed68fb08bfedc8a2da592d7006c6f169db4ebc66b7088430fe19",
+  "pageVersion": "sha256:c1db3149ec874b1643d5c221189d5231e5b9fa0383b80e68db89591a1edb1878",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -723,7 +723,7 @@
           "version": "repo-lines-v1:sha256:c34162c775883293c9f62638e115533660d68730a3cae3d0869436d9933a210b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmZiNTExMWYxODVlMzg3ZTVhYzE5MjhiMDEwYTRjYmI1NzExMzdhNWU2ODM2NmIzYzFiNTY3NmE4ZmFiMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MTJiNmM5MzY3NTAxNmM3ZWU3OWU5NmYyYzYxOTJmOTU3NjdlOGZhNDAyZjJmYTg0YjQzZDQ2ZDM0NzM2M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMzgwNTY1ODZkMjZiNTI5ZmZiOTI2ZmY1MDc3ZGE2MTlmNDQ4YjJiMmMwY2JjMjlmMDY0M2FlMTAzYjY4ZmMifQ"
         },
         {
-          "resource": "repo://scripts/cd/scan-app-image.sh#L10-L60",
+          "resource": "repo://scripts/cd/scan-app-image.sh#L11-L61",
           "version": "repo-lines-v1:sha256:330fd2c48466c8e500f2b2194d51b6d5abf83983d913cc58c6ab0bed2fa8ff4b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYzZmZmYwNjMyMzA3OGZmYjFmMWY4ZmM0MzFlMjg3MDE1NGU5NzkzNTkxNDFjZGYyNGFhYTg1OWFmNGYwZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MmFjNjA4YmRkY2U2OTMyMDc1NWRmNTNiMDdlNDc1ZDkxYmI1YTFkNWNjZjkwYWE5MzljZmQzZjkyYWFlZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4YTg3YzYzYmQwYTdhMzA0NmRiMjIxZmZjNDJlYjY4NTY3ZTZiN2U2NWE0MTQyYjJhY2M5YjYyMjRhOWIwMDYifQ"
         },
         {
@@ -738,7 +738,7 @@
     },
     {
       "id": "claim_5deae55399c9450db8abf0101c3dcbd6",
-      "statement": "The PR-time scan and the deploy run ONE pipeline: both callers invoke `scripts/cd/scan-app-image.sh` and neither runs `trivy image`, `infra-image-scan.mjs` or `check-infra-image-findings.mjs` itself, so a PR and the deploy that follows it share one Trivy pin, one set of flags and one allowlist (`security/infra-images/allowlist.yaml`); a drift guard in `scripts/__tests__/app-image-scan.test.mjs` fails if either caller starts scanning on its own or if the PR's image list and `scan-push.sh`'s image map disagree.",
+      "statement": "The PR-time scan and the deploy run ONE pipeline: both callers invoke `scripts/cd/scan-app-image.sh` and neither runs `trivy image`, `infra-image-scan.mjs` or `check-infra-image-findings.mjs` itself, so a PR and the deploy that follows it share one set of flags and one allowlist (`security/infra-images/allowlist.yaml`); the Trivy version is pinned separately in each workflow that installs it (app-ci.yml, cd-deploy.yml, infra-image-scan.yml) and `renovate-workflow.guard.test.mjs` fails if those pins disagree or are not both pinned and agreeing with the version-tagged install script, while a drift guard in `scripts/__tests__/app-image-scan.test.mjs` fails if either caller starts scanning on its own or if the PR's image list and `scan-push.sh`'s image map disagree.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml#L1825-L1841",
@@ -749,8 +749,12 @@
           "version": "repo-lines-v1:sha256:d114f43c9ef6200dd3aeeef75a5b732bf0b6f9dd83fc51173fcdbc977d697cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiOWJkODkwNjUyNDA1Y2U2YjEyMmRkMTg0NjQwNTEwODBiNGRjOTgwYzA5MDllYTUzYWU3ZWM1OWMyMWMxOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MDM4MzkyZGYxYmFlN2FiYjRjZjE2MmQ0MWEzM2FhZmIyYjViOWRlM2JhZTFiMzU0NmMzMmI2OTNlODg5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MzgzYzcxN2E0ZmY2OTIzODEzNmEwYmZiMzNiNjYxYmIwM2MwZWJmOWFmNDg0MTUyODI3MDM2YThhMjVkNTcifQ"
         },
         {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2035-L2087",
+          "version": "repo-lines-v1:sha256:f6c435128c6ef3808e3480b1832e3afbac48fe0ca01655d4b37584d563bfff73:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDcyNGRiNWQ1YmRmMzE1ODI3MWQ0ZGJkYzgxYWIxMjQ3YzU5MTNmNmZjNDU2ZThmY2IyMDZmOWMwYmY3NGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNjM1NjMwMjZiZjM1OWE1OWVmYmE4NmU0MmFlMzcxNTFjNTIwMDJlZDM4Y2UzYTQ3ODcyYTg3ODNkMjlhYzAifQ"
+        },
+        {
           "resource": "repo://scripts/cd/scan-app-image.sh#L1-L16",
-          "version": "repo-lines-v1:sha256:966cbcb1ce16458027b1b5ddb2c3f61f12787d3e7c49476ca7968bc6c91fb5b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTFlYzU2Mjc1YzEzMWEyNjQ4ZjU5MDdmZjliOTRhMjdjMWNhMThiYWUwYWY3YzVhNjVjNGRhNzU0YjBlYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlZjZhNzI3ODFhMTcxMDBiOTkxOTMwMGVmNmIxODU0MDY1YmM5ZTBmYzMxNTA2NDc2YjllODRkZDMzOGYxNjkifQ"
+          "version": "repo-lines-v1:sha256:bc5a88fdefe235f66f231d49b485786be262e8f5c3673968c3026ef36ea8c880:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYjgyM2ZiNGNjOTE5NDhlOTVjYjFlMmQwNGQ4YjEzZTgyYjZlOTcxMTUwNzY0OGU5ODdiZjczOTY3YjVkYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZmE2YTY1OTc1ZTUzZmRjNWFjNzkwMmIyZjU3MmI4OWY2ZTk3OWZmNTU5YmU5OTBiNTk0OGY1ZDY4YzBkYmMifQ"
         }
       ]
     },
@@ -855,6 +859,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T16:05:45.295Z"
+    "at": "2026-10-31T19:43:53.507Z"
   }
 }

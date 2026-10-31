@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T16:05:45.295Z
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # CI self-serve diagnostics
@@ -183,8 +183,11 @@ which contexts exist, what each state means, and which of them are lying.
   passed every PR check and surfaced as a failed **deploy** on `main`, where nothing blocks (cd-deploy
   run 5745 on 2026-10-21 is that shape). `app-image-scan` closes it: a required app-ci job that runs
   `scripts/cd/scan-app-image.sh` — the deploy gate's per-image scan-and-verdict block, extracted so the
-  PR and the deploy share **one** Trivy pin, one flag set and one allowlist
-  (`security/infra-images/allowlist.yaml`) — over the images `app-e2e` already built. `app-e2e` tags
+  PR and the deploy share one flag set and one allowlist
+  (`security/infra-images/allowlist.yaml`), with the Trivy version pinned **in each workflow that
+  installs it** (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) and
+  `renovate-workflow.guard.test.mjs` failing if those pins disagree or drift from the version-tagged
+  install script — over the images `app-e2e` already built. `app-e2e` tags
   each of them `app-scan/<name>:run-<run id>` immediately after the build, so a later run rebuilding
   `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to `main` too, and
   `trigger-cd` now `needs:` it, so a vulnerability-database change shows as a red on `main` **before** a

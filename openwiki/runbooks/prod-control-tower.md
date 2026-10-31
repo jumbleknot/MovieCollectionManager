@@ -66,7 +66,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T03:40:23.288Z
+    at: 2026-10-31T19:43:53.507Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -526,6 +526,18 @@ prod compose, one identical digest for both services, on the 18 line, mounting `
 never the pre-18 `/var/lib/postgresql/data`, on a volume that is **not** the one holding the 16 data and
 carries the `-v18` marker. A split (one database moved, the other left behind) or an unreviewed move to
 19 — another migration of a store ADR-0002 does not cover — fails the gate instead of arriving as a diff.
+That file is four assertions, one per failure shape: the two services share one image; the shared pin is a
+digest on the 18 line; both mount the parent `/var/lib/postgresql`; and both live on a `-v18-data` volume
+that is not the 16 one. Its own comments record that the previous premise — "the shared pin stays on 16,
+because moving it migrates Unleash as a side effect" — was updated *at its cause* rather than deleted.
+
+The Renovate side of the same change is asserted as a **successor**, not as an absence, because a hold
+deliberately discharged and a hold someone deleted look identical once `allowedVersions` is gone:
+`scripts/__tests__/renovate-workflow.guard.test.mjs` checks, per observability compose file, that no
+update track carries a version ceiling (a `<17` left behind would block the 18 actually deployed),
+that a Postgres *major* on the shared pin requires a dashboard tick, and that the patch stream stays
+automatic — and, as the control, that the observability postgres resolves exactly like `keycloak`'s
+postgres, so a file-scoped rule surviving the discharge reddens the gate.
 
 **Postgres 18 will not start on a 16 data directory.** Measured 2026-10-20 on a copy of a real 16 Unleash
 volume: it exits 1 with the old volume mounted at `/var/lib/postgresql` and again with it mounted at the
