@@ -335,7 +335,7 @@ services:
       - FORGEJO__server__ROOT_URL=http://server.tailnet.ts.net:3000/
       - FORGEJO__packages__ENABLED=true          # enables the OCI registry
       - FORGEJO__actions__ENABLED=true           # enables Forgejo Actions
-      # Backstop for any upload without retention-days (default 90); this repo's set 14 or 7 (spec 084 FR-019c)
+      # Backstop for any upload without retention-days (default 90); this repo's set 14 or 7 (spec 084 FR-019c), which Forgejo 15 honours (verified 2026-10-31)
       - FORGEJO__actions__ARTIFACT_RETENTION_DAYS=30
     volumes:
       - forgejo-data:/data
@@ -1096,7 +1096,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >   - Also not backed up: langfuse / unleash / audit-opensearch (telemetry), redis caches, the RustFS nx-cache store's **data volume** — all rebuildable.
 > - **Why uncompressed.** restic chunks content-defined and compresses on its own (repository v2, restic 0.18.1). A gzip stream changes after its first changed byte, so the old `forgejo dump --type tar.gz` de-duplicated nothing: **19.8–21.1 GiB added every night**. An uncompressed tar of mostly-unchanged files adds roughly the day's real change.
 > - **Komodo's scheduler history.** pg_cron logs every job run into `cron.job_run_details`, and nothing purged it (11.9 M rows, 2,147 MB on 2026-10-27; ~89,000 rows a day from DocumentDB's own jobs, two of which run every 2 s). The dump excludes the table's rows, and [`komodo-cron-retention.sql`](../../infrastructure-as-code/backup/komodo-cron-retention.sql) installs an hourly pg_cron job, `purge-cron-run-history`, that deletes runs older than 3 days. The table is a vendored extension's bookkeeping, not a service or audit log, so neither log-retention minimum applies (operator decision, 2026-10-27).
-> - **Size, before and after (FR-017, SC-008).** Before: the last old-format run (the induced run of 2026-10-27, 3 min 27 s, peak memory 10.4 GB). After: the first night after install (2026-10-29, T034); the per-night figure is the second night's (T035), because the first had nothing in the new formats to de-duplicate against.
+> - **Size, before and after (FR-017, SC-008).** Before: the last old-format run (the induced run of 2026-10-27, 3 min 27 s, peak memory 10.4 GB). After: the first night after install (2026-10-29, T034). The per-night figure is the second and third nights' (2026-10-30/31, T035), because the first had nothing in the new formats to de-duplicate against.
 >
 >   | Component | Before (bytes) | After (bytes, 2026-10-29) |
 >   |---|---|---|
@@ -1107,8 +1107,8 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >   | `mc-service-mongo` | 813,102 | 813,102 |
 >   | `bff-mongo` | 3,022 | 3,092 |
 >   | `release-apks` | — (not backed up) | 639,047,680 (5 versions) |
->   | `cron.job_run_details` in Komodo's database | 2,147 MB (2,180 MB, 12,083,559 rows, on 2026-10-29 before the purge) | **46 MB**, 267,135 rows. The one-off `DELETE` took 8.9 s and `VACUUM FULL` 1.7 s |
->   | `Added to the repository` per night | 19.8–21.1 GiB | first night 937.5 MiB (793.9 MiB stored); second night *pending* (T035, target under 2 GiB) |
+>   | `cron.job_run_details` in Komodo's database | 2,147 MB (2,180 MB, 12,083,559 rows, on 2026-10-29 before the purge) | **46 MB**, 267,135 rows. The one-off `DELETE` took 8.9 s and `VACUUM FULL` 1.7 s. Steady state (2026-10-31): **58 MB**, 269,749 rows spanning 3 days 45 min, since the hourly purge frees space that new runs reuse |
+>   | `Added to the repository` per night | 19.8–21.1 GiB | first night 937.5 MiB (793.9 MiB stored); then **389.6 MiB** (339.2 stored) and **412.1 MiB** (326.4 stored) on 2026-10-30/31, against a 2 GiB target. Most of it is `forge-db`: `pg_dump -Fc` compresses, so it barely de-duplicates between nights |
 >
 >   **To measure again**, in a prod session: the dump sizes and verdicts are in each night's journal, and the forge's and Komodo's sources can be sized directly:
 >   ```bash
@@ -1133,7 +1133,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >
 > **Case study — the backup failed every night for ~3 months (2026-07-27 → 2026-10-22).** Dumps were staged in a temp dir on the RAM-backed `/tmp`. The forge dump, then still including the 100 G+ registry, outgrew it (`write /dev/stdout: no space left on device`). The forge dump was the **only** step with no fallback, so under `set -e` it took every database dump and the off-site upload down with it. Every night the journal recorded `Failed with result 'exit-code'`, and nothing read it. The last good snapshot was 2026-07-26 03:31; the failure was found by chance on 2026-10-22. On 2026-10-22/23 the host was fixed (on-disk staging, registry and archives skipped, tag-grouped retention). Spec 084 then brought the script into the repository and added what would have caught it on night one: per-dump isolation, format, minimum and shrink checks, the `OnFailure` alert, the hang timeout and the independent staleness check.
 >
-> **Restore the forge (the format since spec 084 US4).** *Unproven until the restore drill (FR-006) has run against it; the drill log records when it has.* In a prod session, with the same three exports `backup.sh` sets (`DOCKER_HOST`, `RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE`):
+> **Restore the forge (the format since spec 084 US4).** *Proven by the restore drill of 2026-10-31 (FR-006); the drill log below records each run.* In a prod session, with the same three exports `backup.sh` sets (`DOCKER_HOST`, `RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE`):
 > 1. Find the two dumps: `restic ls --tag homelab latest | grep -E '/(forge-db\.dump|forge-data\.tar)$'`.
 > 2. Stop the forge (not its database): `docker compose -p forgejo -f ~/forgejo/compose.yaml stop forgejo`.
 > 3. Database: `restic dump --tag homelab latest <path>/forge-db.dump | docker exec -i forgejo-forgejo-db-1 sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner'`. The custom format is dependency-ordered, so one pass suffices (unlike the old xorm SQL below).
@@ -1210,7 +1210,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >
 > | Date | Snapshot | forge-db: secs, repos/users | forge-data: secs, fsck ok/bad | mc-service-mongo: secs, collections | Result |
 > |---|---|---|---|---|---|
-> | — | — | — | — | — | no drill yet against the spec 084 US4 format |
+> | 2026-10-31 | `443ebb58` (2026-10-31 03:30) | 14 s, 0 errors; 2 repos / 1 user, matching live (action runs 6,252 against 6,274 live, created since) | 23 s; fsck ok=2 bad=0 | 2 s, 2,315 documents, 0 failed; 2 collections (`mc_db.movie_collections` 2, `mc_db.movies` 2,313) | **pass** |
 >
 > **Restore (Forgejo Postgres from an old `forgejo dump` snapshot, before spec 084 US4 — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
 >

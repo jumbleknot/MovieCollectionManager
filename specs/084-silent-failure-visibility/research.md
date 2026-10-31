@@ -223,10 +223,12 @@ about the prod or ci host that the repository cannot show; each one has a paste-
   server default (`[actions] ARTIFACT_RETENTION_DAYS`) is set to 30 in the runbook's forge compose
   block, as a backstop for any workflow outside this repository.
 - **Baseline (0e, 2026-10-27)**: the five newest artifacts (`dast-report`, `sast-report`) expire at
-  exactly created + 90 days. That confirms the default applies today. **Still to verify after PR B**:
-  re-run 0e on the first upload carrying `retention-days`. If `expired_unix` still says 90 days,
-  Forgejo 15 ignores the per-upload value, the server default carries the requirement alone, and the
-  guard stays as documentation of intent.
+  exactly created + 90 days. That confirms the default applies today.
+- **Verified after PR B (0e, 2026-10-31, T036)**: Forgejo 15 honours the per-upload value. The 15
+  newest artifacts expire at created + **14.0** days (`sast-report`, `infra-image-scan-report`) and
+  created + **7.0** days (the release APK, 57 MB). The server's 30 days is a backstop only. Artifacts
+  uploaded before the change keep the 90 days they were stamped with (expiry is set at upload), so
+  the last of them expire in late January 2027.
 - **Context**: the artifacts are now excluded from the backup (R7), so this bounds host disk, not
   backup size. PR #864 already stops the Maestro accumulation (FR-019b).
 

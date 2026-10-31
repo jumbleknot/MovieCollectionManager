@@ -291,6 +291,8 @@ retention.
   **Done 2026-10-28**: #864 is merged (0776cfef). Size: **pending**. `ci-status.mjs` has no artifact
   view, and the forge's `GET …/actions/artifacts` route answers 404 on Forgejo 15, so the only
   measurement is the Block 5a database query on the host. It runs with T036's 0e re-run.
+  **2026-10-31**: the query found no `maestro-debug` artifact since #864. The newest three are from
+  2026-10-24, before it, at 300 B–45 kB. Size stays pending the first post-#864 mobile failure.
 
 ### Tests
 
@@ -407,18 +409,32 @@ retention.
   - The first package token was echoed into a chat by `cat >` and rotated the same day. The README
     now uses `stty -echo`.
 
-- [ ] T035 [US4] **(operator)** On the **second** night, paste the same journal line. Expected:
+- [x] T035 [US4] **(operator)** On the **second** night, paste the same journal line. Expected:
   `Added to the repository` is under 2 GiB (SC-008, FR-019a). A day after T034, re-run quickstart 0c.
   Expected: `min(end_time)` is within 3 days, and the table is under 75 MB.
-- [ ] T036 [US4] **(operator)** Re-run quickstart **0e** on an artifact uploaded after PR B. Record in
+  **Done 2026-10-31**:
+  - `Added to the repository` was 389.554 MiB (339.152 stored) on 2026-10-30 and 412.103 MiB
+    (326.367 stored) on 2026-10-31.
+  - Forge 778,196,685 and 787,910,528 B; `komodo` 84,872,671 and 85,010,114 B, with no `ack-shrink`.
+  - 0c: 269,749 rows, from 2026-10-28 08:17 to 2026-10-31 09:02 (3 days 45 min); 58 MB; job 5 at
+    `17 * * * *`.
+- [x] T036 [US4] **(operator)** Re-run quickstart **0e** on an artifact uploaded after PR B. Record in
   research R9 whether `expired_unix − created_unix` is 14 days or 90. If it is 90, the server default
   carries the requirement alone; record that in the runbook.
-- [ ] T037 [US4] Record the before and after figures in the runbook and in the spec baseline (SC-008):
+  **Done 2026-10-31**: 14.0 days for every diagnostic, and 7.0 days for the release APK (57 MB).
+  Forgejo 15 honours `retention-days`. Recorded in R9 and in the runbook's compose comment.
+- [x] T037 [US4] Record the before and after figures in the runbook and in the spec baseline (SC-008):
   - forge share 21.5 GiB → measured;
   - per-night added ~20 GiB → measured;
   - Komodo 2.0 GB → measured;
   - the Komodo table 2,147 MB → measured.
   **Done when**: all four after-values are filled in from T034–T035 output.
+  **Done 2026-10-31**:
+  - forge 22.5 GB → 774–788 MB;
+  - per night ~20 GiB → 390–412 MiB;
+  - Komodo 2.07 GB → 85 MB;
+  - the table 2,147 MB → 46 MB after `VACUUM FULL`, then 58 MB steady.
+  All four are in the runbook table and the spec baseline.
 
 ---
 
@@ -443,10 +459,17 @@ retention.
   - The forge database counts are compared with the live forge's.
   - `fsck` runs on every repository, not only `mcm.git`.
   - It warns not to run between 03:00 and 04:00: an open read lock fails the nightly prune.
-- [ ] T039 [US1] **(operator)** Run the restore drill against the first post-PR-B snapshot, and paste
+- [x] T039 [US1] **(operator)** Run the restore drill against the first post-PR-B snapshot, and paste
   the output.
   **Done when**: the forge database restores, `fsck` is clean, and the Mongo collection count is
   above 0. The drill log row is committed (US1-AC5, US4-AC3, SC-005).
+  **Done 2026-10-31**, against snapshot `443ebb58` (2026-10-31 03:30, the third post-PR-B night):
+  - `forge-db` restored in 14 s with 0 errors. Repos and users were 2|1, matching live. Action runs
+    were 6,252, against 6,274 live, which were created since.
+  - `forge-data` untarred in 23 s; app.ini, jwt and mcm.git were present; fsck ok=2 bad=0.
+  - `mc-service-mongo` restored in 2 s: 2,315 documents, 0 failed, 2 collections.
+  - Scratch containers and dir removed.
+  The runbook's "Unproven" caveat on the forge restore is replaced by the drill log row.
 - [ ] T040 [US1] Verify item #830's acceptance criteria against T021, T034–T039 and the runbook. Post
   the evidence as a comment with `node scripts/backlog.mjs comment 830 --body-file …`, then close it
   with `update 830 --state closed`. Also close the T021 alert item with a comment linking #830.

@@ -73,6 +73,12 @@ front of a person.** None of them is a missing capability — in each case the e
     - `release-apks` 639,047,680 B (new);
     - `Added to the repository` 937.5 MiB on the first night, from 21.107 GiB the night before.
     The per-night figure on a typical day is the second night's (T035).
+  - **After US4 (steady state, 2026-10-30/31, T035)**: `Added to the repository` **389.6 MiB** and
+    **412.1 MiB**, from ~20 GiB (SC-008 met); forge 778–788 MB a night; Komodo 85.0 MB with no
+    `ack-shrink`; `cron.job_run_details` 58 MB (269,749 rows, 3 days 45 min of history).
+  - **Restore drill (2026-10-31, T039)**: snapshot `443ebb58` restored in scratch containers —
+    `forge-db` 0 errors with counts matching live, `forge-data` fsck 2 ok / 0 bad, `mc-service-mongo`
+    2 collections and 2,315 documents (SC-005).
   - **agent-db is empty by design** (operator, 2026-10-27): `agent_db` has zero tables, and its
     7.7 MB size equals an empty `postgres` database. The gateway compiles its graph with an
     in-memory checkpointer (`MemorySaver`), and no Python code reads `AGENT_DB_URL`. The 670-byte
