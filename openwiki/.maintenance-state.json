@@ -1,47 +1,47 @@
 {
-  "coveredCommit": "843b781e937ec9799a021f4f047bec0b223a3541",
-  "coveredAt": "2026-10-31T10:40:35.495Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "26c9d4ffb09bb1bd264e8e6912678b0528fe5338",
+  "coveredAt": "2026-10-31T14:17:38.520Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 885,
-    "headCommit": "a2782ed165aa9e3c4d4b728beb66ad11414c4dfe",
-    "markerBefore": "be48d1b4919c070d18eade348cece74980adfada",
+    "number": 889,
+    "headCommit": "b1a8b08e0ee3fc5fa68c8904beefd166ad4591b1",
+    "markerBefore": "843b781e937ec9799a021f4f047bec0b223a3541",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "server-setup.md"
+          "ci-diagnostics.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-31T09:58:14.879Z"
+    "updatedAt": "2026-10-31T14:17:38.927Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 2,
+    "elapsedSeconds": 1003,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 106,
+    "calls": 152,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 428680,
-    "cached": 8941734,
+    "uncached": 791614,
+    "cached": 17774602,
     "cacheWrite": 0,
-    "output": 151179,
-    "reasoning": 119776,
-    "ms": 884993,
-    "estCostUsd": 0.3637,
+    "output": 236616,
+    "reasoning": 191348,
+    "ms": 1470970,
+    "estCostUsd": 0.6281,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/server-setup.md"
+        "runbooks/ci-diagnostics.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.3637,
+      "estCostUsd": 0.6281,
       "rateLimited": null
     }
   ],
