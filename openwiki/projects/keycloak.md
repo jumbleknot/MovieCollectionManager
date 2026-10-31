@@ -29,6 +29,8 @@ sources:
     resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
     resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
@@ -83,10 +85,16 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-b2ca74a715a45afd3a6741ef
     resource: repo://scripts/__tests__/e2e-worker-session.test.mjs
   - id: openwiki-source-18c29c2650068d3600a02d5a
     resource: repo://scripts/__tests__/keycloak-realm-schema.test.mjs
+  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
+    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
     resource: repo://scripts/check-infra-image-findings.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08

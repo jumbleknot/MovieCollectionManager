@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-30T01:33:31.256Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-30T01:33:31.256Z
+    at: 2026-10-31T03:40:23.288Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -330,8 +330,8 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
   in the observability stack whenever that moves — so check the pin against that file rather than
   against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
-  while the tracked observability compose has moved to `1.0.3`; every git-tracked RustFS service must
-  share one digest-pinned Alpine tag). The store's volume and network names are host state
+  while the tracked observability compose has moved to `1.0.4@sha256:ed9210d6…`; every git-tracked
+  RustFS service must share one digest-pinned Alpine tag). The store's volume and network names are host state
   too, so confirm them by ownership *and* contents before running the migration copy — and the backup
   script's path list has to name each store's config directory, which is why the new store's directory
   is on it. Whether the retired store's directory should still be on that list is the one point where

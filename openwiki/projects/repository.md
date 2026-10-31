@@ -53,6 +53,8 @@ sources:
     resource: repo://docs/runbooks/e2e-testing.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
+    resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6

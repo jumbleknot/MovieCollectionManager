@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b91570264293804e7b304381937f444e6f18e2f6a3adbbef7f48ede60cd357f2",
+  "pageVersion": "sha256:1671210d5e27404a3cacae24a96eadbbaf442008ca586f7451789a39cf5f63b9",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -596,7 +596,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L188-L189",
-          "version": "repo-lines-v1:sha256:b3ad25174e82022d7a2e84bea4ba930b0726e04b6108c8ab756cc8fb74d48e96:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y5YWI3OWJhM2RmOTQxNDg4YmEyYzdlMjRjZDkzMGUxYTE5MTViZjU3MWYwZjA5ZjY5ZTEyMWNlMTcxOTEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYxMzlmZjZkM2FhN2E5Y2NiMTg0MmUxNzU2NDZlYThlZjQ1NjViODY0OWIyN2Y3NTVlMjAyYWZkMjk3NzNiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY4ZDNkZDdhY2FlNWE3MTMwNDU4YzQ5YWNiYzVlYjVmMzE0ZDEwNTA2MGJhMDY5ZmRkMTk3NzNjYTFkODRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ0MjNiYjYwMzcwNmFiN2I4ZDcyZDg4MTI1ZmJhODAxZjEwODc3OGI4ZDU0OTQ1ZTBiNjJjYWFkMTFhMjg0ZSJ9"
+          "version": "repo-lines-v1:sha256:b620bce3b9c4428eb555b60b4ba7bb2affa161622902313494711ebe3de3c13b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y5YWI3OWJhM2RmOTQxNDg4YmEyYzdlMjRjZDkzMGUxYTE5MTViZjU3MWYwZjA5ZjY5ZTEyMWNlMTcxOTEwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdiMTgyZmRjZTZiOGZkNzVjZTc2YzlkOWE5MmMxZmE4YTE0NTkzZjJiZjIxNTVlMzUxNjAwNGFjNDg3OGExZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY4ZDNkZDdhY2FlNWE3MTMwNDU4YzQ5YWNiYzVlYjVmMzE0ZDEwNTA2MGJhMDY5ZmRkMTk3NzNjYTFkODRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ0MjNiYjYwMzcwNmFiN2I4ZDcyZDg4MTI1ZmJhODAxZjEwODc3OGI4ZDU0OTQ1ZTBiNjJjYWFkMTFhMjg0ZSJ9"
         },
         {
           "resource": "repo://scripts/object-store-migration.mjs#L404-L412",
@@ -632,15 +632,15 @@
     },
     {
       "id": "claim_8fffc8ff3b12476cb9fe9832fc1aca93",
-      "statement": "The Phase 8 runbook snippet's RustFS pin lags the git-tracked one: it still shows `rustfs/rustfs:1.0.1@sha256:1803faef…` while the tracked observability prod compose has moved to `rustfs/rustfs:1.0.3@sha256:9ca95595…`, and every git-tracked RustFS service must share one digest-pinned Alpine tag. The host-managed Nx-cache compose is invisible to Renovate, so the pin must be copied by hand from the tracked file whenever that moves — check the tracked compose rather than the runbook's example.",
+      "statement": "The Phase 8 runbook snippet's RustFS pin lags the git-tracked one: it still shows `rustfs/rustfs:1.0.1@sha256:1803faef…` while the tracked RustFS composes have moved on — the observability prod compose now pins `rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2`, and every git-tracked RustFS service (observability, observability prod and backups) must share that one digest-pinned Alpine tag. The host-managed Nx-cache compose is invisible to Renovate, so the pin must be copied by hand from the tracked file whenever that moves — check the tracked compose rather than the runbook's example.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L677-L696",
-          "version": "repo-lines-v1:sha256:a9f3f4a7ce97771c527ef45dc9be2b69318e8ee999dde445056228bc62bb6fe7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmY2U3NmE3NjdjYzYwMTcyODc3NTcyODY1ZmYwMDlhZmQwYTRkYjYxY2JkZTc2ODI1OGUzZTk0OWExY2YyYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YTRkNTM2NTEyYzVlOGZlZDQ3NjA1YjRkYWI3MzVlNjVjYmE1NmMwMjQ2MGQ4MjUwZmIyMzg3MDhkZTlmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyZTBhM2E4OTZiYzc0ZTMwNDdjMTljNDVlOTU1NDE2MDk4NmExNzhmZmZkMWUwNGQwNDhlMDdjMWZlYmQyZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNmUxNjllYzVlMDg5NmUzZTVmNTBlZTRjNTI5ZmRkMzdlZDNkNjAxNzVkYWE5MzU5MmFiZDQ3MGMzNmVhMDEifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L679-L696",
+          "version": "repo-lines-v1:sha256:0869a083896ee89de2a09e8d82efd639bd903c17b2ad5a56eb8bb215e018a0de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2YwODgwZjA0ZDgwYzEzM2U2MWM5NGQ4MGMwZDY1MGRmYTYwMDA1ZTJjZDAxNjU0ZmMxYTI0ZTljYmFlODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YTRkNTM2NTEyYzVlOGZlZDQ3NjA1YjRkYWI3MzVlNjVjYmE1NmMwMjQ2MGQ4MjUwZmIyMzg3MDhkZTlmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmODY4OWQ1MTVhZDcyNzk5YzZhNDhlOTkzNzc0NmYxYjk2NmFhNzU5MDgyYWM4NWZhNjQxMDgwMzE5NTdmZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNmUxNjllYzVlMDg5NmUzZTVmNTBlZTRjNTI5ZmRkMzdlZDNkNjAxNzVkYWE5MzU5MmFiZDQ3MGMzNmVhMDEifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L186-L194",
-          "version": "repo-lines-v1:sha256:6767200ced5410acfa0855204b05521df739aa70bc5e6ec24e5c4fb094da206f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA4OThjODQwMjIyYTllZGM2ZDQ4MzAxNzVmYzAwODc3ZmZhOWFkNWVmM2NiMDhhMzRmOGQ4Mjk2YmZkYTQ1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE3YjExNDNlNTIzOTcxMDNjODhjOTkyMzhhNjk2ZTdkYTg4YjcyZTAwNDc3YjNiOWMzOWQ4OGE5YWY3NDAxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGYyMmIxMThiNWUxZmU1ZTFhMmI5MWIyNzYxYjljZGM0ZTg3YmY0OTJhZjAyOTRmNTVjMThhZTg3ZTdlODMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGI0NjBkOGFlNzAyZjU1YzU5ZGZmMjRlZjg1NjQ1YTNhNDEyNTgxOTdmMjMwODY0N2Q3MTk2NjE4NDJjOWYyNyJ9"
+          "version": "repo-lines-v1:sha256:13ca249ffd7810218c48461382df17eb6b04884e31468a743d1641cf440c7d7f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA4OThjODQwMjIyYTllZGM2ZDQ4MzAxNzVmYzAwODc3ZmZhOWFkNWVmM2NiMDhhMzRmOGQ4Mjk2YmZkYTQ1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE3YjExNDNlNTIzOTcxMDNjODhjOTkyMzhhNjk2ZTdkYTg4YjcyZTAwNDc3YjNiOWMzOWQ4OGE5YWY3NDAxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGYyMmIxMThiNWUxZmU1ZTFhMmI5MWIyNzYxYjljZGM0ZTg3YmY0OTJhZjAyOTRmNTVjMThhZTg3ZTdlODMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGI0NjBkOGFlNzAyZjU1YzU5ZGZmMjRlZjg1NjQ1YTNhNDEyNTgxOTdmMjMwODY0N2Q3MTk2NjE4NDJjOWYyNyJ9"
         },
         {
           "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L165-L174",
@@ -803,6 +803,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-30T01:33:31.256Z"
+    "at": "2026-10-31T03:40:23.288Z"
   }
 }

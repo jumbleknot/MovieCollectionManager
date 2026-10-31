@@ -1,10 +1,12 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the five version ceilings that were discharged into approval gates rather than deleted (vault, opensearch, langfuse, the observability postgres, MongoDB), the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the five version ceilings that were discharged into approval gates rather than deleted (vault, opensearch, langfuse, the observability postgres, MongoDB), the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), the item 879 branch reaper that deletes merged branches heading no open PR, and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 sources:
+  - id: openwiki-source-7884f328b4348e296cee1257
+    resource: repo://.forgejo/workflows/branch-reaper.yml
   - id: openwiki-source-6186a866b56089a82cce5c62
     resource: repo://.forgejo/workflows/devcontainer-image.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
@@ -45,14 +47,16 @@ sources:
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-238cf8b88f30f267614313be
     resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-aa94e9cc08dccbe003436cfb
+    resource: repo://scripts/reap-merged-branches.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-21T23:48:47.665Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-30T00:25:37.413Z
+    at: 2026-10-31T03:40:23.288Z
 ---
 
 # Renovate dependency bot
@@ -108,10 +112,13 @@ branch exists.
   both sweep slots stay strictly ahead. Both crons are UTC so the 3h Friday gap is fixed; DST cannot
   narrow it. **Do not "tidy the crons together"** — a guard test asserts the ordering and a gap of at
   least two hours, sized for queue depth rather than for the sweep's own ~3 minutes.
-- **Friday is a ladder on one runner, and that is what the gap is really sized for.** In UTC: 04:00
+- **Friday is a ladder on one runner, and that is what the gap is really sized for.** In UTC: 02:30
+  the daily `branch-reaper` (`branch-reaper.yml`, also on every push to `main`), 04:00
   the twice-weekly CVE sweep (`infra-image-scan.yml`, Friday plus Tuesday), 06:00
   `devcontainer-image` (a heavy build with a 60-minute timeout), 07:00 the Renovate window, 10:00
-  `lockfile-refresh-check`, 11:00 `renovate-health`. A second image build used to sit at 05:00 —
+  `lockfile-refresh-check`, 11:00 `renovate-health`. The reaper's daily 02:30 slot is deliberate: it
+  is ahead of the nightly 03:00 and the Friday window, so a merged `renovate/*` branch is gone
+  *before* Renovate decides whether to reuse it. A second image build used to sit at 05:00 —
   `minio-image.yml`, for the from-source MinIO build — but feature 080 retired that build for the
   upstream `rustfs/rustfs` object store and deleted the workflow, so 05:00 is now free. The
   capacity-1 runner may also already be inside a ~35-minute `app-e2e`, which is why the ordering
@@ -220,11 +227,21 @@ dispatch is one runner slot.
   `git diff --stat main...branch`, which prints nothing for an already-merged branch and reads as "no
   changes" rather than "already in main". `default_delete_branch_after_merge` (enabled 2026-08-29,
   item #290) removes most stale branches now, but only for merges through the UI button — an API-driven
-  merge that omits `delete_branch_after_merge: true` can still leave one behind.
+  merge that omits `delete_branch_after_merge: true` can still leave one behind. That is exactly what
+  happened on 2026-10-30: PRs #832–#835 were API-merged without the flag, their four
+  `lock-file-maintenance*` heads came back as empty PRs #874–#877, and all four went red on `sast`.
+  Since **item #879** the **branch reaper** (`.forgejo/workflows/branch-reaper.yml`, daily 02:30 UTC
+  and on every push to `main`) deletes merged branches that head no open PR, so a stale ref should not
+  survive to a window. It never touches a branch that heads an open PR — an empty PR still needs a
+  `rebase-branch=` tick, as it did that day. The reaper fails closed (an unreadable open-PR listing
+  deletes nothing, and unanswerable ancestry keeps the branch), leases each delete to the exact sha it
+  classified, and leaves `main`, `openwiki-maintenance` and any tip younger than a 6-hour grace period
+  alone.
 - **`renovate/lock-file-maintenance` is hard-exempt from Renovate's own pruning, by exact name** —
-  `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it, so
-  `default_delete_branch_after_merge` is the only thing that removes it (the one stale copy predating
-  that setting had to be deleted by hand). The comparison is exact-name, so the **suffixed** group
+  `finalize/prune.js` filters it out before `cleanUpBranches` ever sees it, so Renovate will never
+  remove it, and `default_delete_branch_after_merge` plus the item #879 branch reaper are the only
+  mechanisms that do (the one stale copy predating that setting had to be deleted by hand). The
+  comparison is exact-name, so the **suffixed** group
   branches this repository actually produces — `renovate/lock-file-maintenance-cargo-deps`,
   `renovate/lock-file-maintenance-python-deps` — are **not** exempt; they are prunable by autoclose like
   any other branch.

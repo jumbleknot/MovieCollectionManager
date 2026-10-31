@@ -7,6 +7,8 @@ tags: [ci, forgejo, diagnostics, tooling, runbook]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-7884f328b4348e296cee1257
+    resource: repo://.forgejo/workflows/branch-reaper.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-96c32d20fcdefc48cf9ec296
@@ -35,6 +37,8 @@ sources:
     resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-2c2f0032bb5935673fca7b18
+    resource: repo://scripts/__tests__/reap-merged-branches.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
@@ -49,6 +53,8 @@ sources:
     resource: repo://scripts/ci-step-ceilings.tsv
   - id: openwiki-source-48dc88a52302b6581d98158e
     resource: repo://scripts/e2e-failure-set.mjs
+  - id: openwiki-source-aa94e9cc08dccbe003436cfb
+    resource: repo://scripts/reap-merged-branches.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T03:00:26.889Z" }
 verified:
   - by: openwiki/0.7.1

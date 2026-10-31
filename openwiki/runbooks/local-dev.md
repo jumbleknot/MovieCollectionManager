@@ -37,10 +37,14 @@ sources:
     resource: repo://infrastructure-as-code/docker/observability/compose.yaml
   - id: openwiki-source-7ad99116ef3a9756b7c06307
     resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
+  - id: openwiki-source-79878dc2da65b6b5c71034f7
+    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
   - id: openwiki-source-164936b930a31e48cf0a65fc
     resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
   - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
     resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
+    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
   - id: openwiki-source-d951526f31e9f2cb4d68995b
     resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40

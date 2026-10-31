@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d9b9a0d5173f53e4f54be3c27352a3741c2322f3415e3d04b13614ef70cc288d",
+  "pageVersion": "sha256:3d96fad8446f2b7e8d35584db8cb4e93533847d01632f1921e03bb35148e0923",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -132,7 +132,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -156,7 +156,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -170,7 +170,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -180,11 +180,15 @@
     },
     {
       "id": "claim_7a17ae9a0304459390d1e752b69762f2",
-      "statement": "renovate/lock-file-maintenance is hard-exempt from Renovate's own branch pruning by exact name, so default_delete_branch_after_merge is the only mechanism that removes it; the suffixed group branches this repository produces are not exempt and are prunable by autoclose.",
+      "statement": "renovate/lock-file-maintenance is hard-exempt from Renovate's own branch pruning by exact name — finalize/prune.js filters it out before cleanUpBranches ever sees it — so default_delete_branch_after_merge plus the item #879 branch reaper are the only mechanisms that remove it; the suffixed group branches this repository produces (renovate/lock-file-maintenance-cargo-deps and -python-deps) are not exempt and are prunable by autoclose like any other branch.",
       "evidence": [
         {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -194,7 +198,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -204,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -214,7 +218,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -228,7 +232,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -270,7 +274,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://scripts/backlog.mjs",
@@ -470,7 +474,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -594,7 +598,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         }
       ]
     },
@@ -622,7 +626,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -721,10 +725,42 @@
           "version": "repo-lines-v1:sha256:6887de0705251017cd5c980a71ddef352017899124bb8173b3d320dc5882cc8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YWQyMTUzNDQwZDdjZTJlODE3MDFkMDY5MTNmMTJkNzdmZjZmZDEwZDg0ODVlYzVlOThmNmJiM2Y0NzA3NDMxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
+    },
+    {
+      "id": "claim_423293ced605413f83642625ab42433f",
+      "statement": "Since item #879 the branch reaper (.forgejo/workflows/branch-reaper.yml, daily 02:30 UTC and on every push to main) deletes merged branches that head no open PR, so a stale renovate/* branch should not survive to a window; its slot is deliberately ahead of the nightly 03:00 and the Friday window so the branch is gone before Renovate decides whether to reuse it. It never touches a branch that heads an open PR (an empty PR still needs a rebase-branch= tick), fails closed — an unreadable open-PR listing deletes nothing and unanswerable ancestry keeps the branch — leases each delete to the exact sha it classified, and exempts main, openwiki-maintenance and any tip younger than a 6-hour grace period.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
+        }
+      ]
+    },
+    {
+      "id": "claim_6513667eadb148d88a0f53daa204e658",
+      "statement": "An API-driven merge that omits delete_branch_after_merge: true can still leave a stale renovate/* branch behind even though the setting reads true; on 2026-10-30 PRs #832–#835 were API-merged without the flag, their four lock-file-maintenance heads came back as empty PRs #874–#877, and all four went red on sast — which is why the item #879 branch reaper removes the dependency on anyone remembering the flag.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/branch-reaper.yml",
+          "version": "repo-file-v1:sha256:b7c36593cdfa61df9473e3a8761c917c82022756cce986fa7948cb7b0eb53df2"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+        },
+        {
+          "resource": "repo://scripts/reap-merged-branches.mjs",
+          "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-30T00:25:37.413Z"
+    "at": "2026-10-31T03:40:23.288Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8c2208961ea557db7d880855fad4794be4b9d7c0e345a0ed3497538206974f4",
+  "pageVersion": "sha256:bc5493e6efa1eb7a91bda84a79668c4ef6a0c25dd4cf85648754c115a71cd84c",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -298,7 +298,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L134-L168",
-          "version": "repo-lines-v1:sha256:5c35efc7ac207f1308a2c956637aabd7c025070238a0340c0edae1267ce7b5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzJkMTZjZGFlNTM0MzMwYWM3NTNkMTEyMzk2M2U1NjlmMzRhYjhiMmVlM2IwNDk1NTAzNjU5MzIyMWVhYmMifQ"
+          "version": "repo-lines-v1:sha256:b3d6f91544f2a72872e5a44d9d8ad409a2220b22dc518e44fd7dc712aa7973dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmZhMzI1NWZhZjJkOTM0NTRjNDUxOTJjMWUyZDRiOTJjZTg5YjgxZTAzOWFjM2I0NmI4ZGYxMDllMGVjMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YzJkMTZjZGFlNTM0MzMwYWM3NTNkMTEyMzk2M2U1NjlmMzRhYjhiMmVlM2IwNDk1NTAzNjU5MzIyMWVhYmMifQ"
         }
       ]
     },
@@ -330,7 +330,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         }
       ]
     },
@@ -374,15 +374,19 @@
     },
     {
       "id": "claim_1e12b323566a45a59adad17f8ff02b0a",
-      "statement": "The prod Langfuse event/media object store is no longer built in-repo: feature 080 replaced every instance with the digest-pinned upstream rustfs/rustfs image, which runs as its own uid (10001) with no compose `user:` key — a fresh named volume inherits the image's /data with that ownership and any other uid fails at startup. All shipped instances (the dev and prod observability composes and the backups compose) pin the same 1.0.3 line on one shared index digest, and the bucket-init one-shot langfuse-rustfs-init reuses that same pinned image; the object-store guard test holds the whole shape (digest-pinned tag, no `user:` key, RUSTFS_* credentials, the readiness probe, and the prod stay-alive init), so a split between the server and its init cannot arise from a hand edit and the digest itself is left to the compose files and Renovate.",
+      "statement": "The prod Langfuse event/media object store is no longer built in-repo: feature 080 replaced every instance with the digest-pinned upstream rustfs/rustfs image, which runs as its own uid (10001) with no compose `user:` key — a fresh named volume inherits the image's /data with that ownership and any other uid fails at startup. All shipped instances (the dev and prod observability composes and the backups compose) pin the same 1.0.4 line on one shared index digest, and the bucket-init one-shot langfuse-rustfs-init reuses that same pinned image; the object-store guard test holds the whole shape (digest-pinned tag, no `user:` key, RUSTFS_* credentials, the readiness probe, the prod stay-alive init, and that all three files pin one identical image), so a split between the server and its init cannot arise from a hand edit and the digest itself is left to the compose files and Renovate.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
           "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs",
-          "version": "repo-file-v1:sha256:0abfa8036002b090a30745946bbffb4fdf969c4d50c85dc1e6439b1a22549237"
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L165-L169",
+          "version": "repo-lines-v1:sha256:7aeb44fc3301a755943cf437e173d561581888a9f25e9c47e2afc3fe6c65fd64:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjczMGRhOWY5NDhlNDYyOGFhN2Y5MGU3YjhiZTlhZGY4N2VlODNlZWZiZjM5YjJmNzhlNWQ1YWY1OTg2OGZlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ1ZjQyNDFjYmJlNzA3ODYxODgzMzgzNDgxZmU5NzBmYzMzNTU1NmMwN2YyODM1MTIzNTFmZmUzMTUzNTgyYSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L44-L45",
+          "version": "repo-lines-v1:sha256:323badf94eda03eedb893617c16fe19328504f5e53235f86685776420fdd7ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhlNDAxYWY5NzRmMjMyOGIzMzc0MGEzZTU0ZTRjYmNlMjgwODBlZjE0MTI5N2RmYzdmMTgwMWU2MjhmZTllZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E2YWU1OGIwNjY2YjJiNzQzMjJmYjZiNTgzYmEwZTQ3ZGI2NGFkZGNhMTAxYWJkZTM0MmIwZDI3MzNlM2Q4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTFhNWVmMTBmNDljNGZjNDE5OWVmY2MwYjJlMTVlMGQzMzcyNmJmZGI0ZjZiOTMwYjBiYWMwOTZjOGZjMjI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ3ZDA5MzgwZDhjZGNjN2M0NmFhZTVmNTc3M2Q2Yjk2MjkzMDY0MmU2YmE1OWFiYmRhMTQyMzAxZDlmNjcxNCJ9"
         },
         {
           "resource": "repo://specs/080-minio-to-rustfs/contracts/object-store-service.md",
@@ -516,7 +520,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -548,7 +552,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:15600b3dad73fc3b818fca146cb8e840bbb8e37f9681fd74f8970bd6ad90467a"
+          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
         },
         {
           "resource": "repo://renovate.json",
@@ -644,7 +648,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:ea24d8b15e74b1caa7f82a6e0911e0f8a6afd4039e818a7fdbdb8487c3bcb064"
+          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
         }
       ]
     },
@@ -671,7 +675,7 @@
       "statement": "The 4.68.0 bump's allowlist work was mixed rather than uniform, and the page's \"re-key at the cause\" rule is the shape while this is the instance: the two `next` advisories the new version discharged were DELETED, while the three that still block on the exact 4.68.0 digests — the base-image ca-certificates CVE on web and worker, and the bundled @sentry/nextjs CVE on web — were RE-KEYED 4\\.56\\.0 → 4\\.68\\.0 with their 2026-11-20 expiry unchanged, so the gate passed with 0 unmatched entries and --check-expiring still opens its warning window on 2026-11-06. renovate.json needed no edit at all, because the `langfuse` packageRule and the stateful-major dependencyDashboardApproval rule match by package name with no version in them — recorded as a fact rather than changed cosmetically.",
       "evidence": [
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L75-L89",
+          "resource": "repo://security/infra-images/allowlist.yaml#L74-L88",
           "version": "repo-lines-v1:sha256:4d0455d1309d3dcdb6e904322fc83db9e5ae716fa4364bbca2d0d9d61aed46d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNTAyNzZhZjQ2NTU3MmY2YWM2MDUzMzI2OTFiNjE4MTFhNzMxNTAwOTVjYzJhNzNlZWViN2Q3MGFjYmM4ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmNjVhYzU3YTc0YjY4Nzg0N2E5OTI0OTZiNDVmYjFjYTdiMGI5NDBmN2Y1OTVjMmM0ZGFjNjg0MDExYmM5MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODk0MWU5NDE5NTBlYzA3MmY3YmU4YzRlMTdmM2U1M2RiYWVkZDJjMmUzOGIxMjIzOWM2MzhhMjhkMTc4MGIifQ"
         },
         {
@@ -697,6 +701,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-10-31T03:40:23.288Z"
   }
 }
