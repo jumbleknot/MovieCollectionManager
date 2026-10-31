@@ -39,6 +39,19 @@ mcp-integration-spreadsheet	300	n=40 max=3s x3=9s -> floor 300s; runs 3503..3103
 mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 #
 # ON THE BACKSTOP — seen in the sample, but too few observations to calibrate from:
+# app-e2e-tag-scan-images	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-decide	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-install-js-dependencies	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-install-trivy	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-verify-tags	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-mc-service	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-mcm-bff	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-agent-gateway	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-movie-mcp	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-web-api-mcp	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-spreadsheet-mcp	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-remove-tags	-	new in spec 084 US3; NO observations yet.
+#   The `app-image-scan` steps run in their own job, bounded by its CI_STEP_TIMEOUT_SECONDS (900s).
 # app-e2e-build-images	-	split out of app-e2e-bring-up-keycloak (feature 073); NO observations
 #   yet under this name. It is the cache-dependent half: ~0s when the Docker layer cache hits,
 #   and a full Expo web export when a PR touches frontend source — which is what drove that

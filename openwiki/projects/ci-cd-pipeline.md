@@ -19,8 +19,11 @@ carry distinct responsibilities:
 - **`app-ci.yml`** — Nx-affected lint/build/unit for changed projects, plus (path-gated) the heavy
   `app-e2e` job: provisioned auth+mcm stacks, containerized [Agent Gateway](./agent-gateway.md)
   and [MCP servers](./mcp-servers.md), full web Playwright E2E, a release APK build,
-  and Maestro mobile agent flows.
-- **`cd-deploy.yml`** — build six images via their Nx targets → Trivy scan (blocks on Critical) → push
+  and Maestro mobile agent flows. Then the required **`app-image-scan`** job (spec 084 US3) runs the
+  deploy gate's own Trivy pipeline (`scripts/cd/scan-app-image.sh`) on the six images `app-e2e` built.
+  So a fixable Critical fails the **PR**, rather than surfacing as a failed deploy after the merge.
+  `trigger-cd` needs it too.
+- **`cd-deploy.yml`** — build six images via their Nx targets → Trivy scan (blocks on Critical; the same script the PR ran) → push
   by tag+digest → **digest-by-git promotion** (write the immutable digest into tracked, host-free
   `.env.deploy` files, commit to `main`) → fire the signed Komodo ResourceSync webhook → post-deploy
   health probe → git-revert rollback on failure.
@@ -30,7 +33,8 @@ flowchart LR
   PR[Pull request] --> G[guardrails.yml]
   PR --> A[app-ci.yml: affected + app-e2e]
   G -->|required checks green| M[Merge to main]
-  A -->|required checks green| M
+  A --> S[app-image-scan: Trivy on app-e2e's 6 images]
+  S -->|required checks green| M
   M --> T["app-ci trigger-cd job\n(needs: CI jobs)"]
   T -->|dispatch deploy=true| C[cd-deploy.yml]
   C --> B[Build 6 images + Trivy scan]

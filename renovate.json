@@ -208,7 +208,8 @@
     {
       "customType": "regex",
       "description": [
-        "Keep the pinned Trivy version current in BOTH workflows that install it. Item #303.",
+        "Keep the pinned Trivy version current in EVERY workflow that installs it. Item #303. Three since",
+        "spec 084 US3: app-ci's app-image-scan scans the PR's images with the scanner the deploy will use.",
         "WHAT WAS WRONG. Both installs fetched the install script from the MOVING branch `main` and",
         "piped it into sh, then passed NO tag — and the script's own usage says 'If tag is missing,",
         "then the latest will be used'. Two floating references on one line, in the tool that decides",
@@ -237,7 +238,8 @@
       ],
       "managerFilePatterns": [
         "/^\\.forgejo/workflows/infra-image-scan\\.yml$/",
-        "/^\\.forgejo/workflows/cd-deploy\\.yml$/"
+        "/^\\.forgejo/workflows/cd-deploy\\.yml$/",
+        "/^\\.forgejo/workflows/app-ci\\.yml$/"
       ],
       "matchStrings": ["TRIVY_VERSION=(?<currentValue>v[\\d.]+)"],
       "depNameTemplate": "aquasecurity/trivy",

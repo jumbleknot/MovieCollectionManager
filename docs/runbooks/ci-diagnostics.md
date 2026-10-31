@@ -487,6 +487,39 @@ number the UI shows.
 > `no deploy dispatched for this sha — trigger-cd passed …`; run `status` on the commits after it in
 > `git log --first-parent main`.
 
+### `app-ci / app-image-scan` — the six app images are scanned on the PR now, not only at deploy (spec 084 US3)
+
+Until spec 084 the six app images (`mc-service`, `mcm-bff`, `agent-gateway`, `movie-mcp`,
+`web-api-mcp`, `spreadsheet-mcp`) were scanned in one place: cd-deploy's `scan-push`, which runs
+**after** the merge. A fixable Critical that a base-image or dependency bump introduced therefore passed
+every PR check and surfaced as a failed deploy on `main`, where nothing blocks (item #822; cd-deploy
+run 5745 on 2026-10-21 is the shape).
+
+`app-image-scan` is a **required** app-ci job. It runs the deploy gate's exact pipeline,
+`scripts/cd/scan-app-image.sh` (one Trivy pin, one set of flags, one allowlist), on the images
+`app-e2e` already built. `app-e2e` tags them `app-scan/<name>:run-<run id>`, so a later run rebuilding
+`:latest` on the persistent daemon cannot change what is scanned. It also runs on pushes to `main`, and
+`trigger-cd` needs it, so a vulnerability-database change shows as a red on `main` **before** a dispatch.
+
+| What you see | Meaning | What to do |
+|---|---|---|
+| `no app path changed — images identical to main's` | Nothing to scan; passes in seconds | Nothing |
+| `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images | Fix `app-e2e`; this job never passes on images it could not find |
+| exit **10**, `✗ SCANNER ERROR for <image>` | Trivy could not complete (vulnerability DB or registry, after its retries). **Not a verdict**: nothing was assessed | Re-run the job |
+| exit **11**, `✗ BLOCKING FINDING in <image>` | An un-allowlisted Critical with an upstream fix. The verdict's table above it names the CVE and the package | Patch it (bump the base image or the dependency), or add a reviewed, justified, **expiring** entry to `security/infra-images/allowlist.yaml` |
+
+Every image is scanned even after one fails, so one run names every blocking image. An allowlist entry
+works in both places at once, because the PR and the deploy read the same file. Key it to the
+**digest** (`^<image>:<tag>@sha256:<prefix>`), so a rebuild is scanned unsuppressed.
+
+**The residual: a green PR can still meet a red deploy.**
+- The vulnerability database moves between the PR's scan and the deploy's, which is why `main`
+  pushes re-scan before `trigger-cd`.
+- cd-deploy rebuilds the images, and its `mcm-bff` bakes the public Keycloak host into the web bundle.
+  The packages and the base image are the same, so the CVE surface is too.
+
+`scan-push` therefore stays, unchanged in position, as the gate on what is actually pushed.
+
 ### Four measured quirks of `GET /actions/runs` (2026-09-19)
 
 Three of the four read as success while returning the wrong thing, which is why they are listed

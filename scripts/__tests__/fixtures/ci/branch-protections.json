@@ -9,7 +9,8 @@
       "app-ci / affected*",
       "app-ci / mc-service-checks*",
       "app-ci / app-e2e*",
-      "infra-image-scan / infra-image-scan*"
+      "infra-image-scan / infra-image-scan*",
+      "app-ci / app-image-scan*"
     ]
   },
   {

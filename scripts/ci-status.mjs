@@ -519,6 +519,8 @@ export const REQUIRED_CONTEXT_GLOBS = [
   'app-ci / mc-service-checks*',
   'app-ci / app-e2e*',
   'infra-image-scan / infra-image-scan*',
+  // Spec 084 US3: the PR-time scan of the six app images (an operator adds it to protection at merge).
+  'app-ci / app-image-scan*',
 ];
 
 /**
