@@ -49,6 +49,15 @@ dev = [
 # (ReadWriteLock SQLite symlink/journal planting) is fixed only on the 4.x line. Forced to 4.2.4
 # (operator-approved 2026-10-23); drop this override once the dependents' cap admits 4.
 override-dependencies = ["pillow>=13.0.0", "filelock>=4.2.4"]
+# anthropic: transitive only (langchain-anthropic -> anthropic). SDK 2.x breaks `temperature`:
+# with anthropic 2.3.0 + langchain-anthropic 1.7.7, ChatAnthropic(temperature=0) on
+# claude-haiku-4-5 is a hard 400 `temperature: Extra inputs are not permitted` on EVERY call, while
+# the same model accepts it on a raw /v1/messages call and on SDK 1.17.0 (measured 2026-10-31, PR #877
+# — the lock-file-maintenance refresh pulled 1.17.0 -> 2.3.0). Since haiku-4-5 is the supervisor's
+# default and src/models.py sends temperature to it, 2.x would fail every supervisor call.
+# A constraint, not an override: it narrows langchain-anthropic's own requirement rather than
+# replacing it. Drop it when the SDK 2.x migration lands (backlog item, see PR #877).
+constraint-dependencies = ["anthropic<2"]
 
 [tool.ruff]
 line-length = 100
