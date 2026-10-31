@@ -1,0 +1,27 @@
+{
+  "_source": "Recorded from the forge 2026-10-31 (read-only credential), trimmed to the fields ci-status reads; trigger_user, event_payload, repository and html_url (which carries the forge host) are dropped. Item #823: cd-deploy run 5745 (UI run 5744) on fa79e611 failed at scan-push and posted no commit status of its own.",
+  "sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+  "statuses": [
+    {
+      "context": "cd-deploy/prod-apk-disk",
+      "status": "success",
+      "description": "reclaimed=none step=success avail=587G used=33%",
+      "created_at": "2026-10-21T01:47:14Z"
+    }
+  ],
+  "workflow_runs": [
+    {
+      "id": 5745,
+      "title": "cd-deploy",
+      "workflow_id": "cd-deploy.yml",
+      "index_in_repo": 5744,
+      "commit_sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+      "event": "",
+      "trigger_event": "workflow_dispatch",
+      "status": "failure",
+      "started": "2026-10-21T01:44:08Z",
+      "stopped": "2026-10-21T01:47:01Z",
+      "created": "2026-10-21T01:44:05Z"
+    }
+  ]
+}

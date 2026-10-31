@@ -1873,3 +1873,260 @@ test('(#485) a run that did NOT fail stays silent — this must not fire on ever
   assert.equal(describeContextlessRunFailure(null), null, 'no --run was passed; there is nothing to say');
   assert.equal(describeContextlessRunFailure(undefined), null);
 });
+
+// ================================================================================================
+// item #823 / spec 084 US2 — the dispatched cd-deploy is visible to status, watch and failure
+// ================================================================================================
+//
+// `trigger-cd` dispatches cd-deploy, and the dispatched run posts no commit status of its own. On
+// 2026-10-21 run 5745 failed at scan-push and every command said "green" or "No failed jobs": the
+// evidence sat in the bundle `5745--build-deploy` and was read by hand. The fixtures are the real
+// payloads, trimmed (fixtures/ci-status/). Two measured shapes the spec did not expect: a
+// dispatched run carries `event: ""` with the event in `trigger_event`, and its sha in
+// `commit_sha` — a resolver keyed on `event`/`head_sha` matches nothing and stays silent.
+
+import {
+  findDispatchedDeploy, DEPLOY_CONTEXT, DEPLOY_BUNDLE_JOBS, cmdStatus,
+} from '../ci-status.mjs';
+
+const DEPLOY_FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'ci-status');
+const deployFixture = (name) => JSON.parse(readFileSync(join(DEPLOY_FIXTURES, `${name}.json`), 'utf8'));
+
+test('findDispatchedDeploy: selects the cd-deploy dispatch for the sha, from the real payload shape', () => {
+  const f = deployFixture('dispatched-failed');
+  const d = findDispatchedDeploy(f.sha, f.workflow_runs);
+  assert.ok(d, 'the real 2026-10-21 run was not found — is the resolver reading `event` instead of `trigger_event`?');
+  assert.equal(d.context, DEPLOY_CONTEXT);
+  assert.equal(d.context, 'cd-deploy / build-deploy (dispatched)');
+  assert.equal(d.runId, 5745);
+  assert.equal(d.state, 'failed');
+  assert.equal(d.required, false);
+});
+
+test('findDispatchedDeploy: success → passed, running → waiting', () => {
+  const ok = deployFixture('dispatched-success');
+  assert.equal(findDispatchedDeploy(ok.sha, ok.workflow_runs).state, 'passed');
+  const running = deployFixture('dispatched-in-progress');
+  assert.equal(findDispatchedDeploy(running.sha, running.workflow_runs).state, 'waiting');
+  for (const status of ['waiting', 'blocked']) {
+    const runs = [{ ...running.workflow_runs[0], status }];
+    assert.equal(findDispatchedDeploy(running.sha, runs).state, 'waiting', status);
+  }
+});
+
+test('findDispatchedDeploy: the newest run by id wins (a re-run decides)', () => {
+  const f = deployFixture('dispatched-rerun');
+  const d = findDispatchedDeploy(f.sha, f.workflow_runs);
+  assert.equal(d.runId, 5746, 'the older, passing run was chosen');
+  assert.equal(d.state, 'failed');
+  // Order-independent: the forge lists newest first, but nothing guarantees it.
+  assert.equal(findDispatchedDeploy(f.sha, [...f.workflow_runs].reverse()).runId, 5746);
+});
+
+test('findDispatchedDeploy: no match returns null — another sha, another workflow, a push run', () => {
+  const f = deployFixture('dispatched-failed');
+  const run = f.workflow_runs[0];
+  assert.equal(findDispatchedDeploy('0'.repeat(40), f.workflow_runs), null);
+  assert.equal(findDispatchedDeploy(f.sha, [{ ...run, workflow_id: 'app-ci.yml' }]), null);
+  assert.equal(findDispatchedDeploy(f.sha, [{ ...run, trigger_event: 'push', event: 'push' }]), null);
+  assert.equal(findDispatchedDeploy(f.sha, []), null);
+  // The GitHub-shaped spelling is honoured too, so a payload that fills `event`/`head_sha` still matches.
+  const gh = { id: 9, workflow_id: 'cd-deploy.yml', event: 'workflow_dispatch', head_sha: f.sha, status: 'success' };
+  assert.equal(findDispatchedDeploy(f.sha, [gh]).runId, 9);
+});
+
+test('findDispatchedDeploy: run_number / index_in_repo is never the bundle name — the id is', () => {
+  // The UI calls run 5745 "5744" (index_in_repo); the bundle is `5745--build-deploy`. A name built
+  // from the UI number 404s for a bundle that exists (CLAUDE.md, instrument checks).
+  const f = deployFixture('dispatched-failed');
+  const d = findDispatchedDeploy(f.sha, f.workflow_runs);
+  assert.notEqual(d.runId, f.workflow_runs[0].index_in_repo);
+  assert.deepEqual(d.bundleVersions, ['5745--build-deploy', '5745--prod-apk']);
+});
+
+test('the deploy bundle jobs are exactly the cd-deploy jobs that publish a digest', () => {
+  // Drift guard: a job added to cd-deploy with its own digest step would otherwise never be read.
+  const yml = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows', 'cd-deploy.yml'), 'utf8');
+  const jobs = [];
+  let current = null;
+  for (const line of yml.split('\n')) {
+    const m = line.match(/^  ([a-z][\w-]*):\s*$/);
+    if (m) current = m[1];
+    if (current && /node scripts\/ci-failure-digest\.mjs/.test(line) && !jobs.includes(current)) jobs.push(current);
+  }
+  assert.deepEqual([...DEPLOY_BUNDLE_JOBS].sort(), jobs.sort());
+});
+
+test('status shows the deploy as advisory and the verdict is unchanged (FR-008, FR-012)', () => {
+  const f = deployFixture('dispatched-failed');
+  const deploy = findDispatchedDeploy(f.sha, f.workflow_runs);
+  const without = computeMergeVerdict(f.statuses, { runs: f.workflow_runs });
+  const withDeploy = computeMergeVerdict(f.statuses, { runs: f.workflow_runs, deploy });
+  const row = withDeploy.gate.advisory.find((c) => c.context === DEPLOY_CONTEXT);
+  assert.ok(row, 'the failed deploy is not in the advisory set');
+  assert.equal(row.required, false);
+  assert.ok(withDeploy.advisory.some((c) => c.context === DEPLOY_CONTEXT), 'not in the view either');
+  assert.equal(withDeploy.mergeable, without.mergeable);
+  assert.deepEqual(withDeploy.gate.blocking, without.gate.blocking);
+  assert.equal(exitCodeForVerdict(withDeploy), exitCodeForVerdict(without));
+  // Even a glob that WOULD match cannot make it required: the verdict is not the deploy's to decide.
+  const greedy = computeMergeVerdict(f.statuses, { runs: f.workflow_runs, deploy, requiredGlobs: ['*'] });
+  assert.equal(greedy.gate.all.find((c) => c.context === DEPLOY_CONTEXT).required, false);
+
+  // A running deploy is outstanding in BOTH the view and the gate, so neither can call it settled.
+  const running = deployFixture('dispatched-in-progress');
+  const rv = computeMergeVerdict(running.statuses, {
+    runs: running.workflow_runs, deploy: findDispatchedDeploy(running.sha, running.workflow_runs),
+  });
+  for (const list of [rv.advisoryWaiting, rv.gate.advisoryWaiting]) {
+    assert.ok(list.some((c) => c.context === DEPLOY_CONTEXT), 'a running deploy is not outstanding');
+  }
+  assert.equal(rv.mergeable, true, 'a running deploy must not hold the merge verdict');
+});
+
+/** A forge that also serves runs and bundles, for the end-to-end cases. */
+function stubDeployForge({ statuses, runs, bundles = {}, runById = null }) {
+  const realFetch = globalThis.fetch;
+  const fetched = [];
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    fetched.push(u);
+    const json = (o) => ({ ok: true, status: 200, text: async () => JSON.stringify(o), json: async () => o });
+    if (u.includes('/branch_protections')) return json([]);
+    if (/\/actions\/runs\/\d+/.test(u)) return json(runById ?? {});
+    if (u.includes('/actions/runs?')) return json({ workflow_runs: runs });
+    if (u.endsWith('/status')) return json({ statuses });
+    const b = u.match(/\/generic\/ci-failures\/([^/]+)\/bundle\.json\.gz$/);
+    if (b) {
+      const manifest = bundles[b[1]];
+      if (!manifest) return { ok: false, status: 404, text: async () => 'not found' };
+      const gz = gzipSync(JSON.stringify(manifest));
+      return { ok: true, status: 200, arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.length) };
+    }
+    throw new Error(`unexpected fetch: ${u}`);
+  };
+  return { fetched, restore: () => { globalThis.fetch = realFetch; } };
+}
+
+async function capture(fn) {
+  const real = console.log;
+  const lines = [];
+  console.log = (l) => lines.push(String(l));
+  try { return { code: await fn(), out: lines.join('\n') }; } finally { console.log = real; }
+}
+
+test('status prints the dispatched deploy row and keeps the exit code (US2-AC1)', async () => {
+  const f = deployFixture('dispatched-failed');
+  const { restore } = stubDeployForge({ statuses: f.statuses, runs: f.workflow_runs });
+  try {
+    const { code, out } = await capture(() => cmdStatus({ sha: f.sha }, FAKE_CONN));
+    assert.match(out, /cd-deploy \/ build-deploy \(dispatched\)\s+failed\s+run 5745/);
+    assert.match(out, /DEPLOY FAILED \(advisory\)/);
+    assert.match(out, /VERDICT  mergeable/);
+    assert.equal(code, 0, 'status must keep exit 0 ⟺ mergeable — the deploy does not gate merging');
+  } finally { restore(); }
+});
+
+test('watch returns on a failed deploy, with exit 4 (US2-AC2, FR-009)', async () => {
+  const f = deployFixture('dispatched-failed');
+  const { restore } = stubDeployForge({ statuses: f.statuses, runs: f.workflow_runs });
+  try {
+    const { code, out } = await capture(() =>
+      cmdWatch({ sha: f.sha }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.equal(code, 4, out);
+    assert.match(out, /DEPLOY FAILED \(advisory\)/);
+  } finally { restore(); }
+  // 4 is distinct from every code a merge verdict maps to, so a caller can branch on it.
+  const verdictCodes = new Set();
+  for (const fx of ['status-all-green', 'status-genuine-failure', 'status-waiting', 'status-cancelled']) {
+    verdictCodes.add(exitCodeForVerdict(computeMergeVerdict(statusesOf(`${fx}.json`))));
+  }
+  verdictCodes.add(exitCodeForVerdict(computeMergeVerdict([])));
+  assert.deepEqual([...verdictCodes].sort(), [0, 1, 3]);
+  assert.ok(!verdictCodes.has(4));
+});
+
+test('watch keeps polling while the dispatched deploy is still running', async () => {
+  const running = deployFixture('dispatched-in-progress');
+  const done = deployFixture('dispatched-success');
+  const realFetch = globalThis.fetch;
+  let runsCalls = 0;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    const json = (o) => ({ ok: true, status: 200, text: async () => JSON.stringify(o) });
+    if (u.includes('/branch_protections')) return json([]);
+    if (u.includes('/actions/runs?')) {
+      runsCalls += 1;
+      return json({ workflow_runs: runsCalls < 3 ? running.workflow_runs : done.workflow_runs });
+    }
+    if (u.endsWith('/status')) return json({ statuses: done.statuses });
+    throw new Error(`unexpected fetch: ${u}`);
+  };
+  try {
+    const { code, out } = await capture(() =>
+      cmdWatch({ sha: done.sha }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.ok(runsCalls >= 3, `returned after ${runsCalls} poll(s), while the deploy was running`);
+    assert.match(out, /waiting on cd-deploy \/ build-deploy \(dispatched\) \[advisory\]/);
+    assert.equal(code, 0);
+  } finally { globalThis.fetch = realFetch; }
+});
+
+test('watch with no deploy dispatched (a PR or non-main sha) is unchanged', async () => {
+  const { restore } = stubDeployForge({ statuses: GREEN_STATUS, runs: [] });
+  try {
+    const { code, out } = await capture(() =>
+      cmdWatch({ sha: SHA_A }, FAKE_CONN, { timeoutSeconds: 60, intervalSeconds: 0 }));
+    assert.equal(code, 0);
+    assert.doesNotMatch(out, /dispatched/);
+  } finally { restore(); }
+});
+
+test('failure falls back to the deploy\'s evidence bundle (US2-AC3, FR-010)', async () => {
+  const f = deployFixture('dispatched-failed');
+  const bundle = deployFixture('bundle-5745--build-deploy');
+  const { restore } = stubDeployForge({
+    statuses: f.statuses, runs: f.workflow_runs, bundles: { '5745--build-deploy': bundle },
+  });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ sha: f.sha }, FAKE_CONN));
+    assert.doesNotMatch(out, /No failed jobs/);
+    assert.match(out, /CI failure — `cd-deploy` \/ `build-deploy`/);
+    assert.match(out, /\*\*Failing step\*\* \| scan-push/);
+    assert.equal(code, 1);
+  } finally { restore(); }
+});
+
+test('failure --run on the dispatched run reads the same bundle, not "posted NO commit status"', async () => {
+  const f = deployFixture('dispatched-failed');
+  const bundle = deployFixture('bundle-5745--build-deploy');
+  const { restore } = stubDeployForge({
+    statuses: f.statuses, runs: f.workflow_runs, bundles: { '5745--build-deploy': bundle },
+    runById: f.workflow_runs[0],
+  });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ run: '5745' }, FAKE_CONN));
+    assert.match(out, /Failing step\*\* \| scan-push/, out);
+    assert.equal(code, 1);
+  } finally { restore(); }
+});
+
+test('failure with the evidence bundle missing says so and exits 1 (FR-011)', async () => {
+  const f = deployFixture('dispatched-failed');
+  const { restore } = stubDeployForge({ statuses: f.statuses, runs: f.workflow_runs, bundles: {} });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ sha: f.sha }, FAKE_CONN));
+    assert.match(out, /deploy run 5745 FAILED; no evidence bundle published/);
+    assert.doesNotMatch(out, /No failed jobs/);
+    assert.equal(code, 1);
+  } finally { restore(); }
+});
+
+test('failure on a passed deploy still reports nothing failed', async () => {
+  const f = deployFixture('dispatched-success');
+  const { restore } = stubDeployForge({ statuses: f.statuses, runs: f.workflow_runs });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ sha: f.sha }, FAKE_CONN));
+    assert.match(out, /No failed jobs/);
+    assert.equal(code, 0);
+  } finally { restore(); }
+});

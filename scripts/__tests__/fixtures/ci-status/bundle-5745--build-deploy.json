@@ -1,0 +1,40 @@
+{
+  "_source": "The ci-failures bundle 5745--build-deploy, recorded 2026-10-31: meta kept, digest.md cut to its header (the rest is container logs), other files dropped.",
+  "files": [
+    {
+      "path": "digest.md",
+      "text": "<!-- ci-digest:job=build-deploy -->\n### ❌ CI failure — `cd-deploy` / `build-deploy`\n\n| | |\n|---|---|\n| **Commit** | `fa79e611` |\n| **Failing step** | scan-push |\n| **Run** | `5745` |\n\n**Container health**\n",
+      "priority": true
+    }
+  ],
+  "meta": {
+    "workflow": "cd-deploy",
+    "job": "build-deploy",
+    "step": "scan-push",
+    "sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+    "pr": null,
+    "runId": "5745",
+    "publish": {
+      "published": true,
+      "channel": "bundle",
+      "reason": null
+    },
+    "digestOutcome": {
+      "outcome": "published",
+      "detail": null,
+      "channel": "bundle",
+      "degraded": false,
+      "summary": "digest published via bundle",
+      "signal": "digest-outcome=published"
+    },
+    "truncated": false,
+    "truncatedSources": [],
+    "droppedSources": [],
+    "absent": [
+      "playwright report — not present",
+      "maestro debug output — CAPTURED on the runner (~/.maestro/tests) but not folded into container-logs/_mobile-diagnostics; see scripts/ci-mobile-agent-flows.sh"
+    ],
+    "cap": 5242880,
+    "collector": "ci-failure-digest"
+  }
+}

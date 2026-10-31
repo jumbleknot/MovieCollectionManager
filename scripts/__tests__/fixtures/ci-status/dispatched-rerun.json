@@ -1,0 +1,40 @@
+{
+  "_source": "Derived from dispatched-failed.json: a re-run of the deploy for the same sha. The OLDER run (5745) passed and the NEWER one (5746) failed, so a resolver that takes the first or the oldest match reports green.",
+  "sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+  "statuses": [
+    {
+      "context": "cd-deploy/prod-apk-disk",
+      "status": "success",
+      "description": "reclaimed=none step=success avail=587G used=33%",
+      "created_at": "2026-10-21T01:47:14Z"
+    }
+  ],
+  "workflow_runs": [
+    {
+      "id": 5745,
+      "title": "cd-deploy",
+      "workflow_id": "cd-deploy.yml",
+      "index_in_repo": 5744,
+      "commit_sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+      "event": "",
+      "trigger_event": "workflow_dispatch",
+      "status": "success",
+      "started": "2026-10-21T01:44:08Z",
+      "stopped": "2026-10-21T01:47:01Z",
+      "created": "2026-10-21T01:44:05Z"
+    },
+    {
+      "id": 5746,
+      "title": "cd-deploy",
+      "workflow_id": "cd-deploy.yml",
+      "index_in_repo": 5745,
+      "commit_sha": "fa79e6118856130312039d1463bf4afceb5f39c9",
+      "event": "",
+      "trigger_event": "workflow_dispatch",
+      "status": "failure",
+      "started": "2026-10-21T01:44:08Z",
+      "stopped": "2026-10-21T01:47:01Z",
+      "created": "2026-10-21T02:10:05Z"
+    }
+  ]
+}

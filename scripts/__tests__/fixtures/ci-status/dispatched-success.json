@@ -1,0 +1,27 @@
+{
+  "_source": "Recorded from the forge 2026-10-31 (read-only credential), trimmed to the fields ci-status reads; trigger_user, event_payload, repository and html_url (which carries the forge host) are dropped. A successful deploy: cd-deploy run 5812 on 220c81c0.",
+  "sha": "220c81c0e1bf6b7fffe40ec5d369c8322bdf3208",
+  "statuses": [
+    {
+      "context": "cd-deploy/prod-apk-disk",
+      "status": "success",
+      "description": "reclaimed=none step=success avail=585G used=34%",
+      "created_at": "2026-10-23T01:08:43Z"
+    }
+  ],
+  "workflow_runs": [
+    {
+      "id": 5812,
+      "title": "cd-deploy",
+      "workflow_id": "cd-deploy.yml",
+      "index_in_repo": 5811,
+      "commit_sha": "220c81c0e1bf6b7fffe40ec5d369c8322bdf3208",
+      "event": "",
+      "trigger_event": "workflow_dispatch",
+      "status": "success",
+      "started": "2026-10-23T01:06:44Z",
+      "stopped": "2026-10-23T01:21:39Z",
+      "created": "2026-10-23T01:03:45Z"
+    }
+  ]
+}
