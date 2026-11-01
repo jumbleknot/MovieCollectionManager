@@ -1,12 +1,23 @@
 {
   "coveredCommit": "4be87b1065bdd90e999f7aafad64951e22144594",
   "coveredAt": "2026-11-01T06:13:18.040Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "runbooks",
+      "pages": [
+        "sast-scanning.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/sast-scanning.md"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 897,
-    "headCommit": "92569aa2527ad79fb4eb641bcfdfe21fb9c3d001",
+    "headCommit": "62768709fc7e6cd9d1f93f5b457c12b8594f5fde",
     "markerBefore": "280ddf314ba3ffea0c92f833648cb3b262535894",
     "slices": [
       {
@@ -19,29 +30,46 @@
         "areaExists": true,
         "reason": "source changed: docs/runbooks/infra-image-scanning.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/infra-image-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "sast.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md"
       }
     ],
-    "updatedAt": "2026-11-01T06:13:18.416Z"
+    "updatedAt": "2026-11-01T09:02:40.910Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 3,
-    "elapsedSeconds": 2204,
+    "pagesWritten": 6,
+    "elapsedSeconds": 2205,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/sast-scanning.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-01T09:02:40.443Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 439,
+    "calls": 495,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2005470,
-    "cached": 47518670,
+    "uncached": 2188360,
+    "cached": 45782412,
     "cacheWrite": 0,
-    "output": 934635,
-    "reasoning": 831890,
-    "ms": 6308601,
-    "estCostUsd": 2.0083,
+    "output": 931881,
+    "reasoning": 803415,
+    "ms": 6195442,
+    "estCostUsd": 2.0495,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +79,12 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/infra-image-scanning.md"
+        "projects/sast.md",
+        "runbooks/sast-scanning.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 2.0083,
+      "estCostUsd": 2.0495,
       "rateLimited": null
     }
   ],
