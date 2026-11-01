@@ -16,7 +16,7 @@
  * No raw token is ever returned to the client, logged, or checkpointed.
  */
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
@@ -28,15 +28,11 @@ import { audit } from '@/bff-server/audit-sink';
 
 /**
  * Fresh subject-token mint for the resume (the paused run held none). Undefined only when token
- * exchange is not configured (FR-004) or there is no member token; a refused exchange throws
+ * exchange is not configured (FR-004); a refused exchange throws
  * (feature 085). Never logged or checkpointed (SC-004).
  */
-async function resolveSubjectToken(
-  headers: Record<string, string | string[] | undefined>,
-): Promise<string | undefined> {
+async function resolveSubjectToken(userToken: string): Promise<string | undefined> {
   if (!isSubjectTokenExchangeConfigured()) return undefined;
-  const userToken = extractRawToken(headers);
-  if (!userToken) return undefined;
   // Feature 085 (item #844): a refused mint is NOT swallowed. It propagates as an
   // AgentIdentityError — 401 (renew, then sign in) or a retryable 503 — and the route answers with it
   // before the gateway is reached, so no assistant step runs without the member's identity.
@@ -47,7 +43,7 @@ async function resolveSubjectToken(
 async function gated(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const { user } = await requireAuth(headers);
+    const { user, accessToken } = await requireAuth(headers);
     requireMcUser(user);
 
     const body = await req.json().catch(() => ({}));
@@ -58,7 +54,7 @@ async function gated(req: Request): Promise<Response> {
     // run (implementation-review 2026-06-09 cross-user resume guard).
     await enforceAgentThreadOwnership(user.id, threadId);
 
-    const subjectToken = await resolveSubjectToken(headers);
+    const subjectToken = await resolveSubjectToken(accessToken);
 
     // Approval decision audit (SC-002). userId is the Keycloak UUID — never email/username.
     audit('approval_decision', { userId: user.id, threadId, proposalId, decision });

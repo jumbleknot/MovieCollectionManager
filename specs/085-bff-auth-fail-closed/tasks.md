@@ -217,7 +217,7 @@ unchanged, no cookies are set, and the mismatch is audited.
 
 ## Checkpoint (a): PR (a) gates
 
-- [ ] T020 Run `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app`, the full unit suite, and the
+- [X] T020 Run `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app`, the full unit suite, and the
   integration suite with `MCM_REQUIRE_LIVE_STACK=1` (0 skipped), on a rebuilt container. **Done
   when**: all are green locally, with outputs saved under the session scratchpad.
 - [ ] T021 Open PR (a) with the real-branch recipe, watch it with `ci-status.mjs watch --pr N
@@ -228,9 +228,9 @@ unchanged, no cookies are set, and the mismatch is audited.
 
 ## Phase 7: US3 — the server accepts only the session cookie (P2) [PR (b)]
 
-- [ ] T022 [US3] Extend `loginSession` (T003a) for PR (b): once only `mcm_session_id` is set,
+- [X] T022 [US3] Extend `loginSession` (T003a) for PR (b): once only `mcm_session_id` is set,
   `cookie` is that cookie alone. **Done when**: the T003a scratch check still gives `200`.
-- [ ] T023 [US3] Integration test `tests/integration/bff-bearer-refused.integration.test.ts`,
+- [X] T023 [US3] Integration test `tests/integration/bff-bearer-refused.integration.test.ts`,
   covering AS-1, AS-2, SC-004 and SC-010:
   - a ROPC access token as `Authorization: Bearer` alone, on `/bff-api/collections`,
     `/bff-api/auth/user` and `/bff-api/agent/run` (GET), gives `401` on each;
@@ -238,7 +238,7 @@ unchanged, no cookies are set, and the mismatch is audited.
     `/auth/user`.
 
   **Verify RED**: against the PR (a) container. Expected: `200` for the bearer-only cases.
-- [ ] T024 [US3] Unit test `src/bff-server/unit-tests/auth.test.ts`, covering AS-1 and AS-2:
+- [X] T024 [US3] Unit test `src/bff-server/unit-tests/auth.test.ts`, covering AS-1 and AS-2:
   - `requireAuth({authorization:'Bearer x'})` throws `SESSION_NOT_FOUND` without calling
     `validateJwt` (spy);
   - `extractRawToken` is no longer exported (`expect(auth).not.toHaveProperty('extractRawToken')`).
@@ -250,7 +250,7 @@ unchanged, no cookies are set, and the mismatch is audited.
 **Independent test**: across login, renewal and logout, no response sets a token cookie; Redis
 holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cleared once.
 
-- [ ] T025 [P] [US6] Unit test `src/bff-server/unit-tests/session-tokens.test.ts`, covering FR-017,
+- [X] T025 [P] [US6] Unit test `src/bff-server/unit-tests/session-tokens.test.ts`, covering FR-017,
   FR-018, FR-019, FR-006 and SC-008:
   - `sealSessionTokens` / `openSessionTokens` round-trip, and fail for another session id or user
     id (AAD);
@@ -265,7 +265,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   - a rejected renewal emits `audit('session_renewal_rejected', {userId})` (analysis C3).
 
   **Verify RED**: `U session-tokens.test`. Expected: `Cannot find module '@/bff-server/session-tokens'`.
-- [ ] T026 [P] [US6] Unit test `src/bff-server/unit-tests/cache-service.test.ts`, covering
+- [X] T026 [P] [US6] Unit test `src/bff-server/unit-tests/cache-service.test.ts`, covering
   data-model.md:
   - `cacheSessionTokens` writes `session-tokens:{sid}` with the session's TTL;
   - `getSessionWithTokens` uses one `mget`;
@@ -274,7 +274,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
     leaves no `session-tokens:` key behind (FR-020, analysis C1).
 
   **Verify RED**: `U 'cache-service.test'`.
-- [ ] T027 [US6] Implement:
+- [X] T027 [US6] Implement:
   - `src/bff-server/keycloak.ts`: `refreshTokens` raises `AuthError(REFRESH_FAILED, 401)` on
     `400`/`401`, and `AuthError(KEYCLOAK_UNAVAILABLE, 503, retryAfterSeconds 5)` on a network error,
     a 5 s `AbortSignal.timeout` or `5xx`.
@@ -288,7 +288,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
     `terminateAllSessions` delete the tokens; `getValidSession` is removed.
 
   **Verify GREEN**: `U 'session-tokens.test|cache-service.test|session-manager.test|keycloak.test'`.
-- [ ] T028 [US6] Implement `requireAuth` in `src/bff-server/auth.ts` as described in research R1. It
+- [X] T028 [US6] Implement `requireAuth` in `src/bff-server/auth.ts` as described in research R1. It
   returns `{payload, user, accessToken, session}`; every failure carries `clearCookies:
   buildClearAuthCookies()`; `extractToken` and `extractRawToken` are deleted (US3).
   - `buildAuthCookies(sessionId)` sets only `mcm_session_id`, with Max-Age equal to the remaining
@@ -304,7 +304,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   - a valid session touches it;
   - near-expiry renews it;
   - the retired cookie alone gives `SESSION_NOT_FOUND` plus clear cookies.
-- [ ] T029 [US6] Migrate every route to the new result: `const { user, accessToken } = await
+- [X] T029 [US6] Migrate every route to the new result: `const { user, accessToken } = await
   requireAuth(headers)`, replacing each `extractRawToken(headers)!`. The routes are:
   - `src/app/bff-api/collections/**`, `agent/**` (run and resume mint from `accessToken`),
     `account/delete-challenge+api.ts` (`auth_time` from `payload`), `admin/**`, `auth/user+api.ts`
@@ -313,7 +313,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   **Done when**: `grep -rn "extractRawToken\|validateSessionTimeout\|ACCESS_TOKEN_COOKIE\|REFRESH_TOKEN_COOKIE"
   frontend/mcm-app/src` prints only the retired-name constants inside `buildClearAuthCookies`, and
   typecheck is clean.
-- [ ] T030 [US6] Unit tests for the auth routes, covering AS-1, AS-3, AS-6, FR-016, FR-020 and
+- [X] T030 [US6] Unit tests for the auth routes, covering AS-1, AS-3, AS-6, FR-016, FR-020 and
   FR-022, in `tests/app/bff-api/auth/{login,refresh,logout}+api.test.ts` and
   `src/bff-server/unit-tests/login-api.test.ts`:
   - **login:** the `set-cookie` set is exactly `mcm_session_id` plus two `Max-Age=0` retired names;
@@ -326,15 +326,15 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
 
   **Verify RED**: `U 'tests/app/bff-api/auth|login-api.test'`. Expected: the cookie-set assertions
   fail.
-- [ ] T031 [US6] Implement `auth/login+api.ts`, `refresh+api.ts` and `logout+api.ts` per
+- [X] T031 [US6] Implement `auth/login+api.ts`, `refresh+api.ts` and `logout+api.ts` per
   contracts/bff-auth.md. **Verify GREEN**: as T030.
-- [ ] T032 [US6] Update the remaining unit tests that mock `@/bff-server/auth`, so their mocks
+- [X] T032 [US6] Update the remaining unit tests that mock `@/bff-server/auth`, so their mocks
   return `accessToken` and drop `extractRawToken`. These are the 16 files from `grep -rln
   "jest.mock('@/bff-server/auth'" frontend/mcm-app/src frontend/mcm-app/tests`, plus any test that
   passes `Authorization: Bearer` to a route handler. **Do not weaken an assertion**: where a test
   asserted that a bearer authenticates, it now asserts `401`. **Verify GREEN**: the full unit suite,
   `pnpm nx test mcm-app -- --watchAll=false --maxWorkers=2`, with 0 failed.
-- [ ] T033 [US6] Integration test `tests/integration/session-token-custody.integration.test.ts`,
+- [X] T033 [US6] Integration test `tests/integration/session-token-custody.integration.test.ts`,
   covering AS-1 – AS-6, SC-007 and SC-008:
   1. `loginSession` sets only `mcm_session_id`;
   2. the Redis db-1 `session-tokens:*` values contain no `eyJ`;
@@ -348,7 +348,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
 
   **Verify RED**: against the PR (a) container (cookies still set). **Verify GREEN**: after T031
   and a rebuild.
-- [ ] T034 [US6] Migrate the 25 integration files from bearer to `loginSession`. Mechanically:
+- [X] T034 [US6] Migrate the 25 integration files from bearer to `loginSession`. Mechanically:
   - `getTestTokens(u,p)` → `loginSession(u,p)`;
   - `auth(t)` → `{ headers: { Cookie: t } }`;
   - keep ROPC only where a raw token goes to Keycloak or mc-service, never to the BFF.
@@ -356,7 +356,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   Each file's assertions stay as they are. **Done when**: `grep -lE "Authorization: \`Bearer"
   frontend/mcm-app/tests/integration/*.test.ts | wc -l` prints `0` (SC-010), and `I .` gives 0
   failed and 0 skipped.
-- [ ] T035 [US6] Web E2E: rewrite `tests/e2e/web/bff-prod-lifecycle.spec.ts` and
+- [X] T035 [US6] Web E2E: rewrite `tests/e2e/web/bff-prod-lifecycle.spec.ts` and
   `tests/e2e/web/agent-session-refresh.spec.ts` for the server-held model:
   - assert that the cookie jar holds `mcm_session_id` only, still `HttpOnly`, `Strict` and, on the
     prod container, `Secure`;
@@ -369,7 +369,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   Keep each test's `@gate` / `@model-decision` tag. **Verify RED**: against the PR (a) build. The
   "only `mcm_session_id`" assertion fails. **Verify GREEN**: gate tier with
   `E2E_REQUIRE_AGENT_STACK=1`, in the Playwright image.
-- [ ] T036 [US6] DAST:
+- [X] T036 [US6] DAST:
   - `scripts/dast-bff-login.mjs` returns `{ mcm_session_id }` and checks only that;
   - `scripts/zap-scan.mjs` `probeAuthenticatedUrls` sends only `mcm_session_id`;
   - `security/zap/scripts/bff-session-refresh.js` sends the session cookie, and on a 401 calls
@@ -394,7 +394,7 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
 
 ## Phase 9: Polish & documentation [PR (b)]
 
-- [ ] T038 [P] Update `openwiki/invariants/auth-chain.md` (canonical):
+- [X] T038 [P] Update `openwiki/invariants/auth-chain.md` (canonical):
   - client holds the session id only, with the tokens server-held and encrypted;
   - per-request idle and absolute enforcement;
   - renewal lock;
@@ -408,10 +408,10 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   "mcm_access_token\|Authorization: Bearer" docs openwiki --include=*.md`. **Do not hand-edit
   derived openwiki pages**; edit their `resource`. **Done when**: `pnpm nx okf-lint
   infrastructure-as-code` and `pnpm nx okf-governance infrastructure-as-code` pass.
-- [ ] T039 [P] Note the FR-009 decision in a comment above `requireAuth` in
+- [X] T039 [P] Note the FR-009 decision in a comment above `requireAuth` in
   `src/bff-server/auth.ts`, with the date, "operator decision", and that there is no environment
   flag. **Done when**: the comment exists, and the SAST `mcm-auth-before-authz` scan is clean.
-- [ ] T040 File two backlog follow-ups (`node scripts/backlog.mjs create`):
+- [X] T040 File two backlog follow-ups (`node scripts/backlog.mjs create`):
   - a dedicated `SESSION_TOKEN_ENC_KEY`, which needs a Komodo Variable (research R3);
   - dropping the retired cookie names from `buildClearAuthCookies` 24 h after rollout (R9).
 

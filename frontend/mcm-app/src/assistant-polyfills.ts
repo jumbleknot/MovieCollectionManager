@@ -16,7 +16,7 @@
 // saved 69 KB of 4.28 MB. The split has to be at the platform boundary, here.
 //
 // What web DOES need is the refresh-retry wrapper: the CopilotKit runtime fetch to /bff-api/agent/run
-// bypasses the axios token-refresh interceptor on every platform, so a `/run` that meets an expired
-// `mcm_access_token` cookie must refresh and retry once. See utils/agent-fetch-refresh.ts.
+// bypasses the axios token-refresh interceptor on every platform, so a `/run` answered 401 must
+// refresh and retry once. See utils/agent-fetch-refresh.ts.
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 require('./utils/agent-fetch-refresh').installAgentFetchRefresh();

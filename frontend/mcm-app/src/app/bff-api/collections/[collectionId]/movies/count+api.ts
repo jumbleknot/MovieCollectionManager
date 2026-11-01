@@ -21,7 +21,7 @@
  * `[movieId]+api.ts` GET.
  */
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { createMcServiceClient } from '@/bff-server/mc-service-client';
 import { withRequestContext } from '@/bff-server/request-context';
@@ -45,10 +45,10 @@ export async function GET(req: Request, { collectionId }: { collectionId: string
 async function _get(req: Request, collectionId: string): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const { user } = await requireAuth(headers);
+    const { user, accessToken } = await requireAuth(headers);
     requireMcUser(user);
     validateObjectId(collectionId, 'collectionId');
-    const jwt = extractRawToken(headers)!;
+    const jwt = accessToken;
     const client = createMcServiceClient(jwt);
 
     const url = new URL(req.url);

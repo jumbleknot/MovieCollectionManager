@@ -4,13 +4,11 @@
  * and the auth context when the access token is expiring.
  *
  * Refresh strategy (BFF cookie model — constitution §Frontend App "Client Auth Model", Option A):
- *   1. POST /bff-api/auth/refresh — BFF exchanges the refresh-token cookie for new tokens
- *   2. On success: the BFF sets new HttpOnly cookies via Set-Cookie. On BOTH web and native the
- *      client stores NO raw token — React Native's native cookie jar holds the rotated cookies, so
- *      the next request (incl. the CopilotKit agent /run XHR, which sends cookies via RN's
- *      `withCredentials=true` default) authenticates with the fresh access cookie. This function
- *      therefore persists nothing client-side by design (it previously claimed a SecureStore
- *      fallback that it never performed — removed for accuracy).
+ *   1. POST /bff-api/auth/refresh — the BFF renews the member's tokens, which it holds server-side
+ *      inside the session (feature 085). The request carries only the session cookie.
+ *   2. On success: nothing is stored client-side, on web or native — there is no token to store. The
+ *      BFF re-sets only the session cookie; the next request (incl. the CopilotKit agent /run XHR,
+ *      which sends cookies via RN's `withCredentials=true` default) authenticates with it.
  *   3. On failure: clear session and redirect to login
  *   4. Rate limit: 1/30s with max 2 retries (enforced server-side)
  */

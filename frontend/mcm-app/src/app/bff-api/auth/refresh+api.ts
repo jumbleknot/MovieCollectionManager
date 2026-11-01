@@ -1,20 +1,20 @@
 /**
- * BFF /refresh endpoint (T-066)
- * Exchanges a refresh token for a new access token via Keycloak.
- * Enforces per-session rate limiting and updates Redis session cache.
+ * BFF /refresh endpoint (T-066; server-held tokens since feature 085).
+ *
+ * Renews the SERVER-HELD tokens of the caller's OWN session (FR-021). The session comes from the
+ * `mcm_session_id` cookie and the refresh token from the session — nothing in the request can name
+ * another session or carry a credential, so the ownership guarantee (FR-006) holds by construction;
+ * the renewal still checks the renewed token's owner (session-tokens.ts). The client's agent and
+ * axios interceptors call this on a 401, unchanged; the response re-sets only the session cookie.
+ *
+ * Enforces per-session rate limiting.
  */
 
-import { refreshTokens, revokeToken } from '@/bff-server/keycloak';
 import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
-import { touchSession, getValidSession, terminateSession } from '@/bff-server/session-manager';
-import {
-  buildAuthCookies,
-  buildClearAuthCookies,
-  extractSessionId,
-  parseCookies,
-  REFRESH_TOKEN_COOKIE,
-} from '@/bff-server/auth';
-import { validateJwt } from '@/bff-server/token-service';
+import { readLiveSessionWithTokens, terminateSession, touchSession } from '@/bff-server/session-manager';
+import { ensureFreshTokens, openSessionTokens, type SessionTokens } from '@/bff-server/session-tokens';
+import { buildAuthCookies, buildClearAuthCookies, extractSessionId } from '@/bff-server/auth';
+import { authErrorHeaders } from '@/bff-server/mc-api-error';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
@@ -22,6 +22,12 @@ import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
   return withRequestContext(() => _post(req));
+}
+
+function refused(code: AuthErrorCode, error: string): Response {
+  const headers = securityHeaders();
+  for (const cookie of buildClearAuthCookies()) headers.append('Set-Cookie', cookie);
+  return Response.json({ error, code }, { status: 401, headers });
 }
 
 async function _post(req: Request): Promise<Response> {
@@ -37,64 +43,27 @@ async function _post(req: Request): Promise<Response> {
 
     await checkRefreshRateLimit(sessionId);
 
-    const session = await getValidSession(sessionId);
-    if (!session) {
-      return Response.json(
-        { error: 'Session expired or not found.', code: AuthErrorCode.SESSION_EXPIRED },
-        { status: 401, headers: securityHeaders() },
-      );
+    const live = await readLiveSessionWithTokens(sessionId);
+    if ('expired' in live) return refused(AuthErrorCode.SESSION_EXPIRED, 'Session expired or not found.');
+
+    const { session, tokensRaw } = live;
+    let held: SessionTokens;
+    try {
+      if (!tokensRaw) throw new Error('session holds no tokens');
+      held = openSessionTokens(session, tokensRaw);
+    } catch {
+      // A session from before 085, or a record that does not open for it: never migrated (FR-022).
+      await terminateSession(session.sessionId, session.userId).catch(() => {});
+      return refused(AuthErrorCode.REFRESH_TOKEN_INVALID, 'Refresh token missing.');
     }
 
-    // Read refresh token from cookie
-    const cookieHeader = req.headers.get('cookie') ?? '';
-    const refreshToken = parseCookies(cookieHeader)[REFRESH_TOKEN_COOKIE];
-
-    if (!refreshToken) {
-      return Response.json(
-        { error: 'Refresh token missing.', code: AuthErrorCode.REFRESH_TOKEN_INVALID },
-        { status: 401, headers: securityHeaders() },
-      );
-    }
-
-    const tokens = await refreshTokens(refreshToken);
-
-    // Feature 085 US2 (item #607, FR-006/FR-007): extend ONLY the caller's own session. The refresh
-    // credential is client-supplied, so a caller holding someone else's session reference could
-    // otherwise keep that session alive with their own token. The other session endpoints already
-    // refuse this (009 finding #9). On a mismatch nothing is extended and nothing is issued: the
-    // tokens just minted are revoked, and the session, now paired with a foreign credential, ends.
-    const { payload } = await validateJwt(tokens.access_token);
-    if (payload.sub !== session.userId) {
-      await Promise.allSettled([
-        revokeToken(tokens.refresh_token, 'refresh_token'),
-        terminateSession(sessionId, session.userId),
-      ]);
-      logger.audit('session_refresh_owner_mismatch', { userId: session.userId });
-      const clearHeaders = securityHeaders();
-      for (const cookie of buildClearAuthCookies()) clearHeaders.append('Set-Cookie', cookie);
-      return Response.json(
-        { error: 'Session could not be renewed.', code: AuthErrorCode.SESSION_OWNER_MISMATCH },
-        { status: 401, headers: clearHeaders },
-      );
-    }
-
-    await touchSession(sessionId);
-
-    const cookies = buildAuthCookies(
-      tokens.access_token,
-      tokens.refresh_token,
-      sessionId,
-      tokens.expires_in,
-      tokens.refresh_expires_in,
-    );
+    const renewed = await ensureFreshTokens(session, held, { force: true });
+    await touchSession(session);
 
     const responseHeaders = securityHeaders();
-    for (const cookie of cookies) {
-      responseHeaders.append('Set-Cookie', cookie);
-    }
-
+    for (const cookie of buildAuthCookies(sessionId)) responseHeaders.append('Set-Cookie', cookie);
     return Response.json(
-      { success: true, expiresIn: tokens.expires_in },
+      { success: true, expiresIn: Math.max(0, Math.round((renewed.accessExpiresAt - Date.now()) / 1000)) },
       { status: 200, headers: responseHeaders },
     );
   } catch (err) {
@@ -105,10 +74,8 @@ async function _post(req: Request): Promise<Response> {
       );
     }
     if (err instanceof AuthError) {
-      return Response.json(
-        { error: err.message, code: err.code },
-        { status: err.statusCode, headers: securityHeaders() },
-      );
+      if (err.statusCode === 401) return refused(err.code, err.message);
+      return Response.json({ error: err.message, code: err.code }, { status: err.statusCode, headers: authErrorHeaders(err) });
     }
     logger.error('refresh: unhandled error', { action: 'refresh_error', error: err });
     return Response.json(

@@ -10,15 +10,15 @@ import { randomUUID } from 'node:crypto';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
-const auth = (t: string) => ({ headers: { Authorization: `Bearer ${t}` } });
+const auth = (t: string) => ({ headers: { Cookie: t } });
 const uniqueTitle = () => `CntMovie_${randomUUID().replace(/-/g, '').slice(0, 12)}`;
 
 function movieBody(title: string, overrides: Record<string, unknown> = {}) {
@@ -42,7 +42,7 @@ describe('movie count proxy — integration (real BFF + mc-service)', () => {
     await ensureRopcAudienceMapper();
     userA = await createTestUser('int-cnt-a');
     await assignRole(userA.userId, 'mc-user');
-    ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+    tokenA = (await loginSession(userA.username, userA.password)).cookie;
 
     const coll = await bff.post('/bff-api/collections', { name: `IntCntColl_${randomUUID().slice(0, 8)}` }, auth(tokenA));
     collectionId = coll.data.collectionId;

@@ -14,11 +14,11 @@
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
@@ -45,7 +45,7 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
     await ensureRopcAudienceMapper();
     userA = await createTestUser('agentcfg-scope-a');
     await assignRole(userA.userId, 'mc-user');
-    ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+    tokenA = (await loginSession(userA.username, userA.password)).cookie;
     userB = await createTestUser('agentcfg-scope-b');
     await assignRole(userB.userId, 'mc-user');
   });
@@ -64,7 +64,7 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
 
     // A authenticates; body tries to target B.
     const res = await bff.delete('/bff-api/agent/config', {
-      headers: { Authorization: `Bearer ${tokenA}` },
+      headers: { Cookie: tokenA },
       data: { userId: userB.userId, _id: userB.userId },
     });
     expect(res.status).toBe(200);
@@ -86,7 +86,7 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
     const res = await bff.put(
       '/bff-api/agent/config',
       { userId: userB.userId, _id: userB.userId, costLimitUsd: 0.99 },
-      { headers: { Authorization: `Bearer ${tokenA}` } },
+      { headers: { Cookie: tokenA } },
     );
     expect(res.status).toBe(200);
 
@@ -100,7 +100,7 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
   it('GET returns the caller (A) view regardless of any spoofed body', async () => {
     await seedRunnable(userA.userId);
     const res = await bff.get('/bff-api/agent/config', {
-      headers: { Authorization: `Bearer ${tokenA}` },
+      headers: { Cookie: tokenA },
       data: { userId: userB.userId },
     });
     expect(res.status).toBe(200);

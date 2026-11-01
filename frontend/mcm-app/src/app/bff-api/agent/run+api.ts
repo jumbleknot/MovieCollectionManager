@@ -28,7 +28,7 @@ import {
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
@@ -56,15 +56,11 @@ const ENDPOINT = '/bff-api/agent/run';
 
 /**
  * Mint the run-scoped subject token. Undefined only when token exchange is not configured for this
- * environment (FR-004) or there is no member token; a refused exchange throws (feature 085). The
+ * environment (FR-004); a refused exchange throws (feature 085). The
  * minted token is never logged or checkpointed (SC-004).
  */
-async function resolveSubjectToken(
-  headers: Record<string, string | string[] | undefined>,
-): Promise<string | undefined> {
+async function resolveSubjectToken(userToken: string): Promise<string | undefined> {
   if (!isSubjectTokenExchangeConfigured()) return undefined;
-  const userToken = extractRawToken(headers);
-  if (!userToken) return undefined;
   // Feature 085 (item #844): a refused mint is NOT swallowed. It propagates as an
   // AgentIdentityError — 401 (renew, then sign in) or a retryable 503 — and the route answers with it
   // before the gateway is reached, so no assistant step runs without the member's identity.
@@ -122,7 +118,7 @@ async function resolveImportFile(
 async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const { user } = await requireAuth(headers);
+    const { user, accessToken } = await requireAuth(headers);
     requireMcUser(user);
 
     // Per-run resolved credentials (decrypted in memory) for a runnable config; null until
@@ -204,7 +200,7 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       if (billable) await recordEstimatedTurnCost(user.id);
     }
 
-    const subjectToken = await resolveSubjectToken(headers);
+    const subjectToken = await resolveSubjectToken(accessToken);
     // US3/R15: bridge the cached sanitized UI snapshot to the gateway (billable turns only — a
     // handshake read runs no graph). Resolves "this"/current-screen references.
     const uiSnapshot = billable ? await resolveUiSnapshot(user.id) : undefined;

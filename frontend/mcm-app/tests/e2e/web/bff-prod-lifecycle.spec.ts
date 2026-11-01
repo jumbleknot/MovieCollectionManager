@@ -7,7 +7,14 @@ import { requireEnv } from './setup/load-e2e-env';
  * T013 / US3 — full auth lifecycle against the BFF container (the R6 reconciliation,
  * exercised end to end as a repeatable test):
  *
- *   login → access-token expiry → transparent refresh → logout → session + SSO terminated
+ *   login → the client holds ONLY the session reference → protected navigation → logout →
+ *   session + SSO terminated
+ *
+ * Feature 085 moved the member's tokens server-side. This spec used to stage "access-token expiry"
+ * by deleting the access-token cookie; there is no such cookie any more, and the BFF renews the
+ * server-held token itself. That renewal is proven in agent-session-refresh.spec.ts, which can age
+ * the server-held token through the dev stack's store — this spec also runs against the prod
+ * container, whose store is not host-reachable.
  *
  * Runs against whatever `E2E_BFF_TARGET` selects; the meaningful target is `prod-container`
  * (HTTPS + Secure cookies), where the `IS_PROD` assertions additionally prove the hardening is
@@ -26,7 +33,7 @@ import { requireEnv } from './setup/load-e2e-env';
 const USER = requireEnv('E2E_TEST_USER');
 const PASS = requireEnv('E2E_TEST_PASSWORD');
 const IS_PROD = process.env['E2E_BFF_TARGET'] === 'prod-container';
-const AUTH_COOKIES = ['mcm_access_token', 'mcm_refresh_token', 'mcm_session_id'] as const;
+const RETIRED_TOKEN_COOKIES = ['mcm_access_token', 'mcm_refresh_token'] as const;
 
 // Isolated, logged-out start — do NOT inherit the shared global-setup session.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -69,49 +76,30 @@ async function gotoHome(page: Page): Promise<void> {
   if (!result) throw new Error('gotoHome: home screen did not render');
 }
 
-const accessToken = async (page: Page): Promise<string | undefined> =>
-  (await page.context().cookies()).find((c) => c.name === 'mcm_access_token')?.value;
-
 test.describe('BFF container — auth lifecycle (T013/US3)', () => {
-  test('login → access-token expiry → transparent refresh → logout terminates session + SSO', async ({ page, context }) => {
+  test('login → the client holds only the session reference → logout terminates session + SSO', async ({ page, context }) => {
     // 1. Login (own session).
     await login(page);
 
-    // 2. Hardening: on the prod container every auth cookie must be Secure + HttpOnly + SameSite=Strict
-    //    (FR-007 — not relaxed for tests).
+    // 2. The client holds ONE credential — the session reference — and no token (085 FR-016,
+    //    SC-007). On the prod container it must be Secure + HttpOnly + SameSite=Strict (FR-007 —
+    //    not relaxed for tests).
     const cookies = await context.cookies();
-    for (const name of AUTH_COOKIES) {
-      const c = cookies.find((ck) => ck.name === name);
-      expect(c, `${name} present after login`).toBeTruthy();
-      expect(c!.httpOnly, `${name} HttpOnly`).toBe(true);
-      expect(c!.sameSite, `${name} SameSite`).toBe('Strict');
-      if (IS_PROD) expect(c!.secure, `${name} Secure (prod HTTPS)`).toBe(true);
+    for (const name of RETIRED_TOKEN_COOKIES) {
+      expect(cookies.find((ck) => ck.name === name && ck.value), `${name} must not be held by the client`).toBeFalsy();
     }
-    const before = await accessToken(page);
-    expect(before).toBeTruthy();
+    const session = cookies.find((ck) => ck.name === 'mcm_session_id');
+    expect(session, 'mcm_session_id present after login').toBeTruthy();
+    expect(session!.httpOnly, 'mcm_session_id HttpOnly').toBe(true);
+    expect(session!.sameSite, 'mcm_session_id SameSite').toBe('Strict');
+    if (IS_PROD) expect(session!.secure, 'mcm_session_id Secure (prod HTTPS)').toBe(true);
 
-    // 3. Simulate access-token expiry by deleting the access-token cookie. The browser auto-deletes
-    //    it at Max-Age (~5 min); deleting it reproduces that deterministically. NOTE: Playwright's
-    //    fake clock (page.clock) cannot expire it — the BFF validates the JWT against its own server
-    //    clock, so only the token's actual absence/expiry triggers the 401 → refresh path.
-    await context.clearCookies({ name: 'mcm_access_token' });
-    expect(await accessToken(page), 'access token removed').toBeFalsy();
-
-    // 4. A protected navigation triggers the auth bootstrap (apiClient GET /bff-api/auth/user); the
-    //    missing access token → 401 → the response interceptor silently refreshes
-    //    (POST /bff-api/auth/refresh with the refresh + session cookies) → retries → succeeds.
+    // 3. A protected navigation authenticates through the session alone.
     await gotoHome(page);
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60000 });
+    expect((await page.request.get(`${BASE}/bff-api/auth/user`)).status()).toBe(200);
 
-    // 5. Transparent refresh recovered: a NEW access token was issued (and still Secure on prod).
-    const after = await accessToken(page);
-    expect(after, 'fresh access token issued by transparent refresh').toBeTruthy();
-    expect(after).not.toBe(before);
-    if (IS_PROD) {
-      expect((await context.cookies()).find((c) => c.name === 'mcm_access_token')!.secure).toBe(true);
-    }
-
-    // 6. Real logout (not mocked) → BFF clears cookies, deletes the Redis session, and terminates
+    // 4. Real logout (not mocked) → BFF clears cookies, deletes the Redis session, and terminates
     //    the Keycloak SSO session.
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
@@ -120,14 +108,10 @@ test.describe('BFF container — auth lifecycle (T013/US3)', () => {
     await page.click('[data-testid="btn-logout-confirm"]');
     await expect(page.getByTestId('login-screen')).toBeVisible({ timeout: 15000 });
 
-    // 7. Session terminated server-side: the auth TOKENS are cleared (the login screen's
-    //    fetch('/bff-api/auth/init') warm-up may re-mint an anonymous mcm_session_id, so the
-    //    token cookies — not the session id — are the signal), and a protected request is rejected
-    //    (401), proving the BFF session (and SSO) was ended, not just the UI navigated.
+    // 5. Session terminated server-side: the session reference no longer authenticates (401) —
+    //    proving the BFF session (and SSO) was ended, not just the UI navigated (085 US6 AS-3).
     const afterLogout = await context.cookies();
-    for (const name of ['mcm_access_token', 'mcm_refresh_token'] as const) {
-      expect(afterLogout.find((c) => c.name === name && c.value), `${name} cleared on logout`).toBeFalsy();
-    }
+    expect(afterLogout.find((c) => c.name === 'mcm_session_id' && c.value === session!.value), 'old session reference cleared').toBeFalsy();
     const res = await page.request.get(`${BASE}/bff-api/auth/user`, { failOnStatusCode: false });
     expect(res.status(), 'protected request rejected after logout').toBe(401);
   });

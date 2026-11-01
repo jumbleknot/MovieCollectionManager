@@ -43,11 +43,12 @@ import {
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
+  getTestTokens,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 
@@ -58,9 +59,12 @@ const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
 
 let user: TestUser;
 let token: string;
+// The BFF is reached with a real session (feature 085); `token` is a real access token used only
+// IN-PROCESS, for calls this suite makes to mc-service as the member (as the BFF itself does).
+let session: string;
 let collectionIdA: string;
 let collectionIdB: string;
-const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
+const auth = () => ({ headers: { Cookie: session } });
 
 const PREFIX = `runner-${randomUUID()}`;
 
@@ -141,6 +145,7 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   user = await createTestUser('bk-runner');
   await assignRole(user.userId, 'mc-user');
+  session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
   const a = await bff.post('/bff-api/collections', { name: `Runner A ${randomUUID().slice(0, 8)}` }, auth());

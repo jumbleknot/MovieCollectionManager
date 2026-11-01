@@ -4,23 +4,19 @@
  * HTTP-level against the running BFF + real Redis (db 0). No mocking
  * (constitution v1.3.0).
  *
- * /auth/refresh refreshes against the production client (movie-collection-manager), whose
- * refresh tokens are obtainable only through the browser PKCE flow — the direct-grant test client
- * must never be enabled on the production client. Feature 085 walks that flow from Node
- * (helpers/bff-session.ts), so the happy path and the session-ownership check (US2) are now
- * covered here against real Keycloak, with real BFF-issued refresh tokens. A ROPC refresh token
- * would not exercise the ownership check at all: Keycloak refuses it on the production client
- * (client mismatch) before the BFF ever compares owners.
+ * /auth/refresh renews the SERVER-HELD tokens of the caller's own session (feature 085): members
+ * sign in through Keycloak's real code + PKCE flow (helpers/bff-session.ts), so the happy path
+ * and the ownership guarantee run against real Keycloak. The FR-006 tamper case — another
+ * member's sealed tokens inside this session — is in session-token-custody.integration.test.ts.
  */
 import { randomUUID } from 'node:crypto';
 import { createBffClient } from './helpers/bff-test-server';
 import {
   bffSeedSession,
-  bffSessionExists,
   bffCleanupUser,
   closeBffRedis,
 } from './helpers/bff-redis-client';
-import { assignRole, createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
+import { assignRole, createTestUser, deleteTestUser, getTestTokens, type TestUser } from './helpers/keycloak-test-client';
 import { loginSession } from './helpers/bff-session';
 import type { Session } from '@/types/auth';
 
@@ -76,11 +72,7 @@ describe('/bff-api/auth/refresh — integration guard paths (real BFF + Redis)',
   });
 });
 
-/** The value of cookie `name` in a set of `Set-Cookie` lines. */
-const cookieValue = (setCookies: string[], name: string): string | undefined =>
-  setCookies.map((c) => c.split(';')[0]!).find((pair) => pair.startsWith(`${name}=`))?.slice(name.length + 1);
-
-describe('/bff-api/auth/refresh — session ownership (feature 085 US2, real Keycloak sessions)', () => {
+describe("/bff-api/auth/refresh — the caller's own session only (feature 085, real Keycloak sessions)", () => {
   let memberA: TestUser;
   let memberB: TestUser;
 
@@ -98,34 +90,29 @@ describe('/bff-api/auth/refresh — session ownership (feature 085 US2, real Key
     }
   });
 
-  it("refuses member B's refresh credential on member A's session, and ends A's session (US2 AS-1, SC-003)", async () => {
+  // US2 under server-held tokens (FR-021): the refresh token is the SESSION's, so a client cannot
+  // present someone else's. B's genuine, live refresh token sent as a cookie is simply not read —
+  // A's session renews with A's own tokens and stays A's.
+  it("a refresh-token cookie from another member is ignored: the session renews as its own owner (US2, FR-021)", async () => {
     const a = await loginSession(memberA.username, memberA.password);
-    const b = await loginSession(memberB.username, memberB.password);
-    const aSession = cookieValue(a.setCookies, 'mcm_session_id')!;
-    const bRefresh = cookieValue(b.setCookies, 'mcm_refresh_token')!;
-    expect(aSession).toBeTruthy();
-    expect(bRefresh).toBeTruthy();
+    const { refreshToken: bRefresh } = await getTestTokens(memberB.username, memberB.password);
 
     const res = await bff.post('/bff-api/auth/refresh', {}, {
-      headers: { Cookie: `mcm_session_id=${aSession}; mcm_refresh_token=${bRefresh}` },
-    });
-
-    expect(res.status).toBe(401);
-    expect(res.data.code).toBe('SESSION_OWNER_MISMATCH');
-    const issued = ((res.headers['set-cookie'] as string[] | undefined) ?? []).filter((c) => !/Max-Age=0/.test(c));
-    expect(issued).toEqual([]);
-    expect(await bffSessionExists(aSession)).toBe(false);
-  });
-
-  it('a same-member refresh succeeds (US2 AS-2)', async () => {
-    const a = await loginSession(memberA.username, memberA.password);
-    const res = await bff.post('/bff-api/auth/refresh', {}, {
-      headers: {
-        Cookie: `mcm_session_id=${cookieValue(a.setCookies, 'mcm_session_id')}; ` +
-          `mcm_refresh_token=${cookieValue(a.setCookies, 'mcm_refresh_token')}`,
-      },
+      headers: { Cookie: `${a.cookie}; mcm_refresh_token=${bRefresh}` },
     });
     expect(res.status).toBe(200);
+
+    const user = await bff.get('/bff-api/auth/user', { headers: { Cookie: a.cookie } });
+    expect(user.status).toBe(200);
+    expect(user.data.id).toBe(memberA.userId);
+  });
+
+  it('a same-member refresh succeeds and sets only the session cookie (US2 AS-2, FR-016)', async () => {
+    const a = await loginSession(memberA.username, memberA.password);
+    const res = await bff.post('/bff-api/auth/refresh', {}, { headers: { Cookie: a.cookie } });
+    expect(res.status).toBe(200);
     expect(res.data.success).toBe(true);
+    const live = ((res.headers['set-cookie'] as string[] | undefined) ?? []).filter((c) => !/Max-Age=0/.test(c));
+    expect(live.map((c) => c.split('=')[0])).toEqual(['mcm_session_id']);
   });
 });

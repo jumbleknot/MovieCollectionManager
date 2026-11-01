@@ -1,58 +1,36 @@
 /**
- * JWT validation middleware (T-025)
- * Server-side BFF middleware — extracts and validates JWTs.
+ * The BFF's authenticator (T-025; session-only with server-held tokens since feature 085).
  *
- * NOTE (feature 085): `extractToken` still honours an `Authorization: Bearer` header AHEAD of the
- * cookie. No client sends one — web and Android both authenticate through the HttpOnly cookies
- * (constitution v2.0.0) — and the path is removed in every environment by 085's second change,
- * together with moving the tokens off the client.
+ * A request authenticates through ONE credential: the `mcm_session_id` cookie. The member's access
+ * and refresh tokens never leave the server — they are sealed beside the session (see
+ * session-tokens.ts) — so there is no token for a client to send, and none is read from a request.
+ *
+ * FR-008/FR-009 (operator decision 2026-11-01): a bearer credential presented to the BFF is NOT
+ * honoured in ANY environment, development and test included, and there is no flag that restores
+ * it. It was consulted before the cookie, contrary to the ratified client auth model (constitution
+ * v2.0.0), and it was exactly the "parallel authentication path created for testing" the
+ * constitution prohibits. Test harnesses sign in the way members do
+ * (tests/integration/helpers/bff-session.ts). Recorded in openwiki/invariants/auth-chain.md.
  */
 
 import { env } from '@/config/env';
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
+import { readLiveSessionWithTokens, terminateSession, touchSession } from '@/bff-server/session-manager';
+import { ensureFreshTokens, openSessionTokens, type SessionTokens } from '@/bff-server/session-tokens';
 import { logger } from '@/bff-server/logger';
-import type { JWTPayload, UserProfile } from '@/types/auth';
-import { AuthError, UnauthorizedError } from '@/types/errors';
+import type { JWTPayload, Session, UserProfile } from '@/types/auth';
+import { AuthError, AuthErrorCode } from '@/types/errors';
 
 // ─── Cookie name constants ─────────────────────────────────────────────────────
 
-export const ACCESS_TOKEN_COOKIE = 'mcm_access_token';
-export const REFRESH_TOKEN_COOKIE = 'mcm_refresh_token';
 export const SESSION_ID_COOKIE = 'mcm_session_id';
 
-// ─── Token extraction ──────────────────────────────────────────────────────────
-
-/**
- * Extract the raw JWT string from request headers (no validation).
- * Use this ONLY after `requireAuth` has already validated the token.
- * The raw token is needed to forward as `Authorization: Bearer` to mc-service.
- */
-export function extractRawToken(
-  headers: Record<string, string | string[] | undefined>,
-): string | null {
-  return extractToken(headers);
-}
-
-function extractToken(headers: Record<string, string | string[] | undefined>): string | null {
-  // 1. Try Authorization: Bearer <token> header (for fallback/testing)
-  const authHeader = headers['authorization'];
-  const authStr = Array.isArray(authHeader) ? authHeader[0] : authHeader;
-  if (authStr?.startsWith('Bearer ')) {
-    return authStr.slice(7);
-  }
-
-  // 2. Try cookie (set as HTTP-only — accessible server-side)
-  const cookieHeader = headers['cookie'];
-  const cookieStr = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
-  if (cookieStr) {
-    const cookies = parseCookies(cookieStr);
-    if (cookies[ACCESS_TOKEN_COOKIE]) {
-      return cookies[ACCESS_TOKEN_COOKIE];
-    }
-  }
-
-  return null;
-}
+// The token cookies clients held before feature 085. Kept ONLY so `buildClearAuthCookies` can
+// expire them at their original Paths (FR-022); nothing reads them. They can go one absolute
+// session lifetime (24 h) after the 085 rollout — tracked as a backlog follow-up.
+const RETIRED_ACCESS_TOKEN_COOKIE = 'mcm_access_token';
+const RETIRED_REFRESH_TOKEN_COOKIE = 'mcm_refresh_token';
+const RETIRED_REFRESH_TOKEN_PATH = '/bff-api/auth/refresh';
 
 export function parseCookies(cookieStr: string): Record<string, string> {
   return cookieStr.split(';').reduce(
@@ -87,29 +65,89 @@ export function buildUserProfileFromPayload(payload: JWTPayload): UserProfile {
 
 // ─── Auth middleware ───────────────────────────────────────────────────────────
 
+export interface AuthenticatedCaller {
+  payload: JWTPayload;
+  user: UserProfile;
+  /** The member's server-held access token, for calls made AS them (mc-service, token exchange). */
+  accessToken: string;
+  session: Session;
+}
+
+/** A session-ending refusal: 401, and the response clears the auth cookies. */
+function sessionEnded(code: AuthErrorCode, message: string): AuthError {
+  return new AuthError(code, message, 401, { clearCookies: buildClearAuthCookies() });
+}
+
 /**
- * Validate the JWT from the incoming BFF request.
- * Returns the validated payload and user profile, or throws UnauthorizedError.
+ * Authenticate the request through its session cookie, on every request:
+ *   1. the session must exist and be within its absolute, then idle, limit (FR-012, FR-023);
+ *   2. its server-held tokens must open for THIS session and owner, and are renewed if due;
+ *   3. the access token is validated (signature, iss, aud, azp, exp, nbf) and must belong to the
+ *      session's owner;
+ *   4. the idle window slides.
+ * Throws AuthError: 401 (with cookie clearing) when the member must sign in again, or a retryable
+ * 503 when the identity provider is unreachable during a renewal (FR-019).
  */
 export async function requireAuth(
   headers: Record<string, string | string[] | undefined>,
-): Promise<{ payload: JWTPayload; user: UserProfile }> {
-  const token = extractToken(headers);
+): Promise<AuthenticatedCaller> {
+  const sessionId = extractSessionId(headers);
+  if (!sessionId) {
+    // UNAUTHORIZED, as before 085: a request carrying no session reference is unauthenticated —
+    // whatever else it carries (a bearer, or a retired token cookie) is not read.
+    logger.warn('auth_failed', { action: 'auth_failed', reason: 'no_session' });
+    throw sessionEnded(AuthErrorCode.UNAUTHORIZED, 'Authentication required.');
+  }
 
-  if (!token) {
-    logger.warn('auth_failed', { action: 'auth_failed', reason: 'no_token' });
-    throw new UnauthorizedError('No authentication token provided');
+  const live = await readLiveSessionWithTokens(sessionId);
+  if ('expired' in live) {
+    if (live.expired === 'missing') {
+      throw sessionEnded(AuthErrorCode.SESSION_NOT_FOUND, 'Your session could not be found. Please log in again.');
+    }
+    logger.audit('session_expired', { userId: live.userId, reason: live.expired });
+    throw live.expired === 'absolute'
+      ? sessionEnded(AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT, 'Your session has ended for security purposes. Please log in again.')
+      : sessionEnded(AuthErrorCode.SESSION_IDLE_TIMEOUT, 'Your session has ended due to inactivity. Please log in again.');
+  }
+
+  const { session, tokensRaw } = live;
+  let tokens: SessionTokens;
+  try {
+    if (!tokensRaw) throw new Error('session holds no tokens');
+    tokens = openSessionTokens(session, tokensRaw);
+  } catch {
+    // A session created before 085 (no tokens key), or a record that does not open for this
+    // session and owner. Neither is trusted, and neither is migrated (FR-022).
+    await terminateSession(session.sessionId, session.userId).catch(() => {});
+    throw sessionEnded(AuthErrorCode.SESSION_NOT_FOUND, 'Your session could not be found. Please log in again.');
   }
 
   try {
-    const { payload } = await validateJwt(token);
-    const user = buildUserProfileFromPayload(payload);
-    return { payload, user };
+    tokens = await ensureFreshTokens(session, tokens);
   } catch (err) {
-    if (err instanceof AuthError) throw err;
-    logger.warn('auth_failed', { action: 'auth_failed', reason: 'invalid_token' });
-    throw new UnauthorizedError();
+    if (err instanceof AuthError && err.statusCode === 401) {
+      throw new AuthError(err.code, err.message, 401, { clearCookies: buildClearAuthCookies() });
+    }
+    throw err;
   }
+
+  let payload: JWTPayload;
+  try {
+    ({ payload } = await validateJwt(tokens.accessToken));
+  } catch (err) {
+    logger.warn('auth_failed', { action: 'auth_failed', reason: 'invalid_token' });
+    if (err instanceof AuthError) throw err;
+    throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Authentication required.', 401);
+  }
+
+  if (payload.sub !== session.userId) {
+    await terminateSession(session.sessionId, session.userId).catch(() => {});
+    logger.audit('session_refresh_owner_mismatch', { userId: session.userId });
+    throw sessionEnded(AuthErrorCode.SESSION_OWNER_MISMATCH, 'Your session could not be renewed. Please log in again.');
+  }
+
+  await touchSession(session);
+  return { payload, user: buildUserProfileFromPayload(payload), accessToken: tokens.accessToken, session };
 }
 
 /**
@@ -128,36 +166,27 @@ export function extractSessionId(
 }
 
 /**
- * Build Set-Cookie headers for auth tokens.
- * Secure, HttpOnly, SameSite=Strict cookies prevent XSS/CSRF attacks (OWASP A05, A01).
+ * The ONE cookie the client holds: the opaque session reference (FR-016). Secure outside
+ * development, HttpOnly and SameSite=Strict (OWASP A05, A01). It lives as long as the session can;
+ * the server ends it sooner on logout, idle or a rejected renewal.
  */
-export function buildAuthCookies(
-  accessToken: string,
-  refreshToken: string,
-  sessionId: string,
-  accessExpiresInSeconds: number,
-  refreshExpiresInSeconds: number,
-): string[] {
+export function buildAuthCookies(sessionId: string): string[] {
   const secure = !env.isDevelopment ? '; Secure' : '';
-  const sameSite = 'Strict';
-
-  return [
-    `${ACCESS_TOKEN_COOKIE}=${accessToken}; HttpOnly; SameSite=${sameSite}${secure}; Path=/; Max-Age=${accessExpiresInSeconds}`,
-    `${REFRESH_TOKEN_COOKIE}=${refreshToken}; HttpOnly; SameSite=${sameSite}${secure}; Path=/bff-api/auth/refresh; Max-Age=${refreshExpiresInSeconds}`,
-    `${SESSION_ID_COOKIE}=${sessionId}; HttpOnly; SameSite=${sameSite}${secure}; Path=/; Max-Age=${refreshExpiresInSeconds}`,
-  ];
+  const maxAge = Math.floor(env.sessionAbsoluteTimeoutMs / 1000);
+  return [`${SESSION_ID_COOKIE}=${sessionId}; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=${maxAge}`];
 }
 
 /**
- * Build Set-Cookie headers to clear all auth cookies (logout).
- * Mirrors buildAuthCookies — SameSite and Secure must match to ensure browsers
- * honour the clear instruction regardless of the original cookie's attributes.
+ * Clear the session cookie and the two retired token cookies (FR-022). SameSite, Secure and Path
+ * must match the originals or the browser ignores the clear — the retired refresh-token cookie was
+ * scoped to its own Path. One Set-Cookie line per cookie: comma-joined, the browser keeps all but
+ * the first.
  */
 export function buildClearAuthCookies(): string[] {
   const secure = !env.isDevelopment ? '; Secure' : '';
   return [
-    `${ACCESS_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
-    `${REFRESH_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/bff-api/auth/refresh; Max-Age=0`,
     `${SESSION_ID_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
+    `${RETIRED_ACCESS_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
+    `${RETIRED_REFRESH_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=${RETIRED_REFRESH_TOKEN_PATH}; Max-Age=0`,
   ];
 }

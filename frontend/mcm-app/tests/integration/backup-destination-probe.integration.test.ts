@@ -16,11 +16,11 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
 import {
@@ -42,7 +42,7 @@ const DAV_PASSWORD = process.env.BACKUP_TEST_WEBDAV_PASSWORD || '';
 
 let user: TestUser;
 let token: string;
-const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
+const auth = () => ({ headers: { Cookie: token } });
 
 const s3Draft = (overrides: Record<string, unknown> = {}) => ({
   type: 's3',
@@ -60,7 +60,7 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   user = await createTestUser('bk-probe');
   await assignRole(user.userId, 'mc-user');
-  ({ accessToken: token } = await getTestTokens(user.username, user.password));
+  token = (await loginSession(user.username, user.password)).cookie;
 }, 60_000);
 
 afterAll(async () => {

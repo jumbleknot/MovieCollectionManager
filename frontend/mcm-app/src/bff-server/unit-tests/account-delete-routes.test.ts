@@ -90,7 +90,7 @@ function callbackReq(qs: string): Request {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockRequireAuth.mockResolvedValue({ user: user() });
+  mockRequireAuth.mockResolvedValue({ user: user(), payload: {} });
   mockRateLimit.mockResolvedValue(undefined);
   mockCountAdmins.mockResolvedValue(3);
   mockBuild.mockResolvedValue({
@@ -147,7 +147,7 @@ describe('POST /bff-api/account/delete-challenge', () => {
   });
 
   it('refuses the last remaining administrator with 409', async () => {
-    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]) });
+    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]), payload: {} });
     mockCountAdmins.mockResolvedValue(1);
 
     const res = await challenge(challengeReq());
@@ -159,7 +159,7 @@ describe('POST /bff-api/account/delete-challenge', () => {
   });
 
   it('allows an administrator who is not the last one', async () => {
-    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]) });
+    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]), payload: {} });
     mockCountAdmins.mockResolvedValue(2);
 
     expect((await challenge(challengeReq())).status).toBe(200);

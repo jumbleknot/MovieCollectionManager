@@ -17,7 +17,6 @@ import type { UserProfile } from '@/types/auth';
 const mockRequireAuth = jest.fn();
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
-  extractRawToken: () => 'member-access-token',
 }));
 
 jest.mock('@/bff-server/request-context', () => ({
@@ -109,7 +108,7 @@ const ROUTES = [
 beforeEach(() => {
   jest.clearAllMocks();
   mockExchangeConfigured = true;
-  mockRequireAuth.mockResolvedValue({ user: member(), payload: { sub: 'user-uuid' } });
+  mockRequireAuth.mockResolvedValue({ user: member(), payload: { sub: 'user-uuid' }, accessToken: 'member-access-token' });
 });
 
 describe.each(ROUTES)('agent route — %s', (_label, call, gateway) => {

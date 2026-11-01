@@ -15,7 +15,6 @@ const mockMcClient = {
 
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn(),
-  extractRawToken: jest.fn().mockReturnValue('raw-jwt-token'),
   extractSessionId: jest.fn().mockReturnValue(null),
 }));
 
@@ -42,7 +41,7 @@ jest.mock('@/bff-server/security-headers', () => ({
 }));
 
 import { GET } from '@/app/bff-api/collections/[collectionId]/movies/filter-options+api';
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { createMcServiceClient } from '@/bff-server/mc-service-client';
 import { UnauthorizedError } from '@/types/errors';
 
@@ -57,7 +56,7 @@ function makeGetRequest(): [Parameters<typeof GET>[0], FilterOptionsRouteParams]
   return [
     {
       url: `http://localhost/bff-api/collections/${COLLECTION_ID}/movies/filter-options`,
-      headers: new Headers({ cookie: 'mcm_access_token=tok' }),
+      headers: new Headers({ cookie: 'mcm_session_id=sid' }),
     } as unknown as Parameters<typeof GET>[0],
     { collectionId: COLLECTION_ID },
   ];
@@ -97,8 +96,7 @@ const mockFilterOptionsResponse = {
 describe('GET /bff-api/collections/:id/movies/filter-options', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile });
-    (extractRawToken as jest.Mock).mockReturnValue('raw-jwt-token');
+    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
     mockMcClient.get.mockResolvedValue({ status: 200, data: mockFilterOptionsResponse });
   });
 
@@ -119,7 +117,7 @@ describe('GET /bff-api/collections/:id/movies/filter-options', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (extractRawToken as jest.Mock).mockReturnValueOnce('filter-jwt');
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'filter-jwt' });
     await GET(...makeGetRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('filter-jwt');
   });
@@ -131,7 +129,7 @@ describe('GET /bff-api/collections/:id/movies/filter-options', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
     const res = await GET(...makeGetRequest());
     expect(res.status).toBe(403);
   });

@@ -1,14 +1,16 @@
 /**
  * BFF /login endpoint (T-065)
  * Exchanges authorization code + PKCE code verifier for tokens with Keycloak.
- * Returns user profile in response and sets JWT in HTTP-only cookies.
+ * Returns the user profile. The tokens stay on the server, sealed in the new session; the client
+ * receives only the session reference cookie (feature 085, FR-016).
  */
 
 import { exchangeCodeForTokens, getUserById, decodeJwtPayload } from '@/bff-server/keycloak';
 import { validateJwt, extractRoles, validateAtHash } from '@/bff-server/token-service';
 import { checkLoginRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createSession, getActiveSessionCount } from '@/bff-server/session-manager';
-import { buildAuthCookies } from '@/bff-server/auth';
+import { buildAuthCookies, buildClearAuthCookies } from '@/bff-server/auth';
+import { tokensFromGrant } from '@/bff-server/session-tokens';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
@@ -95,18 +97,14 @@ async function _post(req: Request): Promise<Response> {
       logger.warn('login: session count check failed (non-fatal)', { action: 'login', userId, error: err });
     });
 
-    const session = await createSession(userId).catch((err: unknown) => {
+    const session = await createSession(userId, tokensFromGrant(tokens)).catch((err: unknown) => {
       if (err instanceof AuthError) throw err;
       logger.error('login: session creation failed', { action: 'login_error', ip, error: err });
       throw new AuthError(AuthErrorCode.UNKNOWN, 'Session creation failed. Please try again.', 503);
     });
-    const cookies = buildAuthCookies(
-      tokens.access_token,
-      tokens.refresh_token,
-      session.sessionId,
-      tokens.expires_in,
-      tokens.refresh_expires_in,
-    );
+    // The session reference, plus clearing the token cookies a pre-085 sign-in left behind
+    // (FR-022): a member who signs in again never keeps a stale token on the client.
+    const cookies = [...buildAuthCookies(session.sessionId), ...buildClearAuthCookies().slice(1)];
 
     const profile = {
       id: userId,

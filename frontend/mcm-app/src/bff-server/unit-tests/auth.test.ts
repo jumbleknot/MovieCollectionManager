@@ -1,21 +1,18 @@
 /**
- * Unit tests for JWT validation middleware (T-151)
+ * Unit tests for the BFF authenticator (T-151; session-only and server-held tokens: feature 085).
  *
- * Covers:
- *   - Session ID extracted from HTTP-only cookie → JWT resolved (success)
- *   - No token present → 401 (session not found)
- *   - Authorization Bearer header fallback (service-to-service)
- *   - Valid JWT accepted
- *   - Invalid/tampered signature → 401
- *   - Expired token → 401
- *   - Missing token → 401
- *   - Malformed token → 401
- *   - Wrong issuer → 401
- *   - Wrong audience → 401
- *   - Wrong/missing azp → 401
- *   - nbf in the future → 401
+ * Since 085 a request authenticates through ONE thing: the `mcm_session_id` cookie. `requireAuth`
+ * reads the session, enforces absolute then idle expiry with the true reason, opens the
+ * server-held tokens (renewing them when due) and validates the access token on every request.
+ * The member's client never holds a token, and a bearer credential is not honoured in any
+ * environment (FR-008/FR-009) — it is not even read.
+ *
+ * The session store and the token sealing are mocked here (their own suites cover them); the JWT
+ * validation cases below are the same ones the cookie-token model had, applied to the server-held
+ * token.
  */
 
+import * as auth from '@/bff-server/auth';
 import {
   requireAuth,
   extractSessionId,
@@ -23,32 +20,46 @@ import {
   buildAuthCookies,
   buildClearAuthCookies,
   SESSION_ID_COOKIE,
-  ACCESS_TOKEN_COOKIE,
 } from '@/bff-server/auth';
-import { AuthError, AuthErrorCode, UnauthorizedError } from '@/types/errors';
-import type { JWTPayload } from '@/types/auth';
+import { AuthError, AuthErrorCode } from '@/types/errors';
+import type { JWTPayload, Session } from '@/types/auth';
 
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
-
-// ─── Mock token-service ───────────────────────────────────────────────────────
+import { readLiveSessionWithTokens, touchSession, terminateSession } from '@/bff-server/session-manager';
+import { ensureFreshTokens, openSessionTokens } from '@/bff-server/session-tokens';
+import { logger } from '@/bff-server/logger';
 
 jest.mock('@/bff-server/token-service', () => ({
   validateJwt: jest.fn(),
   extractRoles: jest.fn().mockReturnValue(['mc-user']),
 }));
-const mockedValidateJwt = validateJwt as jest.MockedFunction<typeof validateJwt>;
-const mockedExtractRoles = extractRoles as jest.MockedFunction<typeof extractRoles>;
-
-// ─── Mock env ─────────────────────────────────────────────────────────────────
-
+jest.mock('@/bff-server/session-manager', () => ({
+  readLiveSessionWithTokens: jest.fn(),
+  touchSession: jest.fn().mockResolvedValue(undefined),
+  terminateSession: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/bff-server/session-tokens', () => ({
+  openSessionTokens: jest.fn(),
+  ensureFreshTokens: jest.fn(),
+}));
+jest.mock('@/bff-server/logger', () => ({
+  logger: { audit: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+}));
 jest.mock('@/config/env', () => ({
   env: {
     keycloakClientId: 'movie-collection-manager',
     isDevelopment: true,
+    sessionAbsoluteTimeoutMs: 86_400_000,
   },
 }));
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const mockedValidateJwt = validateJwt as jest.MockedFunction<typeof validateJwt>;
+const mockedExtractRoles = extractRoles as jest.MockedFunction<typeof extractRoles>;
+const mockedRead = readLiveSessionWithTokens as jest.MockedFunction<typeof readLiveSessionWithTokens>;
+const mockedOpen = openSessionTokens as jest.MockedFunction<typeof openSessionTokens>;
+const mockedFresh = ensureFreshTokens as jest.MockedFunction<typeof ensureFreshTokens>;
+
+const SERVER_HELD_ACCESS = 'server.held.access-jwt';
 
 function makePayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -74,154 +85,184 @@ function makePayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   };
 }
 
-function makeValidatedToken(payload: JWTPayload) {
-  return { payload, header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' } };
+const validated = (payload: JWTPayload) => ({ payload, header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' } });
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  const now = Date.now();
+  return { sessionId: 'session-abc', userId: 'user-123', createdAt: now, lastActivityAt: now, expiresAt: now + 86_400_000, ...overrides };
+}
+
+const TOKENS = {
+  accessToken: SERVER_HELD_ACCESS,
+  refreshToken: 'server.held.refresh',
+  accessExpiresAt: Date.now() + 300_000,
+  refreshExpiresAt: Date.now() + 1_800_000,
+};
+
+const withSession = { cookie: `${SESSION_ID_COOKIE}=session-abc` };
+
+async function refusal(headers: Record<string, string>): Promise<AuthError> {
+  try {
+    await requireAuth(headers);
+  } catch (err) {
+    if (err instanceof AuthError) return err;
+    throw err;
+  }
+  throw new Error('expected requireAuth to refuse');
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockedExtractRoles.mockReturnValue(['mc-user']);
+  mockedRead.mockResolvedValue({ session: makeSession(), tokensRaw: 'sealed-record' });
+  mockedOpen.mockReturnValue(TOKENS);
+  mockedFresh.mockImplementation(async (_session, tokens) => tokens);
+  mockedValidateJwt.mockResolvedValue(validated(makePayload()));
 });
 
-// ─── requireAuth ─────────────────────────────────────────────────────────────
+// ─── requireAuth: the session cookie is the only credential ──────────────────
 
-describe('requireAuth', () => {
-  it('resolves JWT from HTTP-only access token cookie (session present)', async () => {
-    const payload = makePayload();
-    mockedValidateJwt.mockResolvedValue(makeValidatedToken(payload));
+describe('requireAuth — session cookie', () => {
+  it('authenticates through the session and validates the SERVER-HELD token (US6 AS-1)', async () => {
+    const result = await requireAuth(withSession);
 
-    const headers = {
-      cookie: `${ACCESS_TOKEN_COOKIE}=valid.jwt.from.cookie; ${SESSION_ID_COOKIE}=session-abc`,
-    };
-    const result = await requireAuth(headers);
-
-    expect(mockedValidateJwt).toHaveBeenCalledWith('valid.jwt.from.cookie');
+    expect(mockedRead).toHaveBeenCalledWith('session-abc');
+    expect(mockedValidateJwt).toHaveBeenCalledWith(SERVER_HELD_ACCESS);
+    expect(result.accessToken).toBe(SERVER_HELD_ACCESS);
     expect(result.user.id).toBe('user-123');
     expect(result.user.username).toBe('testuser');
+    expect(result.session.sessionId).toBe('session-abc');
   });
 
-  it('resolves JWT from Authorization Bearer header (service-to-service fallback)', async () => {
-    const payload = makePayload();
-    mockedValidateJwt.mockResolvedValue(makeValidatedToken(payload));
-
-    const result = await requireAuth({ authorization: 'Bearer valid.jwt.token' });
-
-    expect(mockedValidateJwt).toHaveBeenCalledWith('valid.jwt.token');
-    expect(result.payload.sub).toBe('user-123');
+  it('slides the idle window on every authenticated request (FR-023)', async () => {
+    await requireAuth(withSession);
+    expect(touchSession).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'session-abc' }));
   });
 
-  it('prefers Authorization header over cookie token', async () => {
-    const payload = makePayload();
-    mockedValidateJwt.mockResolvedValue(makeValidatedToken(payload));
+  it('uses the renewed tokens when they were due (US6 AS-2)', async () => {
+    mockedFresh.mockResolvedValueOnce({ ...TOKENS, accessToken: 'renewed.access-jwt' });
+    const result = await requireAuth(withSession);
+    expect(mockedValidateJwt).toHaveBeenCalledWith('renewed.access-jwt');
+    expect(result.accessToken).toBe('renewed.access-jwt');
+  });
+});
 
-    const headers = {
-      authorization: 'Bearer header.token',
-      cookie: `${ACCESS_TOKEN_COOKIE}=cookie.token`,
-    };
-    await requireAuth(headers);
-
-    expect(mockedValidateJwt).toHaveBeenCalledWith('header.token');
+describe('requireAuth — no bearer credential, in any environment (US3, FR-008/FR-009)', () => {
+  it('refuses a bearer credential alone, and never even validates it (US3 AS-1)', async () => {
+    const err = await refusal({ authorization: 'Bearer valid.jwt.token' });
+    expect(err.statusCode).toBe(401);
+    expect(err.code).toBe(AuthErrorCode.UNAUTHORIZED);
+    expect(mockedValidateJwt).not.toHaveBeenCalled();
+    expect(mockedRead).not.toHaveBeenCalled();
   });
 
-  it('rejects with 401 when no token is provided (session not found)', async () => {
-    await expect(requireAuth({})).rejects.toBeInstanceOf(UnauthorizedError);
-
-    let caughtError: unknown;
-    try {
-      await requireAuth({});
-    } catch (err) {
-      caughtError = err;
-    }
-    expect((caughtError as UnauthorizedError).statusCode).toBe(401);
+  it('with a bearer AND a session cookie, only the cookie authenticates (US3 AS-2)', async () => {
+    await requireAuth({ authorization: 'Bearer some.other.member', ...withSession });
+    expect(mockedValidateJwt).toHaveBeenCalledTimes(1);
+    expect(mockedValidateJwt).toHaveBeenCalledWith(SERVER_HELD_ACCESS);
   });
 
-  it('accepts valid JWT and returns user profile', async () => {
-    const payload = makePayload();
-    mockedValidateJwt.mockResolvedValue(makeValidatedToken(payload));
+  it('there is no helper left that reads a token from request headers', () => {
+    expect(auth).not.toHaveProperty('extractRawToken');
+  });
+});
 
-    const result = await requireAuth({ authorization: 'Bearer valid.jwt' });
-
-    expect(result.user.emailVerified).toBe(true);
-    expect(result.user.accountStatus).toBe('active');
-    expect(result.user.email).toBe('test@example.com');
+describe('requireAuth — sessions that are not live', () => {
+  it('no cookie: 401 UNAUTHORIZED, clearing the auth cookies', async () => {
+    const err = await refusal({});
+    expect(err.code).toBe(AuthErrorCode.UNAUTHORIZED);
+    expect(err.clearCookies).toEqual(buildClearAuthCookies());
   });
 
-  it('rejects with 401 when JWT has invalid or tampered signature', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token signature', 401),
-    );
+  it('only the retired token cookies: refused and cleared, never migrated (FR-022, US6 AS-6)', async () => {
+    const err = await refusal({ cookie: 'mcm_access_token=old.client.jwt; mcm_refresh_token=old.refresh' });
+    expect(err.code).toBe(AuthErrorCode.UNAUTHORIZED);
+    expect(mockedValidateJwt).not.toHaveBeenCalled();
+    const cleared = (err.clearCookies ?? []).map((c) => c.split('=')[0]);
+    expect(cleared).toEqual(expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']));
+  });
 
-    await expect(requireAuth({ authorization: 'Bearer tampered.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
+  it.each([
+    ['absolute', AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT],
+    ['idle', AuthErrorCode.SESSION_IDLE_TIMEOUT],
+  ] as const)('a session past its %s limit is refused with that reason, and audited (FR-012, FR-023)', async (reason, code) => {
+    mockedRead.mockResolvedValueOnce({ expired: reason, userId: 'user-123' });
+    const err = await refusal(withSession);
+    expect(err.code).toBe(code);
+    expect(err.clearCookies).toEqual(buildClearAuthCookies());
+    expect(logger.audit).toHaveBeenCalledWith('session_expired', { userId: 'user-123', reason });
+    expect(mockedValidateJwt).not.toHaveBeenCalled();
+  });
+
+  it('an unknown session is SESSION_NOT_FOUND', async () => {
+    mockedRead.mockResolvedValueOnce({ expired: 'missing' });
+    expect((await refusal(withSession)).code).toBe(AuthErrorCode.SESSION_NOT_FOUND);
+  });
+
+  it('a session with no server-held tokens (created before 085) is ended, not trusted (FR-022)', async () => {
+    mockedRead.mockResolvedValueOnce({ session: makeSession(), tokensRaw: null });
+    const err = await refusal(withSession);
+    expect(err.code).toBe(AuthErrorCode.SESSION_NOT_FOUND);
+    expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-123');
+  });
+
+  it('tokens that do not open for this session are ended, not trusted (FR-017)', async () => {
+    mockedOpen.mockImplementationOnce(() => {
+      throw new Error('Unsupported state or unable to authenticate data');
     });
+    const err = await refusal(withSession);
+    expect(err.code).toBe(AuthErrorCode.SESSION_NOT_FOUND);
+    expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-123');
   });
 
-  it('rejects with 401 when JWT is expired', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'Token has expired', 401),
-    );
+  it("a server-held token that belongs to someone else is refused and ends the session (FR-006)", async () => {
+    mockedValidateJwt.mockResolvedValueOnce(validated(makePayload({ sub: 'someone-else' })));
+    const err = await refusal(withSession);
+    expect(err.code).toBe(AuthErrorCode.SESSION_OWNER_MISMATCH);
+    expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-123');
+    expect(touchSession).not.toHaveBeenCalled();
+  });
+});
 
-    await expect(requireAuth({ authorization: 'Bearer expired.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
+describe('requireAuth — server-side renewal outcomes (FR-019)', () => {
+  it('a rejected renewal is a 401 that clears the cookies', async () => {
+    mockedFresh.mockRejectedValueOnce(new AuthError(AuthErrorCode.REFRESH_FAILED, 'rejected', 401));
+    const err = await refusal(withSession);
+    expect(err.statusCode).toBe(401);
+    expect(err.clearCookies).toEqual(buildClearAuthCookies());
   });
 
-  it('rejects with 401 when JWT is malformed', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Malformed JWT', 401),
+  it('a transient renewal failure is a retryable 503 that keeps the cookies', async () => {
+    mockedFresh.mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'down', 503, { retryAfterSeconds: 5 }),
     );
+    const err = await refusal(withSession);
+    expect(err.statusCode).toBe(503);
+    expect(err.retryAfterSeconds).toBe(5);
+    expect(err.clearCookies).toBeUndefined();
+  });
+});
 
-    await expect(requireAuth({ authorization: 'Bearer not.valid' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
+describe('requireAuth — token validation still runs on every request', () => {
+  it.each([
+    'Invalid token signature',
+    'Token expired',
+    'Malformed token',
+    'Invalid token issuer',
+    'Invalid token audience',
+    'Missing azp claim',
+    'Token not yet valid',
+  ])('a server-held token failing validation (%s) is a 401', async (message) => {
+    mockedValidateJwt.mockRejectedValueOnce(new AuthError(AuthErrorCode.UNAUTHORIZED, message, 401));
+    const err = await refusal(withSession);
+    expect(err.statusCode).toBe(401);
   });
 
-  it('rejects with 401 when JWT has wrong issuer', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token issuer', 401),
-    );
-
-    await expect(requireAuth({ authorization: 'Bearer wrong.iss.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
-  });
-
-  it('rejects with 401 when JWT has wrong audience', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401),
-    );
-
-    await expect(requireAuth({ authorization: 'Bearer wrong.aud.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
-  });
-
-  it('rejects with 401 when JWT is missing the azp (authorized party) claim', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401),
-    );
-
-    await expect(requireAuth({ authorization: 'Bearer no.azp.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
-  });
-
-  it('rejects with 401 when JWT nbf is in the future (token not yet valid)', async () => {
-    mockedValidateJwt.mockRejectedValue(
-      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Token not yet valid', 401),
-    );
-
-    await expect(requireAuth({ authorization: 'Bearer future.nbf.jwt' })).rejects.toMatchObject({
-      statusCode: 401,
-    });
-  });
-
-  it('re-throws non-AuthError as UnauthorizedError', async () => {
-    mockedValidateJwt.mockRejectedValue(new Error('Unexpected internal error'));
-
-    await expect(requireAuth({ authorization: 'Bearer some.jwt' })).rejects.toBeInstanceOf(
-      UnauthorizedError,
-    );
+  it('a non-AuthError from validation becomes a generic 401', async () => {
+    mockedValidateJwt.mockRejectedValueOnce(new Error('jwks fetch exploded'));
+    const err = await refusal(withSession);
+    expect(err.statusCode).toBe(401);
+    expect(err.message).not.toContain('jwks');
   });
 });
 
@@ -229,8 +270,7 @@ describe('requireAuth', () => {
 
 describe('extractSessionId', () => {
   it('extracts session ID from HTTP-only cookie', () => {
-    const headers = { cookie: `${SESSION_ID_COOKIE}=sess-abc-123; other=value` };
-    expect(extractSessionId(headers)).toBe('sess-abc-123');
+    expect(extractSessionId({ cookie: `${SESSION_ID_COOKIE}=sess-xyz` })).toBe('sess-xyz');
   });
 
   it('returns null when no cookie header is present', () => {
@@ -238,103 +278,69 @@ describe('extractSessionId', () => {
   });
 
   it('returns null when session ID cookie is absent', () => {
-    const headers = { cookie: 'unrelated=value; something=else' };
-    expect(extractSessionId(headers)).toBeNull();
+    expect(extractSessionId({ cookie: 'other=value' })).toBeNull();
+  });
+
+  it('never reads a session reference from a header', () => {
+    expect(extractSessionId({ 'x-session-id': 'sess-from-header' })).toBeNull();
   });
 
   it('handles array cookie header values', () => {
-    const headers = { cookie: [`${SESSION_ID_COOKIE}=sess-xyz`] };
-    expect(extractSessionId(headers)).toBe('sess-xyz');
+    expect(extractSessionId({ cookie: [`${SESSION_ID_COOKIE}=sess-arr`] })).toBe('sess-arr');
   });
 
   it('handles cookie with multiple pairs including session ID', () => {
-    const headers = {
-      cookie: `${ACCESS_TOKEN_COOKIE}=some.token; ${SESSION_ID_COOKIE}=session-id-value`,
-    };
-    expect(extractSessionId(headers)).toBe('session-id-value');
+    expect(extractSessionId({ cookie: `a=1; ${SESSION_ID_COOKIE}=sess-multi; b=2` })).toBe('sess-multi');
   });
 });
 
-// ─── buildUserProfileFromPayload ─────────────────────────────────────────────
+// ─── buildUserProfileFromPayload ──────────────────────────────────────────────
 
 describe('buildUserProfileFromPayload', () => {
   it('builds a user profile from a valid JWT payload', () => {
-    const payload = makePayload();
-    const profile = buildUserProfileFromPayload(payload);
-
+    const profile = buildUserProfileFromPayload(makePayload());
     expect(profile.id).toBe('user-123');
-    expect(profile.username).toBe('testuser');
     expect(profile.email).toBe('test@example.com');
-    expect(profile.firstName).toBe('Test');
-    expect(profile.lastName).toBe('User');
-    expect(profile.emailVerified).toBe(true);
-    expect(profile.accountStatus).toBe('active');
-    expect(profile.roles).toEqual(['mc-user']);
   });
 
   it('uses extractRoles to populate the roles array', () => {
     mockedExtractRoles.mockReturnValue(['mc-admin']);
     const payload = makePayload();
     const profile = buildUserProfileFromPayload(payload);
-
     expect(mockedExtractRoles).toHaveBeenCalledWith(payload, 'movie-collection-manager');
     expect(profile.roles).toEqual(['mc-admin']);
   });
 });
 
-// ─── buildAuthCookies ─────────────────────────────────────────────────────────
+// ─── Cookies: the client holds the session reference and nothing else ────────
 
-describe('buildAuthCookies', () => {
-  it('returns three cookie strings (access, refresh, session)', () => {
-    const cookies = buildAuthCookies('access-token', 'refresh-token', 'session-id', 900, 604800);
-    expect(cookies).toHaveLength(3);
+describe('buildAuthCookies (FR-016)', () => {
+  it('sets ONE cookie, the session reference — never a token', () => {
+    const cookies = buildAuthCookies('sess-abc');
+    expect(cookies).toHaveLength(1);
+    expect(cookies[0]).toMatch(new RegExp(`^${SESSION_ID_COOKIE}=sess-abc;`));
   });
 
-  it('marks all cookies as HttpOnly and SameSite=Strict', () => {
-    const cookies = buildAuthCookies('at', 'rt', 'sid', 900, 604800);
-    cookies.forEach((c) => {
-      expect(c).toMatch(/HttpOnly/);
-      expect(c).toMatch(/SameSite=Strict/);
-    });
-  });
-
-  it('includes session ID in the session cookie', () => {
-    const cookies = buildAuthCookies('at', 'rt', 'sess-abc', 900, 604800);
-    const sessionCookie = cookies.find((c) => c.startsWith(`${SESSION_ID_COOKIE}=`));
-    expect(sessionCookie).toBeDefined();
-    expect(sessionCookie).toContain('sess-abc');
-  });
-
-  it('respects the max-age for access token cookie', () => {
-    const cookies = buildAuthCookies('at', 'rt', 'sid', 900, 604800);
-    const accessCookie = cookies.find((c) => c.startsWith(`${ACCESS_TOKEN_COOKIE}=`));
-    expect(accessCookie).toContain('Max-Age=900');
+  it('is HttpOnly, SameSite=Strict, Path=/, and lives as long as the session can', () => {
+    const [cookie] = buildAuthCookies('sid');
+    expect(cookie).toMatch(/HttpOnly/);
+    expect(cookie).toMatch(/SameSite=Strict/);
+    expect(cookie).toMatch(/Path=\//);
+    expect(cookie).toMatch(/Max-Age=86400/);
   });
 });
 
-// ─── buildClearAuthCookies ────────────────────────────────────────────────────
-
 describe('buildClearAuthCookies', () => {
-  it('returns three cookie strings with Max-Age=0 to clear tokens', () => {
+  it('clears the session cookie and both retired token cookies, at their original Paths (FR-022)', () => {
     const cookies = buildClearAuthCookies();
     expect(cookies).toHaveLength(3);
-    cookies.forEach((c) => expect(c).toMatch(/Max-Age=0/));
-  });
-
-  it('clears the session ID cookie', () => {
-    const cookies = buildClearAuthCookies();
-    const sessionCookie = cookies.find((c) => c.startsWith(`${SESSION_ID_COOKIE}=`));
-    expect(sessionCookie).toBeDefined();
-    expect(sessionCookie).toMatch(/Max-Age=0/);
-  });
-
-  it('includes SameSite=Strict on all clear-cookie headers', () => {
-    const cookies = buildClearAuthCookies();
-    cookies.forEach((c) => expect(c).toMatch(/SameSite=Strict/));
-  });
-
-  it('includes HttpOnly on all clear-cookie headers', () => {
-    const cookies = buildClearAuthCookies();
-    cookies.forEach((c) => expect(c).toMatch(/HttpOnly/));
+    cookies.forEach((c) => {
+      expect(c).toMatch(/Max-Age=0/);
+      expect(c).toMatch(/HttpOnly/);
+      expect(c).toMatch(/SameSite=Strict/);
+    });
+    expect(cookies.find((c) => c.startsWith('mcm_session_id='))).toMatch(/Path=\//);
+    expect(cookies.find((c) => c.startsWith('mcm_access_token='))).toMatch(/Path=\//);
+    expect(cookies.find((c) => c.startsWith('mcm_refresh_token='))).toMatch(/Path=\/bff-api\/auth\/refresh/);
   });
 });

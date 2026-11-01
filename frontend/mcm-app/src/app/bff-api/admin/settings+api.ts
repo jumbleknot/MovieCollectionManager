@@ -14,6 +14,7 @@ import { getAppSettings, setAllowSelfRegistration } from '@/bff-server/app-setti
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
+import { authErrorHeaders } from '@/bff-server/mc-api-error';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
 export async function GET(req: Request): Promise<Response> {
@@ -80,7 +81,7 @@ function errorResponse(err: unknown, ip: string | null, action: 'read' | 'write'
     }
     return Response.json(
       { error: err.message, code: err.code },
-      { status: err.statusCode, headers: securityHeaders() },
+      { status: err.statusCode, headers: authErrorHeaders(err) },
     );
   }
   logger.error('admin-settings: unhandled error', { action: 'admin_settings_error', error: err });

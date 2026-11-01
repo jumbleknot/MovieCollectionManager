@@ -20,7 +20,7 @@ function keycloakFetch(url: string | URL, init?: RequestInit): Promise<Response>
 
 // ─── Token response from Keycloak token endpoint ───────────────────────────────
 
-interface KeycloakTokenResponse {
+export interface KeycloakTokenResponse {
   access_token: string;
   refresh_token: string;
   id_token: string;
@@ -152,18 +152,36 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
     body.set('client_secret', env.keycloakClientSecret);
   }
 
-  const res = await keycloakFetch(discovery.token_endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
+  // Feature 085 (FR-019): the BFF renews on the member's behalf, so a REJECTED grant (400/401 —
+  // revoked, expired, session ended: sign in again) must be told apart from an OUTAGE (network,
+  // timeout, 5xx: keep the session, the request is retryable). Treating both as a rejection would
+  // sign members out whenever Keycloak blinked.
+  let res: Response;
+  try {
+    res = await keycloakFetch(discovery.token_endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
+    });
+  } catch {
+    throw identityProviderUnavailable();
+  }
 
-  if (!res.ok) {
+  if (res.status === 400 || res.status === 401) {
     throw new AuthError(AuthErrorCode.REFRESH_FAILED, 'Token refresh failed', 401);
   }
+  if (!res.ok) throw identityProviderUnavailable();
 
   return res.json() as Promise<KeycloakTokenResponse>;
 }
+
+const REFRESH_TIMEOUT_MS = 5000;
+
+const identityProviderUnavailable = () =>
+  new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'The identity provider is temporarily unavailable.', 503, {
+    retryAfterSeconds: 5,
+  });
 
 /**
  * Terminate all Keycloak SSO sessions for a user via the Admin API.

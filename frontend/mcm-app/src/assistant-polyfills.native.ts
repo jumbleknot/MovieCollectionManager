@@ -29,7 +29,7 @@ LogBox.ignoreLogs(['[CopilotKit] Installing non-cryptographic']);
 require('@copilotkit/react-native/polyfills/crypto');
 require('@copilotkit/react-native/polyfills');
 
-// Wrap globalThis.fetch so an expired access-token cookie on the agent /run route triggers a
-// silent refresh + retry (the CopilotKit transport bypasses the axios refresh interceptor).
+// Wrap globalThis.fetch so a 401 on the agent /run route triggers a silent refresh + retry (the
+// CopilotKit transport bypasses the axios refresh interceptor).
 // Installed here — after the streaming-fetch polyfill, before CopilotKit issues any run.
 require('./utils/agent-fetch-refresh').installAgentFetchRefresh();

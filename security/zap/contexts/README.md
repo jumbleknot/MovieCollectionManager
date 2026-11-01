@@ -23,9 +23,10 @@ react to a 401), loaded from `../scripts/`:
 
 - `bearer-auth.js` — injects `Authorization: Bearer <ROPC access_token>` for the `mc-service` and
   `agent-gateway` hosts; re-mints on 401 (survives the 300s token TTL, FR-013).
-- `bff-session-refresh.js` — attaches the `mcm_*` cookies (from the gitignored
-  `../reports/.auth.local.json` produced by `scripts/dast-bff-login.mjs`) for the `bff` host; refreshes
-  via `POST /bff-api/auth/refresh` on 401.
+- `bff-session-refresh.js` — attaches the `mcm_session_id` cookie (from the gitignored
+  `../reports/.auth.local.json` produced by `scripts/dast-bff-login.mjs`) for the `bff` host. Since
+  feature 085 it is the BFF's only credential — the tokens are held server-side and renewed by the BFF
+  — so a 401 means the session ended; the script then checks it via `POST /bff-api/auth/refresh`.
 
 ## Network
 

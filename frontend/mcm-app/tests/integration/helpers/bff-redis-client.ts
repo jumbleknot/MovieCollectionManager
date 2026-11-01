@@ -40,3 +40,29 @@ export async function bffCleanupUser(userId: string): Promise<void> {
 export async function closeBffRedis(): Promise<void> {
   await redis.quit();
 }
+
+/** Every raw value the BFF stores for a session: its record and its sealed tokens (feature 085). */
+export async function bffRawSessionValues(sessionId: string): Promise<{ record: string | null; tokens: string | null }> {
+  const [record, tokens] = await redis.mget(sessionKey(sessionId), `session-tokens:${sessionId}`);
+  return { record: record ?? null, tokens: tokens ?? null };
+}
+
+/**
+ * Age a session's server-held access token by rewriting the CLEAR `accessExpiresAt` of its sealed
+ * record (data-model.md: the expiry times sit outside the ciphertext so a test can do exactly this
+ * without the key). The next request that needs the token must renew it.
+ */
+export async function bffAgeSessionAccessToken(sessionId: string): Promise<void> {
+  const key = `session-tokens:${sessionId}`;
+  const raw = await redis.get(key);
+  if (!raw) throw new Error(`bffAgeSessionAccessToken: no tokens for session ${sessionId}`);
+  const ttl = await redis.ttl(key);
+  await redis.set(key, JSON.stringify({ ...JSON.parse(raw), accessExpiresAt: 0 }), 'EX', Math.max(ttl, 60));
+}
+
+/** Put another session's sealed tokens into this session — a tampered/corrupted store (FR-006). */
+export async function bffCopySessionTokens(fromSessionId: string, toSessionId: string): Promise<void> {
+  const raw = await redis.get(`session-tokens:${fromSessionId}`);
+  if (!raw) throw new Error(`bffCopySessionTokens: no tokens for session ${fromSessionId}`);
+  await redis.set(`session-tokens:${toSessionId}`, raw, 'EX', 600);
+}

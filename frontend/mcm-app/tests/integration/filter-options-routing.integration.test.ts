@@ -19,11 +19,11 @@
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
@@ -47,12 +47,12 @@ describe('filter-options routing guard (US1)', () => {
     await ensureRopcAudienceMapper();
     user = await createTestUser('fopts-user');
     await assignRole(user.userId, 'mc-user');
-    ({ accessToken: token } = await getTestTokens(user.username, user.password));
+    token = (await loginSession(user.username, user.password)).cookie;
 
     const created = await bff.post(
       '/bff-api/collections',
       { name: `fopts-${Date.now()}`, description: 'routing guard' },
-      { headers: { Authorization: `Bearer ${token}` } },
+      { headers: { Cookie: token } },
     );
     collectionId = created.data.collectionId ?? created.data.id;
   });
@@ -60,7 +60,7 @@ describe('filter-options routing guard (US1)', () => {
   afterAll(async () => {
     if (collectionId) {
       await bff.delete(`/bff-api/collections/${collectionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Cookie: token },
       });
     }
     await deleteTestUser(user?.userId);
@@ -68,7 +68,7 @@ describe('filter-options routing guard (US1)', () => {
 
   it('serves the FilterOptionsDto for …/movies/filter-options (US1-AC2, SC-001)', async () => {
     const res = await bff.get(`/bff-api/collections/${collectionId}/movies/filter-options`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Cookie: token },
     });
     expect(res.status).toBe(200);
     for (const key of FILTER_OPTION_KEYS) {
@@ -78,7 +78,7 @@ describe('filter-options routing guard (US1)', () => {
 
   it('does not 400 the "filter-options" sub-path at the edge (US1-AC4, FR-004)', async () => {
     const res = await bff.get(`/bff-api/collections/${collectionId}/movies/filter-options`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Cookie: token },
     });
     // A re-tightened strict-ObjectId check would 400 here (movieId="filter-options").
     expect(res.status).not.toBe(400);

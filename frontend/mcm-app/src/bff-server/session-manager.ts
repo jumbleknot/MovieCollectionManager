@@ -7,11 +7,15 @@
 import { randomUUID } from 'crypto';
 import {
   cacheSession,
+  cacheSessionTokens,
   deleteSession,
   getSession,
+  getSessionWithTokens,
   getUserSessionIds,
   getUserSessionCount,
+  touchSessionRecord,
 } from '@/bff-server/cache-service';
+import { sealSessionTokens, type SessionTokens } from '@/bff-server/session-tokens';
 import { env } from '@/config/env';
 import { logger } from '@/bff-server/logger';
 import type { Session } from '@/types/auth';
@@ -21,11 +25,11 @@ const MAX_SESSIONS = env.maxConcurrentSessions;
 // ─── Session creation ──────────────────────────────────────────────────────────
 
 /**
- * Create a new session for the given user.
+ * Create a new session for the given user, holding their tokens SEALED beside it (feature 085).
  * Evicts the oldest inactive session if the max-concurrent-sessions limit is reached.
- * Returns the new Session object (persist session ID in a cookie).
+ * Returns the new Session object; only its id reaches the client, as a cookie.
  */
-export async function createSession(userId: string): Promise<Session> {
+export async function createSession(userId: string, tokens: SessionTokens): Promise<Session> {
   const now = Date.now();
   const sessionCount = await getUserSessionCount(userId);
 
@@ -42,6 +46,7 @@ export async function createSession(userId: string): Promise<Session> {
   };
 
   await cacheSession(session);
+  await cacheSessionTokens(session, sealSessionTokens(session, tokens));
 
   // Enforce the concurrent-session cap even under simultaneous logins (009 FR-018):
   // the pre-add count check is TOCTOU-racy, so after adding, trim the oldest until
@@ -58,10 +63,24 @@ export async function createSession(userId: string): Promise<Session> {
   return session;
 }
 
-export type LiveSessionResult =
-  | { session: Session }
-  | { expired: 'absolute' | 'idle'; userId: string }
-  | { expired: 'missing' };
+type Expired = { expired: 'absolute' | 'idle'; userId: string } | { expired: 'missing' };
+
+export type LiveSessionResult = { session: Session } | Expired;
+
+/** Absolute BEFORE idle: a session past its maximum length is reported as that even if also idle. */
+async function expiryOf(session: Session | null, sessionId: string): Promise<Expired | null> {
+  if (!session) return { expired: 'missing' };
+  const now = Date.now();
+  if (now > session.expiresAt) {
+    await deleteSession(sessionId, session.userId);
+    return { expired: 'absolute', userId: session.userId };
+  }
+  if (now - session.lastActivityAt > env.sessionIdleTimeoutMs) {
+    await deleteSession(sessionId, session.userId);
+    return { expired: 'idle', userId: session.userId };
+  }
+  return null;
+}
 
 /**
  * Read a session and say why it is not live, when it is not (feature 085 US5, FR-012).
@@ -72,18 +91,19 @@ export type LiveSessionResult =
  */
 export async function readLiveSession(sessionId: string): Promise<LiveSessionResult> {
   const session = await getSession(sessionId);
-  if (!session) return { expired: 'missing' };
+  return (await expiryOf(session, sessionId)) ?? { session: session! };
+}
 
-  const now = Date.now();
-  if (now > session.expiresAt) {
-    await deleteSession(session.sessionId, session.userId);
-    return { expired: 'absolute', userId: session.userId };
-  }
-  if (now - session.lastActivityAt > env.sessionIdleTimeoutMs) {
-    await deleteSession(session.sessionId, session.userId);
-    return { expired: 'idle', userId: session.userId };
-  }
-  return { session };
+/**
+ * The live session and its sealed tokens, in one store round trip — what every authenticated
+ * request reads (feature 085 FR-023: idle expiry is enforced on that same read). `tokensRaw` is
+ * null for a session created before 085, which the caller must treat as no session.
+ */
+export async function readLiveSessionWithTokens(
+  sessionId: string,
+): Promise<{ session: Session; tokensRaw: string | null } | Expired> {
+  const { session, tokensRaw } = await getSessionWithTokens(sessionId);
+  return (await expiryOf(session, sessionId)) ?? { session: session!, tokensRaw };
 }
 
 /**
@@ -96,16 +116,12 @@ export async function getValidSession(sessionId: string): Promise<Session | null
 }
 
 /**
- * Slide the idle window of an active session. Called where idle expiry is enforced: on
- * `/bff-api/auth/user` (via validateSessionTimeout) and `/bff-api/auth/refresh` — not on every
- * authenticated request (feature 085 FR-013 records where it actually happens).
+ * Slide the idle window of a session the caller has just validated. Called by `requireAuth` on
+ * every authenticated request (feature 085 FR-023), so idle expiry applies to every route. Writes
+ * the session record only — never its tokens — and only if it still exists.
  */
-export async function touchSession(sessionId: string): Promise<void> {
-  const session = await getSession(sessionId);
-  if (!session) return;
-
-  session.lastActivityAt = Date.now();
-  await cacheSession(session);
+export async function touchSession(session: Session): Promise<void> {
+  await touchSessionRecord({ ...session, lastActivityAt: Date.now() });
 }
 
 /**

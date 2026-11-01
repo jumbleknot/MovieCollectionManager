@@ -6,10 +6,11 @@
  * which shares db 1 with the module under test (REDIS_URL pinned to db 1 in
  * tests/integration/setup/env.ts before any module loads — T004a).
  *
- * Actual session-manager exports: createSession(userId), getValidSession(sessionId),
+ * Actual session-manager exports: createSession(userId, placeholderSessionTokens()), getValidSession(sessionId),
  * terminateSession(sessionId, userId), terminateAllSessions(userId),
  * getActiveSessionCount(userId), touchSession(sessionId). (No getSession/deleteSession.)
  */
+import { placeholderSessionTokens } from './helpers/session-token-fixture';
 import { randomUUID } from 'node:crypto';
 import {
   createSession,
@@ -43,7 +44,7 @@ describe('session-manager — integration (real Redis db 1)', () => {
 
   it('creates a session in Redis with a positive TTL (US2-AC1)', async () => {
     const userId = randomUUID();
-    const session = await createSession(userId);
+    const session = await createSession(userId, placeholderSessionTokens());
 
     expect(await redisExists(sessionKey(session.sessionId))).toBe(true);
     const ttl = await redisTtl(sessionKey(session.sessionId));
@@ -57,7 +58,7 @@ describe('session-manager — integration (real Redis db 1)', () => {
 
   it('retrieves the stored session payload (US2-AC2)', async () => {
     const userId = randomUUID();
-    const created = await createSession(userId);
+    const created = await createSession(userId, placeholderSessionTokens());
 
     const fetched = await getValidSession(created.sessionId);
     expect(fetched).not.toBeNull();
@@ -103,10 +104,10 @@ describe('session-manager — integration (real Redis db 1)', () => {
     const userId = randomUUID();
     const max = env.maxConcurrentSessions;
 
-    const first = await createSession(userId);
+    const first = await createSession(userId, placeholderSessionTokens());
     // small spread so lastActivityAt differs; create exactly `max` more → total max+1
     for (let i = 0; i < max; i++) {
-      await createSession(userId);
+      await createSession(userId, placeholderSessionTokens());
     }
 
     // count is capped at the max; the oldest (first) session was evicted
@@ -117,7 +118,7 @@ describe('session-manager — integration (real Redis db 1)', () => {
 
   it('removes a terminated session from Redis (US2-AC5)', async () => {
     const userId = randomUUID();
-    const session = await createSession(userId);
+    const session = await createSession(userId, placeholderSessionTokens());
 
     await terminateSession(session.sessionId, userId);
 

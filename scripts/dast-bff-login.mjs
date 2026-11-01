@@ -58,7 +58,9 @@ function parseMcmCookies(setCookieHeaders) {
 }
 
 /**
- * Run the full headless login and return { mcm_access_token, mcm_refresh_token, mcm_session_id }.
+ * Run the full headless login and return { mcm_session_id } — since feature 085 the BFF sets no
+ * token cookie: the member's tokens are held server-side and the session reference is the only
+ * credential a client (or a scanner) carries.
  * Throws with a clear message (never a credential) if any step fails — the caller must fail fast
  * rather than proceed to a public-only scan (FR-012).
  */
@@ -123,10 +125,10 @@ export async function login(cfg = config()) {
     throw new Error(`BFF /bff-api/auth/login returned HTTP ${bffRes.status} — code exchange failed (redirect_uri mismatch? Redis/session store down?).`);
   }
   const cookies = parseMcmCookies(bffRes.headers.getSetCookie());
-  if (!cookies.mcm_access_token || !cookies.mcm_session_id) {
-    throw new Error('BFF login succeeded but did not set the expected mcm_* cookies — cannot establish a BFF scan session.');
+  if (!cookies.mcm_session_id) {
+    throw new Error('BFF login succeeded but did not set mcm_session_id — cannot establish a BFF scan session.');
   }
-  return cookies;
+  return { mcm_session_id: cookies.mcm_session_id };
 }
 
 async function main() {

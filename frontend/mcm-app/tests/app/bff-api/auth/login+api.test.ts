@@ -30,14 +30,21 @@ jest.mock('@/bff-server/session-manager', () => ({
   getActiveSessionCount: jest.fn().mockResolvedValue(0),
 }));
 
-jest.mock('@/bff-server/auth', () => ({
-  buildAuthCookies: jest.fn().mockReturnValue(['mcm_access_token=token']),
-  extractSessionId: jest.fn().mockReturnValue(null),
-}));
+// The REAL cookie builders: what the login sets on the client is the subject of feature 085's
+// assertions below, so mocking them would test the mock.
+jest.mock('@/bff-server/auth', () => {
+  const actual = jest.requireActual('@/bff-server/auth');
+  return {
+    buildAuthCookies: actual.buildAuthCookies,
+    buildClearAuthCookies: actual.buildClearAuthCookies,
+    extractSessionId: jest.fn().mockReturnValue(null),
+  };
+});
 
 import { POST } from '@/app/bff-api/auth/login+api';
 import { exchangeCodeForTokens, getUserById, decodeJwtPayload } from '@/bff-server/keycloak';
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
+import { createSession } from '@/bff-server/session-manager';
 import { checkLoginRateLimit } from '@/bff-server/rate-limiter';
 import { AuthErrorCode, RateLimitError } from '@/types/errors';
 
@@ -118,5 +125,46 @@ describe('POST /bff-api/auth/login', () => {
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.code).toBe(AuthErrorCode.ACCOUNT_DISABLED);
+  });
+});
+
+// Feature 085 US6 (FR-016, FR-022): sign-in hands the client the session reference and NOTHING else.
+describe('POST /bff-api/auth/login — the client receives only the session reference (feature 085)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (exchangeCodeForTokens as jest.Mock).mockResolvedValue(mockTokens);
+    (decodeJwtPayload as jest.Mock).mockReturnValue({ exp: now + 300, at_hash: undefined });
+    (validateJwt as jest.Mock).mockResolvedValue({ payload: { sub: 'user-1' } });
+    (extractRoles as jest.Mock).mockReturnValue(['mc-user']);
+    (getUserById as jest.Mock).mockResolvedValue({
+      id: 'user-1', username: 'tuser', email: 'u@example.com', firstName: 'T', lastName: 'U',
+      enabled: true, emailVerified: true,
+    });
+  });
+
+  it('sets only mcm_session_id, and clears the two retired token cookies (US6 AS-1)', async () => {
+    const res = await POST(makeRequest({ code: 'c', codeVerifier: 'v', redirectUri: 'r' }));
+    expect(res.status).toBe(200);
+    const setCookies = res.headers.getSetCookie();
+    const live = setCookies.filter((c) => !/Max-Age=0/.test(c));
+    expect(live).toHaveLength(1);
+    expect(live[0]).toMatch(/^mcm_session_id=session-new;/);
+    const cleared = setCookies.filter((c) => /Max-Age=0/.test(c)).map((c) => c.split('=')[0]);
+    expect(cleared.sort()).toEqual(['mcm_access_token', 'mcm_refresh_token']);
+  });
+
+  it('no response header carries the access or refresh token', async () => {
+    const res = await POST(makeRequest({ code: 'c', codeVerifier: 'v', redirectUri: 'r' }));
+    const everything = [...res.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n') + JSON.stringify(await res.json());
+    expect(everything).not.toContain('access-tok');
+    expect(everything).not.toContain('refresh-tok');
+  });
+
+  it('hands the tokens to the server-side session instead', async () => {
+    await POST(makeRequest({ code: 'c', codeVerifier: 'v', redirectUri: 'r' }));
+    expect(createSession).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ accessToken: 'access-tok', refreshToken: 'refresh-tok' }),
+    );
   });
 });

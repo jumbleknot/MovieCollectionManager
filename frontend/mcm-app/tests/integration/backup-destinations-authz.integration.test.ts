@@ -21,11 +21,11 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
 import {
@@ -43,8 +43,8 @@ let tokenA: string;
 let tokenB: string;
 let destinationIdA: string;
 
-const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
-const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
+const authA = () => ({ headers: { Cookie: tokenA } });
+const authB = () => ({ headers: { Cookie: tokenB } });
 
 // The REAL test RustFS, addressed the way the BFF CONTAINER reaches it. A placeholder like
 // `https://s3.example.com` is refused on save with a 400, and correctly so: the guard RESOLVES
@@ -67,10 +67,10 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   userA = await createTestUser('bk-authz-a');
   await assignRole(userA.userId, 'mc-user');
-  ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+  tokenA = (await loginSession(userA.username, userA.password)).cookie;
   userB = await createTestUser('bk-authz-b');
   await assignRole(userB.userId, 'mc-user');
-  ({ accessToken: tokenB } = await getTestTokens(userB.username, userB.password));
+  tokenB = (await loginSession(userB.username, userB.password)).cookie;
 }, 60_000);
 
 afterAll(async () => {

@@ -27,9 +27,11 @@ sequenceDiagram
   BFF->>Keycloak: exchange code for tokens
   Keycloak-->>BFF: ID token + access token (JWT)
   BFF->>BFF: validate ID token, validate JWT signature, extract roles
-  BFF-->>Client: HttpOnly SameSite=Strict cookies (no raw JWT to client)
-  Client->>BFF: request (cookie only, withCredentials)
-  BFF->>BFF: extract JWT from cookie, requireAuth + requireMcUser/Admin
+  BFF->>BFF: seal access + refresh token into the Redis session (AES-256-GCM)
+  BFF-->>Client: ONE HttpOnly SameSite=Strict cookie: the opaque session id (no token, ever)
+  Client->>BFF: request (session cookie only, withCredentials)
+  BFF->>BFF: requireAuth: session live? (absolute, then idle), open tokens, renew if due, validate JWT
+  BFF->>BFF: requireMcUser/Admin
   BFF->>mc: Authorization: Bearer <JWT>
   mc->>mc: validate JWT locally against cached JWKS, require_app_role
   Client->>BFF: agent request
@@ -43,11 +45,14 @@ sequenceDiagram
 1. **Client → Keycloak (PKCE).** The [Expo app](../projects/expo-app.md) performs the OAuth2
    authorization-code-with-PKCE exchange directly against Keycloak; the client only ever sees an
    authorization code, never a token.
-2. **BFF exchanges the code, owns the session.** The [BFF](../projects/bff.md) trades the code
-   for tokens, validates the ID token and the access-token JWT, extracts roles, and creates a
-   Redis-backed session. It then hands the *client* only opaque `HttpOnly`, `SameSite=Strict` cookies
-   — the raw JWT never reaches client-side JS on web or native. Subsequent requests carry only that
-   cookie; the BFF re-extracts the JWT server-side on every request via `requireAuth()`.
+2. **BFF exchanges the code, owns the session AND the tokens.** The [BFF](../projects/bff.md)
+   trades the code for tokens, validates the ID token and the access-token JWT, extracts roles, and
+   creates a Redis-backed session. Since feature 085 the access and refresh tokens are **held by the
+   server**, sealed beside the session (AES-256-GCM, bound to the session id and its owner). The
+   client receives exactly one credential, the opaque `mcm_session_id` cookie (`HttpOnly`,
+   `SameSite=Strict`, `Secure` outside development), on web and on Android. Every request goes
+   through `requireAuth()`: it enforces the session's absolute, then idle, limit, opens the
+   server-held tokens, renews them if they are due, and validates the access token.
 3. **mc-service re-validates independently.** [mc-service](../projects/mc-service.md) does not
    trust that the BFF already checked auth — it runs its own `KeycloakAuthLayer` (a tower layer, so a
    new route is protected by default) plus a separate `require_app_role` middleware for the
@@ -59,6 +64,48 @@ sequenceDiagram
    The gateway then re-exchanges per tool call to bind a short-TTL, `aud=mc-service` token to each
    individual MCP call. This means the most model-exposed component in the system (the LLM-driven
    gateway) never holds a long-lived, broad-scope credential.
+
+## Server-held tokens and fail-closed refusals (feature 085)
+
+Source: `specs/085-bff-auth-fail-closed/` (spec, plan, research R1–R11, data model).
+
+- **The session cookie is the only credential. No bearer is honoured, in any environment.** An
+  `Authorization: Bearer` header presented to the BFF is not even read: dev and test included, and
+  no flag restores it. This was an operator decision of 2026-11-01 (FR-009). The bearer path was
+  consulted *before* the cookie, contrary to the ratified client auth model, and was exactly the
+  "parallel authentication path created for testing" the constitution prohibits. Test harnesses sign
+  in the way members do (code + PKCE, then `POST /bff-api/auth/login`):
+  `frontend/mcm-app/tests/integration/helpers/bff-session.ts`.
+- **Tokens never leave the server.**
+  - `session-tokens:{sid}` holds `{v, accessExpiresAt, refreshExpiresAt, blob}`. The blob is sealed
+    with `AGENT_CONFIG_ENC_KEY`, using AAD `{sid}:{userId}:sessionTokens`.
+  - The expiry times sit in clear, outside the AAD, so a test can age a session without the key.
+    The JWT's own `exp` is still validated on every request.
+  - The record lives in its own key so that a touch never overwrites tokens a concurrent renewal
+    has just rotated.
+  - Logout, eviction, absolute or idle expiry, a rejected renewal and account deletion delete both
+    keys.
+- **Renewal happens at most once per session at a time.**
+  - A request that finds the access token within 30 s of expiry takes `session-renew:{sid}` (NX,
+    15 s) and renews. A concurrent request waits for the winner's tokens instead of renewing:
+    Keycloak rotates refresh tokens, and a second renewal would end the member's session.
+  - A rejected renewal (`400`/`401`) ends the session with `401 REFRESH_FAILED`. An unreachable
+    Keycloak (network, a 5 s timeout, `5xx`) keeps the session and answers a retryable `503`.
+  - The renewed token's `sub` must equal the session owner (FR-006). By construction it always
+    does; it is still checked.
+- **Idle expiry is enforced on every authenticated request**, on the same session read that fetches
+  the tokens. Absolute expiry is checked first and reported as such (`SESSION_ABSOLUTE_TIMEOUT`,
+  audit `session_expired {reason}`).
+- **A turn the assistant cannot attribute is refused, never run identity-less** (item #844).
+  - A refused run-scoped subject-token mint answers `401 AGENT_IDENTITY_REJECTED` (the client renews
+    once, then sends the member to sign in) or `503 AGENT_IDENTITY_UNAVAILABLE` (retryable). Either
+    way, the gateway is not called.
+  - **Measured:** Keycloak 26.5 answers a revoked subject token with `400 invalid_request "Invalid
+    token"`, not the RFC's `invalid_token`.
+- **Sign-in redirect registration retries until Keycloak confirms it.** `ensureClientRedirectUris`
+  records "done" only when nothing was missing or the `PUT` returned `2xx` (item #753).
+- **Pre-rollout clients sign in again once.** The retired `mcm_access_token` / `mcm_refresh_token`
+  cookies are never read. Every `401` clears them at their original Paths (FR-022).
 
 ## Gotchas
 

@@ -18,7 +18,6 @@ import type { UserProfile } from '@/types/auth';
 const mockRequireAuth = jest.fn();
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
-  extractRawToken: () => undefined,
 }));
 
 jest.mock('@/bff-server/request-context', () => ({

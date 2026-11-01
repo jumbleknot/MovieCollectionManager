@@ -16,11 +16,11 @@
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 import { isOllamaReachable } from './helpers/ollama';
 import * as store from '@/bff-server/agent-config-store';
@@ -43,14 +43,14 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
   // tests self-skip when Ollama is unreachable (legitimate "ollama not reachable" skip). The bad-key
   // (422) and malformed-body (400) tests don't depend on Ollama and always run.
   let ollamaReachable = false;
-  const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
+  const auth = () => ({ headers: { Cookie: token } });
 
   beforeAll(async () => {
     expect(TMDB_KEY).not.toBe('');
     await ensureRopcAudienceMapper();
     user = await createTestUser('agentcfg-save');
     await assignRole(user.userId, 'mc-user');
-    ({ accessToken: token } = await getTestTokens(user.username, user.password));
+    token = (await loginSession(user.username, user.password)).cookie;
     ollamaReachable = await isOllamaReachable(OLLAMA_BASE_URL);
   });
 

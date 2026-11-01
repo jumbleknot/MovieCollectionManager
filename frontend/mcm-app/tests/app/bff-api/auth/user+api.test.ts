@@ -24,10 +24,6 @@ jest.mock('@/bff-server/token-service', () => ({
   extractRoles: jest.fn().mockReturnValue(['mc-user']),
 }));
 
-jest.mock('@/bff-server/session-timeout', () => ({
-  validateSessionTimeout: jest.fn().mockResolvedValue(undefined),
-}));
-
 import { GET } from '@/app/bff-api/auth/user+api';
 import { requireAuth } from '@/bff-server/auth';
 import { getCachedUserProfile } from '@/bff-server/cache-service';
@@ -38,7 +34,7 @@ import { AuthErrorCode, AuthError, UnauthorizedError } from '@/types/errors';
 function makeRequest(): Parameters<typeof GET>[0] {
   return {
     url: 'http://localhost/bff-api/auth/user',
-    headers: new Headers({ authorization: 'Bearer access-tok' }),
+    headers: new Headers({ cookie: 'mcm_session_id=sid' }),
     json: () => Promise.resolve({}),
   } as unknown as Parameters<typeof GET>[0];
 }

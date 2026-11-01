@@ -22,19 +22,23 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
+  getTestTokens,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 
 let user: TestUser;
 let token: string;
+// The BFF is reached with a real session (feature 085); `token` is a real access token used only
+// IN-PROCESS, for calls this suite makes to mc-service as the member (as the BFF itself does).
+let session: string;
 let sourceCollectionId: string;
 let bystanderCollectionId: string;
-const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
+const auth = () => ({ headers: { Cookie: session } });
 
 const movie = (title: string, extra: Record<string, unknown> = {}) => ({
   title,
@@ -89,6 +93,7 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   user = await createTestUser('bk-restore');
   await assignRole(user.userId, 'mc-user');
+  session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
   const source = await bff.post('/bff-api/collections', { name: `Restore Source ${randomUUID().slice(0, 8)}` }, auth());

@@ -76,3 +76,45 @@ None of them covers code this diff changes. They run in CI's `app-e2e`, which ha
   - "Your session has expired. Please sign in again." for a 401.
 - **Unit test:** `src/components/agent/assistant-run-failure.test.ts`, RED (module missing), then
   GREEN.
+
+## PR (b): US3, US6, FR-023
+
+### Unit
+- **REDs first**:
+  - `auth.test` and `session-tokens.test` could not load (the module did not exist);
+  - `cache-service` had 6 new failures;
+  - `keycloak` refresh classification had 5 failures;
+  - `session-manager` had 5 failures;
+  - the login and refresh routes had 11 failures;
+  - the logout route had 3 failures.
+- **GREEN**: full suite 162 suites / 1730 tests; typecheck clean; lint 0 errors.
+- **Guards updated at the cause:**
+  - `cache-service` `deleteSession` now asserts that BOTH keys are deleted.
+  - `auth-session-side-effects` (009 #9) now asserts the new premise. The session id is the credential and is read from the cookie only, so a victim's id in an `X-Session-Id` header changes nothing.
+
+### Integration (real Keycloak + Redis + mc-service + BFF `085b`)
+- **REDs on the PR (a) image:**
+  - `bff-bearer-refused`: the bearer-only routes answered `200`. Member B's bearer **overrode** member A's session cookie (`Expected: <A's id>`, `Received: <B's id>`). That is the US3 defect.
+  - `session-token-custody`: every case failed (token cookies set, JWTs readable in the store).
+- **GREEN on `085b`:**
+  - 55 of 61 suites passed, 394 tests. The 25 failures are the SAME 25, by name, in the SAME 5 backup suites as the pre-change baseline (local `BACKUP_CONSENT_CLIENT_ID` is empty).
+  - 1 skipped, identical to the pre-change run.
+  - `backup-audit` was fixed by `inProcessSessionCookie`.
+- **SC-010:** no integration test sends a bearer to the BFF. The one remaining `Authorization: Bearer` (`backup-consent-redirect-uri`) is the Keycloak **Admin API**. In-process mc-service calls keep a real access token, which is a bearer to mc-service, not the BFF.
+
+### Web E2E (Playwright official image v1.63.0, dev container :8082)
+
+| Spec | PR (a) image (`085a`) | PR (b) image (`085b`) |
+|---|---|---|
+| `agent-session-refresh` (`@gate`) | RED: `mcm_access_token must not be held` | 1 passed |
+| `bff-prod-lifecycle` (`lifecycle`, `--no-deps`) | RED: `mcm_access_token must not be held by the client` | 1 passed |
+
+### Scripts
+`node --test scripts/__tests__/*.test.mjs` passes 1948 of 1948, 0 skipped. That covers the DAST helpers and the redaction fixtures.
+
+### Android
+This sandbox has no `/dev/kvm`. Per `openwiki/runbooks/android-emulator.md`, the flows run in CI's `app-e2e` on the KVM host, and PR (b) carries the `mobile-e2e-full` label so the sign-in and sign-out flows run as well as the agent flows.
+
+### Follow-ups filed
+- **#905:** a dedicated `SESSION_TOKEN_ENC_KEY`.
+- **#906:** drop the retired-cookie clears 24 h after deploy.

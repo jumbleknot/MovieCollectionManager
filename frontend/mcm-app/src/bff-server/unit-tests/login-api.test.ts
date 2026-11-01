@@ -50,11 +50,12 @@ jest.mock('@/bff-server/session-manager', () => ({
   getActiveSessionCount: (...args: unknown[]) => mockGetActiveSessionCount(...args),
 }));
 
-const mockBuildAuthCookies = jest.fn();
 
-jest.mock('@/bff-server/auth', () => ({
-  buildAuthCookies: (...args: unknown[]) => mockBuildAuthCookies(...args),
-}));
+// The REAL cookie builders (feature 085): what login sets on the client is under test.
+jest.mock('@/bff-server/auth', () => {
+  const actual = jest.requireActual('@/bff-server/auth');
+  return { buildAuthCookies: actual.buildAuthCookies, buildClearAuthCookies: actual.buildClearAuthCookies };
+});
 
 jest.mock('@/config/env', () => ({
   env: {
@@ -132,11 +133,6 @@ function setupHappyPath() {
   mockGetUserById.mockResolvedValue(VALID_USER);
   mockGetActiveSessionCount.mockResolvedValue(0);
   mockCreateSession.mockResolvedValue(VALID_SESSION);
-  mockBuildAuthCookies.mockReturnValue([
-    'mcm_access_token=access-token; HttpOnly; Path=/',
-    'mcm_refresh_token=refresh-token; HttpOnly; Path=/',
-    'mcm_session_id=sess-abc; HttpOnly; Path=/',
-  ]);
 }
 
 beforeEach(() => {
@@ -163,7 +159,7 @@ describe('POST /bff-api/auth/login', () => {
     expect(res.headers.get('X-Session-Id')).toBe('sess-abc');
   });
 
-  it('sets separate Set-Cookie headers for each auth cookie', async () => {
+  it('sets a separate Set-Cookie header per cookie: the session reference plus the two retired-cookie clears (feature 085)', async () => {
     setupHappyPath();
     const req = makeRequest({
       code: 'auth-code',
@@ -173,8 +169,11 @@ describe('POST /bff-api/auth/login', () => {
 
     const res = await POST(req);
 
+    // Feature 085: one live cookie (mcm_session_id) and two clears of the retired token cookies,
+    // each on its own line — joined, the browser would keep only the first.
     const cookies = res.headers.getSetCookie?.() ?? [];
     expect(cookies.length).toBe(3);
+    expect(cookies.filter((c) => !/Max-Age=0/.test(c))).toHaveLength(1);
   });
 
   // ─── Input validation ────────────────────────────────────────────────────────

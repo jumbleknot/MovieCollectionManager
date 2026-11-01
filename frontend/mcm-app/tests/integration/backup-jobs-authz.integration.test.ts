@@ -28,11 +28,11 @@ import {
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 const JOBS = '/bff-api/backups/jobs';
@@ -52,8 +52,8 @@ let destinationB: string;
 let collectionA: string;
 let jobA: string;
 
-const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
-const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
+const authA = () => ({ headers: { Cookie: tokenA } });
+const authB = () => ({ headers: { Cookie: tokenB } });
 
 async function seedDestination(userId: string) {
   return destinationStore.createDestination(userId, {
@@ -73,10 +73,10 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   userA = await createTestUser('bk-jobs-a');
   await assignRole(userA.userId, 'mc-user');
-  ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+  tokenA = (await loginSession(userA.username, userA.password)).cookie;
   userB = await createTestUser('bk-jobs-b');
   await assignRole(userB.userId, 'mc-user');
-  ({ accessToken: tokenB } = await getTestTokens(userB.username, userB.password));
+  tokenB = (await loginSession(userB.username, userB.password)).cookie;
 
   destinationA = (await seedDestination(userA.userId)).id;
   destinationB = (await seedDestination(userB.userId)).id;

@@ -30,11 +30,11 @@ import {
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 const JOBS = '/bff-api/backups/jobs';
@@ -52,17 +52,17 @@ let jobId: string;
 let collectionId: string;
 let versionKey: string;
 
-const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
-const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
+const authA = () => ({ headers: { Cookie: tokenA } });
+const authB = () => ({ headers: { Cookie: tokenB } });
 
 beforeAll(async () => {
   await ensureRopcAudienceMapper();
   userA = await createTestUser('bk-rroutes-a');
   await assignRole(userA.userId, 'mc-user');
-  ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+  tokenA = (await loginSession(userA.username, userA.password)).cookie;
   userB = await createTestUser('bk-rroutes-b');
   await assignRole(userB.userId, 'mc-user');
-  ({ accessToken: tokenB } = await getTestTokens(userB.username, userB.password));
+  tokenB = (await loginSession(userB.username, userB.password)).cookie;
 
   const collection = await bff.post('/bff-api/collections', { name: `RR ${randomUUID().slice(0, 8)}` }, authA());
   collectionId = collection.data.collectionId ?? collection.data.id;
