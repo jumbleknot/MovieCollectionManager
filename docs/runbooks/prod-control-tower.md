@@ -652,6 +652,32 @@ shows in the UI (`:19030`, over the tailnet).
 
 Without a backup, steps 2–3 become "recreate both volumes empty" (ADR-0002 §4): history is lost, nothing else.
 
+## Langfuse 4.68.0 -> 4.72.0 (item #895): the same procedure, plus the object store
+
+This is the #839 procedure above, unchanged in shape. What was measured for this bump (2026-11-01, on
+copies of the dev observability volumes):
+
+- **Postgres:** 4.72.0 adds 3 Prisma migrations, so `_prisma_migrations` goes 460 → **463**.
+- **ClickHouse:** no new migrations. `schema_migrations` stays at version **53**.
+- **The pre-upgrade backup restores into 4.68.0.** Restored, 4.68.0 is healthy, a trace seeded before the
+  upgrade is present, and a trace written after it is absent.
+
+Rollback is still **restore, then revert**. A digest revert alone would start 4.68.0 on a database
+carrying three migrations it has never seen. That was not tested, and it is not the plan.
+
+What differs from #839:
+
+- **The object store is backed up too.** The `langfuse-rustfs` (S3) volume holds the raw OTLP ingestion
+  objects. It is small (about 1 MB in dev), and a cold copy makes the restore complete.
+- **Traces live in ClickHouse's v4 events model.** With `LANGFUSE_MIGRATION_V4_WRITE_MODE=events_only`,
+  `GET /api/public/traces/{id}` reads the legacy `traces` table, which is no longer written. So the
+  trace-landed check counts rows in `events_full`, not via that endpoint. The legacy `trace-create`
+  ingestion event is refused (400); traces arrive over `POST /api/public/otel/v1/traces`.
+
+The operator's paste blocks for this bump (backup B0–B3 including RustFS, the post-deploy checks, and the
+rollback) are in item #895. Each block is self-contained and has a `grep -c` or an exit-code check with its
+expected output.
+
 ## Capacity check (T013) — result (2026-07-03)
 
 Prod host (`prod@homelab`, ~57 GiB usable): **48 GiB RAM available**, actual container RSS ~2.2 GiB (app
