@@ -48,10 +48,11 @@ export function assistantRunFailureNotice(error: unknown): string {
 }
 
 /**
- * The notice for the most recent failed turn, cleared when the next turn starts. `subscribe` is
+ * The notice for the most recent failed turn, cleared when the next turn starts. Both happen in
+ * CopilotKit's own subscriber callbacks (never synchronously inside an effect). `subscribe` is
  * optional-chained because test doubles of the CopilotKit core commonly omit it.
  */
-export function useAssistantRunFailureNotice(isRunning: boolean): string | null {
+export function useAssistantRunFailureNotice(): string | null {
   const { copilotkit } = useCopilotKit();
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -60,13 +61,10 @@ export function useAssistantRunFailureNotice(isRunning: boolean): string | null 
       onError: ({ error, code }: { error: unknown; code: string }) => {
         if (RUN_FAILURE_CODES.has(code)) setNotice(assistantRunFailureNotice(error));
       },
+      onAgentRunStarted: () => setNotice(null),
     });
     return () => subscription?.unsubscribe();
   }, [copilotkit]);
-
-  useEffect(() => {
-    if (isRunning) setNotice(null);
-  }, [isRunning]);
 
   return notice;
 }

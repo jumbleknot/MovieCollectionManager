@@ -167,7 +167,7 @@ function AssistantPanel() {
   const rawMessages = (agent?.messages ?? []) as ChatMessage[];
   const items = buildDockItems(rawMessages, renderToolCall);
   const isRunning = agent?.isRunning ?? false;
-  const runFailureNotice = useAssistantRunFailureNotice(isRunning);
+  const runFailureNotice = useAssistantRunFailureNotice();
 
   // Bump the shared data revision when a run that applied an approved write transitions
   // running → idle, so the collection/movie/home lists re-fetch the now-changed server state.
