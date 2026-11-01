@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T05:36:38.857Z
+    at: 2026-11-01T08:25:59.628Z
 ---
 
 # Infra-image CVE scanning
@@ -268,10 +268,13 @@ findings readable.
   Where the reference is a floating major, or the advisory survives a version move, the **digest** is
   the dischargeable half: the OpenSearch entry is keyed to a digest rather than to `opensearch:3`, so an
   upstream rebuild — not a tag move — is what ends it, and it had to be re-keyed from the 2.x digest to
-  the 3.x one when the OpenSearch 3 major did **not** clear the advisory. The Unleash entry names both
-  version and digest, so any image change re-blocks, and it has already been re-keyed once in a Renovate
-  window after the new digest was re-measured and still carried the vulnerable package under a
-  configuration that keeps the advisory unreachable.
+  the 3.x one when the OpenSearch 3 major did **not** clear the advisory. The Unleash entry named both
+  version and digest (`^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242`), so any image change
+  re-blocked: it was re-keyed 8.2.0 → 8.2.1 in the 2026-10-30 Renovate window after the new digest was
+  re-measured and still carried proxy-addr 2.0.7 under the boolean `trust proxy` that keeps
+  `CVE-2026-90711` unreachable — and it was then **discharged** on 2026-11-01, when the 8.3.1 rebuild
+  (`sha256:025cd8b003a7`) shipped proxy-addr 2.0.8 as the only copy in the image and the entry was
+  deleted rather than left to match nothing.
   `scripts/__tests__/infra-image-scan.test.mjs` asserts both directions for every formerly-floating
   repository: the key still matches today's pin **and** stops matching a later version derived by
   incrementing the pin's last number (a hand-written "next version" literal silently stopped meaning
@@ -342,11 +345,24 @@ findings readable.
     by a tag move. Renovate proposes from the registry rather than from this file, so every rebuild is
     still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether
     the rebuild carries the fix instead of inheriting the acceptance. The price is stated below: once
-    the digest moves, the key matches nothing.
+    the digest moves, the key matches nothing. The live example is the `CVE-2026-111497` brotli cohort,
+    whose keys name the digest with no version at all (`^caddy:2\.11\.7-alpine@sha256:d8542f48d34a`,
+    `^postgres:18-alpine@sha256:77f585114c32`,
+    `^postgres:18\.6-alpine3\.23@sha256:697c180dbf24`).
   - **Discharged, not re-keyed.** Where a bump or a same-version digest refresh measurably clears the
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
+  - **Live inventory (2026-11-01): nine entries.** Two un-expiring BASELINE entries carry the same
+    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18\.6-alpine3\.23` and `postgres:18-alpine`, each
+    recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
+    `usr/local/bin/gosu`). Three are the survivors of the 2026-10-23 ca-certificates cohort, time-boxed to
+    `2026-11-20`: `CVE-2026-114406` on `langfuse/langfuse:4\.68\.0` and
+    `langfuse/langfuse-worker:4\.68\.0`, plus `CVE-2026-114139` (`@sentry/nextjs`) on
+    `langfuse/langfuse:4\.68\.0`. Four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
+    (`CVE-2026-75595`) and three brotli digest keys (`CVE-2026-111497`) on caddy and both postgres lines.
+    Everything else in the file is a comment block recording an entry that has been discharged — history,
+    not a live suppression.
   - **The three tiers the gate reports** are `EXPIRING SOON` (inside the 14-day window, still
     suppressing), `EXPIRED` (no longer suppressing, and the line names the date and who added it), and
     `UNMATCHED ENTRIES` (suppressed nothing this run — which names three causes, not two: already
@@ -360,7 +376,11 @@ findings readable.
   computed over the whole allowlist, will ever surface it — so a digest-keyed entry whose rebuild has
   already landed is invisible until its own expiry window opens. That is the price of keying to content
   rather than to a version, and the recorded cue is to delete each such entry as its digest bump lands
-  rather than renew it without re-scanning.
+  rather than renew it without re-scanning. The brotli cohort produced the measured case: the tree moved
+  `rustfs/rustfs` 1.0.3 → 1.0.4 on 2026-10-30, so the `^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5` key
+  suppressed nothing and was not reported as unmatched; the 2026-11-01 re-triage found it by reading the
+  cohort and **deleted** it rather than renewing it. The three surviving brotli keys (caddy and both
+  postgres lines) still name today's pins.
 - **A published advisory on an unchanged pin is the file's normal shape, and whether the bump
   remediates it is measured, never assumed.** Advisories land against images already running in prod and
   turn `infra-image-scan` red for every compose / `renovate.json` PR at once, with nothing in the diff
@@ -371,7 +391,26 @@ findings readable.
   same change (same CVE, same expiry); where it does not, the entry is deleted, because a re-keyed entry
   that matches nothing keeps failing `--check-expiring` whatever its date. Every surviving justification
   states that the entry is deleted once a clean rebuild ships — a time-box that forces a re-check, not
-  an accepted risk without one.
+  an accepted risk without one. The 2026-10-23 ca-certificates cohort has now produced all three
+  endings: **Keycloak** cleared `CVE-2026-114406` by a same-version digest refresh in PR #838; the
+  **mongo** `9.0-ubi9` entry was discharged on 2026-11-01, when upstream's UBI 9.8 rebuild of the same
+  9.0.4 (`9.0.4-ubi9-20261031T064800Z`, index `sha256:3d40c6fa895f` — the digest every mongo ref now
+  pins) shipped the fixed `ca-certificates 2026.2.92_v9.0.319-90.3.el9_8`, scanned at zero fixable
+  Criticals; and the **langfuse** web/worker entries remain, re-keyed to `4\.68\.0`, because the newest
+  upstream build still carries the pre-fix package. Nothing here is inferred from a version number: each
+  ending follows a scan of the exact new digest.
+- **A cohort is re-triaged in one sitting, and the re-triage is where a stale key is actually found.**
+  The 2026-11-01 re-triage (Trivy 0.76.1, ghcr DB, every newest rebuild scanned) is the shape to copy:
+  of the six brotli entries, `curlimages/curl` and `httpd` had shipped clean rebuilds
+  (`brotli-libs 1.2.1-r0` / `libbrotli1 1.1.0-2+deb13u1`) so both refs moved and both entries were
+  **deleted**; `rustfs` had already moved and its entry was deleted as above; and the remaining three —
+  caddy and both postgres lines — had **no** clean rebuild, so rather than renewing them on the clock
+  each was renewed to `2026-12-01` on **measured non-reachability** recorded in its own justification
+  (in each digest the only object linking `libbrotlidec` is `libcurl.so.4.8.0`: for caddy its only
+  consumer is the curl CLI, which this service never runs — Caddy is a static Go binary and the
+  healthcheck is `nc -z`; for postgres the only thing linking libcurl is the `libpq` OAuth-client module
+  the server never loads, since the only client run here is `pg_isready` with no OAuth parameters).
+  Renewing a suppression without a fresh scan is the thing the time-box exists to prevent.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count
@@ -481,7 +520,8 @@ findings readable.
   pass the same tag as the script's positional argument — one `TRIVY_VERSION` assignment interpolated
   into both sites per file, so a bump cannot move one and strand the other. There are **three** such
   sites since spec 084 US3: app-ci's `app-image-scan` job scans the PR's images with the scanner the
-  deploy will use, so a green PR that ran a different Trivy than the deploy would prove nothing. The
+  deploy will use, so a green PR that ran a different Trivy than the deploy would prove nothing. All
+  three currently agree on `v0.76.1`. The
   floating form this replaced (script from `main`, no tag) had no digest underneath either, and it cost
   real comparability: during item #297 the local sweep ran `aquasec/trivy:0.74.0` while CI ran an
   unknown version, so two scans of byte-identical images could not be reconciled. A `customManagers`

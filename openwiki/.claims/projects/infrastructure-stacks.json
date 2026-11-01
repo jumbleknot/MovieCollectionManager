@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cceba813d5696e6c84230e3c29c8e6dc4c5c72a6f3275550a6d139b2dd3b3357",
+  "pageVersion": "sha256:5a35cb5084b469071ad641a71880e79e5509e4aceb55fcea08889def4f743f06",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
+          "version": "repo-file-v1:sha256:62c00d00760c30d4422cb04f95a52dc31b4962c0d3434741306aa7ec336ebb4a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
+          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -156,7 +156,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
         },
         {
           "resource": "repo://scripts/check-prod-ci-port-collision.mjs",
@@ -212,7 +212,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:a7ba804559ef40cdab5b2206d3504e394e4df3e5af38f03915f339c12a5d9b7c"
+          "version": "repo-file-v1:sha256:15182dd6c05dc69465ced615842b9b66188bdb3f87006b6144329463b7adb343"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -304,11 +304,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
+          "version": "repo-file-v1:sha256:62c00d00760c30d4422cb04f95a52dc31b4962c0d3434741306aa7ec336ebb4a"
         }
       ]
     },
@@ -318,11 +318,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
+          "version": "repo-file-v1:sha256:62c00d00760c30d4422cb04f95a52dc31b4962c0d3434741306aa7ec336ebb4a"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -502,7 +502,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -581,7 +581,7 @@
           "version": "repo-lines-v1:sha256:66b2f13e3b5b6fc07eeda42543e34e1cbea836e603481c31451d3ecb2cccbd23:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTkzNTE2OTJiNGY4ZDMwYTdlNmY3NWFjMjE0YjFkYTNiNjc2YjMyZDY4OTI1MjljYzA0YWYxYjcwZTJmYmE1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExN2ZhMDA2YmE5MjA4NTAwYjI5MzBjZTY5Y2JkZTQzNmM2NDdhZmE5MTdjYjczOTZhOWJjOTExMWE0NmRkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQwYTI3OTljZTZlMmVmYjY2ZTcwMDYwYmIzYjIwMjBiZmMzNzc4NjFlYWZiYjAzMGRkNGU4MTU0OTVkNTI5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBlNjBkMWU4NmI2NzY1ZDQyM2IzZTAxNTZjOGRkMDdmMjBlNmFjYjc3YTBkMTYwOWQwNGJiMGYyOWJjYTExMCJ9"
         },
         {
-          "resource": "repo://scripts/cd/scan-push.sh#L69-L91",
+          "resource": "repo://scripts/cd/scan-push.sh#L62-L84",
           "version": "repo-lines-v1:sha256:06bb9fdc35aa0708a013f087c47405036ed33a6ad522fb4d3bb0033e2c20d2e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDc4MTM4OGQ0NzEzYmNjOWQ2NzgzY2VmZjkxN2QwY2M5ZDQ1NTc2ZDEzNzBhNDUyMWNhODQ2NTQ0ODVmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzVhODNiYmE4OWNjMmI3OThiNGYzNThhODFiMDM0YTEwZjBmYWQwNDk4ZTU3OWU1ZDIxY2JjYjZlMWI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2U0NDYxYTRmZWE0NGY3MzFjOGZmYjk5NDUzZjE0YWU0MDYzZjI1ZDJlMGE4M2U3ZDhkMmZjMGUzN2U3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGU2ZmFlNWUwY2Y1ODJjYmYzZmY1MjU5ZjU5ZjA3MmZkZTA5MzBlYjg4MjAxMmExZWZhY2NmYjdiN2VmNzAifQ"
         }
       ]
@@ -610,7 +610,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         }
       ]
     },
@@ -651,16 +651,12 @@
       "statement": "infrastructure-as-code/docker/backups/compose.yaml's two backup destinations are built around two constraints beyond being a separate file: the WebDAV config and htpasswd live in a named volume written by a one-shot rather than a bind mount, because the dev container's Docker is a Sandbox microVM sharing only /workspaces so a bind source outside it (a git worktree under /home/coder) is silently created as an empty directory and the container fails with `is a directory`; and the destination credentials reach curl through the container's environment, referenced as `$$VAR` and fed to `curl -K -` on stdin, never interpolated by Compose into the entrypoint where docker inspect and ps could read them. Both destinations bind 127.0.0.1 only, and the backup URL guard denies loopback by default — the inverse of the Ollama guard — which is why scripts/gen-dev-env.mjs names mcm-bff-backup-rustfs and mcm-bff-backup-webdav in BACKUP_ALLOWED_DESTINATION_HOSTS for dev.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L102-L137",
-          "version": "repo-lines-v1:sha256:decd8863f22c10b634fd5363870a981c541f9de8caada818ed625c19ec124de4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMDE5ODg1YjZlMGJlOGE3NzJkMzhjZWU1YWY0MWZkNzlkZjRlYWU5YmU5NDQwZGM1NzQ1N2NhNjRkOTYyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmMxOTE2ZTIxMmYzZTU5ZTQ1MWRmZDRiZGU1ZTZhZGJmNDY1MDU0YzQxZmU0MWU4YjIxNWQ5N2U4MjRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMmI3ZmQwNTIzMzgwYTAyZWY2ZmQxZmI3ZTZiN2NhZWUzN2JjNWNhMTlmMzQyOTBjMmFiYzhjNDk1NDVhZWEifQ"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
+          "version": "repo-file-v1:sha256:15182dd6c05dc69465ced615842b9b66188bdb3f87006b6144329463b7adb343"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L18-L24",
-          "version": "repo-lines-v1:sha256:c0c550c1a003441717eea2af9cc215dd0e52a796480974caccd852ed4680679e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmYjJkZDRlNWNlYmE4NDg3MWVmZGE2Y2I5YTRkYjk2ZmQwYjcwNmFhNWYyYTU5MDU5NjU0NjU5NTg3MTA4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE0Yzc4MWJjZDMzMzRhYjZlNzY0NzE5NGYwYWJhODQ0OWFmNDlhMWU4ZTcyYjRjYTFjMDc3ZWY2MGM2MDEwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNmZGNjYTIxNjNhYjE4OGJiMjAyYTM1MmFmN2QyZTY4ZmU3YmIyZWE5OGVlZTc3NTIwNzg4ZDJjMzczNDE0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJmMjdmYTVjZGQ4YzBjZGI5NzEzMDdmYTk2YWYwMTVjOTJjMDVjZDU5MWUyMzVjYTM1YjBmMWIzNjQwMmJiNyJ9"
-        },
-        {
-          "resource": "repo://scripts/gen-dev-env.mjs#L173-L184",
-          "version": "repo-lines-v1:sha256:47aa8c402dd3ea6eb5e0bed66667907fa855eb7cd4eab34daaa4f19be5c89646:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmIxOTU5YmZjZjA4NzAwNGJiNzVmNzY2YTU2MjgzMDM2YTZlMmQxZjI2ZjcwYjhlZjgzNjYxNmJkOWY2MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjOWZkMzFiNTU3ZmIzZjA0MzI1MmNjMzkwYzQwZTVjODM3N2E1NTJjZGEzMWRiNjg3YzMyMzFkM2NlN2I1NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMTg3ZWRmYWMxOGNlNjY0ZWJiOTFjMWZiMzFiY2ViOGIzYjU1MTA1NDk1ZjhlOGQzZmJmNjg3YzlkZTM3OGUifQ"
+          "resource": "repo://scripts/gen-dev-env.mjs",
+          "version": "repo-file-v1:sha256:e7cd6beb8c45dab458b62a7188940c8203b080be7cae6cb9af481fc6b57110f6"
         }
       ]
     },
@@ -696,7 +692,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -724,11 +720,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:16c61951023caf8a1ff2ae6e9f0718de7b504686871ee5b07b00885dc436edbd"
+          "version": "repo-file-v1:sha256:62c00d00760c30d4422cb04f95a52dc31b4962c0d3434741306aa7ec336ebb4a"
         }
       ]
     },
@@ -895,7 +891,7 @@
           "version": "repo-lines-v1:sha256:01accfe8ee97015caec699bd49d110d4067c8f31d138ea8b0b8407e479036172:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGViYTE1YWUxNzJiYzYzYWE1Mjc5M2E5ZmNiNjZkN2IwOTlhNWJiODhhOGY1Y2NlZjk5ZmUxNmQzNjMxYWQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQwOGY3NmYxMjc1ZjUyMDdkYjExMTVkODBiODU5MWRhODVlZTMyNjdlYjA1MDA3MjgyOTFmZGNiMjRkY2JhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3Mjg4MzZiMDBhZGMwOGUzODRkMTVkNTlhYmMyNzUzNWI0NGU2NWExMTlmZDg2NjM1NjM4MWY1OGFjY2VhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmViOGM3ZWE3ZDY5YmU2MzI2NDRmYjU3MmVkZGMxMDExMTU2MTA3NmNlNTFkODYyZWFjNzMxMzNkMzc1NTk0OCJ9"
         },
         {
-          "resource": "repo://scripts/cd/scan-push.sh#L69-L91",
+          "resource": "repo://scripts/cd/scan-push.sh#L62-L84",
           "version": "repo-lines-v1:sha256:06bb9fdc35aa0708a013f087c47405036ed33a6ad522fb4d3bb0033e2c20d2e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDc4MTM4OGQ0NzEzYmNjOWQ2NzgzY2VmZjkxN2QwY2M5ZDQ1NTc2ZDEzNzBhNDUyMWNhODQ2NTQ0ODVmOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzVhODNiYmE4OWNjMmI3OThiNGYzNThhODFiMDM0YTEwZjBmYWQwNDk4ZTU3OWU1ZDIxY2JjYjZlMWI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2U0NDYxYTRmZWE0NGY3MzFjOGZmYjk5NDUzZjE0YWU0MDYzZjI1ZDJlMGE4M2U3ZDhkMmZjMGUzN2U3ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGU2ZmFlNWUwY2Y1ODJjYmYzZmY1MjU5ZjU5ZjA3MmZkZTA5MzBlYjg4MjAxMmExZWZhY2NmYjdiN2VmNzAifQ"
         }
       ]
@@ -914,7 +910,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
-          "version": "repo-file-v1:sha256:a7ba804559ef40cdab5b2206d3504e394e4df3e5af38f03915f339c12a5d9b7c"
+          "version": "repo-file-v1:sha256:15182dd6c05dc69465ced615842b9b66188bdb3f87006b6144329463b7adb343"
         }
       ]
     },
@@ -923,22 +919,60 @@
       "statement": "Three further details in infrastructure-as-code/docker/backups/compose.yaml are load-bearing rather than cosmetic. The S3 side pairs the RustFS server with a one-shot mcm-bff-backup-rustfs-init that PUTs the mcm-backups-test bucket only once the server is healthy, because the store auto-creates nothing and a driver suite failing on NoSuchBucket looks exactly like a driver bug. The WebDAV server is the Debian httpd:2.4 and not httpd:2.4-alpine, because mod_dav_fs consults its DavLockDB on every write even though this driver never issues LOCK, and Alpine's apr-util ships no apr_dbm_*.so so mod_dav_fs answers AH00576: The DBM driver could not be loaded and every write 500s; that container's healthcheck therefore asserts the 401 an unauthenticated request earns, probed over bash's /dev/tcp because the slim Debian base carries no wget, curl or nc, since probing with credentials would make health depend on the very auth the driver suite exists to exercise. The ruled-out predecessor ghcr.io/hacdias/webdav is worth remembering for two reasons that still hold: the infra-image CVE sweep is fail-closed and cannot read ghcr.io at all (Trivy's anonymous token request is answered DENIED: denied, so an unreadable image is a red required check rather than a skipped one), and it carried nine fixable High CVEs that only an upstream toolchain rebuild could discharge.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L102-L126",
-          "version": "repo-lines-v1:sha256:bce6411a069d39427efe65db3bc4cf3b4b0967f32394c90e4345c836302b9c3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMDE5ODg1YjZlMGJlOGE3NzJkMzhjZWU1YWY0MWZkNzlkZjRlYWU5YmU5NDQwZGM1NzQ1N2NhNjRkOTYyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2NhNzRjYjY3MmMwZTE5ZGM4Njg5MzIwMTllMzZiNWQ3YTU3Mjk2YjBlZDU1N2Q4ZDFjM2ExZmQ0YmQ3MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMTlhYTg5OGRiMzI0MTJlZjY1MDRlYzdlZmRiNmQ0YmQ5Y2UxMWVhMGI1MWRhYmZiZGI5NGY1ZTRiMGE1YjUifQ"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml",
+          "version": "repo-file-v1:sha256:15182dd6c05dc69465ced615842b9b66188bdb3f87006b6144329463b7adb343"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea8ee957558641a2af789ce75d450f6a",
+      "statement": "The guard tests this page relies on for the stack contracts actually execute because guardrails.yml's `naming` job runs `node --test scripts/__tests__/*.test.mjs` with a shell-expanded (unquoted) glob rather than a directory argument, so a new `*.test.mjs` under scripts/__tests__/ is enrolled without being named anywhere; that enrollment is the fix for the period when scripts/__tests__ ran in no workflow at all and its guards rotted unnoticed (feature 041, where sast-scan.guard.test.mjs could not even import).",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L219-L234",
-          "version": "repo-lines-v1:sha256:d770c277998690c705b0daab58d01c6b25e1d77bb60be11d9df681f45b615234:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YzFlZjJhMGRkMDMzYTk2MTA2MDQzZmY0NjQ0Nzc5ZDMyODRlYWNlZWZhZWRhOWQzOWI1MjU2MDExYWFmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MmQ0MzgzZWYzMzkwZTUyOWYzZWJmMzBiODg3NDFkMmNjNzU2NzA2MzIwMTdjODkyMmM2MzRkOTFlODdlZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllNTkxNjk4YmI4ZDlmNzE5MzUyYWE1OGMwMDhkZWE5NzliZjRjNDY1NzllMGE1Y2I4YzhmYmNiYjM0NzdlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMWE5MzRmZTY1M2I3MDVhMjhmZjBkOGU4MmJlYmI5NWU3NWNlNThhYjA5M2YwYTI2ZjFmZGNkM2NiMjkwYTAifQ"
+          "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
+          "version": "repo-file-v1:sha256:358c3a115ba3ccbcb690f7d75463e412afdb33cb4440e93097d61fae82b7f668"
+        }
+      ]
+    },
+    {
+      "id": "claim_1243d68a804a423b9e9f5f7901ede3d9",
+      "statement": "The committed-template contract has a second carve-out beside the stacks one: .gitignore tracks `!infrastructure-as-code/docker/**/*.env.prod.example` so the per-component prod placeholder templates stay in git, while the real `*.env.prod` files Komodo writes in the same run directories remain ignored by the `*.env` / `*.env.*` rules above it.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore",
+          "version": "repo-file-v1:sha256:eae0b2d52b2b10a99c2b238f06f2f84fc675e9cc4c04c1f2f904e845edd3c199"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L67-L93",
-          "version": "repo-lines-v1:sha256:6abb00ee482d03b738b834156c0ea4fb6526cddc3988ea3ccecef19211c529a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNmZjOTZjNDM0NzBjMGQwNmE0NTBmNjNkYjNlZjNmZTZmMzRkNDRlMjA1OWY3ZTQxZGFjMmFiODBjNjQzYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjN2VlMzgzYWQ5N2Y4NDM2NjMxY2MxNDMzYWU4YWI2MzYzZGVkZDkzMmU2YWFlNTUwOWI3YzNmYmRhZjZlNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDkzOTE0ZmZkNWIwYzQ3ZjU3MDdiNGIwNjY3YzYxZjg2MTIzN2UzZGJiYzkzNmIzMTc4NGM4MDUzNjZjODYifQ"
+          "resource": "repo://infrastructure-as-code/docker/bff/.env.prod.example",
+          "version": "repo-file-v1:sha256:fa3aed72a78d27f1f71af264248adf5992efef0eba4ca4817942cecf57359e7e"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f1c9aedfd9842b2b704d805e4210091",
+      "statement": "infrastructure-as-code/forgejo/registry-retention.yaml is neither a stack nor a side artifact of one: it is the forge package-registry retention config read by scripts/registry-retention.mjs and run weekly (Sundays 06:00 UTC) plus on an apply dispatch by .forgejo/workflows/registry-retention.yml, it is not a compose file, and no gate in this page's side-artifacts section reads it — so it is named here only so an enumeration of infrastructure-as-code/ does not read as incomplete.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml",
+          "version": "repo-file-v1:sha256:d6447d21b60359f3e4df5f211ee3b18aaa7019bf25a977c28d4711cdfeaf12c5"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs",
+          "version": "repo-file-v1:sha256:26cdf425bfce9039f624b123f40768515f3893b2cff479113a609b813b655f28"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T00:28:11.002Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

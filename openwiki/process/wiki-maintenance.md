@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-28T02:33:05.629Z
+    at: 2026-11-01T08:25:59.628Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -58,8 +58,10 @@ is offline, keyless and free: it decomposes the documentation changes since the 
 bounded slices (at most 8 pages, one bundle area each) and prints them, so a paid run is reviewable
 before it happens. `pnpm nx wiki-maintain infrastructure-as-code` is the paid execution path. `pnpm nx
 okf-governance infrastructure-as-code` runs the second, newer gate
-(`scripts/check-openwiki-governance.mjs`, rules G1–G12) over the regeneration policy, the protection
-fingerprints and the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`;
+(`scripts/check-openwiki-governance.mjs`, rules G1–G12, plus a fail-closed `G0` that treats a missing
+or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` as a violation rather than a skip
+and then stops before checking any concept) over the regeneration policy, the protection fingerprints
+and the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`;
 this page is the summary of what the machinery guarantees and where it is easy to be misled. The
 exhaustive machinery detail — the provider and credential table, the budgets, the exit codes, the four
 slice-verification causes and the Claims sidecars — belongs to the runbook, not here; for the
@@ -95,8 +97,13 @@ proposal, and the always-on gates sit after it rather than inside it.
   valid) and then pass `okf-lint` before being considered complete; see the
   [feature validation checklist](../invariants/feature-validation-checklist.md). On `main` it comes
   from `.forgejo/workflows/wiki-maintain.yml` (feature 044), which is **merge-triggered**: a push to
-  `main` starts a run once `main` has been quiet for about fifteen minutes. Neither path has a
-  `schedule:` trigger — no scheduled job, by design. (Feature 043's original scope also added no CI
+  `main` starts a run once `main` has been quiet for about fifteen minutes — and, failing that,
+  immediately once the oldest commit the run record has not covered reaches a six-hour maximum
+  deferral, so a merge stream that never goes quiet cannot starve maintenance exactly when drift is
+  fastest. That ceiling is derived from git rather than held in a timer, because the debounce works by
+  *cancelling*: a newer push kills the waiting run, and any timer it held dies with it, while git
+  state survives. A `workflow_dispatch` run bypasses the wait entirely.
+  Neither path has a `schedule:` trigger — no scheduled job, by design. (Feature 043's original scope also added no CI
   credential; that no longer holds: the workflow carries its own keys, `ANTHROPIC_API_WIKI_MAINTAIN`
   and `FIREWORKS_API_WIKI_MAINTAIN`.) The workflow is also **never a required context**, so a paid
   and occasionally slow documentation job cannot gate an unrelated merge.

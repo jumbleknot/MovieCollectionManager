@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ff2fe9081d3e2ea984c4d3d3305e8d89ca4694411d1b2092b49200647ace7032",
+  "pageVersion": "sha256:ac7464bc2e58a177dcf852b7545b88382da1bb2aed3d7709f8a431bd2dfa3659",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
@@ -258,11 +258,11 @@
     },
     {
       "id": "claim_9791198156314d7c836c02b4822603fc",
-      "statement": "The backup scripts are guarded behaviourally rather than by inspection, and the guards run in guardrails.yml's naming job, whose node --test scripts/__tests__/*.test.mjs step picks them up automatically. backup-script.test.mjs runs backup.sh against a fake host (docker, restic, curl, systemctl and df shimmed; tar, gzip and python3 real) and pins the measured failure modes, including that a failing forge dump still runs every other dump and still calls restic backup, the per-dump format and minimum verdicts, the eight forge-data excludes, shrink and ack-shrink, staging under ~/backup with tmpfs refused, --group-by host,tags on forget, and the absence of a literal credential; backup-units.test.mjs pins the unit wiring; backup-alert.test.mjs pins the exact forge API calls and the token never appearing in argv; backup-staleness.test.mjs pins 'unreadable is never fresh'; backup-install-manifest.test.mjs pins the committed manifest against the directory; and komodo-cron-retention.test.mjs pins the purge job as hourly, idempotent and touching only its own table.",
+      "statement": "The backup scripts are guarded behaviourally rather than by inspection, and the guards run in guardrails.yml's naming job, whose node --test scripts/__tests__/*.test.mjs step picks them up automatically. The suites share one fake prod host, scripts/__tests__/host-shims.mjs — deliberately not named *.test.mjs so the glob does not collect it — which shims docker, restic, curl, systemctl and df first on PATH, records each call's argv, answers from a fixture, captures an absolute directory argument with its file sizes, dump-manifest.tsv and any *.tar listing (because backup.sh deletes its staging dir on exit), and never records an -H @file argument, which is how a token reaches curl; unshimmed tools (bash, python3, tar, gzip, stat) are real, so format checks run against real files. The harness is itself guarded by host-shims.test.mjs, since a shim that swallowed an exit code or recorded that header file would turn the other suites into false greens. backup-script.test.mjs runs backup.sh against that host and pins the measured failure modes, including that a failing forge dump still runs every other dump and still calls restic backup, the per-dump format and minimum verdicts, the eight forge-data excludes, shrink and ack-shrink, staging under ~/backup with tmpfs refused, --group-by host,tags on forget, and the absence of a literal credential; backup-units.test.mjs pins the unit wiring; backup-alert.test.mjs pins the exact forge API calls and the token never appearing in argv; backup-staleness.test.mjs pins 'unreadable is never fresh'; backup-install-manifest.test.mjs pins the committed manifest against the directory; and komodo-cron-retention.test.mjs pins the purge job as hourly, idempotent and touching only its own table.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L170-L176",
+          "version": "repo-lines-v1:sha256:ca133cf65df8a111686fd253aba3b59d2a4861fa8273d6e2501a5f9354ba49fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDQ0MWFmODA1NDg1NGJlZGUwYzgxOTRmNWZiNDYxNTRjMWVjZTRlZDZmOWRlODRkYTRlNDY4MzMzOTRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU4NmU2NjdkNmQxOWI1ZDQwNjA4MmY5Mjk4MzJhYTcyMWMwNWZkM2Y5NmNmNDAxZjlhYmYxNDMxYTQ5OGZiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
         },
         {
           "resource": "repo://scripts/__tests__/backup-alert.test.mjs",
@@ -285,8 +285,12 @@
           "version": "repo-file-v1:sha256:f871cfec98ab4739bc5e06aa6f1fa4003c3bf07f6ef04d6c36b3df5ad9d06b6e"
         },
         {
-          "resource": "repo://scripts/__tests__/host-shims.mjs",
-          "version": "repo-file-v1:sha256:904cdbe07c3305a8865916b762ae399d0847d294fcab594d804c01272c89e71a"
+          "resource": "repo://scripts/__tests__/host-shims.mjs#L1-L57",
+          "version": "repo-lines-v1:sha256:3405dd319ea4cc288af734cbdbf04f4052780c8e070e829a75921be32e7e4e00:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NzZkODI0MTU4MzlmMTgzYzA0NzQ1N2RiMDM3MGI3ZDQ4ZTZhOWU1Yjc4Mzg1NWNiMzdhZDIzMWUyMzlkMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDI5NTI1MzZmYzYwMDBhZDkxNTY2YmQ5NTNmMjViYzk1OTYxMGU4MTFhNTI5YTliZWY4YjRmMDdjMWM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4OGQ3NWJiMTE5NDI5NDgwMmI4MjRhM2NlM2ZiY2M0MjI3NzYxZWNiMzNmZGY2NTY2OGViYTJkMGY3MGFmMjIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/host-shims.test.mjs#L41-L89",
+          "version": "repo-lines-v1:sha256:95d35ddadbb4852273e8fc0d627be92c6debfdf5d585749992806298a25f1e95:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNmQzMjFmOGQ1Y2E0ZjVkZmRhZGZmOWIwMDhkYjIwMDg0YjIzNzJhMGJjMWYzNmVlYjcxZjcxNWZmMmY4ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZTU0NmYwODU4ZDc1MGRlNGQ0ZmRmZjUyMDJlN2FjYzgwZmQwYjdjZTU1MTJjMTA3NmE3MDJiMWNmNzAxZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://scripts/__tests__/komodo-cron-retention.test.mjs",
@@ -525,6 +529,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

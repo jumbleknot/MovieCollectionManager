@@ -1,8 +1,8 @@
 ---
 type: Architecture
 title: SAST & SCA static security scanning
-description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml.
-tags: [security, sast, sca, semgrep, ci, gates, dependency-management]
+description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
+tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
@@ -66,15 +66,16 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-28T02:33:05.629Z
+    at: 2026-11-01T08:25:59.628Z
 ---
 
 # SAST & SCA static security scanning
 
 Keyless, config-as-code security scanning that runs on every PR. Four scanners cover the full
 first-party surface at rest — no SaaS account, no scanner credential. All findings funnel into one
-normalized report; one `sast` gate in [CI/CD pipeline](./ci-cd-pipeline.md)
-(`guardrails.yml`) decides pass or fail.
+normalized report; the `sast` job in [CI/CD pipeline](./ci-cd-pipeline.md) (`guardrails.yml`) holds
+two gates over it — the blocking severity × scope gate, and a pull-request-only gate over what the
+change *did to* the dependency graph.
 
 | Kind | Scanner | Surface |
 |---|---|---|
@@ -115,10 +116,16 @@ flowchart TD
   F --> G["check-sast-findings.mjs"]
   G --> P["exit 0: no un-allowlisted blocking finding"]
   G --> X["exit 1: un-allowlisted blocking finding, or gate-scope asymmetry"]
+  F -->|"pull requests only, after the scan"| D["check-dependency-downgrade.mjs: base lockfiles from git vs the advisories already fetched"]
+  D --> DP["exit 0: no resolution moved into an advisory"]
+  D --> DX["exit 1: a resolution moved INTO an advisory, in any scope"]
 ```
 
-Four scanners feed one normalization step, one report, and one gate that has exactly two blocking exit
-paths — the second of which is about the gate's own coverage, not about the code.
+Four scanners feed one normalization step, one report, and one severity × scope gate that has exactly
+two blocking exit paths — the second of which is about the gate's own coverage, not about the code.
+A second, PR-only gate reads the same report's already-fetched advisories and compares them against
+the base lockfiles, so a change that makes an advisory newly applicable is caught even where the
+severity × scope rule cannot fire.
 
 ## Normalized severity scale
 
@@ -152,6 +159,103 @@ defaults to **runtime** (conservative → blocking), and a RustSec `cvss` that i
 rather than a number is treated as `unscored` → `High`, because a vector cannot be scored without a
 calculator. The design rule is that an unknown must never silently downgrade a finding out of the
 blocking set.
+
+The dev-scope exemption is a **recorded policy decision, not an oversight**, and it is the one hole
+this rule leaves: a newly-published advisory in build tooling would otherwise turn every PR red until
+someone allowlisted it, and the audit cannot see which jobs a package executes in or which secrets
+those jobs hold. The shape it left open — a change that *makes* an advisory apply to a package it did
+not apply to before — is closed separately by the
+[PR-only downgrade gate](#the-downgrade-gate--a-change-must-not-move-a-package-into-an-advisory),
+which ignores scope.
+
+## The downgrade gate — a change must not move a package INTO an advisory
+
+`scripts/check-dependency-downgrade.mjs` is the second gate over the same report. It runs on **pull
+requests only**, in the `sast` job, **after** the scan step, and that position is architectural fact
+rather than convenience: its input is the pnpm-audit native report the scan already wrote
+(`security/sast/reports/pnpm-audit-native.json`) plus the base lockfiles read out of git
+(`git show <base>:<lockfile>`). So it costs **no extra registry round-trip** and it **cannot disagree
+with the report the main gate read** — the two are looking at the same advisories. A push has no base
+to have regressed from, which is why the step is PR-scoped (`github.event_name == 'pull_request'`,
+with `BASE_REF` from `github.base_ref`).
+
+The rule, per committed lockfile and per advisory:
+
+- the package was resolved at the **base**, and **none** of its base versions is inside that
+  advisory's `vulnerable_versions` range — it was clean for this advisory; and
+- the **head** resolves a version that **is** inside the range, and that version is new to the
+  lockfile.
+
+It is deliberately **scope-blind**: a regression fails in every scope, dev included. "Clean" is a fact
+about the advisory's own range, not an inference from version order, so a *sideways* move into a range
+blocks exactly as a downgrade does.
+
+Two things are deliberately not regressions. A package already exposed at the base belongs to the
+severity × scope gate and its allowlist. A package — or a whole lockfile — that is new in this change
+is an ordinary finding: it is not a change *from* anything.
+
+```mermaid
+flowchart TD
+  R["read the pnpm-audit native report the scan wrote"] --> L{"the lockfile existed at the base?"}
+  L -->|no| SK["skip: nothing to regress from"]
+  L -->|yes| B{"any base version inside the advisory range?"}
+  B -->|yes| A["not a regression: the severity gate and allowlist own it"]
+  B -->|no| H{"the head resolves an affected version new to the lockfile?"}
+  H -->|no| OK["not a regression"]
+  H -->|yes| AL{"an unexpired allowlist entry matches id and location?"}
+  AL -->|yes| SUP["accepted by allowlist: one decision, not two"]
+  AL -->|no| FAIL["exit 1: a resolution moved INTO an advisory, in any scope"]
+```
+
+*The downgrade gate's decision path: a base-versus-head resolution comparison, scoped to advisories
+this change newly made applicable, with the main gate's own allowlist as the only acceptance route.*
+
+### Why it exists, and what it does not change
+
+Measured 2026-10-17 (item 776, spec 081 US3 PR 3b): `nx@23.3.0` pins `undici: 7.29.0` **exactly**, and
+the nx 23 bump re-resolved undici DOWN from 7.29.1, back into **ten** advisories (two High) that
+7.29.1 fixes. All ten read as `pnpm-audit/dev` — which never blocks — so the severity × scope gate
+stayed green and the regression was caught only by diffing the lockfile by hand. The fix was the floor
+`undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'` in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml);
+removing that floor today re-resolves 7.30.1 → 7.29.0 and this gate fails, naming 18 advisories (six
+High) — that mutation was run on 2026-11-01.
+
+**The 2026-11-01 decision (item 776) is that dev-scope High/Critical stays non-blocking.** The
+dev/runtime split is unchanged; the downgrade gate closes the regression *shape* directly instead, and
+it ignores scope on purpose — the dev tree runs in CI jobs that hold credentials (the nx remote-cache
+token), and a rule keyed on "runs in a credentialed job" would need a hand-kept package list the audit
+cannot derive. Revisit if a dev-scope advisory with a credential-exfiltration impact lands on a
+package CI runs with secrets; handle that case by its own triage (a pnpm override, or removing the
+secret from that job), not by flipping the tier.
+
+To clear a red: restore the clean resolution (usually a pnpm override floor, as the nx bump's
+follow-up did), or record an operator-approved allowlist entry. **Accepting a version is one decision,
+not two** — the gate reuses `evaluate` and `loadAllowlist` from `check-sast-findings.mjs` and
+`pnpmAdvisoryId` / `pnpmFindingLocation` from `sast-scan.mjs`, so the entry that suppresses the finding
+in the main gate, matched on the same `id` and the same location string (including a nested tree's
+`<workspace>:` prefix), suppresses it here too, under the same expiry rule.
+
+**It fails closed.** A missing or empty native report, an unreadable lockfile, or a
+`vulnerable_versions` range the parser does not understand is a failure with the reason printed, never
+a pass — a range it cannot read is a range it cannot judge. Exit codes: **0** no regression, **1** a
+regression or an input it could not read, **2** usage error. Two mechanical details follow from that
+stance. There is deliberately **no `semver` dependency** (the root workspace declares none, and adding
+one would move the very lockfile this gate judges), so the parser handles only the small regular
+subset npm advisories actually use and throws on anything else. And a pnpm 11+ lockfile is **two** YAML
+documents, so resolved versions are read line by line from the `packages:` sections rather than through
+a YAML parse, and `snapshots:` keys are deliberately not read because they carry peer suffixes.
+
+Run it the way CI does:
+
+```bash
+node scripts/check-dependency-downgrade.mjs --base origin/main
+node scripts/check-dependency-downgrade.mjs --base <ref> --native <path> --allowlist <path>
+```
+
+`--base` is required and `--native`/`--allowlist` exist for pointing the gate at a throwaway pair; an
+unrecognised flag or a missing value is a usage error (exit 2) through the shared
+`scripts/lib/argv-contract.mjs` contract, which exists because an argument a tool does not recognise
+must never leave its default action running.
 
 ## Custom MCM rules
 
@@ -193,6 +297,10 @@ A blank `justification`/`addedBy` or an invalid `locationPattern` regex is a **g
 2), not a silent pass. Suppression is **gate-only**: an allowlisted finding leaves the failure set
 but stays visible in `findings.json` and the reports, printed as `allowlisted by …`. Full allowlist
 field rules and baseline-seeding steps (`--emit-allowlist`): `security/sast/README.md`.
+
+One entry suppresses across **both** gates: the downgrade gate loads the same file with the same
+loader, the same `scanner` + `id` + `locationPattern` matcher and the same expiry rule, so accepting a
+version is one decision rather than two.
 
 Two mechanical notes that make the difference between an entry that works and one that reads as
 working. Paths are normalized to forward slashes before matching, so one pattern is portable across the
@@ -240,7 +348,7 @@ run on pull requests — `infra-image-scan` also serves `pull_request`, so a wro
 every PR the moment an entry entered the window, and the failure would be *scheduled* rather than
 immediate.
 
-## The `sast` job and the two commands that matter
+## The `sast` job and the commands that matter
 
 Two local entry points, and both are static — no running app stack is required. The Nx target
 `pnpm nx sast infrastructure-as-code` (defined in `infrastructure-as-code/project.json`) runs
@@ -255,15 +363,18 @@ install native build deps (`build-essential`, `pkg-config`, `libssl-dev`, becaus
 native code), uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
 four Python surfaces, `check-sast-findings.mjs --selftest`, `sast-scan.mjs --test-rules`,
 `sast-scan.mjs` (`--scope changed` on PRs, `--scope full` on push), `check-sast-findings.mjs` (the
-gate), then upload the `sast-report` artifact — `always()`-guarded, and capped at
+gate), then — **on pull requests only** — `check-dependency-downgrade.mjs --base "origin/$BASE_REF"`
+(the downgrade gate, which is positioned here because it consumes the native report the scan just
+wrote), then upload the `sast-report` artifact — `always()`-guarded, and capped at
 `retention-days: 14` because it is a diagnostic rather than a record (spec 084 FR-019c). That cap is
 not left to memory: `scripts/__tests__/upload-artifact-retention.test.mjs` walks every
 `actions/upload-artifact` step in `.forgejo/workflows/` and fails any diagnostic upload kept longer
 than 14 days, so a triage artifact you cannot find three weeks later is a named defect rather than a
 surprise. Reports land in `security/sast/reports/`
-(gitignored): `findings.json` is the gate input; `findings.sarif`, `summary.txt` and
-`<scanner>-native.json` are for triage. The changed-scope run is preceded by a `git fetch` of the PR
-base ref, because the diff that builds the target list needs it.
+(gitignored): `findings.json` is the severity gate's input, `pnpm-audit-native.json` is the downgrade
+gate's, and `findings.sarif`, `summary.txt` and the remaining `<scanner>-native.json` are for triage.
+The changed-scope run is preceded by a `git fetch` of the PR base ref, because the diff that builds
+the target list needs it.
 
 The job's `timeout-minutes: 25` is a deliberate value, not a default left alone: an intermediate
 revision raised it to 40 because **pnpm 11.5.3's `pnpm audit` took 550 s where 10.33.0 took ~0 s** — a
@@ -286,6 +397,7 @@ alternative — a green that proves nothing — has already happened once:
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs **and the absence of an event guard on it**, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
 | `scripts/__tests__/upload-artifact-retention.test.mjs` | that the `sast-report` upload — and every other diagnostic upload — stays inside its 14-day ceiling, with the walk asserted non-empty so the guard cannot pass by finding nothing |
 | `scripts/__tests__/check-override-consistency.test.mjs` | both directions of the half-bump, plain-pin scoping, the last-`@` split for scoped names, the exit-2 refusal of a half the gate cannot read, the cap rule against the six real Renovate widenings measured on 2026-10-18 (each failing by name, each entry's current value passing), that a genuine floor raise inside the major still passes, and that the **live** `pnpm-workspace.yaml` is green — every case driven through the `--dir` seam against a throwaway manifest rather than the real one |
+| `scripts/__tests__/check-dependency-downgrade.test.mjs` | both halves of the downgrade gate — the rule and its **wiring**. The rule: the comparator forms npm advisories use, a prerelease sorting below its release, an unreadable range *throwing* rather than judging, `packages:` keys read from both lockfile documents while `snapshots:` keys are ignored, the #774 undici case and its variants (a sideways move into a range blocks, an already-exposed package and an unchanged vulnerable version and a package new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting the regression when unexpired but not when expired. The wiring, because a gate that is never invoked is indistinguishable from no gate: that `guardrails.yml` invokes the gate **inside the `sast` job**, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and **positioned after the scan step that writes its input**. |
 
 The retry guard's shape is worth copying: the usual outcome of a retry is that it silently never
 triggers, so the classifier and retry driver are exported and tested directly rather than inferred from
@@ -302,6 +414,20 @@ a scan that happened to pass.
   equivalent hand check is `pnpm --dir <ws> audit` / `pnpm --dir <ws> why <pkg>`: the root
   `pnpm-workspace.yaml`'s overrides do not govern `tools/openwiki-generator/`, which is its own
   workspace root.
+
+- **A red `sast-downgrade-gate` is not a new advisory — it is your change's side effect, and the
+  scope argument does not apply to it.** The message names a package, its base version(s), the
+  version it now resolves to, and the advisory it entered, with the fixing range. Because the gate is
+  scope-blind by decision (the dev tree runs in CI jobs holding credentials), "it's only a dev dep" is
+  not a response here; the response is to restore the clean resolution — normally the override floor
+  the message suggests — or to record an operator-approved allowlist entry. If you take the override
+  route, the floor obeys the two-halves rule below (key and value move together) or
+  `check-override-consistency.mjs` fails the same PR for a different reason. Two shapes are *not*
+  regressions and should not be argued about as if they were: a package already exposed at the base,
+  and a package or lockfile new in this change — both are ordinary findings the severity × scope gate
+  and its allowlist already own. Note also that the gate cannot run locally without a native report:
+  `--native` points it at one, and an absent or empty report is exit 1 by design, so a local
+  invocation against a clean checkout fails rather than reporting "no regression".
 
 - **`semgrep.dev` is now in the egress allowlist — but adding it to the canonical list is only HALF
   the change (item #222, 2026-08-22).** Semgrep resolves the five `p/*` community packs in
@@ -788,6 +914,7 @@ See [CI/CD pipeline](./ci-cd-pipeline.md) for how the `sast` job sits in the
 `guardrails.yml` workflow, [infra-image scanning](../runbooks/infra-image-scanning.md) for the Trivy
 allowlist this one shares the expiry mechanism and the retry module with,
 [SAST scanning](../runbooks/sast-scanning.md) for the operator triage playbook when `main` goes red on
-an advisory you never touched, and [Renovate](../runbooks/renovate.md) for the lockfile-refresh
+an advisory you never touched — and for the downgrade gate's full procedure and the 2026-11-01
+dev-scope decision — and [Renovate](../runbooks/renovate.md) for the lockfile-refresh
 schedule that clears most `OVERRIDE LEVERS` advice. [`security/sast/README.md`](../../security/sast/README.md)
 is the full config reference and the home of the custom MCM rule definitions.

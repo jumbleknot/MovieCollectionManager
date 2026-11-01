@@ -6,7 +6,7 @@ tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T19:43:53.507Z
+    at: 2026-11-01T08:25:59.628Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -375,8 +375,19 @@ backup is broken.**
 ## Guards
 
 The scripts are guarded behaviourally rather than by inspection, and each suite is a guard for one
-thing: `scripts/__tests__/backup-script.test.mjs` runs `backup.sh` against a fake host (docker, restic,
-curl, `systemctl` and `df` are shims; `tar`, `gzip` and `python3` are real) and pins the measured
+thing. The suites share one fake prod host, `scripts/__tests__/host-shims.mjs` — deliberately **not**
+named `*.test.mjs`, so the guardrails glob treats it as a harness rather than a test. It puts a shim
+first on `PATH` for each of docker, restic, curl, `systemctl` and `df`, records every call's argv, and
+answers from a fixture, so a suite asserts on *what the script asked the host to do* and every failure
+path can be induced; anything unshimmed (`bash`, `python3`, `tar`, `gzip`, `stat`) is the real tool, so
+the format checks run against real files. It captures an absolute directory argument with its file
+sizes, its `dump-manifest.tsv` and the listing of any `*.tar`, because `backup.sh` deletes its staging
+directory on exit and what restic was handed is otherwise gone — and it never records an `-H @file`
+argument, which is exactly how a token reaches curl. Every backup suite trusts it, so the harness has
+its own guard, `scripts/__tests__/host-shims.test.mjs`: a shim that swallowed an exit code, or recorded
+that header file, would turn the suites below into false greens.
+
+`scripts/__tests__/backup-script.test.mjs` runs `backup.sh` against that host and pins the measured
 failure modes — a failing forge dump still runs every other dump and still calls `restic backup`, each
 dump's format and minimum verdict, the eight forge-data excludes, shrink and ack-shrink, staging under
 `~/backup` with tmpfs refused, `--group-by host,tags` on `forget`, and the absence of any literal
