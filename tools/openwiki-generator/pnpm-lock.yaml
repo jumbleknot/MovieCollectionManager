@@ -6,6 +6,7 @@ settings:
 
 overrides:
   body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'
+  '@azure/identity@<4.14.1': '>=4.14.1 <5'
 
 importers:
 
@@ -171,8 +172,8 @@ packages:
     resolution: {integrity: sha512-9n2pWK61veAuN0V20t9lOuoV4CFMdyAZ1ygZzvBGk/pBBJRib/PjL9PLXa/aI2CcPpyHfqVsxxqLCYl6uZlfDw==}
     engines: {node: '>=22.0.0'}
 
-  '@azure/identity@4.14.0':
-    resolution: {integrity: sha512-8utCLdTZn14CiAe0HW4JbtzUMsc0mdDwnjUvStFMrR4IxQP8S2eL9zVAdplpfORVJGYmidZElpeXRYjJQ4UyUw==}
+  '@azure/identity@4.14.1':
+    resolution: {integrity: sha512-HHuuFrmN1uuF9D5A6aAo5eHzNFNX4Q+P4SksZqDKse5YaJFFy/zDLG3wXHEV2FVGgetZ3QM8jGURNBtnQYf1NQ==}
     engines: {node: '>=22.0.0'}
 
   '@azure/logger@1.4.0':
@@ -183,16 +184,16 @@ packages:
     resolution: {integrity: sha512-GYKRquzDZmZggCdStWy2bNJKnPui1upssSuznJgP+/h6Mb0ldkUkaGvaY6uSGGmZOm0CGiBQ3b5BiGy43BpXSg==}
     engines: {node: '>=0.8.0'}
 
-  '@azure/msal-common@16.14.1':
-    resolution: {integrity: sha512-Or6xhPNyi4zHW25158yxBoyxuCqNSPa5YBVqfF1J5Ks4MJWBo/USXdp05DQIPu1Zli00YZu6t0+h6KvHJealxQ==}
-    engines: {node: '>=0.8.0'}
-
   '@azure/msal-common@16.14.3':
     resolution: {integrity: sha512-tz3GvMrR9V/plb2lDdW8qaO8CPpfZevdExBKjltzzbAtyhK0eB2UIvji1aU+gkyHj3fxQ2ie+LNHyMXdmo8wOg==}
     engines: {node: '>=0.8.0'}
 
-  '@azure/msal-node@6.0.1':
-    resolution: {integrity: sha512-ixSO1Y/kCVRthRs+hSx/5qkwaunX1/RAePhlMN0wIpIQ4WEZ6AREGGnGd1AP0qspHVsAwzWQKGubpjh50JyJIQ==}
+  '@azure/msal-common@16.15.0':
+    resolution: {integrity: sha512-lwdLb1B9Q5nEhPLVIKe78XH5wFMN15fCiDkY7ylPDSWZuWcD93G3jpJajrKhO3CQld8SLKz0sHiOi24mxdvtsg==}
+    engines: {node: '>=0.8.0'}
+
+  '@azure/msal-node@7.1.2':
+    resolution: {integrity: sha512-52hKQLGpEQzwNufIXG1SPVU+wQ3RIe7Rp2+g+VdAmZojCAZ6yCdGEffzQEQ6RnBZGBEs40nl14rWBmfJpCoHsg==}
     engines: {node: '>=20'}
 
   '@babel/runtime@7.29.10':
@@ -398,6 +399,7 @@ packages:
   '@smithy/core@3.37.0':
     resolution: {integrity: sha512-97imTcCyiPd8k0e9+ts/Sp0W65Dn9Ti357J7M09Ov4tI8Q1JDJVFSoAJtjEVKqfHEr3Pdo2jfolqKCaaiszH0g==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -2258,7 +2260,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/identity@4.14.0':
+  '@azure/identity@4.14.1':
     dependencies:
       '@azure/abort-controller': 2.2.0
       '@azure/core-auth': 1.11.0
@@ -2269,7 +2271,7 @@ snapshots:
       '@azure/core-util': 1.14.0
       '@azure/logger': 1.4.0
       '@azure/msal-browser': 5.26.0
-      '@azure/msal-node': 6.0.1
+      '@azure/msal-node': 7.1.2
       open: 11.0.4
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -2286,13 +2288,13 @@ snapshots:
     dependencies:
       '@azure/msal-common': 16.14.3
 
-  '@azure/msal-common@16.14.1': {}
-
   '@azure/msal-common@16.14.3': {}
 
-  '@azure/msal-node@6.0.1':
+  '@azure/msal-common@16.15.0': {}
+
+  '@azure/msal-node@7.1.2':
     dependencies:
-      '@azure/msal-common': 16.14.1
+      '@azure/msal-common': 16.15.0
       jsonwebtoken: 9.0.3
 
   '@babel/runtime@7.29.10': {}
@@ -3722,7 +3724,7 @@ snapshots:
     dependencies:
       '@anthropic-ai/vertex-sdk': 0.19.11(zod@4.6.7)
       '@aws-sdk/client-bedrock-runtime': 3.1157.0
-      '@azure/identity': 4.14.0
+      '@azure/identity': 4.14.1
       '@langchain/anthropic': 1.6.0(@langchain/core@1.3.0(@opentelemetry/api@1.10.0)(ws@8.22.0))
       '@langchain/aws': 1.5.0(@langchain/core@1.3.0(@opentelemetry/api@1.10.0)(ws@8.22.0))
       '@langchain/core': 1.3.0(@opentelemetry/api@1.10.0)(ws@8.22.0)
