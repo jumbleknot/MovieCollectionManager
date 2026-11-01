@@ -278,6 +278,7 @@ test('--selftest proves the rules still detect their cases', () => {
   assert.equal(code, 0, out);
   assert.match(out, /G1/);
   assert.match(out, /G12/);
+  assert.match(out, /G13/);
 });
 
 test('--json emits machine-readable findings', () => {

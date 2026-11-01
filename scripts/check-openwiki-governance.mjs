@@ -41,6 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 
+import { claimsScopeFindings } from './openwiki-claims.mjs';
 import { loadPolicy, resolvePolicy, POLICY_STATES, ACTORS, GENERATOR_SCOPE_PREFIX } from './openwiki-policy.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -339,6 +340,11 @@ export function validate(root) {
     }
   }
 
+  // ── G13: Claims only where fingerprints are not (item #513, ADR-0003) ─────────
+  for (const f of claimsScopeFindings(join(root, BUNDLE), authoritative)) {
+    add('G13', `${BUNDLE}/${f.page}`, f.message);
+  }
+
   // ── G5/G6/G7: protected passages ─────────────────────────────────────────────
   const byBundleRel = new Map(concepts.map((c) => [c.bundleRel, c]));
   for (const p of manifest.passages) {
@@ -489,6 +495,7 @@ function selftest() {
   }, 'G11');
   scenario('g11-both', (f) => { f['openwiki/area/a.md'] = concept(PASSAGE, 'CLAUDE.md'); }, 'G11');
   scenario('g12', (f) => { f['openwiki/policy.yaml'] = f['openwiki/policy.yaml'].replace('  - glob: "openwiki/area/a.md"\n    policy: event-driven\n    actor: agent\n    events: [subject-changed]\n', ''); }, 'G12');
+  scenario('g13', (f) => { f['openwiki/.claims/area/a.json'] = '{}\n'; }, 'G13');
   scenario('whitespace-only-drift', (f) => { f['openwiki/area/a.md'] = concept(`${PASSAGE}   `).replace(/\n/g, '\r\n'); }, null);
   scenario('fingerprint-corrected-together', (f) => {
     const reworded = 'A load-bearing sentence that has been deliberately corrected.';
@@ -507,7 +514,7 @@ function selftest() {
     console.error(`✗ openwiki-governance gate --selftest FAILED:\n  ${fails.join('\n  ')}`);
     return 1;
   }
-  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G11 concept classification, G12 authoritative-not-regenerate, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
+  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G11 concept classification, G12 authoritative-not-regenerate, G13 Claims only on derived pages, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
   return 0;
 }
 
