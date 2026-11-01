@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:165fad353e9ee24d752528ccd833d9f9d2f92b27c7b374c0cdb29f3ea8ee7257",
+  "pageVersion": "sha256:a6791770d712ce9a673ca1b1c1a88d0a2b0704eec7ba2652e8116021aebc5961",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -818,7 +818,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
-          "version": "repo-file-v1:sha256:c40b6ad35c7ea4b7f8f7fd9bd72b60941f90182c048d4b071401ac570355699b"
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L16-L26",
@@ -840,7 +840,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
-          "version": "repo-file-v1:sha256:c40b6ad35c7ea4b7f8f7fd9bd72b60941f90182c048d4b071401ac570355699b"
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L179-L208",
@@ -894,7 +894,7 @@
     },
     {
       "id": "claim_f39a0bcc736042f49712699d751b44f6",
-      "statement": "Registry retention's report -> review -> apply flow needs two independent keys held in two places: the weekly schedule and any dispatch are report-only, applying requires a one-line PR flipping `mode: report` to `mode: apply` that links the reviewed report AND a `registry-retention` dispatch with `apply: true`, the schedule never passes `--apply`, and the script refuses `--apply` while the committed config still says `report`. A reviewer checks that no `delete` row's `digest` appears in any `.env.deploy` of the last 6 promotions, and the report's byte total is an upper bound because a blob shared with a kept version is not freed — real storage returns only when the forge's own package-cleanup cron removes unreferenced blobs, so `du -sh` of the package store is checked after that has run rather than right after an apply.",
+      "statement": "Registry retention's report -> review -> apply flow needs two independent keys held in two places: the weekly schedule and any dispatch without `apply: true` are report-only, while deleting additionally requires `mode: apply` in the committed config — a one-line PR that links the reviewed report — plus a `registry-retention` dispatch with `apply: true`. The schedule never passes `--apply` and the script refuses `--apply` while the config says `report`, so the flip itself has since been made (the config now reads `mode: apply`) and a delete today is the dispatch alone; the guards remain the property the flip rests on. A reviewer checks that no `delete` row's `digest` appears in any `.env.deploy` of the last 6 promotions, and the report's byte total is an upper bound because a blob shared with a kept version is not freed — real storage returns only when the forge's own package-cleanup cron removes unreferenced blobs, so `du -sh` of the package store is checked after that has run rather than right after an apply.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/registry-retention.yml#L4-L7",
@@ -907,6 +907,14 @@
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L434-L445",
           "version": "repo-lines-v1:sha256:900f85359eee687517360c702eca32c43db79fa764aadcb39a9bf47d925ba730:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYTVlNDgxYWZkZTJhMzM1M2YzYTc1NjhlYTk1MDE2ZGQ4YzlkZjFiYmJlN2FhNWM4MTYxNzI4NjE0MzhmY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NDFhOWU5Y2FkNjhjOTdhMTZjNTZmYWEwMDAzZDQ5NGM1M2JiYzNlNTVmMzU5OTI1ODYyMGM1MDA3YmQyOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMjc5OTdiMzgzYTVmNmQ2OTUyNGFhMjE3Y2IxZTVmNWIxYTQzNTMxOGIwMzY2OWVhNDc4YjU0MjlhMTcyNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4OTYyZjljMTMwZmU3OTQxMDg5NTZkZTYwOTAwZWUwZWQ0NmViMzBkYmY3MGNkNGI5NWYyZDMzNzJiOWJjOTgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L14-L14",
+          "version": "repo-lines-v1:sha256:f23ba1886c431c117291b2fcbaa1a0e2ac480e8aa2c40e0c694e953c37c8d804:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzYmExODg2YzQzMWMxMTcyOTFiMmZjYmFhMWEwZTJhYzQ4MGU4YWEyYzQwZTBjNjk0ZTk1M2MzN2M4ZDgwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzYmExODg2YzQzMWMxMTcyOTFiMmZjYmFhMWEwZTJhYzQ4MGU4YWEyYzQwZTBjNjk0ZTk1M2MzN2M4ZDgwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2VjMzRlNGE4NDU1OTdlNzgyN2QwYTFhOGIxOTIyZGVkMmM5ZTEzNjllOWUwYjlmNjhiMGU2YzJjYWVjMmQ4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2M3NDg2NWFjMzkzNDkxNWM1MGY4NWJlOWQ0NzBlMTRiNTgyYmY4ODU2MDBmN2JmYzRlNzk4NTdlMTg4MTJjOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L4-L5",
+          "version": "repo-lines-v1:sha256:b0843d2626aa3c23ffce1d2cc66ffca0d9958215ef9b2dcf02ace440f9e110f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYxNjk5ZjFlMmJjMGRiNzJjMjA4N2ZjMTU0YWI0YTRmYjcwNjBmYjY1YzJiNTUyNzRhNGIyNGU1MDdhZTcwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBhZTA5MTk3Yzg0MWMwMGYxYTAwMzM4NjA5ZjEwNGY1ODMwYTA1NDczZTYxMTQzMjU4YmY5ZDcyNzY1ZWQyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU3ZmMzNDAxOGMxNTQ2MGFjMzc4MmY0NDg4MTEyOThkOGMwMjJhN2MzNGUzZDZjYTZmZTYyZjUzNjFlN2Y3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJiZjBkOTc2MTBkOWRlZGYxZjdlNjRkODgxZDg3NDRmNTVjMmRmOGY2NGY3ZGI1ZjE5ZjI5ZDZjZTJjMjVjYyJ9"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L312-L339",
@@ -954,7 +962,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
-          "version": "repo-file-v1:sha256:c40b6ad35c7ea4b7f8f7fd9bd72b60941f90182c048d4b071401ac570355699b"
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
         },
         {
           "resource": "repo://scripts/__tests__/upload-artifact-retention.test.mjs#L58-L65",
@@ -965,10 +973,36 @@
           "version": "repo-lines-v1:sha256:b2607fcc9b17721f0febca1c4694cd659af4b9e3c2bfac26dc929fe9a2cddb35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZGMwMDdiZTEzMDY3ODljNTgxMzM1ZjQ1N2FhMGFmNTkyNjk5MDFiYTk3NGEwYzY4ZmFmMWRjN2M4YjI4MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MmU1ODM0MzMxNzczYTY3ZGRmYTI1NTU4YzFmZWI0YzdkNDBjY2YwZDYyOTM2ZmQ4MTk0ODg4ZDViZDZmZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjkxYzg4MWVhYjA5YzZkZTk2MTgzMzM3NDQ2ZjEwMzk2OWZkNWJlN2RiNjdlY2Q5MWE5ZDYzYjg2NGQzMzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cbb1314e0f0241d6b75e011457078b5b",
+      "statement": "The registry-retention config's committed `mode` is now `apply` (it read `report` for the first report-only run), and that value cannot be set without a reviewed report behind it: the config's own header names the report-only run and the backlog item it was reviewed on (`mode: apply` since the first report, run 6350, reviewed on item #863), and `scripts/__tests__/registry-retention.test.mjs` fails the build when the mode is `apply` and that header line is absent (FR-023). The mode is therefore a reviewed repository value rather than an undocumented forge setting, and the weekly schedule still cannot delete because `--apply` is passed only by a dispatch whose `apply` input is true.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L5-L7",
+          "version": "repo-lines-v1:sha256:f03a43c56f4da5d5d0e1178aa906d817a28b70f55b5b23645fa2fd95a175d734:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI2M2I3YzgzMmFjOTdiYWNiM2YyYzVlOTc5NmI1YTk4NzFiMmM1ZjVmYjA0ZmIwZWViYmVhZDJkZjJkM2Q5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY5OWY5NTk3NDE0NTM4ZjJhZjBjOWMwN2ZlZTAxYzk0NDZkMWZjNDZjOTZhNDNlMWU4OWM1ZDYyMGY2ZjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjUxOWI5ZGYxYmU2ODJhZWFlZDNhZTY4ZmVlYTkwMDRiYmRiZmU4MzM0OWU2YjFjNDUwNWQwOTg2ZGRhZmI1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjU4ZTljNjQ3N2MwNDliYzFiZTc0MWU2MzI4ZTRiNzBkZmE5MDJlN2FjMTA0ODI2M2FmZWJlOWZhNzA0OTk5YyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L14-L14",
+          "version": "repo-lines-v1:sha256:f23ba1886c431c117291b2fcbaa1a0e2ac480e8aa2c40e0c694e953c37c8d804:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzYmExODg2YzQzMWMxMTcyOTFiMmZjYmFhMWEwZTJhYzQ4MGU4YWEyYzQwZTBjNjk0ZTk1M2MzN2M4ZDgwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzYmExODg2YzQzMWMxMTcyOTFiMmZjYmFhMWEwZTJhYzQ4MGU4YWEyYzQwZTBjNjk0ZTk1M2MzN2M4ZDgwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2VjMzRlNGE4NDU1OTdlNzgyN2QwYTFhOGIxOTIyZGVkMmM5ZTEzNjllOWUwYjlmNjhiMGU2YzJjYWVjMmQ4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2M3NDg2NWFjMzkzNDkxNWM1MGY4NWJlOWQ0NzBlMTRiNTgyYmY4ODU2MDBmN2JmYzRlNzk4NTdlMTg4MTJjOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L4-L5",
+          "version": "repo-lines-v1:sha256:b0843d2626aa3c23ffce1d2cc66ffca0d9958215ef9b2dcf02ace440f9e110f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYxNjk5ZjFlMmJjMGRiNzJjMjA4N2ZjMTU0YWI0YTRmYjcwNjBmYjY1YzJiNTUyNzRhNGIyNGU1MDdhZTcwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBhZTA5MTk3Yzg0MWMwMGYxYTAwMzM4NjA5ZjEwNGY1ODMwYTA1NDczZTYxMTQzMjU4YmY5ZDcyNzY1ZWQyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU3ZmMzNDAxOGMxNTQ2MGFjMzc4MmY0NDg4MTEyOThkOGMwMjJhN2MzNGUzZDZjYTZmZTYyZjUzNjFlN2Y3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJiZjBkOTc2MTBkOWRlZGYxZjdlNjRkODgxZDg3NDRmNTVjMmRmOGY2NGY3ZGI1ZjE5ZjI5ZDZjZTJjMjVjYyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/registry-retention.test.mjs#L59-L69",
+          "version": "repo-lines-v1:sha256:a2c01037f9056b929c58b9d90120122bf2f7fd07aaa768ddf1065f0d27b30498:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5YzQwNTdjMzdhNDE3OThkOTY3YmU4ZmYzMDlmNTUzMWI0NDIwZjRkZWUxMGY0YWUzMDgyMjA2ODNiZWFkMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYTQ2ZDYxNDg1ZjQ1NGRjYjliZmY5OWU4ODFjZWU2YzlmMmM1MGM5ZDVmODRlZjFlNGJmNDUyODlhMWJhMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YjAyNDdkN2Q5ZGNhYmNjYzAzNDBmODBiZGZlMDUzMTBjYjI5NjZmMDIwMTFhYWY4ZjQ5NmQ5OTkxNzk3NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L78-L80",
+          "version": "repo-lines-v1:sha256:02ca5c71ee06050c337677f4a3f1732c2771fb67aaf7d001fe7e88d7f41b8c70:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZkMTU5ZTlkZWI1MDdlMGY2ZWZkYjY1NWNmYzJjZWYxM2VjYzZkNjdhMTgwMGU0ZTdlMzFjZDdjOGMwMzYwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM3ZmFjZTg5ZGVjNTliMGU4MWMzMGQ4ZGIyMWRjMDE5NjYzY2E0N2NhZTY5YTFhZDMzNWQ3OGQyYTQ2M2NmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc2NDhmYzA3NGY0YjU1OTA1OWI0NWVlYTMzOTRiY2I0N2MzY2VlNjk2YjU1OTBkNmRmYjljNjU2MTg1M2UzYSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-10-31T23:07:57.553Z"
   }
 }

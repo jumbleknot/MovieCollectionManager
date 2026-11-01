@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a report-only registry-retention job, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 sources:
@@ -56,7 +56,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T19:43:53.507Z
+    at: 2026-10-31T23:07:57.553Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -118,7 +118,8 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   a push mirror so Forgejo stays SSOT, and every automated consumer gets its own minimally-scoped
   named access token. The same phase documents the generic package registry that carries the release
   APK, and — since spec 084 US5 — the **registry retention** sweep that is the only thing that ever
-  deletes from the OCI registry; it runs report-only on a weekly schedule and its gotchas are below.
+  deletes from the OCI registry; the weekly schedule only ever reports, and a delete needs both
+  `mode: apply` in the committed config and a dispatch with `apply: true`. Its gotchas are below.
 - **7 — Forgejo Actions runner.** `forgejo-runner` v12 as a **binary** under the `ci` user's
   systemd-user manager (a container runner would fight container↔Forgejo networking), registered with
   the UUID + secret the web UI hands out — the older registration-token flow is deprecated. The runner
@@ -418,9 +419,10 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   - **The script always exits 0 and is `continue-on-error` on the workflow step.** `prod-apk` is
     non-blocking by design; a registry hiccup must not turn a deploy red. Every failure path emits
     `::error::` so it is visible in the job log without failing the job.
-- **Registry retention is a report-only script with a two-key apply, not the forge's cleanup rules
-  (spec 084 US5).** Until spec 084 nothing ever deleted from the OCI registry: every CI push of the six
-  app images and of the dev-container image since June was still there. Retention is
+- **Registry retention is a repository script whose protections come from git, with a two-key apply,
+  not the forge's cleanup rules (spec 084 US5).** Until spec 084 nothing ever deleted from the OCI
+  registry: every CI push of the six app images and of the dev-container image since June was still
+  there. Retention is
   [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
   [`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
   and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC, after the Friday
@@ -429,6 +431,13 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   live only in the web UI; and they have no report-only run. The script instead computes every
   protection from git **before** its first API call. The full procedure and the current report are the
   [retention section of Phase 6](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5).
+  - **The committed mode is now `apply` — and getting there was the reviewed first report, not a
+    default.** The config reads `mode: apply` since the first report (run 6350, reviewed on backlog item
+    #863), so the weekly schedule still only ever reports while a dispatch with `apply: true` really
+    deletes. FR-023 is what keeps that honest: the script refuses a `mode` other than `report`/`apply`,
+    and the test refuses `mode: apply` unless the config's own header names the report-only run that was
+    reviewed and the item it was reviewed on — so apply cannot land without a reviewed report behind it,
+    and the mode is a value in a reviewed file rather than a forge setting.
   - **Each version is kept by its first reason, else deleted.** `keep:protected` — its digest is pinned
     in an `infrastructure-as-code/docker/*/.env.deploy` at the newest promotion **or one of the 5 before
     it** (the deployed set plus the rollback targets, because a rollback is a `git revert` of a
@@ -452,15 +461,21 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     protected digest is not found in the registry it **exits 5** and deletes nothing: that is a real
     alarm, meaning a deployed or rollback image is gone or the pin is wrong. Indexes are deleted
     **before** their children, so no index that survives a partial run points at a deleted child.
-  - **Report → review → apply is two independent keys, held in two places.** The weekly schedule and any
-    dispatch are **report-only**; the report has one row per version, so the job summary carries only the
-    `delete` rows and the totals, and the full report is available as `--json` or locally as
+  - **Report → review → apply is two independent keys, held in two places — and the config's key is now
+    turned.** The weekly schedule and any dispatch without `apply: true` are **report-only**; the report
+    has one row per version, so the job summary carries only the `delete` rows and the totals, and the
+    full report is available as `--json` or locally as
     `MCM_FORGE_URL=<forge> MCM_FORGE_TOKEN=… node scripts/registry-retention.mjs --json`
-    (`MCM_FORGE_URL` has no default — the script refuses without it). Applying takes a **one-line PR**
-    flipping `mode: report` → `mode: apply` that links the reviewed report, **and then** a
-    `registry-retention` dispatch with `apply: true`; the schedule never passes `--apply`, and the script
-    refuses `--apply` while the config still says `report`. What a reviewer checks is that no `delete`
-    row's `digest` appears in any `.env.deploy` of the last 6 promotions.
+    (`MCM_FORGE_URL` has no default — the script refuses without it). Enabling deletion takes a
+    **one-line PR** flipping `mode: report` → `mode: apply` that links the reviewed report, **and then**
+    a `registry-retention` dispatch with `apply: true`. That flip has been made — the committed config
+    reads `mode: apply` since the reviewed first report (run 6350, item #863) — so a delete today is the
+    dispatch alone. The guards stay because they are what the flip rests on: the schedule never passes
+    `--apply`, the script refuses `--apply` while the config says `report`, and the test refuses
+    `mode: apply` unless the config's own header cites the report-only run that was reviewed and the
+    item it was reviewed on (FR-023), so the mode is a reviewed value rather than a forge setting. What
+    a reviewer checks is that no `delete` row's `digest` appears in any `.env.deploy` of the last 6
+    promotions.
   - **The freed-space figure is an upper bound, and the forge frees the storage — not the script.** A blob
     shared with a kept version is not freed by deleting the version that named it, so the report's bytes
     are an upper bound (its own output says so). Real space returns only when the forge's own
@@ -491,7 +506,7 @@ flowchart TD
   Schedule["Weekly schedule · Sundays 06:00 UTC"] --> Report["report-only run: one row per version"]
   Dispatch["Manual dispatch, apply false"] --> Report
   Report --> Review["review the delete rows against every .env.deploy"]
-  Review --> PR["one-line PR: mode report to mode apply"]
+  Review --> PR["one-line PR: mode report to mode apply, merged"]
   PR --> ApplyDispatch["dispatch with apply true"]
   ApplyDispatch --> Gate{"config says mode apply?"}
   Gate -->|"no"| Refuse["script refuses --apply"]
@@ -500,7 +515,7 @@ flowchart TD
   Report -.->|"a protected digest is missing"| Alarm["exit 5, nothing deleted"]
 ```
 
-*The two keys: a report never deletes, and an apply needs both the merged config flip and the dispatch.*
+*The two keys: a report never deletes, and an apply needs both `mode: apply` in the committed config and the dispatch.*
 - **`ubuntu-latest` on this forge is `node:22-bookworm` — GitHub-hosted-runner recipes do not transfer
   (item #457).** The runner label maps `ubuntu-latest` to a plain Node image, not a GitHub-hosted
   Ubuntu runner. Two consequences bite copied workflow snippets:
