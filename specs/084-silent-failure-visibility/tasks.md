@@ -692,10 +692,13 @@ PR CI built.
   to `movie-mcp`'s image on the pre-fix base. Do **not** merge it. Expected: `app-image-scan` is red
   with exit 11 naming `movie-mcp` and the CVE, and `app-e2e` is unaffected. Record the run id in PR D,
   then close the throwaway PR and delete its branch.
-- [ ] T057 [US3] **(operator)** When merging PR D, add `app-image-scan*` to `main`'s branch-protection
+- [x] T057 [US3] **(operator)** When merging PR D, add `app-image-scan*` to `main`'s branch-protection
   required checks. Confirm with `node scripts/ci-status.mjs status --sha <PR D head>`, which should
   list it as required.
-- [ ] T058 [US3] Verify item #822's criteria, comment the evidence (T055–T057), and close it.
+  **Done** 2026-10-31: `app-ci / app-image-scan*` is a required pattern on `main`, and
+  `status --sha` lists it under REQUIRED.
+- [x] T058 [US3] Verify item #822's criteria, comment the evidence (T055–T057), and close it.
+  **Done** 2026-10-31: item #822 closed with the evidence (mutation run 6326, exit 11).
 
 ---
 
@@ -806,8 +809,9 @@ digest, and that keeps the `ci-failures` evidence window.
   (FR-024).
   **Done**: runbook §6.4 "Retention" (the rule, why children are kept by reference, the
   protections, report → review → apply), and §6.5 gains the `registry-cleanup` token row.
-- [ ] T067 [US5] **(operator)** Create the forge token scoped `write:package` only, and add it as the
+- [x] T067 [US5] **(operator)** Create the forge token scoped `write:package` only, and add it as the
   Actions secret `REGISTRY_CLEANUP_TOKEN`.
+  **Done** 2026-10-31, by the operator.
 - [x] T068 [US5] After PR E merges, dispatch the workflow (report only) and review the report:
   - no `delete` row's digest appears in any `.env.deploy` or in the dev-container pin, which
     `grep` over the JSON confirms;
@@ -816,17 +820,26 @@ digest, and that keeps the `ci-failures` evidence window.
   **Done** 2026-10-31: run 6350 (report, success). 2,496 of 3,773 versions to delete, ≈138.7 GB upper
   bound; 0 of the 6 pinned digests among the deletes; 36 protected rows, 0 unresolved. The
   dev-container pin is not in git, so it is not checked here (see T059/T061). Summary on item #863.
-- [ ] T069 [US5] Open a one-line PR flipping `mode: apply`, with the reviewed report linked. After the
+- [x] T069 [US5] Open a one-line PR flipping `mode: apply`, with the reviewed report linked. After the
   operator approves and it merges, dispatch with `apply: true`.
-- [ ] T070 [US5] **(operator)** After the forge's next package-cleanup cron:
+  **Done** 2026-10-31: PR #892 (280ddf31), then run 6360 (apply, success). All 2,496 reviewed
+  `delete` rows were deleted, and 0 `keep` rows; 3,773 → 1,277 versions. Both promotion sets (12
+  indexes and their children) still resolve. The guard now requires `mode: apply` to cite its
+  reviewed report.
+- [x] T070 [US5] **(operator)** After the forge's next package-cleanup cron:
   - `du -sh` the package storage, and paste the result;
   - run one normal deploy, and one rollback via `scripts/cd/rollback.sh` on a test promotion, or
     confirm that the prior digest still pulls:
     `docker pull <registry>/jumbleknot/mc-service@<prior digest>`.
   **Done when**: storage is down from 109 G, and the deploy and the rollback pull both succeed
   (US5-AC2, SC-009).
-- [ ] T071 [US5] Verify item #863's criteria, comment the evidence, and close it. Note in the comment
+  **Done** 2026-11-01: package storage **31.6 G** (from 109 G). The rollback digest
+  `mc-service@sha256:95851617…` pulled (`Downloaded newer image`), and cd-deploy runs 6364 and 6404
+  succeeded after the apply.
+- [x] T071 [US5] Verify item #863's criteria, comment the evidence, and close it. Note in the comment
   that SC-009's "stops growing month on month" is confirmed by the next month's weekly report totals.
+  **Done** 2026-11-01: item #863 closed with the T070 evidence. The weekly report (Sundays) carries
+  the month-on-month totals.
 
 ---
 
@@ -840,10 +853,24 @@ digest, and that keeps the `ci-failures` evidence window.
   closeout PR: FRs made technology-agnostic, acceptance-scenario refs added to the test tasks (and
   US4-AC4 for FR-019d), SC-008's alert line stated, the host `read:package` token marked required,
   the CI-diagnostic retention justified in the Constitution Check, and terminology aligned.
-- [ ] T074 [P] After the last PR, re-run the spec's Measured Baseline queries (Blocks 1–6) and append
+- [x] T074 [P] After the last PR, re-run the spec's Measured Baseline queries (Blocks 1–6) and append
   an "After" column to the baseline tables in `spec.md`.
-- [ ] T075 Confirm that every SC has evidence linked from its item's closing comment: SC-001..003 and
+  **Done** 2026-11-01. The forge, artifact and registry tables now have an After column, and the
+  per-dump line is re-measured. Highlights: forge share 22.5 GB → 0.80 GB; 576 MiB added per night;
+  Komodo 2.0 GB → 85 MB; registry 109 G → 31.6 G, with 1,301 versions; host disk 301 G → 227 G
+  used. Artifacts are still 21.7 G but out of the backup, and they drain as the pre-PR-B 90-day
+  expiries pass.
+- [x] T075 Confirm that every SC has evidence linked from its item's closing comment: SC-001..003 and
   SC-005..009 from T021–T071, and SC-004 by observation over the following month (note it in #822).
+  **Done** 2026-11-01:
+  - SC-001: items #830 (backups), #823 (deploys) and #822 (images);
+  - SC-002, SC-005, SC-007 and SC-008: item #830 (alert, staleness, drill, per-format checks,
+    before/after);
+  - SC-003: item #823;
+  - SC-009: item #863;
+  - SC-006: the mutation notes on each task;
+  - SC-004: observation window 2026-10-31 → 2026-12-01, noted on item #822, with 0 scan-blocked
+    deploys so far.
 
 ---
 

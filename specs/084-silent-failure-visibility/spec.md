@@ -36,24 +36,24 @@ front of a person.** None of them is a missing capability — in each case the e
 - **Measured on the host by the operator, 2026-10-26** (forge data volume, `du` inside the forge
   container; forge database via `pg_total_relation_size`):
 
-  | Component | Size | In the dump? |
-  |---|---|---|
-  | Actions **artifacts** — 354,028 files; 13.7 GiB older than 30 d, none older than 90 d | **21.8 G** | yes — **≈ the entire dump** |
-  | Actions logs — 21,375 files | 447 M | yes |
-  | Forge database (Postgres) — of which Actions tables 652 MB (`action_artifact` 272 MB / 452,748 rows, `action_task` 154 MB, `action_run_job` 123 MB, `action_task_step` 67 MB) | 783 MB | yes |
-  | Repositories | 138 M | yes |
-  | Indexes, queues, sessions, avatars, attachments, LFS, config | ≈ 15 M | yes |
-  | Package registry | **109.1 G** | no (skipped since 2026-10-22) |
+  | Component | Size | In the dump? | After (2026-11-01, T074) |
+  |---|---|---|---|
+  | Actions **artifacts** — 354,028 files; 13.7 GiB older than 30 d, none older than 90 d | **21.8 G** | yes — **≈ the entire dump** | 21.7 G, **out of the backup** since US4. Still draining: uploads before PR B keep the 90-day expiry they were stamped with, new ones expire at 14 d (7 d for the APK) |
+  | Actions logs — 21,375 files | 447 M | yes | 467 M |
+  | Forge database (Postgres) — of which Actions tables 652 MB (`action_artifact` 272 MB / 452,748 rows, `action_task` 154 MB, `action_run_job` 123 MB, `action_task_step` 67 MB) | 783 MB | yes | 806 MB (`action_artifact` 274 MB / 454,484 rows) |
+  | Repositories | 138 M | yes | 150 M |
+  | Indexes, queues, sessions, avatars, attachments, LFS, config | ≈ 15 M | yes | not re-measured |
+  | Package registry | **109.1 G** | no (skipped since 2026-10-22) | **31.6 G** (US5 apply, run 6360) |
 
   - **Artifacts are the dump.** They are CI's diagnostic uploads, expiring at the forge's 90-day
     default (no `[actions]` retention key is set). Live artifacts by name, from `action_artifact`:
 
-    | Artifact | Rows | Size | Note |
-    |---|---|---|---|
-    | `maestro-debug` | 330,497 | **11 GB** | **accumulation confirmed** 2026-10-27: rows per upload 6, 9, 12, 15, 18 … 5,819 over 154 uploads; the job runs on the CI host, whose `~/.maestro/tests` held 967 entries / 5.8 G (Maestro self-prunes at ~14 d). Fixed by PR #864 |
-    | `infra-image-scan-report` | 10,899 | 1.3 GB | |
-    | `agent-e2e-container-logs` | 2,461 | 126 MB | |
-    | `MovieCollectionManager-release-<sha>` | 1 each | 57 MB each | one per deploy; the same APK is also published to the `mcm-app-android` package |
+    | Artifact | Rows | Size | Note | After, live (2026-11-01, T074) |
+    |---|---|---|---|---|
+    | `maestro-debug` | 330,497 | **11 GB** | **accumulation confirmed** 2026-10-27: rows per upload 6, 9, 12, 15, 18 … 5,819 over 154 uploads; the job runs on the CI host, whose `~/.maestro/tests` held 967 entries / 5.8 G (Maestro self-prunes at ~14 d). Fixed by PR #864 | 309,598 rows / 10 GB, all from before #864 (105,166 rows / 1.9 GB already expired). **Zero uploads since #864**, so the per-upload size is still pending the first mobile failure (T023) |
+    | `infra-image-scan-report` | 10,899 | 1.3 GB | | 11,595 / 1.6 GB |
+    | `agent-e2e-container-logs` | 2,461 | 126 MB | | 2,295 / 127 MB |
+    | `MovieCollectionManager-release-<sha>` | 1 each | 57 MB each | one per deploy; the same APK is also published to the `mcm-app-android` package | 7-day expiry since PR B (T036) |
 
   - **The forge dump has no option to exclude Actions artifacts** (`forgejo dump --help` on the
     running version lists `--skip-repository/-log/-custom-dir/-lfs-data/-attachment-data/
@@ -76,6 +76,12 @@ front of a person.** None of them is a missing capability — in each case the e
   - **After US4 (steady state, 2026-10-30/31, T035)**: `Added to the repository` **389.6 MiB** and
     **412.1 MiB**, from ~20 GiB (SC-008 met); forge 778–788 MB a night; Komodo 85.0 MB with no
     `ack-shrink`; `cron.job_run_details` 58 MB (269,749 rows, 3 days 45 min of history).
+  - **After, all stories (2026-11-01, T074)**: snapshot `ff20c0fe` 1.533 GiB, 12 snapshots. Per dump:
+    `forge-db` 202,727,910 B + `forge-data` 601,910,272 B (forge 0.80 GB, from 22.5 GB); Komodo
+    85,162,249 B (from 2.0 GB; its database 199 MB, from 2,284 MB; `cron.job_run_details` 58 MB /
+    267,887 rows); `release-apks` 639,088,640 B; mc-service Mongo 813,102 B; Keycloak 381,023 B; BFF
+    Mongo 3,289 B; agent-db 670 B. `Added to the repository`: 389.6 / 412.1 / **576.2 MiB** over
+    2026-10-30..11-01 (SC-008). Host disk: **227 G used**, from 301 G.
   - **Restore drill (2026-10-31, T039)**: snapshot `443ebb58` restored in scratch containers —
     `forge-db` 0 errors with counts matching live, `forge-data` fsck 2 ok / 0 bad, `mc-service-mongo`
     2 collections and 2,315 documents (SC-005).
@@ -106,21 +112,25 @@ front of a person.** None of them is a missing capability — in each case the e
 - **3,657 package versions** on 2026-10-26 (2026-06: 34 created; 07: 894; 08: 650; 09: 938; 10: 1,141
   so far), with no cleanup rule:
 
-  | Package | Versions | Blob bytes referenced | Kind |
-  |---|---|---|---|
-  | **mcm-devcontainer** | 194 | **84 GB** | dev-container image (scheduled rebuilds) |
-  | mcm-bff | 557 | 39 GB | app image |
-  | agent-gateway | 616 | 31 GB | app image |
-  | movie-mcp | 485 | 2.2 GB | app image |
-  | web-api-mcp | 485 | 2.2 GB | app image |
-  | spreadsheet-mcp | 484 | 2.2 GB | app image |
-  | mc-service | 536 | 1.0 GB | app image |
-  | mcm-app-android | 5 | 609 MB | release APK |
-  | ci-failures | 295 | 18 MB | CI evidence bundle |
+  | Package | Versions | Blob bytes referenced | Kind | After: versions (2026-11-01, T074) |
+  |---|---|---|---|---|
+  | **mcm-devcontainer** | 194 | **84 GB** | dev-container image (scheduled rebuilds) | 17 |
+  | mcm-bff | 557 | 39 GB | app image | 171 |
+  | agent-gateway | 616 | 31 GB | app image | 198 |
+  | movie-mcp | 485 | 2.2 GB | app image | 141 |
+  | web-api-mcp | 485 | 2.2 GB | app image | 141 |
+  | spreadsheet-mcp | 484 | 2.2 GB | app image | 141 |
+  | mc-service | 536 | 1.0 GB | app image | 190 |
+  | mcm-app-android | 5 | 609 MB | release APK | 5 |
+  | ci-failures | 295 | 18 MB | CI evidence bundle | 297 |
 
   Layers are shared between versions, so rows overlap; the exact total is **8,468 distinct blobs,
   109 GB**, of which only 122 MB (5 blobs) is unreferenced. **The dev-container image alone accounts
   for most of the registry.** Measured 2026-10-26 from the forge database.
+
+  **After (2026-11-01, T074)**: **1,301 versions**, of which a report-only run would delete 0;
+  **2,974 distinct blobs, 32 GB** (forge database); package storage 31.6 G on disk. The apply
+  (run 6360) deleted the 2,496 reviewed versions, and the rollback digest still pulls (T070).
 
 - Two readers depend on old versions and constrain any cleanup: production **rollback redeploys the
   prior promoted digest** (`scripts/cd/rollback.sh`), and `ci-status` reads recent `ci-failures`
