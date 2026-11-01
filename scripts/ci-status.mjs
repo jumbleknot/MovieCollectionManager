@@ -249,15 +249,43 @@ export function bundleJobName(context) {
 }
 
 /**
+ * The events whose runs POST each narrow status, read from each posting step's `if:` (item #563).
+ *
+ * A narrow status carries no `(event)` suffix, so the context alone cannot say which run it came
+ * from. Without this table the match fell back to "the first run of that workflow on the sha", and
+ * that is right only by list order. Measured 2026-11-01 on 7d27f72f: the Friday cron and a push run
+ * of infra-image-scan.yml share the sha, so the answer depended on which was listed first.
+ *
+ * Every narrow status a workflow posts must be listed here; (n4) in ci-status.test.mjs fails otherwise.
+ */
+export const NARROW_STATUS_EVENTS = {
+  'infra-image-scan/weekly': ['schedule'], // publish-sweep-verdict.mjs, `github.event_name == 'schedule'`
+  'infra-image-scan/expiry': ['push', 'schedule', 'workflow_dispatch'], // `!= 'pull_request'`
+  'renovate/mode': ['workflow_dispatch'], // `== 'workflow_dispatch'`
+  'cd-deploy/prod-apk-disk': ['push', 'schedule', 'workflow_dispatch'], // `!= 'pull_request'`
+};
+
+/**
+ * The event that STARTED a run. This forge reports a schedule run as `event: push`, and only
+ * `trigger_event` says `schedule` (measured 2026-11-01, run 6172). Matching on `event` alone handed
+ * a push check the cron's run id. `event` is the fallback for a payload without `trigger_event`.
+ */
+const runTrigger = (r) => r.trigger_event || r.event;
+
+/**
  * Find the run that produced a context, matching on BOTH workflow file and event — the same job
  * appears once per event and the two can disagree, so matching on workflow alone picks the wrong run.
+ *
+ * A narrow status (no suffix) matches only runs of an event that posts it (`NARROW_STATUS_EVENTS`).
+ * An unlisted one keeps the old any-event match; (n4) keeps that set empty for what workflows post.
  */
 export function findRunForContext(context, runs = []) {
   const { job, event } = parseContext(context);
   const workflow = job.split('/')[0].trim();
+  const events = event !== null ? [event] : NARROW_STATUS_EVENTS[job.trim()] ?? null;
   return (
     runs.find(
-      (r) => r.workflow_id === `${workflow}.yml` && (event === null || r.event === event),
+      (r) => r.workflow_id === `${workflow}.yml` && (events === null || events.includes(runTrigger(r))),
     ) ?? null
   );
 }
@@ -915,7 +943,9 @@ export function renderDigestAbsence(failed, outcomes = []) {
   }
 
   const brokenJobs = new Set(broken.map((o) => o.job));
-  const stillAbsent = failed.filter((c) => !brokenJobs.has(String(c.job).split('/').pop().trim()));
+  // bundleJobName, not the context's tail: `outcomes` are keyed by it, and for a narrow status
+  // (`infra-image-scan/weekly`) the tail is a label, not the job (item #563).
+  const stillAbsent = failed.filter((c) => !brokenJobs.has(bundleJobName(c.job)));
   if (stillAbsent.length) {
     lines.push(`${stillAbsent.length} job(s) failed, but no digest was published for them:`);
     for (const c of stillAbsent) lines.push(`  ✗ ${c.job} — ${c.description}`);

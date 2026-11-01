@@ -135,7 +135,8 @@ test('(g2) the fixtures load and have the shape the classifier expects', () => {
 // T009 — classifyCheckState: five states, two of which the raw API reports WRONG.
 // ================================================================================================
 
-import { classifyCheckState, parseContext, findRunForContext, bundleJobName } from '../ci-status.mjs';
+import { classifyCheckState, parseContext, findRunForContext, bundleJobName, NARROW_STATUS_EVENTS } from '../ci-status.mjs';
+import { CONTEXT as SWEEP_CONTEXT } from '../publish-sweep-verdict.mjs';
 
 const statusesOf = (f) => fixture(f).statuses;
 const byContext = (f, needle) => statusesOf(f).find((s) => s.context.includes(needle));
@@ -237,6 +238,44 @@ test('(n) a context is matched to its run by workflow file AND event', () => {
   const run = findRunForContext('app-ci / app-e2e (pull_request)', runs);
   assert.equal(run?.workflow_id, 'app-ci.yml');
   assert.equal(findRunForContext('nope / nothing (push)', runs), null);
+});
+
+// Item #563, the last criterion ("do the other narrow statuses have readers that mis-derive?").
+// Measured 2026-11-01 on 7d27f72f: this forge reports a SCHEDULE run as `event: push` and only
+// `trigger_event: schedule` tells them apart. Matching on `event` gave the push run's own check
+// `infra-image-scan / infra-image-scan (push)` the CRON's run id (6172, not 6164) — so its bundle,
+// and its cancelled-run signal, came from another run.
+test('(n2) a push-suffixed check resolves to the PUSH run, not a schedule run on the same sha', () => {
+  const runs = fixture('runs-cron-shares-push-sha.json').workflow_runs;
+  assert.equal(findRunForContext('infra-image-scan / infra-image-scan (push)', runs)?.id, 6164,
+    'the push check was attributed to the cron run (event=push, trigger_event=schedule)');
+  assert.equal(findRunForContext('guardrails / naming (push)', runs)?.id, 6163);
+});
+
+test('(n3) a narrow status resolves to a run of the event that POSTS it, never to whichever is listed first', () => {
+  const runs = fixture('runs-cron-shares-push-sha.json').workflow_runs;
+  // Posted only by the Friday cron.
+  assert.equal(findRunForContext('infra-image-scan/weekly', runs)?.id, 6172);
+  // The same fixture with the list order reversed must give the same answer — order is not evidence.
+  assert.equal(findRunForContext('infra-image-scan/weekly', [...runs].reverse())?.id, 6172,
+    'the weekly verdict was attributed by list order rather than by which run posts it');
+  // Posted only on workflow_dispatch: two schedule runs of renovate.yml are on this sha, neither posted it.
+  assert.equal(findRunForContext('renovate/mode', runs), null,
+    'renovate/mode was attributed to a schedule run, which never posts it');
+});
+
+test('(n4) every narrow status a workflow posts declares the events that post it', () => {
+  // A new separator-less status added without an entry falls back to "any run of the workflow",
+  // which is exactly the guess (n2)/(n3) remove. So adding one must fail here first.
+  const wfDir = join(HERE, '..', '..', '.forgejo', 'workflows');
+  const posted = new Set();
+  for (const name of readdirSyncGuard(wfDir).filter((n) => /\.ya?ml$/.test(n))) {
+    for (const m of readFileSync(join(wfDir, name), 'utf8').matchAll(/\\"context\\":\\"([^"\\]+)\\"/g)) posted.add(m[1]);
+  }
+  posted.add(SWEEP_CONTEXT);
+  const narrow = [...posted].filter((c) => !c.includes(' / '));
+  assert.ok(narrow.length >= 4, `expected the four measured narrow statuses, found ${JSON.stringify(narrow)}`);
+  for (const c of narrow) assert.ok(NARROW_STATUS_EVENTS[c], `narrow status ${c} declares no posting events`);
 });
 
 // ================================================================================================
@@ -1061,6 +1100,18 @@ test('(z) a `failed` outcome is NEVER rendered with the "no digest was published
   );
   assert.match(lines, /ran and FAILED/i, 'the report does not say the digest itself is broken');
   assert.match(lines, /no-credential/, 'the sub-reason, which implies the next action, was dropped');
+});
+
+test('(z1b) a NARROW status with a broken digest is not ALSO reported as absent (item #563)', async () => {
+  const { renderDigestAbsence } = await statusModule();
+  // The outcome is keyed by bundleJobName (`infra-image-scan`); the absent-filter took the context's
+  // tail (`weekly`), so the same failure was reported as both "ran and FAILED" and "no digest".
+  const lines = renderDigestAbsence(
+    [{ job: 'infra-image-scan/weekly', description: 'weekly sweep RED' }],
+    [{ job: 'infra-image-scan', outcome: 'failed', detail: 'transport', summary: 's' }],
+  ).join('\n');
+  assert.match(lines, /ran and FAILED/i);
+  assert.doesNotMatch(lines, /no digest was published/i, 'the weekly sweep was reported as broken AND absent');
 });
 
 test('(z2) each `failed` sub-reason points at its OWN next action', async () => {
