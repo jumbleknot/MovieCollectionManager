@@ -52,6 +52,20 @@ The format follows `docs/templates/feature-test-tasks-template.md`, compacted.
 
 ## Phase 2: Foundational (blocks US1, US2, US6)
 
+- [ ] T003a Create `frontend/mcm-app/tests/integration/helpers/bff-session.ts`, which provides
+  `loginSession(username, password)` and returns `{ cookie, setCookies }`. It:
+  1. calls `GET /bff-api/auth/init`;
+  2. walks Keycloak authorize (PKCE S256, `redirect_uri=${BFF}/auth-callback`) → password → code,
+     by generalising `walkStepUpLogin` in `tests/integration/helpers/keycloak-browser-flow.ts` with
+     an option to omit `max_age=0`;
+  3. calls `POST /bff-api/auth/login`;
+  4. returns the `Cookie` header plus the raw `set-cookie` lines.
+
+  If T002 found `TRUSTED_PROXY=true`, it sends a per-user `X-Forwarded-For`. In PR (a) the
+  `set-cookie` lines still include the token cookies, and US2's integration test needs member B's
+  BFF-issued refresh token from them (analysis U1). **Done when**: a scratch test using it gets
+  `200` from `/bff-api/auth/user`.
+
 - [ ] T003 [P] Add `AGENT_IDENTITY_REJECTED`, `AGENT_IDENTITY_UNAVAILABLE`,
   `SESSION_RENEWAL_PENDING` and `SESSION_OWNER_MISMATCH` to `AuthErrorCode` in
   `frontend/mcm-app/src/types/errors.ts`, and an optional `clearCookies?: string[]` and
@@ -106,12 +120,21 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
   - Update the header comments, which say "a mint failure is non-fatal".
 
   **Verify GREEN**: `U 'agent-run-api.test|agent-resume.test'`, then `U 'tests/app/bff-api/agent'`.
+  Also add one case to `src/utils/unit-tests/agent-fetch-refresh.test.ts`: a `/run` 401 with body
+  code `AGENT_IDENTITY_REJECTED` refreshes and retries once, and a 503 is passed through with no
+  refresh (US1 AS-2 and AS-3, analysis C4). This pins existing behaviour; **mutation RED**: change
+  the wrapper to refresh on 503, and the 503 case fails.
 - [ ] T010 [US1] Integration test `tests/integration/agent-identity-refusal.integration.test.ts`,
   covering AS-1 and SC-001 against the real BFF and Keycloak. A member whose Keycloak user sessions
   were ended through the Admin API (`logoutUserSessions`), so the access token is still
-  signature-valid but the exchange answers `invalid_token`, POSTs a billable `/run`. Expect `401
-  AGENT_IDENTITY_REJECTED`, and that the gateway received no run (assert on the gateway's run log,
-  or the absence of a thread checkpoint for the thread id). **Verify RED**: `I
+  signature-valid, POSTs a billable `/run`.
+  - **First measure** Keycloak's actual token-exchange answer for that token, with a direct `curl`,
+    and record it in `baseline.md`. If it is not `400/401 invalid_token|invalid_grant`, adjust
+    T007's classification to the measured answer, and say so in research R6.
+  - Expect `401 AGENT_IDENTITY_REJECTED`.
+  - Assert "no step ran" from the BFF side: the response is the BFF's JSON error, not an SSE
+    stream, and the captured log has `agent_identity_refused` and no
+    `approval_decision`/gateway-call line for the request id. **Verify RED**: `I
   agent-identity-refusal`. Expected: `200` streamed, not `401`. **Verify GREEN**: after T009 and a
   container rebuild.
 - [ ] T011 [US1] Check the client outcome for 503. Drive the dock in web E2E with the BFF's exchange
@@ -145,8 +168,10 @@ unchanged, no cookies are set, and the mismatch is audited.
 
   **Verify GREEN**: `U 'auth/refresh\+api.test'`.
 - [ ] T014 [US2] Integration test in `tests/integration/auth-refresh.integration.test.ts`, covering
-  AS-1. Log member A in, which creates a real session. Then call `/bff-api/auth/refresh` with A's
-  `mcm_session_id` and B's ROPC **refresh token** as `mcm_refresh_token`. Expect `401
+  AS-1. Log members A and B in through `loginSession` (T003a), which creates real BFF sessions. Then call
+  `/bff-api/auth/refresh` with A's `mcm_session_id` and **B's BFF-issued** `mcm_refresh_token`, taken
+  from B's login `set-cookie`. A ROPC refresh token would not do: it was issued to `mcm-bff-test`,
+  and Keycloak refuses it on the BFF client before the owner check (analysis U1). Expect `401
   SESSION_OWNER_MISMATCH`, A's session gone from Redis db 1, and an audit line captured through
   `audit-log-capture`. **Verify RED**: against the pre-T013 container. Expected: `200`.
   **Verify GREEN**: after rebuild.
@@ -203,17 +228,8 @@ unchanged, no cookies are set, and the mismatch is audited.
 
 ## Phase 7: US3 — the server accepts only the session cookie (P2) [PR (b)]
 
-- [ ] T022 [US3] Create `tests/integration/helpers/bff-session.ts`, `loginSession(username,
-  password)`, which returns a `Cookie` header string. It:
-  1. calls `GET /bff-api/auth/init`;
-  2. walks Keycloak authorize (PKCE S256, `redirect_uri=${BFF}/auth-callback`) → password → code,
-     by generalising `walkStepUpLogin` in `keycloak-browser-flow.ts` with an option to omit
-     `max_age=0`;
-  3. calls `POST /bff-api/auth/login`;
-  4. returns `cookieHeaderFrom(res)`.
-
-  If T002 found `TRUSTED_PROXY=true`, it sends a per-user `X-Forwarded-For`. **Done when**: a
-  scratch test using it gets `200` from `/bff-api/auth/user`.
+- [ ] T022 [US3] Extend `loginSession` (T003a) for PR (b): once only `mcm_session_id` is set,
+  `cookie` is that cookie alone. **Done when**: the T003a scratch check still gives `200`.
 - [ ] T023 [US3] Integration test `tests/integration/bff-bearer-refused.integration.test.ts`,
   covering AS-1, AS-2, SC-004 and SC-010:
   - a ROPC access token as `Authorization: Bearer` alone, on `/bff-api/collections`,
@@ -245,7 +261,8 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   - a rejected renewal deletes both keys and throws `401 REFRESH_FAILED`;
   - a transient renewal keeps the keys and throws `503 KEYCLOAK_UNAVAILABLE`;
   - a renewed token with a different `sub` throws `401 SESSION_OWNER_MISMATCH` and persists nothing;
-  - a loser timing out throws `503 SESSION_RENEWAL_PENDING`.
+  - a loser timing out throws `503 SESSION_RENEWAL_PENDING`;
+  - a rejected renewal emits `audit('session_renewal_rejected', {userId})` (analysis C3).
 
   **Verify RED**: `U session-tokens.test`. Expected: `Cannot find module '@/bff-server/session-tokens'`.
 - [ ] T026 [P] [US6] Unit test `src/bff-server/unit-tests/cache-service.test.ts`, covering
@@ -253,7 +270,8 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   - `cacheSessionTokens` writes `session-tokens:{sid}` with the session's TTL;
   - `getSessionWithTokens` uses one `mget`;
   - `touchSession` uses `SET … XX` and never writes the tokens key;
-  - `deleteSession` deletes both keys.
+  - `deleteSession` deletes both keys, and `terminateAllSessions` (which account deletion uses)
+    leaves no `session-tokens:` key behind (FR-020, analysis C1).
 
   **Verify RED**: `U 'cache-service.test'`.
 - [ ] T027 [US6] Implement:
@@ -320,8 +338,8 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   covering AS-1 – AS-6, SC-007 and SC-008:
   1. `loginSession` sets only `mcm_session_id`;
   2. the Redis db-1 `session-tokens:*` values contain no `eyJ`;
-  3. the access token is aged artificially, by rewriting `accessExpiresAt` through the BFF's own
-     `cacheSessionTokens` with real Redis and the real key, and two concurrent
+  3. the access token is aged by rewriting the **clear** `accessExpiresAt` in the
+     `session-tokens:` JSON in Redis db 1 (data-model.md; no key needed), and two concurrent
      `/bff-api/collections` both give `200`, with the Keycloak refresh happening once (assert one
      new `session_renewed` audit line);
   4. logout, then the same cookie gives `401`, and Keycloak introspection of the old refresh token
@@ -342,9 +360,9 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
   `tests/e2e/web/agent-session-refresh.spec.ts` for the server-held model:
   - assert that the cookie jar holds `mcm_session_id` only, still `HttpOnly`, `Strict` and, on the
     prod container, `Secure`;
-  - simulate expiry server-side, by aging `accessExpiresAt` through a test-only Redis write the spec
-    already has access to via the e2e Redis helper, or by waiting one Keycloak lifespan in the
-    model tier;
+  - simulate expiry server-side by rewriting the clear `accessExpiresAt` of the session's
+    `session-tokens:` record in the stack's Redis, through a small e2e helper modelled on the
+    integration `redis-test-client`;
   - assert the transparent renewal causes no login prompt (SC-009);
   - logout gives `401` on reuse.
 
@@ -367,6 +385,8 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
     emulator otherwise);
   - add a flow step, or a BFF-side audit check, showing that no token cookie was set during the
     journey (SC-007);
+  - before the assistant turn, age the session's clear `accessExpiresAt` (as in T035), so the turn
+    exercises a server-side renewal with no added sign-in (SC-009, analysis C2);
   - update the comments in `src/utils/agent-fetch-refresh.ts`, `token-refresh.ts` and
     `assistant-polyfills.ts` that describe the `mcm_access_token` cookie.
 
@@ -408,11 +428,10 @@ holds only ciphertext; concurrent expiry renews once; pre-rollout cookies are cl
 
 ## Dependencies
 
-- Phase 2 (T003 – T005) blocks every story.
+- Phase 2 (T003, T003a – T005) blocks every story; T003a blocks T010, T014, T023, T033 and T034.
 - US1 (T006 – T011), US2 (T012 – T014), US4 (T015 – T016) and US5 (T017 – T019) are mutually
   independent → PR (a).
 - US3 and US6 (T022 – T037) need PR (a) merged.
-  - T022 blocks T023, T033 and T034.
   - T027 blocks T028; T028 blocks T029 – T031; T029 blocks T032.
   - T033 – T036 need T031.
 - T038 – T042 come last.

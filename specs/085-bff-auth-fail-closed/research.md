@@ -80,7 +80,7 @@ the per-user cap of 10 is never reached.
 | Key | Value | TTL |
 |---|---|---|
 | `session:{sid}` | the existing `Session` JSON: owner, created, last activity, absolute expiry (unchanged shape) | remaining absolute lifetime (unchanged) |
-| `session-tokens:{sid}` | `{ v: 1, blob }`, where `blob` = AES-256-GCM of `{accessToken, refreshToken, accessExpiresAt, refreshExpiresAt}` | the same remaining absolute lifetime |
+| `session-tokens:{sid}` | `{ v: 1, accessExpiresAt, refreshExpiresAt, blob }`, where `blob` = AES-256-GCM of `{accessToken, refreshToken}` and the expiry times are in clear, outside the AAD (data-model.md, analysis U2) | the same remaining absolute lifetime |
 
 - **AAD** = `${sid}:${userId}:sessionTokens`. A blob moved to another session or another user
   fails authentication, as `secretAad` does for agent config.

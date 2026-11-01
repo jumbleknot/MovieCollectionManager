@@ -267,8 +267,8 @@ session reference no longer authenticates.
 - **FR-008**: In production, the server MUST authenticate member requests only through the session
   cookie, and MUST NOT honour a bearer credential presented by the caller.
 - **FR-009**: Bearer acceptance MUST be removed in every environment, not only production (operator
-  decision 2026-11-01). The server integration test files (27 of 59 today) and the E2E file that
-  authenticate with a bearer credential MUST migrate to sessions established the way a member's is. The
+  decision 2026-11-01). The server integration test files that authenticate to the server with a bearer credential (25 of 59,
+  measured 2026-11-01; see research R2; no E2E file does) MUST migrate to sessions established the way a member's is. The
   decision MUST be recorded next to the code and in the auth-chain documentation.
 
 **Redirect registration (item #753)**

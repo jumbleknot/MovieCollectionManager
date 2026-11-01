@@ -22,14 +22,25 @@ Redis is the only store touched. See research R3 for why there are two keys.
 
 ## Session tokens — `session-tokens:{sessionId}` (new)
 
-Stored value: `{"v":1,"blob":"<base64 iv‖tag‖ciphertext>"}`. The plaintext of `blob` (JSON) is:
+Stored value (JSON envelope):
 
-| Field | Type | Source |
-|---|---|---|
-| `accessToken` | JWT | Keycloak `access_token` |
-| `refreshToken` | opaque | Keycloak `refresh_token` |
-| `accessExpiresAt` | epoch ms | `now + expires_in·1000` at issue |
-| `refreshExpiresAt` | epoch ms | `now + refresh_expires_in·1000` at issue |
+| Field | Type | Where | Source |
+|---|---|---|---|
+| `v` | `1` | clear | schema version |
+| `accessExpiresAt` | epoch ms | **clear** | `now + expires_in·1000` at issue |
+| `refreshExpiresAt` | epoch ms | **clear** | `now + refresh_expires_in·1000` at issue |
+| `blob` | base64 iv‖tag‖ciphertext | sealed | the JSON `{accessToken, refreshToken}` |
+
+**Why the expiry times are in clear (analysis U2):**
+- They are not secret.
+- Holding them in clear lets a test age a session without the production key. Without that, a
+  renewal could not be exercised except by waiting out a real token lifetime.
+- They are deliberately **not** in the AAD. If they were, editing them would only fail decryption.
+- Tampering cannot extend a token's life. `validateJwt` checks the JWT's own `exp` on every request,
+  so a later `accessExpiresAt` just gets a 401 (and then a renewal through `/auth/refresh`). An
+  earlier one only forces an early renewal.
+- Anyone who can write Redis can already delete or replace sessions outright, so the clear fields
+  add no capability.
 
 **Sealing:**
 - The cipher is AES-256-GCM via `encryptSecret`/`decryptSecret` (`agent-config-crypto.ts`), with
