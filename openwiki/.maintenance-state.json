@@ -1,47 +1,47 @@
 {
-  "coveredCommit": "280ddf314ba3ffea0c92f833648cb3b262535894",
-  "coveredAt": "2026-10-31T23:44:35.736Z",
+  "coveredCommit": "4be87b1065bdd90e999f7aafad64951e22144594",
+  "coveredAt": "2026-11-01T06:13:18.040Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 893,
-    "headCommit": "c0f2ea56164bcb2b3fccf23e5701b72ba3da496c",
-    "markerBefore": "2caddd1ffe713ee9eb99812e96e623d0f7280ab1",
+    "number": 897,
+    "headCommit": "92569aa2527ad79fb4eb641bcfdfe21fb9c3d001",
+    "markerBefore": "280ddf314ba3ffea0c92f833648cb3b262535894",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "ci-diagnostics.md"
+          "infra-image-scanning.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/ci-diagnostics.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/infra-image-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/infra-image-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-10-31T23:44:36.081Z"
+    "updatedAt": "2026-11-01T06:13:18.416Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 2203,
+    "pagesWritten": 3,
+    "elapsedSeconds": 2204,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 258,
+    "calls": 439,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1571412,
-    "cached": 31003080,
+    "uncached": 2005470,
+    "cached": 47518670,
     "cacheWrite": 0,
-    "output": 432348,
-    "reasoning": 371025,
-    "ms": 2517189,
-    "estCostUsd": 1.1763,
+    "output": 934635,
+    "reasoning": 831890,
+    "ms": 6308601,
+    "estCostUsd": 2.0083,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +51,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/ci-diagnostics.md"
+        "runbooks/infra-image-scanning.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 1.1763,
+      "estCostUsd": 2.0083,
       "rateLimited": null
     }
   ],
