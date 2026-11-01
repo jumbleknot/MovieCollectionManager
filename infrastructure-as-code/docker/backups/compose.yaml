@@ -123,7 +123,7 @@ services:
   # can see. CLAUDE.md sends every agent sharing this container to a worktree, so the bind-mount
   # form would be broken for the most common way this stack is brought up.
   mcm-bff-backup-webdav-init:
-    image: httpd:2.4@sha256:454942557d44332cd7e4ae415e7ec9b4dbbf01b4a042491f423fcaf10a32ce9f
+    image: httpd:2.4@sha256:c6b7745aa371570cc8460a9f08c39989583d4aa7bc8e3ed8bd77a492803ea704
     container_name: mcm-bff-backup-webdav-init
     # Root for this ONE-SHOT only: a freshly created named volume is owned by root, so the writer
     # could not otherwise write. It writes two files and exits; the long-lived server below mounts
@@ -201,7 +201,7 @@ services:
         max-file: "3"
 
   mcm-bff-backup-webdav:
-    image: httpd:2.4@sha256:454942557d44332cd7e4ae415e7ec9b4dbbf01b4a042491f423fcaf10a32ce9f
+    image: httpd:2.4@sha256:c6b7745aa371570cc8460a9f08c39989583d4aa7bc8e3ed8bd77a492803ea704
     container_name: mcm-bff-backup-webdav
     restart: unless-stopped
     command: ["httpd", "-f", "/conf/httpd.conf", "-DFOREGROUND"]

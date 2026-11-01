@@ -86,11 +86,10 @@
   justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
   addedBy: 'claude (operator-approved, steve)'
   expiry: '2026-11-20'
-- image: 'mongodb/mongodb-community-server:9\.0-ubi9'
-  id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates 2025.2.80_v9.0.305-91.el9), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). RE-KEYED 8.0.8-ubi9 -> 9.0-ubi9 with PR #817 (2026-10-24), exactly as otel-lgtm was re-keyed with its bump: same CVE, same justification, same expiry — the operator-approved 2026-10-23 acceptance covered this advisory on the mongo store, and #817 deletes the 8.0.8 entry it replaces (which would otherwise fail UNMATCHED). Trivy 0.74.0 on the newest 9.0-ubi9 (9.0.4-ubi9-20261023T064549Z, index sha256:2cb58a8d…): this is its ONLY blocking finding, so no newer 9.0 UBI9 build clears it today. Internal-only (backend-network, no published port). Flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete once the image is a clean rebuild.'
-  addedBy: 'claude (re-keyed from the operator-approved 8.0.8 entry; PR #817)'
-  expiry: '2026-11-20'
+# mongodb/mongodb-community-server:9\.0-ubi9 CVE-2026-114406: entry DISCHARGED 2026-11-01, not re-keyed. Upstream's
+# UBI 9.8 rebuild of the SAME 9.0.4 (9.0.4-ubi9-20261031T064800Z, index sha256:3d40c6fa895f) ships the fixed
+# ca-certificates 2026.2.92_v9.0.319-90.3.el9_8: Trivy 0.76.1 (ghcr DB 2026-11-01) reports ZERO fixable
+# Criticals on it. Every mongo ref moved to that digest in the same change; if the advisory returns, it re-blocks.
 # ── mongodb/mongodb-community-server:8\.0\.8-ubi9 — SEED ENTRY DELETED 2026-10-20 (feature 081 US8a, T057) ──
 # CVE-2025-68121 (Go stdlib, 8 blocking findings on 8.0.8-ubi9) stood here since feature 035. DISCHARGED,
 # not re-keyed: every mongo ref moved to 9.0-ubi9 (9.0.4), which Trivy 0.74.0 with the gate's flags and
@@ -363,11 +362,10 @@
 # RE-KEYED 2026-10-30 8.2.0 -> 8.2.1 with the Renovate bump (PR #878), after re-measuring the NEW digest
 # (sha256:c6eaaede7242): still the boolean `trust proxy`, still proxy-addr 2.0.7 only. 8.3.0/8.3.1 exist
 # upstream but were inside the 3-day minimumReleaseAge at the 2026-10-30 window; same CVE, same expiry.
-- image: '^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242'
-  id: 'CVE-2026-90711'
-  justification: 'proxy-addr 2.0.7 trust-subnet IP spoofing. NOT REACHABLE, measured in 8.2.0 (sha256:5020013b7a9a) 2026-10-09, re-measured 2026-10-10 (item #711), and RE-MEASURED IN THIS EXACT 8.2.1 IMAGE 2026-10-30 (PR #878, operator-approved): dist/lib/app.js line 43 sets `trust proxy` to the boolean true, unconditionally, and it is the only `trust proxy` in /unleash/dist, so Express never has proxy-addr compile a subnet. proxy-addr is 2.0.7 everywhere in the image (node_modules/.pnpm/proxy-addr@2.0.7 is the only copy). 8.3.0 (2026-10-27) / 8.3.1 (2026-10-29) exist upstream but sat inside the 3-day minimumReleaseAge at the 2026-10-30 window; delete when Renovate moves unleash to a build that clears it, do not renew without re-measuring.'
-  addedBy: 'renovate-window-2026-10-09; renewed 2026-10-10 (item #711); re-keyed 2026-10-30 (PR #878, operator-approved)'
-  expiry: '2026-12-01'
+# DISCHARGED 2026-11-01 (item #711), not re-keyed: unleash moved 8.2.1 -> 8.3.1 (sha256:025cd8b003a7). Upstream's
+# v8.3.0 lockfile resolves proxy-addr 2.0.8, and the 8.3.1 image was inspected: node_modules/.pnpm/proxy-addr@2.0.8
+# is the ONLY copy. Trivy 0.76.1 (ghcr DB 2026-11-01) reports ZERO fixable Criticals on that digest. The entry is
+# deleted rather than left to match nothing (guard 063 / UNMATCHED ENTRIES); if the advisory returns, it re-blocks.
 
 
 # ── keycloak 26.7.4 entries CVE-2026-75595 / CVE-2026-8763 / CVE-2026-84939: DELETED 2026-10-02 ─────────
@@ -394,33 +392,24 @@
 #   rustfs/rustfs:1.0.3: no rebuild yet (the hub digest is the one pinned).
 # Whether each rebuild carries brotli 1.2.1-r0 / 1.1.0-2+deb13u1 is NOT verified here. The Renovate
 # PR's own scan answers that.
+# RE-TRIAGED 2026-11-01 (Trivy 0.76.1, ghcr DB 2026-11-01, every newest rebuild scanned):
+#   curlimages/curl 8.23.0 (sha256:3fb7e13e5d17, brotli-libs 1.2.1-r0) and httpd 2.4 (sha256:c6b7745aa371,
+#   libbrotli1 1.1.0-2+deb13u1) are CLEAN rebuilds: both refs moved to them and both entries were DELETED.
+#   rustfs moved 1.0.3 -> 1.0.4 on 2026-10-30, so its entry matched nothing and was DELETED.
+#   caddy and both postgres lines have NO clean rebuild (Alpine 3.24's 1.2.0-r1 is not the fix either), so
+#   those three were RENEWED to 2026-12-01 on measured non-reachability, recorded in each justification.
 - image: '^caddy:2\.11\.7-alpine@sha256:d8542f48d34a'
   id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: '^curlimages/curl:8\.23\.0@sha256:11e64e28c5f5'
-  id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: '^httpd:2\.4@sha256:454942557d44'
-  id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (libbrotli1 1.1.0-2+b7; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0). RENEWED 2026-11-01 to 2026-12-01 on MEASURED non-reachability: the only object in this exact digest that links libbrotlidec is /usr/lib/libcurl.so.4.8.0, whose only consumer is the curl CLI (apk reverse deps of brotli-libs and libcurl; a scan of every executable and .so for the soname). Caddy itself is a static Go binary and never loads it, and the compose healthcheck is `nc -z`, so nothing in this service runs curl. No clean rebuild exists: the newest 2.11.7-alpine (sha256:e70b164da81e, pushed 2026-10-30) still ships 1.2.0-r0 and Trivy 0.76.1 still blocks on it. Keyed to the digest, so a rebuild is scanned unsuppressed; delete when one lands.'
+  addedBy: 'claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)'
+  expiry: '2026-12-01'
 - image: '^postgres:18-alpine@sha256:77f585114c32'
   id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1). RENEWED 2026-11-01 to 2026-12-01 on MEASURED non-reachability: the only object in this exact digest that links libbrotlidec is /usr/lib/libcurl.so.4.8.0, and the only thing that links libcurl is /usr/local/lib/libpq-oauth-18.so, the module libpq dlopens for an OAuth CLIENT connection. The server never loads it, and the only client run here is `pg_isready` with no OAuth parameters. No clean rebuild exists: the newest 18-alpine / 18.6-alpine3.24 (sha256:10a5c69a8303, Alpine 3.24, pushed 2026-10-26) ships 1.2.0-r1, which Trivy 0.76.1 still blocks (fix 1.2.1-r0). Keyed to the digest, so a rebuild is scanned unsuppressed; delete when one lands.'
+  addedBy: 'claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)'
+  expiry: '2026-12-01'
 - image: '^postgres:18\.6-alpine3\.23@sha256:697c180dbf24'
   id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: '^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5'
-  id: '^CVE-2026-111497$'
-  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r1; fixed upstream, awaiting the image rebuild). Reachability not measured: time-boxed instead. Keyed to the digest pinned on 2026-10-29, so the Renovate digest bump is scanned unsuppressed. Delete when that bump lands; do not renew without re-scanning.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
+  justification: 'Brotli decoder out-of-bounds write (brotli-libs 1.2.0-r0). RENEWED 2026-11-01 to 2026-12-01 on MEASURED non-reachability: the only object in this exact digest that links libbrotlidec is /usr/lib/libcurl.so.4.8.0, and the only thing that links libcurl is /usr/local/lib/libpq-oauth-18.so, the module libpq dlopens for an OAuth CLIENT connection. The server never loads it, and the only client run here is `pg_isready` with no OAuth parameters. No clean rebuild exists: the newest 18.6-alpine3.23 (sha256:1a0c23d53c1a, pushed 2026-10-26) still ships 1.2.0-r0, and the Alpine 3.24 line (1.2.0-r1) is not fixed either. Keyed to the digest, so a rebuild is scanned unsuppressed; delete when one lands.'
+  addedBy: 'claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)'
+  expiry: '2026-12-01'
