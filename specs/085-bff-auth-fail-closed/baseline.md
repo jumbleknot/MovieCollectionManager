@@ -65,3 +65,14 @@ Five tests pass locally by returning early, so they report green without running
 - Ollama is unreachable (2 tests).
 
 None of them covers code this diff changes. They run in CI's `app-e2e`, which has the full stack.
+
+### T011: what a member sees for a refused turn
+
+- **Before:** nothing. CopilotKit reports a failed `/run` through `onError`, never as a rejected
+  promise, and the dock rendered no errors.
+- **Now:** `useAssistantRunFailureNotice` shows an assistant-side bubble, testID
+  `assistant-run-failure`, chosen by the BFF error `code` in the response body:
+  - "The assistant is temporarily unavailable. Please try again." for a 503;
+  - "Your session has expired. Please sign in again." for a 401.
+- **Unit test:** `src/components/agent/assistant-run-failure.test.ts`, RED (module missing), then
+  GREEN.

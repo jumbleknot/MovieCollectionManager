@@ -137,7 +137,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
     `approval_decision`/gateway-call line for the request id. **Verify RED**: `I
   agent-identity-refusal`. Expected: `200` streamed, not `401`. **Verify GREEN**: after T009 and a
   container rebuild.
-- [ ] T011 [US1] Check the client outcome for 503. Drive the dock in web E2E with the BFF's exchange
+- [X] T011 [US1] Check the client outcome for 503. Drive the dock in web E2E with the BFF's exchange
   client secret deliberately wrong, or verify in a unit test of the dock error renderer, whichever
   exists. If the shown text is not "The assistant is temporarily unavailable. Please try again.",
   add that string for `AGENT_IDENTITY_UNAVAILABLE` where the dock maps run errors
