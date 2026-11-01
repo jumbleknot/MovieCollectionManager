@@ -141,7 +141,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/084-silent-failure-visibility/plan.md`
+`specs/085-bff-auth-fail-closed/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
