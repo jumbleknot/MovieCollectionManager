@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
-description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, now deployed in production at FCV 8.0 with the FCV raise still pending after its soak.
+description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production at FCV 8.0 with the post-soak FCV raise the one step still outstanding.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
 sources:
@@ -42,7 +42,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -73,14 +73,16 @@ pointer to the exact commands, not as a queue of pending chores:
 - **Feature 081 US8a (8.0.8 → 9.0).** The production cutover ran on 2026-10-24 and the deploy landed
   through CD, not by hand. Both stores are on `9.0-ubi9` (`9.0.4`) at FCV `"8.0"`, each having logged
   its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the
-  pre-flight files. The image digest has since moved: the upgrade itself ran on the 2026-10-23 build
-  (`9.0-ubi9@sha256:2cb58a8d…`), while every Mongo ref — compose and runbook alike — now pins
-  `sha256:3d40c6fa…`, the 2026-10-28 rebuild of the same mongod 9.0.4 on a patched UBI 9 base
-  (PR #896). The runbook's §6 commands therefore name the image production actually runs, and a re-run
-  or a rollback uses that pin; the expected outputs are unchanged. The one step still outstanding is
-  §6.4's **FCV raise to `"9.0"`**, which follows the 7-day soak and was therefore not to be run before
-  2026-10-31 — until it runs, everything below about FCV `"8.0"` still describes production. The
-  measured record (before/after counts, the V1–V4
+  pre-flight files. The pinned digest has since moved: the upgrade itself ran on the 2026-10-23 build of
+  `9.0-ubi9`, while every Mongo ref — compose and runbook alike — now pins a later rebuild of the *same*
+  mongod 9.0.4 on a patched UBI 9 base (the 2026-10-28 rebuild, in the 2026-11-01 change, PR #896). That
+  rebuild is what cleared the `CVE-2026-114406` ca-certificates finding which had landed on every UBI 9
+  image after the first scan. The pin is a digest, never a floating tag, so a re-run or a rollback uses
+  the image production actually runs; the expected outputs are unchanged. The one step still outstanding
+  is §6.4's **FCV raise to `"9.0"`**, gated on a 7-day soak
+  that began at the 2026-10-24 cutover — so it was not to be run before 2026-10-31, and that window has
+  now elapsed: the raise is the next action, not a pending pre-condition. Until it runs, everything below
+  about FCV `"8.0"` still describes production. The measured record (before/after counts, the V1–V4
   output, the kernel-gate result) is in
   [`specs/081-major-dependency-upgrades/tasks.md`](../../specs/081-major-dependency-upgrades/tasks.md)
   T059, not in the runbook — the runbook is the procedure.
@@ -150,9 +152,13 @@ world-readable keyfile, or one it does not own. So
 in the *same* user context that wrote the file, the owner matches by construction — no chown, no uid
 guesswork. The script `rm -f`s the file before rewriting it, because on a plain container *restart* the
 prior run's read-only `0400` file persists and a non-root redirect cannot reopen it (EACCES), which
-used to crash-loop the container ([prod reboot resilience](./prod-reboot-resilience.md)). Dev stacks
-stay unauthenticated; the auth flags exist only in the prod compose files and the scratch/rehearsal
-environment.
+used to crash-loop the container ([prod reboot resilience](./prod-reboot-resilience.md)). That
+idempotency is pinned by
+[`mongo-entrypoint.test.sh`](../../infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh),
+which drives the real script with a no-op exec target and asserts four cases: a fresh run creates a
+`0400` keyfile, a restart over a leftover `0400` file succeeds, two consecutive runs both exit 0, and an
+unset `MONGO_MC_KEYFILE` still fails fast. Dev stacks stay unauthenticated; the auth flags exist only in
+the prod compose files and the scratch/rehearsal environment.
 
 ## The 8.0.8 → 9.0 in-place upgrade (feature 081 US8a, T059)
 
@@ -177,7 +183,7 @@ flowchart TD
   Raise -->|"problem found"| Rb
 ```
 
-The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore. The pre-flight through verification and the FCV-8.0 soak are complete in production; the FCV raise is the step still ahead.
+The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore. The pre-flight through verification and the FCV-8.0 soak are complete in production; the FCV raise is the step still ahead, and its soak window has now elapsed.
 
 ### Gotchas (the upgrade)
 

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration, both of them completed in production — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the six one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move, and the two schema-carrying Langfuse minors (4.56.0 → 4.68.0, item 839, and 4.68.0 → 4.72.0, item 895) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
@@ -66,7 +66,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -81,17 +81,18 @@ of the secrets posture documented in [Secrets management](../invariants/secrets-
 [published-port reservation convention](../invariants/published-port-reservation.md) for its two
 tailnet-reachable operator UIs.
 
-On top of that steady state sit **five one-time stateful cutovers**, each operator-run, each with the
+On top of that steady state sit **six one-time stateful cutovers**, each operator-run, each with the
 merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
 object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
 OpenSearch 2 → 3 with the audit history preserved (feature 071), the observability Postgres 16 → 18 move
-(spec 081 US8b), and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (spec 081 US8 PR 8d, item 839),
-whose merge *is* its migration. The last two of the five have now run in production — US8b on 2026-10-20
-and the Langfuse minor on 2026-10-25. Three of the five — RustFS, OpenSearch 3 and Postgres 18 — put the
-new state on a **new external volume** and leave the old one untouched as the rollback; the Langfuse 4
-cutover recreated its volumes in place and deliberately discarded the traces, and the Langfuse 4.68 minor
-migrates in place, where a pre-merge backup is what separates a rollback from a loss. The policy they all
-answer to is
+(spec 081 US8b), and the two schema-carrying Langfuse minors — 4.56.0 → 4.68.0 (spec 081 US8 PR 8d,
+item 839) and 4.68.0 → 4.72.0 (item 895) — whose merges *are* their migrations. US8b ran in production
+on 2026-10-20 and the 4.68 minor on 2026-10-25; the 4.72.0 refs landed in the tree on 2026-11-01, on
+measurements taken against copies of the dev observability volumes. Three of the six
+— RustFS, OpenSearch 3 and Postgres 18 — put the new state on a **new external volume** and leave the old
+one untouched as the rollback; the Langfuse 4 cutover recreated its volumes in place and deliberately
+discarded the traces, and the two Langfuse minors migrate in place, where a pre-merge backup is what
+separates a rollback from a loss. The policy they all answer to is
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
@@ -692,7 +693,8 @@ Here that re-key was mixed: the two `next` advisories the new version discharged
 the three that still block on the 4.68.0 digests (the base-image CA bundle on web and worker, and the
 bundled `@sentry/nextjs` on web) were re-keyed `4\.56\.0` → `4\.68\.0` with their expiry unchanged, and
 `renovate.json` needed no edit at all because the `langfuse` group and the major-approval rule match by
-name with no version in them.
+name with no version in them. (Those three re-keys were themselves discharged a week later by the next
+Langfuse bump — see below.)
 The pre-merge backup is a `pg_dumpall` of `langfuse-postgres` plus a cold `tar` of the stopped
 ClickHouse data volume; the acceptance reading afterwards is `_prisma_migrations` at 460, ClickHouse
 migration 53 applied, zero error lines in either container and a new trace readable. Note which Postgres
@@ -715,6 +717,37 @@ worker logged zero error lines, and a trace landed (the worker's `ClickhouseWrit
 on the host at `~/839-langfuse-468`; the task list records the run, this page records the shape — read
 the runbook for the commands.
 
+## Langfuse 4.68.0 → 4.72.0, the same procedure plus the object store (item 895)
+
+The sixth cutover is the same shape as the fifth, applied to the next minor: **the merge is the
+migration**, a backup before it is what turns a rollback into a restore, and a digest revert alone does
+not roll back (4.68.0 started on a store carrying three Prisma migrations it has never seen is not the
+plan). What the bump was measured to do (2026-11-01, on copies of the dev observability volumes):
+
+- **Postgres:** 4.72.0 adds 3 Prisma migrations, so `_prisma_migrations` goes **460 → 463**.
+- **ClickHouse:** no new migrations; `schema_migrations` stays at version **53**.
+- **The backup restores into the older image.** Restored, 4.68.0 is healthy, a trace seeded before the
+  upgrade is present and a trace written after it is absent — which is what makes "restore, then revert"
+  a real rollback rather than a hope.
+
+Two things differ from the 4.68 minor:
+
+- **The object store is backed up too.** The `langfuse-rustfs` volume holds the raw OTLP ingestion
+  objects. It is small (about 1 MB in dev), and a cold copy is what makes the restore complete.
+- **Traces now live in ClickHouse's v4 events model.** With `LANGFUSE_MIGRATION_V4_WRITE_MODE=events_only`,
+  `GET /api/public/traces/{id}` reads the legacy `traces` table, which is no longer written, so the
+  trace-landed check counts rows in `events_full` rather than using that endpoint; the legacy
+  `trace-create` ingestion event is refused (400) and traces arrive over
+  `POST /api/public/otel/v1/traces`. Do **not** "fix" a v4 read with
+  `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` — it restores ingestion only and hides an unmigrated read path.
+
+The same PR closed the 4.68.0 allowlist chapter: the three entries re-keyed a week earlier (the
+base-image ca-certificates CVE on web and worker, and the bundled `@sentry/nextjs` CVE on web) were
+**discharged, not re-keyed again** — both refs moved to `4.72.0` on a clean rebuild that Trivy reports at
+zero fixable Criticals, so a re-keyed entry would match nothing and fail `--check-expiring` under
+UNMATCHED ENTRIES. `renovate.json` again needed no edit, because the `langfuse` group and the
+stateful-major approval rule match by package name with no version in them.
+
 ## Capacity
 
 The pre-observability capacity check (2026-07-03) measured ~48 GiB RAM available on the prod host, actual
@@ -733,6 +766,8 @@ runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 rehearsal record and completion note are in
 [the spec-081 research](../../specs/081-major-dependency-upgrades/research.md) and
 [its task list](../../specs/081-major-dependency-upgrades/tasks.md) — which is also where the
-Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded — and the
+Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded (the 4.72.0
+bump that discharged those allowlist entries, item #895, is recorded in the runbook and the allowlist's
+own history) — and the
 stack-level view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

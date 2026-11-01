@@ -76,7 +76,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 
@@ -87,8 +87,8 @@ deadline-stop escalation of 078 US6, the drift re-planning and parking of featur
 output cap of item #719 — raised to 65536 on the Fireworks row in PR #732 — and the overlapping-run
 handling of #748).
 `pnpm nx wiki-plan infrastructure-as-code`
-decomposes the documentation changes since the last recorded run into **slices** — at most 8 pages,
-exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
+decomposes the documentation changes since the last recorded run into **slices** — at most
+`MAX_PAGES_PER_SLICE` (8) pages, exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
 on `pnpm nx wiki-maintain infrastructure-as-code` (paid, needs the selected provider's key). A second
 free check answers a different question the plan cannot: `node scripts/wiki-maintain.mjs
 --claims-audit` (offline, keyless; `--json` for machines) lists the pages openwiki will *force* into
@@ -366,7 +366,7 @@ egress host costs one token, not a slice.
 
 | Code | Meaning | Is something wrong? |
 |---|---|---|
-| `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
+| `0` | Plan produced, or every attempted slice verified, or nothing to do — or `--execute` stopped before any paid generation because the checkout's run record is behind the remote base branch's (#748; nothing is attempted or recorded) | No |
 | `1` | A slice **failed verification** — a requested page missing, left stale, or left mid-edit by its worker and restored, the bundle became non-conformant or broke openwiki governance, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, a forge that cannot be reached for the pre-plan reconcile, or a policy file that will not load | **Yes** |
 | `3` | Stopped with work outstanding — the run budget was reached, the job deadline left too little time to start a generator, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |

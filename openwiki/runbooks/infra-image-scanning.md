@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Infra-image CVE scanning
@@ -353,13 +353,10 @@ findings readable.
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
-  - **Live inventory (2026-11-01): nine entries.** Two un-expiring BASELINE entries carry the same
+  - **Live inventory (2026-11-01): six entries.** Two un-expiring BASELINE entries carry the same
     Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18\.6-alpine3\.23` and `postgres:18-alpine`, each
     recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
-    `usr/local/bin/gosu`). Three are the survivors of the 2026-10-23 ca-certificates cohort, time-boxed to
-    `2026-11-20`: `CVE-2026-114406` on `langfuse/langfuse:4\.68\.0` and
-    `langfuse/langfuse-worker:4\.68\.0`, plus `CVE-2026-114139` (`@sentry/nextjs`) on
-    `langfuse/langfuse:4\.68\.0`. Four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
+    `usr/local/bin/gosu`). The other four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
     (`CVE-2026-75595`) and three brotli digest keys (`CVE-2026-111497`) on caddy and both postgres lines.
     Everything else in the file is a comment block recording an entry that has been discharged — history,
     not a live suppression.
@@ -391,14 +388,15 @@ findings readable.
   same change (same CVE, same expiry); where it does not, the entry is deleted, because a re-keyed entry
   that matches nothing keeps failing `--check-expiring` whatever its date. Every surviving justification
   states that the entry is deleted once a clean rebuild ships — a time-box that forces a re-check, not
-  an accepted risk without one. The 2026-10-23 ca-certificates cohort has now produced all three
-  endings: **Keycloak** cleared `CVE-2026-114406` by a same-version digest refresh in PR #838; the
-  **mongo** `9.0-ubi9` entry was discharged on 2026-11-01, when upstream's UBI 9.8 rebuild of the same
-  9.0.4 (`9.0.4-ubi9-20261031T064800Z`, index `sha256:3d40c6fa895f` — the digest every mongo ref now
-  pins) shipped the fixed `ca-certificates 2026.2.92_v9.0.319-90.3.el9_8`, scanned at zero fixable
-  Criticals; and the **langfuse** web/worker entries remain, re-keyed to `4\.68\.0`, because the newest
-  upstream build still carries the pre-fix package. Nothing here is inferred from a version number: each
-  ending follows a scan of the exact new digest.
+  an accepted risk without one. The 2026-10-23 ca-certificates cohort has now emptied, and its members
+  took different routes out: **Keycloak** cleared `CVE-2026-114406` by a same-version digest refresh in
+  PR #838; the **mongo** `9.0-ubi9` entry was discharged on 2026-11-01, when upstream's UBI 9.8 rebuild
+  of the same 9.0.4 (`9.0.4-ubi9-20261031T064800Z`, index `sha256:3d40c6fa895f` — the digest every mongo
+  ref now pins) shipped the fixed `ca-certificates 2026.2.92_v9.0.319-90.3.el9_8`, scanned at zero
+  fixable Criticals; and the **langfuse** web/worker entries were discharged on 2026-11-01 (item #895),
+  when the images moved to `4.72.0` and the newest upstream build shipped a clean CA bundle — both
+  scanned at zero fixable Criticals, so the three entries were deleted rather than re-keyed. Nothing here
+  is inferred from a version number: each ending follows a scan of the exact new digest.
 - **A cohort is re-triaged in one sitting, and the re-triage is where a stale key is actually found.**
   The 2026-11-01 re-triage (Trivy 0.76.1, ghcr DB, every newest rebuild scanned) is the shape to copy:
   of the six brotli entries, `curlimages/curl` and `httpd` had shipped clean rebuilds
@@ -572,9 +570,9 @@ its lessons are about the *shape*, not about that image.
   guard can pass, while nothing extracts the dependency it describes: the rule is only a claim about
   what would happen if the dep were ever seen. Read the Dependency Dashboard's *Detected Dependencies*,
   which is Renovate telling you what it actually extracted. See [Renovate](./renovate.md) for the
-  measured case (item #560) and for the visibility guard in
-  `scripts/__tests__/infra-image-scan.test.mjs` that asserts it — a guard should assert visibility, not
-  configuration.
+  measured case (item #560) — also recorded in `renovate.json`'s `rustfs/rustfs` rule description — and
+  for the visibility guard in `scripts/__tests__/infra-image-scan.test.mjs` that asserts it: a guard
+  should assert visibility, not configuration.
 - **The property is asserted twice, once generally and once for the image that replaced the build.**
   `scripts/__tests__/infra-image-scan.test.mjs`'s `(412)` test covers every compose file carrying an
   `image:`; `scripts/__tests__/renovate-workflow.guard.test.mjs`'s `(080b)` test adds the RustFS-specific

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e731f47cfbaab79dd085d6cc1628b21669fd3d83f4ce50d532bda12abfd438e2",
+  "pageVersion": "sha256:069d93ba101592a28c77a62aeb1f4f92fbaf72242c57748b98d3253b14528836",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -886,19 +886,23 @@
     },
     {
       "id": "claim_9beacf8bd7ba4e8694dd6003d92697da",
-      "statement": "Package-registry retention (spec 084 US5) is `scripts/registry-retention.mjs`, configured by `infrastructure-as-code/forgejo/registry-retention.yaml` and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC, after the Friday Renovate window and outside the nightly backup). It is the only thing in this repository that ever deletes from the forge registry, and the forge's own name-regex cleanup rules are deliberately unused because they cannot protect a digest a git file names, they live only in the web UI, and they have no report-only run.",
+      "statement": "Package-registry retention (spec 084 US5) is `scripts/registry-retention.mjs`, configured by `infrastructure-as-code/forgejo/registry-retention.yaml` and run weekly by `.forgejo/workflows/registry-retention.yml` (Sundays 06:00 UTC, after the Friday Renovate window and outside the nightly backup). It is the only thing in this repository that deletes a **container image** version from the forge registry — the generic packages prune themselves at publish time — and the forge's own name-regex cleanup rules are deliberately unused because they cannot protect a digest a git file names, they live only in the web UI, and they have no report-only run.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/registry-retention.yml",
           "version": "repo-file-v1:sha256:d6447d21b60359f3e4df5f211ee3b18aaa7019bf25a977c28d4711cdfeaf12c5"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
-        },
-        {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
           "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/cd/publish-apk.mjs#L38-L60",
+          "version": "repo-lines-v1:sha256:6f83d65ae2b50aa902a5d3f343d8d5070e14d65abb195a52b4d8605f9b8f3847:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjc4ZDE3MzNjY2E4Yjg1MGQ1ZjA4NzNmZjlkZjYxYTMxZDI3YTEzNzA5NjdhNTM3OGNhODYxY2ExODBhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNWNjOThmZGVmMjI1ZTJiMDYzOTY0YmIyNzgxMDdhMjhjMTIwYWFmOTVhNWE3Yjc2N2NlYmU4OWI3MTVkNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNTRiODljODdlOWY0MTcxYzY3NWQ4NjYwNGU0MjFmOWQ2ZDY4NjA3MWQ4ZmJiMDc4NGNmYmQ2NDBiOWMxZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmOThiMGFkZWM3ZmJiZDE1MmQ1MDI2OTI0YzRkY2JhYzJjY2E1NTc0ODNiNWU1NWZhODFkOWQ1MjZlYzc0NzkifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1011-L1012",
+          "version": "repo-lines-v1:sha256:69e26e9965f03a04ec932cb048e5e274592c3d63687a259ef6b5d1ba7def536b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM5ZjhkZDA0YTFhYWRiYjcwMmQzZjJlOGYxYjMzN2FmNjhiZjA2ZmIwNjMzYTM3Zjc2NWY2ZDFkMWNkM2RkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0MGRjNWE1ZGNjZWQ5YWUzODdmYWQ1MTMyYzNiZGVlZDQzZGI3OTRhOTQyMjBmMzU4YWQ0ZGZlNDcyNTA4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA4M2EyZTRlNDhlYzI0MWU0Y2E4Y2Y5NDA2NTg1ODEzZDczY2RlMmNiNDJkYTIzN2QwMzAwMTBjZmM5OGQ3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjYjlhZThlMjRiYTJiMzBjNmRiODYwMjE5NTg4NTNhMzQyNTJhYmNmZWJlOTk4OWFhMTdjYjljNmNlZjE2NSJ9"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs",
@@ -930,7 +934,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L7-L36",
@@ -948,7 +952,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L199-L208",
@@ -1032,7 +1036,7 @@
         },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:0def127d7fcc945fb10f65b69b3191b4698999743de1105c083ec01ba6c0fd48"
+          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L367-L376",
@@ -1079,10 +1083,36 @@
           "version": "repo-lines-v1:sha256:7199daefbafff51fe107f34928693da56514dfd256b1a3f017f8c2112a3a8475:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjg1YmM1Mzk4NTJjNDY4MDNlNzAwMWNkZTJjMDdiNjQ3ZjI2NjEwNGQzYWNhNTA1NTkwNDQxYmM4NzBmZTRmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzkzNzkxN2Q1ZWNlM2MxZWI2YmIwNTk0N2MyNjRlNzQ3ZTFlNjUwNDE0M2I4MTQwOTdiZWU0OWNmZDQ3MzU4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U1ZjRlOThiNWViZGZkNGYxYjcyZGE2NGZmYWViMTQ4MmNmMWE2YTViNGI4YjgxOThlMzY0YTUxMjdjODEzMSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_de70fdd0a22547988fbd1b3ec7900064",
+      "statement": "The forge's GENERIC package registry has no scheduled sweep — each publisher prunes opportunistically at publish time, which is why registry retention owns only the container images. `scripts/ci-failure-digest.mjs` deletes `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS` (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — invoked by `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by `created_at` plus any version whose name ends in `-keep`, which is never pruned and does not consume one of the 5 slots. That retention is COUNT-based rather than a day window because a quiet month would otherwise delete every installable APK, and a prune failure in either publisher is logged and swallowed rather than allowed to red a deploy.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L523-L523",
+          "version": "repo-lines-v1:sha256:187f0d41da3f3812aacbc47c9efdcda27d677a8a0c59272e32e05e218d3a4165:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA4YzE0ODYyMDQzMWYxZmU3ZjhkYjg3NWQwM2U3Y2I5ODFmNzgyMGE4MTBkMzUwNDA2MDNkMTIwZGQzMjVhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI4NjVmMDFiYWI3NmYzZDkyMDA2Yzg0YzlhOTk4ZGY2YzQ2YmRlNGIxNzRmYjI4NThkZmFhZGJmYjM4ZTMyOSJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/publish-apk.mjs#L42-L60",
+          "version": "repo-lines-v1:sha256:33968f867524c37572c41cd4994cb1d832559ef247422a2ec5cbd41b7a79f1a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZDNjNjIyN2Q1NjdhYTMwODFiNGJlYzlhYTI0ZTBkYmZmMjM4N2U0MzU5MDg3OTYzOWNiMjM0MTlkYmQ0NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNWNjOThmZGVmMjI1ZTJiMDYzOTY0YmIyNzgxMDdhMjhjMTIwYWFmOTVhNWE3Yjc2N2NlYmU4OWI3MTVkNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyZDBiNzg2NWM2ZDEyMGI0ZjljMzBlYjU1NmM1ZTE5OGY2M2FjNTlkNTk2YmNhNGY2NTgyY2Q0ZjQ5YTg1ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmOThiMGFkZWM3ZmJiZDE1MmQ1MDI2OTI0YzRkY2JhYzJjY2E1NTc0ODNiNWU1NWZhODFkOWQ1MjZlYzc0NzkifQ"
+        },
+        {
+          "resource": "repo://scripts/cd/publish-apk.mjs#L86-L109",
+          "version": "repo-lines-v1:sha256:22190b526e98787c46c8e1ae6bfbfec829d8d214bfb25d60952da755f73d62e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmODg4ODAxYWJlNWFiNTVmZjhjMDlkNjkwMDY3NjJhNjdkMjEyMDIzMTIxYWQ4OTZlMjZkMGRmZDc4ZjFiZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2NmFkYzU5NDk5ZjVjY2RiOTU1NDM3MWE3ZWY0Y2ZkN2U5OWIyMDMyMzM5ZmZkODFjYTQyYTM1ZDIxNzM0OWYifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1011-L1012",
+          "version": "repo-lines-v1:sha256:69e26e9965f03a04ec932cb048e5e274592c3d63687a259ef6b5d1ba7def536b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM5ZjhkZDA0YTFhYWRiYjcwMmQzZjJlOGYxYjMzN2FmNjhiZjA2ZmIwNjMzYTM3Zjc2NWY2ZDFkMWNkM2RkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0MGRjNWE1ZGNjZWQ5YWUzODdmYWQ1MTMyYzNiZGVlZDQzZGI3OTRhOTQyMjBmMzU4YWQ0ZGZlNDcyNTA4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA4M2EyZTRlNDhlYzI0MWU0Y2E4Y2Y5NDA2NTg1ODEzZDczY2RlMmNiNDJkYTIzN2QwMzAwMTBjZmM5OGQ3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjYjlhZThlMjRiYTJiMzBjNmRiODYwMjE5NTg4NTNhMzQyNTJhYmNmZWJlOTk4OWFhMTdjYjljNmNlZjE2NSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1189-L1200",
+          "version": "repo-lines-v1:sha256:9e7616f2a99cfa5932f8584717849392a254c63295542d0cec067474bd2b373e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjOTAxMmY0N2M1NDM3ZDczYjM4MzBiNmUxNjFkOTdkZTc4YTIwM2Q5ZmIyMTMyNjdkMDJlOGE0NGQ5OGNlN2MifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T05:36:38.857Z"
+    "at": "2026-11-01T20:52:31.113Z"
   }
 }

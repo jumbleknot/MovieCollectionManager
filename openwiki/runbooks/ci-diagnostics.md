@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, and the two keys that gate a delete.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T05:36:38.857Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # CI self-serve diagnostics
@@ -875,8 +875,9 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
 ## What the registry keeps (spec 084 US5)
 
 `app-image-scan` decides whether a *new* image may merge; registry retention decides which images the
-registry still **holds**, and it is the only thing in this repository that ever deletes from the forge
-registry. It is [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
+registry still **holds**, and it is the only thing in this repository that ever deletes a **container
+image** version from the forge registry — the generic packages prune themselves at publish time, which
+is the last bullet below. It is [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
 [`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
 and run weekly by [`.forgejo/workflows/registry-retention.yml`](../../.forgejo/workflows/registry-retention.yml)
 (Sundays 06:00 UTC). The forge's own cleanup rules are deliberately **unused**: they match versions by
@@ -946,6 +947,20 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   alongside a window, or a `mode` other than `report`/`apply` is refused), and it enforces the floor
   that `ci-status durations` needs on the `ci-failures` bundles — which `ci-failure-digest.mjs` itself
   already prunes at 30 days.
+- **The GENERIC packages prune themselves at publish time; this sweep owns only the container images.**
+  There is no scheduled job for either, so each publisher deletes opportunistically as it writes:
+  `ci-failure-digest.mjs` drops `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS`
+  (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting
+  evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — run by
+  `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by
+  `created_at` plus anything whose name ends in `-keep` (which is never pruned and does not consume one
+  of the 5 slots), a COUNT rather than a day window because a quiet month would otherwise delete every
+  installable APK. That retention is count-based for the same reason the container rules are
+  reference-based: the two packages answer different questions about what "still needed" means, and a
+  prune failure in either is logged and swallowed rather than allowed to red a deploy.
+  The `ci-failures` entry in the retention config is therefore a **floor**, not the deleter — it exists
+  so a future config edit cannot shrink the window below what `ci-status durations` samples — and its
+  `evidenceWindowDays: 45` is the value a `ci-failures` `keepDays` below which is refused outright.
 
 The sweep uses its own `write:package`-only credential (`REGISTRY_CLEANUP_TOKEN`), separate from the CI
 push token so rotating either cannot break the other. The full procedure, the review criteria for a

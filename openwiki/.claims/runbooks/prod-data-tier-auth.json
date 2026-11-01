@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4bb6f096c8da10a0f0851ca49714409a70f181bdd8e00df8e3d1ef14f9d6ef3d",
+  "pageVersion": "sha256:1143db9cd1a4c5fd23cd74f73d5833e9633dd09c8dcbc16db972b5a4cc872a23",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -386,25 +386,35 @@
     },
     {
       "id": "claim_be698420a65f4ffaba26caef90ff4342",
-      "statement": "The MongoDB 9.0 image pin moved after the production upgrade: the cutover ran on `9.0-ubi9@sha256:2cb58a8d…` (the 2026-10-23 build), while every Mongo ref — both prod compose files and every §6 command in the runbook — now pins `mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1`, the 2026-10-28 rebuild of the same mongod 9.0.4 on a patched UBI 9 base (PR #896), so a re-run or a rollback uses the image production actually runs and the expected outputs are unchanged.",
+      "statement": "The MongoDB 9.0 image pin moved after the production upgrade: the cutover itself ran on the 2026-10-23 build of `9.0-ubi9`, while every Mongo ref — both prod compose files and every §6 command in the runbook — now pins a later rebuild of the same mongod 9.0.4 on a patched UBI 9 base (the 2026-10-28 rebuild, adopted in the 2026-11-01 change, PR #896), which is what cleared the CVE-2026-114406 ca-certificates finding that had landed on every UBI 9 image after the first scan. The pin is a digest rather than a floating tag, so a re-run or a rollback uses the image production actually runs and the expected outputs are unchanged.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L354-L363",
           "version": "repo-lines-v1:sha256:8de06a5e557c058385874bb04fe696c4e3bbeef348c27594ed850cb41624cd08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjFkOGQzNmQzM2RlYTA5MzljNmY1YTg4OWFjNjcwZDRiMWI0M2I2ZmM5MTYxYzBjZDA2MjdkNjNjMzM3OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NTYzMzk1NTQ3YzUyNDU0MWVmNWZlODEwZTdmNTI4ZTc3NWE2MzhkZDhkYjUyMDZmY2I0NzcxNzFjZDA1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYzE1MWRiNGRhYThlY2I1MDg3MGY1YTNmNjhmOTNmNjc2MWQ3MzFhNGUzNDZiMTcyYjBlY2UwNDhiYzc0MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2YTAzNWI5ZGUyYTI0YWNkMzQyZTZjNTg1N2YyMmRkYWZjZmVlYmY3YjdhYzE4NDdmOGE2ODVhMjk1Mzk4OGIifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L132-L133",
-          "version": "repo-lines-v1:sha256:5cc56b133e578d23e211f312177808af3ca107039d50616b177492cfa20837a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYwMTExODRjYjc4MzMzMzg1YWMzZjIwNzg1MTZjMTg0NjY2YzQzNDFmMjdiNDhhZTM3NzMyNGY4YTljODRmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUxN2MwNzg5Y2MxMTI0NTYzNzM1MTYxYjg0ODU0ZjRlY2NmNjBiMWUyNzllZWRiNWVjOWQ0ZDA4NTQ1YTA3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQzMjc2ZDgyMmFjYTdlZTA2NDY0YjJjYmIzOTA3ZWIzMGVjOWI2MWNlMzI4M2NmZGQyZDA2MTQxNzc0NDgzYSJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml",
+          "version": "repo-file-v1:sha256:2bed67c5670f9304e1f3f5fd4cd7dfc5ec50694b3c5ce59bb0b88c9ffcedca96"
+        }
+      ]
+    },
+    {
+      "id": "claim_1e5a1ad8237d4b69a6660ff220c8a59a",
+      "statement": "The keyfile entrypoint's restart idempotency is pinned by `infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh`, which drives the real script with a no-op exec target and asserts four cases: a fresh run creates a 0400 keyfile with the expected content, a restart over a leftover 0400 file succeeds, two consecutive runs both exit 0, and an unset `MONGO_MC_KEYFILE` still fails fast.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh",
+          "version": "repo-file-v1:sha256:ffdc1b34663483aeb05a8e02309b4685ad8cbb8c60f472998b13be449c924b9d"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L24-L25",
-          "version": "repo-lines-v1:sha256:d6e41fd75a799f5d12a3e7c7a7d5d8f410cd56f62ee66db68a0d7d80b8a4b7bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdjY2M5ZWI1NGRiYTY5YjkwMDQ2NTgwMmU1ZWJkNzM5Y2Q3ODliNjU4MGNjMzllODgzZTFlOTg2MTdhODYxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EzN2RlZjc1YWY5MDdhZTg4NmNhNjdhMWE0ZDk0NzA3MmVhOWE1ZTc1NTJhM2Y5MWIwNDU5ODdmNjFjMDk0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhY2I5YmQ4MmQ2MDdlNTBhZTIzZDMxZTE4YmUzOGI1NTI4NzViNzZmY2ExNmFiYTYxZTg2YzU2YTRhOTYzYSJ9"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh",
+          "version": "repo-file-v1:sha256:4010131c6ca9854d983181a8a84aa037c8105d3cc411cbf96bd0dcab3113c344"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T13:34:04.956Z"
+    "at": "2026-11-01T20:52:31.113Z"
   }
 }

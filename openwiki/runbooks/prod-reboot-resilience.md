@@ -38,7 +38,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Prod reboot resilience
@@ -178,7 +178,12 @@ one-shot containers — `agent-audit-init` (provisions the write-only audit user
 idempotently and then `exec sleep infinity`, so they too declare `restart: always` and stay eligible for
 the daemon's start-at-boot rather than exiting and being counted unhealthy
 ([`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml),
-[`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). Do not
+[`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). The
+idling has a second, less obvious cost: a container that never exits can never satisfy
+`service_completed_successfully`, so the dependency had to be re-expressed as readiness —
+`langfuse-worker` waits on `langfuse-rustfs-init` with `condition: service_healthy`, and that healthcheck
+is a `/tmp/ready` marker the entrypoint touches only after the bucket PUT succeeds. "Init done" therefore
+becomes a readiness signal rather than an exit code, and any new dependent must be written that way. Do not
 reintroduce `unless-stopped` on a prod or host-managed service expecting a reboot to bring it back.
 
 The immediate fix on the host was an interim `docker update --restart always` over the running

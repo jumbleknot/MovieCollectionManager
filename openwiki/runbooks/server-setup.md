@@ -56,7 +56,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T23:07:57.553Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -105,7 +105,10 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   `kvm:host` (Phase 7), which is precisely why `ci` must be in the group. On this host `/dev/kvm` is
   mode **666** (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option,
   and the group membership is what keeps the job working if it is applied. Passing
-  `--device /dev/kvm --group-add kvm` into a job container was the setup until commit `235f2f4c`.
+  `--device /dev/kvm --group-add kvm` into a job container was the setup until commit `235f2f4c`. Only
+  the emulator job needs the device; the other host jobs that share the label — the DAST scan and the
+  image build/scan jobs — need a reachable Docker daemon instead, which is why the same `DOCKER_HOST`
+  assertion guards each of them.
 - **5 — Two segregated rootless Docker daemons.** The core of the design: two unprivileged service
   users, each running its own rootless `dockerd` at its own socket with data under its own home, plus
   per-daemon `daemon.json` (log rotation, `live-restore`), the `kvm`-group membership and `kvm:host`
@@ -125,9 +128,12 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   the UUID + secret the web UI hands out — the older registration-token flow is deprecated. The runner
   advertises **two labels**: `ubuntu-latest`, which is where it becomes a plain Node image, and the
   host-type `kvm:host` (referenced as `runs-on: kvm`, the label *name*), on which jobs execute directly
-  on the host as the unprivileged `ci` user with no job container — the emulator job and the
-  Docker-image-building jobs, which need `/dev/kvm`, a single-host view of `localhost:8082` /
-  `10.0.2.2:8082`, and a reachable `ci` rootless daemon.
+  on the host as the unprivileged `ci` user with no job container — the emulator job, which needs
+  `/dev/kvm` plus a single-host view of `localhost:8082` / `10.0.2.2:8082`, and the
+  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The runbook's Phase 7 block
+  still names only three tenants — `app-e2e`, `dast` and `build-deploy`; the tracked workflows have
+  grown since, and the *complete* set today is `app-e2e` and `dast` and `app-image-scan` (`app-ci`),
+  `build-deploy` (`cd-deploy`) and `build-publish` (`devcontainer-image`).
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
   `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
   custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`
@@ -325,6 +331,17 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   `kvm:host` label carries the Docker-image-building jobs, which a `node:22-bookworm` job container
   could not run at all (no Docker CLI or daemon). See [Android emulator](./android-emulator.md) for the
   job-side view.
+  - **KVM is the emulator job's requirement, not the label's.** Five jobs share the label today —
+    `app-e2e` and `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
+    `build-publish` in `devcontainer-image` — and only `app-e2e` needs `/dev/kvm`; the rest need the
+    Docker CLI and the `ci` daemon, which is why the runbook's Phase 7 note still enumerates a shorter
+    set (emulator, DAST, image build) and the tracked workflows have grown past it.
+  - **One host job's own error text still describes the pre-`235f2f4c` container setup.**
+    `cd-deploy`'s Docker guard tells the operator to "mount `/run/user/1001/docker.sock` into the kvm
+    job (runner `config.yaml` `container.options`)" — advice for a job container that no longer exists;
+    `app-ci`'s equivalent was corrected on 2026-10-04 to name the host execution. The *host* runs the
+    corrected reality (the jobs execute on the host and reach the socket through `DOCKER_HOST`), so
+    read the message as stale wording, not as a setup step.
 - **A default Periphery root lives on a tmpfs and is wiped by every reboot.** Rootless Docker
   copy-ups `/etc` into a per-daemon tmpfs, so Komodo's stock `/etc/komodo` root — and with it the
   cloned repo checkout that every stack's relative bind-mounts resolve against — does not survive.

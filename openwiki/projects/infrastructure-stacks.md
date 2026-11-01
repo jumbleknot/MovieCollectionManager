@@ -6,7 +6,7 @@ resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -354,7 +354,10 @@ then invokes the `opa` binary itself (`opa eval --fail … http.send({…}).stat
 rather than `wget`, because that busybox ships no `wget`, `curl` or `nc`: the previous `wget` form failed
 every run, so the container read `unhealthy` from ~2026-09-10 (a `FailingStreak` of 130247 by
 2026-10-03) while OPA was serving fine — the thing that was wrong was Komodo's view of the policy
-server, not the policy server.
+server, not the policy server. Two places still describe the removed form and must not be copied back:
+the prod compose's own header comment and the prod control-tower runbook's gotcha bullet both say the
+`-debug` busybox "runs the /health wget healthcheck", which is what the shipped `healthcheck` no longer
+does — reintroducing `wget` there reproduces the every-run failure.
 
 **Dev-only Ollama helper** — `infrastructure-as-code/docker/dev-ollama.compose.yaml` is not part of any
 stack and not part of the production agent stack: it is a dev-container-only helper brought up by

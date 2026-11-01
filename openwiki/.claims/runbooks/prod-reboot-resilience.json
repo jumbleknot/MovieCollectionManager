@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:966203b3c0016ba8ddd223427bbc291878203ca5fadb7a7b583cd5d6f96cfb97",
+  "pageVersion": "sha256:ff978c2b0979dec6e64cea30f4eb623398613a58c7aedb17cb178f4c5c892c28",
   "claims": [
     {
       "id": "claim_9226997034364eb9b148a34270defeae",
@@ -131,7 +131,7 @@
       "statement": "The periphery root fix is host state: `PERIPHERY_ROOT_DIRECTORY` must point at a path on persistent disk and periphery must be recreated, and the server-setup runbook Phase 9 now bootstraps that value so a host rebuild cannot reintroduce `/etc/komodo`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L917-L923",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L921-L927",
           "version": "repo-lines-v1:sha256:e97a152aa2dee73d2e4909e4687ba19a29338ecb19a68bd98b176e6a4c0314c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkNWI4NmFjYjg4OWU1Mjg0NzBlZjkyNzNlMjI5NzI4ODkxOWQzMTZmYmY4MjIyNTQyYmNkYjMyZTAxNDVjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1Mjk3NmNhODBmYzg2YzJhY2E5NjVjNDFkNTAwYTk4YTQwMGIyY2EwOTNlOGE5OTRkNWI5MWEwNzRlODM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTViOWY3NzhkMzQwMTM4YWExNzYyYmNlMmQ5OGU3ZmMxNmQyYTE2YjIyZDFiZDkwNTViZTY2MTRmZDYyODVmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZmE0OWRlY2VhZDQwZGVhNzNhZDRhNDA5MTBhMGY0NDE5ZDc2MmE0ZTY5YWQ2M2NhMzJmNjQxYmU4NGU4MyJ9"
         },
         {
@@ -406,7 +406,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
+          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -431,10 +431,24 @@
           "version": "repo-lines-v1:sha256:ff7c60bc5c89ee1f83f76c1fe242c7e5b7ea6753bee027ab55e2f2c9109031f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNmVkZTMyZTY3MzQ0N2EzMWE2MDZlNTgxOTA1N2U5NmQwMzExYjgwODg1YTEwY2U5YTRiNjQ4OTAyNTE2NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMWU1N2RkNDEyNTg3NWMwYmUyZmJlZmU4MWU0MDNmMDU2YzIyNmJiNjg4ZTdiYzI2MWZlZWM5ZGIyOGJkNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNTgwZmU4ODY4Yzc0Mjk2MDg5NmYzZmFkYTlmMTc2Y2M3NTUyZmVjNTRmMWJjMmEwOTVhYTgzOTIwN2NkOWYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f1d702480f2a4e7590eb935f5494663d",
+      "statement": "Because the prod one-shot init containers idle instead of exiting, they can never satisfy Compose's `service_completed_successfully`; the dependent had to be re-expressed as readiness instead — `langfuse-worker` waits on `langfuse-rustfs-init` with `condition: service_healthy`, and that healthcheck is a `/tmp/ready` marker the entrypoint touches only after the bucket PUT succeeds, so \"init done\" is signalled by a readiness marker rather than an exit code.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L106-L107",
+          "version": "repo-lines-v1:sha256:82b4b0b48a6a5d6fa9c69da6ffe0a47d24af90cf74ce401db58bdae1217cfad4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQwZDJjZjViMmMzMGYzZDQ1MTRkZWU4ZDUwOWZkZDExZDkzY2IzMDM4NjFhY2Q5MmVjNGU3Y2I5NmUzOWQwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFhYjA5YzJjYmU2MjQxMmExZDE2NWM0Zjk3ZjEyNTUyNjU4ZmFiMjE5MjNlZDYxODQ1NTg1Njc4NmJlZTRlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E5YmM5YjFkZjU1ZWMzOGM0NzZhYzQ5NDY1YzI4NTZkOGFhMGVkN2MxMGJkY2UwNWIwY2UwZGUyMzE4MDYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2MmFjMzU2Mzk4M2UxNGVhOTFjNWJhZTdiNDZkNTIzZmYyNmE1NGM4OWVjM2Q4ZmZiNjNmOTIwYjIwY2RhYiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
+          "version": "repo-lines-v1:sha256:219ca97909e054ab9f713506fa022ad9224e42620154bdd9ffeb4557ceff3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T13:34:04.956Z"
+    "at": "2026-11-01T20:52:31.113Z"
   }
 }
