@@ -4,10 +4,10 @@
 // in the files (a Node pin below pnpm's `engines`, and a pnpm version pinned in four places). These
 // tests pin the exact shapes that broke, so a refactor of the parser cannot quietly stop seeing them.
 
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,9 +19,14 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const GATE = resolve(HERE, '..', 'check-toolchain-consistency.mjs');
 
+// Every throwaway root is removed when the file finishes (item #901: these leaked, 5,366 at once).
+const made = [];
+after(() => made.forEach((d) => rmSync(d, { recursive: true, force: true })));
+const tempRoot = (prefix) => { const d = mkdtempSync(join(tmpdir(), prefix)); made.push(d); return d; };
+
 /** Build a throwaway repo root with the given files, and run findDrift against it. */
 function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null, lockfile = null, manifests = {} }) {
-  const root = mkdtempSync(join(tmpdir(), 'toolchain-'));
+  const root = tempRoot('toolchain-');
   writeFileSync(join(root, 'package.json'), JSON.stringify(pkg, null, 2));
   if (nxJson) writeFileSync(join(root, 'nx.json'), JSON.stringify(nxJson, null, 2));
   // Taken as TEXT, not as an object to serialise: the cases that matter are malformed, absent and

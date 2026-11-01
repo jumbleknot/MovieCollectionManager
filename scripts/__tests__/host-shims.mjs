@@ -9,7 +9,7 @@
 // stat…) is the real tool, so format checks run against real files.
 
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -57,14 +57,24 @@ process.exitCode = f.exit ?? 0;
 `;
 
 /**
+ * The test context is REQUIRED, and the root is removed in its `after` hook whether the test passes
+ * or fails. Each root holds ~20 MB of fixtures; before item #901 nothing removed them, and 2,418 of
+ * them (50 GB) filled the sandbox disk on 2026-11-01. host-shims-cleanup.test.mjs proves it.
+ *
+ * @param {import('node:test').TestContext} t
  * @param {{ fixtures?: object[], shims?: string[] }} [opts]
- * @returns {{ root: string, home: string, bin: string, env: object,
+ * @returns {{ root: string, home: string, bin: string, env: object, cleanup: () => void,
  *   run: (script: string, args?: string[], extraEnv?: object) => import('node:child_process').SpawnSyncReturns<string>,
  *   calls: () => {cmd: string, argv: string[], dataFiles: object, dirs: object, manifests: object, tars: object}[], rawCalls: () => string,
  *   setFixtures: (fixtures: object[]) => void }}
  */
-export function makeShimEnv({ fixtures = [], shims = DEFAULT_SHIMS } = {}) {
+export function makeShimEnv(t, { fixtures = [], shims = DEFAULT_SHIMS } = {}) {
+  if (typeof t?.after !== 'function') {
+    throw new TypeError('makeShimEnv(t, opts): pass the test context, so its temp root is removed after the test');
+  }
   const root = mkdtempSync(join(tmpdir(), 'host-shims-'));
+  const cleanup = () => rmSync(root, { recursive: true, force: true });
+  t.after(cleanup);
   const home = join(root, 'home');
   const bin = join(root, 'bin');
   for (const d of [bin, join(home, 'backup/state'), join(home, '.config/systemd/user')]) {
@@ -95,6 +105,7 @@ export function makeShimEnv({ fixtures = [], shims = DEFAULT_SHIMS } = {}) {
     home,
     bin,
     env,
+    cleanup,
     setFixtures,
     rawCalls,
     calls: () => rawCalls().split('\n').filter(Boolean).map((l) => JSON.parse(l)),
