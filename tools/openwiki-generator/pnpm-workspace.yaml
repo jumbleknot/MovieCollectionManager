@@ -21,9 +21,18 @@ allowBuilds:
 # time (a lockfile regeneration cannot pick a transitive younger than this — the item #271 gap that
 # Renovate's cooldown does not cover) and at INSTALL time (a frozen install fails
 # ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION rather than install a locked entry inside the window). Run 4950
-# died on a transitive two minutes old. Do NOT add a minimumReleaseAgeExclude list: nothing here is a
-# security floor, and this code runs with the generator's model credential.
+# died on a transitive two minutes old.
 minimumReleaseAge: 4320
+
+# Exclusions are SECURITY-FLOOR exceptions only, and never for impatience: this code runs with the
+# generator's model credential. Each entry is ONE exact version that an `overrides:` floor below
+# requires, so it can admit nothing else, and it becomes moot once that version clears the window.
+# wiki-maintain.guard.test.mjs fails a name-only or ranged entry, or one with no matching floor.
+minimumReleaseAgeExclude:
+  # ADDED 2026-11-01 by operator override of the cooldown: @azure/identity 4.14.1 (published
+  # 2026-10-29 22:16 UTC) is the first release requiring @azure/msal-node ^7.1.0, the fix for
+  # GHSA-xcx6-jx8p-x3h5. Clears the window 2026-11-01 22:16 UTC; remove at the next bump after that.
+  - '@azure/identity@4.14.1'
 
 # Security floors. The root workspace's `overrides:` do not reach here (this is its own root), so a
 # floor the generator's tree needs is repeated in this file.
@@ -33,3 +42,7 @@ overrides:
   # major, the same entry as the root pnpm-workspace.yaml. Resolvable here only from 2026-10-25 11:39 UTC,
   # when 2.4.0 clears this workspace's minimumReleaseAge.
   body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'
+  # ADDED 2026-11-01: GHSA-xcx6-jx8p-x3h5 in @azure/msal-node <7.1.0. openwiki 0.7.1 asks for
+  # @azure/identity ^4.13.3, and 4.14.1 is the first release that requires msal-node ^7.1.0. Floored
+  # within the major.
+  '@azure/identity@<4.14.1': '>=4.14.1 <5'

@@ -223,8 +223,19 @@ test('a transitive younger than the Renovate cooldown cannot be installed by the
   const age = GENERATOR_WORKSPACE.minimumReleaseAge;
   assert.ok(Number.isInteger(age) && age >= RENOVATE_COOLDOWN_MINUTES,
     `tools/openwiki-generator/pnpm-workspace.yaml must set minimumReleaseAge >= ${RENOVATE_COOLDOWN_MINUTES} (got ${age})`);
-  assert.equal(GENERATOR_WORKSPACE.minimumReleaseAgeExclude, undefined,
-    'no release-age exclusions: the generator runs with a model credential, and nothing here is a security floor');
+  // Exclusions are security-floor exceptions only (the generator runs with a model credential): each
+  // must be ONE exact version that an `overrides:` floor in the same file requires, so it admits
+  // nothing else. A name-only or ranged entry would silently exempt every future release of a package.
+  const excludes = GENERATOR_WORKSPACE.minimumReleaseAgeExclude ?? [];
+  assert.ok(Array.isArray(excludes), 'minimumReleaseAgeExclude must be a list');
+  const floors = Object.entries(GENERATOR_WORKSPACE.overrides ?? {});
+  for (const entry of excludes) {
+    const m = /^((?:@[^/@\s]+\/)?[^@\s]+)@(\d+\.\d+\.\d+)$/.exec(entry);
+    assert.ok(m, `release-age exclusion '${entry}' must be an exact name@x.y.z, never a bare name or a range`);
+    const [, name, version] = m;
+    const floored = floors.some(([sel, target]) => sel.startsWith(`${name}@`) && String(target).includes(`>=${version}`));
+    assert.ok(floored, `release-age exclusion '${entry}' has no overrides: floor requiring >=${version} — it is not a security floor`);
+  }
   // It must be ITS OWN workspace root. Inside the root workspace, pnpm would read the root's settings
   // (which deliberately set no cooldown) and the root lockfile, and this directory's would not apply.
   const rootWorkspace = parse(readFileSync(join(REPO_ROOT, 'pnpm-workspace.yaml'), 'utf8'));

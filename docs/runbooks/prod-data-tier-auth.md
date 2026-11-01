@@ -352,8 +352,13 @@ Expected: `GZIP-OK`; each `done dumping` count ≥ 2; the per-collection documen
 is a grep for the marker, not a `tail`.) Copy `~/mongo-upgrade-081` off the host as well if you can.
 
 **P6 — pre-pull the 9.0 image and check its user**
+> **Digest moved 2026-11-01.** The upgrade itself ran on `9.0-ubi9@sha256:2cb58a8d…` (the 2026-10-23
+> build). The compose pin is now `@sha256:3d40c6fa…`, the 2026-10-28 rebuild of the same mongod 9.0.4 on
+> a patched UBI 9 base (PR #896). Every command below names the current pin, so a re-run or a rollback
+> uses the image production actually runs; the expected outputs are unchanged.
+
 ```bash
-docker pull mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79 && docker run --rm --entrypoint sh mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79 -c 'mongod --version | head -1; id; command -v setpriv'
+docker pull mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1 && docker run --rm --entrypoint sh mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1 -c 'mongod --version | head -1; id; command -v setpriv'
 ```
 Expected: `db version v9.0.4`, `uid=1000(mongod) gid=1000(mongod) …`, `/usr/bin/setpriv`.
 
@@ -385,7 +390,7 @@ runs expired by TTL between P4 and now.)
 
 P7c — clean stop, re-own, start 9.0 on the same volumes, compare:
 ```bash
-( set -eu; B=~/mongo-upgrade-081; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79
+( set -eu; B=~/mongo-upgrade-081; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1
 for c in r081-mc r081-bff; do docker exec "$c" mongosh --quiet --eval 'db.adminCommand({shutdown:1})' >/dev/null 2>&1 || true; done
 i=0; while docker ps -q --filter name='^r081-(mc|bff)$' | grep -q .; do i=$((i+1)); [ $i -lt 30 ] || { echo "FAIL: scratch mongod did not stop"; exit 1; }; sleep 2; done; echo STOPPED
 docker logs r081-mc 2>&1 | grep -c '"Now exiting"' || true
@@ -415,7 +420,7 @@ the app between P4 and the deploy if you want the counts to compare exactly.
 
 **M2 — wait for the deploy, bounded, and catch a crash-loop** (polls for up to 2 hours):
 ```bash
-( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79; i=0
+( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1; i=0
 while :; do
   for c in mc-service-store-mongo mcm-bff-store-mongo; do
     s=$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' "$c" 2>/dev/null || echo "missing 0")
@@ -440,7 +445,7 @@ Expected: `BOTH ON 9.0 after <n> min`. On `TIMEOUT` (sync did not redeploy): Kom
 docker inspect -f '{{.Name}} {{.Config.Image}} {{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}} restarts={{.RestartCount}}' mc-service-store-mongo mcm-bff-store-mongo mc-service mcm-bff-service
 for c in mc-service-store-mongo mcm-bff-store-mongo; do echo "== $c"; docker logs "$c" 2>&1 | grep 'mongo-data-owner' || echo "(no re-own line)"; docker logs "$c" 2>&1 | grep '"id":5853300' | tail -1 | grep -o '"featureCompatibilityVersion":"[0-9.]*"' || echo "(no FCV line in the retained log)"; done )
 ```
-Expected: both stores on the `9.0-ubi9@sha256:2cb58a8d…` image, `running healthy restarts=0`;
+Expected: both stores on the `9.0-ubi9@sha256:3d40c6fa…` image, `running healthy restarts=0`;
 `mc-service` and `mcm-bff-service` `running healthy`; each store shows **one**
 `mongo-data-owner: re-owning /data/db to mongod (uid 1000)` and `"featureCompatibilityVersion":"8.0"`.
 
@@ -513,7 +518,7 @@ same with the names in brackets and **no** `--replSet`/`rs.initiate`.
 
 **RB2 — keep the 9.0 volume, then recreate an empty one under the original name**
 ```bash
-( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:2cb58a8d9f94ca36fd071f31e195523feb77d86cfa692bc24820479e7983cd79; V=mc-service-store-mongo-data   # [mcm-bff-store-mongo-data]
+( set -eu; NEW=mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1; V=mc-service-store-mongo-data   # [mcm-bff-store-mongo-data]
 [ -z "$(docker ps -q --filter volume=$V)" ] || { echo "FAIL: $V still in use — stop the stack first"; exit 1; }
 docker volume create "$V-9.0-keep" >/dev/null
 docker run --rm -u 0 -v "$V":/src:ro -v "$V-9.0-keep":/dst --entrypoint sh "$NEW" -c 'cp -a /src/. /dst/ && du -s /src /dst'

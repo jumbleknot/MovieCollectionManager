@@ -607,14 +607,20 @@ days, Renovate's catch-all), which pnpm enforces twice:
   `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` ("The lockfile contains entries that the active policies
   reject") rather than install one inside the window.
 
-There is deliberately **no** `minimumReleaseAgeExclude` here: nothing in the generator is a security
-floor, and the code runs with a model credential. `better-sqlite3` is the one package allowed to run
+`minimumReleaseAgeExclude` is reserved for **security-floor exceptions**, because the code runs with a
+model credential. Each entry is one exact `name@x.y.z` that an `overrides:` floor in the same file
+requires, so it admits that version and nothing else, and it becomes moot once the version clears the
+window. The guard fails a name-only or ranged entry, or one with no matching floor. The first and only
+entry (2026-11-01, operator override of the cooldown) is `@azure/identity@4.14.1`, published 2026-10-29
+22:16 UTC. It is the first release that requires `@azure/msal-node` ^7.1.0, the fix for
+GHSA-xcx6-jx8p-x3h5. Remove it at the next generator bump after 2026-11-01 22:16 UTC. Never add one
+because a fresh transitive is blocking a branch: wait the window out instead. `better-sqlite3` is the one package allowed to run
 an install script (`allowBuilds`) — openwiki's LangGraph checkpointer loads its native binding at
 runtime, and it ran under the old `npm install -g` too.
 
 **Checking the guard yourself** (the live half of the proof; the static half is
 `scripts/__tests__/wiki-maintain.guard.test.mjs`, which fails a cooldown under three days, an
-exclusion list, a range instead of an exact pin, a lockfile that disagrees with the manifest, or any
+exclusion that is not an exact, floor-backed version, a range instead of an exact pin, a lockfile that disagrees with the manifest, or any
 run-time resolution in the workflow). Copy the three files somewhere scratch, raise the window past
 the age of the lock, and install frozen — **from the repository root**, with `--dir`, so corepack
 picks this repository's pnpm; run from inside the scratch directory it picks whatever pnpm is
