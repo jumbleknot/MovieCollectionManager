@@ -20,8 +20,8 @@ const TOKEN = 'tok-0123456789abcdef';
 const LABELS = JSON.stringify([{ id: 11, name: 'type/bug' }, { id: 22, name: 'priority/p1' }, { id: 33, name: 'type/chore' }]);
 
 /** A host with the token and forge URL installed, and the given open issues. */
-function alertHost({ open = [], extraFixtures = [], tokenMode = 0o600, token = true, url = true } = {}) {
-  const env = makeShimEnv({ shims: ['curl', 'systemctl', 'journalctl'] });
+function alertHost(t, { open = [], extraFixtures = [], tokenMode = 0o600, token = true, url = true } = {}) {
+  const env = makeShimEnv(t, { shims: ['curl', 'systemctl', 'journalctl'] });
   env.setFixtures([
     ...extraFixtures,
     { cmd: 'curl', match: ['/comments'], stdout: '{"id":1}' },
@@ -48,8 +48,8 @@ const detail = (env, text) => {
   return p;
 };
 
-test('with no open item, it creates one: exact title, type/bug + priority/p1 by label id', () => {
-  const env = alertHost();
+test('with no open item, it creates one: exact title, type/bug + priority/p1 by label id', (t) => {
+  const env = alertHost(t);
   const r = env.run(SCRIPT, ['stale', detail(env, 'newest snapshot is 37 h old')]);
   assert.equal(r.status, 0, r.stderr);
   const [create] = posts(env);
@@ -61,8 +61,8 @@ test('with no open item, it creates one: exact title, type/bug + priority/p1 by 
   assert.match(body.body, /newest snapshot is 37 h old/);
 });
 
-test('with an open item, it comments on it and never opens a second one', () => {
-  const env = alertHost({ open: [{ number: 870, title: TITLE }, { number: 871, title: `${TITLE} (old copy)` }] });
+test('with an open item, it comments on it and never opens a second one', (t) => {
+  const env = alertHost(t, { open: [{ number: 870, title: TITLE }, { number: 871, title: `${TITLE} (old copy)` }] });
   assert.equal(env.run(SCRIPT, ['failed', 'homelab-backup.service']).status, 0);
   const p = posts(env);
   assert.equal(p.length, 1);
@@ -70,8 +70,8 @@ test('with an open item, it comments on it and never opens a second one', () => 
   assert.match(bodyOf(p[0]).body, /failed/);
 });
 
-test('the search asks for issues only and sends no label filter (an unknown label is silently ignored)', () => {
-  const env = alertHost();
+test('the search asks for issues only and sends no label filter (an unknown label is silently ignored)', (t) => {
+  const env = alertHost(t);
   env.run(SCRIPT, ['stale', '-']);
   const search = env.calls().find((c) => c.cmd === 'curl' && c.argv.some((a) => a.includes('type=issues')));
   const url = search.argv.find((a) => a.includes('type=issues'));
@@ -79,13 +79,13 @@ test('the search asks for issues only and sends no label filter (an unknown labe
   assert.doesNotMatch(url, /labels=/);
 });
 
-test('recovered comments on an open item, does nothing when none is open, and never closes', () => {
-  let env = alertHost();
+test('recovered comments on an open item, does nothing when none is open, and never closes', (t) => {
+  let env = alertHost(t);
   let r = env.run(SCRIPT, ['recovered', '-']);
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(posts(env), []);
 
-  env = alertHost({ open: [{ number: 870, title: TITLE }] });
+  env = alertHost(t, { open: [{ number: 870, title: TITLE }] });
   r = env.run(SCRIPT, ['recovered', '-']);
   assert.equal(r.status, 0, r.stderr);
   assert.equal(posts(env).length, 1);
@@ -93,9 +93,9 @@ test('recovered comments on an open item, does nothing when none is open, and ne
   assert.doesNotMatch(env.rawCalls(), /PATCH|"state"\s*:\s*"closed"/, 'closing stays a human act');
 });
 
-test('a failed unit whose result is timeout is reported as hung; any other result as failed', () => {
+test('a failed unit whose result is timeout is reported as hung; any other result as failed', (t) => {
   for (const [result, reason] of [['timeout', 'hung'], ['exit-code', 'failed']]) {
-    const env = alertHost({ extraFixtures: [{ cmd: 'systemctl', match: ['Result'], stdout: `Result=${result}\n` }] });
+    const env = alertHost(t, { extraFixtures: [{ cmd: 'systemctl', match: ['Result'], stdout: `Result=${result}\n` }] });
     assert.equal(env.run(SCRIPT, ['failed', 'homelab-backup.service']).status, 0);
     const body = bodyOf(posts(env)[0]).body;
     assert.match(body, new RegExp(`reason: ${reason}\\b`));
@@ -103,17 +103,17 @@ test('a failed unit whose result is timeout is reported as hung; any other resul
   }
 });
 
-test('an unknown reason is refused before any network call', () => {
-  const env = alertHost();
+test('an unknown reason is refused before any network call', (t) => {
+  const env = alertHost(t);
   const r = env.run(SCRIPT, ['broken', '-']);
   assert.equal(r.status, 2);
   assert.match(r.stderr, /usage/);
   assert.deepEqual(env.calls().filter((c) => c.cmd === 'curl'), []);
 });
 
-test('a missing or loose token file, or no forge URL, exits 3: alert NOT delivered', () => {
+test('a missing or loose token file, or no forge URL, exits 3: alert NOT delivered', (t) => {
   for (const opts of [{ token: false }, { tokenMode: 0o644 }, { url: false }]) {
-    const env = alertHost(opts);
+    const env = alertHost(t, opts);
     const r = env.run(SCRIPT, ['stale', '-']);
     assert.equal(r.status, 3, `${JSON.stringify(opts)}: ${r.stderr}`);
     assert.match(r.stderr, /alert NOT delivered/);
@@ -121,15 +121,15 @@ test('a missing or loose token file, or no forge URL, exits 3: alert NOT deliver
   }
 });
 
-test('an HTTP failure exits 4', () => {
-  const env = alertHost({ extraFixtures: [{ cmd: 'curl', match: ['POST'], stderr: 'curl: (22) 500', exit: 22 }] });
+test('an HTTP failure exits 4', (t) => {
+  const env = alertHost(t, { extraFixtures: [{ cmd: 'curl', match: ['POST'], stderr: 'curl: (22) 500', exit: 22 }] });
   const r = env.run(SCRIPT, ['stale', '-']);
   assert.equal(r.status, 4, r.stderr);
   assert.match(r.stderr, /alert NOT delivered/);
 });
 
-test('the token never appears in argv, output, or anything the shims recorded', () => {
-  const env = alertHost({ open: [{ number: 870, title: TITLE }] });
+test('the token never appears in argv, output, or anything the shims recorded', (t) => {
+  const env = alertHost(t, { open: [{ number: 870, title: TITLE }] });
   const r = env.run(SCRIPT, ['failed', 'homelab-backup.service']);
   assert.equal(r.status, 0, r.stderr);
   assert.doesNotMatch(r.stdout + r.stderr, new RegExp(TOKEN));
@@ -139,8 +139,8 @@ test('the token never appears in argv, output, or anything the shims recorded', 
   }
 });
 
-test('the detail is redacted: URI user-info masked, credential-bearing lines dropped', () => {
-  const env = alertHost();
+test('the detail is redacted: URI user-info masked, credential-bearing lines dropped', (t) => {
+  const env = alertHost(t);
   const r = env.run(SCRIPT, ['stale', detail(env, [
     'mongodump --uri=mongodb://mcuser:hunter2@127.0.0.1:27017/mc failed',
     'PGPASSWORD=hunter2 pg_dump exited 1',

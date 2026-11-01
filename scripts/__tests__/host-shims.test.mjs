@@ -14,8 +14,8 @@ const script = (env, body) => {
   return p;
 };
 
-test('a shim records its argv, in call order', () => {
-  const env = makeShimEnv();
+test('a shim records its argv, in call order', (t) => {
+  const env = makeShimEnv(t);
   const r = env.run(script(env, 'docker exec komodo-postgres-1 pg_dumpall\nrestic snapshots --json'));
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(
@@ -24,8 +24,8 @@ test('a shim records its argv, in call order', () => {
   );
 });
 
-test('the first matching fixture answers: stdout, stderr and exit code all propagate', () => {
-  const env = makeShimEnv({
+test('the first matching fixture answers: stdout, stderr and exit code all propagate', (t) => {
+  const env = makeShimEnv(t, {
     fixtures: [
       { cmd: 'docker', match: ['forgejo dump'], stderr: 'disk full', exit: 7 },
       { cmd: 'docker', match: ['exec'], stdout: 'dumped' },
@@ -38,8 +38,8 @@ test('the first matching fixture answers: stdout, stderr and exit code all propa
   assert.match(r.stderr, /disk full/);
 });
 
-test('an @data file is captured, but an @header file never is (a token travels that way)', () => {
-  const env = makeShimEnv();
+test('an @data file is captured, but an @header file never is (a token travels that way)', (t) => {
+  const env = makeShimEnv(t);
   const r = env.run(script(env, [
     'echo "Authorization: token s3cr3t-value" > "$HOME/h"',
     'echo \'{"title":"x"}\' > "$HOME/body.json"',
@@ -51,16 +51,16 @@ test('an @data file is captured, but an @header file never is (a token travels t
   assert.doesNotMatch(env.rawCalls(), /s3cr3t-value/);
 });
 
-test('an unshimmed tool is the real one (python3 is not faked unless asked)', () => {
-  const env = makeShimEnv();
+test('an unshimmed tool is the real one (python3 is not faked unless asked)', (t) => {
+  const env = makeShimEnv(t);
   const r = env.run(script(env, 'python3 -c "print(6*7)"'));
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout.trim(), '42');
   assert.deepEqual(env.calls(), []);
 });
 
-test('a directory argument is captured with its file sizes and any dump-manifest.tsv (staging is deleted on exit)', () => {
-  const env = makeShimEnv();
+test('a directory argument is captured with its file sizes and any dump-manifest.tsv (staging is deleted on exit)', (t) => {
+  const env = makeShimEnv(t);
   const r = env.run(script(env, [
     'd=$(mktemp -d "$HOME/backup/stage.XXXXXX"); trap \'rm -rf "$d"\' EXIT',
     'printf abc > "$d/a.sql"; printf "keycloak\\t3\\n" > "$d/dump-manifest.tsv"',
@@ -73,8 +73,8 @@ test('a directory argument is captured with its file sizes and any dump-manifest
   assert.equal(call.manifests[dir], 'keycloak\t3\n');
 });
 
-test('a *.tar in a captured directory is captured with its listing; one that does not list is null', () => {
-  const env = makeShimEnv();
+test('a *.tar in a captured directory is captured with its listing; one that does not list is null', (t) => {
+  const env = makeShimEnv(t);
   const r = env.run(script(env, [
     'd=$(mktemp -d "$HOME/backup/stage.XXXXXX"); trap \'rm -rf "$d"\' EXIT',
     's=$(mktemp -d); mkdir -p "$s/release-apks/1.2.0" && printf x > "$s/release-apks/1.2.0/a.apk"',

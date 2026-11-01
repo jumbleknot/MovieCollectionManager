@@ -1,8 +1,8 @@
 // Item #776 — the dependency-downgrade gate. The undici fixture is the measured case from #774:
 // nx@23.3.0 pins undici 7.29.0 exactly, so dropping the floor re-resolves 7.29.1 -> 7.29.0.
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -10,6 +10,11 @@ import { fileURLToPath } from 'node:url';
 import {
   compileRange, compareVersions, resolvedVersions, findRegressions, applyAllowlist, DowngradeCheckError,
 } from '../check-dependency-downgrade.mjs';
+
+// Every throwaway root is removed when the file finishes (item #901: these leaked, 5,366 at once).
+const made = [];
+after(() => made.forEach((d) => rmSync(d, { recursive: true, force: true })));
+const tempRoot = (prefix) => { const d = mkdtempSync(join(tmpdir(), prefix)); made.push(d); return d; };
 import { loadAllowlist } from '../check-sast-findings.mjs';
 
 const SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), '../check-dependency-downgrade.mjs');
@@ -136,7 +141,7 @@ test('a nested workspace is reported under the same <workspace>:pkg@version loca
 // ── allowlist: one acceptance decision, shared with the main gate ───────────────────────────────────
 
 function allowlistFile(expiry) {
-  const dir = mkdtempSync(join(tmpdir(), 'downgrade-allow-'));
+  const dir = tempRoot('downgrade-allow-');
   const p = join(dir, 'allowlist.yaml');
   writeFileSync(p, [
     '- scanner: "pnpm-audit"', '  id: "GHSA-rfgv-xxqx-mfg5"', '  locationPattern: "^undici@7\\\\.29\\\\.0$"',
@@ -167,7 +172,7 @@ test('CLI: --help prints usage and exits 0; an unknown flag or a missing --base 
 });
 
 test('CLI: a missing or empty native report fails closed (1), never "no regression"', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'downgrade-native-'));
+  const dir = tempRoot('downgrade-native-');
   assert.equal(cli(['--base', 'HEAD', '--native', join(dir, 'absent.json')]).status, 1);
   writeFileSync(join(dir, 'empty.json'), '{}');
   assert.equal(cli(['--base', 'HEAD', '--native', join(dir, 'empty.json')]).status, 1);

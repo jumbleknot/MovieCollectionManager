@@ -26,8 +26,8 @@ const snapshots = (...ages) => JSON.stringify(ages.map((h, i) => ({
   tags: ['homelab'],
 })));
 
-function staleHost(resticFixture) {
-  const env = makeShimEnv({ shims: ['restic'] });
+function staleHost(t, resticFixture) {
+  const env = makeShimEnv(t, { shims: ['restic'] });
   env.setFixtures([{ cmd: 'restic', ...resticFixture }]);
   const log = join(env.home, 'alerts.log');
   const stub = join(env.home, 'backup/backup-alert.sh');
@@ -36,24 +36,24 @@ function staleHost(resticFixture) {
   return { env, alerts: () => (existsSync(log) ? readFileSync(log, 'utf8') : '') };
 }
 
-test('a newest snapshot under 36 h old passes quietly', () => {
-  const h = staleHost({ stdout: snapshots(50, 2, 26) });
+test('a newest snapshot under 36 h old passes quietly', (t) => {
+  const h = staleHost(t, { stdout: snapshots(50, 2, 26) });
   const r = h.env.run(SCRIPT);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /snap1/);
   assert.equal(h.alerts(), '');
 });
 
-test('a newest snapshot over 36 h old alerts stale, naming its age', () => {
-  const h = staleHost({ stdout: snapshots(80, 37) });
+test('a newest snapshot over 36 h old alerts stale, naming its age', (t) => {
+  const h = staleHost(t, { stdout: snapshots(80, 37) });
   const r = h.env.run(SCRIPT);
   assert.equal(r.status, 1);
   assert.match(h.alerts(), /^ALERT stale$/m);
   assert.match(h.alerts(), /snap1 .* 37 h old/);
 });
 
-test('it reads the newest homelab snapshot itself, from every group (the staging path is random)', () => {
-  const h = staleHost({ stdout: snapshots(2) });
+test('it reads the newest homelab snapshot itself, from every group (the staging path is random)', (t) => {
+  const h = staleHost(t, { stdout: snapshots(2) });
   h.env.run(SCRIPT);
   const [call] = h.env.calls();
   assert.deepEqual(call.argv.slice(0, 1), ['snapshots']);
@@ -62,22 +62,22 @@ test('it reads the newest homelab snapshot itself, from every group (the staging
   assert.ok(!call.argv.includes('--latest'), '--latest is per path group, and the path is random');
 });
 
-test('anything it cannot read is staleness-unreadable — never fresh', () => {
+test('anything it cannot read is staleness-unreadable — never fresh', (t) => {
   for (const [why, fixture] of [
     ['restic fails', { stderr: 'Fatal: unable to open repository', exit: 1 }],
     ['no snapshot at all', { stdout: '[]' }],
     ['an unparsable time', { stdout: JSON.stringify([{ time: 'yesterday', short_id: 'x' }]) }],
     ['not JSON', { stdout: 'oops' }],
   ]) {
-    const h = staleHost(fixture);
+    const h = staleHost(t, fixture);
     const r = h.env.run(SCRIPT);
     assert.equal(r.status, 1, `${why}: ${r.stdout}${r.stderr}`);
     assert.match(h.alerts(), /^ALERT staleness-unreadable$/m, why);
   }
 });
 
-test('MCM_BACKUP_STALE_HOURS (tests only) moves the threshold, and no unit sets it', () => {
-  const h = staleHost({ stdout: snapshots(2) });
+test('MCM_BACKUP_STALE_HOURS (tests only) moves the threshold, and no unit sets it', (t) => {
+  const h = staleHost(t, { stdout: snapshots(2) });
   assert.equal(h.env.run(SCRIPT, [], { MCM_BACKUP_STALE_HOURS: '1' }).status, 1);
   assert.match(h.alerts(), /^ALERT stale$/m);
   for (const unit of readdirSync(BACKUP_DIR).filter((f) => /\.(service|timer)$/.test(f))) {
@@ -85,8 +85,8 @@ test('MCM_BACKUP_STALE_HOURS (tests only) moves the threshold, and no unit sets 
   }
 });
 
-test('an argument is refused: the check takes none', () => {
-  const h = staleHost({ stdout: snapshots(2) });
+test('an argument is refused: the check takes none', (t) => {
+  const h = staleHost(t, { stdout: snapshots(2) });
   const r = h.env.run(SCRIPT, ['--hours', '1']);
   assert.equal(r.status, 2);
   assert.deepEqual(h.env.calls(), []);
