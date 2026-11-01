@@ -70,6 +70,13 @@ and that context makes a concept accurate. But do **not** create a concept per f
 historical work-units superseded by the code they produced, and enumerating them fills
 metadata-driven retrieval with dead work.
 
+**Source precedence: a spec is a record of what a feature decided *at the time*, never the current
+state.** Specs are not updated when a later feature supersedes them. When a spec disagrees with a
+runbook under `docs/runbooks/`, a decision record, or the code, **the later source wins**. State a
+spec's decision as current only when nothing later contradicts it; otherwise attribute it ("feature
+043 originally …") or leave it out. Item #608 records the two errors this caused: a drift rule and a
+credential claim, both copied from feature 043 after later features had replaced them.
+
 The exception is `specs/*/HANDOFF.md`. Those carry live measured knowledge — the facts a later session
 needs and cannot re-derive cheaply — so they are in scope as sources and may be cited as a `resource`.
 

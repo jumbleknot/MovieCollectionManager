@@ -58,12 +58,14 @@ time, precisely. Everything else deferred a week.
 **branch** creation, not just PR creation. And open PRs consume concurrency: leaving four green
 Renovate PRs unmerged caps the next window at one new PR. **Merging promptly is a throughput lever.**
 
-### How the four slots are allocated, and why docker outranks the rest (item #486)
+### How the weekly slots are allocated, and why docker outranks the rest (item #486)
 
-With one in-window run a week, `prHourlyLimit: 4` **is** the weekly throughput. There are **three**
-`lockFileMaintenance` channels (`pnpm`, `cargo-deps`, `python-deps`) and they carry `prPriority: 5` —
-so three of the four slots are spoken for before anything else is considered, every week, by
-construction. Measured over three consecutive windows, each one exactly at the limit:
+With one in-window run a week, `prHourlyLimit` **is** the weekly throughput: **5** since 2026-10-02,
+and 4 when the windows below were measured (the fifth slot is explained at the end of this section).
+There are **three** `lockFileMaintenance` channels (`pnpm`, `cargo-deps`, `python-deps`) and they
+carry `prPriority: 5` — so three of the slots are spoken for before anything else is considered,
+every week, by construction. Measured over three consecutive windows, each one exactly at the limit
+of 4:
 
 | window | PRs created | of which `lockFileMaintenance` |
 | --- | --- | --- |

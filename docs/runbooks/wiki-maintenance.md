@@ -293,7 +293,7 @@ directly.
 
 | Code | Meaning | Is something wrong? |
 |---|---|---|
-| `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
+| `0` | Plan produced, or every attempted slice verified, or nothing to do — or `--execute` stopped before any paid generation because the checkout's run record is behind `main`'s (§4; nothing is recorded, and the next run plans from the current record) | No |
 | `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it (§3) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
 | `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
