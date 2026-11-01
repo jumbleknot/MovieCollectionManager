@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:78429820f9a05ca70fb4570d82b0e3fc0bb58fb5dd7f21825dd42a90a1c8d38d",
+  "pageVersion": "sha256:e43e52dd853fc84d3f13cc296e0dd5b41d0c911a29ef7800521eba0ebd39aad6",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -129,7 +129,7 @@
       "statement": "Feature 073's backup destination containers live in their own compose file (`infrastructure-as-code/docker/backups/compose.yaml`) rather than a profile inside the `mcm` stack, because the `mcm` stack is one Compose project whose `include:` pulls in every component file and Compose interpolates every service of an included file at parse time regardless of which profiles are selected — so a required `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole stack, including CI's app-e2e bring-up which wants none of those services. Feature 080 removed the offending from-source object-store image (the S3 oracle is now upstream RustFS pinned by digest), so the variable is gone and CI's bring-up step passes no registry input, but the separate file remains because a profile is not isolation from interpolation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L719-L727",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L720-L728",
           "version": "repo-lines-v1:sha256:fd7a0c9dee943bac2239db249fd587f8e2de59ca47b2e5a7210db7140c8aa586:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMxMmIxMGM1ODE3NGViNGU2NWY3MzYyNmI5YzA0OTc1YWJiMDIyZTlhMWNiYTQ2ZGEyNzc1ZDk5MWVlNGIwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MTZjMzk5MDI5ZDJiM2FlMWJmYTA0ZGVmODNlOTEyMjg0MWEzYTcyM2E1YzIyY2RmZGFjNzk1MTk4NzA1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE3NTc1ZDYzNjg1ZjZmOTBhNzUwOTQwNTA0YzUwOGIwODdlMmRhYjE4M2YxZDVmMmFlMTQyMWRjN2JjNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFlMjU0YjI1MDIwZDQ2M2Y5NjZhMjI5NTI3MGFmODE5M2U1YzgzMGQ1NzFhNWFmMWJiZDY4ODkzYmE3N2YwNiJ9"
         },
         {
@@ -179,7 +179,7 @@
       "statement": "The backup-destinations compose file is standalone: it attaches to the `mcm` stack's `mcm-bff-network` as an `external` network (so `up` fails when the `mcm` stack is not already running, which is the correct answer since the BFF is what writes there), and because it is a separate file in the same Compose project the stack's own `down` does not reach it — teardown requires a second `docker compose -f infrastructure-as-code/docker/backups/compose.yaml down`, or the persistent CI runner silently reuses the previous run's destinations.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1464-L1472",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1480-L1488",
           "version": "repo-lines-v1:sha256:1a559e893f61f3704e3974dc518c681cd41bcff6b8b9d336e0cf0cda04ed597b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTUwOWU3MzdhZmY0OGI0NjliODExYzg0YjM0YTk5MzRhYWJkM2VkOGZjM2UwMmZiNDI5YjBlYzE0NjJkYmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIwZDdmMTc5NTAxMGY4OTUzMjQxYmY0OWYxMDE1NTE2YWZkZWVlN2Q3ZjljZmE3Njk1Yjk0NDQwZjI5NjUwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ0ODhjZTJjZGM5OTBkMmU0OGJmMWU1OGY2Nzg2MzI5Yjc4MDZjMmM0ZjYxZmU2NDU1NTMwNjI0OGEyNjg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNWVhMjU0NjBmM2NhNTZhMjQ4OGFhMTVhMTE3ZThhNGZiNTJlNGIyNzUwNDkzYjZiODQzZWZmOGZkZGI5MCJ9"
         },
         {
@@ -416,19 +416,23 @@
     },
     {
       "id": "claim_991602aed31d406396a478eaf674aa17",
-      "statement": "Bringing the backup destinations up means two long-lived servers plus two one-shot init containers: the S3 init PUTs the test bucket (a driver suite failing on `NoSuchBucket` reads like a driver bug) and the WebDAV init writes the Apache config and a bcrypt `htpasswd` into a named volume rather than a bind mount, because the dev container's Docker is a sandbox microVM that shares only `/workspaces` and would otherwise mount an empty directory. Both one-shots take their credentials from the container's own environment (`$$VAR`) instead of Compose interpolation so the value never lands in the container's argv, and each server carries its own healthcheck — RustFS its `/health/ready`, WebDAV the 401 an unauthenticated request earns, probed over bash `/dev/tcp` since that image ships no curl, wget or nc. CI's bring-up step therefore cannot use `--wait` (it exits 1 for a service that exits 0, which both one-shots do) and instead waits for both servers to report `healthy` and both one-shots to have exit code 0, printing the failing container's logs.",
+      "statement": "Bringing the backup destinations up means two long-lived servers plus two one-shot init containers, each one-shot gating its server with a Compose condition rather than a sleep: the S3 init waits for `service_healthy` and PUTs the test bucket (a driver suite failing on `NoSuchBucket` reads like a driver bug), and the WebDAV init must report `service_completed_successfully` before the httpd server starts. The WebDAV init is the only service in the file that runs as root (`user: \"0:0\"`), and only because a freshly created named volume is root-owned: besides writing the Apache config and a bcrypt `htpasswd` into a named config volume (rather than a bind mount, because the dev container's Docker is a sandbox microVM that shares only `/workspaces` and would otherwise mount an empty directory), it chowns the data volume to `www-data` and creates and re-owns `/var/lock/apache2`, the third named volume holding the `DavLockDB` that `mod_dav` consults on every write; the long-lived server mounts `/conf` read-only. Both one-shots take their credentials from the container's own environment (`$$VAR`) instead of Compose interpolation so the value never lands in the container's argv, and each server carries its own healthcheck — RustFS its `/health/ready`, WebDAV the 401 an unauthenticated request earns, probed over bash `/dev/tcp` since that image ships no curl, wget or nc. CI's bring-up step therefore cannot use `--wait` (it exits 1 for a service that exits 0, which both one-shots do) and instead waits for both servers to report `healthy` and both one-shots to have exit code 0, printing the failing container's logs.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L760-L789",
-          "version": "repo-lines-v1:sha256:30a17b8b70260bb7eebc1f6d6b44eb29ae0a0ca3be193697b6652a82ff6138cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ODY4ZTQ2NmNhOWE0MDllMzQ4OGU0Nzk5OGEwMDUzY2I0Y2RlNjA0ZGIwODA0ZTA3ZWY4NGFiYmQxN2NmN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MTMzM2RmNjZkNTk1YzYyMjM3NDEyZTdkMTYwN2I1Y2ZiMDExNDdmMGYzYTlkYjdiN2FjNGU3MjljNDNkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwOTYzNjQzNDI2ZThjNmFhZmVjYmNlZWI1MGIxODAwZGU4NjAzMjc2MDk0ZWU3ZGM3YTk2OTUwYTIxNzNiZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L760-L790",
+          "version": "repo-lines-v1:sha256:40f56414e11e6c269bff41b3ba3a19d39151db5f8112f2e8f3c07b94ad2f4a3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MTMzM2RmNjZkNTk1YzYyMjM3NDEyZTdkMTYwN2I1Y2ZiMDExNDdmMGYzYTlkYjdiN2FjNGU3MjljNDNkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZGJjZWY2ZmJhZGJkYTM0YzI5YmMyMjg2ODE4MDg1NGI2MTZiZTllNTc4MDc1NTJkMWQwYjdiZTJhYjgxMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L117-L131",
-          "version": "repo-lines-v1:sha256:d0b064f6aac8213a94c156f23829e5bcff0eead68d38f8a136a73c3fdc9b8f1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NjgwNGZmMDA4NDFjZWExY2UyNTMyMGZkN2NjZDdkNzgxNjNhZDEzNWE4NTkzNjhjMzE2YzBiOTY5ZWU0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMDljNGU2OTZhZDQ3ZThjZmY1MTc3ZDA2ZmE3MzlkZDQ3NDFiNGY1YjlkZTA1ODE3Y2RkNGFiOTE1MjE3Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZTlkMGQxZGFiMGNiNDhlNDg5ODQxOTJhMWJlZTg5NTA1ZGI0MjA5ZDk0OTFmOTliYzc3NDI5ZDk1ZGQ5NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5MDUyYjBjNTA4ZGRjNzVhZGE1MDVlYzg0NWFkYzMxMTA0ZmUyYWZlNmQ1NTk5OGViMzRiMmZkNWQ1YzQzMjkifQ"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L117-L137",
+          "version": "repo-lines-v1:sha256:8df825f5f09906af22dd919c78ee9da8ed7622800a3416cd9da68923ed0fa4e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NjgwNGZmMDA4NDFjZWExY2UyNTMyMGZkN2NjZDdkNzgxNjNhZDEzNWE4NTkzNjhjMzE2YzBiOTY5ZWU0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmMxOTE2ZTIxMmYzZTU5ZTQ1MWRmZDRiZGU1ZTZhZGJmNDY1MDU0YzQxZmU0MWU4YjIxNWQ5N2U4MjRiMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZTlkMGQxZGFiMGNiNDhlNDg5ODQxOTJhMWJlZTg5NTA1ZGI0MjA5ZDk0OTFmOTliYzc3NDI5ZDk1ZGQ5NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMmI3ZmQwNTIzMzgwYTAyZWY2ZmQxZmI3ZTZiN2NhZWUzN2JjNWNhMTlmMzQyOTBjMmFiYzhjNDk1NDVhZWEifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L219-L238",
-          "version": "repo-lines-v1:sha256:3433f473fa76c48886976b932209f574f294e348f301b18a52f12f7a20f24d1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YzFlZjJhMGRkMDMzYTk2MTA2MDQzZmY0NjQ0Nzc5ZDMyODRlYWNlZWZhZWRhOWQzOWI1MjU2MDExYWFmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2VmNmE0ZWEwZTU2MzdjMjNkZGJmMWU0YzdhMTUyYTYyNGZjOTQwNjIxZGU5YjEwOGJkNDNjODc4ZjU1N2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllNTkxNjk4YmI4ZDlmNzE5MzUyYWE1OGMwMDhkZWE5NzliZjRjNDY1NzllMGE1Y2I4YzhmYmNiYjM0NzdlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L184-L196",
+          "version": "repo-lines-v1:sha256:7f4f051a77e82eb5dae4b63f630c06746ad0ca0a75be6626ceb5d4a68edf2ea6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyN2FhN2EwMWMxNzJhYWExNThkNzgxZDE3NzM2ZGU4ZjRmNDJmZWMwYWVjODQ2NzEzYTAzNmFlZjhiZGM1ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYTFmYjI0Yjc0NDQ1ZTQzOWM1ZTE1NDRlMTFhYTAwMTdhZjEzYmQwZWQxMzdhNTQ1MWY3ODQwMjIwNmFjNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1ODk1M2UwMzMwYmZmNjE0MjIwOTkzOGQ5MjE0NTBhMzAxNWRiZDQ5MjYxMmEzOTc3NTY2Y2Q1OTZmZjliM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L203-L238",
+          "version": "repo-lines-v1:sha256:96d0f66f7bc68d349497cc5813e3459848d5269d65b3447fbe919d21be517ed3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYzU3OTIyNzVhYTc3NDY2OTFhYzVmMDUwZTgxNWEzMDBlZjI3MThjZjA5YzVlZTU5NWExNjBkZTdlY2QwODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2VmNmE0ZWEwZTU2MzdjMjNkZGJmMWU0YzdhMTUyYTYyNGZjOTQwNjIxZGU5YjEwOGJkNDNjODc4ZjU1N2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjYxYWY3MmNjMzFiZmFhZmM2ZjkxNzMyMjA0MDhmYzQ3YzY1MjRkYTA1ODE3Y2ZiMTU2ZmM3YzBlOTdlOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/backups/compose.yaml#L39-L60",
@@ -445,15 +449,15 @@
       "statement": "CI brings the feature-073 backup destinations up in their own dedicated `app-e2e-bring-up-backup-destinations` step rather than folding them into the Keycloak bring-up, because the two image pulls pushed that step past its calibrated 300 s ceiling and a slow pull then read as \"Keycloak would not start\" instead of as itself; the step passes no registry input of any kind, and the web E2E gate forwards `E2E_REQUIRE_BACKUP_TARGETS=1` into the Playwright container so `backups.spec.ts` fails rather than skips when the destinations are absent.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1053-L1054",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1069-L1070",
           "version": "repo-lines-v1:sha256:1a10022fa18f1c5b19ff2fcffd6eeee6d1646f0c91921104df3e964a244daed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUyMmE5Njg2YmVmZjMyYmE5MGMwZTFkNjc1MGNjOTIwYmQ0ODQ2NmRmNzkyN2M5ODdhMWRjNzIwNDIzMmJkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY2N2M4NTU5MTU3ZjhkYmY3NmU1NzljNWQ0ZDdhNjJhNzBkODkyNDUxOWQ5NTdiMzFjODEzYWVmOWRkYzBkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRjMDU0NGJiNTZmMjk2YzQyOWE1ODk5MDk1MzI4NWQyOGU4YzgwMWVmYjY1YzAzZjVmMTlmMTI2MDg1YTE4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDYyZDZhN2FkZTQzYjgwMjkzY2Y5MzFkNzhiYzE3N2E2MmZlNjgyNjU0NWM3MTc3YThiZjY5NDBmZjJlMWFiMiJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1073-L1076",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1089-L1092",
           "version": "repo-lines-v1:sha256:a9244a91708ec741e0614d890b4e0612daabd907ec9fcc6aca1c198e92e593fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAyMDAyYWE0ZjE4MWZjNWEzODI1NWE4NTA0OGJhNjU1YTUzZTVkNDQ4YjI0YTc0ODM5NjI4ZWU3ZDYwMmYwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdiZTdlMWE1NjBhZjhiNTc3ODU1ZWYyNTg1NTY1OTJiZjI0MTA1ODdhMTMxMTM0Y2JmZThlYzFjNzg3MjlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM5NDNjMTI2YzhlNTUxNGNhZDAzMmRjOTIzYmQxMGFmNzAzYzRjODRiNTVkNjViMmUxYjkzNTg0NTg1ZDI3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY0MWRhNzhiOTkzZGIwMGYyOWE3OGFiMDljYTkzM2VjN2M5MmE5ZDEzZmEwMWQ1YWU1YjU2NGUzYzY4YTQ2OCJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L710-L719",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L711-L720",
           "version": "repo-lines-v1:sha256:166701cc7157aac331cf15bce98e4aadfa97df43e98bf527225c11b2606834f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDJmNDczZmI5MTQ5MTRlZmMyNmU5Nzc1M2ZhZTZlNDM3NDc2MTljMDdkMzFiZGI4MGEwZDc4YjkwNGI0MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTJiMTBjNTgxNzRlYjRlNjVmNzM2MjZiOWMwNDk3NWFiYjAyMmU5YTFjYmE0NmRhMjc3NWQ5OTFlZTRiMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NzQwYTYxYmYxOTE2MjllOWQ3YWNmNzZkZjU5YTY1NmM0NzgyMzI3OGFkYWYwYTljNjA1ZmQxODk3ZGFhYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjY3ODQ0NjNiMjRmM2YzYzg3ZDQyOWVkNDI1MDFlNDc2NzMzNDRiNTQ1ODE4NzhiZDViZGVkY2FmZmZmYjcifQ"
         },
         {
@@ -539,6 +543,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T00:28:11.002Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

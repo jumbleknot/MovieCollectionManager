@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fd0f05b6249b640da14eec548b7f516ad1daf80fb9e6a72301e8276a669640f2",
+  "pageVersion": "sha256:ffd74869dea29c733cbdb819965ec2196d4c4b9218b72b29c9153648dff43540",
   "claims": [
     {
       "id": "claim_48336ae10f46486caf689e37d3d26063",
@@ -157,12 +157,12 @@
       "statement": "The OKF conformance gate (`scripts/check-openwiki-okf.mjs`) is offline, keyless and fail-closed with no skip flag, resolving repository-relative `resource` links against the working tree while only shape-checking external ones, so it cannot fail because a third-party host is down; drift rule V12 is the sole rule that warns without affecting the exit code.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L209-L213",
+          "version": "repo-lines-v1:sha256:d9f74e88445ac92dc56baaee74eafa0d63e21be80ffeb89f90cda051d98b4946:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI5ZjE4MTRkMjhiYjljOWRlZTZkMTg3YWU4Y2M4ZjQ2YjYzZTA1Nzc4M2M2YzNmZWEzZTFjYWIxMTY0OGUwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU5ZjExMGY5NGQ3OTcxZmQzOGU1ZmJiYjk5ZmM2MjMxMTdlNjE5NGFhODc2MGUyYmJjZjhlM2YxZWZjMTNhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdhMDZlMTI3ZjAwNWFiNDQzNThlZjlmODE1YmIzMzZmYzgxNjBiNTgxZjBiMTc3MjlkNzM0ZWJjNTE1MmFkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzZkODE1M2EwODgxMjQ5Yjc5MzhkYWRhNzU4YmM2NjI4YTFkOWRhYjY2MTExYmEwYjA0ZjhkMTIyNjMxNzc1MSJ9"
         },
         {
-          "resource": "repo://scripts/check-openwiki-okf.mjs",
-          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L294-L320",
+          "version": "repo-lines-v1:sha256:b18107c908b8bd2ee4e3e1762070e853fe3c805d7ee7e0300477b1b831a50178:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMzJiYzU0ZDk0YzRmNDBjZGZhMDBjNDk2ZTYwNjFjOGQ0ZTU5OTYzYjcyODliZWUzMzJjN2M2Yjg4YjIxNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YjlhMGIxNmI5OTEwYmFhNWQwYTRkY2FmZjhhNjBjNDI5NjMzYmYyYWUzY2JhY2M4MjAyOTA3NTgwZDEwY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMDhjYjdiODU0OTI2NGYxNWIyNGMyM2EzOTJiOTQ2YjM0ODM1ZTMyMDg1NGUwYWM1YTA1MzNjNTZjOWMzNmQifQ"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/data-model.md#L59-L77",
@@ -297,8 +297,8 @@
       "statement": "Both gates run as steps of the same always-on `okf` CI job, each preceded by its own `--selftest` so that a rule which silently stopped detecting its case would turn the build red.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L216-L243",
+          "version": "repo-lines-v1:sha256:2aee0cd26ac8a7e92424ad217f7cf406441012edcac536282084ddf9b156ba1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMTFmNTE5ZWFiODAzZWI2MGY4ZTIyZTE0MTQ3ZTNlMmYwMzM2NTk1Nzk2Mjc3ODczNDU0YThjOTA0Nzk3MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMGNhNGE3ZWI2NDVjMjMwOTMzODBlOWQzMzk3OGIwNDRlYzNkNzFiYzlkNDg4NGYzMzE4OTViMDYyODk4MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
         }
       ]
     },
@@ -491,7 +491,7 @@
           "version": "repo-lines-v1:sha256:74916bfe65f98e07a58b0ad66685a47e929772e71353e28a41bbbcc289c49612:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYzY1YzlkMTkzMzVlODYwZDQ3YjViZjRmNzhlMzU1ZjMxNjExODQwNWUxM2ZjMDAyYzY3MmVkYjBmYjgxNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzODM2NGRkYmYwNTUwY2VlMDgwMTQ4NmM2ZmNhYTMxYjdiMzBlYWI5M2ExMTYyZmVlNDk1NjRiMzk0MzIzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L423-L436",
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L432-L445",
           "version": "repo-lines-v1:sha256:47cc2c7387a9bea80c564e1484b50e1f5851542f5fd653b2bdf9e0a5a049b24e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MTJiNDBkZjJhYTllNjY5MGRjNjU3OTJmNGNlOGUzYzVjNjJjYzFiYWY0YjA4ZWVhZDlkYTI2NThjOTNkMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZjU5ZDhjZTI5NzY1MGRmMWY4YmU2NWU3NDdjNTk5YmZmNWY3NzUxYzcwY2QzNTRkNTI3NzViNjdjODc4ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzYmJlMWFhMzFkMTAzNjUzMTc4YjE3ZDBiZTU0ZjczNGIyY2M1NGUyYjFmMDBlMjE4YjAzMTdmNWM1ODgwZWMifQ"
         },
         {
@@ -499,10 +499,32 @@
           "version": "repo-lines-v1:sha256:11eb4a934e4660eb7b73a5df5de2a95fbd5cce61e209b20157a88f22f02b7eab:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q0MzEyNDlmMjFlZjY3NTUxNWM3YjkzZjdmYzA5NDc0NzQ5ZTgxMzc5OWVhNDRjNDcyMzdmZmE2NTkxYTMyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZmNjQ1OGM5ZmU4OTNlYjFmMzhmZmJkMGY2YWJiMWZhZWQwODgxMWQzNzRiZDhiZTE5ZGVmMjNhMDQ4NTRiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQwNjNhZjBkY2JkYjNkNGFlMGE3MzE5MzYzZTcxMWYzYmE4MDc1N2ZiZDc2Mjk5YmU3ZjNjMGJhMjM0MzU0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2IwZTQzZmM5YzZiNDBmOGJlMzk1MDBiNGY1NTUxZTJkYmM1NTQwMDE4MzY1MjBhYWViZjJhZGY4NDZjN2JjMSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_be61dc469e47487aa5ead99da1700101",
+      "statement": "The maintenance trigger's debounce is bounded by a six-hour maximum deferral: `shouldDeferMaintenance` runs immediately once the oldest commit the run record has not covered reaches `MAX_DEFERRAL_SECONDS` (21600 s, at-or-past rather than strictly greater so a stream pinned at the ceiling cannot defer forever), and that age is derived from git commit dates rather than from a timer because the debounce works by cancelling the waiting run — any timer it held would die with it, while git state survives. A `workflow_dispatch` run bypasses the wait entirely.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L14-L17",
+          "version": "repo-lines-v1:sha256:c2c2a4851e86d5ece14c44673412f079533b454ae9de28b8f2d43fc2a87fdf80:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAwMTJlZGUzZjJkOWUzODZjM2ZmOGQxMTAwYWUxMGJjNmRiZGRlYmNiZDE0ZGI1OWQ4ZDRmMDg5NDljZTQ4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZiMGVjYTY3ODU4N2RhMzM4Y2ZlNzcwNGM0NGQyYThmYWZlZjdhNmQ3MTAwZjM2ZjI4NmJjN2FjNWRkNzQ1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODhkNTYxOGJkY2U0YmQzMjliNjFmOGViZjk0ZTI4ZTdmNGQ1Y2I0ZjVkZTcyYzhkMWQzNzYxZDgyNzExOGRjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU5OTQwOTkxYTc2NDkxODRmZTEzZjM3ZGI1ZDIzNDc5ZDg0NDk5NWVjOTM1MGRhOTlhMWI2NzU5YjUwYzNlYSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L196-L210",
+          "version": "repo-lines-v1:sha256:6acf08e144c8b02eb5a04b9f67e056857af482b78ace2b1b8954be5251daf549:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzFhYTMyMDdlNGRiZjVjNjhlYjBlZDBhYWFkYjVmNGI4NGY2MTA0ZTY1ZGY2ZTFmNzg1YzNjZTYzYTJkY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OGFlZDIxNmViNDZlZDRlYjg3ZjI2YTExM2ZiNmNhZGE4NTk1ZjdmYTc3NGY0YTE3NzZlODQzNTE3NjBhZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlYjViODJjOWM5ZDNjNmE3MTBjMDYwNjJjM2JlODFhYjNiOGY5ZWYyMmE1YzhkYzhjYWJjYzFkZjAwMmFmNGQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L551-L556",
+          "version": "repo-lines-v1:sha256:b1f470b105a077bc5efc207d767dc12cde00c7ae68041c4c7d2a594cdf83a4fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmVhODY1ZTEwZjFhNjg5ZWFlYWIwNjBkMmJiNWMyZmU4YWExYzBmZDE3YmRhZDE1OGRhNzE4OTg0NzYzYzMxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEzMmMxMGEwODA4MzgwNzU3NGNkZmQ3NzUzMjBjYWZmNjBiNjJlNDBiOTI3OTcwODMzNjVmYTc2NTE5NDFkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJiNDVlNGQ0ZjhhMTJkNzcxZGFiYzdkM2Y0YmNiOWJiMWI5YTJhM2Y3YjlmZWFkNzk0ZjM2MzkzNzkxOGUyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQyZmJiOGFhZTExN2NlMjcwOTA2ZWNkYmEyNGM2OTkzYWQ1ZDAxOTdjMWI3ZGVhNTMxODI1ZGEzZTExYzVjNCJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L931-L968",
+          "version": "repo-lines-v1:sha256:b7cb08c1069e4ad0bda21bda5fa06c9b667e120b35a662743d67a2f737ef6cf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmOWQ3M2M4NWMwMTA0MzkxY2ViZTc1NjkyNDUxY2E0OTc5ZDI4ZDNmZDFmMGE2YTA0YTA5NDExNjc2YmIzOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZDdhYTQ3ZWU1NDEwYThkNmE2NTkxYWVmMjJiMGU5NGFmNTExNTI3MzdkODkwYjZlMjhmOGZmODYyMDZiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjN2YyMGQ0ZDM0Yzk1NWY0ZWUxMTZlM2JlNjljYmEzN2QxMmU3OGVmN2Y3Y2JlZmZjZGI1NmM4N2JiMzUyYjEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-28T02:33:05.629Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

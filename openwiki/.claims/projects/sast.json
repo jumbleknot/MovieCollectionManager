@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b8bc4bfcb743ffb93d9a8a3103a215ad54aa824a73d9ec4afa0aeaa33c6b4393",
+  "pageVersion": "sha256:515911b1142107976254b42a509c031ecfb2fe2b9a14ddf89f55d3e2c3868072",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -36,19 +36,23 @@
     },
     {
       "id": "claim_a947f7bf568c43a78dd413e241ec70eb",
-      "statement": "A finding blocks when its severity is High or Critical AND it is either a SAST finding or an SCA finding in runtime scope; a High/Critical advisory in a dev/build-only dependency is a non-blocking warning and Medium/Low findings are always warnings. Dependency scope is computed per ecosystem (`cargo tree --edges no-dev`, `pnpm audit --prod` per audited workspace, `uv export --no-dev`), and the SCA half always runs full regardless of what changed because a freshly published advisory can hit an unchanged dependency.",
+      "statement": "A finding blocks when its severity is High or Critical AND it is either a SAST finding or an SCA finding in runtime scope; a High/Critical advisory in a dev/build-only dependency is a non-blocking warning and Medium/Low findings are always warnings. Dependency scope is computed per ecosystem (`cargo tree --edges no-dev`, `pnpm audit --prod` per audited workspace, `uv export --no-dev`), and the SCA half always runs full regardless of what changed because a freshly published advisory can hit an unchanged dependency. The dev-scope exemption is a recorded policy decision rather than an oversight, and the regression shape it leaves open — a change that newly makes an advisory apply to a package — is closed separately by the pull-request-only dependency-downgrade gate, which ignores scope.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L305-L312",
           "version": "repo-lines-v1:sha256:41f4c17638f8822fbc1bd58037beab8eb6f90556db12456b2f1b843313cf7e0a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I2MTgxN2EzOWI1YmE0NTY0YWUxNzUzMzU2YjgzOTczOTJlOTgwYzc3OWMxNmRiM2U3MTI5OTk0MDg3NWU4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmMxZTA3MDBjZjY3MzhkNGVjMmNmNWJlYjMxYWFmYWUwYmYxY2I3MmVlZjdiMTFlM2NkMWE1ODIwMTQzNzk5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdhMDZlMTI3ZjAwNWFiNDQzNThlZjlmODE1YmIzMzZmYzgxNjBiNTgxZjBiMTc3MjlkNzM0ZWJjNTE1MmFkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODAwMDAxODkwMWRiNWU5OWE2ODM2ZTliYzczMDllMzY3NTZmMDllZDAyNzJlMWRmYjBlMjZjMmU0ZTdmNThhNSJ9"
         },
         {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L102-L120",
+          "version": "repo-lines-v1:sha256:acdb1fea9114dd023f1b4e62d22d4a99f6ccbbd35a676e3e673d666e4a6be742:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2NiMDVjMjdjYjdlZTI5YWE5YzY2MTIxZjI3YTNhN2NhYTM0NmEwMWU0ODUzYjY1MjI2NjY3ZTFjOTUwMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMjU4ZjY4OWY1N2NhZGMwYzU1ZDljYjQ2OWQ3YTIyMzc2ZGQ0OTI1MDFlNzcwNWM4MzFmM2JlNGY1YmIzMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZmE5ZGE1ODAyOTk1NmVkOTAzNDYyYThiODg0MTJlMWM3ODkwMzhjNGY4ZTUyNmU5ZDkxMDc5ZGZmNzU4ZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMmEyZjc2ZDM0NzMxOTcxODk5NDg2NDM1MWNjYjI0N2JkMTIwODQ1ODQ2MTY0YTcwMGIyNmYxMDhlZjhmMjUifQ"
+        },
+        {
           "resource": "repo://scripts/sast-scan.mjs#L196-L206",
           "version": "repo-lines-v1:sha256:57def7f9d876eef408868339def59ec74074af9b7f79e5fa40b831756361606d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTg3NzBjNmEwYzU3OTcyNjQ5MDUzNTU4YjdkZTE1ZDQxYTZiMmMxMTY3MjFhOGUyOTY0YmY4ODg0ZTA5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjY2YzN2I2MGJiMTljYjg0NmY1YmRiMWI2OGI0MzlmYTI3YmViZTlhMjE1MWU5Zjc4MTU5NzcwMTQ5NmVkNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNTY1ODU4Y2I2NTg5ODI1OTJjOWZmMWY4OTAxNzdmYzYwZDIwNzBlMjk0NTQ0NDg4N2FkOTU4ZGY2YjJiNmMifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L503-L537",
-          "version": "repo-lines-v1:sha256:445d64a95fdf2cc5167f34e5edca78c372ebe6862f3b67bf8ac8bf46adaffb90:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZTczZTM3YjQ4YjkzMWRlMGM2ZmMxN2Q3NTUwMmY5ZDJkZmVkNjNlNWJmMDNmZTlhY2JmNjU1ZTQyMmYwNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMjI3MjEyZGQzYWM4YmQ2MTEyZWUxMWM1YmE3ZTc3MGE0MGYxYjJmNDEyMWE3NWE1ZGNmMGUwMjU5NjkwMDMifQ"
+          "resource": "repo://scripts/sast-scan.mjs#L517-L535",
+          "version": "repo-lines-v1:sha256:7ade010118aae795869cf5e4b924de95b90fb0576218a13f0fa4864a639a61a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZTczZTM3YjQ4YjkzMWRlMGM2ZmMxN2Q3NTUwMmY5ZDJkZmVkNjNlNWJmMDNmZTlhY2JmNjU1ZTQyMmYwNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYThhY2E5NmRjNGRmMTA5ZTdjOGFlY2U1ZGI2M2I2YjBmM2Y4YTc1OTI3MDhjMjY1ODIzYTdlNzAzMDIxZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjNmQyNTkyOTk0YWU2ZTA5NGM2ZTkyOGMzZjEwNmU3MzhmMWQwNTllN2RhZmFhMzA2MjE3Y2Y1NzI1MTE4NzMifQ"
         },
         {
           "resource": "repo://security/sast/README.md#L25-L28",
@@ -174,19 +178,19 @@
     },
     {
       "id": "claim_c13ca7df33a5430a8814c5f08a767a0e",
-      "statement": "The `sast` job in guardrails.yml has no `paths:` filter and runs on every pull request and every push to `main`. It installs uv, Rust with a pinned cargo-audit, and JS dependencies, syncs each of the four Python surfaces, then runs the gate selftest, the custom-rule fixtures, the scan (changed scope on PRs, full on push), the gate, and finally uploads the `sast-report` artifact; the changed-scope path is preceded by a `git fetch` of the PR base ref because the diff that builds the target list needs the ref to exist.",
+      "statement": "The `sast` job in guardrails.yml has no `paths:` filter and runs on every pull request and every push to `main`. It installs uv, Rust with a pinned cargo-audit, and JS dependencies, syncs each of the four Python surfaces, then runs the gate selftest, the custom-rule fixtures, the scan (changed scope on PRs, full on push), the severity gate, and — on pull requests only — the dependency-downgrade gate, and finally uploads the `sast-report` artifact; the changed-scope path is preceded by a `git fetch` of the PR base ref because the diff that builds the target list needs the ref to exist. The downgrade step sits after the scan because it consumes the `pnpm-audit-native.json` the scan wrote, so it runs before the artifact upload.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml#L313-L331",
           "version": "repo-lines-v1:sha256:5bcead7788eeb6bba12c8925088dc48ccadd5acdd1cff21cd2b64f16306fb277:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZjAzM2NjYTY5YmZjNDhmZWEwMGUyMjJkZjZkNmFjMTc0YmU3ZGI0ZjMzYzE3YmY5NTFmZjc1MmQ1ZDVjNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNjU1OWFkOGI2ZThhYjJiYjcwNWIwNjhhODE3NjA5NWY1ZTZhN2M5OGIzMzAwNmMwODE5MGY3MjE4MjdkMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliOWEzMDY4ZDI1MjBkMmQ1OGExZDgzMzU1YzRjYTgwMzI1YTI5MTFiMzE5NGNkMWFjYjAwYjBhNzUwZDJiOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMGFiZDNjMWUxODczY2E5NDQ0YTM3NjUyYTliMGY4Nzk5NjQ1YWIwZjdiMDQzYTUzNzM4ZGQ1MzVjYjcyMDAifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L373-L401",
-          "version": "repo-lines-v1:sha256:580fcdfdaf3b93f625c61039d23e343c98272c71348ecb927e2924f231f25074:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNDhkNzEyNjUwMGM2ZWNmZWRmMzBjOTUzOWYxZjUzZWNlODJjZGE5N2MwZjQyOGJkOGNlNjVhNWNhYjRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODBhOTk2MjIzMGU0ODkyNzU0Zjc2YmY0ZjhlOTg0NDY3NWEwYjY2NDJmYTBkZWQxOGQ3ZDFiZWI5YjFjN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZGZhMGUwYWIxMjAxODMxNTIxMjg5MGI4M2IwZjQ0MjY0ZDNjZGJlZTFhYTVkNmFmZDJkNzY3NjI2YTY3MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L373-L411",
+          "version": "repo-lines-v1:sha256:77357fec78f861684bbcaf0ba9fa19e4ae3bf7880c5201745ff02908144ab742:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNDhkNzEyNjUwMGM2ZWNmZWRmMzBjOTUzOWYxZjUzZWNlODJjZGE5N2MwZjQyOGJkOGNlNjVhNWNhYjRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NTY1ZWNiMDU4ZjQ4NjdkMTE2YTM1NWVhZGMyZTk5YTgwOGM4NzQwY2RlNmVkMTNmMWM0YjU2OGNjZTJkM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZGZhMGUwYWIxMjAxODMxNTIxMjg5MGI4M2IwZjQ0MjY0ZDNjZGJlZTFhYTVkNmFmZDJkNzY3NjI2YTY3MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L63-L75",
-          "version": "repo-lines-v1:sha256:0c2fb7bc7f5301054f31f15dcd70216720217e69b8f168402aa5081733d2102e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YjIzMTRmODc0ZGQ0MjgxMzZmODdlYTg3ODRmYjgxNWIxMTcxODA5MjFjYTI4OTRkMjE0MjBjYmRjY2NhNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YWIxOWFjY2QzNGQ2OGMzNmU1MjhmYmQwMWZkZWYxZDQ0ODk3M2VkNzBhMjc2Njc1MDJjOTkyZWY2YjZhMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxM2QzYWZiNjEyN2VmMmU2ZDQxMzkzMGEyODgyODhjZWZmNTUyODY5Nzc5YTE2OTUwZmJmNGE4ZTljZmQ3YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMmEyZjc2ZDM0NzMxOTcxODk5NDg2NDM1MWNjYjI0N2JkMTIwODQ1ODQ2MTY0YTcwMGIyNmYxMDhlZjhmMjUifQ"
+          "version": "repo-lines-v1:sha256:48b753f3e01fea474c1798ecd766578028f7ca22a3afcc67d2402a35f185755a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YjIzMTRmODc0ZGQ0MjgxMzZmODdlYTg3ODRmYjgxNWIxMTcxODA5MjFjYTI4OTRkMjE0MjBjYmRjY2NhNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZDJkZDAwM2UwYWY5ZmI0MWI4ZjA0N2FiMDVjMjEzM2M4M2NiZDlhNzAzMjk5ZWFlNDczNmRiZWE4MWIwZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxM2QzYWZiNjEyN2VmMmU2ZDQxMzkzMGEyODgyODhjZWZmNTUyODY5Nzc5YTE2OTUwZmJmNGE4ZTljZmQ3YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNjc5OTJmOWRmYTYxNmIzM2JjZDFlMDZiZWQ4YTE1YjI4NTIxNjZhN2EzMGU0MmViYmFiNDdmYjY4MzhiYzkifQ"
         }
       ]
     },
@@ -223,7 +227,7 @@
       "statement": "A scanner failure caused by an unreachable third party is classified against a deliberately narrow `TRANSIENT_SIGNATURES` list and re-attempted 3 times with deterministic exponential backoff (2 s then 4 s) before a verdict; fail-closed is preserved because exhausting the attempts still throws, and an unrecognised failure is treated as real and fails on the first attempt. The classifier and retry driver live in scripts/lib/scanner-retry.mjs and are shared by sast-scan.mjs and infra-image-scan.mjs, because the hard part is the signature list and a signature learned from one scanner's outage is the one the other needs next; that module also owns `readTail`, since truncating a scanner's output from the head hides the HTTP status that names the remedy.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L108-L143",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L153-L188",
           "version": "repo-lines-v1:sha256:8d7658ae951de04e086886e013169b0028f1ea1a17685a66a1df5df20eef0ea8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NmFlMmFiN2RkZGRkOWEzYTI3ZDMzMjM0ZGVhZTA2YzdmMmFmMDQ1ODRjZGY2YjEyZGZmY2VhYzZjZDMwODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDZjZjU3ZTFmNzk3YmZiMDExNjg2MDk4OTE4ZWRmNzllY2JlNDQ3Zjg2OWQzMDEzOWU2Njc2ZjMyMGFmYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2NzJiZWI4YmI5YzljMTRhOTQzMDQ1ODA0ZWFjZjVkMTZjMjg1M2YzZWI1N2VhNzU0NzAxM2Q0NzdmZWVmMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNGMzYTMxOGQyNjU4ODQzMDZkYThkOGI0MzcyMzVhYTI4NzlkNDk2OWQ1Nzk3YzVhOGE0YmQxMDg1ZmJhN2EifQ"
         },
         {
@@ -277,11 +281,11 @@
           "version": "repo-lines-v1:sha256:8a9f3aac6b8a231145ab9c0e2f8a08c706db92926854f5b95a0db3ac02ed66eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU5ZDg3NjhkYThkNjA0YjA5MDE1NWU4ZjNjMGMxMDE3ZjcyZjIyMmIxOGQzNjUxZmM2M2U5MmUxMjhhYmE5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE2NTU5YWQ4YjZlOGFiMmJiNzA1YjA2OGE4MTc2MDk1ZjVlNmE3Yzk4YjMzMDA2YzA4MTkwZjcyMTgyN2QyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVmYTMzNDQ5ZDYxMmM0ODExYTI4NWJiOTgyMjZjMDk1ZDkwMzMwZDIzMTY5MTMwMzI5NjM5MmQzMGZjMjQ0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2MwYWJkM2MxZTE4NzNjYTk0NDRhMzc2NTJhOWIwZjg3OTk2NDVhYjBmN2IwNDNhNTM3MzhkZDUzNWNiNzIwMCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L358-L363",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L403-L408",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L827-L827",
+          "resource": "repo://scripts/sast-scan.mjs#L840-L840",
           "version": "repo-lines-v1:sha256:63f6686130e74cec11407858461a625f22410155c12ad6e09b9c4ef7f48ef452:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNmNjY4NjEzMGU3NGNlYzExNDA3ODU4NDYxYTYyNWYyMjQxMDE1NWMxMmFkNmUwOWI5YzRlZjdmNDhlZjQ1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNmNjY4NjEzMGU3NGNlYzExNDA3ODU4NDYxYTYyNWYyMjQxMDE1NWMxMmFkNmUwOWI5YzRlZjdmNDhlZjQ1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWMzY2RjNDFjODNiZTEzNDBjYjgzZWUxMzIzZjVjMmRjMmUyZTZhMTM0MzEwMTliNzlhOGIxMTc1ZDQ2ODU0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQ5NDY0OTQxYjYxZTA4NWIwMTM0MjljNDZlZThkNmI0YzgxZjdjMGIzOGQ5MDY5MjRmMDkxZWZiMTU2OGY2MyJ9"
         }
       ]
@@ -365,7 +369,7 @@
       "statement": "Remediation is preferred over re-dating: deleting or extending an `expiry` converts a time-box into a permanent suppression, and a fixable High whose patched version exists within the range its consumers declare must be bumped rather than allowlisted. The two legitimate exceptions — no published fix exists at all, and a fix exists only outside the range the consumers declare (an operator decision, not the reader's) — each require the evidence written into the justification and take a specific shape in the committed file: the entry is pinned to the exact vulnerable version so a different version re-blocks for a fresh assessment, and short-dated so it stops suppressing on its own. The committed file currently shows that no-fix shape three times — the node-forge entry, the root braces entry, and a second braces entry anchored to `tools/openwiki-generator:` (item #721), which the root entry cannot reach because a nested workspace's location is `<workspace>:pkg@version`; the two braces expiries were renewed together on 2026-10-10 onto the 2026-12-01 infra-image cohort date (items #633/#648). The third instance of the pattern overall, `@graphql-tools/utils@11.2.2` (whose fix sat outside the `^11.2.0` range its consumers declared), was deleted on 2026-10-09 under backlog item #674 once graphql-yoga and its defer-stream plugin widened to `^12.0.3` and a lock refresh removed the vulnerable version from pnpm-lock.yaml. Each entry stated reachability checked rather than assumed, and each removal is tracked on the backlog rather than renewed at expiry.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L187-L225",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L232-L270",
           "version": "repo-lines-v1:sha256:db610243e304e6c69b413a56b9937c324ff2158c1541c869ad479a858bb91582:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OTZmNmI5MzNkNmJhMDE4ODQ2NmY0MGVkOWFhMDY5YTNhZTU5YTZjYTA2MmZhN2RhNGQ4YzIxMzhjN2JjNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMDE5MDQ0MWMyNjYxMDBmMjc3NTllYjIyNzBhOGRhYTJhODY5MDZmYWE5Njk2MzFiMDcxZmY1MzBkMjQzOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMDljNGJmZmIyN2Q1MjBlOWY4MTY2NmNlYzVkZWEwZmE3ZjRiMDkzYzI5NjlkMjhmZjE2MDk0NDg5MzhjMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNTkyMjdhYjkwZmM2MTU4YmM4OGY2NzBjYjA1ODFkNTRhM2Q1MDQ0MjE4MjRiOThkY2NjOTMzODUzYzE3NDQifQ"
         }
       ]
@@ -375,7 +379,7 @@
       "statement": "When the gate reports `OVERRIDE LEVERS` for a finding whose package already carries an override in pnpm-workspace.yaml, the two halves of the section point at different levers: `Already permitted by an existing override — REFRESH THE LOCKFILE` means the override range is already correct and the lockfile is what pins the vulnerable version, while `Not reachable by the current override — RAISE THE FLOOR` means the override itself must move — and its message names the two-halves invariant the move must honour (the key's exclusive upper bound equal to the value's inclusive lower bound), which scripts/check-override-consistency.mjs enforces on every pull request. The section is advisory only, never changes the exit code, and prints for non-blocking findings too; the lever logic lives in scripts/override-lever.mjs, which is pure and returns nothing rather than guessing when the override map or a version cannot be read, and the gate reads the override map in a try/catch so an unreadable manifest costs the advice and nothing else.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L178-L200",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L223-L245",
           "version": "repo-lines-v1:sha256:c5e05b030e31a61d0c5bd9411569d9718d08031603c8dce9d504c87b8f237c17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YThkYWJhNDI0OWRjYjBkYzI5NWE0MjZhNTZjMWVhM2Y4NzM1YWMyMTFmZmZmYjgzNWNmYzQwNmE5NjhmMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmNjODk0ZTgwY2ZjZjg4YWRiZDFlNmU3OWIwN2IyNTUwMjgxZTk2ZmRlMWJjNGIxMmE4YmY0MjkxZWU0YjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ZmUwMWY5NjQxN2IyMzVlNmZkODFjZjA4YjFmZDQyNTU1ZjdiYjMxMTc0MzZhZTllM2ViMWQ2YjcxNTdkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0N2E3ZDBjM2MyZWY1ZGQ3YTM5NGY5NTQ0MmFlNTY1N2U0YzI5NjZkMDMwNDcxYWVlMjNhYjAzOGU3NzNkM2EifQ"
         },
         {
@@ -435,11 +439,11 @@
       "statement": "Since feature 068 pip-audit audits all four installed Python venvs (agents/movie-assistant and the three mcp-servers), each with its own dependency graph and runtime classification, and an unsynced surface fails the scan rather than being silently skipped — `--no-sync` on the invocation is what makes that a real failure. Findings are project-qualified (`mcp-servers/web-api-mcp:click@8.5.0`), so an allowlist locationPattern is normally surface-anchored, and two static checks run before any comparison: `assertKnownPythonSurfaces` fails the scan if a directory carrying a `uv.lock` is not registered in `PYTHON_SURFACES`, and `assertPipAuditAllowlistShape` fails it if an anchored pattern names a surface that does not exist.",
       "evidence": [
         {
-          "resource": "repo://scripts/sast-scan.mjs#L570-L603",
+          "resource": "repo://scripts/sast-scan.mjs#L583-L616",
           "version": "repo-lines-v1:sha256:a5bbae6bb04c6290531fddfbdf9513b4a3c4ed705f0e01b93141be4ae6d80af9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNjNmYjYxYzc4YjcxZTIwNGY4NzRkN2RjNDhiZTYxMThkOWVlZjNkMjhjZTNmODY3ODU2MDliZTRhZTY1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmODQ5YWUxMzIwMTc0ZmU3YjcyYjc3ZmI0ODg5ZjAxZWZlMGRjN2Y0YzNiYjg4ODQ3YjJjMTQ2MTVhYjc2MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYTlmODQzNGZmY2VhMjQ2N2Y1NjYyY2U3YmFmMjRhMTI0NjI3ZTE4ODY5NTI3Y2VlYWQ0YTI5OTBkMTM3YjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNjBhMmNlNzc1OTQwYWVlNmVlYTgwODk0MTcyODRlN2U1YWZkNTdkNzNlYjVkMzE3ZjEwNzg5Mzc3NWIyYzcifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L680-L680",
+          "resource": "repo://scripts/sast-scan.mjs#L693-L693",
           "version": "repo-lines-v1:sha256:ca595e6dd755479c319807c938c5abff787b851a3f422dc1ee17c68a8316e5e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1OTVlNmRkNzU1NDc5YzMxOTgwN2M5MzhjNWFiZmY3ODdiODUxYTNmNDIyZGMxZWUxN2M2OGE4MzE2ZTVlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1OTVlNmRkNzU1NDc5YzMxOTgwN2M5MzhjNWFiZmY3ODdiODUxYTNmNDIyZGMxZWUxN2M2OGE4MzE2ZTVlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzYzYzM4YWMyZmM1YWZlMmZiNmJjYTAwZTg3YzBjNTk5MWMwMjYwOWI5ODNhYTFkMmJiZTIwNzdjYTA2NDAwNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTBhOWQwNDYzNGJhMDU3ODgwYmE2Y2NkOTkwNWJkMmU4ZDQ1ZWFjZjBjOWRkZTNjMjFhZmZjOWFiM2U1ZmIxMyJ9"
         },
         {
@@ -501,7 +505,7 @@
           "version": "repo-lines-v1:sha256:4a60842c0347d049bb01b9469a772537f1c981d5eb3c29af90dd6653b6b71b78:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMzExOTZhMDU5NWNhMmE2NWNjZmMzNDk4NTY4YzMyMzJlMTIxNzc3MWVlMmE2ZGI4NmMzYzcwMzQwOWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5MmM1ZTFiODIyNjEyZGM0MGJlYzMyYjkzMmViYzQ3Y2FkMTYyYWNkMGJlOTY2YWVkNDEzMmZiZTc2MWZkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L87-L93",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L132-L138",
           "version": "repo-lines-v1:sha256:b48611dce50f3873fefbba1363a7281057dced4549f6163b08c9b77ed0103f08:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhjYjUzNDZhM2M1YWY1ZWFkMmM1ZWExNzkxNWE3Yjc0ZGVkZmRlZmMyYTNjMzkxYWZmZmNmYmVhNDdlOGNlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGM5NDZlNTgyNWIzMzljOTYwMzA4MGUzOGNhM2FiODU4YTQ3MzQxMTg4ZTNmMWMzNjEzM2RjNzQwYjIyY2I1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTg0NTdjMGY4ZmM5ODA2NWFmZjBmMzYwM2MzNzU1N2UyMjM2NzBjZjkwMDI5ZDhlZjk1MWQyYjk2NTNiOTc0YyJ9"
         },
         {
@@ -515,7 +519,7 @@
       "statement": "A failed Semgrep run leaves a well-formed 0-finding report rather than a partial one: the orchestrator runs the scanners in order (semgrep, cargo-audit, pnpm-audit, pip-audit) and breaks out of the loop on the first failure, recording `ran: false` plus `scanners[].error` for that scanner, so the scanners after the failed one never ran in that invocation. A missing toolchain is the same shape, because `assertToolchain` refuses to skip a language surface and fails the scan naming the scanner. This is why a 0-finding report and a 0-blocking-finding report both print green and the finding COUNT must be checked, not just the exit code.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L358-L363",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L403-L408",
           "version": "repo-lines-v1:sha256:5f3f85994242042c93621381093b3471fd3e633daa4d2cf2b8b088f670a58353:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgyODcyMDhmNzA3MjNiZGIwZDAxZGNiMzc4YWI0ODAxN2I3MWMyMTViOTE5YjUxZTQyYzIwMGUzZWRiMGRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0NmJlODgzNGM1NmZiZDg2ZDMxOWYwODIyYWQyYWNhY2ViMDA3ZTEzYjhmNDU1NDYxYmI0MDc1MWUxYmFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxZTA2NjY1OWZhNWZmMWNjMGI3MGQ3YTYyMTgzZTM2MmNkN2U5N2JlYzljZWM1ZjUxZDAyYzIwYWFiNGE4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNkZDM3NTlkMDljYTZkZDkzOTBlMDY3NmRiMzAwZDY2Yjg3MWQ0NWI0OGZjODlkY2QyODMzNGIxMjAzZjE5YyJ9"
         },
         {
@@ -523,7 +527,7 @@
           "version": "repo-lines-v1:sha256:3f69353a45fc5f23c83ed26f7bab0c8789c7547be2a47bb33a8208d263839c59:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y2OTM1M2E0NWZjNWYyM2M4M2VkMjZmN2JhYjBjODc4OWM3NTQ3YmUyYTQ3YmIzM2E4MjA4ZDI2MzgzOWM1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y2OTM1M2E0NWZjNWYyM2M4M2VkMjZmN2JhYjBjODc4OWM3NTQ3YmUyYTQ3YmIzM2E4MjA4ZDI2MzgzOWM1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTcyOTZkMWQ4ZTE5MDFmZmRmZWQ5NzJkMGYzZjMxNmE4ZTAxY2VhODdhMWUwYjNmYjdmZWUyYTY1YmRjMDRlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGMzYmQ1NjczYmRkNzc1N2M1YWJkMDRhMmMwOWMyMDA3NTRjMmE0OGUwZWIyOWQ1Y2EzYjk1NzQwNDg3ZmIzNSJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L864-L867",
+          "resource": "repo://scripts/sast-scan.mjs#L877-L880",
           "version": "repo-lines-v1:sha256:b673165761bbbe9efd38081eca3f21f3593cf9d224b6f2c60055353890faeb05:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJhYjkyYzA5NWVkNWFhZGM4MzczNGFiYmVkOGQ2MWEyZDI0NTJhYTFiMDllMmM0ZTAyNWQ0MDllY2U5OTdhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJlYmVjZjMyYjIzNDFlOTg3YWFkNjQyYWM0YWY5NjQwZTEwNDY0MjMxNDNiYjk3MGQ3N2ViMzg0NGViMjg3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjE1OTY1OWUyOWM0MzAzNzNiNTI2MWQ1MGExZGM4MDU5OGFhNjM2NzljZGRhZDE1ZjBkNzRlYjE5YTYzZTNmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZmNGI2MWMwNGRhMjhhZmI4MTQ2ODFjMGJkNTg0NzEwNWVkMDlhYzdiMjBkYTMzNDM2MTFjMGFkMmY4YmI4ZCJ9"
         }
       ]
@@ -533,7 +537,7 @@
       "statement": "`pnpm why <pkg> --prod` without `-r` runs at the repository root only and prints nothing for a dependency that is runtime-reachable through a sub-package, and that empty output is not evidence of a dev-only dependency but the wrong scope; the gate itself derives scope from `pnpm audit --prod` across the whole workspace. The correct hand check is `pnpm why <pkg> --prod -r`, and for a nested workspace the equivalent is `pnpm --dir <ws> audit` / `pnpm --dir <ws> why <pkg>` because the root workspace's overrides do not govern it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L144-L155",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L189-L200",
           "version": "repo-lines-v1:sha256:51e6701485cf6f325ad946bbe59d33de652f7d539242bc46208c3f082b3f3a0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OTZmNmI5MzNkNmJhMDE4ODQ2NmY0MGVkOWFhMDY5YTNhZTU5YTZjYTA2MmZhN2RhNGQ4YzIxMzhjN2JjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxYTU3Mjg3NjI1ZmFkOTQ5MzE3OWJhYWEwNjM2OGE3NWQ4ZDM0ZDY2NzAwYmFmM2Q0NGYxNTNlNjFmOTJkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjBkYTVhNzM1MDI1NjZmMzU1MmJhZWFiNjI1NzQyNzc2MDVmNTNlYWEzZDM1NmY5ZTFjMzQ2YjMxOGYxYmUifQ"
         },
         {
@@ -541,7 +545,7 @@
           "version": "repo-lines-v1:sha256:99f900b1a7b7705d54f72ec8e4f8abca2b87bd214dedc05d5fd9cfa3f52ec513:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjgyZjBiZjM2Zjk1NmFmNDJjZWMyYTVhNTNlZmNiMTgxYmI3YWUyNGUzMDAwNTY1NWQyMWJjZTE4MDIxNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMGE5NjRmOTkzNzQ5NTY4YmRmNjIxY2M0ZjcxNTExZjM1ZmIyODQ3NjU3YWM3N2JlNGQ1N2UzZGNjYjllYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYjM4ZWRmNmE2NTU0MzVhMTkyNzU2MzIyYTYzMjdiNjE5ZDc5NDJhZDYxZGVjMWVjOTc4OTQ4YzkyYjViN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YzNlMmUwZTc3Y2M3ZTIwMzBiOTAyMWNiMjBkOTc3NjJmMTVkNjFiZmZhMDcxOThkNzg4NzRlMDY0ODI2YTAifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L524-L537",
+          "resource": "repo://scripts/sast-scan.mjs#L537-L550",
           "version": "repo-lines-v1:sha256:63ae53b27c00acd32c912a85baa6bb615006ae952d63036023363fc14ecdd8b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFhNjE5ZmNiNDU0MzkyOTMxNWYyODYxN2VmNmVkMjZiYWIyNzg2MGJhOGFmZjhkNzZkOWUxMGE3NGU1MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMjI3MjEyZGQzYWM4YmQ2MTEyZWUxMWM1YmE3ZTc3MGE0MGYxYjJmNDEyMWE3NWE1ZGNmMGUwMjU5NjkwMDMifQ"
         }
       ]
@@ -551,11 +555,11 @@
       "statement": "Allowlist `locationPattern`s are matched against paths normalized to forward slashes so one pattern is portable across the Windows dev host and the Linux CI runner; a pattern written with backslashes matches nothing on the runner and passes silently on the Windows side. The generated reports/allowlist.proposed.yaml additionally writes its dedupe key with `\\u0000` as an escape sequence rather than a raw NUL byte, because a raw one makes grep treat the whole file as binary and print no matching lines at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L376-L377",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L421-L422",
           "version": "repo-lines-v1:sha256:44877ab3ee914095a855deda5dd890ec1e696626b4eeec9cb82bca151dd290e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhNjI5NDkyNmE3YzhlN2NkNDc1M2RjMjg2YzUwZjQ2ZWNiNTRlMWJiNjU1OWI0NzdiY2RhYjIyYzg1MjRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU2ZThhZjFmNTQ5NjFiY2NkZTVjZWU5M2U4ZmUyNzhkODgzNWYwYmNjMmY3NzlhZTNhYzQ1OGIzMjA2ZGZmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcxMDZmMTdhODY1MDNhNDNmNDE5Mjk0OWRmN2IxZGI1M2Q5YjUxZmM5OWRkNWFhZTY0MjdlZWU3ZTkzMWRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L764-L766",
+          "resource": "repo://scripts/sast-scan.mjs#L777-L779",
           "version": "repo-lines-v1:sha256:d6f5e3dd13a964cff8636247e23dbe831c400637a76250b478d06ad37ee6cd37:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VhNTUxYmJjMTE3Y2U4YWE4MzU0NmNiMzM5OTBhMmEzZDU5OTQ4NGUxNTk0N2U3Nzc2MWM3Y2M5N2Q0N2E1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU1ODdmM2NiN2I5ZDQ2NmNlYTM5YWFjYWRmZTQ1YjFmNGE2NWJkMTgxYTMwYzY2NjJiOGEzZDYwNmMwNTJkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2IzOWFjMjhkZTkwMjA4NzM3NzYzMzYzNTU1YzYzZmE1M2JmODNmZDM3NDgyNGMxYTI1ZGRjYzM3NTVmMDExNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI4NTQxZDgxNGYzZTI2NzYyOWRlYzA0OTZkZTI0NDIyYjNiYjY1NWY4NDNjNzA0OGUyZDBkNzk1ZGY4MmZhMiJ9"
         },
         {
@@ -587,7 +591,7 @@
           "version": "repo-lines-v1:sha256:69539fbdb56aec7540caaaeb8df69d640d7492b78f48d1bbc0b0f538e8f577e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNmOTcyYzFlNzY1ZGUwYjg3YWU5NTM5MzhkNzBiOWE1NWRjZjNkMGYxMTgwZTM3MDAxOWM5NjVlZWViYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTMxYWFiZjQ1NTdiZGNhYjE4Yzc3ZTk3MmRmOWQ5MDRmNzhkM2M1NjE3MzFjOGZlMjQ3NGIzMjcyYjAzYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTA5MzU3Y2IxYTNjOWFhZDNmMWExMTdhNzU0YmFjMmVlOWU5YzAwNDBiZDlhMTcwOWQyOGU0ZDJhZjBhM2IifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L373-L375",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L418-L420",
           "version": "repo-lines-v1:sha256:b7106f17a86503a43f4192949df7b1db53d9b51fc99dd5aae6427eee7e931dd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhODIwODFlNDVlNDhiOTg0Y2NiM2M2ZmE3NDMxNGRmYmRjYTc0ZDk4OWYxOGY5ZjI5OTY3ZmMxOWNhZjUyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmI0N2ZjMmQwODZhMTBjMzFjZjgzNWYwM2YxYzQxY2I0NTRhNDdiMGIzMjVjYjY1ODJkZDFiNjhhZjYzNThlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY0MDVmM2Q0NzkwZjU2ZmVjNWY2MzAzZDZiYTMxYzdiODljZWZkYWUzZjFhMWZjNTFkOWFmMDY0YjAzYzdhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ4NzdhYjNlZTkxNDA5NWE4NTVkZWRhNWRkODkwZWMxZTY5NjYyNmI0ZWVlYzljYjgyYmNhMTUxZGQyOTBlOSJ9"
         }
       ]
@@ -601,11 +605,11 @@
           "version": "repo-lines-v1:sha256:4bd8f7eba8574f7fa9c0a442ac227724248f5d3e05392dfeb3e76af98c04d51b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJkOGY3ZWJhODU3NGY3ZmE5YzBhNDQyYWMyMjc3MjQyNDhmNWQzZTA1MzkyZGZlYjNlNzZhZjk4YzA0ZDUxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJkOGY3ZWJhODU3NGY3ZmE5YzBhNDQyYWMyMjc3MjQyNDhmNWQzZTA1MzkyZGZlYjNlNzZhZjk4YzA0ZDUxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjE0ZGEyMjk3NzhiNDcwOTk3NGVhOWFkN2IzNWIzYzVlMDZhMzU2NDBhNWE4NGQ2YmQyMzZlNmVkYWQxZTljYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg4ODYyZWIxZDg0ZDQwMWUzYjE5NjQzYWZhZDA5ZjQ5YmVjYjJmODJkYTY5MTkwYjgzYzFiYjAxOWI3ZGI3YSJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L667-L667",
+          "resource": "repo://scripts/sast-scan.mjs#L680-L680",
           "version": "repo-lines-v1:sha256:952945ccc476a0d8492daaf46dff036932b2403aee4b05d459a9436540244b96:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyOTQ1Y2NjNDc2YTBkODQ5MmRhYWY0NmRmZjAzNjkzMmIyNDAzYWVlNGIwNWQ0NTlhOTQzNjU0MDI0NGI5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyOTQ1Y2NjNDc2YTBkODQ5MmRhYWY0NmRmZjAzNjkzMmIyNDAzYWVlNGIwNWQ0NTlhOTQzNjU0MDI0NGI5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY5YmU1NzI5NDk5ZDJhNDA1ZDhiOTZjOGMyNDNiNWNjYzcyZjU2ZmU1MWNkODhmZjllNDhkZWE5MGFjMDQ3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZlMmFjOGNjZjVkZjhlMDEzYTE4Zjc2Mjc3ZjllYjU4YjFjNThiMGQ1NjYwZjMxZTRkNDJlYTEzYzRlNmFjMyJ9"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L680-L680",
+          "resource": "repo://scripts/sast-scan.mjs#L693-L693",
           "version": "repo-lines-v1:sha256:ca595e6dd755479c319807c938c5abff787b851a3f422dc1ee17c68a8316e5e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1OTVlNmRkNzU1NDc5YzMxOTgwN2M5MzhjNWFiZmY3ODdiODUxYTNmNDIyZGMxZWUxN2M2OGE4MzE2ZTVlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1OTVlNmRkNzU1NDc5YzMxOTgwN2M5MzhjNWFiZmY3ODdiODUxYTNmNDIyZGMxZWUxN2M2OGE4MzE2ZTVlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzYzYzM4YWMyZmM1YWZlMmZiNmJjYTAwZTg3YzBjNTk5MWMwMjYwOWI5ODNhYTFkMmJiZTIwNzdjYTA2NDAwNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTBhOWQwNDYzNGJhMDU3ODgwYmE2Y2NkOTkwNWJkMmU4ZDQ1ZWFjZjBjOWRkZTNjMjFhZmZjOWFiM2U1ZmIxMyJ9"
         }
       ]
@@ -619,7 +623,7 @@
           "version": "repo-lines-v1:sha256:1697112ac6e6e3d86063cbcde719f6dd03608bff42d83b4ffe31cae52763753c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZTg1ODg5YmEyMDBhYWU2Yjg4MTljMTQzNTVjOTcyYzhjNDVkMjAxZmQyNzU2MzllMTgwZmI4ZjAxNzU4MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyOGFjZTQzZmUxM2NlYWNjZjIzMzU4ZDgwMjBlOGRiNzFmNDdmYmVhZWI1ZTNlMGU4OGYzN2ZlMGUyOWEzZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhYzY5MjMwNTFiYjJlZDM1ZmQ0ZWQ5MTIxOWEwNDQyZWNmNGNlNWY5OGRkMzI0ZTlmOTVmNDM3NTkzOTM4MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmYzhlOTIwNjM5ZTY1OWFlMzYxMzRjMzFiMmRkNmFmMTJkOTczNDhlMTJkY2NhNWI3YWE5MjFmMDc4YmJlNWIifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L403-L421",
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L412-L430",
           "version": "repo-lines-v1:sha256:e88fc56f2495ea8a5ff489ecd30077aa0c0e017b223372d2cd18c9b098415514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTU0OWNlNTFiMTEwZGFlYjEzMzkwZDdmZDYxYThkZDQ5YTdiM2RhZTdmODkyZDUxYWU5ZDQ4MzQ1NDdjZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMTcwZjFjNmE4MWY5Y2NhZDJlYzMyYjk5YzgwMzFjMmRkMWUyNDljZTVjOTAyMTc1YTc2NDIwZDY0YjhkN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNzQzZGM0YjI1NGJjZTg4YzU3N2I2MmFjNDdkMzQ4YTJhNjViMTZhZmM3OTI4YjAxZWJiMzkzYjZmOTI2N2EifQ"
         }
       ]
@@ -629,11 +633,11 @@
       "statement": "The `runtime` tag a finding carries is the audit's own scoping rather than a reachability finding: it answers whether the whole-workspace `--prod` audit sees the package, not whether the vulnerable code path is exercised, so it must never be read as evidence of reachability when writing an allowlist justification. The node-forge and root-braces no-fix acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a production dependency — node-forge arrives only through Expo CLI / code-signing tooling and braces only through micromatch in Metro's file watcher and Jest, plus (re-measured 2026-10-10) fast-glob via @tamagui/static/globby and http-proxy-middleware via Nx — while neither is imported by first-party code, neither ships in the web or server bundle, and the glob patterns those tools expand come from repository configuration rather than a request. The now-deleted @graphql-tools/utils acceptance was tagged runtime through @copilotkit/runtime on the same kind of non-evidence, being only listed as a dependency and never reached on a request path. The generator's braces entry carries the same runtime tag while its code path IS reachable — braces@3.0.3 arrives via openwiki > deepagents > micromatch and deepagents' glob/grep tools pass model-chosen patterns to micromatch, where a ~40 KB nested-brace pattern aborts the process (V8 RegExpCompiler OOM, exit 134); it is accepted as availability-only impact on the unattended, non-required wiki-maintain job, and no lockfile lever exists because deepagents pins micromatch ^4.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L144-L155",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L189-L200",
           "version": "repo-lines-v1:sha256:51e6701485cf6f325ad946bbe59d33de652f7d539242bc46208c3f082b3f3a0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OTZmNmI5MzNkNmJhMDE4ODQ2NmY0MGVkOWFhMDY5YTNhZTU5YTZjYTA2MmZhN2RhNGQ4YzIxMzhjN2JjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxYTU3Mjg3NjI1ZmFkOTQ5MzE3OWJhYWEwNjM2OGE3NWQ4ZDM0ZDY2NzAwYmFmM2Q0NGYxNTNlNjFmOTJkNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjBkYTVhNzM1MDI1NjZmMzU1MmJhZWFiNjI1NzQyNzc2MDVmNTNlYWEzZDM1NmY5ZTFjMzQ2YjMxOGYxYmUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L202-L225",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L247-L270",
           "version": "repo-lines-v1:sha256:3adbbe67845521cc21cc2ff89a957de3d52936f42c0feac78a28de52f6483cae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyYWZmZTg0MjgzNGYwMzQyZTk2M2YwZWM4OGZkZTk3ODUwNTFiZGE1ZjY4NjM4ZmRmODk0ODk0NzRlZTYzNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMDE5MDQ0MWMyNjYxMDBmMjc3NTllYjIyNzBhOGRhYTJhODY5MDZmYWE5Njk2MzFiMDcxZmY1MzBkMjQzOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMDQ1MTQ2OWU1OWVlYjU0ZTZiMmVmMDY1NzExY2Q4ZjZkYjQ5MmI1ODQ3NjQ5OTQ2ODQ4ZmFiZTE3ZWRiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNTkyMjdhYjkwZmM2MTU4YmM4OGY2NzBjYjA1ODFkNTRhM2Q1MDQ0MjE4MjRiOThkY2NjOTMzODUzYzE3NDQifQ"
         }
       ]
@@ -647,7 +651,7 @@
           "version": "repo-lines-v1:sha256:4a60842c0347d049bb01b9469a772537f1c981d5eb3c29af90dd6653b6b71b78:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRiMzExOTZhMDU5NWNhMmE2NWNjZmMzNDk4NTY4YzMyMzJlMTIxNzc3MWVlMmE2ZGI4NmMzYzcwMzQwOWUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5MmM1ZTFiODIyNjEyZGM0MGJlYzMyYjkzMmViYzQ3Y2FkMTYyYWNkMGJlOTY2YWVkNDEzMmZiZTc2MWZkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM3NmYyYmVmYTExOTgwYTgzOGI4YTdlYzM0NjY2YmEwZTQwMjZiOTU0NjkwMzE2OWI1NGJiMjlmZDUzZDcxZSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/sast-scanning.md#L300-L318",
+          "resource": "repo://docs/runbooks/sast-scanning.md#L345-L363",
           "version": "repo-lines-v1:sha256:d4085f6b76e9d86b7a234b7f86c6be8d1f8d48308c8f6db56e9a724cf68a0094:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmE3NGM1NzJiYjI3YjAzYzkzNWY5NjQxMmVjNWViNGFkMzNlZTZhN2FiZGJmZTE4Y2RhOGQwYTJmMDY3ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZDBiNDllNGViZTRjMjk4ODZkMjZlOWE0ZmE2YWMzZTQwZGJiMzNmM2YxNDdkODU4MmQyNzdmMjhhY2UzYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMTk0N2Q0NDM3ZGRhODVkZmUyNGI3OTdkNzM4ZDEzYTc4ODQ1YTczMTdkMjRhOTljNTA0YWI5Y2YyNGZkMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZWY0MjYzZTdjOWM0NDczNjQxYTk5MzUwNTgxZjRiNTdhMDNlZjIxY2Q2OWE0YTYyMjE0ZGY3NGExOTRlN2EifQ"
         }
       ]
@@ -683,7 +687,7 @@
           "version": "repo-lines-v1:sha256:9aff1074f5214aa025a3b37a2753ffd770a002576a4374fe456647e70f8a1749:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDZmNTBjZDI5NzVjYzQxNDNmMjk1MWJmM2FjNDI5MDk4ZDVlNzQxYTdlM2FjOGM1YmY0NzJmYzAxZGY3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExN2M5MWFjNjg1ZWQ2Njk4MGJjYjYwMGM3NjA4OGQzOTIxZTY0MGMxMzgxMjEzNmRkMGZiZTU4ODU4MGQxNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNDIxNzZjNzNlMTk4NTIxNTE0YzRhZjljMWZiZTBkYTMyYTBhMDI0Y2M5ZjFkMjhmYzZmMjc3OTg4Y2ZkZjMifQ"
         },
         {
-          "resource": "repo://scripts/sast-scan.mjs#L524-L537",
+          "resource": "repo://scripts/sast-scan.mjs#L537-L550",
           "version": "repo-lines-v1:sha256:63ae53b27c00acd32c912a85baa6bb615006ae952d63036023363fc14ecdd8b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFhNjE5ZmNiNDU0MzkyOTMxNWYyODYxN2VmNmVkMjZiYWIyNzg2MGJhOGFmZjhkNzZkOWUxMGE3NGU1MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxMjI3MjEyZGQzYWM4YmQ2MTEyZWUxMWM1YmE3ZTc3MGE0MGYxYjJmNDEyMWE3NWE1ZGNmMGUwMjU5NjkwMDMifQ"
         }
       ]
@@ -711,11 +715,11 @@
       "statement": "The same override-consistency gate also bounds the value's other end, because Renovate's npm manager attacks the cap rather than the floor: it reads a keyed override's value as a plain range and widens the upper bound to admit the newest major (`undici@<6.27.0: '>=6.27.0 <7'` arriving as `'>=6.27.0 <9'`), which leaves the floor rule green and closes no advisory while handing a dependent that resolved into the vulnerable span a different major than it declared. The cap rule therefore requires every keyed floor's value cap to be at most `<key major + 1>`, a tighter cap being fine; an uncapped floor admits every major already and is out of scope but named on every run rather than passed in silence, and a value not written as `>=A` or `>=A <B` (a `<=` cap, a `||` union, a caret) is refused with exit 2 because the gate cannot say which majors it admits. The companion response lives on the Renovate side, where `major` updates matching pnpm-workspace.yaml are permanently disabled while patch/minor stay enabled and ungated, since that is the track a genuine floor raise arrives on.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L837-L842",
+          "resource": "repo://docs/runbooks/renovate.md#L845-L850",
           "version": "repo-lines-v1:sha256:f298f2f953886c47a241d3d153ebe205a2f981f8a78c67317e5dc9ee312511dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYzYzE3NGMxMTQ4NzI0OTcyZmU2ODc1MWNiZGQ3NGJkMmE1ZWZmNWMwMjQ2ZTk4NmJkZTg4MjU4M2IzMTY5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VmM2YyYjNkNDYzN2YxYTI2ODRmYzgxMmVkNjdiN2ZjN2QxMmVkMjExYzYxNzA3ZWY4ZWFjNmExZjg2NWY1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU4ODU3Y2M3MjI4ZjY0ZTYyMzMzNDQ0N2Y3MjFjY2I0ZWIwMzM5MWE2ODBkYzQwMmE2ZjEyYzQwZDZjMGQxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ4MmVhOGYyZTRmOGI0Mzc1YmE1OGE5YmYzNzdkZTViYTI1NGU2YzZkZmVkNDNmMjk3ZWQ2ZDE0MTlhZjdhNyJ9"
         },
         {
-          "resource": "repo://renovate.json#L882-L902",
+          "resource": "repo://renovate.json#L884-L904",
           "version": "repo-lines-v1:sha256:3cfe4094b0f19f47c00f49050b209c62200c79da25102d0a4cb2b96dbe69c389:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViYjdlNzM5NGU3YmIwYzE1ZjBlZTMzNWVkMTdmZjEyZmM0YTc4NTkyYjNjMGNkMjFjNzIyNjg3YjUxYmJhZTgifQ"
         },
         {
@@ -777,7 +781,7 @@
       "statement": "The `sast` job uploads its reports as the `sast-report` artifact under an `always()` guard so a failed scan still leaves triage material, and caps it at `retention-days: 14` on the rationale that the report is a diagnostic rather than a record (spec 084 FR-019c). That cap is enforced rather than remembered: `scripts/__tests__/upload-artifact-retention.test.mjs` parses every workflow under `.forgejo/workflows/` and fails any upload whose retention exceeds its class ceiling (14 days for diagnostic names such as `*-report`, 7 for the release APK, 30 otherwise), and it first asserts the walk actually found known artifacts including `sast-report`, so the guard cannot pass vacuously.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/guardrails.yml#L396-L402",
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L405-L411",
           "version": "repo-lines-v1:sha256:0fd2e5ad6dc4fa204c16c16a58d9ba61692be757673576a31f7b96e6dea791ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVjMjRhNWM0Yzg1MzI3NWE3MjFjNTkxY2VmNGVhMTQyY2YyNWQxMjg0MjQ4NzRhZDQ5Y2IxM2IwZmQ5OTAyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1NjVlY2IwNThmNDg2N2QxMTZhMzU1ZWFkYzJlOTlhODA4Yzg3NDBjZGU2ZWQxM2YxYzRiNTY4Y2NlMmQzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAwZTA4ZjBmNWQ0YmU5ZmRkNGYwYzM3OWIxODM5NjI1MmQxMWUxNTc1YzFjNjhlYWVjMDFkYTUwNTMzNmI1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU4NTZkNjBjYTU4MTU3YTRlMWQxNTQyYWMyNjU4ZTk5ZDcxNzBkM2IzMTMxNjYxYjUzMzNlOWNmNzdiZGUwZSJ9"
         },
         {
@@ -799,10 +803,156 @@
           "version": "repo-lines-v1:sha256:867d96a25cafa58637daf244df4b4a2795f665bf6671e6939b951d37f6d2b9e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NzE0OTZiZmMwYjQxOTNlZjE3Y2Y3Nzc3N2VhYjg3Mzk5MTgxYjhiNDkyZWFiNWYyMjZjMWIxYzlkZDIxMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZDg5MjkzZjFkZTJkNDZjMWYxM2NkZDQ5NjMzNmRjN2M2YjY3NDllNTA2ZWYyMzgwZWI2MjJkMDcxNjI2ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiY2VhZDNlNDVmN2Q3YWU4NGZiYjRlZTU3NGYzM2Q0ZTM3Y2IxYmZhMDY3YzA0MDhkMDY1ZTA4NDNlYWI0MTAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f7a45a2f6e9247a4b73bc55b273c0aee",
+      "statement": "`scripts/check-dependency-downgrade.mjs` is a second gate over the same scan. It runs on pull requests only, in the `sast` job, positioned after `sast-scan.mjs`, and that position is architectural rather than convenient: its inputs are the pnpm-audit native report the scan already wrote (`security/sast/reports/pnpm-audit-native.json`) plus the base lockfiles read out of git (`git show <base>:<lockfile>`), so it costs no extra registry round-trip and cannot disagree with the report the severity gate read. A push has no base to have regressed from, which is why the step is PR-scoped on `github.event_name == 'pull_request'` with `BASE_REF` from `github.base_ref`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L396-L404",
+          "version": "repo-lines-v1:sha256:e8a8f9b703dc234907f4bde604167eb884fd8dc698e35ea25b2d7ff6984aacdb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGEzYTE2MDU3YjY1YTA4YjhiYTI3NzMyNDhhMWZkNmM3ODAwNjYxMTA4ZmU1YzA2ZTU3OGRhMWI4NThmNWNmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZkNTRkZGFiYThmNTU5NzUxMDNjMTdlYzM2NGRiNjllYWY5Y2NkYjI1OWFlY2U2OTJlYjkxMWYxOWVjMzllMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAwZTA4ZjBmNWQ0YmU5ZmRkNGYwYzM3OWIxODM5NjI1MmQxMWUxNTc1YzFjNjhlYWVjMDFkYTUwNTMzNmI1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNmZhY2RhMzhkZjc2NzQ0YWMwNGYxN2RiOWYwZjI5YzU0OTVjYzNkNTdhNDY5Y2U2NGUwYmMwZGQwYzAwMCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L78-L83",
+          "version": "repo-lines-v1:sha256:dddae880191ef9724fe835ce64820ba1268b58dfaf5afa6f277f747d3a6d5a18:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4N2ViNDFlYTRlMWM5NzhlODRhNTU0MmM3NTMyMzJjMDdiMjMzMTU1MzQ1ZTA2MmZjODY1MWVlODQzZWVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ1NzQ2Mjk1MGNmNDNkZDczMmRlN2JjOWY4MjJjOThiYjcxNDZiMjY2ZDY1MDBhYjQ0OTcxOTRjMWQ1Y2E4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGIwMjM5OWE3NzRkNDQ2MDI2ZGNhNWJlYzA2ODM3NjJkOWI5NmM2YjkyYTU5OGRkN2Y0MTgxZmIxMWFjOWYxNiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L262-L267",
+          "version": "repo-lines-v1:sha256:be058fcea3d53f32db6e88552ae24f6b6fe681e4323e76d5fa25eb7487bdd484:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQ0NTExN2I4NGRjYjZhMjIwNmNhOGQ2NjJkNzlhN2Y4NDgzNzk1MTFiOTA4MjNjY2YxMzE0YzI5ODllYTQwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmMxNTQ0MWE5ZTY0NTA2MjBiMGNmY2VjODNlOGRiMDdhYzJjNGEwNTJjOTU3MWFlZGZkNDA1NDhiMzZiMWJiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRkNTJkYTExZjRhOWM4MGJlMDczMmU2OTM2MWVhNjQ2ZTNhZDhiYWE1OWIyMGY3ZmJmMzgzMGY4NDZjNjI1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIwY2M0ZjM3MTBmMWIzMjFkYTExOGY0NDBmMDYxMWM3Yzc5YmRlNTNmNjc4OTc4NzUwZmQyYjU3Mzg3NDBkOSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L27-L40",
+          "version": "repo-lines-v1:sha256:61871109148ef2121c5663e2da89225879fc940232d81d785729d27e31998269:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0Y2E4NDA1M2NmNWE4MWYzNDg5MDgwNjhjYmYxMjliZTkxZTJlZDkwYzJkNzM5NWZiNTQ0MmQzY2NjNmUyZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0N2UwZDBkN2Y2NWYxOWQ5YTJiOTc5MTgxMDkxYzE0MjZhMDNiNTA3NDBjODFmY2VkOWNmMGI2NzY2MWVjNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1M2Y3M2YzODVlOWI1NTQ1MWRmYzZhZjlkZDc3ZjE4MjJhODViYWE5MWZjMzNlZmUyMWI3MGU2NGVkZjkxMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNGMzZGVhODU3ZTc2OWI0ZWEwZjExOGVkOWU2YzhlMzI1NjliNjMyYTlmN2E1MTQ5MjIzNzhiZWZmMTU5MDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a809120aa8a24b42b74d01c013a692a0",
+      "statement": "Per committed lockfile and per advisory, the downgrade gate fails when the package was resolved at the base and NONE of its base versions is inside that advisory's `vulnerable_versions` range, and the head resolves a version that IS inside it and is new to the lockfile. It is deliberately scope-blind — a regression fails in every scope, dev included — and \"clean\" is judged by the advisory's own range rather than by version order, so a sideways move into a range blocks exactly as a downgrade does. Two shapes are deliberately not regressions: a package already exposed at the base, which belongs to the severity gate and its allowlist, and a package or lockfile that is new in this change, which is an ordinary finding rather than a change from anything.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L84-L97",
+          "version": "repo-lines-v1:sha256:0fba86740f3bbd95efea911bdfb0cc34d28cd7d105d58046979eaca445d63908:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MTY3NjVkZjZkZGYwMzgzZjhiOWIzMWU3MjM3NzdlZjdjMjYwNzliYTJmNDYxYjMyMzY4OGZjZTdmZDAyODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2OThhYmNlYmMwZTcyMDAzMjZlNGI3Y2JjYzFkZmY1NzZkZWEyMGVmOTk1ZDI0M2UwZTE1ODk1NTM2NmNjMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNWFmYmI0OGM5MzI1ODYyZWU0ODlkMWZjMWJkOGVkOWFkMmI1MWI3NmJkNGFmOWZjMTU4MDU5NjdlMTg5NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZTE3ZjljMTUxNDdjYzNiMGQ4NGY5NWY3MjBkNzE5ZDBmZjY4NDdkYTM2OTk2ZjNjYWU5MTI3OWUyYjdkYzIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L100-L134",
+          "version": "repo-lines-v1:sha256:ef9f63897934a5455bff79784e40551c3994d915e7b4229b8aa316d37b39ca78:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZWIyZWI1YjY2MDMyMDE0YWQ4NDA3ZjJkMjY1NDAzMWY3Y2Q3Y2YwODVlNjM5MjdmOTMzOTFiZGJjODBhOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYWEzYzRiOWQ1OWY3ZDk3MDU5MzgyZjE2YjE2NjVlZTZkNWJjNjA1NmJmNTgyODUyMDU5Y2MxMzA1NTdlYTYifQ"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L18-L25",
+          "version": "repo-lines-v1:sha256:12572ca6c096cf2de1817e174385de9ac3769a060b6029a5d99ccd1e98343933:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk5MWZkNjI0OWNhOGFjODFiYTQwYmZmMTVlYTdmY2ZhNzZhYjYzYTEyODNkODllMWRkOTQxODI2MWJhNzdhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU3ZDFhMGI3M2NiODRlNDAzOTE4NGE5ZTk1MmIwZjVmYWE5ZTJhYzkyNTRhNjFmNGIyMzgyY2ZjODc5ODk0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTEyMWJmYTFmZjJjZTI1ZDgxMjYyNjc3MWFhYzM3ODYyZTk2YWVkNWQ2N2Y1NmRhMDFhMGIxNjU3ODY5NDdmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ0ZWNhNjhhZjhlZDFhMTY2MjAyODRiNWFkOTAzNzViYWMwZWZlMTFjMTZiY2Q5MmY5NWNkYTE2MTdhOGIwNiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L191-L220",
+          "version": "repo-lines-v1:sha256:60d4ab0c04ce093d0b7f43c2b8288284751d57fef2503a6fe8e5ddd4a3f6b5a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOGZhMzBjM2EzMzYwZGE5ZjNhNzdlM2VlY2U1NTgwZGZkYzE0MDYzZTFlNjQ2ZTYwYjY4YzRhOTU5YmU3MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxZTU5Njc0ZWQzMWY1NGE0YzExMGU1YmRlZDVhZDdhMTUzZjlkNWQ0NTVlNzRiMDY0MDFlMTZkMDJhYmFlZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2YjJhZjMzYWY4NjY2YjlmMzY3OThlNmQzOWU5NWQxYjM1OGJkZWI0MDZmMzhlNGMzZmViYzgyMzQ3YmQzNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19d7c1244c924e1fa5b6e7388c87bb9d",
+      "statement": "Accepting a version is one decision rather than two: the downgrade gate reuses `evaluate` and `loadAllowlist` from `check-sast-findings.mjs` and `pnpmAdvisoryId` / `pnpmFindingLocation` from `sast-scan.mjs`, so an unexpired allowlist entry matching the same `scanner` + `id` + location suppresses a regression here too — including a nested tree's `<workspace>:` prefix — under the same expiry rule that governs the main gate.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L148-L155",
+          "version": "repo-lines-v1:sha256:ccf2584ec0d7980b0f60a97df59d611799ccfb9a06783c89412afe6769412243:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmZDhmNGVkZWVkM2VjZjY0MzNiYmJhNmExZWQ1YzAyN2Q0NDM0NmUwMTlmODEwZDFkN2M5ZTY4MGExNDc1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNkNWQ3ODdkOTk1MDEzNjhlNzljYTA1MmIxNDlmNjdlZTIyYmM1NWI5MjZhMzkxNTljOWZhYjIwNjRiYzQwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ0YTA1YTVmNmQ1OTQyODI0YjYyZDQ3MjQyMDYzZThiNjEwNDJlNGY1MjgzM2FmOGVjZjJiNWQ1MmIyOTljOSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L222-L227",
+          "version": "repo-lines-v1:sha256:df5330c75dd1490542deb3780c2574b491a0dc90b0a977292e64561f98afbc87:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTAwNjNjYTIxNzFhMTZiODhmYWYzZjNmMjFhYWVjZWYyZmEwODgyZWU0NjY0NmUzMjAxODUwZWU5Mjg1OWFjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGMwNzU3YzRiYTdkYzJkYjExYmM0ZmViZDFkNjY4MzM0NGM4ZGI0ZmMzMzI3NmRjMzc2MDQ1MDU4YTUzZDRkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y5ZmM1YmMzNmRlMGQ2OTg2ZGJiNDVjNWNlYjkwZDYzOWUxM2RlNjhiMTkwNzFkNDkyZDAxNjhlNWNhYWM3YSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L42-L52",
+          "version": "repo-lines-v1:sha256:0c7e45add008970844b14b38ba83c8c18605783f37898504f1edf14ec2f483d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0YWRjNmU5Y2ExNjhjYTVkMmFhMGVjM2IwMjdiNTk3ZGY1NGI1ZDEzN2Y5Zjc4ODU0MzkwMGI4NTZiNmUyODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViN2Y2Y2FiMmRiYjI2Zjk2YjdmN2IzYmM1NzBjZmY5NDI5NWMzMjBkNDM1ODAzMzc5YzFiMmY0Y2EwZTFjMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkYTkzMTRjZGI1MDcyZjlmYTAxOTNhYzY2MDQyOWY0ZDk5NmMyZTc2NDE3NWE4NWM4OWVjZTBkMWY1MzY0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2MGIyZmFlZDgzNTNlYzA4YjkyNDE0OWY3ZTY2NWYwNTFjYWQwOGJkMzU5ZTZjYzRmNGEyNDZhMTk0ZWM3MzMifQ"
+        },
+        {
+          "resource": "repo://scripts/sast-scan.mjs#L503-L515",
+          "version": "repo-lines-v1:sha256:e9ef1fc78bab21d21af9041cd0e9eaf2a07963cd791e09746fcde0765152f4b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ODAzYmYwYzdlYTU0M2YwNmI2N2MxN2JhMzdmNGZjYWFiNTBmOTBiZmE1MDIxYzk4NWNhOTE0ZTU1YzNkZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96cfc8a9a7834c79a6ef6fea7e6ddebd",
+      "statement": "The downgrade gate fails closed: a missing or empty native report, an unreadable lockfile, or a `vulnerable_versions` range its parser does not understand is a failure with the reason printed, never a pass — a range it cannot read is a range it cannot judge. Exit codes are 0 (no regression), 1 (a regression, or an input it could not read) and 2 (usage error), the latter routed through the shared `scripts/lib/argv-contract.mjs` contract. Two mechanical consequences follow: there is deliberately no `semver` dependency, because adding one would move the very lockfile the gate judges, so the parser handles only the small regular subset npm advisories use and throws otherwise; and a pnpm 11+ lockfile is two YAML documents, so resolved versions are read line by line from the `packages:` sections and `snapshots:` keys are deliberately not read because they carry peer suffixes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L72-L85",
+          "version": "repo-lines-v1:sha256:e34358dc6afeafce5d3d6998283ef38d41a0dc814eec3014628c5a1d6d07ea3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZmJmNGIwZDkwYjU4ZGIwZjc0YTE2MjMyYTljMTU0Mzg1ZjhmODE0YTJmMmIwOGVhZmZjNTQ5MzU0Njk2OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkOTc0ZTUwMDBjZDY3OTIzM2I5MGYwYjFhODE1ZjA0ZGE0ZGU3MGE4N2QzMWVjNjUyODVlN2ZjZWI5YjAyMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiM2M1MWRjYzg0YTllYWQ0NTQ0MjQ5ZDE4YjI2OTRiYTQzNTNkOTdhMmZhMTRlOTFjOTZjNzZmNjJkYTMxYTUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L133-L178",
+          "version": "repo-lines-v1:sha256:650c73e8cc273295e65fd41952c7c5446ad658e3f5e2a1927e1a2823ca191a1d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNjRjZGZiZTA5ODlkZGQ3MTA0Mjk1MzhmNmRjMjlhNWY4NDE4ZmI1MmEzZWMwNjZkZGQzNTFkYmM1ZWJkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4N2Q5OWYxZTRjNDIxZDRmNjAyNzJlMzU1NzUxMDJlMzU4NjAxNjg3Njc0ODA1OTI3MGY2MjY4ZjBmNzI3ODkifQ"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L245-L260",
+          "version": "repo-lines-v1:sha256:6c649f2ad8a3f67ddec9c19a6ac6cb2270addd818bc49afd930b1b90d28149ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNjY2ZGQ5YzYzMmE0NDMyZGE3NDkxZjJkNzcxY2Q5ZWMyYWJiZTc0ZTU2NTE0MmQ5MDYyNDkzOTVlYzEyNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MjRhZjcwM2FmMjYxOGUwZjVjNjJmM2Q2MjZjMjM0Mzg0NjNlOGNiYzNlZmJmNzhmM2YwMWJhODcyZTQ4NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NzQ5NWNkMDZhZDVjMjdkNzlmNWExYmNhNDViZjg3YmE1MDI1OTA2YjZjYWE4NzhmZTNiMTNiMmY2MTlmZTQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L33-L34",
+          "version": "repo-lines-v1:sha256:5f821af7919ffae7c60422bdf8754e2ae3aa871012a858e716337b71522f0703:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUzMzQzN2I4ZTkzMDAwODIyMzRjZGFlMDhiMTVjODJiNDFiNmJjZjkzOGM5MzU5MWNkMWViNzY3MDk4MWMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEyYTM2MTdkOWY1NWNkODE5N2NjM2JmZmFlY2YwZTcwMTE0MzdmYjM1MzIyNDc5MzlhZjY2OTljYjkyMWQyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTEyMzE5ZGNjOTE2NTc0OTlhNDRmMTY0ZGI4NWIzYjM1M2Y0ZGEyYzQ5YzVjOTAyZTdiMjQ3MDExYWJlZmYyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGI5ZjdlNWI0OGU1MzE3ZmE4YTcxY2IzZmZlNWY4MzhlNDM1MmZiN2IyMDFhMjMxOWU3MzBmM2VkZTYyNTBkNiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L62-L67",
+          "version": "repo-lines-v1:sha256:24728d6c2f0e890622a243c2fc1c2d896a5669a2d5603e95b9e602752576d327:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJhNjU1ZTU5ZmExOWQzZGJhZjYwNmFmOTNkZjk0N2Q1ZTM5YzZlOWE4ZTZhY2VkNTVlZGFhYmNmMzc0ZGE0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjE0MTY1ZWUyMzU2NTNlM2FjN2IxYjBjMjM0MmI4OWQ5OWRjOTg3YTE4MTdjODgyODRiMjg5ZTU4MmE0MmU3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNmY2ZjZWQxNTExMDI3M2Y0MWUwOTk5NzdkYmVjNzRiZjdjZTE1NjFiOTc5OTk1ZDFhNDMxNWZlNTBlYWJiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFmM2I3NDMwMTA1MGViY2JkMDI2MzRkNzU0ZjIwYTY0YmE3OTRjZmY5MzU4NWZhNWNkZGE3MzczNGFmYzk2OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a23c98ead454d41abd2f1ae08f67f4e",
+      "statement": "Measured 2026-10-17 (item 776, spec 081 US3 PR 3b): `nx@23.3.0` pins `undici: 7.29.0` exactly, so the nx 23 bump re-resolved undici DOWN from 7.29.1, back into ten advisories (two High) that 7.29.1 fixes; all ten read as `pnpm-audit/dev`, which never blocks, so the severity gate stayed green and the regression was caught only by diffing the lockfile by hand. The fix was the floor `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'` in pnpm-workspace.yaml, and removing that floor re-resolves 7.30.1 to 7.29.0 with the downgrade gate failing and naming 18 advisories (six High) — measured 2026-11-01. The 2026-11-01 decision (item 776) is that dev-scope High/Critical stays non-blocking: the dev/runtime split is unchanged and the downgrade gate closes the regression shape directly instead, ignoring scope on purpose because the dev tree runs in CI jobs that hold credentials (the nx remote-cache token), and because a rule keyed on \"runs in a credentialed job\" would need a hand-kept package list the audit cannot derive.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L88-L120",
+          "version": "repo-lines-v1:sha256:f5e77197b752f299b006f109e5135cdb31779a3a5ccfa031e4811c6c6d1b9d37:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNDFiNTA1ZWVkNDZhYzk4ZTA1ODNkM2RiNmI2MTI3ZWMyYTFlMDg0N2Y4MTQzMWY3ZTc0ZDMxMmRkM2JmMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMjU4ZjY4OWY1N2NhZGMwYzU1ZDljYjQ2OWQ3YTIyMzc2ZGQ0OTI1MDFlNzcwNWM4MzFmM2JlNGY1YmIzMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxZTFlZTIyOTY3NTA5MGFmMDBiOTdhN2VkZWY2ZGVjNzc2YzdkZGM1ZTZkNDMyMmI3Yjk4YjJjYmJkNjRlMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMmEyZjc2ZDM0NzMxOTcxODk5NDg2NDM1MWNjYjI0N2JkMTIwODQ1ODQ2MTY0YTcwMGIyNmYxMDhlZjhmMjUifQ"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml#L87-L95",
+          "version": "repo-lines-v1:sha256:49e06370792da13a9791aebc15bdad140b675c46ab1ac15deae8a58fa2b2dcfa:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZhZDFmODA4MzQ5YzUwZmYyYTBkMDg4MGY5MDVjYTEyMmNhMDBkYTAxMGQwYTY2Zjk2N2FkMzE4ZjExNDZmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4ODQwOThjNTE2YmE5OWQ2MDA0Mjg4OGEzMGQ1YWE1NzdmZWRjOTg2YzA0YzAzNTgwMjhhZWY4ZTRhODQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzExMjdjN2E0YzYzZGY0NGQxNGRkYTc0ZGI5MjNiNDk2OWIxZGVlOWYxNzhiMDI3ZjcyODJiZmNkMTA3YTg4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg4NWJjNWY5YmZiYzE1N2VhOWJlZTMzMTNkNTZjNTg0NjYxYTNmNzk2N2VlZDMyODUxZWE0MThiOTk4NjgxNCJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L1-L25",
+          "version": "repo-lines-v1:sha256:a5f567e2a830d3d2771c1df848b4b5f9769beb7c81cb504d0d95510483582318:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlN2QxYTBiNzNjYjg0ZTQwMzkxODRhOWU5NTJiMGY1ZmFhOWUyYWM5MjU0YTYxZjRiMjM4MmNmYzg3OTg5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NGVjYTY4YWY4ZWQxYTE2NjIwMjg0YjVhZDkwMzc1YmFjMGVmZTExYzE2YmNkOTJmOTVjZGExNjE3YThiMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53fbfc25cef24d4da14315a2ff0df72f",
+      "statement": "scripts/__tests__/check-dependency-downgrade.test.mjs proves both the downgrade gate's rule and its WIRING. The wiring half asserts that guardrails.yml invokes the gate inside the `sast` job, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and positioned after the scan step that writes its input — because a gate that is never invoked is indistinguishable from no gate. The rule half covers the comparator forms npm advisories use, a prerelease sorting below its release, an unreadable range throwing rather than judging, `packages:` keys read from both lockfile documents while `snapshots:` keys are ignored, the #774 undici case and its variants (a sideways move into a range blocks; an already-exposed package, an unchanged vulnerable version, and a package or lockfile new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting a regression when unexpired but not when expired.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L163-L174",
+          "version": "repo-lines-v1:sha256:8f0a616843857bc22f7e1f44e344975a71f96d2fed2bc089ed3835a20bd16d65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YjY5OWMxODNkNTNkZmI4MWEyYTY2MDQ1ZjZiZTljMGJlMzc4NjQyY2EwNjkzMGI2NWVkZTFmMzkzODgwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTFjMTVmYmMxZjdjZGJkMGRkZThlNGUzNGUxNWQ3MThhNDBiZmU5YzU3NWEwMTkwMzVjYzYwOTVkMmY1ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L178-L187",
+          "version": "repo-lines-v1:sha256:3b9d8728203cd4f24e2ece7ffdc6a116a4ab609021ecc01bcd396fdefa1249c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNGUwMGMxYzA1NDY4YTMzMTdhZDMyNDFkMWU2NzNkYjZlNDMyMTc1OTIwMDI1ZjY5N2U5ODNiYTc1ODY2YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L45-L134",
+          "version": "repo-lines-v1:sha256:aa1d4934773f0fae27147b22ce464d87b0f8969edcf52b0243d9e30da4de3a70:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3M2MxMjAyNjkxYjY3MThiZGY0YTUyZTFiYmRkODFmNTNlMTQxN2JiZGRjNmFmNjE5NTQ2M2VhZWEwODhkNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMmMzMDIxZTVkMTdmODYwMTAzYzY4MGE3Y2NkZmQ1NmNlZTYzNjc4YTc0YzgwNTBjMWU0OTI1MWUxOGM3OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYWEzYzRiOWQ1OWY3ZDk3MDU5MzgyZjE2YjE2NjVlZTZkNWJjNjA1NmJmNTgyODUyMDU5Y2MxMzA1NTdlYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ec0cce9ae1741aa967871e6282aa408",
+      "statement": "A red downgrade gate is a property of the change rather than a newly published advisory, so the scope argument does not apply to it: the message names the package, its base version(s), the version it now resolves to, the advisory entered and the fixing range, and the remedy is to restore the clean resolution — normally the override floor the message suggests, which must obey the two-halves rule or `check-override-consistency.mjs` fails the same pull request for a different reason — or to record an operator-approved allowlist entry. The gate also cannot run without a native report, so `--native` must point at one and an absent or empty report is exit 1 by design rather than a \"no regression\" result.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/sast-scanning.md#L96-L100",
+          "version": "repo-lines-v1:sha256:a66b5ebcdf4e19c13c848cfd9c9b9e2ba5fb7b492e0eb7558a57b930650ca24d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE4ZGIxNDA0M2U0NjdmM2UwNWZhOGE4NzY0OTYyNjU1Yjc5ZWQxNGZmYTRiMmNmZTA3NDI0YmM4OGNiYWEwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDljMmYxZjdmODA5MGUwZTFjNjFmNWNhOGZhM2JkZGYyNGFkNmY5Y2NhZWUwOGY4OGM5Nzg2NjA5ZmQ1NGY3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQ4NzE4MjAxZjgyZThlYzYyNjE0ZWIyYmYwMzU0Yjk4OTVjMmU3NDVhNmU4NzMyMWE1MTkzNWZlN2FjYmE0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODcxOTc0ZDUwOWIyMTM3NjhhMjllZmVmOWUyNzMyZDk2MGVhM2VlNzRmOTU4Y2Y2MTEwZTFmZDA2NzFiZmE0NyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L169-L174",
+          "version": "repo-lines-v1:sha256:92c49919ffd97e40f82e89e0f3398df824f4ac9755e790681cf16ba31b25c059:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdjNmY1NTQ2Y2RmZWZkZWVjNGI2MDdlZWZiOGE5OWNkMzE1YTRkMDU3M2UzOGI3ZWUzODIyYzhkZDU3NTZkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWVhNjcwYzY0ZWNiNjg2NTVjMmQzY2YyM2FhZDA3MmRhNDE2YTAwNDIxMjc4NWFkNmZkMTQ5YmVjMDZjMjFlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGViZjU0OGVhMzU1MzQwMjYzMDQ1M2VkYzE2ZWI5MGI3YTNmYmEzN2IyNDJkODllNzkwYWVlNGMzZTk0NTM4YSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-dependency-downgrade.mjs#L270-L284",
+          "version": "repo-lines-v1:sha256:9826e3873e4a4c512bb8876fc71ca86459b53107804bbde6d01bb6ec7ce3fc8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYTcyOTc0Yjc5NTYxNmYwMDQzN2UwNjZkZDQwZWEwOGViNzllMDFiZTllYTRmNjQwZGJmNjY2MzAzMjU2OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1MDA0MmMwMzg1YjU3MDYwMGE5NTA2YWUzYzg3Y2IxOGNiM2M2ODRkNjA0M2RiMjUxMTU0NmYzZjczNTJhNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhYjQ5ZDViYmY2YTY4OGQyYmVjZDc0MjZlMjQ0OTM3OGQyYjM1YmE4YTQ1ODMxYTk1MDI1YWVkMDVkMDk2YTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-28T02:33:05.629Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

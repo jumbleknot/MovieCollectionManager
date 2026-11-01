@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:00b9da7a075504f8f85c47efdb06e012959013e0c9c2a273a1142d61471c5fca",
+  "pageVersion": "sha256:a7eda23f6fb631cab974d7efa3c62c982cdca9d7fcdbdc19411cd46570b0759e",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -61,8 +61,8 @@
       "statement": "The scan and the verdict are two commands so that one exit code carries one meaning: scripts/infra-image-scan.mjs runs Trivy with --format json and no --exit-code (non-zero therefore means only that the scanner could not run), and scripts/check-infra-image-findings.mjs carries the vulnerability verdict from the normalized report. scripts/cd/scan-app-image.sh is the single per-image contract that wires the pair together, mapping a failed scan to exit 10 and a failed gate to exit 11 (0 clean, 2 usage), and it is the ONLY place the two commands run: cd-deploy's scan-push.sh calls it before each `docker push`, and app-ci's `app-image-scan` job calls it on the six images `app-e2e` built, so the PR and the deploy share one Trivy pin, one set of flags and one allowlist — and an accepted finding lives in security/infra-images/allowlist.yaml instead of a .trivyignore nobody reviews.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1781-L1881",
-          "version": "repo-lines-v1:sha256:23fff8710768ac2bf99c58bd8c3c923c8fe405c9f8f92c86fa44e090e41b6ff2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMWQwYjk5ZGZmOTA5ZjA2YWFhMDM0NTIxMWQwNmRmYzgyOTg4ZmI3MDNmMjQxZDQ3MTkxMjdmODg4NDNiZGI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxM2UxMmRmMGYzN2ZiMTljOGUzZTU3ZTc2NjA1Y2NhZjhhYmQyZGQxNzkzOTJlNWViYzJhMDBiN2M3MWZlNWM2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NTYxZjg5NmJlNWVjNDQ1OGUyZDM0MGZhYzc2ODY4MDcxYTNlZGJlZjE0NWZmZDVmMmRiMDUwYmRiY2I0MTZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZTIyMzY5ZmJmZjY2YThlMjhjZDZiYjU5NjEzMzAwZWI2MjM4ODdjOTAyYzg4MGEyNWM4MWIzZjg3MDg0MjlmIn0"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs",
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -112,7 +112,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/publish-sweep-verdict.mjs",
@@ -126,7 +126,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -140,7 +140,7 @@
         },
         {
           "resource": "repo://security/infra-images/allowlist.yaml",
-          "version": "repo-file-v1:sha256:5cbfcc0e353b969a0efa86b83a7d606bcc2f6e83d5370e2cbfd0ee4d695f1117"
+          "version": "repo-file-v1:sha256:a38ca9de76245a23301c40d1ad1f8a7fa31db809d8ae99b6917c19c70c14c98f"
         }
       ]
     },
@@ -150,7 +150,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -192,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -216,7 +216,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/check-infra-image-findings.mjs",
@@ -230,11 +230,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/infra-image-scan.mjs",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -258,7 +258,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
@@ -272,11 +272,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -286,7 +286,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -310,7 +310,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -352,7 +352,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/cd/scan-push.sh",
@@ -366,7 +366,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -376,7 +376,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -386,7 +386,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
@@ -417,24 +417,20 @@
       "statement": "The Trivy install in `.forgejo/workflows/infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` is version-pinned rather than floating: the install script is fetched from a version tag rather than the moving branch `main`, the same tag is passed as the script's positional argument, and one `TRIVY_VERSION` assignment per file is interpolated into both sites so a bump cannot move one and strand the other. There are three such sites since spec 084 US3 (app-ci's `app-image-scan` must scan the PR's images with the scanner the deploy will use, or a green PR says nothing about the deploy). `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the RESOLVED state across all three files — each pinned, each script ref equal to its installed tag, and all three agreeing on one version, because a disagreement means one gate can block what another passes — and that the `aquasecurity/trivy` customManager (datasource `github-releases`) covers all three files and actually captures a `currentValue` in each, since a manager whose regex misses is indistinguishable from no manager at all.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1827-L1841",
-          "version": "repo-lines-v1:sha256:8358e1c00620adf589e3f5892971c93e60453128ebbd5a20498483c86fb8d97a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNjYwYzhmZWQ0YTBkNDNiNjY0Y2IxOTg3Y2EzYzNjNWQ3YjY5NmFhYjE2MTQwZDdhMmQ1NjA5ODcyNWQ4M2YifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L205-L221",
-          "version": "repo-lines-v1:sha256:565e126864118eef9f069369b6e14ce739ecaa9c44e26894907923bd4611e564:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YzE1ZWE5ZWFjNjQzZDk2ZDA5OTI2MGNiY2RhYjEzZTBiZDA0MWViZTk5ODU3MGE5YzFiNmE4OTMzZjFmZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZTE1NjhlOTMxYTIwZDhkOTAxN2NlOWYwYzhhYWJhODRjMTE2YWY3MWVkMTAxMzNlMGQ1N2QzMmY3ZGEyMzQifQ"
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml",
+          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
         },
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L178-L195",
-          "version": "repo-lines-v1:sha256:969deaa9271503a215aa777dde015a98f19844b0c9ef3bba99fc66356e8e62d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjE5NWE5OGNjYmJhYWNjZGY3Zjk4N2FjNjgyOGY4ODk1OTcxMTZkMjFlZDMzNTJjM2Y0ODFmM2IwOWEzMjUifQ"
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
-          "resource": "repo://renovate.json#L208-L247",
-          "version": "repo-lines-v1:sha256:0fa40d060e7d3695ead69161517e02939ef4a588994e7241800ecf412ee9366a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDIxMWI5YzM4MDRkYTYxOGUzNWQ0OWExYTQwZDQ2NTc5NWE5MGQwYjgzMjAwNTU2ZjliMjU1YjdhZTQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNDExM2IwYWRlYzM5NmZkMjk2NWYyYjQzMDZmOGM1NjZmMzA0ODgwNmJkZTJhOTIyMjJjYWY1NDJkMTUzNjUifQ"
-        },
-        {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1999-L2113",
-          "version": "repo-lines-v1:sha256:064d91c5b0db83142114ddfd4bb8f0341d907d2166af3c83d78d2739bb16f868:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyY2QwZTJmOTk1NDJmNTA2OTA2OTA1NjhhYjljOTlhMjA3YzUxNjIyN2IxOGVmYWY0OTE1MWY5MThjNzdkNzIyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmUzMTRkZTM3ODI3MzAxMjA4NWYyMTg0OTE4MDgwYWFhOGRkMGI5OTRiZjg2NmYwZTc5YjAxMmI1MGM5OTI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTE0ZTM0ZDE2Yjg4ZDI1ZDAzNWIxYmVjOTMwM2JiNTYzOTFjMDJjNDhiNmZjZGI2YjgyZTU1NDliNzRlNTZhIn0"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -476,11 +472,11 @@
     },
     {
       "id": "claim_460c80ee07764e488b930024a0b4f7f9",
-      "statement": "Where a reference is a floating major, or the advisory survives a version move, the allowlist entry is keyed to the DIGEST so that an upstream rebuild — not a tag move — is what discharges it: the OpenSearch entry is `opensearchproject/opensearch:3@sha256:bcc17975…` rather than `opensearch:3` and was re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did NOT clear CVE-2026-75595, and the Unleash entry names version AND digest (`^unleashorg/unleash-server:8\\.2\\.1@sha256:c6eaaede7242`) so any image change re-blocks — it was re-keyed 8.2.0 → 8.2.1 in the 2026-10-30 Renovate window (PR #878) after the new digest was re-measured and still carried proxy-addr 2.0.7 under the boolean `trust proxy` that keeps CVE-2026-90711 unreachable.",
+      "statement": "Where a reference is a floating major, or the advisory survives a version move, the allowlist entry is keyed to the DIGEST so that an upstream rebuild — not a tag move — is what discharges it: the OpenSearch entry is `opensearchproject/opensearch:3@sha256:bcc17975…` rather than `opensearch:3` and was re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did NOT clear CVE-2026-75595. The Unleash entry named version AND digest (`^unleashorg/unleash-server:8\\.2\\.1@sha256:c6eaaede7242`) so any image change re-blocked: it was re-keyed 8.2.0 → 8.2.1 in the 2026-10-30 Renovate window after the new digest was re-measured and still carried proxy-addr 2.0.7 under the boolean `trust proxy` that keeps CVE-2026-90711 unreachable, and it was then DISCHARGED on 2026-11-01 rather than re-keyed again, because the 8.3.1 rebuild (`sha256:025cd8b003a7`, the digest every unleash ref now pins) ships proxy-addr 2.0.8 as the only copy in the image and was scanned at zero fixable Criticals.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L270-L270",
-          "version": "repo-lines-v1:sha256:c163736035010bafccfeeb7d0defa8adb45dfaa9f60ad9e61dfd9ccabdea950a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE2MzczNjAzNTAxMGJhZmNjZmVlYjdkMGRlZmE4YWRiNDVkZmFhOWY2MGFkOWU2MWRmZDljY2FiZGVhOTUwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE2MzczNjAzNTAxMGJhZmNjZmVlYjdkMGRlZmE4YWRiNDVkZmFhOWY2MGFkOWU2MWRmZDljY2FiZGVhOTUwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDUzNGY3YmVkY2JmODAyYjU4NDlhMjdmYTNhY2E2OWMyMmIwZmU0NzNmNGY5NGJkOTIyZDVlMzNiMDRjMTJkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTU0N2VjODRkZjQ1NDQzNzZkNjBkN2U1YWRiZDNmZjczNDRmMzhjZDk3OThlNGJhZDU5YWQ0NDJjMDBiOTZjMCJ9"
+          "version": "repo-lines-v1:sha256:2c27c4c6ed8ce780a5eccc84cdda551b33d9d5f10ce0083908dace0cc9f76a71:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmMyN2M0YzZlZDhjZTc4MGE1ZWNjYzg0Y2RkYTU1MWIzM2Q5ZDVmMTBjZTAwODM5MDhkYWNlMGNjOWY3NmE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmMyN2M0YzZlZDhjZTc4MGE1ZWNjYzg0Y2RkYTU1MWIzM2Q5ZDVmMTBjZTAwODM5MDhkYWNlMGNjOWY3NmE3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDUzNGY3YmVkY2JmODAyYjU4NDlhMjdmYTNhY2E2OWMyMmIwZmU0NzNmNGY5NGJkOTIyZDVlMzNiMDRjMTJkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTU0N2VjODRkZjQ1NDQzNzZkNjBkN2U1YWRiZDNmZjczNDRmMzhjZDk3OThlNGJhZDU5YWQ0NDJjMDBiOTZjMCJ9"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.yaml#L30-L30",
@@ -491,12 +487,12 @@
           "version": "repo-lines-v1:sha256:c20bdd8bacd22729d1efdc8df546bc4e7bd27c9b96b956fb779b7733fc2ee6af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MWYwNDllMzUyNDQxZDY4OGZhNzU3M2U5OTYyYWNlOTRjMmU1ZWY0MzBmYTVmNWI1ZmRiMmUxYzVmOWFlOTYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlY2RkZTlhMTE2NWZiYjBhOGYwMDJmMDBiY2ZiYzMxYzk5YTQzNzE4OWRjMTg1YjNlNjljMGY1ZWYwNjJlYTI4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NDU2ZmJkYzRlNmNhNmE4ODg5MGZmZWFhNDk4Y2I0Y2JkYWZhOTdjZTM3MzgyMzMwM2NmYjlmZTkxYWNhMmM2In0"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L265-L270",
-          "version": "repo-lines-v1:sha256:6e596b8900d6d6681a5739721ee3f291b2ea53f16b61d48207ef82b4f5fa2b20:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc5MTJjYjEzOGFjMmRiODYxMzQ4NTI1M2Y1YTNlN2U5NDA1Y2ZkMjIxZDE2NDdhZTNlYmM3OTNiNTY5NmU5NSJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L264-L270",
+          "version": "repo-lines-v1:sha256:69f63c4a180ebefffb0600ac0728ba3523933aa1a265cdf49b90e8165dd932ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzMDAzYWU3NjdhZTI5MTY1NTk0NDVjN2ExNzlmMzVkNDdlZDQ5MTAyMTIyMjAwZTYzYzJhZTAxZTdmMWE1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDhkYzYzOTBhNGFhOGRlZDdmZWEzMzczMTA2M2ZkOTcxN2ZjYWY5ODU5MGRlM2IxZmU4MjMxODVkM2ZiYzY1ZSJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L363-L370",
-          "version": "repo-lines-v1:sha256:6c521a0cd775eec4974c06297500d440a969e9c4e42d69558621315231a42ade:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQwYTk4OGI4ZTZiY2Y5NTBiZWE4MzQxM2VkZjU5NzAwZTZiNWUxY2E5OWRmYTU5MWM4ZDA2OTNkYTFjZDgyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L362-L368",
+          "version": "repo-lines-v1:sha256:ec1b90c30c8825e545a3db3ef466f475042ec5b9073c4f441c382095af77ee58:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQwYTk4OGI4ZTZiY2Y5NTBiZWE4MzQxM2VkZjU5NzAwZTZiNWUxY2E5OWRmYTU5MWM4ZDA2OTNkYTFjZDgyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFjZjQ1MmY0YjJhYTJkNjcxM2M0MDc1ZDNjMGYwNzI2ZWE3ZmI2M2I5YmNlM2MyNmVlZmEyOTZhYWIwZWFmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAxZGQxYzc2ZDFiOGI3M2M2YWU1YWIwZDgyZGMwOTFmZDY3MDg0NWFjODNhZmZlYTk0NDE1YWNkNzFiMDJlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
         }
       ]
     },
@@ -528,33 +524,29 @@
     },
     {
       "id": "claim_c8bc042116284749ab175a0ca0ee1e7a",
-      "statement": "The infra-image allowlist holds fourteen live entries in four cohorts. Two are the un-expiring BASELINE for the same Go-stdlib Critical CVE-2025-68121 on `postgres:18\\.6-alpine3\\.23` and `postgres:18-alpine`, each recording its own measurement because no reachable tag clears it (the shipped binary carrying it is `usr/local/bin/gosu`); the third seed entry for the same CVE, on `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`, is discharged rather than re-keyed (feature 081 US8a, T057) because every mongo ref moved to 9.0-ubi9. Four remain from the 2026-10-23 operator-approved CVE-2026-114406 (ca-certificates) cohort time-boxed to `2026-11-20` — on `langfuse/langfuse:4\\.68\\.0`, `langfuse/langfuse-worker:4\\.68\\.0` and `mongodb/mongodb-community-server:9\\.0-ubi9`, plus `@sentry/nextjs` CVE-2026-114139 on `langfuse/langfuse:4\\.68\\.0` — all flagging EXPIRING from `2026-11-06`, the re-check date; the cohort's fifth entry, on `grafana/otel-lgtm:0\\.37\\.0`, is discharged rather than re-keyed because the 2026-10-30 window moved otel-lgtm to `0.38.1@sha256:0df9bc14…730af7`, a clean rebuild that reports the advisory neither blocking nor allowlisted (PR #878). Two more are time-boxed to `2026-12-01`: the OpenSearch netty CVE-2026-75595 digest key and the Unleash proxy-addr CVE-2026-90711 version+digest key, itself re-keyed 8.2.0 → 8.2.1 in the same window. The newest six are the 2026-10-29 operator-approved CVE-2026-111497 brotli cohort, also time-boxed to `2026-11-20`. Comment blocks describing absent entries (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the `next` pair, the retired object store, the mongo 8.0.8 seed) are the file's history, not live suppressions.",
+      "statement": "The infra-image allowlist holds nine live entries (measured 2026-11-01) in four shapes. Two are the un-expiring BASELINE for the same Go-stdlib Critical CVE-2025-68121 on `postgres:18\\.6-alpine3\\.23` and `postgres:18-alpine`, each recording its own measurement because no reachable tag clears it (the shipped binary carrying it is `usr/local/bin/gosu`); the third seed entry for the same CVE, on `mongodb/mongodb-community-server:8\\.0\\.8-ubi9`, is discharged rather than re-keyed (feature 081 US8a, T057) because every mongo ref moved to 9.0-ubi9. Three are the survivors of the 2026-10-23 operator-approved ca-certificates cohort, time-boxed to `2026-11-20`: CVE-2026-114406 on `langfuse/langfuse:4\\.68\\.0` and `langfuse/langfuse-worker:4\\.68\\.0`, plus `@sentry/nextjs` CVE-2026-114139 on `langfuse/langfuse:4\\.68\\.0` — the cohort's mongo and otel-lgtm members are discharged, not re-keyed. Four are time-boxed to `2026-12-01`: the OpenSearch netty CVE-2026-75595 digest key and three brotli CVE-2026-111497 digest keys on `caddy:2\\.11\\.7-alpine` and both postgres lines. Comment blocks describing absent entries (Keycloak 26.7.4, `langfuse:4`, the otel-lgtm amqp091-go trio, the `next` pair, the retired object store, the mongo 8.0.8 seed, the Unleash proxy-addr key) are the file's history, not live suppressions.",
       "evidence": [
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L101-L108",
-          "version": "repo-lines-v1:sha256:212af772100d54a4789932bb57eb655620439aca2354fe275fd64765cdbe143d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YwZDMzYzI0YmRiMjc4Y2QwN2JhNmU3NjI0M2E0OTU5YmU3Y2FmNjNhY2JlMTAzYzFiMGY1M2NmMDRiNTViNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA4Y2ZlOWFjZGFmMDcyYThmMmRmZGQ0NzVlYmE4ZjVmZmUwZTBkMjhjYWE4MThmZTM4NzA5NDYzODY0YzNjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNlMmU2NTg2NWJjZTAzZGFkMzBmZjVlOWUxN2M0MjUwMzc2MGM0M2I2YTg5OThhMTQxMGRhMjM3ZTdjOWNiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RiZDhjZjU4YzIyOWFhMWFmZGZkNWZlYjYwMGMzOTY5MzY3Mjk0YmMxNGVkYWUyYjRiZjQyOGVlMWNkNTY4YSJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L100-L108",
+          "version": "repo-lines-v1:sha256:2dd47e8a9defdddc2f55d3e46d8bff16927bdd2b6186a26f062c0e1704a8ba9a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YwZDMzYzI0YmRiMjc4Y2QwN2JhNmU3NjI0M2E0OTU5YmU3Y2FmNjNhY2JlMTAzYzFiMGY1M2NmMDRiNTViNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM1Nzk3OWUwOTFjODY4Y2E1YjIzNmU0MzYzZjg0MDZlN2ViZTI2NTlkMTA1Nzk1NTQ1MzNiZjdkOWJjYTkyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNlMmU2NTg2NWJjZTAzZGFkMzBmZjVlOWUxN2M0MjUwMzc2MGM0M2I2YTg5OThhMTQxMGRhMjM3ZTdjOWNiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjYyNGMxOWVkYjM0NTA1MDUyOWVlMzAzYzdmNjMwNDY5Y2U3ODk1YTQ2M2FkZGQwYmQzZjVjMGFiYjczMjY1NSJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L265-L270",
-          "version": "repo-lines-v1:sha256:6e596b8900d6d6681a5739721ee3f291b2ea53f16b61d48207ef82b4f5fa2b20:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc5MTJjYjEzOGFjMmRiODYxMzQ4NTI1M2Y1YTNlN2U5NDA1Y2ZkMjIxZDE2NDdhZTNlYmM3OTNiNTY5NmU5NSJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L264-L270",
+          "version": "repo-lines-v1:sha256:69f63c4a180ebefffb0600ac0728ba3523933aa1a265cdf49b90e8165dd932ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwY2Y2NDZlYWQ3ZmM5ZTQ2YjQ4MzhiNTllMjcxNDQ5NjQ2ZDBlZGIzYTdmZjRmNTk1ZWU1YzkwZjk1YTMwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzMDAzYWU3NjdhZTI5MTY1NTk0NDVjN2ExNzlmMzVkNDdlZDQ5MTAyMTIyMjAwZTYzYzJhZTAxZTdmMWE1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ2Njc0ZmNkYTAzMGNiOTMxYzRlYjUwYTFjYTE4Y2E2NzM3MGVjMmJjNjFhZDRmMGYxMmI5ZTE2NDI0Njg2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDhkYzYzOTBhNGFhOGRlZDdmZWEzMzczMTA2M2ZkOTcxN2ZjYWY5ODU5MGRlM2IxZmU4MjMxODVkM2ZiYzY1ZSJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L366-L370",
-          "version": "repo-lines-v1:sha256:8c06937da7b896be08dbf83dfb437f5ee6c5b0f05d8c239ad2c2752a2e18e1be:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzllMzhjMGUzMTAyMzBjYjc4ZTkzZTdiNjMzY2Q0ZTYzYzRhMzEzYjQ3ZmYyODNkMGFiN2U5ODI0MTI2NjBmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU1NzZhYmUwYjc3NzBjZTQ0NTFjODkwMzk4Y2VhYmEwYjNhMjlhNmIzOTI0OGU2OTVlYTA3Mzk4YzgxMjQyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTIxZTgwMTBlZjczZGFjOTdmMzg0N2RjNzEyNWZiMzViNzVkZTczZTI5Y2JmNmU3Mjk2NWMxN2ZiYzBiM2Y5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxYTA4NjM1YjYwMWJiODcyNzdkZGFmMTNjZGQ5OTllMGEwMDQ4MGE1M2VhNzA3N2YwNDdjMTE3MjkzMmE3NyJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L379-L415",
+          "version": "repo-lines-v1:sha256:92820c19db9b4c7144135728f98695e6a2fe7baf95653631daad7476c98c8bb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZDdlZDU3NjA3ZmQwNWZmMDhkYjE5ZWFiYmZlNDFmZTFmMzRlYjdjNjljNzY3MDc3NzVmYjM2OTJiYjc4MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTc2YWJlMGI3NzcwY2U0NDUxYzg5MDM5OGNlYWJhMGIzYTI5YTZiMzkyNDhlNjk1ZWEwNzM5OGM4MTI0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTIwYzI1YTMwMTZmOGJhNTdiNDNjYTFhMDZlYTEwMTA1MDM5ZmZmMzgwZTIzMGE1OWYxMWRlOTVhNTI5MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L397-L426",
-          "version": "repo-lines-v1:sha256:df19c23b5947c6051faabae15509a80f77b3eb1fae5afd970295d6afccff532d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NzBmYjNjMWJiODFkZDdhMzgzNTFlNThhZGIxZmI1ZWFiNjgzYjU4ZGFlMzllMzEyZjRkYzVhNmUxNmRiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzM2ZiYTJmY2U4YzFiOGViZDllMGZhZGVlMTQ3YjBlOGQ4NmYyMDk5ZTZiYmRmZGY4NzYzYzIxYmRmZmU5MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        },
-        {
-          "resource": "repo://security/infra-images/allowlist.yaml#L74-L93",
-          "version": "repo-lines-v1:sha256:e53ca1051bdf701c7aeacfb802f5fc8dd7560c9c0c7fa5bef1424ca23440b6db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNTAyNzZhZjQ2NTU3MmY2YWM2MDUzMzI2OTFiNjE4MTFhNzMxNTAwOTVjYzJhNzNlZWViN2Q3MGFjYmM4ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNDQzMDFkYmEwMDFlZGQxNWEyNjkwYTM5MDBmYmI3NjhjNGE1MmIxZGFlY2UyMzdlNmI5MDljY2IwMjZjOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOGVjZDYwZDRhNjZmOTI0N2I2OWQ4Y2Y2YjAzN2FhNzIwMWUzMzBiMDBhM2Y0NjE4NTYwOWZkZDViZDQwMzAifQ"
+          "resource": "repo://security/infra-images/allowlist.yaml#L74-L99",
+          "version": "repo-lines-v1:sha256:685906c00bcadf2e3e1b17c76dbfdb88e5c3341594220c0970c1f7af958ebb28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNTAyNzZhZjQ2NTU3MmY2YWM2MDUzMzI2OTFiNjE4MTFhNzMxNTAwOTVjYzJhNzNlZWViN2Q3MGFjYmM4ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4OTRkMzljMGMyMDU3NTRhNTlmZjc4NDllNGNlYzFjMTkxNmI3NjFkZGFkMTExZDhhMDA1MWQ2MDE2ODJhYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNDQzMDFkYmEwMDFlZGQxNWEyNjkwYTM5MDBmYmI3NjhjNGE1MmIxZGFlY2UyMzdlNmI5MDljY2IwMjZjOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZmY2MTAwNTNlZDM4Y2Y1ZmRlZjZmOWE1NmIyOGE1ZTRiMTcyMTgwMzVjOTZmZDU4ZGIyZTM1MWU2YjlhYTUifQ"
         }
       ]
     },
     {
       "id": "claim_945d6b601ee64c6ca03e3bf427a5f3b1",
-      "statement": "The 2026-10-23 allowlist cohort is the file's normal shape — advisories published against images nobody changed: CVE-2026-114406 (base-image ca-certificates), the `next` GHSAs and CVE-2026-114139 (`@sentry/nextjs`) turned `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) although the pins were untouched. The survivors are the ones nothing upstream cleared at the time: `langfuse`/`langfuse-worker` 4.68.0 still ship the pre-fix ca-certificates, and on the newest mongo `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index sha256:2cb58a8d…) that advisory is the image's ONLY blocking finding — whereas Keycloak cleared the same CVE by a same-version digest refresh in PR #838, which is the expected follow-up. Each surviving entry is version-keyed to the pin the run actually scans so that a bump re-blocks rather than inheriting the suppression, and each justification states the entry is deleted once a clean rebuild ships — a time-box that forces a re-check rather than a permanent acceptance. Three of the original seven have already been through such a bump and were RE-KEYED in the same change — same CVE, same expiry — rather than deleted, because the new pin still shipped the pre-fix CA bundle: the Renovate window moved otel-lgtm 0.36.0 -> 0.37.0 (PR #836, 2026-10-24); spec 081 US8a moved the mongo store 8.0.8-ubi9 -> 9.0-ubi9 (PR #817), which also deleted the 8.0.8 entry it replaced so it could not fail as UNMATCHED; and spec 081 US8 PR 8d moved langfuse web and worker 4.56.0 -> 4.68.0 (item #839, 2026-10-25), re-keying the CVE-2026-114406 (web, worker) and CVE-2026-114139 (web) entries to `4\\.68\\.0` after a verify-RED run on the new digests showed they still block. The cohort has since produced both endings, and which one applies is measured rather than assumed: that same change DELETED the two `next` GHSAs (langfuse 4.68.0 ships next 16.4.2 and neither advisory appears at any severity, so a re-keyed entry would have matched nothing), and the 2026-10-30 window DISCHARGED the otel-lgtm entry the same way — `0.38.1@sha256:0df9bc14…730af7` is a clean rebuild reporting the CVE neither blocking nor allowlisted (PR #878) — while the langfuse and mongo entries remain, keyed to the version, ready to re-block on the next bump.",
+      "statement": "The 2026-10-23 allowlist cohort is the file's normal shape — advisories published against images nobody changed: CVE-2026-114406 (base-image ca-certificates), the `next` GHSAs and CVE-2026-114139 (`@sentry/nextjs`) turned `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) although the pins were untouched. Whether the bump remediates is measured per image, and the cohort has now produced all three endings. Each surviving entry is version-keyed to the pin the run actually scans (`langfuse/langfuse` and `langfuse/langfuse-worker` at `4\\.68\\.0`, re-keyed from 4.56.0 by spec 081 US8 PR 8d / item #839 on 2026-10-25 after a verify-RED run on the new digests) so that a bump re-blocks rather than inheriting the suppression, and each justification states the entry is deleted once a clean rebuild ships. Keycloak cleared the same CVE by a same-version digest refresh in PR #838; the two `next` GHSAs were DELETED rather than re-keyed in the same change that moved langfuse to 4.68.0 (it ships next 16.4.2 and neither advisory appears at any severity, so a re-keyed entry would have matched nothing); and the cohort's remaining members were discharged on 2026-11-01 — `grafana/otel-lgtm` when the 2026-10-30 window moved it to `0.38.1@sha256:0df9bc14…730af7`, a clean rebuild reporting the CVE neither blocking nor allowlisted (PR #878), and mongo when upstream's UBI 9.8 rebuild of the same 9.0.4 (`sha256:3d40c6fa895f`, the digest every mongo ref now pins) shipped the fixed ca-certificates 2026.2.92_v9.0.319-90.3.el9_8, scanned at zero fixable Criticals. The langfuse web and worker entries remain because the newest upstream build still carries the pre-fix CA bundle.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L229-L229",
@@ -565,8 +557,8 @@
           "version": "repo-lines-v1:sha256:96fd3df3c0cc29463db7cc03b2e3a189ec9dbd691f7d73a1f01e9461f27f61f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZmZDNkZjNjMGNjMjk0NjNkYjdjYzAzYjJlM2ExODllYzlkYmQ2OTFmN2Q3M2ExZjAxZTk0NjFmMjdmNjFmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZmZDNkZjNjMGNjMjk0NjNkYjdjYzAzYjJlM2ExODllYzlkYmQ2OTFmN2Q3M2ExZjAxZTk0NjFmMjdmNjFmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM1ZmNmZWE1ZjZlZmQxMWJjNDhhMzIyYmIzYjM4NWVlOGYzNmQ3YjZhNzBjM2UxNzNmZjk1NDg3ZWY5MzNlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ2OTQzNTljZWUxNjg5N2E2NTMyMmRkNjQ2YWVkYTE2ZjI3MDY0NTJlMjc3ODNlMjAyY2E1ZjQzNjQ0YmJkOCJ9"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L64-L104",
-          "version": "repo-lines-v1:sha256:dd994d32a5c76fd2f486533f5152ba2363135b57f3a8871400a857cf20a7a79a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YzBjYjMxZGZkMWM2NDk4ZmQ2Yzc2YzRhYzFlNDU3MTlmYmI0YTJmNjQyOWEwOGI5MDJhMDk5N2ZhZTRjYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2Y2RiYjEzNWQ4YThmMGQ5YjM3MGFjY2FlYjUxYjRjM2FkMzY5YmY0YjU0NWNjNDM3Nzg0M2VhOTYzMzhjMDYifQ"
+          "resource": "repo://security/infra-images/allowlist.yaml#L64-L99",
+          "version": "repo-lines-v1:sha256:bd69d382e1d165df10adae6cb467fa7dfc7c04ba20591471ae7579916eb8a246:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4OTRkMzljMGMyMDU3NTRhNTlmZjc4NDllNGNlYzFjMTkxNmI3NjFkZGFkMTExZDhhMDA1MWQ2MDE2ODJhYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZmY2MTAwNTNlZDM4Y2Y1ZmRlZjZmOWE1NmIyOGE1ZTRiMTcyMTgwMzVjOTZmZDU4ZGIyZTM1MWU2YjlhYTUifQ"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L538-L565",
@@ -580,7 +572,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L4-L31",
-          "version": "repo-lines-v1:sha256:22203d25d3ad722cfd1bf7f802ab4c20c4bdd1ce6a9190a8fdeaf63f90ae8559:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3Y2NjOWViNTRkYmE2OWI5MDA0NjU4MDJlNWViZDczOWNkNzg5YjY1ODBjYzM5ZTg4M2UxZTk4NjE3YTg2MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTMxZTc1ZWMwMWY3Y2ZjMzhjZmI2N2E3OGYxMDg1MmY3ZmY0MjVlZDQ5MDQwYTEzYjVjZmEyMWMwODcwOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
+          "version": "repo-lines-v1:sha256:3d9bda0595f94d52edf643fd452c955e26343a9d0ba8197ed91717037fef6bfa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3Y2NjOWViNTRkYmE2OWI5MDA0NjU4MDJlNWViZDczOWNkNzg5YjY1ODBjYzM5ZTg4M2UxZTk4NjE3YTg2MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMGE4M2IwYzk3MjY2Mjc2NzU2MDc2MWU2MWE2MjdkOWZiM2Y1MmQ1ODUzNGU2OGMwNTNjM2QwNWNlYzZjOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTMxZTc1ZWMwMWY3Y2ZjMzhjZmI2N2E3OGYxMDg1MmY3ZmY0MjVlZDQ5MDQwYTEzYjVjZmEyMWMwODcwOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMDcyZWFkZWY5ZmM2ZTFiNGQwNTdjZTFlNTY4ZmQyYmE0MzRjNGQ4MmU3YTE1MmUwMDdhNWQ5N2I0NzQyMGUifQ"
         },
         {
           "resource": "repo://renovate.json#L1154-L1178",
@@ -633,7 +625,7 @@
           "version": "repo-lines-v1:sha256:acac514ce8d7eff329f30b39504f29c6eed90c804dbc9167031c009b126e3e2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5OTJjY2ZlZWI0MDJmNjcxMDFiZmU4OWU5NjdjYjQyMjNiNDBhN2UwNmI4Y2MwMzNkYWY4OWIzZDZmMTYxMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYjY0N2Q2MjI4ZTI3ZTU2YjI5ZjhkNmU4NzU2Y2IzNjdlYTI5YWQ1NDAxYzNiYjNiOWQ4YzBmMDYxZDQ0MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2ZjVlNzg4MzUxZDVlNzYwYzM0NjViZWVlZGViNWE1ZjkwMWE3OWEzYzc0MWMwZTc3YmJhMjg2M2MyYTRkNzcifQ"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L321-L342",
+          "resource": "repo://security/infra-images/allowlist.yaml#L320-L341",
           "version": "repo-lines-v1:sha256:1fc80d9febec7e3ff6b0138fcc4101d08001d3a16875e11e695d59d558f33369:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MTBhY2I2ODA3Mzk1OTA0NGQ1OWFiMWU3NWY0ZmRlNjM2MDRjMWRhMGM4ZWEwMzMxNmI5MDVlNmY3MDg0MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYTFjM2Y0MzJjMDQyZWUxZmE3MDc2ODJlYmZiMTlkYjhlNWMxMTY2OWQzMmYxOTNjNzU2MTQ4M2U0NDUwYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiN2M5YjQ0YTA2Y2E0NjUwMzk1OTMxMWY3MWU0ZjY2Y2U1ZmZhZTEzZGM0YmI5OWIxOWE5OWIwMTgwNDJmNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNzU3NjZjNmQ0NTkyOGQ5NjU1NWE3MmVhZDhhMWFkNDgwYzdhNTg5Njg0NmNhMzA4ZTNlNjZhZWM0ZTE1YWQifQ"
         },
         {
@@ -644,15 +636,15 @@
     },
     {
       "id": "claim_c843a4c2d8384441a6feaa3685b5f600",
-      "statement": "The CVE-2026-111497 brotli cohort is the allowlist's only set keyed to the DIGEST ALONE with no version in the key — `^caddy:2\\.11\\.7-alpine@sha256:d8542f48d34a`, `^curlimages/curl:8\\.23\\.0@sha256:11e64e28c5f5`, `^httpd:2\\.4@sha256:454942557d44`, `^postgres:18-alpine@sha256:77f585114c32`, `^postgres:18\\.6-alpine3\\.23@sha256:697c180dbf24` and `^rustfs/rustfs:1\\.0\\.3@sha256:9ca9559533b5` — because the suppression must be discharged by a REBUILD rather than by a tag move. Renovate proposes from the registry rather than from this file, so every rebuild is still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether the rebuild carries the fixed brotli instead of inheriting the acceptance, while the old entry stops matching. Reachability was deliberately not measured for these six; they are time-boxed to `2026-11-20` instead, an entry that then matches nothing is only advisory on a pull request and fails the scheduled expiry check, and the recorded cue is to delete the entry when the digest bump lands rather than renew it without re-scanning.",
+      "statement": "The CVE-2026-111497 brotli cohort is the allowlist's only set keyed to the DIGEST ALONE with no version in the key, because the suppression must be discharged by a REBUILD rather than by a tag move: Renovate proposes from the registry rather than from this file, so every rebuild is still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether the rebuild carries the fixed brotli instead of inheriting the acceptance, while the old entry stops matching. It opened as six entries and is now THREE, all renewed to `2026-12-01` by the 2026-11-01 re-triage (Trivy 0.76.1, ghcr DB, every newest rebuild scanned): `^caddy:2\\.11\\.7-alpine@sha256:d8542f48d34a`, `^postgres:18-alpine@sha256:77f585114c32` and `^postgres:18\\.6-alpine3\\.23@sha256:697c180dbf24`, each renewed on MEASURED non-reachability recorded in its own justification rather than on the clock — in each of those digests the only object linking `libbrotlidec` is `libcurl.so.4.8.0` (for caddy its only consumer is the curl CLI, which that service never runs, since Caddy is a static Go binary and the healthcheck is `nc -z`; for postgres the only thing linking libcurl is the `libpq` OAuth-client module the server never loads, the only client run being `pg_isready` with no OAuth parameters) — and none of the three has a clean rebuild upstream (Alpine 3.24's brotli-libs 1.2.0-r1 is not the fix). The cohort's other three entries were deleted rather than renewed: `curlimages/curl` 8.23.0 and `httpd` 2.4 both moved to clean rebuilds, and `rustfs/rustfs` had already moved 1.0.3 → 1.0.4 so its key matched nothing.",
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs#L428-L545",
           "version": "repo-lines-v1:sha256:fbfc7cfee63026d51a25d2bd189895d135ed946d22df8e40a9761c68b58f3d82:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MWYwNDllMzUyNDQxZDY4OGZhNzU3M2U5OTYyYWNlOTRjMmU1ZWY0MzBmYTVmNWI1ZmRiMmUxYzVmOWFlOTYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyN2ZhODI0ZDdjYzUzNmNkMDkzMjQwZjQyNjM0OGE0YTE0MmNiZjczMTZkYTc3MWY0NjAwNDFkNGE0YjY0YzM4In0"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L381-L426",
-          "version": "repo-lines-v1:sha256:4891e9f3fb4bc71bc96acc72ba128752b410475decc9a195662c78af06fdb404:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZDdlZDU3NjA3ZmQwNWZmMDhkYjE5ZWFiYmZlNDFmZTFmMzRlYjdjNjljNzY3MDc3NzVmYjM2OTJiYjc4MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NjhkYWQxZjgzNzg1Njg1YjZhYzA2NDgxODA2NGYyNzBjOTY1OWRhN2RkMGE2ODJkNTgxYjE1YTM2NmI1NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTIwYzI1YTMwMTZmOGJhNTdiNDNjYTFhMDZlYTEwMTA1MDM5ZmZmMzgwZTIzMGE1OWYxMWRlOTVhNTI5MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://security/infra-images/allowlist.yaml#L379-L415",
+          "version": "repo-lines-v1:sha256:92820c19db9b4c7144135728f98695e6a2fe7baf95653631daad7476c98c8bb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZDdlZDU3NjA3ZmQwNWZmMDhkYjE5ZWFiYmZlNDFmZTFmMzRlYjdjNjljNzY3MDc3NzVmYjM2OTJiYjc4MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTc2YWJlMGI3NzcwY2U0NDUxYzg5MDM5OGNlYWJhMGIzYTI5YTZiMzkyNDhlNjk1ZWEwNzM5OGM4MTI0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTIwYzI1YTMwMTZmOGJhNTdiNDNjYTFhMDZlYTEwMTA1MDM5ZmZmMzgwZTIzMGE1OWYxMWRlOTVhNTI5MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -676,7 +668,7 @@
     },
     {
       "id": "claim_38f481782f724c22acda13611f468a75",
-      "statement": "A digest-keyed allowlist entry whose digest moves becomes invisible rather than merely stale: unmatched detection is scoped to `generatedForImages` (item #423), so an entry whose image regex matches none of the images the run scanned is silent by design, while only the EXPIRING/EXPIRED tiers — computed over the whole allowlist — will ever surface it. This is live in the brotli cohort: the tree now pins `rustfs/rustfs:1.0.4@sha256:ed9210d6…` while the entry still names `^rustfs/rustfs:1\\.0\\.3@sha256:9ca9559533b5`, so that key suppresses nothing and is not reported as UNMATCHED; its `2026-11-20` expiry window (opening `2026-11-06`) is what will surface it, and the recorded cue is to delete it when the digest bump lands rather than renew it without re-scanning.",
+      "statement": "A digest-keyed allowlist entry whose digest moves becomes invisible rather than merely stale: unmatched detection is scoped to `generatedForImages` (item #423), so an entry whose image regex matches none of the images the run scanned is silent by design, while only the EXPIRING/EXPIRED tiers — computed over the whole allowlist — will ever surface it. The brotli cohort produced the measured case: the tree moved `rustfs/rustfs` to `1.0.4@sha256:ed9210d6…` on 2026-10-30, so the `^rustfs/rustfs:1\\.0\\.3@sha256:9ca9559533b5` key suppressed nothing and was never reported as UNMATCHED; the 2026-11-01 re-triage found it by reading the cohort and DELETED it rather than renewing it, which is why the recorded cue is to delete each such entry as its digest bump lands rather than renew it without re-scanning. The three surviving brotli keys still name today's pins, and their `2026-12-01` expiry windows are what will surface them if a rebuild lands first.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml#L177-L177",
@@ -691,8 +683,8 @@
           "version": "repo-lines-v1:sha256:9dd816954f7093c31c2ec1124c0ec4662f62ec81e5c2e8491bca7ccad6ae2867:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2I5NjllMjE2OTY1ZTUzMGZhNjdmODVkOTY5NTE0ZGRmYzBmMjVmZTBiNmQzM2JlNjAyZmNiM2JmM2EzYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NGVhNmEwZjA0MGZjNjVkNTE0YTJkZmFhOGI5NGYxN2RmMDBiOTE2ZjcwMmM5YjMzNzdmZjJhYTI5ZGFhOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4M2M1OWM2MDY0YmY0M2U2NjI2MzVhZTJlMzE5OTg2ODcwYjdlOTdhZWVkMjk3MWM3Njg5NzlkNDRkZTZjNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxOTViMDYyNGUyNzU0MzM3NGJhOTRhMzdmZWVjOTFjMzk3YzM5YjQwYzM2Nzg5ZjI0ZWEzYzQ2NTQzZWZmOGQifQ"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml#L422-L426",
-          "version": "repo-lines-v1:sha256:1cb8d5688cda13ca9de4ed7f6aa7c862b9036b349952be3189c78311140dfd94:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQxZmIzODhhNGNmNWFlYWYwM2Q3YWM1MzQ2ODQ3N2E1MzI3MjdlNDA0MWNmNTY4ZTZhZWE5ZTU4MWU1OWY1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ2OGRhZDFmODM3ODU2ODViNmFjMDY0ODE4MDY0ZjI3MGM5NjU5ZGE3ZGQwYTY4MmQ1ODFiMTVhMzY2YjU2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzcyOThlZmVlOWE4OTIyY2M1YWQwYzE1ZDQ1MmU1OTA1NDUyNTM2NWFkY2QxNGRlZjRhZjhlNDVlOTM3YTkxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://security/infra-images/allowlist.yaml#L395-L400",
+          "version": "repo-lines-v1:sha256:65322f348725ab71fe928924f46b1fd00d8733f02522582be71c490e3105be9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDhkYTUwNTQzNGQ1MzQ2YjI3ZjgwMTZiZTBhYWVhZGNlODk2YjgxYzIxYWI3Y2ViNGY1NWU1ZDdlYmZhNjBjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE3NzVlMmU5NmIzM2UyNjBkODQyNmI4ODYyYjM3OTcxNzVjMTFmYzRhYThjYjdjYTU1ZjNkNGM3MjFmZjQ3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMzZmJhMmZjZThjMWI4ZWJkOWUwZmFkZWUxNDdiMGU4ZDg2ZjIwOTllNmJiZGZkZjg3NjNjMjFiZGZmZTkxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjljYTJiNDNmNWI5MmRkYmUzMTNmYWQwNTU0NDhiMDBlZmZhZDQ4ZmMyNTJmNWJmZDA1OTU3MTc4OGI0YmJiOCJ9"
         }
       ]
     },
@@ -701,16 +693,16 @@
       "statement": "The shared per-image pipeline is what moved the deploy gate onto the pull request (spec 084 US3, item #822): app-ci's required `app-image-scan` job runs `scripts/cd/scan-app-image.sh` on the six images `app-e2e` already built, which `app-e2e` tags `app-scan/<name>:run-<run id>` so a later rebuild of `:latest` on the persistent daemon cannot change what is scanned. The job needs `[changes, app-e2e]` but is `always()`-guarded so a skipped `app-e2e` cannot skip it, runs on the `kvm` runner holding the images, passes early and explicitly when no app path changed, fails naming a missing scan tag rather than passing on images it could not find, scans every image even after one fails so one run names every blocking image, removes the run-scoped tags under `always()`, and is required by `trigger-cd` so a red scan on `main` blocks the dispatch before any deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1781-L1921",
-          "version": "repo-lines-v1:sha256:102b18ca7ac2d84a53f2bf3c641f42282c8fd9e8c0ad48dedfd220c1b0ce2a74:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMWQwYjk5ZGZmOTA5ZjA2YWFhMDM0NTIxMWQwNmRmYzgyOTg4ZmI3MDNmMjQxZDQ3MTkxMjdmODg4NDNiZGI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYmU1YmU0ZGQzNmM3NjU0Y2U2ZTM1YzcyNTc0MzkzMDY0NjBmOWRlNDNiYTg5YTNjMjA2OTFjMGYyZDBiYTE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NTYxZjg5NmJlNWVjNDQ1OGUyZDM0MGZhYzc2ODY4MDcxYTNlZGJlZjE0NWZmZDVmMmRiMDUwYmRiY2I0MTZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3YzUzOTYzNTI3MDZjNWQ4ZDA3N2NiOGZlNGYzYmVlNDlkNmM5MDViNzEwNDJjNTY1MzE3MGE4M2FhOTc4OWVkIn0"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L490-L521",
-          "version": "repo-lines-v1:sha256:a007fdd212309d6d87288bb26e2168ebcba5d869594a2a00360065f04f47f370:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDhiNWFmNjZjODcwZTA1NWJmMGZlMWVmY2FiM2Y0Y2VmNDVhYTAxNWJhMjIzZDI1ODZlNDAzM2M2MmQ4NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZTk0MmI0OGI4YmI1YTE1MDBhNmUxOGM1YjMwZTE3NjRiNWRkNzVkZTg3NTExYzljMzQ1NDIyZGI3NDg3ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMWRkNzY1YTgyNTk1NDNlMTM2YmU2Mzc0NzBlODg2MDMwMDc2ZTViOTllYTcyZWY1NThmNzU2NmQzNmI4ZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZThhNzMzMTAwMDFjNDExMDMxOTcyZjIwYTFkYmQ2OTgxOWQ0ZmViZDg4MjBiZDViMWZmYjZiZTAwYTVhNmMifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
         },
         {
-          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L150-L203",
-          "version": "repo-lines-v1:sha256:31e7017343d1ca3a28de1b1e1f75ef9facbcf9671461596f1490f1f9e481cee8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNDc0ZDY2M2U5MjYwZjUxOTJmNjk1MTE1YzM0Yzc2NmFkMTk4NmEwY2NlMDJhM2Y4OGQ1MmU4MWMyMGEyZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzgwNTY1ODZkMjZiNTI5ZmZiOTI2ZmY1MDc3ZGE2MTlmNDQ4YjJiMmMwY2JjMjlmMDY0M2FlMTAzYjY4ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YTczNTAwZGEyZDA3ODBmYThlNDhjZWY2MTRkMDQ0MWRhODA0MjJhMDc2YTdhZmQ5YWRhMzY4MTI5NDUyN2EifQ"
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs",
+          "version": "repo-file-v1:sha256:2095db85c3152f7f39564202c3f528cc046f25bc85aad5e406cfdab09504226c"
         }
       ]
     },
@@ -735,10 +727,38 @@
           "version": "repo-lines-v1:sha256:702c1375b38376ab963a79160185a85f0daa67ee0d8471f055fddff86a4dea85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMTg2NzU4YWZkMmRkNjM3MDFlNGM0NmVhNjIzMTg3MjUzMjYwNDBmODFjYzg3MzAzOGRmNzc2MzI2MDM4OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YjczNzgzNTg4YmNhZWM0Zjc1M2JhMjI2NDg4NTQ2NmVmNGVhMzQ1ODU3OGMwYzIwYjUzMWQxMzhjY2U0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f852e26f4f694402a9c54e49bc1ebe77",
+      "statement": "The `generatedForImages` scoping check tolerates a report that is explicitly marked absent (`reportAbsent: true` — the marker the gate's own ENOENT path sets under `--check-expiring`) by returning an empty result set, which is what stopped the weekly allowlist-expiry step crashing on a report no scan had produced; the exemption is keyed on that explicit marker and never on the field merely being missing, so a report that EXISTS and omits `generatedForImages` is still a hard `GateError` and a producer that stops writing the field fails rather than silently restoring all-in-scope unmatched detection.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-infra-image-findings.mjs",
+          "version": "repo-file-v1:sha256:bd43b42c85fcd5e48ab458a82d08090ac7b9466fd24f599fa73669663fa3fa3d"
+        }
+      ]
+    },
+    {
+      "id": "claim_58d801a17fad40be901a3efece66ed65",
+      "statement": "A dated allowlist cohort is re-triaged in one sitting, and the re-triage is where a stale key is actually found rather than at its expiry date. The 2026-11-01 sitting (Trivy 0.76.1, ghcr DB, every newest rebuild scanned) is the shape to copy: each entry in the cohort is re-measured against the newest upstream build before any date is renewed, a clean rebuild deletes the entry and moves the ref, a tag that has already moved deletes the entry because it can no longer match, and an entry with no clean rebuild is renewed with its non-reachability re-measured and recorded in its own justification — because renewing a suppression without a fresh scan is exactly the thing the time-box exists to prevent.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/allowlist-expiry.mjs#L42-L42",
+          "version": "repo-lines-v1:sha256:79d6a1778cb7710ee970091f60a6090231153239517734db9b114f1773ee44ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkNmExNzc4Y2I3NzEwZWU5NzAwOTFmNjBhNjA5MDIzMTE1MzIzOTUxNzczNGRiOWIxMTRmMTc3M2VlNDRmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzlkNmExNzc4Y2I3NzEwZWU5NzAwOTFmNjBhNjA5MDIzMTE1MzIzOTUxNzczNGRiOWIxMTRmMTc3M2VlNDRmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFiYzkyMzE5OGE0YjUzNWZkM2U4Y2M0M2Y3ZmYyMmI3YjYxNmQ3MGFmMzE3MmE2MmZjM2FiOGM1MzFjNWYwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjNjZTgwZjFmODZlNGQ4Yzc0YzJmMzQxYjdjMzk1MzQxNDNmY2JjNGZkODQ3ZGIyNGY5YWExNGM5MGZiMjE4OSJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L388-L400",
+          "version": "repo-lines-v1:sha256:5bb799b841902c7c3d788d42b3e15ad5583c39d8abcf24549a38afa98448cf7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3Y2M4NGRhZTcyMmExNDVmMjExMThkOTY1MTIwMjViZDY5MjY1NzYyOTg3NzdmYjJlMWY2ZTk2Yjc0MjQ4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzc1ZTJlOTZiMzNlMjYwZDg0MjZiODg2MmIzNzk3MTc1YzExZmM0YWE4Y2I3Y2E1NWYzZDRjNzIxZmY0NzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiOWMzNzdiN2YyYWExYmZiMTk0NjlkYmVmYmZmZWIwMDcyZmRjY2IxOTU3YTg0ZjkzNzhmMmRhMWRlMThiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5Y2EyYjQzZjViOTJkZGJlMzEzZmFkMDU1NDQ4YjAwZWZmYWQ0OGZjMjUyZjViZmQwNTk1NzE3ODhiNGJiYjgifQ"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L401-L415",
+          "version": "repo-lines-v1:sha256:930d29e6ebbd1fe84d28408b564bb7cdd7965fbee0e1f664f8bdb60d1edb9109:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NzBmYjNjMWJiODFkZDdhMzgzNTFlNThhZGIxZmI1ZWFiNjgzYjU4ZGFlMzllMzEyZjRkYzVhNmUxNmRiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTc2YWJlMGI3NzcwY2U0NDUxYzg5MDM5OGNlYWJhMGIzYTI5YTZiMzkyNDhlNjk1ZWEwNzM5OGM4MTI0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYzRhNzAwNGUwNmYwOTY0NzI5MzEwYTc2ZWE4NmUyYTczZTQ5NGM0ODE4NzM3ZWJkMDJhYjMyMTQ1NTg2N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-11-01T08:25:59.628Z"
   }
 }

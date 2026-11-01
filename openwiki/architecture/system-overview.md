@@ -4,9 +4,6 @@ title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -68,6 +65,9 @@ sources:
     resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-c1c739d605caccb56fa33851
     resource: repo://specs/073-scheduled-backups/spec.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-01T08:25:59.628Z
 ---
 
 # System overview (MCM)
@@ -317,19 +317,44 @@ common source of confusion when reasoning about "why can't this user do X":
   store does not auto-create a bucket, and a driver suite failing on `NoSuchBucket` looks exactly
   like a driver bug, so `mcm-bff-backup-rustfs-init` PUTs the test bucket;
   `mcm-bff-backup-webdav-init` writes the Apache config and a bcrypt `htpasswd` into the shared
-  volume. Both take their credentials from the container's own environment (`$$VAR`), never through
-  Compose interpolation, so the value never lands in the container's argv where `docker inspect` or a
-  `ps` inside it can read it. Each server carries its own healthcheck — RustFS its `/health/ready`,
-  WebDAV the 401 an *unauthenticated* request earns, probed over bash `/dev/tcp` because that image
-  ships no curl, wget or nc — and the mcm-app integration preflight re-probes the same two endpoints
-  under `MCM_REQUIRE_BACKUP_TARGETS=1`. CI's bring-up step cannot use `--wait` (it exits 1 for a
-  service that exits 0, which both one-shots do), so it waits for both servers to report `healthy`
-  and both one-shots to have exit code 0, printing the offending container's logs on failure.
+  volume. That WebDAV init is the only service in the file that runs as root (`user: "0:0"`), and
+  only because a freshly created named volume is root-owned: besides the two files it `chown`s the
+  data volume to `www-data` (httpd drops to that user, and without the chown every write 500s with a
+  permission error that reads exactly like a driver bug) and creates and re-owns `/var/lock/apache2`,
+  where the `DavLockDB` that `mod_dav` consults on every write lives — a third named volume, shared
+  with the long-lived server, which mounts `/conf` read-only and starts only once the init reports
+  `service_completed_successfully`. Both take their credentials from the container's own environment
+  (`$$VAR`), never through Compose interpolation, so the value never lands in the container's argv
+  where `docker inspect` or a `ps` inside it can read it. Each server carries its own healthcheck —
+  RustFS its `/health/ready`, WebDAV the 401 an *unauthenticated* request earns, probed over bash
+  `/dev/tcp` because that image ships no curl, wget or nc — and the mcm-app integration preflight
+  re-probes the same two endpoints under `MCM_REQUIRE_BACKUP_TARGETS=1`. CI's bring-up step cannot
+  use `--wait` (it exits 1 for a service that exits 0, which both one-shots do), so it waits for both
+  servers to report `healthy` and both one-shots to have exit code 0, printing the offending
+  container's logs on failure.
 - **The backup scheduler is silent when nothing is due, and does not run under Metro.** In dev,
   `pnpm start` runs the app through Metro and `server.js` never executes, so **no tick fires** — call
   the tick route directly. The scheduler is also disabled outright when `BACKUP_TICK_SECRET` is unset
   (announced once at boot, because a silent never-ran scheduler is the worst way for the feature to
   fail). See the [backups runbook](../runbooks/backups.md) for how to confirm it is actually ticking.
+
+The destination bring-up above is easier to hold as a graph than as prose:
+
+```mermaid
+flowchart TD
+  up["compose up -d (separate file, external mcm-bff-network)"] --> rustfs["mcm-bff-backup-rustfs"]
+  rustfs -->|"service_healthy"| rustfsinit["mcm-bff-backup-rustfs-init: PUT mcm-backups-test"]
+  up --> davinit["mcm-bff-backup-webdav-init (root): write conf + htpasswd, chown data + lock volume"]
+  davinit -->|"service_completed_successfully"| dav["mcm-bff-backup-webdav: httpd mod_dav, /conf read-only"]
+  rustfs -->|"healthcheck /health/ready"| ci{"CI waits"}
+  dav -->|"healthcheck: unauthenticated GET earns 401"| ci
+  rustfsinit -->|"exit code 0"| ci
+  davinit -->|"exit code 0"| ci
+  ci -->|"all four good"| ready["feature-073 suites run"]
+  ci -->|"otherwise"| fail["print that container's logs and fail"]
+```
+
+*Startup order of the two one-shots and the two servers, and what CI's bring-up step actually asserts.*
 
 See `docs/MCM-Architecture.md` for the full purpose/roadmap statement, the complete component list,
 the container diagrams, and the diagrammed mc-service layer table.

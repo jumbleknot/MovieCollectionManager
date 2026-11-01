@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:180a86051bb36fe43ceb80324148ccb128912aace5bd4d511bebaf1905cfd3e8",
+  "pageVersion": "sha256:de091db78f7d8912625ee01cb6ca23ead5ae1e266f3f1c176572974d91cdbf51",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L70-L92",
@@ -190,11 +190,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
+          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
         },
         {
           "resource": "repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs",
@@ -310,7 +310,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2976-L3000",
@@ -334,7 +334,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh",
@@ -412,7 +412,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L80-L136",
@@ -448,7 +448,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L138-L145",
@@ -498,7 +498,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/ci-maestro-debug.test.mjs",
@@ -516,7 +516,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:32149dab28ff85b3238a0d0115aacea9779358b58a1fdda00a5ccd89fc3b97ba"
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs",
@@ -549,6 +549,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T16:05:45.295Z"
+    "at": "2026-11-01T05:36:38.857Z"
   }
 }
