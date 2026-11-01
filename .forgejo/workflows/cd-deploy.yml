@@ -213,7 +213,7 @@ jobs:
           # with no digest pin underneath — strictly worse than the infra images item #297 fixed.
           # Renovate keeps this current (customManagers in renovate.json, datasource github-releases);
           # renovate-workflow.guard.test.mjs asserts both files stay pinned and agree.
-          TRIVY_VERSION=v0.74.0
+          TRIVY_VERSION=v0.76.1
           curl -fsSL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
             | sh -s -- -b "$HOME/.local/bin" "${TRIVY_VERSION}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
