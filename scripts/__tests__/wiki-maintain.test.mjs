@@ -1154,6 +1154,86 @@ test('verify: the same rewrite KEEPING its resource passes both gates — the ch
   }
 });
 
+// ── Item #777: openwiki's MINIMAL front-matter rebuild drops the repository's keys ─────────────
+// openwiki 0.7.1 repairs a page whose model-written YAML does not parse by rebuilding a minimal header
+// (okf/frontmatter.js repairOkfFrontmatter → rebuildMinimalConcept): `type: "Reference"`, a quoted
+// title, `openwiki_generated: true`, then verified/sources/generated on finalisation. Everything else
+// is gone — #775 stacks.md, #791 renovate.md, #857 bff.md. The harness restores the lost keys from
+// HEAD and carries the Claims hash, as it does for a link rewrite.
+
+/** The #775 shape: the page as the rebuild leaves it, with Claims certifying THOSE bytes. */
+function minimalRebuild(root, rel = 'runbooks/local-dev.md') {
+  const page = join(root, 'openwiki', rel);
+  const body = readFileSync(page, 'utf8').replace(/^---\n[\s\S]*?\n---\n/, '');
+  const rebuilt = '---\ntype: "Reference"\ntitle: "Local Development Stack"\nopenwiki_generated: true\n'
+    + 'verified:\n  - by: openwiki/0.7.1\n    at: 2026-10-17T13:24:33.842Z\n'
+    + 'sources:\n  - id: openwiki-source-1\n    resource: repo://docs/runbooks/local-dev.md\n'
+    + 'generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }\n---\n' + body;
+  writeFileSync(page, rebuilt);
+  const certified = `sha256:${createHash('sha256').update(rebuilt).digest('hex')}`;
+  const sc = join(root, 'openwiki', '.claims', rel.replace(/\.md$/, '.json'));
+  mkdirSync(dirname(sc), { recursive: true });
+  writeFileSync(sc, JSON.stringify({ pageVersion: certified, verification: { by: 'openwiki/0.7.1', at: '2026-10-17T13:24:33.842Z' }, claims: [] }));
+  writeFileSync(join(root, 'openwiki', '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { [`/openwiki/${rel}`]: { pageVersion: certified } } }));
+  return page;
+}
+
+test('frontmatter (#777): a minimal rebuild gets resource/description/type back from HEAD, and stays durable', () => {
+  const root = governedRepo();
+  try {
+    const page = minimalRebuild(root);
+    const changed = mod.restoreRebuiltFrontmatter({ root, bundleRoot: join(root, 'openwiki'), files: ['openwiki/runbooks/local-dev.md'] });
+    assert.equal(changed.length, 1, 'the rebuilt page was not restored');
+    const text = readFileSync(page, 'utf8');
+    const header = text.match(/^---\n([\s\S]*?)\n---\n/)[1];
+    assert.match(header, /^resource: docs\/runbooks\/local-dev\.md$/m, 'resource not restored');
+    assert.match(header, /^description: Summary of the local stack bring-up order\.$/m, 'description not restored');
+    assert.match(header, /^type: Runbook$/m, 'the fallback type was kept instead of HEAD\'s');
+    assert.doesNotMatch(header, /openwiki_generated/, 'the rebuild marker was left behind');
+    assert.match(header, /^verified:$/m, 'the verification was dropped — this restores, it does not uncover');
+    assert.match(header, /^ {4}resource: repo:\/\/docs\/runbooks\/local-dev\.md$/m, 'a NESTED sources resource was disturbed');
+    assert.deepEqual(claimsMod.claimsDurabilityFindings(join(root, 'openwiki')), [], 'the certified hash was not carried');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('frontmatter (#777): verifySlice proposes a minimal-rebuilt page once restored — governance passes', () => {
+  const root = governedRepo();
+  try {
+    const before = mod.snapshotTree(root);
+    minimalRebuild(root);
+    const v = mod.verifySlice({ root, bundleRoot: join(root, 'openwiki'), slice: sl('runbooks', ['local-dev.md']), before });
+    assert.deepEqual(v.violations.filter((x) => /governance/i.test(x)), [], v.violations.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('frontmatter (#777): a page WITHOUT the rebuild marker is left alone — a plain drop still fails governance', () => {
+  // The #857 guard above stays meaningful: only openwiki's diagnosed fallback is repaired.
+  const root = governedRepo();
+  try {
+    const page = join(root, 'openwiki', 'runbooks', 'local-dev.md');
+    writeFileSync(page, readFileSync(page, 'utf8').replace(/^resource: .*\n/m, ''));
+    const changed = mod.restoreRebuiltFrontmatter({ root, bundleRoot: join(root, 'openwiki'), files: ['openwiki/runbooks/local-dev.md'] });
+    assert.deepEqual(changed, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('frontmatter (#777): a NEW page (not at HEAD) carrying the marker is left alone — there is nothing to restore from', () => {
+  const root = governedRepo();
+  try {
+    const rel = 'openwiki/runbooks/brand-new.md';
+    writeFileSync(join(root, rel), '---\ntype: "Reference"\ntitle: "New"\nopenwiki_generated: true\n---\n# New\n');
+    assert.deepEqual(mod.restoreRebuiltFrontmatter({ root, bundleRoot: join(root, 'openwiki'), files: [rel] }), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('execute: three areas are written by ONE invocation (SC-003), and every page is verified', () => {
   const root = twoAreaRepo();
   try {

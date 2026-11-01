@@ -673,6 +673,17 @@ To correct a covered page by hand, **uncover** it in the same commit: remove its
 delete its sidecar, and delete its front-matter `verified:` event. openwiki then leaves it for full
 review, and the correction stands until the page is next regenerated.
 
+**G11 on a page that was valid on `main` (item #777).** Symptom: `guardrails / okf` and `naming` fail with
+`(G11) … is NEITHER derived nor authoritative` on a page that `main` cites a `resource` for, and its header now
+reads `type: "Reference"`, a double-quoted `title`, and `openwiki_generated: true`, with no `resource`, `description`
+or `tags`. Cause: the model wrote front matter that did not parse as YAML, and openwiki 0.7.1 rebuilt a minimal header
+in its place without telling the agent (`repairOkfFrontmatter` → `rebuildMinimalConcept`). It hit #775, #791 and
+#857. Since 2026-11-01 `verifySlice` restores `type`, `description`, `resource` and `tags` from `HEAD` on any page
+carrying that marker and carries the Claims hash, so this should no longer reach a proposal; the run log says
+`restored … from HEAD in <page>`. If it still does, the page lost its keys **without** the marker. That was the
+model's own edit, and the governance gate refuses it in the run. To fix it by hand, uncover the page as above and
+restore its header from `main`.
+
 The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
 from there, and only while its proposal is **open** (a closed one's commits are not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,
 started from `main`, and the `--force-with-lease` push replaced the open proposal — measured on
