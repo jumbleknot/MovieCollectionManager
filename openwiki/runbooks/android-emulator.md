@@ -59,7 +59,7 @@ sources:
     resource: repo://scripts/mobile-flows.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T05:36:38.857Z
+    at: 2026-11-01T18:13:07.622Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -108,7 +108,7 @@ Both emulator steps `adb reverse` 8082 and 8099, install the same `$APK_PATH`, t
 script; the agent half runs gating → enable-anthropic → the agent flows → disable, followed last and
 specially by the non-agent `admin-settings-access` flow.
 
-Three details of that step are load-bearing when editing it:
+Four details of the mobile half are load-bearing when editing it:
 
 - **The AVD is deliberately oversized for Chrome.** The action is given 4 GB guest RAM, a 576 MB heap
   and 3 cores because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat:
@@ -119,6 +119,15 @@ Three details of that step are load-bearing when editing it:
 - **The Maestro CLI is pinned** (`MAESTRO_VERSION=2.10.0`): the vendor installer fetches
   `releases/latest` when that variable is unset, so without the pin the mobile tier silently tracked
   whatever Maestro released that day. Renovate maintains the pin.
+- **The Android SDK install names its packages explicitly, and `platform-tools` is not optional.**
+  The `android-actions/setup-android` step passes `packages: 'platform-tools'` rather than relying on
+  the action's default: the old default was `tools platform-tools`, and `tools` — the legacy SDK Tools
+  package, long superseded by `cmdline-tools` — was removed from Google's index, so the action died on
+  its first package (`Failed to find package 'tools'`) before it ever installed `platform-tools`.
+  Pinning the value removes the dependency on an upstream default entirely. It also matters for this
+  page's own reason: the emulator half drives `adb` directly (`adb reverse tcp:8082` / `tcp:8099`,
+  `adb install`), so dropping `platform-tools` would break the mobile half a second time. Keep it in
+  step with `cd-deploy`'s `prod-apk`, which pins the same value.
 
 - **When the mobile half runs:** every push to `main` and every `workflow_dispatch`; on a
   `pull_request` only when the diff touches the job's `mobile` filter (`frontend/**`, `agents/**`,

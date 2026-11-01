@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan / wiki-maintain / okf-governance around them), the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T18:13:07.622Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -55,9 +55,16 @@ into the Nx target's environment; the bare CLI omits both and reliably OOMs on t
 
 Around that pair sit three more targets on the same project. `pnpm nx wiki-plan infrastructure-as-code`
 is offline, keyless and free: it decomposes the documentation changes since the last recorded run into
-bounded slices (at most 8 pages, one bundle area each) and prints them, so a paid run is reviewable
-before it happens. `pnpm nx wiki-maintain infrastructure-as-code` is the paid execution path. `pnpm nx
-okf-governance infrastructure-as-code` runs the second, newer gate
+bounded slices — at most 8 pages when refreshing concepts that already exist, at most 3 when creating
+new ones, one bundle area each and never a mix of the two kinds — and prints them, so a paid run is
+reviewable before it happens. It shows only what was *requested*, though: openwiki forces every page
+with a stale or unresolved Claims citation into every run as a full paid regeneration whatever the plan
+says, and `node scripts/wiki-maintain.mjs --claims-audit` is the second offline, keyless, model-free
+check, naming that set in advance from openwiki's own resolver. `pnpm nx wiki-maintain
+infrastructure-as-code` is the paid execution path; at execution, consecutive same-kind slices of
+*different* areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` (8)
+pages, because every invocation pays a fixed planning pass — the slice stays the unit of the backlog
+and of carry-forward. `pnpm nx okf-governance infrastructure-as-code` runs the second, newer gate
 (`scripts/check-openwiki-governance.mjs`, rules G1–G12, plus a fail-closed `G0` that treats a missing
 or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` as a violation rather than a skip
 and then stops before checking any concept) over the regeneration policy, the protection fingerprints
@@ -76,6 +83,7 @@ the file that constrains it.
 ```mermaid
 flowchart TD
     Plan["wiki-plan, offline and free"] --> Maintain["wiki-maintain, paid"]
+    Audit["claims audit, offline and free"] --> Maintain
     Maintain --> Generate["wiki-update, runs scripts/wiki-generate.mjs"]
     Generate --> Cli["openwiki code --update --print"]
     Cli --> Verify["verifySlice: pages landed, conformance, policy"]
@@ -86,8 +94,9 @@ flowchart TD
     Gov --> Review["human review, never auto-merged"]
 ```
 
-The paid path runs from the free planner through the generator to slice verification and one reviewed
-proposal, and the always-on gates sit after it rather than inside it.
+The paid path runs from the two free checks through the generator to slice verification and one reviewed
+proposal, and the always-on gates sit after it rather than inside it. The planner shows what the run was
+asked for; the claims audit shows what openwiki will force in on top of it.
 
 ## Gotchas
 
@@ -209,11 +218,16 @@ proposal, and the always-on gates sit after it rather than inside it.
 - **The generator's own account of a run is never trusted.** `wiki-maintain` verifies each slice by the
   pages that actually landed in the working tree, by bundle conformance and by whether policy permitted
   every written path — never by the generator's exit status, which was measured at exit 0 after twelve
-  minutes of paid work that wrote a single `index.md`. Its own exit codes follow from that: `1` is a
-  slice that failed verification, `2` is bad usage or a missing credential, and **`3` means the run
-  stopped at its page or wall-clock budget with work carried forward — it is not a failure.** The
-  numbers behind those budgets live as constants in `scripts/wiki-maintain.mjs`, not in prose: change
-  one and a guard test fails offline because it derives the CI job's timeout from the same constants.
+  minutes of paid work that wrote a single `index.md`. Its own exit codes follow from that: `0` means
+  planned, every attempted slice verified, nothing to do — or `--execute` stopped before any paid
+  generation because the checkout's run record is behind `main`'s; `1` is a slice that failed
+  verification, and `2` is bad usage, an unreadable run record, a missing credential or a failed
+  preflight. **`3` means the run stopped at its page or wall-clock budget with work carried forward —
+  it is not a failure**, on the same reasoning that separates runner starvation from a red build. The
+  workflow maps `0` and `3` to the two non-broken outcomes and `1`/`2` to `failed`, so the run's exit
+  code is never confused with the generator's. The numbers behind those budgets live as constants in
+  `scripts/wiki-maintain.mjs`, not in prose: change one and a guard test fails offline because it
+  derives the CI job's timeout from the same constants.
 - **The run record is committed state, and the marker commit must not re-trigger the job.**
   `openwiki/.maintenance-state.json` is committed because CI runners are ephemeral and the marker has
   to advance even on a run that produced no proposal; it is **not** the tool's own
@@ -263,6 +277,18 @@ proposal, and the always-on gates sit after it rather than inside it.
   wins. The downgrade is not invisible after the fact: the rewritten fence keeps an
   `openwiki: mermaid parse failed` comment naming the parser error, so a diagram that never rendered
   can be found and repaired by hand.
+- **The plan is not the whole bill: openwiki forces pages in on its own.** A page with any stale or
+  unresolved Claims citation is a mandatory "reconcile stale or unresolved Claims" job in every run —
+  a full paid regeneration, whatever was requested — because openwiki re-resolves every `repo://`
+  citation before it starts. The planner cannot see that, so `node scripts/wiki-maintain.mjs
+  --claims-audit` exists as the second free check: it loads openwiki's own `RepositoryEvidenceResolver`
+  from the install the `openwiki` binary on `PATH` belongs to and lists the pages that will be forced
+  (exit 2 when there is no such install). A forced page is labelled *churn citations only: avoidable*
+  when every one of its issues is a citation of a file routine commits rewrite — a lockfile, a
+  `.env.deploy` digest pin, a line-addressed allowlist entry, or a cited range holding an `@sha256:`
+  digest — which is why `openwiki/INSTRUCTIONS.md` §9 tells the generator not to cite those. A page
+  that carries one of them is therefore paid for again on the next unrelated commit that rewrites the
+  file, which is the whole reason the citation is forbidden rather than merely discouraged.
 - **Rejected content is fixed in the brief, never allowlisted.** If a page trips the conformance gate,
   the governance gate or a leak scan, the surface that changes is `openwiki/INSTRUCTIONS.md`, followed
   by a regeneration. The gates deliberately have no skip flag and no allowlist, because an allowlisted

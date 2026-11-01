@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:be97e5ab1d02f85cad98c54e156d589f6b603beeebe38826c8f144b4bad86900",
+  "pageVersion": "sha256:13c5120ebb99d38e567933ee0fa70b8af18859eb5f9f62c3983985c5c19770c8",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
-          "version": "repo-file-v1:sha256:bb3af8b549c8f74b23ec1a812e46fbd5f59d146561d8246d784ec7a39df24ecc"
+          "version": "repo-file-v1:sha256:724b5b9089b13e383ab8c88b18a3a4397f538d99929db13022c84b6ce4ecae5a"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
@@ -30,7 +30,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
-          "version": "repo-file-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840"
+          "version": "repo-file-v1:sha256:679b1169d9c094e659590b1ff59e11ad300a05d51faa61b0cc5d7b0f75a66652"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-service-client.ts",
@@ -321,7 +321,7 @@
           "version": "repo-lines-v1:sha256:7c073857b6d0485da043f72cec7a845a47de9544d73c36234f0a22727b98f720:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMGYzMTkyYWU5NTZlM2NlZTg3MGI2YzRhYmQ4NjRjYzIzZjMwZWM0OTQxYmY1OGNmOTQzODQwYjRiNjdjZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYWQyYmYzZmY2NTY5NDZhNjFkMWJlNTVlMWJmNmFlOWEzODVhMmMxOTI5ZjA0NDBjMjMxMGEyMjkwMGJhOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNTgwNDcxMzg2ZWZiZDkxMmU0NDY2MDA3Mzc0MGMwNzg3ZjBiYTM5YjA5MDUyZDIzMjZkOWE1NjIyYjgxYjgifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L362-L375",
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L346-L359",
           "version": "repo-lines-v1:sha256:2dd9548d967a8f24b6955dc4e62897d7cb77962022df1bf6f8c3e1ce4100dee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2E4ZWMwODBmZTAxNjYxYjk0YzkyN2ZiZTkwYTIxMDg4M2UyYmUwZDRlZTg1MTY1NzQyODE0NDMwNTk1NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MWEzNzc1YmJiZTEyNjc2YmRjYTI3OTFlZjM2ZjYwOWI5ZmQ0ZmMzNTBmYzQyMmQyMjE0N2VlMjdlYTNkYTgifQ"
         }
       ]
@@ -430,7 +430,7 @@
     },
     {
       "id": "claim_4035a0268c0440b89cccb5b29f16edf6",
-      "statement": "GET /bff-api/auth/init is the redirect-URI reconciliation route: it is unauthenticated by design, is called once on app mount best-effort by the client root layout (fetch('/bff-api/auth/init').catch(() => {})), and passes ensureClientRedirectUris() the complete six-entry list this client needs — the web PKCE callback, the verified-email redirect, the native login scheme URI, the backup-consent callback, the account-deletion step-up callback and its own native scheme URI. When BACKUP_CONSENT_CLIENT_ID names a client other than the login client it makes a second call registering the consent callback on that dedicated client too, because a URI registered only on the login client is refused once the consent round trip runs as the dedicated client. Because the underlying write is additive ([...existing, ...missing]) and one-shot per client per process, the list is the contract: a URI left out is never registered by this path, and on a fresh realm nothing fails at deploy time until someone hits that flow.",
+      "statement": "GET /bff-api/auth/init is the redirect-URI reconciliation route: it is unauthenticated by design, is called once on app mount best-effort by the client root layout (fetch('/bff-api/auth/init').catch(() => {})), and passes ensureClientRedirectUris() the complete six-entry list this client needs — the web PKCE callback, the verified-email redirect, the native login scheme URI, the backup-consent callback, the account-deletion step-up callback and its own native scheme URI. When BACKUP_CONSENT_CLIENT_ID names a client other than the login client it makes a second call registering the consent callback on that dedicated client too, because a URI registered only on the login client is refused once the consent round trip runs as the dedicated client. Because the underlying write is additive ([...existing, ...missing]) and the per-process mark is per client and set only on a CONFIRMED result — nothing missing, or the PUT answered 2xx — the list is the contract: a URI left out is never registered by this path, and a rejected registration is warned about (redirect_uri_registration_failed naming the failing step) and retried on the next call instead of being latched as done until a restart.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/_layout.tsx#L54-L58",
@@ -441,8 +441,12 @@
           "version": "repo-lines-v1:sha256:59e24405f0cfc60c256def7db5a01a833e4b839f8b31b0599e58d06ea4983962:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzJlNWFlNjk2YjBjNWI2Y2FjNTdjZGQwZTMxNjcwZjEyNzZlYzY0ZmQxYWMyNzkwODRkZDI2NGYwZDVlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmY2ZlY2JjOGFjZjE5ZGY3MzY4Zjg0MTQ4MDQyMzE5NTNhZGFiODM5ZmY3Zjg3NjBiMDBlNTU3ZGQ4NThkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L461-L520",
-          "version": "repo-lines-v1:sha256:e7489ee54484f6b0652e3918f8e8f35ce8da363ad02f1ec447eacad7830aab4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNGYzZjlhNTBjOWU2ZWI4MzkzNzVlOTBmNzkwZWI5ZDJiYjczOTVmNDg2OGE0NDRiODQ2ZmU3MWNlMTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YTVjMDkzNWUxYmM2OTVhYWNmZDJiYjk0ODkzM2IyMDczZDc5MTM4ZGIzNGU5OTAwNzdlOGJlM2Q1ODU2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L464-L530",
+          "version": "repo-lines-v1:sha256:14f43ab1e6de9a63f244fcc42eba7f0c41f0a2976f401fa5100dabbab44730f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMWM0NDYxMGFiZDc3NTk1YzNiZWRmN2RhOGU4ZjE4NTQwZWFiOTUxZGRiY2QxNDRhZWQxOWMyYTg0NTlhZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMTBkZjA2YTcwYzQ0OWI1YTAyMWYxZWQ2YzQzNDY2OTk5NTkzMTQzYjAyNGYyNGMxNjU3OGZkNzQ3NGNhZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts#L1-L87",
+          "version": "repo-lines-v1:sha256:e79fef8d84b0e09380a3c8ef79ab3af49c397bed8173b0a7a243be3850ff9ca4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -451,7 +455,7 @@
       "statement": "Three auth cookies cross the wire and nothing else: the access token and session id are scoped to Path=/ while the refresh token is scoped to Path=/bff-api/auth/refresh only, which is what makes it unreachable from an ordinary API request; all three are HttpOnly and SameSite=Strict and Secure outside development, and the clear-cookie set mirrors those attributes exactly because a browser may decline a clear whose attributes do not match the cookie being removed.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L137-L170",
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L130-L163",
           "version": "repo-lines-v1:sha256:545071908cb83f4475e9a84cbaa9a528b93785017e827d07f95ceb7df578a4e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MjMwN2M5MTY5YmQyNmViYjFmMDMwNGFkODBkMjllNjQ5NTc2OTMzMjMyNmI2Yzk3OGYxMzRhZGRjMWU2NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -482,15 +486,23 @@
     },
     {
       "id": "claim_2602e5f6222747ce99cc9a44d07ab698",
-      "statement": "error-handler.ts (handleBffError) is the older Express-shaped error mapper and is now reachable only from its own unit test: no live route handler imports it (register+api.ts mentions it only in a comment about adapting it), and the live handlers answer with securityHeaders() plus either handleMcApiError() or the RFC 9457-shaped problemResponse()/problem() helpers.",
+      "statement": "error-handler.ts (handleBffError) is the older Express-shaped error mapper and is now reachable only from its own unit test: no live route handler imports it (register+api.ts mentions it only in a comment about adapting it). The live handlers answer with securityHeaders() plus either handleMcApiError() or the RFC 9457-shaped problemResponse()/problem() helpers, and only handleMcApiError() routes every AuthError through the shared authErrorHeaders() helper — so a refusal raised on a problem()/problemResponse() path silently loses its clearing cookies and its Retry-After.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/error-handler.ts#L96-L127",
-          "version": "repo-lines-v1:sha256:cb96d90715060d913fca4a436233aa825d832ee7f2e82a0fb9f303c70e8cccb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzVmOGJmNDUyOGM0ZDkwNDE3M2IzYjk2Nzk2NjFlOWUxZWZkOWNlMmVlMTM4MWI0NjY2MjA2YzAyYTU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMzc0NmViYjEwNGYwNGI5NWU0M2Y4ODEzZGZjN2QzNzJlNWQxOGNkNThjOThkOGJjYzhiNmY0NTkxMDY0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L21-L29",
+          "version": "repo-lines-v1:sha256:1385d783844b36f7fe75934c25c8d7b3aa882947e57aacb2a3afb9e73d4ef156:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMTcxOTE2MTFmM2QwNjcxM2I4NDc4Y2VjYjI4Y2RkMTQzMWVmNDJlM2U2NTQ5MDAxZjAzMzJmY2I2N2I3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzlkMDI3YzU0OWI2NjI2OWEzMDMzOTlhMGU1MjMxMWIzZjRmOTVjYjIzNDZkOTMwMDQ2NWFiNGE5NzMyNWVkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTViMTQ0MGNjNDUzYWU3MmNlMzYxYTczYmRkYjQ4ZjEyMjkwYWRiMWVlODgyZDg0NjhmNzA1MmI3OGVmYTI0NSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts#L1-L66",
-          "version": "repo-lines-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts#L27-L32",
+          "version": "repo-lines-v1:sha256:da3c3c876f138a8921f59b1c6f4ee9f3267d9f1d0b89b04da8517f73b8726cb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBmNGU3YzI5NjVkNDA5NmFjYzFmZmNlNDM5NmViYjkwZmI3ODIxZGUwZmU1N2Y3Y2U1MWE1NDg1MTMyODlhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2I3NmQ1ZTE2ZWM5MGEwYjJlYjI2NDIyNGQ3N2ZmMGQ3ZTM1MTc0MGQxYmYxYzIxNzg5NGRmZjM3N2Y2NjU0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQzZTZmNDU0NDFiZTNhMjA1MjVjM2RiNDRjMGFjY2Q2ZjVlNGU4MWQ0ZjAzMDM1OGRlYzE0Mzc0YjNlODg0YSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/error-handler.ts#L106-L135",
+          "version": "repo-lines-v1:sha256:811a4ac03eb7fc0fc9d05d5b9ebfb8baa400d28f3d4581d7ad90837a0fc6adcb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNGRhYWE3NDAzMzZmNWMyYmQ5OTllYmE2OWJhY2M3NDJlYTM2Yzc5YzY5MDA5YmRiZTc1OThjNGQ5OTdlYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxODA4OGViYTMxMTE1YjA5ODU3NGZmM2Y4ZDkwOWRiZTZmN2FlODViYTRiMjNiMjQxYzRhMWJmNTY0MWVhMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts#L22-L49",
+          "version": "repo-lines-v1:sha256:772e19c5b132a4437c9c704e9d8c3d8913f5f3380c8635500b86ea691c07f26c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjNTI0YWRjMzBiNzM5MWY4MTRhZGVkNWQ0MDQzNTVjNzVlNmI0ZjdhNDgyMTgyMTRjNmY0ODU1NzVjYjhiZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMTQyYTI1NmRjY2E0ZTUwODdlNmNkYTg0ZmU4MWVkMjhmNGQ3NDY4Zjg0NWMwNjc4ZmZiZjRiZjIwM2YxMWUifQ"
         }
       ]
     },
@@ -577,7 +589,7 @@
       "statement": "The backup integration suites escalate rather than skip quietly: tests/integration/helpers/backup-targets.ts treats missing destinations as a loud SKIP when MCM_REQUIRE_BACKUP_TARGETS is unset but as a HARD FAILURE at a named assertion (assertBackupTargetsPresent) when it is set, so a suite that passes with the targets down is not possible under the flag; the rule for reading a result is therefore to watch the skip count, not the exit code.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md#L266-L280",
+          "resource": "repo://docs/runbooks/backups.md#L270-L284",
           "version": "repo-lines-v1:sha256:7488caf2cc57b3b17130f5f9c7fd8df49e496f43797fde693c299973c0721574:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzIwYjcxMTI4NzZiZmMxMmY2MmI0OTg2Mzc3ZmU3ZTk4ODU2YmI2MWQ3YmQ4ODU2ZWU1YTg0YjdkNTdkNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDI3YWJkMDYzMmQxOThhZjBhMTM3MjlkNTZhZjY4NjI3NDhjYTgyNjEzMzRjZWZhY2E5NzJlOWJjZTJlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNzhkZDQ4Y2RmMzI5MTU3ZDIwNzAzNmYzMzlkY2FmMDdlODBlYWRmYjMzNzg2NTU1YjU2MmMxMjFlZGMzZjIifQ"
         },
         {
@@ -634,19 +646,19 @@
     },
     {
       "id": "claim_c39eecd5ee5d4a4b9f5046913c7ab10c",
-      "statement": "`bff-api/agent/run+api.ts` hosts the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI `HttpAgent` from `@ag-ui/client` + `ExperimentalEmptyAdapter`) because the `@copilotkit/react-native` client speaks the CopilotKit runtime protocol while the Agent Gateway is AG-UI-native; this is the framework's standard library adapter, so no model inference and no orchestration happen in the BFF and the gateway's event stream passes through unchanged. The binding must be the AG-UI `HttpAgent` — `LangGraphHttpAgent` speaks the LangGraph Platform REST protocol and 404s against the AG-UI endpoint. The handler also strips the `Access-Control-Allow-Origin: *` and `Access-Control-Allow-Credentials` headers the runtime stamps by default, since the web client is same-origin, and answers the runtime's `GET /info` handshake through the same handler with auth and RBAC but without the cost gate or the rate limit.",
+      "statement": "`bff-api/agent/run+api.ts` hosts the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI `HttpAgent` from `@ag-ui/client` + `ExperimentalEmptyAdapter`) because the `@copilotkit/react-native` client speaks the CopilotKit runtime protocol while the Agent Gateway is AG-UI-native; this is the framework's standard library adapter, so no model inference and no orchestration happen in the BFF and the gateway's event stream passes through unchanged. The binding must be the AG-UI `HttpAgent` — `LangGraphHttpAgent` speaks the LangGraph Platform REST protocol and 404s against the AG-UI endpoint. The handler also strips the `Access-Control-Allow-Origin: *` and `Access-Control-Allow-Credentials` headers the runtime stamps by default, since the web client is same-origin, and answers the runtime's `GET /info` handshake through the same handler with auth and RBAC but without the cost gate or the rate limit (GET calls the shared handler with limits disabled).",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L1-L23",
-          "version": "repo-lines-v1:sha256:34a1f0b6e6219a3b692776ebde6e27268d478462be3242d0564046bc1a699698:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmOTk1ODNlNTU4Yjg0YjVjZDMwZGY5OTJjZTY5MWFhN2IxOTA0ZDViMjY1MTYyOWE0MTc4OGQ5NTNiODg1ODcifQ"
+          "version": "repo-lines-v1:sha256:b95bb55df3f892a59294c6d6093b0e3fc0d8fffc4f12b27a46a036f869716c57:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmOTk1ODNlNTU4Yjg0YjVjZDMwZGY5OTJjZTY5MWFhN2IxOTA0ZDViMjY1MTYyOWE0MTc4OGQ5NTNiODg1ODcifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L246-L268",
-          "version": "repo-lines-v1:sha256:460306e04d880504571973686ff7a5c44cf5a6828fb3e17b220b99d104635519:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhM2Y3Y2RkOWZhY2Q0YmU3OWZiNjU5YTk5NWI4YzRmOWZkZWE4OTU2NDVmZmQzZGM5NjdkMjI1ZTY5YTAwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMWViNmM2OTVjMzc1NzI5MzhkZDAxMWM5MTU2MWM3ZmRiYmI3MDRiOGRlMGI2ZGYwZDIzYzc0OWM5M2JhZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ZjZhOGM3YmJmYjQ3MjcyYTQ4NWJlMzJkYmFjYmExZGI1NWM3NTE3ODk1YTg5MjlhM2E1ZTMzN2MxMjRkMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5YTJjMDc4NDEwZWYxZDA3OWI3YzA4ZDRiMTgxZTdkYzk3N2FjNmE0YTUzYzdiZmRmMDljNjQ3MmQwNTcwNjcifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L252-L268",
+          "version": "repo-lines-v1:sha256:cfeaba2376c740975ebe821eeb8a1aefcd8e9dec5da2031be7f0baac9c7504c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYWE4YmY2OGVhMDI2NjJhYjUxNmE2Yzk5MWM3Zjg0ODJkNjFjODlkNDNiZTgxYjA5MzExNjEzMzMyMDMzYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YWNkNjZiMTlkOGY5YTg0NjY3M2RjYzNmYjlmNzIyNTRjYzhkNzIxZmRmNDkzYWFiZmJhZmU2YzJkNWM5ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MTkwZTI2Zjk2OThjZGVjZTU2MTRhZmU2MjllMTRjMGM3YmEyOTllNjM2ZmRkNmIyMjBlZWU3OTNlZTk5MDYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L274-L282",
-          "version": "repo-lines-v1:sha256:7152ce369a40e003329a4fa371e658256a96dac87504ed07860ec9dc53f4a6b5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxMTc2OGM5YWYxMDY1ZjNmZDUxMTNkODJhNGQ0ZTNhMWViZWY0OTkzZjQ3ZTE5MzExOTY4YjM5Y2IzNWJjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L274-L277",
+          "version": "repo-lines-v1:sha256:9f66189d7a9121eb6296de9dddb00819c64f17559ecfda7a0945e71d169e4c71:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI5N2MxMDY0ZTdhMDZlMmU5ZDQzNmMwYzJiYTk5NDIxMjU5NDk5ZTMwYTEwYmFlODM4MDg5M2E3YmYyMTUzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYwOTVjYWFmZTRlNmU2ZGE0NmQxYjEyMzZmODU0N2EzMTViYjVlY2ViNzlkNmNjN2UwZGY5MDBkNGFhMDVjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRhYmQwMjQ3ODRmMDkyYTUwODk4M2JjZThlMTlhYmJkNTMzMGE0OTg5MTIzODU0ZDRkNGYxMjA3ODNhYjgxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts#L75-L98",
@@ -659,7 +671,7 @@
       "statement": "The agent run route classifies a CopilotKit runtime POST as billable by default-deny on the GraphQL `operationName`: only `availableAgents`, `loadAgentState` and `hello` are non-billable reads, and a missing, spoofed, non-string or unparseable operation name is treated as billable so the cost ceiling cannot be dodged by relabelling a run. The per-user request rate limit and the cross-user thread-ownership guard apply to every POST, while the cost ceiling, the per-turn cost accrual and the runnable-config resolution apply only to a billable turn — gating the handshake instead would lock an over-budget user out of even opening the dock.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L136-L209",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L132-L205",
           "version": "repo-lines-v1:sha256:83dc220941b16debe35af4eb697f9d61d86d11a05cefcae1c1b7e1c8591aa2b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNzBkZTVkYzRhMzAxM2I5YzgxMDQxM2RhZTVlMWUxMjk0ZGVmM2ZmNTk1ZTM4Njc3ZWU0YTBjY2ZlMzIxZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NTRkYThkMTEzNTZjNjZiYmVkYTg2ZTQyNGU3ODlkODliNTNlZDVmNDk5MjBhYjg1NmExZmZlYjE2ZWIwMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYTkwZTNmZmQ0N2YxMGI3ZGRiMGU5ZjZmZGU2ODllY2M3YzJiZTE1ZTU1NjNjMjFlNTdmZGYyMmNjN2YyMDgifQ"
         },
         {
@@ -677,11 +689,11 @@
       "statement": "A billable agent run requires a runnable per-user config (enabled + provider credential + TMDB key) resolved via `resolveForRun` BEFORE any rate-limit accrual or gateway call; when none resolves the route answers `{ type: 'assistant_not_configured' }` with HTTP 200 and performs no model or TMDB call, so an un-opted-in user costs nothing. The decrypted credentials then ride the `X-Agent-Config` header for that single run only — never the request body, never persisted, never logged.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L160-L174",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L156-L170",
           "version": "repo-lines-v1:sha256:1a2a90b55a6abdbdb24ea8cc81b98d748b2c116ce76b4c2a1723348626dcbbed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYWRmZTVkOGIxYzY2Yzk4MTgzMzQ1ZjA2YmM1OGNhOTBhM2Q0MzZlOWIxZTdhNzE4NTA4YzY5ZTBhZDg5OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YjQ5YjkzZTEyYjFjYThhZGZlNTVkZTcyZDgxNWZkNWVkZGYzZjY1NDk0N2QwZjg2YjRiYjc2OGQ1MjA4MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODdiNDZkZjVhOTQ2MzdiZjM1MDhlZmVjNDAwNzA3NGM2ZTczOWQ5ZmViZTJhOGE2YWNmNTU5YmRmZjA4MzEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L225-L253",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L221-L249",
           "version": "repo-lines-v1:sha256:35cdbc73a0a38142ada61e4c1e61b73db94941d3c97e05bb8eb8398d22dd6de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NGI4OGNmYTVjOTQwZmVkMGYwYmNmMThhYTU1YmEyNWY4ODY0YzFiZDVjNDBlZmVmZThiMmY2ZGFhYTVjYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDU1NGVkYWNhYjhmOGZlYTRkNTEyNmFmY2QxMTIxNGE3ZjQ3NjM4NzVhOTg1MTY0NmYzODIyNDdhMThkYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMTc3NDBiYjZmY2M3ZDJiM2I3MTBlMGYzNzIwZTQ0YjZmMmExNmIzMTMyODQwZWI1N2ZjMzJmY2M3OTI4Y2YifQ"
         },
         {
@@ -695,7 +707,7 @@
       "statement": "The per-run context bridges from the run route are gated on `billable`, not on the request being a POST: the pending sanitized UI snapshot and the single-use import-file handle are consumed only for a billable turn. Gating them on the POST path meant a CopilotKit handshake landing between the upload and the `import` turn silently consumed the handle, so the import turn reached the gateway with nothing and no error anywhere; both bridges share the one condition so they cannot drift apart. The UI snapshot is pushed by `ui-state+api.ts`, which is the sole sanitization point (a structural-field allowlist that drops values, PII and unknown keys), and the run reads it back out of the per-user cache.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L210-L224",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L206-L220",
           "version": "repo-lines-v1:sha256:49b4697e1de4e4a6260159e17ed6ee65b8cf5a9720d4b10097baea110e615862:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMjI2ZjE2M2ZjNWE3YTVjNzZlZmQzZDcyNDk0YzQ3YTYwM2VhODdkZjhjYjNkMmUyNGYxMWUwNDY5YmFhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMGQ4ZGUzZDM4ZWFkNDliZGM5ZDA1ZTYzZDBkM2NhN2IyNmI4ZjZhOTM4MWEzNjM1NTIyNjA0N2UzZjU1MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMmI1NmZmNmU1ZjBkMTIyNDhiNzQwOWIwYTc5MDk5OTJlYTNmMWQzNzc2NjY1ZTgxNjUxZGRhNGMyZWE4NjQifQ"
         },
         {
@@ -713,7 +725,7 @@
       "statement": "A client-supplied CopilotKit `thread_id` is bound to its owning user before any gateway call, because the gateway keys its LangGraph checkpoint solely on that id and an unbound id would let one user resume another's thread and see the checkpointed proposal preview. `enforceAgentThreadOwnership` claims the thread atomically for the first user via Redis `SET ... NX` and throws 403 on a later mismatch, with the TTL set to the session's absolute window so threads expire with the session; a Redis outage surfaces as a typed 503 error rather than a silent bypass.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L59-L62",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L56-L59",
           "version": "repo-lines-v1:sha256:ea6655c43c02517d106899d83c6ac81a5a0a1bb2db5e55c3de59292edd359f2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjN2Y3YTVjZmY1MTdjZmM0MzVlOWQ5MDkyMWJhOTc5OGNiMTFmOTZiY2JkM2M1NmQ0ZjgzZGRhODRmZTM5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlNjgwOGVkZDcwYjFhMzJkODdmNTE2YjA5NWFkNzc1ZTE1YTRjNjMyMTJmM2ZhMWNjNGQwYTZlMWUwZTYzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDFjMWNmOGFlMzgyZGE3MzRiNjJiNjhlYjhlMTcwNDIxMjgzZGU5YTc5NjI5NmRjZTUxODgxZjRmNzE4NzQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTYwOWE3MGI1NTNkZjgxNDMwZTY5ZjIzNWNjZWNlMzkxMjNlNWVmOTU4YzMwMjYwMWY3ZGU2YTJlMjViZGI0YyJ9"
         },
         {
@@ -721,30 +733,34 @@
           "version": "repo-lines-v1:sha256:317a462a6e611486a07d765b4a9ba7682560580fd2a56764d53873c8ed1a50b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L378-L403",
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L362-L387",
           "version": "repo-lines-v1:sha256:b79f437688154a1a9a9256a27f9afce92776c672fe5d238d54cdb868d393794b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjA0NjQwNTViMTQyYmUzODg4NDQ4MmE1ZjM5NDA5YjQ0NTUxZGNmODM3MjBhYTE0OWUyM2IzMmM5ZmEwZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzNTUyNDM2OGUwNjU5YjI5N2RkYWI5Yjc0OTI2ZjhkZGY1NzA4YWFlYWZhNDk5MjE4OGE4ODRmMmI4ZDQyMmYifQ"
         }
       ]
     },
     {
       "id": "claim_68c8c5247af94db5a521838944f9e247",
-      "statement": "On each run and each HITL resume the BFF performs its own RFC 8693 token exchange to mint a run-scoped, audience-narrowed delegation token (a defensive hard TTL ceiling of 180 seconds on top of the reported expiry) and hands that to the gateway instead of the user's session access token; the minted token is never logged, never checkpointed and never returned to the client. The mint is best-effort — an unconfigured exchange, an absent user token or a failed exchange is logged and the run proceeds without a token, which is correct only while the supervisor graph is tool-free. A resume always mints a fresh token because a paused run holds none, which is what makes pause length irrelevant.",
+      "statement": "On each run and each HITL resume the BFF performs its own RFC 8693 token exchange to mint a run-scoped, audience-narrowed delegation token (a defensive hard TTL ceiling of 180 seconds on top of the reported expiry, and a 5-second timeout on the exchange call) and hands that to the gateway instead of the user's session access token; the minted token is never logged, never checkpointed and never returned to the client. The mint is no longer best-effort: a refused exchange propagates out of resolveSubjectToken as the route's own response before the gateway factory is reached, classified as an auth refusal (401 AGENT_IDENTITY_REJECTED, which the client renews from once and then signs in) or a transient one (retryable 503 AGENT_IDENTITY_UNAVAILABLE with Retry-After 5), and only an unconfigured exchange or an absent user token skips the mint so the turn runs as before. A resume always mints a fresh token because a paused run holds none, which is what makes pause length irrelevant.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L30-L48",
-          "version": "repo-lines-v1:sha256:763cc7766ec3a935ca6223ea50b5415b8837f9f0351a1d04185ff06d35d023ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkOTFmZjVlMTk3NzYzODMwMGEyZmE1OWEzNzdjNmM4MzI2N2ZlMGExN2Q3Y2U2NDkzMzhlNTkxNDY5ZDU2YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYjAzOGE3MzRhMmE0MWE0ZDY1MmEzM2E5MTgzNzlmMGMzOTdlNjBlNTA5ZWY5MmUyYWIyYzFiNzZhNWZmOTgifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L29-L48",
+          "version": "repo-lines-v1:sha256:5ff6777bc2b71a4e7a08b589e9dea555f61681ea044d892ee012704f1a7c3f9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4ZjJjYTViNzVkNDBlYjg3ZGEyODczMWQ1NjAwMTliM2MyY2Q3ZTg2NTJjMjBkNzkyMjQ2Yjc1MmJmMjM1ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNTdhZjQ3YTJmNWEzNWIxYzIyNWQxYjhmNzgzNjI4OTQwOGQ4YjVjYjk4ZGYzM2Q3YWU3MGEzY2E2MDBiMDIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L58-L77",
-          "version": "repo-lines-v1:sha256:4a37bd50e1c1d2b4233e665b71000bfdad6e712b041efec5f33615475ff31b8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOGQwOWViZmJlYmQ4N2RmMTExYzQ1NzE4ZTdjMmNhMzAzYjYzYzY2NDZmMTk3MWZlMTRlNTEwZWFhMWM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYmU5MDgxOTVkNTk4NTA5ZTI2ZDlkMzQ3NzljZDRkMjhmZmQ4YTMwZjFkYTVlZGQ5OTU5MDg5ZjRhMTRkYzYifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L57-L73",
+          "version": "repo-lines-v1:sha256:cea6114781b1d7b924456cfe7043eff1eebf08116c5492f3601115dc331bf5b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOGQwOWViZmJlYmQ4N2RmMTExYzQ1NzE4ZTdjMmNhMzAzYjYzYzY2NDZmMTk3MWZlMTRlNTEwZWFhMWM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYmU5MDgxOTVkNTk4NTA5ZTI2ZDlkMzQ3NzljZDRkMjhmZmQ4YTMwZjFkYTVlZGQ5OTU5MDg5ZjRhMTRkYzYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L1-L32",
-          "version": "repo-lines-v1:sha256:a32bc22dbdec4a24348a212e167b32708110d217580f293ae6c87c29a6940ef1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNzY5ZGI4YTAyMzRkN2VlOWUwNGVjMThmMzljNWM3ODk4YzZhOGRjOTI5N2ZiNjE0Mzg5MTE1YWIxODZmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZDM3ZDRmZjYwNzA5ZDAwMjExMTc1MmJkMGM4MWYwMzU1MjhlNjgwYTE1OTRmOTQyM2YyMTdkNWEzMWFjM2YifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L1-L41",
+          "version": "repo-lines-v1:sha256:de9dbe59fd3d0b52302f1ac121abd4e293f2e4431e7273d62ba4f629c9c6f931:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNzUxODAzMDNhOWQ4YjU3NTFkNTY2ZGVlYjg3ZjdjNGQ3ZjI0ZjQ1ZjhmM2ViMDUwMmNiODU2ZGQ4YzA4YjIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L50-L64",
-          "version": "repo-lines-v1:sha256:19bde6a70608bbcbe73e3a6378de14e8e0fa2ff319a5aa6691fb259884a2537d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlZjJhMGFkNjk0YjYzNTUzOWE3MTZlODFhZWNiYmQwMmYzMDQyMGM5MmUxNjQ0MWJlNDhjZWY4ZGRmMDdmMGMifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L147-L201",
+          "version": "repo-lines-v1:sha256:8ee44139d00f8a7831ba59ce456ca88bc3e82769581f26ac87dddc5ec924ffdc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMDdjOGZlMDNmYzUxY2MxN2QxMmJiOTVmZTMyOTk3MjNlNTUyODY0YjE1ZDJmMjcwZTFkMjM0ZGJhMjQ5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L115-L145",
+          "version": "repo-lines-v1:sha256:130350bf004f0f3510058b006a19efcd660daf2dfbfd40c32d4bc627e20bca65:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ODIxNDQ3MzNjY2QyZmZkOTgwZWE5OTM5YzIzN2FmY2M3OWU5NmJjZjhiOTc4NDBkNjI1YjA0YmFhNGNmMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYzZjNjk4ZGMxODBlZTA4NmYzMjFiMzgxYjFhNWRmODBkMjAwODBhYTlmZWJkNzM5ZTgyYTAzYjI4YWZkN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -753,11 +769,11 @@
       "statement": "`agent/resume+api.ts` is a distinct approval authorization point gated on in-session auth only (no step-up): the decision body is validated deny-by-default so a blank `threadId`/`proposalId` or a decision outside `approved`/`rejected` is a typed 400 that never reaches the gateway, the thread is bound to its owner before the token mint, and every decision is audited. CopilotKit's `useInterrupt` actually resumes through `/run` rather than `/resume`, forwarding `forwardedProps.command.resume`, so the run handler also extracts and audits that decision best-effort without blocking the run.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L50-L76",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L47-L73",
           "version": "repo-lines-v1:sha256:24b1502f2d6b9d4419c033b4ebffcfe2591e3050b69c1cc0c350a03995ec502c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOGIxMTIwNGUzMjBiNmFlMDdhYjZlZjcwNGQxMzk5YzE3ZjE2YWVkNTM0MGEwMDVmOTE0NzJhNzZkMTMzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmY2ZmZDk1ZjI4NzU4MDRmMDc3ZjI1MjVkY2M2NTRkYzVmYTI1OGIzYTk1NzQ2YmU4NjA0ZDM1YzNjNTg1M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L186-L201",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L182-L197",
           "version": "repo-lines-v1:sha256:52e53429c77660ed049a4b9ecf3d866268b92df24faf6010f9a23050f6fa1174:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MDU0ODEzZGJlZWY3MDdjODBlOWQ2ZTMyMDIzMDhhNDNhZGMwOWQ4YjZhOTZjODg2Nzc2N2E2MDUxN2I3Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYzJlMDA3ZTlkMjg2MTVjYThjNDU0OWZhODY0YzM0MmVhNzAwOWQyYzVjYmRiMGZkYjFkNzRiZTdjNDNlODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYzZlMzA2OWVmM2E2YzMzZWFiNTUwMDgxNTJkN2M3OTU5ZTYyNWJmYWU5YzNjMzllNWI5MTk2ZjA5Yzg1YzYifQ"
         },
         {
@@ -811,7 +827,7 @@
       "statement": "Because Expo Router provides no runtime global middleware, every `bff-api/agent/*` route enforces auth per handler (`requireAuth` then `requireMcUser`), and `agent-route-auth.integration.test.ts` enumerates the agent routes and asserts 401 without auth and 403 without the `mc-user` role BEFORE any upstream gateway call — so a new agent route must be added to that list, and the authorized streaming path is validated separately.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L126-L131",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L122-L127",
           "version": "repo-lines-v1:sha256:64c9cde1084c698324ecab355f4505fa9751e5209e06b0d044af877d84e9238b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUzNmU5MmUzMjg5MTIwMTZjNzQxY2E3YTJjNGEwZTZlODE3ZjdhMTFkNDIxYTUwYzUwNzQ2OTIwN2U2ZDc0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzExN2IyY2Y2ZTVhZTk1MDlhYjE4N2EwOTk0Yzk5NWViNTkwZjdjYzc4YTI2YjJjYjg5Y2Q2ZmY3ZTNlMzIwNSJ9"
         },
         {
@@ -847,7 +863,7 @@
           "version": "repo-lines-v1:sha256:5e2b1413e7c6014bc1c223db08350d79970d146ea12948de68f6e4bf16e8c86c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzJlNWFlNjk2YjBjNWI2Y2FjNTdjZGQwZTMxNjcwZjEyNzZlYzY0ZmQxYWMyNzkwODRkZDI2NGYwZDVlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOWRiYzdmMmYyNGI1Mjg0MzU3Zjk4NjMwNmZlZjA0MTdjYzZmODFhODNhMDJiZjgxNTBmNzExMmY4ODNiMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmY2ZlY2JjOGFjZjE5ZGY3MzY4Zjg0MTQ4MDQyMzE5NTNhZGFiODM5ZmY3Zjg3NjBiMDBlNTU3ZGQ4NThkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjZDc0ZWZlMDhmZTJhZmU3OWU0MTk2NTA2MmFkYThlZTliNWU4MGM5NzhkZTlhYTMwNmU0Mzc3MzAzOWY5OGQifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L31-L50",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L32-L51",
           "version": "repo-lines-v1:sha256:b5a7eb9c25c6c02a80c23736f875b1eac357642faa18dde23432ac2b36d6239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OTZmODM4NTlkMWJkMzZhMmFmNGE4OTMwMjkyMmE2ZjA4OWQxNjU5OTU2MmVmNWMxNTU1ZjExN2ExYTkyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYzQ2NTY0YmQyYmY0ODJlN2I5M2YzOTZlYTg2NDcwZTc3ZTFkYzZlZGE0MmRhM2JhMzc0NDM0YTY3MGVlOTEifQ"
         },
         {
@@ -919,10 +935,108 @@
           "version": "repo-lines-v1:sha256:d78cce5eaaa4e48f86fffb0a89d3ff20a1efc257ea82a495050cc0ed41d5348b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdhZTZkM2NiMzUzOTMxODAxYzliMjVmNzIwZGZhMmM3OWRkOGU3MDZlNTExZjFjM2I4MTQwZjVmY2RjN2Q3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ2NDAwNjViMzA4OWM0YzMyZGVkNjE3MDUzNzFiZmMzN2JkYzY4YmU5NWIwYWM3MDAwNmY1ZjNmMTU5MzM0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDRkNDRkNmI1NDNmN2I2MmFmMjkxMjJjN2NiZjg2Y2RkY2MyZDAxYTMxMzdmZjhmYWM3YmUwNTJiNjkzNzdlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzJmZjBmNjlmZWI3NjFiOGM0MmRhMWEzYmJkODYwZWM0MDUyZWQ5MGZlM2QyNWU2YjBhYTYyMGExM2MxM2EwZCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_59357b952a80451592be3cdddbfced5a",
+      "statement": "mintSubjectToken classifies a refused RFC 8693 exchange rather than returning a bare AuthError, because the right answer differs: `auth` means the identity provider rejected the member's credential — invalid_token, invalid_grant, or the pair Keycloak 26.5 actually returns for a revoked or malformed subject token, 400 invalid_request with the description \"Invalid token\" (measured against the live realm; the status alone is not enough because Keycloak also uses invalid_request for configuration faults such as \"Requested audience not available\") — and becomes 401 AGENT_IDENTITY_REJECTED; `transient` is everything else (unreachable, the 5-second AbortSignal timeout, a 5xx, or a 4xx not about the member, e.g. a misconfigured exchange client's 403 access_denied) and becomes 503 AGENT_IDENTITY_UNAVAILABLE with retryAfterSeconds 5. Every refusal logs agent_identity_refused with the outcome and the provider's status and OAuth error code only, never the subject token, the error_description or the response body, at warn level for auth and error level for transient.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L186-L193",
+          "version": "repo-lines-v1:sha256:344330b7103938857a2851db06a4da24e5b29988d6f6c578c9ebaaa08205888a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM4MjFkNGEzZDQ4NzRjMTUxNjczMjgxOWE2MmEyOThiNGM5NTU3YmI2NDM1NDFiNDE3M2M4NTE1NWRlZjliZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzU1ODBjOTViYmZmYzNjYjFiZjFiYzY2NjE3ODg5MGVhMjVmMzNlMDkyMWZlNWRjMDA1NTI1MTliNDY3YWY2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIwMmQwMmM1Yzc3MmE3OWNiNjFhYThjNzhhZTRkNDMwOWI1YmQ0MDllYWRmMzUwNmMyMjMzNzg5MmJmY2JlNyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L39-L110",
+          "version": "repo-lines-v1:sha256:418987efc808f4f8bb1ca981e90688d9a1705b7f57f01486ff16f5769546b1e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMDNlNmQxMzg4N2ZjOTUyYWY0NGMxZDAzOThiZmRmNzJkODQ2ZmZhYmYxYjJkMTkxNjA1Yjc3YzIwZjI1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MWQ0MDEwZTlmZDA4NzZiMjNlY2VkNmFkYWVkYjAwMDNkZmQ2ZTk3MzU0OGU5YjIyNjBjZTg5NDU1MWNkNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YjhmZWU3MTg5NDcxNjE3NjAzMWI4OTJkNzM1YWNlOTQ5ZjNjMmU0YzIxOWM0MmJiMzJjNzkyN2JiMzFiY2MifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-subject-token.test.ts#L140-L214",
+          "version": "repo-lines-v1:sha256:a9803d3ef465e8e55c42bee9d24fb6962e7dd68b4df1d39a2ac537f9af16cae6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZGRlODJjOGY2ZmNkOGZkNTdmNjM1MDBjYjhkNzU3ODI5NGQ0Y2JiOGI4NmVkM2E1ZWFjNGU4OTVkNjc1MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/agent-subject-token.integration.test.ts#L104-L125",
+          "version": "repo-lines-v1:sha256:2d4862a6df0a6605ff1e8e73ddcdc8854a7ddfb6b8474406b73283a4a7d03862:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYzhmMDhkYTBkYTEzZjE2OTRlMGRkOTczZjFjMmI2MTczMTg4NGI4MjM3NmU3MGMwZDE3ZjhlMTZkOWNiMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMTY1NTgyZTIwMmQxZTYzMmYwZDdlNDNhMWRjNTliMWMyNWZkMGNkNTc5ODNjMGViNGE3MDI1MjdiNjEzNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YTVlOTY4MzMzZTZiZjdjMTliOWZhNzg1MDVjZGVjZTdmZGUzYzk3MGVlODViZTI4Yzg4MmJlMTNhMDU4ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cff225fd50d846febffcf921e255a25d",
+      "statement": "The gateway factory is never reached on either identity refusal — agent-identity-refusal.test.ts drives both /run and /resume per route with the real AgentIdentityError and the real handleMcApiError, asserting the 401/503 status, the code, the Retry-After and that createMovieAssistantAgent / resumeMovieAssistantRun was never called — and the client half of that contract is split the same way: the agent transport wrapper renews and retries a /run exactly once on the 401 and passes the 503 straight through without touching the session, while assistant-run-failure.ts maps the BFF's code to a member-facing bubble (\"your session has expired\" for the sign-in codes, \"temporarily unavailable\" for the retryable ones) instead of showing the error.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L1-L145",
+          "version": "repo-lines-v1:sha256:c151df99eefce3a6e24d8e913aae8243d412ea74d66cf8f61b46801d46067a0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts#L13-L48",
+          "version": "repo-lines-v1:sha256:4712bc59b1f9ce1741e4a2fcfaef527718ee0a2c1d9446d7c03ee5bfd0bbdf80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YjE3Y2Q4N2RlZmQ0YjJmOTk0MzIxZmJhNWJmMThlOGVjYzc5YzY3MGE1OGMwZjJlZmVjOWU5YWI0MDQ2Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MDUyYjFkMTk2ZTA2ZTY3OWFjNTIxYmI0NjlmNTdmYTY2NmQxYzNjZTA0ZTEyZmRlMzYyZmY4NmZiNTUyNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MDQ1ZDY0MDAyZTViNmE4OTMyMjY5NjgyZmJkY2FhYmRhNmVlZTg5YTViYzljMmVmZGU2ZGQ0MjkwODJjMTkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L51-L88",
+          "version": "repo-lines-v1:sha256:4d3e662a3f57dfcadc9a25f88cf95f6d164482af3664ca2e146a0b0b4f84b816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkOTRhYWMwYzVjNzFlMjcyNGI4NDVkNDAyNTgwOTFiYzg4YTY1YjljMWE5NGY1OTFlNTFjMzdkOTI5NTAyNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts#L140-L163",
+          "version": "repo-lines-v1:sha256:8c2ac59770559b0e9c629c2c484dda3f547093ea43599eede05fc5297b3c63aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZmVjYmMyODU1YWQxMmRiYTkxZjY3NzQyYzZmZTc4NzRmYjgwMmZjNmE2YTQ4NWExYmY1OWY2OWEyYTFjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_23767e25321f46598985626b1bec6ff4",
+      "statement": "authErrorHeaders(err) in mc-api-error.ts is the one place an AuthError's response headers are built, so a refusal can carry its own Set-Cookie lines via clearCookies — one header per entry, because joining them with commas lets the browser keep only the first, which is how a session that had just ended kept its refresh cookie — and a Retry-After via retryAfterSeconds on a retryable 503; the fields live on AuthError itself in src/types/errors.ts, so the refusal travels as one object rather than being reconstructed per handler. The sibling helpers problem() (backup-route-support.ts) and problemResponse() (account-route-support.ts) emit the RFC 9457 shape with securityHeaders() but do not read those fields.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts#L21-L29",
+          "version": "repo-lines-v1:sha256:1385d783844b36f7fe75934c25c8d7b3aa882947e57aacb2a3afb9e73d4ef156:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhMTcxOTE2MTFmM2QwNjcxM2I4NDc4Y2VjYjI4Y2RkMTQzMWVmNDJlM2U2NTQ5MDAxZjAzMzJmY2I2N2I3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzlkMDI3YzU0OWI2NjI2OWEzMDMzOTlhMGU1MjMxMWIzZjRmOTVjYjIzNDZkOTMwMDQ2NWFiNGE5NzMyNWVkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTViMTQ0MGNjNDUzYWU3MmNlMzYxYTczYmRkYjQ4ZjEyMjkwYWRiMWVlODgyZDg0NjhmNzA1MmI3OGVmYTI0NSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts#L22-L49",
+          "version": "repo-lines-v1:sha256:772e19c5b132a4437c9c704e9d8c3d8913f5f3380c8635500b86ea691c07f26c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjNTI0YWRjMzBiNzM5MWY4MTRhZGVkNWQ0MDQzNTVjNzVlNmI0ZjdhNDgyMTgyMTRjNmY0ODU1NzVjYjhiZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMTQyYTI1NmRjY2E0ZTUwODdlNmNkYTg0ZmU4MWVkMjhmNGQ3NDY4Zjg0NWMwNjc4ZmZiZjRiZjIwM2YxMWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts#L179-L198",
+          "version": "repo-lines-v1:sha256:ca94da1615c646b775a633ca53134ef8edac0cae054e70baec72bff6dae4ac63:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNjA0YmY4YjM0YjJkZTczODE3NDE5NWQwZjRkYmRhYTE5MDQxZjcxYjI1OWQxZjFmNzQ2Y2UzOGYwNTQ2NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/types/errors.ts#L57-L79",
+          "version": "repo-lines-v1:sha256:05e10e61e4bfcdce637764307060c8f9a85d17ffe847c6dbbb79166e00368b07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYWQwNTIzZDI4MzBkMGNkNTg0MDlkMTc1YjEzOTRhMWZlNTJkNTk4NDkyYjAzZDg5YjE5MTJkZWE3Yjc0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YTY2YmMzZWZkMzMxMjRhMDM0ZTdlOTgwMWNkYzM0MTE5ZGQ5YjI1M2E4MWY5NTE0Y2JkZjgxMWRjM2VlZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMTA5OTliY2I0MTY4ODcxZjFkZTdlNzQzODkwYTBhNzQzYjQ3NGNiZjI3ZTYwNjg4NzkzNDRjNTI5ZDE2ZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f5db6dd99b8433a8971ea42b2d6e251",
+      "statement": "ensureClientRedirectUris records a client as done for the process only on a confirmed result — nothing missing, or the PUT answered 2xx — so a rejected update (403, 400, 500) is warned about as redirect_uri_registration_failed with the failing step (client_lookup, client_fetch, update or error) and retried on the next call instead of staying latched until a restart; the mark is keyed on the Keycloak client id, and the function never throws, so the route always answers ok true and the operator adds a missing entry in the console. redirect-uri-registration.test.ts pins each case one client id at a time, because the mark is per client per process.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L464-L530",
+          "version": "repo-lines-v1:sha256:14f43ab1e6de9a63f244fcc42eba7f0c41f0a2976f401fa5100dabbab44730f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMWM0NDYxMGFiZDc3NTk1YzNiZWRmN2RhOGU4ZjE4NTQwZWFiOTUxZGRiY2QxNDRhZWQxOWMyYTg0NTlhZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMTBkZjA2YTcwYzQ0OWI1YTAyMWYxZWQ2YzQzNDY2OTk5NTkzMTQzYjAyNGYyNGMxNjU3OGZkNzQ3NGNhZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts#L1-L87",
+          "version": "repo-lines-v1:sha256:e79fef8d84b0e09380a3c8ef79ab3af49c397bed8173b0a7a243be3850ff9ca4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7aa727e5271f4e53814873b8a1e7c54c",
+      "statement": "The scheduled-backup consent failing because its grant was issued to the login client now surfaces as a refused agent turn rather than an identity-less one: revoking that grant removes the login client from the member's SSO session, Keycloak then answers the RFC 8693 exchange with TOKEN_EXCHANGE_ERROR / subject_token validation failure, and the BFF classifies that as an auth refusal and answers 401 AGENT_IDENTITY_REJECTED (the older behaviour was an assistant answering \"No caller identity is available for this action\"), while the next refresh still returns Session not active and signs the member out.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/backups.md#L137-L153",
+          "version": "repo-lines-v1:sha256:c5f104739f774766171c7da7ab0e60d422ee34d4af28baadf9bd8b9f9e94b5f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyY2JiNTIzZjhjMTQ1ZDJlYWVhYWZmMmI4ZjAyMDE3ZDcxMjY2Njk1Mjg3OTEzMTU1ZDVkNzdjZjgwYzAzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNTg3YjMxYWUzZGQ5YmQ1NWM4MmUyNWZjMDdiZTNiMjQ4ZjAzYzEwMTU0YThhNDM1ZTI3NDE1MGE4ZjhhOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmOGYzNDFmN2E5NzJjOWE3OTlmNDMwZGJlZjRjOWU4NDYxNWJkOGRhZjVjNjJmMmQzZThhMDJmMjkwYzI5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNzYxNWUwM2ExZDNkMWVmYjc3N2YwODY5MjdhOWRmMWViMmY4YWIwYmI5NDdiZmYwYTk5MTdhMDhhZmM3NzAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L106-L110",
+          "version": "repo-lines-v1:sha256:745c3bae05ca5ae9d5199ce8b897bf4ab4e0824286c85e9ccaa040f6f923a278:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMzUxOTQxOTk4NzNlYzRiOWNiZmRlMjVmODYzMTllMGExY2JlZTBiZTY2NzkwZmIwZDg0ZTY4M2E3M2JjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRiOGZlZTcxODk0NzE2MTc2MDMxYjg5MmQ3MzVhY2U5NDlmM2MyZTRjMjE5YzQyYmIzMmM3OTI3YmIzMWJjYyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L39-L49",
+          "version": "repo-lines-v1:sha256:79ea3ff0d5c9ee3a617aa685a2bd245091e297deff9c2ac1618df2fbf76f35ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMDNlNmQxMzg4N2ZjOTUyYWY0NGMxZDAzOThiZmRmNzJkODQ2ZmZhYmYxYjJkMTkxNjA1Yjc3YzIwZjI1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmN2RlNWVmYjJiYzEyYTI4NTQyOGM3Y2YxM2MyMjU3OTZjODIxZmVmYTgzN2E5YWVjNzdkMzRmMjFhYjg2ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MWQ0MDEwZTlmZDA4NzZiMjNlY2VkNmFkYWVkYjAwMDNkZmQ2ZTk3MzU0OGU5YjIyNjBjZTg5NDU1MWNkNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMWYxOWQ5MjMyYzU1NTYzODc1NjU0Nzc5MTQ2YTcxODE4ZmY0NzFmZDEzY2FlZmZkZDU4MGFlZTljMzcxNmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T18:33:06.357Z"
+    "at": "2026-11-01T18:13:07.622Z"
   }
 }

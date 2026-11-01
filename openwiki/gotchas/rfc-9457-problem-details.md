@@ -6,7 +6,7 @@ resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-11-01T18:13:07.622Z
 sources:
   - id: openwiki-source-bff475d8fa855e3592cfedc2
     resource: repo://.specify/memory/constitution.md
@@ -156,7 +156,7 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   feature as "just ordering" — nothing else would fail, and only a byte-comparing assertion would
   notice.
 
-## Two contract-vs-implementation gaps worth knowing
+## Contract-vs-implementation gaps worth knowing
 
 - **The OpenAPI schema declares an `instance` member that the handler never emits.**
   `ProblemDetail` in [`api-specs/mc-service-api.yaml`](../../api-specs/mc-service-api.yaml) lists
@@ -178,15 +178,47 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   which sets `Content-Type: application/problem+json` explicitly before constructing the `Response`.
   The BFF's other `about:blank` bodies — `problem()` in
   [`backup-route-support.ts`](../../frontend/mcm-app/src/bff-server/backup-route-support.ts) and the
-  inline literals in the agent-config and backups-tick routes — go through `Response.json()` as well,
-  so they are served as `application/json`, the same split `require_app_role` has on the mc-service
-  side. Two consequences for a client or a test: a problem-media-type assertion holds neither through
-  the proxy routes nor on the BFF's own problem-shaped refusals — assert it against mc-service
-  directly or on the account routes — and a client keying on the `type` namespace must expect both
+  inline literals in the agent-config, agent-config-test and backups-tick routes — go through
+  `Response.json()` as well, so they are served as `application/json`, the same split
+  `require_app_role` has on the mc-service side. Two consequences for a client or a test: a
+  problem-media-type assertion holds neither through the proxy routes nor on the BFF's own
+  problem-shaped refusals — assert it against mc-service directly or on the account routes — and a
+  client keying on the `type` namespace must expect both
   `https://mc-service.example/errors/{CODE}` and `about:blank`. The `about:blank` form means "no more
   specific type than the status code" by RFC 9457, not "unknown service". The same BFF file's
   `errorStatus()` deliberately discards a thrown error's message, because one can carry a hostname, a
   connection string or a Keycloak diagnostic.
+- **The BFF's own API contracts claim the problem media type their implementations do not serve.**
+  The backups contract declares `application/problem+json` for its `400` and `422` responses
+  (`specs/073-scheduled-backups/contracts/bff-backups-api.yaml`) and the movies-count contract
+  documents `4xx application/problem+json (via handleMcApiError)`, while `problem()` in
+  `backup-route-support.ts` and the proxy branch of `handleMcApiError()` both answer with
+  `application/json`. The declared *shape* is right — the backups `Problem` schema is `type`,
+  `title`, `status`, `detail` and never an upstream body — so a generated client will parse the
+  bodies correctly, but any assertion on the `Content-Type` header derived from the contract will
+  fail. Do not "fix" this by trusting the contract alone in either direction: read the media type off
+  the response, and treat the contract's media type as intent.
+
+```mermaid
+flowchart TD
+    Up["mc-service answers 4xx or 5xx as application/problem+json"] --> AxiosBranch["handleMcApiError axios branch re-serves the body verbatim"]
+    AxiosBranch --> JsonProxy["client sees application/json, type still mc-service.example"]
+    AuthThrown["BFF route throws AuthError"] --> AuthBranch["handleMcApiError AuthError branch"]
+    AuthBranch --> JsonAuth["client sees application/json with error and code, no type or title"]
+    Own["BFF refusal from its own validation"] --> Pick{"which helper"}
+    Pick -->|"problemResponse in account-route-support"| Real["application/problem+json, type about:blank"]
+    Pick -->|"problem in backup-route-support or an inline literal"| JsonOwn["application/json, type about:blank"]
+```
+
+Where each BFF error shape ends up, and which of them actually carry the problem media type.
+
+A related client-side consequence: the generic `getErrorMessage()` in `src/utils/errors.ts`
+understands only an `{ code }` body, so a problem-shaped refusal (`title`/`detail` with no `code`)
+collapses to "An unexpected error occurred. Please try again." Two call sites compensate by reading
+the problem members directly — `extractErrorMessage()` in `src/hooks/use-movies.ts` and
+`backupErrorMessage()` in `src/hooks/backup-error-message.ts`, both preferring `detail` then
+`title` — and the latter's comment records that this general gap was left for its own item rather
+than widened inside the auth error mapper.
 
 See [mc-service](../projects/mc-service.md) for the Clean Architecture layering that produces
 `DomainError` in the application/domain layers before this API-layer handler ever sees it, and

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba051534b708a5ddbc6054d7e3204f0d3208850c55cda15f588100c8685e1aea",
+  "pageVersion": "sha256:669051462362a6d768936989dbc4ceda7774ee50a0197e5b4ac3655e6b3453c9",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -192,7 +192,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
-          "version": "repo-file-v1:sha256:9b401a4f484bde2f36eb7343623c840a25a4d990d9829e0c47826618eec14840"
+          "version": "repo-file-v1:sha256:679b1169d9c094e659590b1ff59e11ad300a05d51faa61b0cc5d7b0f75a66652"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/security-headers.ts",
@@ -213,10 +213,68 @@
           "version": "repo-file-v1:sha256:a885fc0722435ff0761252b8b2a789b8873678e52cd5ff3950e51ede7cb4d4d5"
         }
       ]
+    },
+    {
+      "id": "claim_d80a9715ae684ae4adc68094585f3971",
+      "statement": "handleMcApiError()'s AuthError branch and its unexpected-error fallback do not answer with an RFC 9457 document: they return Response.json({ error, code }, ...) as application/json, so a BFF-originated auth or 500 refusal carries neither type, title nor detail, unlike the axios branch which forwards a problem-shaped upstream body. The AuthError branch additionally attaches whatever the error itself carries — one Set-Cookie line per AuthError.clearCookies entry and a Retry-After on a retryable 503 — through the shared authErrorHeaders() helper.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
+          "version": "repo-file-v1:sha256:679b1169d9c094e659590b1ff59e11ad300a05d51faa61b0cc5d7b0f75a66652"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts",
+          "version": "repo-file-v1:sha256:74c07d0b46fcb86c83f155b90367151f6ebc037aa8177f998c63792826a32ea3"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/types/errors.ts",
+          "version": "repo-file-v1:sha256:8e58d73ba94ea8cb26be4e8009cc07f257f6f0370c67698c58c74e96aa2ad6b1"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc0de4f35641486983effc38ac8ae031",
+      "statement": "The BFF's own published API contracts declare application/problem+json for error responses their implementations serve as application/json: the backups contract (specs/073-scheduled-backups/contracts/bff-backups-api.yaml) declares it for the destination-creation 400 and the restore 422, and the movies-count contract documents '4xx application/problem+json (via handleMcApiError)', while problem() in backup-route-support.ts and handleMcApiError()'s proxy branch both use Response.json(). The declared body shape is correct — the backups Problem schema is type/title/status/detail and never an upstream body — so a generated client parses the bodies but a Content-Type assertion derived from the contract fails.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts",
+          "version": "repo-file-v1:sha256:621a57cc64852d721561585986cbb69b4530c2301e918aa51383237e9b0798c2"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
+          "version": "repo-file-v1:sha256:679b1169d9c094e659590b1ff59e11ad300a05d51faa61b0cc5d7b0f75a66652"
+        },
+        {
+          "resource": "repo://specs/013-post-agent-enhancements/contracts/bff-movies-count.md",
+          "version": "repo-file-v1:sha256:9565806a3cab13d9ccab8e75dd145865ec1e151a0d6b1e6f6dc558926d251a3e"
+        },
+        {
+          "resource": "repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml",
+          "version": "repo-file-v1:sha256:5ab7eaa7cdf54058a85b7db5d1aaf5288dce62ed9a50974831fb3114257b04a2"
+        }
+      ]
+    },
+    {
+      "id": "claim_cddbccde8cd443748bbb66334d9ad11a",
+      "statement": "The BFF client's generic getErrorMessage() in src/utils/errors.ts understands only an auth-vocabulary body with a `code` member, so an RFC 9457 refusal that carries title/detail instead collapses to the generic 'An unexpected error occurred. Please try again.' Two call sites compensate by reading the problem members directly — extractErrorMessage() in src/hooks/use-movies.ts and backupErrorMessage() in src/hooks/backup-error-message.ts, both preferring detail then title — and the latter's comment records the general gap as a separate item rather than widening the shared auth error mapper.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/backup-error-message.ts",
+          "version": "repo-file-v1:sha256:c9a7dbdd48554dd33940540351a53d6b3164200d1908d16e82a127dcf9ec83f1"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-movies.ts",
+          "version": "repo-file-v1:sha256:53ca4e5343268ddbb5c3bbbd5e46acc9726814da9167501c8e54f3b3908bd9e0"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/errors.ts",
+          "version": "repo-file-v1:sha256:0c00e4eabe5c257a50244654a6b0bcb29547fc659a0a38c536bd66ef8f91ae8d"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T20:35:10.714Z"
+    "at": "2026-11-01T18:13:07.622Z"
   }
 }

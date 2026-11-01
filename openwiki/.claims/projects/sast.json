@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:515911b1142107976254b42a509c031ecfb2fe2b9a14ddf89f55d3e2c3868072",
+  "pageVersion": "sha256:86611bd408311b5540b57a7d25dc15ac4a33d6f32df32d6d27ad48614bd73416",
   "claims": [
     {
       "id": "claim_8dae93c0934d4f8da3e82f0eb70b444c",
@@ -715,7 +715,7 @@
       "statement": "The same override-consistency gate also bounds the value's other end, because Renovate's npm manager attacks the cap rather than the floor: it reads a keyed override's value as a plain range and widens the upper bound to admit the newest major (`undici@<6.27.0: '>=6.27.0 <7'` arriving as `'>=6.27.0 <9'`), which leaves the floor rule green and closes no advisory while handing a dependent that resolved into the vulnerable span a different major than it declared. The cap rule therefore requires every keyed floor's value cap to be at most `<key major + 1>`, a tighter cap being fine; an uncapped floor admits every major already and is out of scope but named on every run rather than passed in silence, and a value not written as `>=A` or `>=A <B` (a `<=` cap, a `||` union, a caret) is refused with exit 2 because the gate cannot say which majors it admits. The companion response lives on the Renovate side, where `major` updates matching pnpm-workspace.yaml are permanently disabled while patch/minor stay enabled and ungated, since that is the track a genuine floor raise arrives on.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L845-L850",
+          "resource": "repo://docs/runbooks/renovate.md#L847-L852",
           "version": "repo-lines-v1:sha256:f298f2f953886c47a241d3d153ebe205a2f981f8a78c67317e5dc9ee312511dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYzYzE3NGMxMTQ4NzI0OTcyZmU2ODc1MWNiZGQ3NGJkMmE1ZWZmNWMwMjQ2ZTk4NmJkZTg4MjU4M2IzMTY5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VmM2YyYjNkNDYzN2YxYTI2ODRmYzgxMmVkNjdiN2ZjN2QxMmVkMjExYzYxNzA3ZWY4ZWFjNmExZjg2NWY1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU4ODU3Y2M3MjI4ZjY0ZTYyMzMzNDQ0N2Y3MjFjY2I0ZWIwMzM5MWE2ODBkYzQwMmE2ZjEyYzQwZDZjMGQxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ4MmVhOGYyZTRmOGI0Mzc1YmE1OGE5YmYzNzdkZTViYTI1NGU2YzZkZmVkNDNmMjk3ZWQ2ZDE0MTlhZjdhNyJ9"
         },
         {
@@ -835,7 +835,7 @@
           "version": "repo-lines-v1:sha256:0fba86740f3bbd95efea911bdfb0cc34d28cd7d105d58046979eaca445d63908:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MTY3NjVkZjZkZGYwMzgzZjhiOWIzMWU3MjM3NzdlZjdjMjYwNzliYTJmNDYxYjMyMzY4OGZjZTdmZDAyODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2OThhYmNlYmMwZTcyMDAzMjZlNGI3Y2JjYzFkZmY1NzZkZWEyMGVmOTk1ZDI0M2UwZTE1ODk1NTM2NmNjMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNWFmYmI0OGM5MzI1ODYyZWU0ODlkMWZjMWJkOGVkOWFkMmI1MWI3NmJkNGFmOWZjMTU4MDU5NjdlMTg5NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZTE3ZjljMTUxNDdjYzNiMGQ4NGY5NWY3MjBkNzE5ZDBmZjY4NDdkYTM2OTk2ZjNjYWU5MTI3OWUyYjdkYzIifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L100-L134",
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L105-L139",
           "version": "repo-lines-v1:sha256:ef9f63897934a5455bff79784e40551c3994d915e7b4229b8aa316d37b39ca78:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZWIyZWI1YjY2MDMyMDE0YWQ4NDA3ZjJkMjY1NDAzMWY3Y2Q3Y2YwODVlNjM5MjdmOTMzOTFiZGJjODBhOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYWEzYzRiOWQ1OWY3ZDk3MDU5MzgyZjE2YjE2NjVlZTZkNWJjNjA1NmJmNTgyODUyMDU5Y2MxMzA1NTdlYTYifQ"
         },
         {
@@ -853,7 +853,7 @@
       "statement": "Accepting a version is one decision rather than two: the downgrade gate reuses `evaluate` and `loadAllowlist` from `check-sast-findings.mjs` and `pnpmAdvisoryId` / `pnpmFindingLocation` from `sast-scan.mjs`, so an unexpired allowlist entry matching the same `scanner` + `id` + location suppresses a regression here too — including a nested tree's `<workspace>:` prefix — under the same expiry rule that governs the main gate.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L148-L155",
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L153-L160",
           "version": "repo-lines-v1:sha256:ccf2584ec0d7980b0f60a97df59d611799ccfb9a06783c89412afe6769412243:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmZDhmNGVkZWVkM2VjZjY0MzNiYmJhNmExZWQ1YzAyN2Q0NDM0NmUwMTlmODEwZDFkN2M5ZTY4MGExNDc1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNkNWQ3ODdkOTk1MDEzNjhlNzljYTA1MmIxNDlmNjdlZTIyYmM1NWI5MjZhMzkxNTljOWZhYjIwNjRiYzQwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ0YTA1YTVmNmQ1OTQyODI0YjYyZDQ3MjQyMDYzZThiNjEwNDJlNGY1MjgzM2FmOGVjZjJiNWQ1MmIyOTljOSJ9"
         },
         {
@@ -875,7 +875,7 @@
       "statement": "The downgrade gate fails closed: a missing or empty native report, an unreadable lockfile, or a `vulnerable_versions` range its parser does not understand is a failure with the reason printed, never a pass — a range it cannot read is a range it cannot judge. Exit codes are 0 (no regression), 1 (a regression, or an input it could not read) and 2 (usage error), the latter routed through the shared `scripts/lib/argv-contract.mjs` contract. Two mechanical consequences follow: there is deliberately no `semver` dependency, because adding one would move the very lockfile the gate judges, so the parser handles only the small regular subset npm advisories use and throws otherwise; and a pnpm 11+ lockfile is two YAML documents, so resolved versions are read line by line from the `packages:` sections and `snapshots:` keys are deliberately not read because they carry peer suffixes.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L72-L85",
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L77-L90",
           "version": "repo-lines-v1:sha256:e34358dc6afeafce5d3d6998283ef38d41a0dc814eec3014628c5a1d6d07ea3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZmJmNGIwZDkwYjU4ZGIwZjc0YTE2MjMyYTljMTU0Mzg1ZjhmODE0YTJmMmIwOGVhZmZjNTQ5MzU0Njk2OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkOTc0ZTUwMDBjZDY3OTIzM2I5MGYwYjFhODE1ZjA0ZGE0ZGU3MGE4N2QzMWVjNjUyODVlN2ZjZWI5YjAyMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiM2M1MWRjYzg0YTllYWQ0NTQ0MjQ5ZDE4YjI2OTRiYTQzNTNkOTdhMmZhMTRlOTFjOTZjNzZmNjJkYTMxYTUifQ"
         },
         {
@@ -916,33 +916,49 @@
     },
     {
       "id": "claim_53fbfc25cef24d4da14315a2ff0df72f",
-      "statement": "scripts/__tests__/check-dependency-downgrade.test.mjs proves both the downgrade gate's rule and its WIRING. The wiring half asserts that guardrails.yml invokes the gate inside the `sast` job, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and positioned after the scan step that writes its input — because a gate that is never invoked is indistinguishable from no gate. The rule half covers the comparator forms npm advisories use, a prerelease sorting below its release, an unreadable range throwing rather than judging, `packages:` keys read from both lockfile documents while `snapshots:` keys are ignored, the #774 undici case and its variants (a sideways move into a range blocks; an already-exposed package, an unchanged vulnerable version, and a package or lockfile new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting a regression when unexpired but not when expired.",
+      "statement": "scripts/__tests__/check-dependency-downgrade.test.mjs proves both the downgrade gate's rule and its WIRING. The rule half covers the comparator forms npm advisories use (comparators, `||` unions, hyphen ranges, partial and wildcard versions), a prerelease sorting below its release, an unreadable range *throwing* rather than judging, `packages:` keys read from both lockfile documents — scoped and quoted — while `snapshots:` keys are ignored, the #774 undici case and its variants (a second dependent pinning an affected version beside a kept clean one still regresses; a sideways move into a range blocks; the upgrade direction leaves nothing to report; an already-exposed package, an unchanged vulnerable version, and a package or lockfile new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting a regression when unexpired but not when expired. The CLI half pins the contract: `--help` exits 0, an unknown flag or a missing `--base` exits 2, and a missing or empty native report exits 1 rather than reporting \"no regression\". The wiring half asserts that guardrails.yml invokes the gate inside the `sast` job, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and positioned after the `sast-static-scan` step that writes its input — with a positive assertion that the scan step still exists, because a gate that is never invoked is indistinguishable from no gate.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L163-L174",
-          "version": "repo-lines-v1:sha256:8f0a616843857bc22f7e1f44e344975a71f96d2fed2bc089ed3835a20bd16d65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YjY5OWMxODNkNTNkZmI4MWEyYTY2MDQ1ZjZiZTljMGJlMzc4NjQyY2EwNjkzMGI2NWVkZTFmMzkzODgwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTFjMTVmYmMxZjdjZGJkMGRkZThlNGUzNGUxNWQ3MThhNDBiZmU5YzU3NWEwMTkwMzVjYzYwOTVkMmY1ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEifQ"
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L153-L160",
+          "version": "repo-lines-v1:sha256:ccf2584ec0d7980b0f60a97df59d611799ccfb9a06783c89412afe6769412243:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmZDhmNGVkZWVkM2VjZjY0MzNiYmJhNmExZWQ1YzAyN2Q0NDM0NmUwMTlmODEwZDFkN2M5ZTY4MGExNDc1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNkNWQ3ODdkOTk1MDEzNjhlNzljYTA1MmIxNDlmNjdlZTIyYmM1NWI5MjZhMzkxNTljOWZhYjIwNjRiYzQwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ0YTA1YTVmNmQ1OTQyODI0YjYyZDQ3MjQyMDYzZThiNjEwNDJlNGY1MjgzM2FmOGVjZjJiNWQ1MmIyOTljOSJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L178-L187",
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L168-L179",
+          "version": "repo-lines-v1:sha256:d75fbf540a6af121727ec7788641bb9bed083ae5fed1c1a3586628b200082bd7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YjY5OWMxODNkNTNkZmI4MWEyYTY2MDQ1ZjZiZTljMGJlMzc4NjQyY2EwNjkzMGI2NWVkZTFmMzkzODgwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTFjMTVmYmMxZjdjZGJkMGRkZThlNGUzNGUxNWQ3MThhNDBiZmU5YzU3NWEwMTkwMzVjYzYwOTVkMmY1ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L183-L192",
           "version": "repo-lines-v1:sha256:3b9d8728203cd4f24e2ece7ffdc6a116a4ab609021ecc01bcd396fdefa1249c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNGUwMGMxYzA1NDY4YTMzMTdhZDMyNDFkMWU2NzNkYjZlNDMyMTc1OTIwMDI1ZjY5N2U5ODNiYTc1ODY2YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L45-L134",
-          "version": "repo-lines-v1:sha256:aa1d4934773f0fae27147b22ce464d87b0f8969edcf52b0243d9e30da4de3a70:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3M2MxMjAyNjkxYjY3MThiZGY0YTUyZTFiYmRkODFmNTNlMTQxN2JiZGRjNmFmNjE5NTQ2M2VhZWEwODhkNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMmMzMDIxZTVkMTdmODYwMTAzYzY4MGE3Y2NkZmQ1NmNlZTYzNjc4YTc0YzgwNTBjMWU0OTI1MWUxOGM3OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYWEzYzRiOWQ1OWY3ZDk3MDU5MzgyZjE2YjE2NjVlZTZkNWJjNjA1NmJmNTgyODUyMDU5Y2MxMzA1NTdlYTYifQ"
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L50-L69",
+          "version": "repo-lines-v1:sha256:ae55ebf428d6302e67bbb120f37da55d75be5666382f0b80cba57599ad27d7a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3M2MxMjAyNjkxYjY3MThiZGY0YTUyZTFiYmRkODFmNTNlMTQxN2JiZGRjNmFmNjE5NTQ2M2VhZWEwODhkNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMmMzMDIxZTVkMTdmODYwMTAzYzY4MGE3Y2NkZmQ1NmNlZTYzNjc4YTc0YzgwNTBjMWU0OTI1MWUxOGM3OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYzA0OTFlNzAwMTg1ZWFkNGUyMjQ5NzMyZmQxMmIzMGI1NWZlYTlkZmRhYjlkNzhhMTk0ODhiMTQ0NjE4NjYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L71-L80",
+          "version": "repo-lines-v1:sha256:fa4832f65c66e84db48c30b8dec93741de4c9b7d8a263cefb0fcb99307f84164:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ZTVhMWQ4ZWM4MjFjZTQ3ODJkYzVkZWI4OGE4NTU2OTA2NTBjNzhmN2FiZDhlZjFiYTk1ODdhNWJlZmQwYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMjczMmJjODNmMzcyNGJjMWVmYzljYzZkOWFmZjg2YWE4ODMzOWZhNGE2MWE3ZDM3ZmUxODlkZDNhYTQ5OWEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L84-L90",
+          "version": "repo-lines-v1:sha256:14fb0be1489f41d4027dbf5f0ca32a75bcece00805edcd212c6f1d2cd7c06561:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiOWQxOTNkNjMxODE3MDU1OTg5YzJmNWI1NmM4NzYwMTkxNWQ1NjM5ZmM4MDc1N2M1NjE1Mjk2ZGE3NzcyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2MyNzMyYmM4M2YzNzI0YmMxZWZjOWNjNmQ5YWZmODZhYTg4MzM5ZmE0YTYxYTdkMzdmZTE4OWRkM2FhNDk5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGIzYzUxZGNjODRhOWVhZDQ1NDQyNDlkMThiMjY5NGJhNDM1M2Q5N2EyZmExNGU5MWM5NmM3NmY2MmRhMzFhNSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L96-L139",
+          "version": "repo-lines-v1:sha256:783a400100c6723e13cec039252f21355bf90d60920ed158795f66024981f80c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkM2I0OTEzZWQzZGIxYzBjMzFkNzk4MDdjY2M0ZDIxYzdjNGNhM2QxN2U0MTg2ZWQ2MzhkNmQ5MTEzMjg3YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNGVjNzJjNWFlYjQ5YWRhNWY2NWFhZWY4NjJkMzNlOWU2MDA2ZDgxMzgzODI3Mzk2OGI2NGQ1YzMxYjdiZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYWEzYzRiOWQ1OWY3ZDk3MDU5MzgyZjE2YjE2NjVlZTZkNWJjNjA1NmJmNTgyODUyMDU5Y2MxMzA1NTdlYTYifQ"
         }
       ]
     },
     {
       "id": "claim_5ec0cce9ae1741aa967871e6282aa408",
-      "statement": "A red downgrade gate is a property of the change rather than a newly published advisory, so the scope argument does not apply to it: the message names the package, its base version(s), the version it now resolves to, the advisory entered and the fixing range, and the remedy is to restore the clean resolution — normally the override floor the message suggests, which must obey the two-halves rule or `check-override-consistency.mjs` fails the same pull request for a different reason — or to record an operator-approved allowlist entry. The gate also cannot run without a native report, so `--native` must point at one and an absent or empty report is exit 1 by design rather than a \"no regression\" result.",
+      "statement": "A red downgrade gate is a property of the change rather than a newly published advisory, so the scope argument does not apply to it: the message names the package, its base version(s), the version it now resolves to, the advisory entered and the fixing range, and the remedy is to restore the clean resolution — normally the override floor the message suggests, which must obey the two-halves rule or `check-override-consistency.mjs` fails the same pull request for a different reason — or to record an operator-approved allowlist entry. The gate also cannot run without a native report, so `--native` must point at one and an absent or empty report is exit 1 by design rather than a \"no regression\" result — a fact the gate's own test pins through the CLI, alongside `--help` exiting 0 and an unknown flag or a missing `--base` exiting 2.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/sast-scanning.md#L96-L100",
           "version": "repo-lines-v1:sha256:a66b5ebcdf4e19c13c848cfd9c9b9e2ba5fb7b492e0eb7558a57b930650ca24d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE4ZGIxNDA0M2U0NjdmM2UwNWZhOGE4NzY0OTYyNjU1Yjc5ZWQxNGZmYTRiMmNmZTA3NDI0YmM4OGNiYWEwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDljMmYxZjdmODA5MGUwZTFjNjFmNWNhOGZhM2JkZGYyNGFkNmY5Y2NhZWUwOGY4OGM5Nzg2NjA5ZmQ1NGY3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQ4NzE4MjAxZjgyZThlYzYyNjE0ZWIyYmYwMzU0Yjk4OTVjMmU3NDVhNmU4NzMyMWE1MTkzNWZlN2FjYmE0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODcxOTc0ZDUwOWIyMTM3NjhhMjllZmVmOWUyNzMyZDk2MGVhM2VlNzRmOTU4Y2Y2MTEwZTFmZDA2NzFiZmE0NyJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L169-L174",
-          "version": "repo-lines-v1:sha256:92c49919ffd97e40f82e89e0f3398df824f4ac9755e790681cf16ba31b25c059:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdjNmY1NTQ2Y2RmZWZkZWVjNGI2MDdlZWZiOGE5OWNkMzE1YTRkMDU3M2UzOGI3ZWUzODIyYzhkZDU3NTZkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWVhNjcwYzY0ZWNiNjg2NTVjMmQzY2YyM2FhZDA3MmRhNDE2YTAwNDIxMjc4NWFkNmZkMTQ5YmVjMDZjMjFlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGViZjU0OGVhMzU1MzQwMjYzMDQ1M2VkYzE2ZWI5MGI3YTNmYmEzN2IyNDJkODllNzkwYWVlNGMzZTk0NTM4YSJ9"
+          "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs#L168-L179",
+          "version": "repo-lines-v1:sha256:d75fbf540a6af121727ec7788641bb9bed083ae5fed1c1a3586628b200082bd7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YjY5OWMxODNkNTNkZmI4MWEyYTY2MDQ1ZjZiZTljMGJlMzc4NjQyY2EwNjkzMGI2NWVkZTFmMzkzODgwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTFjMTVmYmMxZjdjZGJkMGRkZThlNGUzNGUxNWQ3MThhNDBiZmU5YzU3NWEwMTkwMzVjYzYwOTVkMmY1ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYmY1NDhlYTM1NTM0MDI2MzA0NTNlZGMxNmViOTBiN2EzZmJhMzdiMjQyZDg5ZTc5MGFlZTRjM2U5NDUzOGEifQ"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs#L270-L284",
@@ -953,6 +969,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T08:25:59.628Z"
+    "at": "2026-11-01T18:13:07.622Z"
   }
 }

@@ -118,7 +118,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-01T18:13:07.622Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -587,8 +587,42 @@ redirect, the native `mcm-app://` login callback, and the later additions: the b
 the account-deletion step-up callback, and its own native scheme URI. It authenticates as the BFF
 service account, reads the live client, and PUTs back the client with `[...existing, ...missing]` —
 additive by construction, so it neither duplicates an entry nor needs the caller to know what is
-already registered. Its errors are swallowed (the operator adds the entry in the console instead), and
-a module-level `Set` makes it one-shot *per client* per process, marked only on a successful run.
+already registered.
+
+```mermaid
+sequenceDiagram
+  participant App as App root layout
+  participant Init as GET /bff-api/auth/init
+  participant KC as Keycloak Admin API
+  App->>Init: called once on app mount
+  Init->>KC: client_credentials as the BFF service account
+  KC-->>Init: admin token
+  Init->>KC: GET client by clientId
+  KC-->>Init: full client representation
+  Init->>KC: PUT client with existing plus missing redirect URIs
+  alt nothing missing, or the PUT answered 2xx
+    Init->>Init: record this client id as done for the process
+  else lookup, fetch or PUT rejected
+    Init->>Init: warn redirect_uri_registration_failed with step and status, stay unrecorded
+  end
+  Init-->>App: ok true
+```
+
+One reconciliation attempt: the write is additive, and the per-process "done" mark is set only on a confirmed result.
+
+**No path out of the function throws**, so the route always answers `{ok: true}` and the operator adds
+a missing entry in the console instead. What a failure does do is warn and stay retryable: every
+failure path goes through a local `unrecorded(step, status)` helper that logs
+`redirect_uri_registration_failed` with `step` one of `client_lookup`, `client_fetch`, `update` or
+`error` — never the admin token, the client representation or the URI list — and the module-level `Set`
+that makes the call one-shot *per client* per process is keyed on **confirmation**, not on attempt: the
+client id is added only when nothing was missing or the `PUT` answered 2xx, so the next
+`GET /bff-api/auth/init` retries. Before feature 085 a rejected `PUT` still latched the mark, and an
+address that was never registered stayed that way until a restart with nothing logged.
+`src/bff-server/unit-tests/redirect-uri-registration.test.ts` pins each case — a rejected update
+(`403`/`400`/`500`) is warned with `step: 'update'` and retried, a successful update and a
+nothing-missing call are not repeated, a failed client lookup is warned with `step: 'client_lookup'`
+and retried — one client id per case, because the mark is per client per process.
 
 The client is a parameter (`keycloakClientId = env.keycloakClientId`), and feature 083 added the second
 call that needs it: when `env.backupConsentClientId` differs from the login client, the route registers

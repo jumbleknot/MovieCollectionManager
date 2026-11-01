@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:de091db78f7d8912625ee01cb6ca23ead5ae1e266f3f1c176572974d91cdbf51",
+  "pageVersion": "sha256:4b1071cab8621ad1e36f767d9d58f713ee8f7eabe583a9a85560a91f899a2a22",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -261,8 +261,8 @@
           "version": "repo-lines-v1:sha256:93ad570bc15eafa6f9765fa44486b5aa8e6582d905e16ed0566848f2f9d362f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L673-L690",
-          "version": "repo-lines-v1:sha256:b4d4e75dc45fcd5f03b9fa30eee67fb734c7e911a9ccf9101451d247ca008128:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmVkMzYzZDk2ZDU2MzZkZjUxMmJkMTVhMWFhM2NjZGQyODU0YTIyMDU3Y2Y2ZmUyZTc0ZGY4ZWU5NjFlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YmRhZjk1ZWE5OTU5ZmE5OTMxYTMyOTU5MGQ1YTY1N2IyMTA1MGQ2NmQwM2I1OWZjZWFkMzI2OGNlMGY0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L673-L694",
+          "version": "repo-lines-v1:sha256:338f0fced96da0f7bc5f4eae630db251e0bf02b89475aa38ed57fa9f5daff357:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmVkMzYzZDk2ZDU2MzZkZjUxMmJkMTVhMWFhM2NjZGQyODU0YTIyMDU3Y2Y2ZmUyZTc0ZGY4ZWU5NjFlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YmRhZjk1ZWE5OTU5ZmE5OTMxYTMyOTU5MGQ1YTY1N2IyMTA1MGQ2NmQwM2I1OWZjZWFkMzI2OGNlMGY0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkNGNiNzZkZjc1MzJlNjhiNWViYWVmMTdkYzQxOTg1MTY2NmIzZTE1YjY4MjUyMGY2NzFiN2M2OWNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWM3NDFlMjA5NThhYzRiYjIwNDM2N2RhOTc5ZWIxMjMzNWI4MzM5OGQwOGZiMDU1NTg3NmNiZjQwMDM1M2EifQ"
         }
       ]
     },
@@ -545,10 +545,24 @@
           "version": "repo-file-v1:sha256:67537673607ade0b534ac1c511da9b3f72c32d5f4df6e11664ec45bc49eb4b08"
         }
       ]
+    },
+    {
+      "id": "claim_5097f9765c4a4fb5aa5c15e3cad4617b",
+      "statement": "The app-e2e Android SDK install names its packages explicitly (`packages: 'platform-tools'` on android-actions/setup-android) instead of relying on the action's default, because that default was `tools platform-tools` and `tools` — the legacy SDK Tools package superseded by cmdline-tools — was removed from Google's package index, so the step died on its first package (`Failed to find package 'tools'`) before reaching `platform-tools`; `platform-tools` itself is not optional because the emulator half drives `adb` directly (`adb reverse tcp:8082`/`tcp:8099`, `adb install`), and the value must stay in step with cd-deploy's prod-apk, which pins the same value.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L558-L582",
+          "version": "repo-lines-v1:sha256:c105e5cb7611681723634924d38cb2cbad8603b6b3557ea9d1452e32d871baee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNDQ1MWJlZThiNjhjODQzMTZmMDJlMmExZDJhMGU3ZmU0YzM1NWM2MDE0MzA5NzdlZjU5MjkxNWQyZmZiNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMThjZWNlOTBhNjE3YmJlMmM0Nzc4MTIxYzE5MDUyZDE5YmZkNDQ3MDc5YzcwMGE0YzI2NjA0MDcwZWVkYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzUzYmU2ZmVjNmYzNmUwOTg1ZGNkNWU4ZGQyNDAyOTg2MzJkZDcwYjBiY2FkZDRhYjI1OTAwNjhjNzJiNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMDZiMTE5OTBkMGYxMWY0MWJlMTJkODdjMzgzYzNjNDhmN2IwYjQzYjA2YTlhZWNmY2U0MWQ0YTQ1ZGI0MzQifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L481-L486",
+          "version": "repo-lines-v1:sha256:6c79788b4892006cd402a47d66db63250b87ab99ad360841f256a9a043e68d3f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ3YTQ0M2E4MzJmMjRmNDAwNWQ2YmYzNTNkZWI1OTZjYjZmMGE2OGVlMTQyMWU5M2RhNWZmOGRiZTVlYWU4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMxOGNlY2U5MGE2MTdiYmUyYzQ3NzgxMjFjMTkwNTJkMTliZmQ0NDcwNzljNzAwYTRjMjY2MDQwNzBlZWRhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFhYWUyYWUwYzlhOTk1YmQxOTU1MDBhMjAyZjU2MjEyNzhlNzI5NTNjNjBjYTczYWMyM2I0MTRjODhkZWM0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc3YjM2Y2M2ODI5NmE4ZTY1NjUzODlhYmU1MmE0YWJlY2YwYThiYTFkNjVlNzExNjIwY2M4NTdlMmMxYmQxMSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T05:36:38.857Z"
+    "at": "2026-11-01T18:13:07.622Z"
   }
 }

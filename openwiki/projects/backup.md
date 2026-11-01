@@ -4,9 +4,6 @@ title: Prod host backup (restic) and its failure alerting
 description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -55,6 +52,9 @@ sources:
   - id: openwiki-source-5159dca913823c87d5dcf112
     resource: repo://specs/084-silent-failure-visibility/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-01T18:13:07.622Z
 ---
 
 # Prod host backup (restic) and its failure alerting
@@ -120,7 +120,10 @@ The forge used to be one dump. It is now two, and the APKs are new:
 unchanged file costs nothing the second night. A gzip stream changes from its first changed byte
 onwards, so the old `forgejo dump --type tar.gz` **de-duplicated nothing: 19.8–21.1 GiB were added to
 the repository every night.** An uncompressed tar of mostly-unchanged files adds roughly the day's real
-change instead.
+change instead, and that is measured rather than argued: **389.6 MiB** and **412.1 MiB** were added on
+2026-10-30/31 (576.2 MiB on 2026-11-01) against a **2 GiB** target, and the forge's own share of the
+snapshot fell from 22.5 GB to about 0.8 GB. What remains is mostly `forge-db`: `pg_dump -Fc` compresses
+itself, so it barely de-duplicates between nights.
 
 ### Komodo's scheduler history
 
@@ -385,7 +388,13 @@ sizes, its `dump-manifest.tsv` and the listing of any `*.tar`, because `backup.s
 directory on exit and what restic was handed is otherwise gone — and it never records an `-H @file`
 argument, which is exactly how a token reaches curl. Every backup suite trusts it, so the harness has
 its own guard, `scripts/__tests__/host-shims.test.mjs`: a shim that swallowed an exit code, or recorded
-that header file, would turn the suites below into false greens.
+that header file, would turn the suites below into false greens. A second guard,
+`scripts/__tests__/host-shims-cleanup.test.mjs`, covers the harness's own footprint: each call writes
+about 20 MB of fixtures under `TMPDIR` and nothing removed them, so **2,418 leaked roots (50 GB) filled
+the sandbox disk on 2026-11-01**. `makeShimEnv` now **requires the test context** and removes its root in
+that context's `after` hook whether the test passes or fails — a caller cannot forget the cleanup — and
+the guard runs the shim suites under a private `TMPDIR` and asserts they leave no root behind, including
+from a deliberately failing test.
 
 `scripts/__tests__/backup-script.test.mjs` runs `backup.sh` against that host and pins the measured
 failure modes — a failing forge dump still runs every other dump and still calls `restic backup`, each
