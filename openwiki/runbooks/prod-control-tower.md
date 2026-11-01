@@ -66,7 +66,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T19:43:53.507Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -231,9 +231,9 @@ Two smaller prod-only details worth knowing:
   and needs no flag.
 - **OPA uses the `-debug` image variant, but not for its `wget`.** Distroless `openpolicyagent/opa` has no
   shell at all, so `-debug` is still required; its busybox, however, ships **no** `wget`/`curl`/`nc`, and
-  the previous `wget` healthcheck failed on every run — measured as "unhealthy" with a five-figure
-  failing streak while OPA served fine. The healthcheck now drives the request through the `opa` binary
-  itself (`http.send`), which works without a shell.
+  the previous `wget` healthcheck failed on every run — measured as `unhealthy` from ~2026-09-10, with a
+  `FailingStreak` of 130,247 by 2026-10-03, while OPA served fine. The healthcheck now drives the request
+  through the `opa` binary itself (`http.send`), which works without a shell.
 - **ClickHouse is bounded twice over.** `mem_limit: 4g` (plus `memswap_limit: 4g` and a `cpus` ceiling)
   bounds the server's own memory accounting and stops observability starving the shared host — on
   2026-10-02 this container sat at ~725% CPU with swap full and slowed every CI job 2–3x. Separately, the

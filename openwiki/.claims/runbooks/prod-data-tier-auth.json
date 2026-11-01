@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8273e8cafa76e04a198cc1f1670169aa0fd452a2097fcd554d121086f7c2bcf",
+  "pageVersion": "sha256:4bb6f096c8da10a0f0851ca49714409a70f181bdd8e00df8e3d1ef14f9d6ef3d",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -8,15 +8,15 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md",
-          "version": "repo-file-v1:sha256:edf226b45effb67e38a88c13cd8a7810113cfa0c3c8ca49da19942fec0d8c8db"
+          "version": "repo-file-v1:sha256:66a3a433d7f97462e8dba53617643acfbb10ff58478571b365608377ee2241a5"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:31dfc44c6ccef880abc2000c04c27ef80f3ef516b6c8f61ee9de8ce069548293"
+          "version": "repo-file-v1:sha256:655ccf01fb90a78f6f1264a49aeb2bc5ac84e58ced7d397c7a48e0fd777dbaf0"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:935bc8f328c0637a5caad461b966adbfba9c74ba3dd894049383f09f749b4269"
+          "version": "repo-file-v1:sha256:7514b21f88ef8c0f723a7a1f99dfbff3e2fc8af6a1f9965051638c154bb34183"
         },
         {
           "resource": "repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md",
@@ -62,11 +62,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:31dfc44c6ccef880abc2000c04c27ef80f3ef516b6c8f61ee9de8ce069548293"
+          "version": "repo-file-v1:sha256:655ccf01fb90a78f6f1264a49aeb2bc5ac84e58ced7d397c7a48e0fd777dbaf0"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:935bc8f328c0637a5caad461b966adbfba9c74ba3dd894049383f09f749b4269"
+          "version": "repo-file-v1:sha256:7514b21f88ef8c0f723a7a1f99dfbff3e2fc8af6a1f9965051638c154bb34183"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:1b5c2616b9f1ca9323d5f2ac351a40f1b1bbab1943a1dd753162b25471522f6a"
+          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
         },
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
@@ -115,7 +115,7 @@
       "statement": "The 9.0 deploy does not raise the feature compatibility version: the store starts on the 8.0 data at FCV `\"8.0\"`, and the raise to `\"9.0\"` happens only after a 7-day soak with `confirm: true` (which the command requires and which is idempotent), implicitly adding the `term` field to the replica-set configuration.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L478-L495",
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L483-L500",
           "version": "repo-lines-v1:sha256:9c69f104fbb79d65aff547394c5adf46d99f1d96c1f0f19c874313105c5a0397:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDE3MGFjZjkxMzJiM2M3YmY4ZDI2ZmQwZWFhZTJkOTBmNjk4MDBiYTJhNGI2NmEyMWY2YzJlZjhiNjJkNGYifQ"
         },
         {
@@ -129,8 +129,8 @@
       "statement": "There is no image-revert rollback for the 9.0 upgrade: MongoDB supports a binary downgrade from 9.0 only to the latest 8.0 patch, never to 8.0.8, and the volume has been re-owned to uid 1000, so rollback is a dump restored onto a fresh 8.0.8 volume — a path rehearsed both from the pre-flight archive and from a dump taken on 9.0 at FCV 9.0.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L503-L547",
-          "version": "repo-lines-v1:sha256:ae6a803de6b8834a5c256963e4b96a73e68d139280e386e6b5d3ff5d74f2b329:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYmU2OTViZDQyOTRhMDM4ZmMxYzAxYzNjZWRlNmFjYTNmMjRkYTgzZGExYjQ4ZjA0YmEyNDJlNDFhMzIzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYThiZTBjNWNhNTQ3MjYxYmRiODJiNmU4YTczNGRkYjc2YmY5M2E3NTM3YmQ2OWM3ODI4ZDI2OTg3MThkMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZjZhYjRhMmNkM2M2MDA1MjMxMjc5ZTFhMDc1YzkyOTM2YzYxZDcwMTBkOTYwM2UwYjFkYWNjNjUzYzM5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md",
+          "version": "repo-file-v1:sha256:66a3a433d7f97462e8dba53617643acfbb10ff58478571b365608377ee2241a5"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md#L388-L393",
@@ -217,8 +217,8 @@
       "statement": "Upgrade verification is a set of operator-run comparisons in the runbook's §6.3: container state plus the single `mongo-data-owner` re-own log line and the startup FCV line, per-collection counts diffed against the pre-flight files, the movie store's index list diffed after restarting `mc-service` so its index pass runs against 9.0, and a real app pass (sign in, page, search, open the backup settings — which is what triggers the BFF's lazy index pass) after which the BFF index list is diffed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L435-L476",
-          "version": "repo-lines-v1:sha256:3a656940df2f520b5778021487d59a407c6e545fc1cfaa49c47f77ed5d1f581d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2FhNzBjMzVjMjhjMThlOWNkMGY2ZDVkMzgzMTkyZDMzZTY5ZTM4NzQ3NWZlNGFlZjFiNjIyOTk1MTQ0ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUzOWZlZjFmNjU3Yzc3ZDNmOGVjZjAwNTc3NzEzMmYzMTk3M2M3MjNhNWUwMjVmNWI2NzhhNzRkOGFkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhN2YyMGExMTljMzEyMzI0YWY1YWRjN2U3ZDczZTY3NTA2YmU1YmNmMWM0NjYzNDdhNWQxN2UwNGY4YThlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzg0YWE1ZTJiYTIyMTJjYjJmZWE4OGMxZmIwNzk5ODA2NzdkZDg1MTRhNjk5NjE2YWZmN2Q0M2NiZWYyODEifQ"
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L440-L481",
+          "version": "repo-lines-v1:sha256:8bfbc83a9876d89bedcb867a791d014918256934a9cae3e3e43020e44ea0fe5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2N2FhNzBjMzVjMjhjMThlOWNkMGY2ZDVkMzgzMTkyZDMzZTY5ZTM4NzQ3NWZlNGFlZjFiNjIyOTk1MTQ0ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYTUzOWZlZjFmNjU3Yzc3ZDNmOGVjZjAwNTc3NzEzMmYzMTk3M2M3MjNhNWUwMjVmNWI2NzhhNzRkOGFkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhN2YyMGExMTljMzEyMzI0YWY1YWRjN2U3ZDczZTY3NTA2YmU1YmNmMWM0NjYzNDdhNWQxN2UwNGY4YThlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzg0YWE1ZTJiYTIyMTJjYjJmZWE4OGMxZmIwNzk5ODA2NzdkZDg1MTRhNjk5NjE2YWZmN2Q0M2NiZWYyODEifQ"
         }
       ]
     },
@@ -231,7 +231,7 @@
           "version": "repo-lines-v1:sha256:86cd0bf5fbd61211cb4f0d29bcbeb70f6bc9d5d7738f1c8b8cd9f2bba6dddf36:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdhYzZiM2RiZTlhZThmMWIwYjY3ZGQ0NjQ2OTI3MGVhZGRhNDRiZTU2MWQ0OWVkNmJlNWY2NzU1ZGE0MjVmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY0ZjllMDVkZTQ5ZmFlMDA0Y2M5ODdiZGUxYmExOTY0NjdjM2Y1NTY2MWI1MWM3YTRhNmY4YjNlNzAzNjQxZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L551-L568",
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L556-L573",
           "version": "repo-lines-v1:sha256:cab905af81a03c3615fc60402654e50e2ff2510ca3280bfcd51a6367062c700a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MDMzNzcwNjZiZjk2YTM4ZTc3ZDNlMjM5ZTYzMjJhNTc0MTg1NjllM2EyMzViMTRlZWIyNDMxN2Y0OTI4MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOTUxMTc1ZTFkNzZmMThmY2E4ZTI1ODUyZjk1NzNiMzAzYmY3MzRlZjJiMjI4Mzk2YTZiOGQwOGU0NjY5OWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
@@ -331,7 +331,7 @@
       "statement": "The feature 081 US8a production cutover ran on 2026-10-24 and was deployed by CD rather than by hand: both stores are on `9.0-ubi9` (9.0.4) at FCV `\"8.0\"`, each having logged its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the pre-flight files — and the only step still outstanding is §6.4's FCV raise to `\"9.0\"` after the 7-day soak, not before 2026-10-31, so the FCV-8.0 state still describes production.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L478-L495",
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L483-L500",
           "version": "repo-lines-v1:sha256:9c69f104fbb79d65aff547394c5adf46d99f1d96c1f0f19c874313105c5a0397:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDE3MGFjZjkxMzJiM2M3YmY4ZDI2ZmQwZWFhZTJkOTBmNjk4MDBiYTJhNGI2NmEyMWY2YzJlZjhiNjJkNGYifQ"
         },
         {
@@ -383,10 +383,28 @@
           "version": "repo-lines-v1:sha256:eef2bc0733b2b6ebd4c1e6460f22a6c0c755fdebfad4a8c68eb6010e17ea6be8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzOWRkMjhiZDlmYWIwMGI1M2M1YzJhMTI2MjJkMjA1ZTZhMmJkY2MzMGY4Y2QyMTdkNjA1M2FkM2Y0NWNmNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MmVlYjYyNGZmZTlmYmVmNDJjNzgxNDEzNzQxMmI1ZjM4NzQ5YTgxMWNhMTcxZmNjYjVjODcyZTIyMjI1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlOGNhMzNhNDdiNDU0YTE4OTdjZDQ3MmUwYzYwNjQ3MDMzZmUzYTEwZGI3NTE3MGQ1MTA3MTk5YzgzYzJjYjYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_be698420a65f4ffaba26caef90ff4342",
+      "statement": "The MongoDB 9.0 image pin moved after the production upgrade: the cutover ran on `9.0-ubi9@sha256:2cb58a8d…` (the 2026-10-23 build), while every Mongo ref — both prod compose files and every §6 command in the runbook — now pins `mongodb/mongodb-community-server:9.0-ubi9@sha256:3d40c6fa895ff42616070872e3223e156f5108452633c98ba84db99465dd95d1`, the 2026-10-28 rebuild of the same mongod 9.0.4 on a patched UBI 9 base (PR #896), so a re-run or a rollback uses the image production actually runs and the expected outputs are unchanged.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L354-L363",
+          "version": "repo-lines-v1:sha256:8de06a5e557c058385874bb04fe696c4e3bbeef348c27594ed850cb41624cd08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjFkOGQzNmQzM2RlYTA5MzljNmY1YTg4OWFjNjcwZDRiMWI0M2I2ZmM5MTYxYzBjZDA2MjdkNjNjMzM3OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NTYzMzk1NTQ3YzUyNDU0MWVmNWZlODEwZTdmNTI4ZTc3NWE2MzhkZDhkYjUyMDZmY2I0NzcxNzFjZDA1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYzE1MWRiNGRhYThlY2I1MDg3MGY1YTNmNjhmOTNmNjc2MWQ3MzFhNGUzNDZiMTcyYjBlY2UwNDhiYzc0MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2YTAzNWI5ZGUyYTI0YWNkMzQyZTZjNTg1N2YyMmRkYWZjZmVlYmY3YjdhYzE4NDdmOGE2ODVhMjk1Mzk4OGIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L132-L133",
+          "version": "repo-lines-v1:sha256:5cc56b133e578d23e211f312177808af3ca107039d50616b177492cfa20837a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYwMTExODRjYjc4MzMzMzg1YWMzZjIwNzg1MTZjMTg0NjY2YzQzNDFmMjdiNDhhZTM3NzMyNGY4YTljODRmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUxN2MwNzg5Y2MxMTI0NTYzNzM1MTYxYjg0ODU0ZjRlY2NmNjBiMWUyNzllZWRiNWVjOWQ0ZDA4NTQ1YTA3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQzMjc2ZDgyMmFjYTdlZTA2NDY0YjJjYmIzOTA3ZWIzMGVjOWI2MWNlMzI4M2NmZGQyZDA2MTQxNzc0NDgzYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L24-L25",
+          "version": "repo-lines-v1:sha256:d6e41fd75a799f5d12a3e7c7a7d5d8f410cd56f62ee66db68a0d7d80b8a4b7bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdjY2M5ZWI1NGRiYTY5YjkwMDQ2NTgwMmU1ZWJkNzM5Y2Q3ODliNjU4MGNjMzllODgzZTFlOTg2MTdhODYxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EzN2RlZjc1YWY5MDdhZTg4NmNhNjdhMWE0ZDk0NzA3MmVhOWE1ZTc1NTJhM2Y5MWIwNDU5ODdmNjFjMDk0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhY2I5YmQ4MmQ2MDdlNTBhZTIzZDMxZTE4YmUzOGI1NTI4NzViNzZmY2ExNmFiYTYxZTg2YzU2YTRhOTYzYSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-11-01T13:34:04.956Z"
   }
 }

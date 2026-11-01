@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ffd74869dea29c733cbdb819965ec2196d4c4b9218b72b29c9153648dff43540",
+  "pageVersion": "sha256:e2ae4e0bf033f8e4abac25de8adac730e2abfabf75385013c393fff4b78f49c5",
   "claims": [
     {
       "id": "claim_48336ae10f46486caf689e37d3d26063",
@@ -129,7 +129,7 @@
           "version": "repo-lines-v1:sha256:947bd7cede4c51bd36722c22740965d893f26b925aec73ed2def4ed5aaea0884:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmU4MGFiNzdlY2M2YTI2ZWE3NGMwNjllMzA4YTkxMjMxOWUwY2NkZjliNWE2OWMxOTFlYTIzNDM4NDVjZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlYTZmZDU2ZjU1ZmUyZjY2NWVkZTNhNWIxYzMyZmM2OWYxZDVjZWEzNjZkYzBmNjQ3MGE5NGRlOTgwZjEyYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYmUzYTFjNzY3OWY0MmQ5ZTA0NDk0ZGM1N2UwNDZiYWMxODc4NWJiNDQ3YTZhODJmOTFjMTFmNzdiZTUzNmYifQ"
         },
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L771-L780",
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L777-L786",
           "version": "repo-lines-v1:sha256:03bc5d036f4ecbfd42fb257b0e70ca9ee5a2e7cf5281570b688b2666656452ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZjFjODk0YTk1MWFiNGUwYWM3Y2Y4MGUwZGI5OTJmYTY2MWM3NGY0MDQ3ZmEzNDBlYWVhMGMzYWIwZTM2OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZjNlNTY2MDg4YWQ3OTRmNDI1OTQ5MTE3YzcxNjkxNTllNzMxZGQ1YjRiNGE2ZDY1NmIyMGQ1Nzg5NDFlMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NjY2NTlhMmE4YzY5ZWI1ZDYxZTdmNzVmMGJjMGE1NDhiNTI3NzY4YzM1Mzk2NzQ3ZDIyYmRkOTE1MzdmNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
@@ -175,7 +175,7 @@
       "statement": "Rule V16 holds a page that openwiki has covered (an entry in `openwiki/.page-manifest.json`) to the sha256 its verified Claims sidecar certifies, with the invariant defined once in `scripts/openwiki-claims.mjs`; a hand edit of such a page makes openwiki refuse every later run until the page is uncovered.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L660-L666",
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L666-L672",
           "version": "repo-lines-v1:sha256:9a1440b296c2865c496d53cb484e25fc8849ce57da9cd3f86f22b8287542aaf4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFhMGI4OTFiMWIwM2U3NDlkNzg0MzE1MjRkMDE1YzFmMGVjMmEwM2JiZmMyODljOWQ4MzMzNzk4YjA5NjgxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE5YWUwODkwM2E2NDM4MTY4ZDk5MzdhZDE2YzA2ZmUwZTI4ODE2ZjczY2JlYzY5MGViZGRiYTkxNDBjOGVjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY4NjI4MTE3MTFmZDdiZTU1YzU5OWRkOTlmNWQ3ODczNmNhYTE1YzgxMjhhNGRiZjRkNDM2ODViYjEwMmEwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzYyNmJiNzQ0ZGM1NWFiNWM3NzI2YzY2NDdmYzllYzMxY2QwYmNlYzhiMjhiZGEwNDM3YzliZTBkMjQ4YTk0MyJ9"
         },
         {
@@ -215,11 +215,11 @@
           "version": "repo-lines-v1:sha256:5b7f00833c445b62af5bef82b5cafa0b18f88327d425a014814a85cc5ffe15c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZTg0NDU5ZmYzZTQ4NjJmZmY5MjI5MTk1YzMzZmIzYTEyMTdhOGQ0YWQyZThhNzM4NmFlZmFhMWU3OGM0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYjI3ODk4YTlhMDdjYTUyODkyYWRjMjNiMmQ5ZjQ0Y2RhYmJmODg3NTRhMGM5Yzc4OWI2MmM0ODQxMWMwNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZGE0Mzg2ZmM0MjljMWNiM2NjZGZjNGRkMTA4MGRhNjZhMjAwMmMyYmYxNGYxNzIyYTE5OTE4ZTYzNTMwNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNDg0MDZkMjFmNjRlODM2MzVlZTA2NWY3OWZkZDY1MGFkNGJiNzRhODA2MDZlZDc5Y2JhMDg4ZGM1YTQ5ZDgifQ"
         },
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L954-L968",
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L960-L974",
           "version": "repo-lines-v1:sha256:49b53fd9f33a427e5e5efa4dda723ece1680f1e6bf0ffc1f1c422008cd3c7fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYTg4Nzk5ZWE1NGVkY2I4N2Q4MDUwNDlhNjQ2ZWE3MGM3YTNjODk1ODNmZjA2ZmMwYWIyM2JlZGExZmMyMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MWY2NTQzYTYzZjg4M2E3M2QyYmIzYzU1NmI3MWZmZWUxNDYzZDkwNmE0YmQ2YmYyMjdhMGYzM2NmOTFmMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNTJjOTVlYmYxYmQwNmM2YzczZmZmN2VkZmYxN2Q5NTQ3MGZjZGQwMGM4ZDg4NDE5Mjc4Yzg2MTg3ZjUzOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L237-L255",
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L248-L266",
           "version": "repo-lines-v1:sha256:5364cb0b1035c8850eef46c81650f10041bd7f10ed5749d1a511326c57cf9d59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwNzVhNDQ2ZGMyYWM0MGI5OTM3YTI4NDExMzYzMmU0MmU1ODAzMjg2NzBkMzMyMjk0ZGY1ZDEwYTg3ZGM5NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEifQ"
         },
         {
@@ -233,7 +233,7 @@
       "statement": "The managed `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in `AGENTS.md` and `CLAUDE.md` must already be byte-identical to what the pinned generator writes, because openwiki rewrites that block on every run while the regeneration policy permits only an agent to write `AGENTS.md`; a mismatch would fail every slice and hold the marker indefinitely.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L565-L609",
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L576-L620",
           "version": "repo-lines-v1:sha256:8f82a13dd8ef2659cf355b62c844dfacf4915dea91a606383be7831dad735fc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYzU3NmNlNmY2OWY1NWUxZjU3ZDRjODM2MThhNzAwOTdmZDFmODlmNTBhMGRmMTM1M2FjMjA0ZTVmNDg4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYWQ0MGNkMDMwNGU1NjVjNzJjNTdlYjRkNTMyMDJkNTkwM2QzYmEzZjdmYzllZTY4YzkwYTY1Yzc0YmM5MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
@@ -265,7 +265,7 @@
       "statement": "The canonical-home rule routes a durable learning by the concept's front matter: a concept carrying a resolving `resource` is a derived summary so the learning goes into the cited source, while a concept with no `resource` is authoritative and listed under `authoritative:` in the protection manifest so the learning goes into the concept. The governance gate enforces the classification in both directions: G11 rejects a concept that is neither a resolving derived summary nor a listed authoritative one (and one that is both), and G12 rejects an authoritative concept whose effective policy is `regenerate`, because a summary of nothing could only be paraphrased.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L784-L826",
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L790-L832",
           "version": "repo-lines-v1:sha256:4bb19bab021cbd59eb40cdc1664c4f2ef7568009780540afbe32858a56acac54:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OWJjNTIwNzEyZjIxN2VlNjI4NGVlZjUyZjQzNzA2MDU1NGMzYmM0YjY1ZGZjZTdhNThjMDcwZjUwMzQyMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMGJlNzVjZGYxOWJjZWUxMjY0YzVmMGUxN2FhNDJmNDAyMmI4OTFiMDM0NjcyNTg4YjE5ZDhmZDc0NmY5M2UifQ"
         },
         {
@@ -319,7 +319,7 @@
           "version": "repo-lines-v1:sha256:c66710d214c3764a73671bb963b63d94b6eb715d1680c257f80d0c963e185e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMzNkMzcyYjRjY2RjMzY2MTMyMTM4ZWQ5OTQ3OWFkNzIwMDhmNGRjOTRiYjZlNzQ1YjU4ZmUzNDcxNTMzYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ODdmYzkzNWI1N2FlNGJlN2RiNzhmZWU1MTMzNTMyZTljNzdhNjRkYzRkZjc5YjQ0OTU0NDEyZjRlNTA1NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MjdlZmVjMmQ1YzEzZDRkYjNjNTlmNTUxNWI2NTI3YTk5MjE5ZmRjY2FmYjdjZjUwN2UyYTVmYmYxMDViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YTc0NTc1NTExYjQyYWM3YmY1NjQ1OGQ0ODdlNzJkNTI3MDIwMzRhZTA5MWYwNTcwODQyYmUzYzY0OThhMGMifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L237-L255",
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L248-L266",
           "version": "repo-lines-v1:sha256:5364cb0b1035c8850eef46c81650f10041bd7f10ed5749d1a511326c57cf9d59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwNzVhNDQ2ZGMyYWM0MGI5OTM3YTI4NDExMzYzMmU0MmU1ODAzMjg2NzBkMzMyMjk0ZGY1ZDEwYTg3ZGM5NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEifQ"
         }
       ]
@@ -352,19 +352,19 @@
     },
     {
       "id": "claim_685129cec1be4c5e987d4c9b1cb4fe57",
-      "statement": "`tools/openwiki-generator` is deliberately its own pnpm workspace root outside the root workspace's `frontend/*` and `packages/*` globs, so the root's settings (which set no cooldown) do not apply, and it sets `minimumReleaseAge: 4320` (three days, Renovate's catch-all) with no exclusion list; pnpm enforces that window both at resolve time (a lockfile regeneration cannot pick a younger transitive) and at install time (a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`), and guard tests fail a cooldown under three days, an exclusion list, a range instead of an exact pin, a lockfile that disagrees with the manifest, or a root glob that swallows the directory.",
+      "statement": "`tools/openwiki-generator` is deliberately its own pnpm workspace root outside the root workspace's `frontend/*` and `packages/*` globs, so the root's settings (which set no cooldown) do not apply, and it sets `minimumReleaseAge: 4320` (three days, Renovate's catch-all); pnpm enforces that window both at resolve time (a lockfile regeneration cannot pick a younger transitive) and at install time (a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`). Its `minimumReleaseAgeExclude` is reserved for security-floor exceptions — each entry must be one exact `name@x.y.z` required by an `overrides:` floor in the same file — and guard tests fail a cooldown under three days, a name-only or ranged exclusion or one with no matching floor, a range instead of an exact pin, a lockfile that disagrees with the manifest, or a root glob that swallows the directory.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/wiki-maintenance.md#L597-L613",
-          "version": "repo-lines-v1:sha256:99e5963b623bf526e14b180c09cc60e6ba4856b37930ce00b03ee989cbb621f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1NTAwYWI1NTUxNzdjZDNiMTMyM2E4NTc2YjAxMWZkZDhlN2IwMGMwODc1N2U5YTM1MzQ3Yjk2MGE3ZjI3NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNmIxMTIyNjkzZDlkYzA3M2NmYTU4YTE4YTNhMzg3YTBhZWI5ZDdmYmNjNmRiNGVkZTc4ZDIzM2IxNmUxNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjMDIyMWU0YTE1ZjliNjM2YTc5MTA1YTVmMDY3MTM4YzE3YTY5NDg2ZDVkNTA5MjJhMDhkZjQxZjhhMjVhMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMmI5MWM3NGM4OTg1YTgxMDljNzE4OTUwYTFjNDBjYjlmNjdhNTZlNTk0YmU2YmJkMTdmMjcwZTk3NWExMTIifQ"
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L597-L619",
+          "version": "repo-lines-v1:sha256:f2cb25cfb30a4a9456b8486bde10f23212c9c4a464a4795dc6ef6a6c95abd020:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1NTAwYWI1NTUxNzdjZDNiMTMyM2E4NTc2YjAxMWZkZDhlN2IwMGMwODc1N2U5YTM1MzQ3Yjk2MGE3ZjI3NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNmIxMTIyNjkzZDlkYzA3M2NmYTU4YTE4YTNhMzg3YTBhZWI5ZDdmYmNjNmRiNGVkZTc4ZDIzM2IxNmUxNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjMDIyMWU0YTE1ZjliNjM2YTc5MTA1YTVmMDY3MTM4YzE3YTY5NDg2ZDVkNTA5MjJhMDhkZjQxZjhhMjVhMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMmI5MWM3NGM4OTg1YTgxMDljNzE4OTUwYTFjNDBjYjlmNjdhNTZlNTk0YmU2YmJkMTdmMjcwZTk3NWExMTIifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L199-L235",
-          "version": "repo-lines-v1:sha256:bbdc561e623a24bf9f4b39f8eceb698f63cfa67c5cb8021fb8077c69b91e602a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYzg0NGU3NTVhMTA2NmI0MTZiZTg3YWFjZDljNTcyZDcyMGFhYWE1ZmIwZTYzODgxOTVlZDQ4MTFlNWJhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZWQ4Nzk0Y2EzMTE1ZjNmMmRjNjc1M2QyNzk4MjdkZTZjYWZkZjJiMTkxN2YzMjUzNTZkYWUwOWU5YzVmYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NTIyYzVjM2FlZDE5MjAwMDc0OTY2NTg5YTNiMzE2MGMxY2ViNjgxOTZhNTRhNTAwNWI4ZjE5MjEyNDU3N2EifQ"
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L199-L246",
+          "version": "repo-lines-v1:sha256:cfc392eb5ccf1e33f4cb7b8cf132c3baa9b58275890d46f2261820b241517814:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYzg0NGU3NTVhMTA2NmI0MTZiZTg3YWFjZDljNTcyZDcyMGFhYWE1ZmIwZTYzODgxOTVlZDQ4MTFlNWJhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZWQ4Nzk0Y2EzMTE1ZjNmMmRjNjc1M2QyNzk4MjdkZTZjYWZkZjJiMTkxN2YzMjUzNTZkYWUwOWU5YzVmYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NTIyYzVjM2FlZDE5MjAwMDc0OTY2NTg5YTNiMzE2MGMxY2ViNjgxOTZhNTRhNTAwNWI4ZjE5MjEyNDU3N2EifQ"
         },
         {
-          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L1-L26",
-          "version": "repo-lines-v1:sha256:7bbc7cca772606d863821427d57426ebea3432153e9f742634c653d9c5fa7b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYWNmNWI0ZDM1MDhkNGFmNzQzNDE1OWFmYzViNzgwZmEwZjgyMjNhOGM4ZjM5OTFmNTQ0MGU1ZWQ4MjU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NTJjYjA4MmRkZDFjNTljZWZkMjFhNGY2NzM4NGE3YmU1NGE2ODE0YTExZTZiYzBlOWUxMzE5NDg4OGZjZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L1-L48",
+          "version": "repo-lines-v1:sha256:618d112b778954ac8d9b8454826d4f849994fcabb5845a38c685ea5c04a2fe38:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYWNmNWI0ZDM1MDhkNGFmNzQzNDE1OWFmYzViNzgwZmEwZjgyMjNhOGM4ZjM5OTFmNTQ0MGU1ZWQ4MjU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTYxMzEzZWE2YTc2ZWRmOTNiOGQ3MmRlN2IzMDI1NmViOTJjMjE0MGY3MzFjMDNhMzM1OTg5MjZjMjQ3NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -525,6 +525,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T08:25:59.628Z"
+    "at": "2026-11-01T13:34:04.956Z"
   }
 }

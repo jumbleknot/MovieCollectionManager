@@ -76,7 +76,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-26T03:45:38.439Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 
@@ -302,11 +302,15 @@ settings (which deliberately set no cooldown) do not apply and its own do. It se
 time, so a lockfile regeneration cannot pick a transitive younger than three days (the gap item #271
 describes for the root workspace, closed for this directory), and at **install** time, where a frozen
 install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked entry inside the
-window. There is deliberately **no** `minimumReleaseAgeExclude` list, and the file says so in as many
-words: an exclusion is a *security-floor* exception — a fix that landed inside the cooldown and is needed
-now — and this code runs with the generator's model credential, so the mechanism is not spent on
-impatience. `better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because
-openwiki's LangGraph checkpointer loads its native binding at runtime.
+window. `minimumReleaseAgeExclude` is reserved for **security-floor exceptions**, because this code runs
+with the generator's model credential: each entry is one exact `name@x.y.z` that an `overrides:` floor in
+the same file requires, so it admits that version and nothing else, and it becomes moot once the version
+clears the window. The guard fails a name-only or ranged entry, or one with no matching floor. The first
+and only entry (2026-11-01, an operator override of the cooldown) is `@azure/identity@4.14.1`, published
+2026-10-29 22:16 UTC: the first release requiring `@azure/msal-node` ^7.1.0, the fix for
+GHSA-xcx6-jx8p-x3h5. Never add one because a fresh transitive is blocking a branch — wait the window out.
+`better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because openwiki's
+LangGraph checkpointer loads its native binding at runtime.
 
 **Being its own root cuts both ways: the cooldown is local, and so is every floor.** The same fact that
 lets this directory set a cooldown the root deliberately does not have means the root's `overrides:` map
@@ -325,10 +329,10 @@ yields lockfile advice for a finding in this tree — see
 
 **Checking the cooldown yourself** (the live half of the proof; the static half is
 `scripts/__tests__/wiki-maintain.guard.test.mjs`, which fails a cooldown under three days, an exclusion
-list, a range instead of an exact pin, a lockfile that disagrees with the manifest, a root workspace glob
-that swallows this directory, or any run-time resolution in the workflow). Copy the three files somewhere
-scratch, raise the window past the age of the lock, and install frozen — **from the repository root**, with
-`--dir`, so corepack picks this repository's pnpm:
+that is not an exact, floor-backed version, a range instead of an exact pin, a lockfile that disagrees
+with the manifest, a root workspace glob that swallows this directory, or any run-time resolution in the
+workflow). Copy the three files somewhere scratch, raise the window past the age of the lock, and install
+frozen — **from the repository root**, with `--dir`, so corepack picks this repository's pnpm:
 
 ```bash
 d=$(mktemp -d) && cp tools/openwiki-generator/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$d"/

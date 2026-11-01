@@ -6,25 +6,7 @@ resource: docs/runbooks/dev-environment-setup.md
 tags: [setup, toolchain, host, runbook]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-17T03:12:52.160Z
-sources:
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-8cb0da307c90adb4287997a5
-    resource: repo://docs/runbooks/dev-environment-setup.md
-  - id: openwiki-source-5b54a58d1b51cd490b0e7162
-    resource: repo://package.json
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
-    resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
-  - id: openwiki-source-238cf8b88f30f267614313be
-    resource: repo://scripts/check-toolchain-consistency.mjs
-  - id: openwiki-source-c8029c93bdccd81963968b22
-    resource: repo://tools/openwiki-generator/package.json
-  - id: openwiki-source-012d67e0a1df20ece216c0d0
-    resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-17T03:12:52.160Z" }
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # Developer environment setup (host toolchain)
@@ -51,7 +33,7 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
 
 > **Don't hardcode exact patch versions here.** Node and pnpm patch pins drift independently across
 > contexts in this repo (CI workflows pin Node `24.19.0` while `frontend/mcm-app/Dockerfile` pins
-> `24.21.0`) and are enforced for internal agreement by
+> `24.22.1`) and are enforced for internal agreement by
 > `scripts/check-toolchain-consistency.mjs`, not by this page. Point at the source of truth
 > (`engines.node`, `packageManager`, `.devcontainer/toolchain.Dockerfile`) rather than repeating a
 > number that will go stale.
@@ -91,20 +73,60 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
   every gate still passes — the only symptom is a diagram quietly downgraded to preformatted text,
   with no error, no warning, and no diff context to flag it. Install all three packages together at
   the same version the devcontainer toolchain image pins (see
-  `docs/runbooks/dev-environment-setup.md` §6a for the exact invocation and the Node ≥ 22.22
+  `docs/runbooks/dev-environment-setup.md` §6a for the invocation and the Node ≥ 22.22
   floor that OpenWiki also requires — above this repo's own `>=22.13` floor).
 
 ## How the generator's version is held in step
 
-The dev container bakes a global `openwiki` + `mermaid` + `jsdom` into its toolchain image; a CI
-runner has no such copy, so the wiki-maintain job installs the same three from the **committed
-lockfile** in `tools/openwiki-generator/` (`pnpm --dir tools/openwiki-generator install
---frozen-lockfile`, exact pins only, with a three-day `minimumReleaseAge` cooldown so a lockfile
-regeneration cannot drag in a package published minutes ago). The two halves must name the same
-version and the same peer set: `scripts/__tests__/wiki-maintain.guard.test.mjs` reads the
-container's real install command line and fails if they diverge, which is why Renovate moves both in
-one grouped PR. A host install that ignores the container's pin therefore diverges from both the
-container and CI.
+The dev container bakes a global `openwiki` + `mermaid` + `jsdom` into its toolchain image with
+`npm install -g openwiki@0.7.1 mermaid jsdom` (there is no repository checkout at image-build time);
+a CI runner has no such copy, so the wiki-maintain job installs the same three **exact** pins from
+the **committed lockfile** in `tools/openwiki-generator/`
+(`pnpm --dir tools/openwiki-generator install --frozen-lockfile`). The two halves must name the same
+version and the same peer set: `scripts/__tests__/wiki-maintain.guard.test.mjs` extracts the
+container's *real* install command line — skipping comment lines, because the Dockerfile also names
+the install in prose and a whole-file regex happily matches the comment — and fails if the versions
+or the `mermaid`/`jsdom` set diverge, which is why Renovate moves both halves in one grouped
+`openwiki generator` PR. A host install that ignores the container's pin therefore diverges from
+both the container and CI.
+
+```mermaid
+flowchart TD
+    A["Dev container toolchain image: npm install -g openwiki mermaid jsdom"] --> C["wiki-maintain.guard.test.mjs"]
+    B["tools/openwiki-generator: exact pins plus a committed pnpm-lock.yaml"] --> D["CI wiki-maintain: pnpm --dir tools/openwiki-generator install --frozen-lockfile"]
+    D --> C
+    C -->|"versions or peer set differ"| E["guardrail failure"]
+    F["renovate.json: one grouped openwiki generator PR"] --> A
+    F --> B
+```
+
+Where the generator's two pin sites come from, and the guard that keeps them in agreement.
+
+`tools/openwiki-generator/` is deliberately its **own pnpm workspace root**, outside the root
+workspace globs (`frontend/*`, `packages/*`): inside the root workspace pnpm would apply the root's
+settings — which set no cooldown — and the root lockfile, so nothing below would take effect. Its
+`pnpm-workspace.yaml` sets `minimumReleaseAge: 4320` (three days, matching `renovate.json`'s
+catch-all cooldown) and pnpm applies it **twice**: at *resolve* time, so a lockfile regeneration —
+Renovate's or a human's — cannot pick a transitive younger than the window, and at *install* time,
+so a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked
+entry inside it. The gap this closes is real and measured: run 4950 died 404-ing on an `openai`
+release two minutes old, because the old step pinned only `openwiki` and resolved its whole
+transitive tree at run time.
+
+Exclusions from the cooldown are **security-floor exceptions only**, never impatience — the
+generator runs with a model credential. The guard requires each `minimumReleaseAgeExclude` entry to
+be one exact `name@x.y.z` (never a bare name or a range) that an `overrides:` floor in the same file
+requires at or above that version, so it admits nothing else; the root's `overrides:` map does not
+reach this directory, so a floor the generator's tree needs is repeated here by hand. The same guard
+also fails a root workspace glob that would swallow `tools/openwiki-generator`, and the generator
+manifest may not declare a `packageManager` of its own — it is run as `pnpm --dir` from the root.
+
+Because the tree is locked, CI must never resolve the generator at run time: the guard rejects a
+`npm install -g`, an `npx ... openwiki`, a `pnpm add`/`pnpm dlx`, or an `npm install ... openwiki`
+anywhere in the workflow's command lines, requires the locked binary to be placed first on
+`$GITHUB_PATH`, and requires the installed-generator checks to read
+`tools/openwiki-generator/node_modules/openwiki` via `OPENWIKI_ROOT` — with a `command -v openwiki`
+check so a global that happens to be on the runner's PATH cannot stand in for it.
 
 Full pinned-version table, per-tool install commands, and the Claude Code plugin list:
 `docs/runbooks/dev-environment-setup.md`.
