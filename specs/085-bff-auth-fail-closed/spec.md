@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Draft
+**Status**: Draft (revised 2026-11-01 after operator review: FR-009 → remove everywhere; server-held tokens added as US6)
 
 **Input**: User description: "BFF auth fail-closed hardening — combine backlog items #607 (refresh ownership check, server-side Bearer acceptance, idle timeout enforced only on two routes, dead code/wrong comments), #844 (fail the agent run with an auth error the client turns into re-login when the subject-token mint is refused with invalid_token, instead of running identity-less; decide transient-failure behaviour) and #753 (ensureClientRedirectUris latches its success flag after a rejected PUT)."
 
@@ -23,6 +23,10 @@ should **refuse**. Each has been verified against `main`:
   - The server accepts a bearer credential ahead of the session cookie, contrary to the ratified client
     auth model (constitution v2.0.0: clients authenticate *exclusively* through the session cookie).
   - The idle timeout, the comments describing it, and the reported expiry reason disagree with the code.
+- **Access and refresh tokens in client cookies** (found writing this spec; added to scope by the
+  operator 2026-11-01). Both cookies are `HttpOnly`, so page script cannot read them. But the raw access
+  token and the raw refresh token still live in the client, and the server-side session record holds
+  only metadata. The constitution allows the client to hold only an opaque session reference.
 - **Item #753** (found reviewing wiki proposal #747). If the identity provider rejects the update that
   registers the app's sign-in redirect addresses, the server still records the step as done. It never
   retries until the process restarts.
@@ -97,27 +101,27 @@ and a security event is recorded.
 
 ### User Story 3 - The server accepts only the session cookie in production (Priority: P2)
 
-In production, the server authenticates members only through the session cookie, as the constitution
-requires. A bearer credential presented directly to the server is not honoured. Non-production
-behaviour depends on the answer to FR-009.
+The server authenticates members only through the session cookie, as the constitution requires, in
+every environment. A bearer credential presented directly to the server is not honoured anywhere,
+including development and test. Test harnesses authenticate the way members do.
 
 **Why this priority**: The bearer path is not a known exploit. A caller needs a valid token either way.
 But it is an authentication path the ratified auth model says must not exist, it is consulted *before*
 the cookie, and nothing records that it is deliberate.
 
-**Independent Test**: In a production-configured server, call an authenticated endpoint with only a
-valid bearer credential and no session cookie. The call is refused as unauthenticated. The same call
-with the session cookie succeeds.
+**Independent Test**: In any environment, call an authenticated endpoint with only a valid bearer
+credential and no session cookie. The call is refused as unauthenticated. The same call with the session
+cookie succeeds.
 
 **Acceptance Scenarios**:
 
-1. **Given** a production-configured server, **When** a request carries a valid bearer credential and no
+1. **Given** a server in any environment, **When** a request carries a valid bearer credential and no
    session cookie, **Then** it is refused as unauthenticated.
-2. **Given** a production-configured server, **When** a request carries both a bearer credential and a
+2. **Given** a server in any environment, **When** a request carries both a bearer credential and a
    valid session cookie, **Then** only the cookie is used to authenticate it.
-3. **Given** the decision recorded for FR-009, **When** a reviewer looks for why the bearer path exists
-   (or does not), **Then** the decision and its scope are written down next to the code and in the
-   auth-chain documentation.
+3. **Given** the server integration and E2E suites, **When** they run, **Then** every authenticated
+   call goes through a session established the way a member's is, and none presents a bearer
+   credential to the server.
 
 ---
 
@@ -170,6 +174,44 @@ on session activity and timeout name the routes that actually enforce it.
    described correctly (not as a request header).
 4. **Given** the codebase, **When** searched for the unused session-activity helper, **Then** it is gone.
 
+---
+
+### User Story 6 - The member's tokens never leave the server (Priority: P2)
+
+The member's client holds one thing: the opaque session reference. The access and refresh tokens the
+identity provider issues stay on the server, inside the member's session, and are used there on the
+member's behalf. The app's behaviour is unchanged for members on web and on Android: they sign in,
+stay signed in while active, and sign out exactly as today.
+
+**Why this priority**: The tokens are already shielded from page script, so this is not a known exploit.
+But a stolen cookie jar or a misconfigured proxy today yields a token that works directly against the
+identity provider and downstream services until it expires. A refresh token is long-lived, and would
+yield fresh access until the session is revoked. With server-held tokens, the only thing to steal is a
+reference the server can invalidate at once. It also brings the client into line with the ratified auth
+model, which US3 enforces from the other side.
+
+**Independent Test**: Sign in on web and on Android, use the app past one access-token lifetime, then
+sign out. At no point does any response set, and the client store, an access token or refresh token.
+The member stays signed in across the token renewal without noticing it, and after sign-out the
+session reference no longer authenticates.
+
+**Acceptance Scenarios**:
+
+1. **Given** a member signing in, **When** sign-in completes, **Then** the only credential the client
+   receives is the session reference, and the session on the server holds the tokens.
+2. **Given** a signed-in member whose access token has expired, **When** they make a request, **Then**
+   the server renews the tokens itself and the request succeeds. The client sees no change and stores
+   nothing new.
+3. **Given** a member who signs out, **When** sign-out completes, **Then** the server-held tokens are
+   revoked at the identity provider and deleted with the session, and the old session reference is
+   refused.
+4. **Given** the session store, **When** an operator or an attacker reads its raw contents, **Then** the
+   tokens are not readable in clear text.
+5. **Given** two requests from the same member that both find the access token expired, **When** they
+   arrive at the same moment, **Then** the tokens are renewed once and both requests succeed.
+6. **Given** a member signed in before this change ships, **When** they make their next request,
+   **Then** they are asked to sign in again once, and their old token cookies are cleared.
+
 ### Edge Cases
 
 - **The identity provider times out partway through minting the run-scoped identity.** This is a
@@ -183,8 +225,14 @@ on session activity and timeout name the routes that actually enforce it.
   Existing rate-limiting and rotation behaviour is unchanged.
 - **The redirect registration fails at the client-lookup step, before any update.** This already leaves
   the step unrecorded today, and must still do so.
-- **A test harness or tool authenticates to the server with a bearer credential.** Covered by FR-009 and
-  its migration consequence.
+- **A test harness or tool authenticates to the server with a bearer credential.** It is refused, in
+  every environment (FR-009). The harness migrates to a real session.
+- **The identity provider rejects a server-side token renewal** (refresh token revoked or expired). The
+  session ends, and the member is asked to sign in again. It is not retried in a loop.
+- **The identity provider is unreachable during a server-side renewal.** The request gets a retryable
+  "temporarily unavailable" outcome. The session is kept, so a later request can renew.
+- **The session store is unavailable.** Authenticated requests are refused. There is no fallback to a
+  client-held token, because none exists.
 
 ## Requirements *(mandatory)*
 
@@ -218,10 +266,10 @@ on session activity and timeout name the routes that actually enforce it.
 
 - **FR-008**: In production, the server MUST authenticate member requests only through the session
   cookie, and MUST NOT honour a bearer credential presented by the caller.
-- **FR-009**: Outside production, bearer acceptance MUST be [NEEDS CLARIFICATION: kept for test
-  harnesses (27 of 59 server integration test files and 1 E2E file authenticate this way today), or
-  removed everywhere with those tests migrated to the session cookie?]. Whatever is chosen MUST be
-  recorded next to the code and in the auth-chain documentation.
+- **FR-009**: Bearer acceptance MUST be removed in every environment, not only production (operator
+  decision 2026-11-01). The server integration test files (27 of 59 today) and the E2E file that
+  authenticate with a bearer credential MUST migrate to sessions established the way a member's is. The
+  decision MUST be recorded next to the code and in the auth-chain documentation.
 
 **Redirect registration (item #753)**
 
@@ -230,26 +278,51 @@ on session activity and timeout name the routes that actually enforce it.
 - **FR-011**: A rejected update MUST be logged as a structured warning with no credential and no client
   configuration, and MUST be retried on the next sign-in attempt.
 
+**Server-held tokens (added to scope 2026-11-01)**
+
+- **FR-016**: The client MUST receive and hold only the opaque session reference. No response may set an
+  access token or refresh token on the client, on web or on Android.
+- **FR-017**: The server MUST keep the member's access and refresh tokens in the member's server-side
+  session, encrypted at rest. They MUST NOT appear in clear text in the session store, in logs, or in
+  audit events.
+- **FR-018**: When a request needs the member's access token and it has expired or is about to, the
+  server MUST renew it itself, at most once for concurrent requests from the same session.
+- **FR-019**: When the identity provider rejects a server-side renewal, the server MUST end the session
+  and return an authentication failure that sends the member to sign in again. When the provider is
+  unreachable, it MUST return a retryable "temporarily unavailable" outcome and keep the session.
+- **FR-020**: Sign-out MUST revoke the server-held refresh token at the identity provider and delete the
+  tokens with the session. Session eviction, absolute expiry and idle expiry MUST delete the tokens too.
+- **FR-021**: The client-side renewal path MUST keep working against the new model. A client renewal
+  request renews the server-held tokens for the caller's own session. The caller cannot name a
+  different session, which makes the FR-006 ownership guarantee hold by construction (FR-006 and
+  FR-007 remain as tests).
+- **FR-022**: On first contact after deployment, a request carrying only the old token cookies and no
+  valid server-held session MUST clear those cookies and ask the member to sign in again. It MUST NOT
+  migrate a client-held token into a session.
+
 **Session expiry accuracy (item #607, findings 3–5)**
 
 - **FR-012**: When a session ends because it reached its maximum lifetime, the reported outcome and audit
   event MUST say "absolute timeout", not "idle timeout".
+- **FR-023**: Idle expiry MUST be enforced on every authenticated request, on the same session read
+  that retrieves the server-held token (see Assumptions: idle-timeout reach).
 - **FR-013**: Code comments describing session activity and timeout MUST state where idle expiry is
   actually enforced, and MUST describe the session reference as cookie-only.
 - **FR-014**: The unused session-activity helper MUST be removed.
 
 **Verification**
 
-- **FR-015**: Each of FR-001–FR-003, FR-006–FR-008, FR-010–FR-012 MUST have an automated test that fails
+- **FR-015**: Each of FR-001–FR-003, FR-006–FR-012, FR-016–FR-022 and FR-023 MUST have an automated test that fails
   without the change. Where the behaviour already exists, use a mutation RED: show that the test fails
   when the change is reverted.
 
 ### Key Entities
 
-- **Member session**: the server-side record of a signed-in member. It has an owner, a
-  last-activity time, a creation time, and a reference the client holds only as a cookie.
-- **Renewal credential**: what the client presents to extend a session. It resolves to an identity that
-  must match the session's owner.
+- **Member session**: the server-side record of a signed-in member. It has an owner, a last-activity
+  time, a creation time, the member's encrypted access and refresh tokens, and a reference the client
+  holds only as a cookie.
+- **Renewal credential**: the refresh token that extends a session. It now lives only inside the
+  session on the server. It resolves to an identity that must match the session's owner.
 - **Run-scoped identity**: the short-lived identity the assistant uses to act as the member for one
   turn. It is obtained from the identity provider at the start of each turn or resume.
 - **Redirect registration**: the set of sign-in return addresses the identity provider must know for the
@@ -272,14 +345,20 @@ on session activity and timeout name the routes that actually enforce it.
 - **SC-005**: After a single rejected redirect-registration update, the next sign-in attempt retries it,
   with no restart. Covered by an automated test.
 - **SC-006**: Sessions that end by maximum lifetime are reported as such in 100% of test cases.
+- **SC-007**: Across a full member journey on web and on Android (sign in, use past one token lifetime,
+  sign out), 0 responses set an access or refresh token on the client, and 0 tokens are stored there.
+- **SC-008**: A raw dump of the session store contains 0 readable tokens.
+- **SC-009**: Members notice no change: with the access token expiring mid-session, the web and Android
+  E2E suites pass with no added sign-in prompts, other than the one-time re-sign-in at rollout.
+- **SC-010**: 0 server integration or E2E tests authenticate with a bearer credential.
 
 ## Assumptions
 
-- **Idle-timeout reach.** Comments are corrected to match the code rather than enforcing idle expiry on
-  every route. Idle expiry is enforced whenever a session is checked or refreshed. Access credentials
-  live about 5 minutes and must be refreshed to continue, so an idle session cannot keep acting for more
-  than one credential lifetime past the idle window. Enforcing it on every request would add a
-  session-store round trip to each request for at most that gain. Revisit if credential lifetimes grow.
+- **Idle-timeout reach (revised 2026-11-01).** With server-held tokens, every authenticated request
+  already reads the session to get the token. Enforcing idle expiry on that same read costs nothing
+  extra, so idle expiry is enforced on every authenticated request. The earlier "comments only"
+  position rested on avoiding that round trip, which no longer applies. FR-013's comments describe
+  the result.
 - **Transient failures fail closed (FR-002).** This was chosen over the alternative of degrading to an
   identity-less turn. The assistant's steps now need identity, so an identity-less turn produces exactly
   the confusing refusal this feature removes. "Temporarily unavailable" is honest and retryable.
@@ -290,7 +369,15 @@ on session activity and timeout name the routes that actually enforce it.
 - **Ownership is established from the renewal result.** The identity the provider returns for the
   renewed credential is compared with the session's owner before the session is touched. If the
   comparison can be made before renewal without an extra provider call, that is preferable.
-- **Out of scope.** The access credential currently travels to the client in an `HttpOnly` cookie. That
-  sits awkwardly with the constitution's "only an opaque session reference in the client cookie" rule,
-  but it was not part of these three items and changes the transport for every request. It should be
-  triaged as its own backlog item, not folded in here.
+- **Server-held tokens are in scope (operator decision 2026-11-01).** US6 changes the transport for
+  every authenticated request, and it is the largest story here. It is P2 rather than P1 because the
+  cookies are already `HttpOnly`, so it closes no known exploit. US1 and US2 can ship ahead of it.
+- **Encryption at rest uses the server's existing secret-key mechanism**, the one already used for
+  members' stored assistant configuration. No new key-management system is introduced.
+- **One forced re-sign-in at rollout is acceptable.** Translating a client-held token into a server
+  session would mean trusting a client-supplied token at the exact point this feature removes that
+  trust (FR-022).
+- **Server-side renewal follows the same transient-vs-rejected split as US1** (FR-019 mirrors
+  FR-001/FR-002), so members see one consistent pair of outcomes.
+- **The assistant's run-scoped identity (US1) is minted from the server-held access token.** It no
+  longer reads the token from a client cookie. The behaviour in US1 is unchanged.

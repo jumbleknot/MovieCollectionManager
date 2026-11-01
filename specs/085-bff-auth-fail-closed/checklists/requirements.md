@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,10 +31,12 @@
 
 ## Notes
 
-- One marker remains, FR-009 (bearer acceptance outside production). It is a scope decision for the
-  operator: removing it everywhere means migrating 27 of 59 server integration test files and 1 E2E
-  file to the session cookie.
+- FR-009 answered by the operator 2026-11-01: bearer acceptance is removed in every environment, and the
+  27 integration test files and 1 E2E file that use it migrate to real sessions.
+- Scope extended by the operator 2026-11-01: server-held tokens (US6, FR-016 to FR-022, SC-007 to SC-010).
+  This revises the idle-timeout assumption: idle expiry is now enforced on every authenticated request,
+  because the session read happens anyway.
 - Security terms such as "session cookie", "bearer credential" and "identity provider" are
   deliberate. This is a security-hardening spec, and those terms are the domain vocabulary of the
   constitution rules it enforces, not implementation choices.
-- `/speckit-plan` should wait until FR-009 is answered.
+- Ready for `/speckit-plan`.
