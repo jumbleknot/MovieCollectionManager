@@ -65,9 +65,9 @@ diagnosing an nx failure from a path that no longer exists.
 - [x] T007 [US1] PR 1a: bump `actions/checkout` v4→v7, `actions/setup-node` v4→v7, and `actions/upload-artifact`
   (to v7 only if T004 showed support) at every site in `.forgejo/workflows/*.yml` (22 / 12 / 7 sites), SHA +
   `# vN` comment convention. **Done when**: `pnpm nx preflight infrastructure-as-code` passes.
-- [ ] T008 [US1] Verify PR 1a: all required contexts green; `cd-deploy` `workflow_dispatch` with
+- [x] T008 [US1] Verify PR 1a: all required contexts green; `cd-deploy` `workflow_dispatch` with
   `build_apk=true` and no deploy green; `infra-image-scan`, `renovate-health` green; job logs show the new
-  majors executed. **Done when**: PR 1a merged with that evidence in its body.
+  majors executed. **Done when**: PR 1a merged with that evidence in its body. *(2026-11-01, item #254 audit: PR #769 merged 2026-10-16. Its body records the `build_apk=true`, `deploy=false` dispatch, run id 5425, and the guard RED→GREEN.)*
 - [x] T009 [US1] PR 1b: bump `actions/setup-java` v4→v6 (keep `java-version: '17'`), `android-actions/setup-android`
   v3→v4, `astral-sh/setup-uv` v5→v10, `dorny/paths-filter` v3→v4, `pnpm/action-setup` v4→v6. **Done when**:
   preflight passes.
@@ -91,9 +91,9 @@ diagnosing an nx failure from a path that no longer exists.
   **Verify GREEN**: `pnpm install --frozen-lockfile` cold succeeds with no warnings about ignored keys;
   `node scripts/check-override-consistency.mjs` exits 0; `node scripts/check-toolchain-consistency.mjs`
   exits 0.
-- [ ] T014 [US2] AFTER table: every overridden package resolves within its patched range (no floor moved
+- [x] T014 [US2] AFTER table: every overridden package resolves within its patched range (no floor moved
   down). `pnpm nx run-many -t docker-build` (every image does a cold frozen install), `pnpm nx sast
-  infrastructure-as-code`. **Done when**: PR 2 merged with before/after tables and green board.
+  infrastructure-as-code`. **Done when**: PR 2 merged with before/after tables and green board. *(2026-11-01, item #254 audit: PR #771 merged 2026-10-17 with the BEFORE/AFTER override tables, which are identical: 14 keys, no floor moved.)*
 
 ---
 
@@ -103,9 +103,9 @@ diagnosing an nx failure from a path that no longer exists.
   `package.json` (nx stays 22).
   **Verify RED (upgrade)**: `pnpm nx run-many -t test lint -p mc-service movie-assistant --skip-nx-cache`
   — record failures (or "bump was clean").
-- [ ] T016 [US3] Fix executor/option changes until GREEN.
+- [x] T016 [US3] Fix executor/option changes until GREEN.
   **Verify GREEN**: same command | **Expected GREEN**: 0 failures; `pnpm why @nx/devkit` shows the 20.x and
-  21.x copies gone. **Done when**: PR 3a merged.
+  21.x copies gone. **Done when**: PR 3a merged. *(2026-11-01, item #254 audit: PR #773 merged 2026-10-17. Its body records `pnpm why @nx/devkit` BEFORE with 20.8.4 and 21.6.11, and AFTER with both gone.)*
 - [x] T017 [US3] PR 3b: T002 check; record `pnpm nx show projects --json` and each project's target list
   (BEFORE). Run `pnpm nx migrate 23.x` (latest 23 at that day), `pnpm install`, `pnpm nx migrate
   --run-migrations`; keep `nx.json` `installation.version` == `package.json` `nx`.
@@ -114,8 +114,8 @@ diagnosing an nx failure from a path that no longer exists.
   (`pnpm nx run mc-service:test`). If they do not, stop and record (spec US3 AC3).
   **Verify GREEN**: same command, 0 failures; `node scripts/check-toolchain-consistency.mjs` exits 0;
   AFTER project/target list identical to BEFORE.
-- [ ] T019 [US3] Verify PR 3b: `pnpm nx e2e mcm-app` (via @nx/playwright), `pnpm nx preflight
-  infrastructure-as-code`, CI `affected` selects the expected projects. **Done when**: PR 3b merged.
+- [x] T019 [US3] Verify PR 3b: `pnpm nx e2e mcm-app` (via @nx/playwright), `pnpm nx preflight
+  infrastructure-as-code`, CI `affected` selects the expected projects. **Done when**: PR 3b merged. *(2026-11-01, item #254 audit: PR #774 merged 2026-10-17, with `preflight` passing 27 checks and the scripts suite at 1700 pass / 0 fail / 0 skipped.)*
 
 ---
 
@@ -151,14 +151,14 @@ Run in the **Docker Desktop/DinD** dev container (needs `/dev/kvm` for the emula
   assertion. Implement in `renovate.json` (+ `java-version` in workflows if moving). **Verify GREEN**: same.
 - [ ] T028 [US4] Android: `pnpm nx build-apk mcm-app`, then `pnpm nx e2e:mobile mcm-app` and
   `pnpm nx e2e:agents mcm-app` on the local KVM emulator. **Done when**: all flows pass; any flake re-run
-  shown to be pre-existing against `main` (baseline per pull-request-batching).
+  shown to be pre-existing against `main` (baseline per pull-request-batching). *(2026-11-01, item #254 audit: still open. PR #778 left it unticked as an operator pre-merge step: KVM emulator flows on an APK built from that branch. No result has been recorded since.)*
 - [ ] T029 [US4] Web: `pnpm nx export-server mcm-app`, BFF prod image build, `pnpm nx bundle-budget mcm-app`,
-  `pnpm nx e2e mcm-app`. **Done when**: green with zero skipped suites.
+  `pnpm nx e2e mcm-app`. **Done when**: green with zero skipped suites. *(2026-11-01, item #254 audit: still open. PR #778 recorded export-server, bundle-budget (88.4%) and app-e2e run 5493 with 181 passed / 0 skipped on the gate tier, but left this task unticked pending its operator steps.)*
 - [x] T030 [US4] SAST re-check: `pnpm nx sast infrastructure-as-code`. **Done when**: the node-forge
   (`^node-forge@1\.4\.0$`) and braces (`^braces@3\.0\.3$`) allowlist entries still match exactly, or — if
   discharged — are deleted in this PR (FR-018). Expected per R4: neither discharged.
 - [ ] T031 [US4] PR 4 with rollback (revert; previous APK) and exit criterion (plan.md US4). **Done when**:
-  merged with human approval of T022.
+  merged with human approval of T022. *(2026-11-01, item #254 audit: PR #778 merged 2026-10-18 with T022 operator-approved, but left this unticked until T028 and T029 are done.)*
 
 ---
 
@@ -642,10 +642,10 @@ images, so the hand pin needs no config change and no release-age exclusion is a
 
 ## Phase 12: Close-out
 
-- [ ] T069 Write the learnings into their canonical sources (not openwiki pages, not CLAUDE.md):
+- [x] T069 Write the learnings into their canonical sources (not openwiki pages, not CLAUDE.md):
   `docs/runbooks/renovate.md` (the override-widening trap and the new holds), and the CI-diagnostics runbook
   if T004 changed the upload-artifact fact. **Done when**: `pnpm nx okf-governance infrastructure-as-code`
-  passes.
+  passes. *(2026-11-01: `renovate.md` already recorded the override-widening trap and the SDK-pinned holds. It now also records the upload-artifact <4 and java-jdk 17 holds (items #912, #913), and `ci-diagnostics.md` records the upload-artifact fact. okf-governance passes.)*
 - [ ] T070 SC-001 audit: a table of every research R1 pending major → outcome (merged PR, or backlog item
   with re-check rule); post it as a comment on item #254 and close the item only if no row is empty.
   **Done when**: zero rows without an outcome.

@@ -862,6 +862,18 @@ stopped in `renovate.json`, asserted on the RESOLVED rules by `renovate-workflow
     So a gated rule always sets its own `groupName`, ordered after `js majors`.
   - **Ticking one is a decision.** Read its LIFT condition first. Ticking it before then only re-proposes
     a PR that cannot go green.
+- **Two GitHub-Actions majors are held by `allowedVersions`, not by approval.** Both are regexes or
+  plain ceilings placed after the `ci actions` group rule, so that the last matching rule wins.
+  - **`actions/upload-artifact` stays below v4** (item #912). This forge's runner refuses v4 and later:
+    `GHESNotSupportedError: … upload-artifact@v4+ … not currently supported on GHES`. That was measured
+    on both runner labels on 2026-10-16 (spec 081 research T004), the fourth measurement after specs
+    023, 042 and 048. A Forgejo release note claiming support does not lift it. Re-run the two-label
+    probe and read the step outcome.
+  - **`java-jdk` (the `java-version` that `actions/setup-java` takes) stays at 17** (item #913). It is
+    an Android toolchain pin: the Expo SDK's React Native gradle plugin builds with
+    `jvmToolchain(17)`. It moves in the Expo SDK PR that changes that, never with the action. Its
+    ceiling is the regex `/^17\./`, because `java-jdk` uses semver-partial versioning, under which
+    `<18` admitted exactly 18.0 and blocked 17.
 
 ### A packageRule whose MANAGER does not exist — the rule/extraction gap (item #560)
 
