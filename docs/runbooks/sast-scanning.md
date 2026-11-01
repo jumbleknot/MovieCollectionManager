@@ -67,12 +67,57 @@ runs on every pull request and on every push to `main` (the `push:` trigger is b
 required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no
 `${{ secrets }}`. Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` the agent
 venv → `check-sast-findings.mjs --selftest` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
-on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → upload the `sast-report` artifact
+on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → on PRs,
+`check-dependency-downgrade.mjs` (the downgrade gate, below) → upload the `sast-report` artifact
 (always, for triage). **No `paths:` filter** — a newly-published advisory can hit an unchanged dep, so
 SCA must run regardless of what changed (FR-013).
 
 Forgejo shows no per-step logs; if the `sast` job fails, reproduce locally and read the `sast-report`
 artifact (`findings.json` + `summary.txt`). This is how 031's DAST CI was debugged.
+
+### The downgrade gate — a PR must not move a package INTO an advisory, in any scope (item #776)
+
+`check-dependency-downgrade.mjs --base origin/<base>` runs on pull requests only, after the scan. For each
+committed pnpm lockfile it reads the pnpm-audit advisories the scan already fetched
+(`security/sast/reports/pnpm-audit-native.json`) and the base lockfile from git, and fails when:
+
+- a package was resolved at the base, and **none** of its base versions is inside an advisory's
+  `vulnerable_versions` range; and
+- the head resolves a version that **is** inside that range.
+
+It ignores scope on purpose. The measured case: `nx@23.3.0` pins `undici: 7.29.0` exactly, so the nx 23
+bump re-resolved undici 7.29.1 → 7.29.0, back into ten advisories (2 High). All ten were `pnpm-audit/dev`,
+the gate above stayed green, and the bump was caught only by reading the lockfile by hand (#774, which
+added the `undici@>=7.0.0 <7.29.1` floor in `pnpm-workspace.yaml`). Removing that floor today re-resolves
+7.30.1 → 7.29.0, and this gate fails, naming 18 advisories (6 High). That mutation was run on 2026-11-01.
+
+Two things are deliberately **not** regressions. A package that was already exposed at the base belongs
+to the gate above and its allowlist. A package that is new to the lockfile is an ordinary finding, not a
+change *from* anything. An unexpired allowlist entry for the exact `id` + location accepts a regression
+too: it is the same loader and matcher as the main gate, so accepting a version is one decision, not two.
+To clear a red: restore the clean resolution (usually a pnpm override floor, as #774 did), or allowlist it
+with an operator's approval. The gate fails closed: a missing native report, or a vulnerable range it cannot
+parse, is a failure, never a pass.
+
+### Decision (2026-11-01, item #776): dev-scope High/Critical stays non-blocking
+
+Should a dev-scope High/Critical in a package that runs in a **credentialed** CI job (nx holds the
+remote-cache token, for example) block like a runtime one? **No. The dev/runtime split stays as it is.**
+
+- **The failure that motivated the question is now gated directly.** What went wrong on #774 was a
+  change that made the dev tree *worse*, and the downgrade gate blocks exactly that, in every scope.
+- **Blocking standing dev advisories would block PRs that changed nothing.** A newly published advisory
+  in build tooling would turn every PR red until someone allowlisted it. That is the advisory-churn shape
+  in "When `main` goes red on SAST you didn't change" below, multiplied across the whole dev tree. Most of
+  those packages have no patched release either (braces, node-forge), so the allowlist would grow with
+  entries that carry no decision.
+- **"Runs in a credentialed job" is not something the scan can see.** The audit knows dev from runtime.
+  It does not know which jobs a package executes in, or which secrets those jobs hold. A rule keyed on it
+  would need a hand-kept package list, which goes stale silently.
+
+Revisit if a dev-scope advisory with a credential-exfiltration impact lands on a package that CI runs
+with secrets. Handle that case by its own triage (a pnpm override, or removing the secret from that job),
+not by flipping the whole tier.
 
 ## Triage / allowlist
 
