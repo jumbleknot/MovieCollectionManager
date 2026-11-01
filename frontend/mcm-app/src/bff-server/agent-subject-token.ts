@@ -33,6 +33,82 @@ export const SUBJECT_TOKEN_MAX_TTL_SECONDS = 180;
 
 const DEFAULT_AUDIENCE = 'agent-gateway';
 
+/** Bound on the exchange call: a hung identity provider is a transient refusal, never a hung turn. */
+const EXCHANGE_TIMEOUT_MS = 5000;
+
+/** OAuth error codes that mean "this member's credential is no good", as opposed to an outage. */
+const CREDENTIAL_REJECTIONS = new Set(['invalid_token', 'invalid_grant']);
+
+/**
+ * Keycloak 26.5's standard token exchange answers a revoked or malformed subject token with
+ * `400 invalid_request` and this exact description — measured against the live realm (feature 085
+ * T010), not taken from the RFC, which would say `invalid_token`. `invalid_request` alone is not
+ * enough: Keycloak also uses it for configuration faults ("Requested audience not available"),
+ * which are outages, not a reason to send the member back to sign-in.
+ */
+const KEYCLOAK_INVALID_SUBJECT_TOKEN = 'Invalid token';
+
+/**
+ * A refused mint, classified (feature 085, item #844 — FR-001/FR-002).
+ *
+ * `auth` means the identity provider rejected the member's credential: a 401 the client's agent
+ * transport already answers with one silent renewal, then sign-in. `transient` is everything else —
+ * unreachable, timed out, a server error, or a 4xx that is not about the member (a misconfigured
+ * exchange client answers 403 `access_denied`). That is a retryable 503: the member is not signed
+ * out for an outage, and the turn does not run identity-less, which is what produced the
+ * unexplained "No caller identity is available" refusal this replaces.
+ */
+export class AgentIdentityError extends AuthError {
+  constructor(
+    public readonly outcome: 'auth' | 'transient',
+    public readonly providerStatus: number | null,
+  ) {
+    super(
+      outcome === 'auth' ? AuthErrorCode.AGENT_IDENTITY_REJECTED : AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE,
+      outcome === 'auth'
+        ? 'Your session has expired. Please log in again.'
+        : 'The assistant is temporarily unavailable. Please try again.',
+      outcome === 'auth' ? 401 : 503,
+      outcome === 'auth' ? {} : { retryAfterSeconds: 5 },
+    );
+    this.name = 'AgentIdentityError';
+  }
+}
+
+/**
+ * Log the refusal with its class, the provider's status and its OAuth `error` code (a fixed
+ * vocabulary such as `invalid_request`) — never a token, the `error_description` or the body (FR-005).
+ */
+function refuse(outcome: 'auth' | 'transient', status: number | null, providerError?: string): AgentIdentityError {
+  const context = { action: 'agent_subject_token_mint', outcome, status, providerError };
+  if (outcome === 'auth') logger.warn('agent_identity_refused', context);
+  else logger.error('agent_identity_refused', context);
+  return new AgentIdentityError(outcome, status);
+}
+
+interface OAuthError {
+  error?: string;
+  description?: string;
+}
+
+async function oauthErrorOf(res: Response): Promise<OAuthError> {
+  try {
+    const body = (await res.json()) as { error?: unknown; error_description?: unknown };
+    return {
+      error: typeof body.error === 'string' ? body.error : undefined,
+      description: typeof body.error_description === 'string' ? body.error_description : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function rejectsCredential(status: number, { error, description }: OAuthError): boolean {
+  if (status !== 400 && status !== 401) return false;
+  if (error && CREDENTIAL_REJECTIONS.has(error)) return true;
+  return error === 'invalid_request' && description === KEYCLOAK_INVALID_SUBJECT_TOKEN;
+}
+
 interface SubjectTokenConfig {
   clientId: string;
   clientSecret: string;
@@ -71,7 +147,7 @@ interface TokenExchangeResponse {
 /**
  * Mint a run-scoped subject token by exchanging the user's session access token.
  * @param userAccessToken the user's validated JWT (from `extractRawToken`).
- * @throws AuthError if token exchange is not configured or Keycloak rejects the exchange.
+ * @throws AuthError if token exchange is not configured; AgentIdentityError if Keycloak refuses it.
  */
 export async function mintSubjectToken(userAccessToken: string): Promise<SubjectToken> {
   const { clientId, clientSecret, audience } = readConfig();
@@ -96,26 +172,24 @@ export async function mintSubjectToken(userAccessToken: string): Promise<Subject
   const tokenUrl = `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/token`;
   const requestId = getRequestId();
 
-  const res = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      ...(requestId ? { 'X-Request-Id': requestId } : {}),
-    },
-    body: body.toString(),
-  });
+  let res: Response;
+  try {
+    res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(requestId ? { 'X-Request-Id': requestId } : {}),
+      },
+      body: body.toString(),
+      signal: AbortSignal.timeout(EXCHANGE_TIMEOUT_MS),
+    });
+  } catch {
+    throw refuse('transient', null);
+  }
 
   if (!res.ok) {
-    // Log the failure WITHOUT the subject token or any token material (SC-004).
-    logger.error('Agent subject-token exchange failed', {
-      action: 'agent_subject_token_mint',
-      status: res.status,
-    });
-    throw new AuthError(
-      AuthErrorCode.FORBIDDEN,
-      'Failed to mint agent subject token',
-      403,
-    );
+    const oauthError = await oauthErrorOf(res);
+    throw refuse(rejectsCredential(res.status, oauthError) ? 'auth' : 'transient', res.status, oauthError.error);
   }
 
   const data = (await res.json()) as TokenExchangeResponse;

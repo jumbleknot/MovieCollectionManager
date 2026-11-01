@@ -1,55 +1,48 @@
 /**
- * Session timeout BFF middleware (T-028a)
- * Enforces 30-minute idle timeout and 24-hour absolute timeout on every
- * authenticated BFF request. Handles timeout detection server-side.
+ * Session timeout BFF middleware (T-028a).
+ *
+ * Enforces the idle and absolute timeouts for the session named by the `mcm_session_id` COOKIE, on
+ * the routes that call it — `/bff-api/auth/user`, which the client calls at startup and on
+ * resume. It is NOT applied to every authenticated request (feature 085 FR-013): the other routes
+ * authenticate the access token alone, whose own short lifetime bounds them.
  */
 
-import { getValidSession, touchSession } from '@/bff-server/session-manager';
+import { readLiveSession, touchSession } from '@/bff-server/session-manager';
+import { logger } from '@/bff-server/logger';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
-// ─── Session timeout validation ────────────────────────────────────────────────
-
-export interface SessionTimeoutResult {
-  valid: boolean;
-  reason?: 'idle' | 'absolute';
-}
-
 /**
- * Validate that the session identified by sessionId is still within its timeout bounds.
- * - Returns { valid: true } if the session is alive and updates lastActivityAt.
- * - Returns { valid: false, reason } if timed out.
- * - Throws if session does not exist (missing cookie / tampered).
- *
- * Call this after extractSessionId() and before any protected business logic.
+ * Throw unless the session is live, with the true reason when it is not; slide the idle window
+ * when it is. The reason is audited (feature 085 US5, FR-012): an absolute expiry is never
+ * reported as inactivity.
  */
 export async function validateSessionTimeout(sessionId: string | null): Promise<void> {
   if (!sessionId) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'No session found', 401);
   }
 
-  const session = await getValidSession(sessionId);
+  const result = await readLiveSession(sessionId);
 
-  if (!session) {
-    // Session expired — determine which timeout was hit (best-effort from timestamp absence)
-    // The session was already cleaned up by getValidSession; signal idle timeout by default
-    throw new AuthError(
-      AuthErrorCode.SESSION_IDLE_TIMEOUT,
-      'Your session has ended due to inactivity. Please log in again.',
-      401,
-    );
+  if ('session' in result) {
+    await touchSession(sessionId);
+    return;
   }
 
-  const now = Date.now();
+  if (result.expired === 'missing') {
+    throw new AuthError(AuthErrorCode.SESSION_NOT_FOUND, 'Your session could not be found. Please log in again.', 401);
+  }
 
-  // Double-check absolute timeout (getValidSession may not distinguish)
-  if (now > session.expiresAt) {
+  logger.audit('session_expired', { userId: result.userId, reason: result.expired });
+  if (result.expired === 'absolute') {
     throw new AuthError(
       AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT,
       'Your session has ended for security purposes. Please log in again.',
       401,
     );
   }
-
-  // Update activity timestamp (slide idle window)
-  await touchSession(sessionId);
+  throw new AuthError(
+    AuthErrorCode.SESSION_IDLE_TIMEOUT,
+    'Your session has ended due to inactivity. Please log in again.',
+    401,
+  );
 }

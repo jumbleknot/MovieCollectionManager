@@ -9,6 +9,7 @@ import { env } from '@/config/env';
 import type { JWTPayload, KeycloakUser, RegisterRequest } from '@/types/auth';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import { getRequestId } from '@/bff-server/request-context';
+import { logger } from '@/bff-server/logger';
 
 function keycloakFetch(url: string | URL, init?: RequestInit): Promise<Response> {
   const requestId = getRequestId();
@@ -466,13 +467,21 @@ const redirectUrisEnsured = new Set<string>();
 /**
  * Ensure a Keycloak client's redirectUris list includes all required URIs — the login client
  * unless another is named (feature 083: the backup-consent client has its own callback).
- * Called once per client per process lifetime. Safe to call multiple times (no-op if already done).
+ *
+ * Recorded as done for the process only when Keycloak CONFIRMED it: nothing was missing, or the
+ * update answered 2xx (feature 085, item #753). Before that, a rejected update still latched the
+ * mark, and an address that was never registered stayed that way, silently, until a restart. Any
+ * other outcome is a warning naming the step and status — never the admin token, the client
+ * representation or the URI list — and the next call tries again.
  */
 export async function ensureClientRedirectUris(
   uris: string[],
   keycloakClientId: string = env.keycloakClientId,
 ): Promise<void> {
   if (redirectUrisEnsured.has(keycloakClientId)) return;
+
+  const unrecorded = (step: 'client_lookup' | 'client_fetch' | 'update' | 'error', status?: number) =>
+    logger.warn('redirect_uri_registration_failed', { action: 'ensure_redirect_uris', step, status });
 
   try {
     const adminToken = await getAdminToken();
@@ -482,25 +491,25 @@ export async function ensureClientRedirectUris(
       `${env.keycloakAdminApiBase}/clients?clientId=${encodeURIComponent(keycloakClientId)}`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
-    if (!clientsRes.ok) return;
+    if (!clientsRes.ok) return unrecorded('client_lookup', clientsRes.status);
 
     const clients = (await clientsRes.json()) as { id: string }[];
     const clientId = clients[0]?.id;
-    if (!clientId) return;
+    if (!clientId) return unrecorded('client_lookup', clientsRes.status);
 
     // Fetch the full client representation
     const clientRes = await keycloakFetch(
       `${env.keycloakAdminApiBase}/clients/${clientId}`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
-    if (!clientRes.ok) return;
+    if (!clientRes.ok) return unrecorded('client_fetch', clientRes.status);
 
     const client = (await clientRes.json()) as Record<string, unknown> & { redirectUris?: string[] };
     const existing = client.redirectUris ?? [];
     const missing = uris.filter((u) => !existing.includes(u));
 
     if (missing.length > 0) {
-      await keycloakFetch(
+      const updateRes = await keycloakFetch(
         `${env.keycloakAdminApiBase}/clients/${clientId}`,
         {
           method: 'PUT',
@@ -511,10 +520,12 @@ export async function ensureClientRedirectUris(
           body: JSON.stringify({ ...client, redirectUris: [...existing, ...missing] }),
         },
       );
+      if (!updateRes.ok) return unrecorded('update', updateRes.status);
     }
 
     redirectUrisEnsured.add(keycloakClientId);
   } catch {
-    // Non-fatal — the user may need to add the redirect URI manually
+    // Non-fatal for the request, but unrecorded: the next sign-in retries.
+    unrecorded('error');
   }
 }

@@ -136,3 +136,29 @@ describe('createRefreshingFetch — transport-drop retry', () => {
     expect(r.status).toBe(403);
   });
 });
+
+// Feature 085 (item #844): the BFF now REFUSES a turn it cannot attribute instead of running it
+// identity-less. The two refusals reach this wrapper as plain statuses, and the member-facing
+// promise rests on how it treats each: a 401 (AGENT_IDENTITY_REJECTED) is renewed from once, then
+// sign-in (US1 AS-2); a 503 (AGENT_IDENTITY_UNAVAILABLE) must NOT trigger a renewal — an outage is
+// not a reason to touch the member's session (US1 AS-3).
+describe('createRefreshingFetch — identity refusals (feature 085)', () => {
+  it('renews once and retries on the 401 an identity refusal carries', async () => {
+    const refresh = jest.fn().mockResolvedValue(true);
+    const base = jest.fn().mockResolvedValueOnce(resp(401)).mockResolvedValueOnce(resp(200));
+    const f = createRefreshingFetch(base as never, { isAgentRequest, refresh });
+    const r = (await f('/bff-api/agent/run', { method: 'POST' })) as unknown as Resp;
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(r.status).toBe(200);
+  });
+
+  it('passes a 503 (assistant temporarily unavailable) through without renewing or retrying', async () => {
+    const refresh = jest.fn();
+    const base = jest.fn().mockResolvedValue(resp(503));
+    const f = createRefreshingFetch(base as never, { isAgentRequest, refresh });
+    const r = (await f('/bff-api/agent/run', { method: 'POST' })) as unknown as Resp;
+    expect(r.status).toBe(503);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(base).toHaveBeenCalledTimes(1);
+  });
+});

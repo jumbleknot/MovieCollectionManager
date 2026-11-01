@@ -6,8 +6,8 @@
  *   1. requireAuth → requireMcUser (401/403 exactly as every BFF route; proven by T028a).
  *   2. Validate the decision body (deny-by-default → 400; never forwarded if invalid).
  *   3. Mint a FRESH run-scoped subject token — the paused run held none (SC-004); the gateway
- *      re-exchanges it for the approved writes. Best-effort like /run (the tool-free graph
- *      resumes without it; once US1 tools are deployed the writes require it).
+ *      re-exchanges it for the approved writes. A refused mint refuses the resume exactly as /run
+ *      refuses a turn (feature 085): 401 or a retryable 503, and the gateway is never called.
  *   4. Record an ApprovalDecision to the audit trail (SC-002). OpenSearch is the eventual
  *      append-only sink (T030); `logger.audit` is the MVP record — userId (never PII), thread,
  *      proposal, decision, requestId.
@@ -24,13 +24,12 @@ import { parseResumeRequest } from '@/bff-server/agent-resume';
 import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { resumeMovieAssistantRun } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
-import { logger } from '@/bff-server/logger';
 import { audit } from '@/bff-server/audit-sink';
 
 /**
- * Best-effort fresh subject-token mint for the resume (paused run held none). Returns
- * undefined when token exchange is unconfigured, no user token is present, or the mint fails
- * — the tool-free graph still resumes. Never logged or checkpointed (SC-004).
+ * Fresh subject-token mint for the resume (the paused run held none). Undefined only when token
+ * exchange is not configured (FR-004) or there is no member token; a refused exchange throws
+ * (feature 085). Never logged or checkpointed (SC-004).
  */
 async function resolveSubjectToken(
   headers: Record<string, string | string[] | undefined>,
@@ -38,13 +37,11 @@ async function resolveSubjectToken(
   if (!isSubjectTokenExchangeConfigured()) return undefined;
   const userToken = extractRawToken(headers);
   if (!userToken) return undefined;
-  try {
-    const { token } = await mintSubjectToken(userToken);
-    return token;
-  } catch {
-    logger.warn('Proceeding without agent subject token on resume', { action: 'agent_resume' });
-    return undefined;
-  }
+  // Feature 085 (item #844): a refused mint is NOT swallowed. It propagates as an
+  // AgentIdentityError — 401 (renew, then sign in) or a retryable 503 — and the route answers with it
+  // before the gateway is reached, so no assistant step runs without the member's identity.
+  const { token } = await mintSubjectToken(userToken);
+  return token;
 }
 
 async function gated(req: Request): Promise<Response> {

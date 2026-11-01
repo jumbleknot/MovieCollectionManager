@@ -18,6 +18,7 @@ import {
   touchSession,
   terminateSession,
   getActiveSessionCount,
+  readLiveSession,
 } from '@/bff-server/session-manager';
 import type { Session } from '@/types/auth';
 
@@ -194,6 +195,38 @@ describe('getValidSession', () => {
 
     expect(result).toBeNull();
     expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', idleExpired.userId);
+  });
+});
+
+// ─── readLiveSession (feature 085 US5, FR-012) ─────────────────────────────────
+
+describe('readLiveSession', () => {
+  it('returns the live session', async () => {
+    const session = makeSession();
+    mockedGetSession.mockResolvedValue(session);
+    await expect(readLiveSession('sess-001')).resolves.toEqual({ session });
+  });
+
+  it('reports a missing session as missing, deleting nothing', async () => {
+    mockedGetSession.mockResolvedValue(null);
+    await expect(readLiveSession('unknown')).resolves.toEqual({ expired: 'missing' });
+    expect(mockedDeleteSession).not.toHaveBeenCalled();
+  });
+
+  it('reports an absolute expiry as absolute, even when the session is ALSO idle', async () => {
+    const now = Date.now();
+    const both = makeSession({ expiresAt: now - 1_000, lastActivityAt: now - 3_600_000 });
+    mockedGetSession.mockResolvedValue(both);
+    await expect(readLiveSession('sess-001')).resolves.toEqual({ expired: 'absolute', userId: both.userId });
+    expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', both.userId);
+  });
+
+  it('reports an idle-only expiry as idle', async () => {
+    const now = Date.now();
+    const idle = makeSession({ expiresAt: now + 86_400_000, lastActivityAt: now - 1_900_000 });
+    mockedGetSession.mockResolvedValue(idle);
+    await expect(readLiveSession('sess-001')).resolves.toEqual({ expired: 'idle', userId: idle.userId });
+    expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', idle.userId);
   });
 });
 

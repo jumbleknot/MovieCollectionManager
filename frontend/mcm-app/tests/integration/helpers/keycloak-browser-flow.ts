@@ -127,6 +127,11 @@ export async function walkStepUpLogin(opts: {
   totpSecret?: string;
   state?: string;
   codeChallenge?: string;
+  /**
+   * `max_age=0` makes this a step-up (a fresh authentication however recent the last one was).
+   * An ordinary sign-in — the one `bff-session.ts` drives — passes false (feature 085).
+   */
+  forceReauthentication?: boolean;
 }): Promise<StepUpWalkResult> {
   const cookies = new Map<string, string>();
   const remember = (res: Response): void => {
@@ -146,8 +151,8 @@ export async function walkStepUpLogin(opts: {
     redirect_uri: opts.redirectUri,
     state: opts.state ?? randomBytes(8).toString('hex'),
     prompt: 'login',
-    max_age: '0',
   });
+  if (opts.forceReauthentication ?? true) params.set('max_age', '0');
   if (opts.codeChallenge) {
     params.set('code_challenge', opts.codeChallenge);
     params.set('code_challenge_method', 'S256');

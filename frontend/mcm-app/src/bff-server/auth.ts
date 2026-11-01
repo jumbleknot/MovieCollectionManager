@@ -1,7 +1,11 @@
 /**
  * JWT validation middleware (T-025)
- * Server-side BFF middleware — extracts and validates JWTs from HTTP-only cookies.
- * Falls back to Authorization header for platforms without cookie support.
+ * Server-side BFF middleware — extracts and validates JWTs.
+ *
+ * NOTE (feature 085): `extractToken` still honours an `Authorization: Bearer` header AHEAD of the
+ * cookie. No client sends one — web and Android both authenticate through the HttpOnly cookies
+ * (constitution v2.0.0) — and the path is removed in every environment by 085's second change,
+ * together with moving the tokens off the client.
  */
 
 import { env } from '@/config/env';
@@ -9,18 +13,6 @@ import { validateJwt, extractRoles } from '@/bff-server/token-service';
 import { logger } from '@/bff-server/logger';
 import type { JWTPayload, UserProfile } from '@/types/auth';
 import { AuthError, UnauthorizedError } from '@/types/errors';
-
-// ─── Request extensions ────────────────────────────────────────────────────────
-// In Expo Router API routes, ExpoRouterRequest/Response are used.
-// We define a minimal augmented request type for BFF middleware usage.
-
-export interface AuthenticatedRequest {
-  headers: Record<string, string | string[] | undefined>;
-  cookies?: Record<string, string>;
-  user?: UserProfile;
-  tokenPayload?: JWTPayload;
-  sessionId?: string;
-}
 
 // ─── Cookie name constants ─────────────────────────────────────────────────────
 
@@ -121,7 +113,8 @@ export async function requireAuth(
 }
 
 /**
- * Extract session ID from cookies/headers (does not validate the session).
+ * Extract the session ID from the `mcm_session_id` COOKIE — never a header (does not validate the
+ * session).
  */
 export function extractSessionId(
   headers: Record<string, string | string[] | undefined>,

@@ -59,11 +59,11 @@ Run-scoped identity, when token exchange is configured:
 | Keycloak token-exchange answer | Response | Gateway called? |
 |---|---|---|
 | `200` | the run proceeds (unchanged) | yes |
-| `400`/`401` with `invalid_token` / `invalid_grant` | `401 {code:"AGENT_IDENTITY_REJECTED"}` | **no** |
+| `400`/`401` with `invalid_token` / `invalid_grant`, or `invalid_request` + `"Invalid token"` (Keycloak 26.5, measured) | `401 {code:"AGENT_IDENTITY_REJECTED"}` | **no** |
 | network error, 5 s timeout, `5xx`, or any other `4xx` | `503 {code:"AGENT_IDENTITY_UNAVAILABLE"}`, `Retry-After: 5` | **no** |
 | exchange not configured | the run proceeds without a subject token (unchanged, FR-004) | yes |
 
-Log event `agent_identity_refused {action, outcome: "auth"|"transient", status}`, at `warn` for
+Log event `agent_identity_refused {action, outcome: "auth"|"transient", status, providerError}` (the OAuth `error` code only), at `warn` for
 `auth` and `error` for `transient`. It carries no token and no body.
 
 ## `GET /bff-api/auth/init` (redirect registration)

@@ -168,12 +168,19 @@ keeps the test.
 
 ## R6 — Run-scoped identity fails closed (FR-001 – FR-005)
 
+**Measured (T010, Keycloak 26.5, 2026-11-01).** A subject token whose Keycloak sessions were
+ended, and a malformed one, are both answered **`400 invalid_request` / `"Invalid token"`**, not the
+RFC's `invalid_token`. The first implementation of the table below therefore classified a genuine
+credential rejection as transient. The real-Keycloak integration test caught it, and the rule now
+includes that exact pair. `invalid_request` with any other description, for example "Requested
+audience not available", stays transient: it is a configuration fault, not the member's credential.
+
 **Decision.**
 - `mintSubjectToken` classifies Keycloak's answer:
 
   | Keycloak answer | Error | HTTP |
   |---|---|---|
-  | `400`/`401` with `error` ∈ {`invalid_token`, `invalid_grant`} | `AgentIdentityError('auth')` | `401`, code `AGENT_IDENTITY_REJECTED` |
+  | `400`/`401` with `error` ∈ {`invalid_token`, `invalid_grant`}, **or** `invalid_request` + `"Invalid token"` (measured) | `AgentIdentityError('auth')` | `401`, code `AGENT_IDENTITY_REJECTED` |
   | network error, a 5 s timeout, any `5xx`, **or any other `4xx`** | `AgentIdentityError('transient')` | `503`, code `AGENT_IDENTITY_UNAVAILABLE`, `Retry-After: 5` |
 
   A misconfigured exchange client (`403 access_denied`) is therefore "temporarily unavailable"

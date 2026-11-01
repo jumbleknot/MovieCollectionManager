@@ -38,10 +38,10 @@ The format follows `docs/templates/feature-test-tasks-template.md`, compacted.
 
 ## Phase 1: Setup
 
-- [ ] T001 Rebase `085-bff-auth-fail-closed` on `origin/main` and run `CI=true pnpm install
+- [X] T001 Rebase `085-bff-auth-fail-closed` on `origin/main` and run `CI=true pnpm install
   --frozen-lockfile` in the worktree. **Done when**: `pnpm nx typecheck mcm-app` is clean on the
   unchanged tree, which is the baseline.
-- [ ] T002 Record the baselines in `specs/085-bff-auth-fail-closed/baseline.md`:
+- [X] T002 Record the baselines in `specs/085-bff-auth-fail-closed/baseline.md`:
   - the counts from `grep -lE "Authorization: \`Bearer" frontend/mcm-app/tests/integration/*.test.ts`
     (expect 25) and `grep -rln "extractRawToken" frontend/mcm-app/src` (expect 21);
   - whether CI's integration BFF sets `TRUSTED_PROXY` (`.forgejo/workflows/app-ci.yml`), which
@@ -52,7 +52,7 @@ The format follows `docs/templates/feature-test-tasks-template.md`, compacted.
 
 ## Phase 2: Foundational (blocks US1, US2, US6)
 
-- [ ] T003a Create `frontend/mcm-app/tests/integration/helpers/bff-session.ts`, which provides
+- [X] T003a Create `frontend/mcm-app/tests/integration/helpers/bff-session.ts`, which provides
   `loginSession(username, password)` and returns `{ cookie, setCookies }`. It:
   1. calls `GET /bff-api/auth/init`;
   2. walks Keycloak authorize (PKCE S256, `redirect_uri=${BFF}/auth-callback`) → password → code,
@@ -66,16 +66,16 @@ The format follows `docs/templates/feature-test-tasks-template.md`, compacted.
   BFF-issued refresh token from them (analysis U1). **Done when**: a scratch test using it gets
   `200` from `/bff-api/auth/user`.
 
-- [ ] T003 [P] Add `AGENT_IDENTITY_REJECTED`, `AGENT_IDENTITY_UNAVAILABLE`,
+- [X] T003 [P] Add `AGENT_IDENTITY_REJECTED`, `AGENT_IDENTITY_UNAVAILABLE`,
   `SESSION_RENEWAL_PENDING` and `SESSION_OWNER_MISMATCH` to `AuthErrorCode` in
   `frontend/mcm-app/src/types/errors.ts`, and an optional `clearCookies?: string[]` and
   `retryAfterSeconds?: number` on `AuthError`. **Done when**: typecheck is clean.
-- [ ] T004 Test `frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts`, with new cases:
+- [X] T004 Test `frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts`, with new cases:
   - an `AuthError` carrying `clearCookies` yields one `Set-Cookie` per entry;
   - a 503 `AuthError` with `retryAfterSeconds` yields `Retry-After`.
 
   **Verify RED**: `U mc-api-error.test`. Expected: 2 failing (no `set-cookie`, no `retry-after`).
-- [ ] T005 Implement the append in `handleMcApiError` (`src/bff-server/mc-api-error.ts`) and in the
+- [X] T005 Implement the append in `handleMcApiError` (`src/bff-server/mc-api-error.ts`) and in the
   other AuthError→Response helpers (`error-handler.ts`, `backup-route-support.ts`,
   `account-route-support.ts`), through one shared `authErrorHeaders(err)` in `mc-api-error.ts`.
   **Verify GREEN**: `U mc-api-error.test`, then `U error-handler.test`.
@@ -87,7 +87,7 @@ The format follows `docs/templates/feature-test-tasks-template.md`, compacted.
 **Independent test**: Keycloak rejects the token exchange, and the turn is refused before any
 gateway call; a transient failure gives 503; unconfigured exchange runs as today.
 
-- [ ] T006 [P] [US1] Unit test `src/bff-server/unit-tests/agent-subject-token.test.ts`, covering
+- [X] T006 [P] [US1] Unit test `src/bff-server/unit-tests/agent-subject-token.test.ts`, covering
   AS-1 and AS-3 and the edge-case timeout. With a mocked `fetch`:
   - `400 {"error":"invalid_token"}` and `401` throw `AgentIdentityError` with `outcome: 'auth'`;
   - `503`, `500`, a rejected fetch, an `AbortSignal` timeout and `403 {"error":"access_denied"}`
@@ -96,7 +96,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
     neither the subject token nor the response body (FR-005).
 
   **Verify RED**: `U agent-subject-token.test`. Expected: fails, `AgentIdentityError is not exported`.
-- [ ] T007 [US1] Implement it in `src/bff-server/agent-subject-token.ts`:
+- [X] T007 [US1] Implement it in `src/bff-server/agent-subject-token.ts`:
   - `AgentIdentityError` with `outcome` and a mapping to `AuthError`. `auth` maps to
     `401 AGENT_IDENTITY_REJECTED`; `transient` maps to `503 AGENT_IDENTITY_UNAVAILABLE`,
     `retryAfterSeconds 5`.
@@ -104,7 +104,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
   - The log level is `warn` for auth and `error` for transient.
 
   **Verify GREEN**: `U agent-subject-token.test`.
-- [ ] T008 [P] [US1] Unit test `src/bff-server/unit-tests/agent-run-api.test.ts` and
+- [X] T008 [P] [US1] Unit test `src/bff-server/unit-tests/agent-run-api.test.ts` and
   `agent-resume.test.ts`, covering AS-1, AS-3, AS-4 and AS-5 (FR-001 – FR-004). With exchange
   configured:
   - a mint that throws `auth` gives `401 AGENT_IDENTITY_REJECTED`, and **`createMovieAssistantAgent`
@@ -114,7 +114,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
 
   **Verify RED**: `U 'agent-run-api.test|agent-resume.test'`. Expected: the four configured cases
   fail. Today's code swallows the error and calls the gateway.
-- [ ] T009 [US1] Implement it in `src/app/bff-api/agent/run+api.ts` and `resume+api.ts`:
+- [X] T009 [US1] Implement it in `src/app/bff-api/agent/run+api.ts` and `resume+api.ts`:
   - `resolveSubjectToken` no longer catches. An `AgentIdentityError` becomes its `AuthError` and
     reaches `handleMcApiError`.
   - Update the header comments, which say "a mint failure is non-fatal".
@@ -124,7 +124,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
   code `AGENT_IDENTITY_REJECTED` refreshes and retries once, and a 503 is passed through with no
   refresh (US1 AS-2 and AS-3, analysis C4). This pins existing behaviour; **mutation RED**: change
   the wrapper to refresh on 503, and the 503 case fails.
-- [ ] T010 [US1] Integration test `tests/integration/agent-identity-refusal.integration.test.ts`,
+- [X] T010 [US1] Integration test `tests/integration/agent-identity-refusal.integration.test.ts`,
   covering AS-1 and SC-001 against the real BFF and Keycloak. A member whose Keycloak user sessions
   were ended through the Admin API (`logoutUserSessions`), so the access token is still
   signature-valid, POSTs a billable `/run`.
@@ -149,7 +149,7 @@ gateway call; a transient failure gives 503; unconfigured exchange runs as today
 **Independent test**: member A's session plus member B's refresh token is refused, A's activity is
 unchanged, no cookies are set, and the mismatch is audited.
 
-- [ ] T012 [P] [US2] Unit test `tests/app/bff-api/auth/refresh+api.test.ts`, covering AS-1, AS-2
+- [X] T012 [P] [US2] Unit test `tests/app/bff-api/auth/refresh+api.test.ts`, covering AS-1, AS-2
   and SC-003. Mock `refreshTokens` to return an access token whose (mocked) `validateJwt` payload
   has `sub` B, for a session owned by A. Expect:
   - `401 SESSION_OWNER_MISMATCH`;
@@ -159,7 +159,7 @@ unchanged, no cookies are set, and the mismatch is audited.
 
   The same-owner case still gives `200`. **Verify RED**: `U 'auth/refresh\+api.test'`. Expected:
   the mismatch case fails with `200`.
-- [ ] T013 [US2] Implement it in `src/app/bff-api/auth/refresh+api.ts`. After `refreshTokens`,
+- [X] T013 [US2] Implement it in `src/app/bff-api/auth/refresh+api.ts`. After `refreshTokens`,
   `validateJwt(tokens.access_token)`. If `payload.sub !== session.userId`:
   - `revokeToken(tokens.refresh_token, 'refresh_token')`;
   - `terminateSession(sessionId, session.userId)`;
@@ -167,7 +167,7 @@ unchanged, no cookies are set, and the mismatch is audited.
   - return `401` with the clear cookies.
 
   **Verify GREEN**: `U 'auth/refresh\+api.test'`.
-- [ ] T014 [US2] Integration test in `tests/integration/auth-refresh.integration.test.ts`, covering
+- [X] T014 [US2] Integration test in `tests/integration/auth-refresh.integration.test.ts`, covering
   AS-1. Log members A and B in through `loginSession` (T003a), which creates real BFF sessions. Then call
   `/bff-api/auth/refresh` with A's `mcm_session_id` and **B's BFF-issued** `mcm_refresh_token`, taken
   from B's login `set-cookie`. A ROPC refresh token would not do: it was issued to `mcm-bff-test`,
@@ -178,7 +178,7 @@ unchanged, no cookies are set, and the mismatch is audited.
 
 ## Phase 5: US4 — redirect registration recovers from a rejected update (P3)
 
-- [ ] T015 [P] [US4] Unit test `src/bff-server/unit-tests/keycloak.test.ts`, covering AS-1 – AS-3
+- [X] T015 [P] [US4] Unit test `src/bff-server/unit-tests/keycloak.test.ts`, covering AS-1 – AS-3
   and SC-005. With mocked fetch:
   1. lookup ok, fetch ok, `PUT` 403: the second call `PUT`s again, and `logger.warn
      ('redirect_uri_registration_failed', {step:'update', status:403})` is logged without
@@ -189,14 +189,14 @@ unchanged, no cookies are set, and the mismatch is audited.
 
   **Verify RED**: `U keycloak.test`. Expected: case 1 makes only one `PUT` (latched), and the warn
   is absent.
-- [ ] T016 [US4] Implement it in `ensureClientRedirectUris` in `src/bff-server/keycloak.ts`: mark
+- [X] T016 [US4] Implement it in `ensureClientRedirectUris` in `src/bff-server/keycloak.ts`: mark
   done only on nothing-missing or `res.ok`, and warn at each failure step and in `catch`.
   **Verify GREEN**: `U keycloak.test`. **Mutation RED**: move `redirectUrisEnsured.add` back above
   the `res.ok` check, and case 1 fails.
 
 ## Phase 6: US5 — expiry is reported as it behaves (P3), today's transport
 
-- [ ] T017 [P] [US5] Unit test `src/bff-server/unit-tests/session-manager.test.ts` and
+- [X] T017 [P] [US5] Unit test `src/bff-server/unit-tests/session-manager.test.ts` and
   `session-timeout.test.ts`, covering AS-1, AS-2, FR-012 and SC-006:
   - `readLiveSession` returns `{expired:'absolute'}` for `now > expiresAt`, even when also idle;
   - it returns `{expired:'idle'}` for idle-only, and `{expired:'missing'}` for an absent record;
@@ -205,10 +205,10 @@ unchanged, no cookies are set, and the mismatch is audited.
 
   **Verify RED**: `U 'session-manager.test|session-timeout.test'`. Expected: `readLiveSession is
   not a function`, and the absolute case receives `SESSION_IDLE_TIMEOUT`.
-- [ ] T018 [US5] Implement `readLiveSession` in `src/bff-server/session-manager.ts`, keeping
+- [X] T018 [US5] Implement `readLiveSession` in `src/bff-server/session-manager.ts`, keeping
   `getValidSession` as a thin wrapper until PR (b). Rewrite `validateSessionTimeout` to use it, and
   remove the unreachable "double-check". **Verify GREEN**: as T017.
-- [ ] T019 [US5] FR-013 and FR-014: delete `updateSessionActivity` from
+- [X] T019 [US5] FR-013 and FR-014: delete `updateSessionActivity` from
   `src/bff-server/cache-service.ts` and the unused `AuthenticatedRequest` from `auth.ts`. Correct
   the comments in `session-timeout.ts` ("every authenticated BFF request" → the routes that call
   it, which in PR (a) is `/auth/user`), `auth.ts` and `extractSessionId` (cookie-only, not

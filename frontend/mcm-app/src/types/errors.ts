@@ -32,6 +32,14 @@ export enum AuthErrorCode {
   SESSION_LIMIT_EXCEEDED = 'SESSION_LIMIT_EXCEEDED',
   UNAUTHORIZED = 'UNAUTHORIZED',
   FORBIDDEN = 'FORBIDDEN',
+  // Feature 085: a refresh whose renewed token belongs to someone other than the session owner.
+  SESSION_OWNER_MISMATCH = 'SESSION_OWNER_MISMATCH',
+  // Feature 085: a concurrent request waited for another request's token renewal and it did not land.
+  SESSION_RENEWAL_PENDING = 'SESSION_RENEWAL_PENDING',
+
+  // Run-scoped assistant identity (feature 085, item #844)
+  AGENT_IDENTITY_REJECTED = 'AGENT_IDENTITY_REJECTED',
+  AGENT_IDENTITY_UNAVAILABLE = 'AGENT_IDENTITY_UNAVAILABLE',
 
   // Email verification errors
   VERIFICATION_TOKEN_INVALID = 'VERIFICATION_TOKEN_INVALID',
@@ -46,14 +54,27 @@ export enum AuthErrorCode {
   TOKEN_INVALID = 'TOKEN_INVALID',
 }
 
+export interface AuthErrorOptions {
+  /** Set-Cookie lines the response must carry, e.g. clearing a session that just ended. */
+  clearCookies?: string[];
+  /** Seconds for a `Retry-After` header on a retryable (503) refusal. */
+  retryAfterSeconds?: number;
+}
+
 export class AuthError extends Error {
+  public readonly clearCookies?: string[];
+  public readonly retryAfterSeconds?: number;
+
   constructor(
     public readonly code: AuthErrorCode,
     message: string,
     public readonly statusCode: number = 400,
+    options: AuthErrorOptions = {},
   ) {
     super(message);
     this.name = 'AuthError';
+    this.clearCookies = options.clearCookies;
+    this.retryAfterSeconds = options.retryAfterSeconds;
   }
 }
 
