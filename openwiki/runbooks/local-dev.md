@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Local dev infrastructure & environment variables
-description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — the mcm stack's unprofiled stores and their replica-set and MongoDB 9.0 ownership rules — plus the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
+description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — the mcm stack's unprofiled stores, their replica-set and MongoDB 9.0 ownership rules, and the movie store's dev-only cache/nofile pins — plus the leased test-database pool and the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, mongodb, runbook]
 sources:
@@ -72,7 +72,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -131,10 +131,20 @@ same shape — the difference is the reason each exists:
   and so never chases the member announcement. **Never bring it up with a bare `docker run`:** that
   can initialise the set with the Docker-internal name instead, after which host-side `cargo test`
   fails with "No such host is known" while the container itself looks healthy; the repair is an
-  `rs.reconfig(…, { force: true })` naming `localhost:27017`. A failed or interrupted integration run
-  also leaves `mc_test_*` databases behind (one crash left 31) — harmless, but they accumulate, and
-  the runbook's cleanup command anchors its regex on the 32-hex suffix so the real `mc_db` can never
-  match.
+  `rs.reconfig(…, { force: true })` naming `localhost:27017`.
+- **The movie store is also the one container whose resources are pinned to the dev box.** Its
+  `command` carries `--wiredTigerCacheSizeGB 1` plus `--setParameter
+  wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250`, and the
+  service declares `ulimits.nofile.soft`/`hard` at `64000`. Both halves are load-bearing and both are
+  **dev-only** (`mc-service/compose.prod.yaml` carries its own `command`). The `nofile` pin exists
+  because MongoDB needs `>= 64000` while the devcontainer's Docker-in-Docker daemon hands containers a
+  soft limit of 1024 — mongod survives that while idle and then exhausts it under a real run, the
+  replica set can no longer reach itself on `localhost:27017`, and the container crash-loops. The
+  cache and sweeper pins answer a different failure with an *identical* symptom: WiredTiger's default
+  cache is `max(0.5 * (RAM - 1 GB), 256 MB)` (~7.9 GB on a 16 GB box, with no swap) and MongoDB raises
+  the sweeper thresholds to `closeIdleTime=600 s` / `closeMinimum=2000`, which is wrong for a workload
+  that churns thousands of namespaces a minute. `--setParameter` is **startup-only** — it cannot be
+  changed at runtime — so a mongod that died of either resource must be recreated, not reconfigured.
 - **`mcm-bff-store-mongo` is a plain standalone `mongod`** — no `--replSet`, no `directConnection`,
   no rs-init sidecar. The BFF store does single-document upserts only, so it needs no transactions.
   It publishes on `27018` so it cannot collide with the movie store's `27017`, and it is the store the
@@ -143,6 +153,51 @@ same shape — the difference is the reason each exists:
 - **`mcm-bff-cache-redis` is the third**, and the BFF's login path reads it with no typed wrapper
   around the first call — with Redis down, `/login` returns a bare 500 "Authentication failed" rather
   than an infrastructure error, so check Redis first when login breaks.
+
+## The integration harness leases test databases, it does not mint them
+
+`common::test_db()` used to mint a fresh `mc_test_<uuid>` database per call and drop it on release.
+That made the namespace count scale with **test** count (~180 databases, ~3 400 WiredTiger idents per
+run) and leaked on every panic, because a panicking test never reached `cleanup_db`. It now leases a
+bounded pool slot instead:
+
+- The database is named `mc_test_s<slot>` and the slot space is capped at `MAX_SLOTS = 64`, with
+  bookkeeping in the `mc_test_pool.leases` collection of the `mc_test_pool` database (which never
+  carries test data).
+- **Cleaning happens on ACQUIRE, not on release.** `reset()` deletes the documents in `movies` and
+  `movie_collections` and re-runs the idempotent `create_indexes` — deleting documents rather than
+  dropping the database, because a drop unlinks the idents the next acquire would recreate. That
+  inversion is what makes a panicking test cost nothing, and it is why `cleanup_db` is now a
+  deliberate no-op: the guarantee genuinely moved, so its ~148 call sites still read correctly.
+- A slot is held for the **duration of a test** and handed back by a thread-local destructor, not
+  owned by a thread identity — libtest spawns a new thread per test, so keying slots by `ThreadId`
+  would have reproduced one-slot-per-test churn (measured: 41 tests produced 39 slots).
+- A lease whose holder pid has exited is reclaimable **immediately**; the 600 s staleness window is the
+  backstop for a holder that cannot be judged (another host, unreadable pid). Without the liveness
+  path the slot space would be exhausted within a single run, since the integration binaries run one
+  after another.
+- If every slot is held by a live process the pool degrades to the old unique `mc_test_<uuid>` name
+  rather than sharing a database with a running test — so only that fallback path (and runs predating
+  the pool) leaves the debris the runbook's cleanup command clears, whose regex is anchored on the
+  32-hex suffix so the real `mc_db` can never match.
+
+The properties a passing suite cannot show — same database returned twice on one thread, a pool-slot
+name rather than a unique one, rows left by a deliberate panic gone for the next acquisition, product
+indexes present on acquire, and stale-versus-live lease reclaimability — are pinned by
+`backend/mc-service/tests/integration/pool_test.rs`. If `cleanup_db` is ever made to drop or wipe
+again, expect the namespace churn to come straight back.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Free
+  Free --> Leased: try_claim_slot
+  Leased --> Leased: reset on acquire and refresh lease
+  Leased --> Free: thread-local destructor at test end
+  Leased --> Free: holder pid exited or lease older than 600 s
+```
+
+How a pool slot moves between free and leased: in-process release via the thread-local destructor,
+cross-process reclaim via holder liveness or the staleness window.
 
 ## One-time bootstrap (per machine)
 

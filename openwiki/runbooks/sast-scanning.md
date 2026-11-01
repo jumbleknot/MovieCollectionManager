@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: SAST & SCA static scanning
-description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
+description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
@@ -74,7 +74,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T14:00:59.999Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # SAST & SCA static scanning
@@ -82,7 +82,9 @@ verified:
 Four scanners — Semgrep over first-party TS/JS and Python source (the target filter also admits the two
 workflow trees and first-party Dockerfiles), cargo audit over Rust dependencies, pnpm audit over **every
 committed `pnpm-lock.yaml`** (root and nested workspace alike), and pip-audit over **all four** Python
-venvs — feed one normalized findings report and one blocking `sast` CI job. It complements
+venvs — feed one normalized findings report and one blocking `sast` CI job, which holds **two** gates
+over that report: the severity × scope gate (`check-sast-findings.mjs`) and a pull-request-only gate
+over what the change did *to* the dependency graph (`check-dependency-downgrade.mjs`). It complements
 [DAST scanning](./dast-scanning.md): DAST exercises the running app, this scans source and the dependency
 graph at rest. It is also disjoint from [infra-image scanning](./infra-image-scanning.md), which scans
 pulled third-party container images rather than first-party code or first-party dependency graphs. For
@@ -99,10 +101,15 @@ flowchart TD
   R --> G["check-sast-findings.mjs"]
   G --> P["exit 0: no un-allowlisted blocking finding"]
   G --> X["exit 1: un-allowlisted blocking finding, or GATE-SCOPE ASYMMETRY"]
+  R -->|"pull requests only, after the scan"| D["check-dependency-downgrade.mjs: base lockfiles from git vs the advisories already fetched"]
+  D --> DP["exit 0: no resolution moved into an advisory"]
+  D --> DX["exit 1: a resolution moved INTO an advisory, in any scope"]
 ```
 
 Four scanners, one normalization step, one report, and one gate with exactly two blocking exit paths —
-the second of which is about the gate's own coverage rather than about the code.
+the second of which is about the gate's own coverage rather than about the code. A second, PR-only gate
+reads the same report's already-fetched advisories against the base lockfiles, so a change that makes an
+advisory newly applicable is caught even where the severity × scope rule cannot fire.
 
 ## Running it, and where the output lands
 
@@ -113,8 +120,9 @@ pnpm nx sast infrastructure-as-code        # → node scripts/sast-scan.mjs --sc
 node scripts/check-sast-findings.mjs       # the gate: exit 0 pass / 1 fail / 2 bad input
 ```
 
-Reports land in `security/sast/reports/` (gitignored): `findings.json` is the gate's input contract, with
-`findings.sarif`, `summary.txt` and `<scanner>-native.json` for triage. `--scope changed --base <ref>`
+Reports land in `security/sast/reports/` (gitignored): `findings.json` is the severity gate's input
+contract, `pnpm-audit-native.json` is the downgrade gate's input, and `findings.sarif`, `summary.txt`
+and the remaining `<scanner>-native.json` are for triage. `--scope changed --base <ref>`
 narrows Semgrep to the files changed against `<ref>` (SCA still runs full), `--only <scanner,...>`
 restricts the scanners — the lever that gets you the SCA half when Semgrep's registry is unreachable —
 and `--emit-allowlist` writes a proposed baseline for triage.
@@ -122,15 +130,17 @@ and `--emit-allowlist` writes a proposed baseline for triage.
 The blocking `sast` job in [guardrails.yml](../../.forgejo/workflows/guardrails.yml) runs on every pull
 request and every push to `main`, with **no `paths:` filter**. It installs the toolchain, `uv sync`s all
 four Python surfaces, runs the gate's `--selftest` and the custom rules' fixtures *before* the scan, then
-the scan (`--scope changed` on a PR, `--scope full` on push) and the gate, and uploads the `sast-report`
-artifact unconditionally (14-day retention — a diagnostic, not a record).
+the scan (`--scope changed` on a PR, `--scope full` on push) and the gate — then, **on pull requests
+only**, the dependency-downgrade gate, which is positioned there because it consumes the native report
+the scan just wrote — and uploads the `sast-report` artifact unconditionally (14-day retention — a
+diagnostic, not a record).
 
 **Read a red `sast` from the failure digest, never from runner logs** — the forge API exposes no log,
 artifact or per-run-jobs endpoint at all, so there is nothing to hunt. Every `run:` step in this job is
 wrapped in `scripts/ci-log-step.sh`, which mirrors its combined stdout+stderr into a run- and
 job-scoped directory the digest collector reads at the highest priority; the digest therefore names
-the failing step (`sast-gate`, `sast-static-scan`, …) and carries its output tail as a `step:sast-…`
-excerpt:
+the failing step (`sast-gate`, `sast-static-scan`, `sast-downgrade-gate`, …) and carries its output tail
+as a `step:sast-…` excerpt:
 
 ```bash
 node scripts/ci-status.mjs failure --pr <n> --job sast        # the digest comment (--job takes the bare
@@ -147,6 +157,96 @@ artifact (`findings.json` plus `summary.txt`) is the other route, but it is reac
 forge web UI — the API has no artifact endpoint. See
 [CI self-serve diagnostics](./ci-diagnostics.md) for the digest's three-way published/broken/absent
 outcome and the bundle layout.
+
+## The downgrade gate — a PR must not move a package INTO an advisory, in any scope
+
+The `sast` job carries a **second** gate over the same report, and it is the one that closes the shape
+the severity × scope rule structurally cannot see. `check-dependency-downgrade.mjs --base origin/<base>`
+runs on **pull requests only**, in the `sast` job, **after** the scan step — and that position is
+architectural rather than convenient: its input is the pnpm-audit native report the scan already wrote
+(`security/sast/reports/pnpm-audit-native.json`) plus the base lockfiles read out of git
+(`git show <base>:<lockfile>`). So it costs **no extra registry round-trip** and it **cannot disagree
+with the report the main gate read** — the two are looking at the same advisories. A push has no base to
+have regressed from, which is why the step is PR-scoped.
+
+The rule, per committed lockfile and per advisory:
+
+- the package was resolved at the **base**, and **none** of its base versions is inside that advisory's
+  `vulnerable_versions` range — it was clean for this advisory; and
+- the **head** resolves a version that **is** inside the range, and that version is new to the lockfile.
+
+It is deliberately **scope-blind**: a regression fails in every scope, dev included. "Clean" is a fact
+about the advisory's own range, not an inference from version order, so a *sideways* move into a range
+blocks exactly as a downgrade does. Two shapes are deliberately **not** regressions: a package already
+exposed at the base (the severity × scope gate and its allowlist own it), and a package — or a whole
+lockfile — new in this change (an ordinary finding, not a change *from* anything).
+
+**Why it exists (item #776, measured 2026-10-17 on spec 081 US3 PR 3b, #774):** `nx@23.3.0` pins
+`undici: 7.29.0` **exactly**, and the nx 23 bump re-resolved undici DOWN from 7.29.1, back into **ten**
+advisories (two High) that 7.29.1 fixes. All ten read as `pnpm-audit/dev` — which never blocks — so the
+severity × scope gate stayed green and the regression was caught only by diffing the lockfile by hand.
+The fix was the floor `undici@>=7.0.0 <7.29.1: '>=7.29.1 <8'` in `pnpm-workspace.yaml`; removing that
+floor today re-resolves 7.30.1 → 7.29.0 and this gate fails, naming **18** advisories (six High) — that
+mutation was run on 2026-11-01.
+
+**Accepting a version is one decision, not two.** The gate reuses `evaluate` and `loadAllowlist` from
+`check-sast-findings.mjs` and `pnpmAdvisoryId` / `pnpmFindingLocation` from `sast-scan.mjs`, so the
+entry that suppresses the finding in the main gate — matched on the same `id` and the same location
+string, including a nested tree's `<workspace>:` prefix — suppresses it here too, under the same expiry
+rule. **It fails closed**: a missing or empty native report, an unreadable lockfile, or a
+`vulnerable_versions` range the parser does not understand is a failure with the reason printed, never a
+pass — a range it cannot read is a range it cannot judge. Exit codes: **0** no regression, **1** a
+regression or an input it could not read, **2** usage error.
+
+```bash
+node scripts/check-dependency-downgrade.mjs --base origin/main
+node scripts/check-dependency-downgrade.mjs --base <ref> --native <path> --allowlist <path>
+```
+
+```mermaid
+flowchart TD
+  R["read the pnpm-audit native report the scan wrote"] --> L{"the lockfile existed at the base?"}
+  L -->|no| SK["skip: nothing to regress from"]
+  L -->|yes| B{"any base version inside the advisory range?"}
+  B -->|yes| A["not a regression: the severity gate and its allowlist own it"]
+  B -->|no| H{"the head resolves an affected version new to the lockfile?"}
+  H -->|no| OK["not a regression"]
+  H -->|yes| AL{"an unexpired allowlist entry matches id and location?"}
+  AL -->|yes| SUP["accepted by allowlist: one decision, not two"]
+  AL -->|no| FAIL["exit 1: a resolution moved INTO an advisory, in any scope"]
+```
+
+*The downgrade gate's decision path: a base-versus-head resolution comparison, limited to advisories this
+change newly made applicable, with the main gate's own allowlist as the only acceptance route.*
+
+`--base` is required; `--native`/`--allowlist` point the gate at a throwaway pair. An unrecognised flag
+or a missing value is a usage error (exit 2) through the shared `scripts/lib/argv-contract.mjs`
+contract. Two mechanical details follow from the fail-closed stance: there is deliberately **no
+`semver` dependency** (the root workspace declares none, and adding one would move the very lockfile
+this gate judges), so the range parser handles only the small regular subset npm advisories actually
+use and throws on anything else; and a pnpm 11+ lockfile is **two** YAML documents, so resolved versions
+are read line by line from the `packages:` sections, with `snapshots:` keys deliberately not read
+because they carry peer suffixes.
+
+### Decision (2026-11-01, item #776): dev-scope High/Critical stays non-blocking
+
+Should a dev-scope High/Critical in a package that runs in a **credentialed** CI job (nx holds the
+remote-cache token, for example) block like a runtime one? **No — the dev/runtime split stays as it is**,
+for three stated reasons:
+
+- **The failure that motivated the question is now gated directly.** What went wrong on #774 was a
+  change that made the dev tree *worse*, and the downgrade gate blocks exactly that, in every scope.
+- **Blocking standing dev advisories would block PRs that changed nothing.** A newly published advisory
+  in build tooling would turn every PR red until someone allowlisted it — the advisory-churn shape,
+  multiplied across the whole dev tree. Most of those packages have no patched release either (braces,
+  node-forge), so the allowlist would grow with entries that carry no decision.
+- **"Runs in a credentialed job" is not something the scan can see.** The audit knows dev from runtime.
+  It does not know which jobs a package executes in, or which secrets those jobs hold. A rule keyed on
+  it would need a hand-kept package list, which goes stale silently.
+
+**Revisit** if a dev-scope advisory with a credential-exfiltration impact lands on a package that CI
+runs with secrets. Handle that case by its own triage (a pnpm override, or removing the secret from
+that job), not by flipping the whole tier.
 
 ## Gotchas
 
@@ -173,6 +273,21 @@ outcome and the bundle layout.
   reporting a false clean. No secret is ever required — see
   [Secrets management](../invariants/secrets-management.md) for the broader no-clear-text-secrets
   posture this fits into.
+- **A red `sast-downgrade-gate` is not a new advisory — it is your change's side effect, and the scope
+  argument does not apply to it.** The message names a package, its base version(s), the version it now
+  resolves to, and the advisory it entered, with the fixing range. Because the gate is scope-blind by
+  decision (the dev tree runs in CI jobs that hold credentials), "it's only a dev dep" is not a response
+  here; the response is to restore the clean resolution — normally the override floor the message
+  suggests — or to record an operator-approved allowlist entry. If you take the override route, the
+  floor obeys the two-halves rule below, or `check-override-consistency.mjs` fails the same PR for a
+  different reason. Two shapes are *not* regressions and should not be argued about as if they were: a
+  package already exposed at the base, and a package or lockfile new in this change — both are ordinary
+  findings the severity × scope gate and its allowlist already own. Note also that the gate **cannot run
+  locally without a native report**: `--native` points it at one, and an absent or empty report is exit
+  1 by design, so a local invocation against a clean checkout fails rather than reporting "no
+  regression". Its guard test checks the **wiring** as well as the rule, because a gate that is never
+  invoked is indistinguishable from no gate — that `guardrails.yml` invokes it inside the `sast` job,
+  PR-scoped, and *after* the scan step that writes its input.
 - **The SCA half runs full on every push, unconditionally** — a newly published advisory can hit an
   unchanged dependency, so it is never path-gated. This means `main` can legitimately go red on a
   dependency nobody touched; that is the gate working, not a defect, and it recurs.
@@ -180,6 +295,16 @@ outcome and the bundle layout.
   reachable from a runtime path across the whole workspace, not just the root package — checking scope
   by hand requires a recursive, workspace-spanning query, not a root-only one; getting this wrong has
   previously produced a false "gate bug" report.
+- **…and dev-scope High/Critical STAYS non-blocking — that was decided, not overlooked (2026-11-01,
+  item #776).** A dev-scope High/Critical in a package that runs in a *credentialed* CI job (nx holds
+  the remote-cache token, for example) does **not** block, and the three reasons are recorded in the
+  decision section of
+  [docs/runbooks/sast-scanning.md](../../docs/runbooks/sast-scanning.md): the #774 failure shape is now
+  gated directly by the downgrade gate, blocking standing dev advisories would redden PRs that changed
+  nothing across a tree whose packages mostly have no patched release, and "runs in a credentialed job"
+  is not something the audit can see. Revisit if a dev-scope advisory with a credential-exfiltration
+  impact lands on a package CI runs with secrets — and handle that case by its own triage (a pnpm
+  override, or removing the secret from that job), not by flipping the whole tier.
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
   package", which is a different question from "is the vulnerable code path exercised". The two live
@@ -566,8 +691,9 @@ worked example was `@graphql-tools/utils`, patched only in 12.0.1 while `graphql
 when the consumers widened to `^12.0.3` and a lock refresh carried the patched version — a reminder
 that a time-box is a holding position, not a fix.
 
-Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, and the
-step-by-step "gate went red on an untouched dep" playbook:
+Full scanner matrix, local invocation, the CI gate steps, the triage/allowlist workflow, the
+downgrade gate's full procedure and the 2026-11-01 dev-scope decision, and the step-by-step "gate went
+red on an untouched dep" playbook:
 [docs/runbooks/sast-scanning.md](../../docs/runbooks/sast-scanning.md). Field rules for allowlist
 entries and the full expiry semantics:
 [security/sast/README.md](../../security/sast/README.md).

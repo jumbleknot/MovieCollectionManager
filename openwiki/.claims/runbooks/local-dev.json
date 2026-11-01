@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d4865da3c4914c099564326f8a268f7fb7a7eea90e75ee962c5bfa4fc5e76f11",
+  "pageVersion": "sha256:8faf49a3bbf0ab4356e37600042c9ef24b00d601fd6badf57a9c898e6c3e0390",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -608,7 +608,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L118-L149",
-          "version": "repo-lines-v1:sha256:b91a96048de86b2e6761f6ec3ec1291c8373bd53260ac8288d97dc314d5b346f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
+          "version": "repo-lines-v1:sha256:83a74a1af21c094730876e9c139f9c9c53b07e761b28b7a4710c135407210fcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L151-L182",
@@ -618,7 +618,7 @@
     },
     {
       "id": "claim_22b36488d66b4b1fb8c162925aeb02c6",
-      "statement": "Bringing the movie-store Mongo up with a bare `docker run` instead of the stack can initialise the replica set with the Docker-internal hostname, after which host-side `cargo test` fails with \"No such host is known\" while the container itself looks healthy; the documented repair is an `rs.reconfig(…, { force: true })` naming `localhost:27017`. A failed or interrupted integration run also leaves `mc_test_*` databases behind (one crash left 31) — harmless but accumulating, which is why the cleanup command anchors its regex on the 32-hex suffix so the real `mc_db` can never match.",
+      "statement": "Bringing the movie-store Mongo up with a bare `docker run` instead of the stack can initialise the replica set with the Docker-internal hostname, after which host-side `cargo test` fails with \"No such host is known\" while the container itself looks healthy; the documented repair is an `rs.reconfig(…, { force: true })` naming `localhost:27017`. Stale `mc_test_*` debris is no longer a consequence of every interrupted run: the integration harness leases bounded pool slots and `cleanup_db` is a deliberate no-op, so the cleanup command's debris now comes from the pre-pool behaviour and from the pool's unique-name fallback — which is why its regex is anchored on the 32-hex suffix, so the real `mc_db` can never match.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/local-dev.md#L146-L152",
@@ -629,8 +629,8 @@
           "version": "repo-lines-v1:sha256:cce1ef58b88be4f35c7b7a46b2bd5f9d130e1cb817f591630515f41fa5ea256d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAzOWEyMjA3MjBkNDk2NGNhODZjNWU0ODk0MTBjODc2NzdiMTc5ZTJiZTc1M2YwNjA5NjZhNTE0YTUyMTY5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ0NzlmZGE2ZWM2YmIwNmRiYWNkZGUxZjFmMWU5MWRkNDRlYzJiYWI3M2U5OGU0NWJhMjc3ZmRlYTBhMDcwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDY5ZmIwYWY2MTA4ZGViOTgxZWZlMDYyN2NlMjM0ZjQ4NjZkNDFjM2ExZjM4Yjc2NTFiZTg3ODY0ZmYwMTAzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVlOTg0ODQ3M2Y1Njc1ODNkZWZlNzYwOWJmMjgxZDc2ZTlhZmM1NmJjOWYyZTFmMjZjMmJhNmFhOWRiYzQ4NiJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L130-L149",
-          "version": "repo-lines-v1:sha256:98cf7a8c3b34d53b5461376e93652d2b557d0c9f69ab15d474872d711ff904ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNmZhNzFlZTcxMTQxOTNiZjllNWEwOTg2MmM5OTAxYWE4MjgzNWYzNmE0ZTIzNDYzMzNmZjJhYjVjYTc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWRiNzJiYjExNTQ2MjQ2OTRkN2U1NmRlNjIzZjMxMjk4MDk3NDQyZDg3YjcxOWE3NDliMjNmMzVjMTVhN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L118-L149",
+          "version": "repo-lines-v1:sha256:83a74a1af21c094730876e9c139f9c9c53b07e761b28b7a4710c135407210fcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODQyMGE2MmIwMDBjODUyNjkzNWI5OTJkNGUyZmYzNzlmYjU3NTE3NDhhMzkxY2JhNTIzOTRjYjdiNjdlNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzdmNTVhNDc1ZGJlYmQ0OTg1NDFjN2Y1YTU0MmZkOTYzMjI4OGIwYTFkY2Q4NjlkNzc0ZWNjZGQwZDVhMTIifQ"
         }
       ]
     },
@@ -644,7 +644,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L132-L185",
-          "version": "repo-lines-v1:sha256:050e3ca6d8d6c9fb94bc8ea2057ddb1a6b817cbba42569e949462f85b2cf3d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZmU1MTJhMDBjNmJlMmE2ZmExMjQ5MzQwMDg2ZGZlNDk1ZTdlMTAyZjUwMjczOWQ3NTk0NzRmOTQyOWU4MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MTdjMDc4OWNjMTEyNDU2MzczNTE2MWI4NDg1NGY0ZWNjZjYwYjFlMjc5ZWVkYjVlYzlkNGQwODU0NWEwNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZTFlMTFkNmVjZjU1MjQwMWE1MTEzODIwZGYxY2IyZDUyMjg2ODI3MjhlNjNmYWEwNzc0YjY4ODA2YWEyNDIifQ"
+          "version": "repo-lines-v1:sha256:1bf35396c68f94c8a4e3fe487d9fdacc643402c795649cf4db15c62f04937cef:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZmU1MTJhMDBjNmJlMmE2ZmExMjQ5MzQwMDg2ZGZlNDk1ZTdlMTAyZjUwMjczOWQ3NTk0NzRmOTQyOWU4MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MTdjMDc4OWNjMTEyNDU2MzczNTE2MWI4NDg1NGY0ZWNjZjYwYjFlMjc5ZWVkYjVlYzlkNGQwODU0NWEwNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZTFlMTFkNmVjZjU1MjQwMWE1MTEzODIwZGYxY2IyZDUyMjg2ODI3MjhlNjNmYWEwNzc0YjY4ODA2YWEyNDIifQ"
         }
       ]
     },
@@ -809,10 +809,56 @@
           "version": "repo-lines-v1:sha256:8947d8c59f02667892ea7144581867dd38040ce868a4d0d146100859ccc789d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRmOGE5NWFlMjA2MmNhZjc5ZDdhNDYyMzZjODdmYmM3YmJlM2YyOTg3MzM3NzUwYTFlMDczNDZiNDc2YzBlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVjODk2ZmJhYzllOGIyMmJjOGE3MDg3ZTUxMmM0ZDE0Y2UxZmU4YWVkN2YwYmU5NmQ0MDYwMDhmNzg3Mjc2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ1ODc0NGFiNzAxODRkYjdmYWFkYzZmYjlmOGY1YWQ3YjU1OGY5NzFlNjU0MDY1NTE1ZGViYjJhOWFmY2Y4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a6917dfec034483da5781b8f5f52927f",
+      "statement": "The movie store container carries dev-only resource pins that answer two different crashes with an identical symptom. `ulimits.nofile.soft`/`hard` are pinned at `64000` because MongoDB requires that and the devcontainer's Docker-in-Docker daemon hands containers a soft limit of 1024, which mongod survives while idle and then exhausts under a real integration run — the listener logs \"Too many open files\", the single-member replica set can no longer reach itself on `localhost:27017`, and the container crash-loops. Separately, `--wiredTigerCacheSizeGB 1` caps a WiredTiger cache whose default is `max(0.5 * (RAM - 1 GB), 256 MB)` (~7.9 GB on the 16 GB dev box, which has no swap), and `--setParameter wiredTigerFileHandleCloseIdleTime=30 --setParameter wiredTigerFileHandleCloseMinimum=250` restore WiredTiger's own sweeper defaults, which MongoDB had raised to `600 s` / `2000` — wrong for a harness that churns thousands of namespaces a minute, leaving data handles unswept and the heap climbing until the OS killed mongod. Both halves are dev-only (`mc-service/compose.prod.yaml` carries its own `command`), and `--setParameter` is startup-only, so a mongod that died of either resource must be recreated rather than reconfigured.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L53-L58",
+          "version": "repo-lines-v1:sha256:9c51d8c990109de519d69907a8c23be90ac3892ea90919eb6c86d8ec4757cc77:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk1MTRmZTg0YWRjZDU4NDFmOTkzYTE2ZDAzZmQwZTM5NzFhNTliZjI4M2UwYWVlM2JlOTZlYzQ0YWVjOGYwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0MmI4ZTA4ZjYwY2NiYjVmM2VmN2NjZmY5ZmQxNTdmMzY1NjU0NjY1YWJiNWUyMmFiZWUwY2ZiZDkwYjU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjkyNmUyOWNjZTVkM2NkNzZkNjBlNDMyOGNmNzFhZjVhZTgxNjExNTQ1MTI3MzdjYjBjNjQzODY3ZWNmMDI2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRhZjdiOTgxY2UyM2RiNGFkYmIzYzVjMzI1MDhjMTE2NjI5ZGNiMWNkODVkOGRmZTU2OTMyMzNhNzRhNDgzMSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L32-L96",
+          "version": "repo-lines-v1:sha256:89b94d5f2c7beeb15ab0c1e18547352f57023d0744d8f7d3acce6c86bf493aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ODYzNDQ5NTJiNzY1ZDFhNWY5NmE4ZGNiYTVmMjg3YjE0YzMxZDQ3NjY5ODAyNGUzOGFlMGFmYzcyNGE3YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYzM1MGI2OWFiMzY0NDc5ZTJkOTBjNmRhNzJkNWY3OGI1ZmRlYTc2OGU1NjIwMTFiNDkzYzY4MGQ5ZjQyZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5Nzk1ZGI3YTlhOWNhMzQ2OGIwYTk0MTk2ZDU2MDA5NjJjYzJjMGZmYmNiNzkyNWY2MThkNmZhMWI0MzczNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NmVmZmI3MmUzZDEzMDJiNTdmZTY3NWE4NWI3OWQyOTJjMWVjNmNjYzUzODczYjc5YTMxMDAwNTNmNTlkYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad6d492bff0e4964af17d86c93283487",
+      "statement": "The mc-service integration harness no longer mints a database per test. `common::test_db()` leases a bounded pool slot named `mc_test_s<slot>` (`MAX_SLOTS = 64`, bookkeeping in the `mc_test_pool.leases` collection of the `mc_test_pool` database) and **resets on acquire** rather than on release: `reset()` deletes the documents in `movies` and `movie_collections` and re-runs the idempotent `create_indexes`, deliberately deleting documents rather than dropping the database because a drop unlinks the WiredTiger idents the next acquire would recreate. That inversion is what makes a panicking test cost nothing, and it is why `cleanup_db` is now a deliberate no-op whose ~148 call sites were left in place. A slot is held for the duration of a test and returned by a thread-local destructor rather than owned by a thread identity, because libtest spawns a new thread per test (keying by `ThreadId` reproduced the churn: 41 tests produced 39 slots). A lease whose holder pid has exited is reclaimable immediately — the integration binaries run one after another, so without that the slot space is exhausted inside a single run — with a 600 s staleness window as the backstop for a holder that cannot be judged, and if every slot is held by a live process the pool degrades to the old unique `mc_test_<uuid>` name rather than sharing a database with a running test.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L171-L210",
+          "version": "repo-lines-v1:sha256:40c6053d30e1e8cf738a5f60a2675546b17caca793aa21c03a21d7b272cc5259:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlOTI0MGE4MGQwMWM1ZjBiZTQxNTFhNjViYTllYTc5ODQ2YzhhYjQ5NWEzMTQyMWVhOTRhYTViYmM5MzY3MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyOTEyMDUzZWQxMDBlOWEwMWJjYWZmZDg5ZWQ2NWZjZjVjODBiN2ZmZjc3ZmViYTc1OTRmMzE1MmNhMzAxMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhOTVkMTk5ZjNjMzY3ZmY4YTdhMGM0MWRhMDFhOWRjYTc0ZGRmOWUxNzllNWY3ZWI2MDRkZjM2ZjdhZTZlY2YifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L30-L58",
+          "version": "repo-lines-v1:sha256:4391c4dd712b6eca696d0027b6d39ac24abf4f826452c07432196736c7708489:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NDQwNWI3YjliNjc1OGQyNDk3NjM5NzRjZDZmZTE4MWM5YTZlY2RlZWM2NDA2YzhmNTk1MmUxNGYxMGE2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNTJkNTc3OWE2ZDc4YTM4YjUyZTg0MzE5M2FlMTEzYzNmNTUxOWYzNWY2NGNiMGE0NmZlNDIzNjU1NzJjOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlZjMzMGVjOTY0MGIyNGFhMTkyZTcwNGZhOWM3YWMxMTY1ZTIxZjQ2NGYwYmQxY2I1MjRkMmQzNDFhNGE5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzNGZlODBmMTc4ZmE2NDA4NzVkOTQ1ZTdhNmY5NzI5ODQ2MDE3ZGM4YWNhOTI5N2YwMGMyZjM3NDU4NzM3MGEifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/common/mod.rs#L363-L441",
+          "version": "repo-lines-v1:sha256:16faddb3f108073b48f7c4d1197375e59f0c622c58a40efe89770a9f84c70915:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MjIxMzcwMDM1OTM1OWZlZjVhZDFhYmVlMjNmYTMxYmNmNDFhMDJkNjMwMDliNzE2Mzg1ZWM4ZTczOGQxYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyY2RlYTgwZjgyYmI1OGFhMjNhMjllZjRkNWQzNjA1NjNhYjA5ODdkYzk1NjkyZGUwODNlYTNkNzI3NjI1Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ea9e8f4d279483a9384eca8dfd04268",
+      "statement": "The test-database pool's properties that a passing suite cannot show are pinned by `backend/mc-service/tests/integration/pool_test.rs`: two acquisitions on one thread return the same database, a leased database is a bounded pool slot rather than a per-call unique name, rows left behind by a deliberate panic that never reaches `cleanup_db` are gone for the next acquisition, a leased database arrives with the product indexes (`unique_movie_per_collection`, `unique_name_per_owner`), and a stale lease is reclaimable while a fresh one is not — including a lease held by a pid that has genuinely exited, which must be reclaimable at once without waiting out the staleness window.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/tests/integration/pool_test.rs#L1-L13",
+          "version": "repo-lines-v1:sha256:dbc7ed413fd91260a7aba49d25031164cc7850bf6f772781ca9b2ea006373b4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NjE0MTA1OGZlYjVmNWVhNDg1YWI1YjBkM2ZjOTUyMjI1NGMxMjYxOTUxNGE3NGVlYmU2ODI0ODhjODY2NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjVkOTlmMzY2MTZlOTM4MjM4YWFhM2ExM2U4YTFlODdmZjVhZjFjNDQ2MDk0YzdlZjAwMzMzZGJiNmUyZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwM2MwMzNhYTdhZGUwMDdkZjA3NjNhNzYzYTllOGIxODU5MWZiMjU2MTBiOWE3MjAwYTQ0ZDUzYzc5MmIzNzAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/pool_test.rs#L18-L163",
+          "version": "repo-lines-v1:sha256:7ec324d99741237d10fef7579e1ede3aea0f2bee4717b9aa830bde8d31e261a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZGNkNTkzYjE1YTI4YjEwNjMzNWU3NGQ3NmI4MzAxNDNkYWI5MDk5MzUxMzU1YzkyMzBlZDNlOGVjYTRlYmE5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOWJkZTUyMmM5MDJhYjdhYzU3NDY4MWVlMDFkYWQ1YzI2MDlhZmUzNjhmZGYxMTU3YzgzZWVjYzRjZjc4ZTExIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T00:28:11.002Z"
+    "at": "2026-11-01T13:34:04.956Z"
   }
 }

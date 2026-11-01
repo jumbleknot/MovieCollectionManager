@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e4c0f20ca77747d7f9634591b617e1d45a9918f56f4f8d235c7d05c69b7030cb",
+  "pageVersion": "sha256:234e2cc8dcf9c995c07eabc8e8b9a07c241cb821e93141dc532e319126e6a54c",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -322,15 +322,15 @@
     },
     {
       "id": "claim_cc4305ec50824796b3cff4dea62f5d38",
-      "statement": "The OPA healthcheck is driven through the opa binary rather than a shell utility, because the -debug variant's busybox ships no wget, curl or nc — the previous wget check failed on every run, leaving OPA marked unhealthy for a five-figure failing streak while it served fine; the -debug variant itself is still required because the distroless image has no shell at all.",
+      "statement": "The OPA healthcheck is driven through the opa binary rather than a shell utility, because the -debug variant's busybox ships no wget, curl or nc — the previous wget check failed on every run, leaving OPA marked unhealthy from ~2026-09-10 with a FailingStreak of 130,247 by 2026-10-03 while it served fine; the -debug variant itself is still required because the distroless image has no shell at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:c8a5cae559c65f9b63ddc6a14bd4cd02027965d86016fbc3cdee60b663ed685a"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L675-L677",
+          "version": "repo-lines-v1:sha256:06ac48960510a8088754b78cf046d207ef8378bbeec2cac87c63932049b9986f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0MWU1NjRkNTFhNDhkZDQzYzUyZTBjYmJmYmY1NTFiZTdjYjM5N2YzMjY2NWQxN2NiMmU2NmU5M2M4MTBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg0OGFiNTQ3MzY2ZjdjZTBiNDU0ODA3NDM3MDk0ZGI3YTM5YTMxYzE1ODAyYTkxYTIzYmMxODJkZDM2YjdjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY1ZTQ5NmJhNGU2NzhkZGE3MDNhZjY3NTIyOThlZTJjZDM5MTJmYWVlYmIxMmFhZGVhOGU1ODdmZmZmMzcxNSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L293-L298",
+          "version": "repo-lines-v1:sha256:26747923a0b97b350725c040478b9c61906ea618ddc6251bbf04bb3c17cc5a70:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxZGI0ZTg3NWViOWE2YWYxNDU1NjMwNTg2MTk2Zjc0MjIyMzEyOGIzNjI1ODAwOTg0OWE2OGY4MDJjY2Y5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZkMWQyNjE4ZTBjMzk3MzJiYmE4YTU0NjQzYTBjYjIxYTIwNGRhMTliOTcyZmMwYTJhZDg2OTU2ZThkZjEzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM2YTI2ZWQ0MGJmOGUwYjRiODVmNjI1ZTYzYjA4MzE5NGU1ZjUzZTI0MWQ5MDY0NGMxZDhmMTAxNjQ3YzcwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFjMDViOWE4MDQyMGIyNmZjODRhMWU2OTJkMDRmODgwZjkzMDU2ODNmZWUwOTI2ZGU3MDkyNzcxNmU3ODU1ZiJ9"
         }
       ]
     },
@@ -520,7 +520,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -648,7 +648,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:db6ba22f6bd9a17d4f6e73e4490a511d684f566560bdb20a60157125de27fe8c"
+          "version": "repo-file-v1:sha256:135252440dbae29bfc423957ef92348eb3e53e9b045a0c56877d15adfc09f19b"
         }
       ]
     },
@@ -737,6 +737,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-11-01T13:34:04.956Z"
   }
 }

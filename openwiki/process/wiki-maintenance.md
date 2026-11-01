@@ -40,7 +40,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -235,11 +235,17 @@ proposal, and the always-on gates sit after it rather than inside it.
   run-time resolution in the workflow — a global install, an `npx`, a `pnpm add` — because the previous
   `npm install -g openwiki@0.7.1 mermaid jsdom` pinned only `openwiki` and resolved its whole
   transitive tree at run time; run 4950 died 404-ing on a transitive published two minutes earlier.
-  That workspace also sets `minimumReleaseAge: 4320` (three days) and is deliberately its own
-  workspace root, so the root's no-cooldown settings do not apply and pnpm rejects an entry inside the
-  window both when resolving a lockfile and when installing frozen. The dev container still bakes a
-  *global* install at image-build time (there is no checkout then), so the two halves are kept in step
-  by hand and by Renovate's grouped `openwiki generator` rule: a guard test reads the
+  Guard tests pin the rest of that arrangement: a cooldown under three days, a range instead of an
+  exact pin, a lockfile that disagrees with the manifest, or a root workspace glob that swallows the
+  directory all fail offline. That workspace also sets `minimumReleaseAge: 4320` (three days) and is
+  deliberately its own workspace root, so the root's no-cooldown settings do not apply and pnpm rejects
+  an entry inside the window both when resolving a lockfile and when installing frozen. Its
+  `minimumReleaseAgeExclude` is reserved for **security-floor exceptions** — this code runs with the
+  generator's model credential — so every entry must be one exact `name@x.y.z` that an `overrides:`
+  floor in the same file requires, which admits that version and nothing else and goes moot once it
+  clears the window; the guard fails a name-only or ranged entry, or one with no matching floor. The dev
+  container still bakes a *global* install at image-build time (there is no checkout then), so the two
+  halves are kept in step by hand and by Renovate's grouped `openwiki generator` rule: a guard test reads the
   `npm install -g openwiki@<v>` command line from the Dockerfile and fails if it names a version other
   than the one in the locked manifest, since otherwise CI and local runs would silently run different
   generators on the output the gates judge. That guard runs in this job after the install and **before

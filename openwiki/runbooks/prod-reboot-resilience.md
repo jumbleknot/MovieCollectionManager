@@ -38,7 +38,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-01T13:34:04.956Z
 ---
 
 # Prod reboot resilience
@@ -435,9 +435,13 @@ failure:
   allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket`
   pattern, since `always` would restart-loop them
   ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)). That exemption is
-  narrow by construction and currently unused: all 27 services in the seven prod composes declare
-  `always`, the three init/seed containers included, because they idle instead of exiting. Its scan globs
-  only `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
+  narrow by construction and currently unused in production: all 27 services in the seven prod composes
+  declare `always`, the three init/seed containers included, because they idle instead of exiting. It is
+  not untested — the gate's `--selftest` exercises it with planted one-shot names
+  (`langfuse-rustfs-init`, `mc-service-store-mongo-rs-init`, `object-store-createbucket`) — and the only
+  `restart: "no"` in the tree today is the **dev** `mc-service/compose.yaml`'s
+  `mc-service-store-mongo-rs-init`, which no prod scan sees. Its scan globs only
+  `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
   host-managed composes above.
 
 Both run selftest-then-scan in the `naming` job of

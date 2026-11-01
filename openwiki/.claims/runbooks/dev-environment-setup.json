@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4f2fe6c3341a77d29febc55f82f93154c8feb075552a71ce8d9285f048167d37",
+  "pageVersion": "sha256:9014975afa8725ecf9bab0c9e56a3ab3e36da2ccae27a5e0221e9dd507213d49",
   "claims": [
     {
       "id": "claim_bcc478242c8643dabbfe30e448e6b1e6",
@@ -140,27 +140,31 @@
     },
     {
       "id": "claim_c2cb8d139e1f4f0bb979bb4c637b5d1b",
-      "statement": "The OpenWiki generator's version is pinned in two places that must agree: the dev container's toolchain image installs it globally (`npm install -g openwiki@<v> mermaid jsdom`, since there is no repository checkout at image-build time), while the CI wiki-maintain job has no generator baked in and installs the same three exact pins from the committed lockfile in tools/openwiki-generator/ with `pnpm --dir tools/openwiki-generator install --frozen-lockfile`. tools/openwiki-generator is its own pnpm workspace root, outside the root workspace globs, with a three-day minimumReleaseAge cooldown enforced at both resolve and install time so a lockfile regeneration cannot pull in a freshly published transitive. scripts/__tests__/wiki-maintain.guard.test.mjs reads the container's real install command line against the locked manifest and fails if the versions or the mermaid/jsdom peer set differ, and renovate.json moves both halves in one grouped PR.",
+      "statement": "The OpenWiki generator's version is pinned in two places that must agree: the dev container's toolchain image installs it globally with `npm install -g openwiki@0.7.1 mermaid jsdom` (there is no repository checkout at image-build time), while the CI wiki-maintain job has no generator baked in and installs the same three exact pins from the committed lockfile in tools/openwiki-generator/ with `pnpm --dir tools/openwiki-generator install --frozen-lockfile`. tools/openwiki-generator is its own pnpm workspace root, outside the root workspace globs (frontend/*, packages/*), with a three-day minimumReleaseAge cooldown (4320 minutes, matching renovate.json's catch-all) enforced at both resolve and install time so a lockfile regeneration cannot pull in a freshly published transitive and a frozen install fails ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION instead. scripts/__tests__/wiki-maintain.guard.test.mjs extracts the container's real install command line (skipping comment lines) against the locked manifest and fails if the versions or the mermaid/jsdom peer set differ, fails a cooldown under three days or a non-exact minimumReleaseAgeExclude entry with no matching overrides: floor, fails a root workspace glob that would swallow the generator directory, and requires the generator manifest to declare no packageManager of its own; renovate.json moves both halves in one grouped `openwiki generator` PR.",
       "evidence": [
         {
           "resource": "repo://.devcontainer/toolchain.Dockerfile#L69-L86",
           "version": "repo-lines-v1:sha256:6013505215c5b4dff89ab4811a491999b8f1f2d228e503c82a1efbda6b6f9e4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZDg0Njg1YzY4ZmVmYjBhMGIxNzgzMmRjYmEwOGVkZGJlMjdjOTc1ZDVkMDVjMTg2NGViOTE3ZDkyMmU3YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYjI3ODk4YTlhMDdjYTUyODkyYWRjMjNiMmQ5ZjQ0Y2RhYmJmODg3NTRhMGM5Yzc4OWI2MmM0ODQxMWMwNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYTkwMmEyMmM0YTEwYzNiNDU1MTcwYTcwZjQ4NjAxYzNjZjNmOTE2MGI1MmVmODlmMGE5MzI1Mjg5Y2Q2ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNDg0MDZkMjFmNjRlODM2MzVlZTA2NWY3OWZkZDY1MGFkNGJiNzRhODA2MDZlZDc5Y2JhMDg4ZGM1YTQ5ZDgifQ"
         },
         {
-          "resource": "repo://renovate.json#L401-L415",
+          "resource": "repo://renovate.json#L403-L417",
           "version": "repo-lines-v1:sha256:282bc142fef55682ed17ce5d3fcde8d6d34c2a09928868224f98f57752773843:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMWRjZTQ5ODY1OGQwMTU1NzE3NjgxNGI3NTRhMDFkZWI0M2Q4YTY1OWQ0NWM5NGE5ZTMxOThjNTI5ZDkxNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyYjRjZjBlNTMwMzQ2MzJiYmE3NzFlNjcxZmQ0OGE4NDQ0MDljMDk3YjEwZGRiNWVjYjc2ZjEwNDU5YmNjY2IifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L178-L255",
-          "version": "repo-lines-v1:sha256:5cb61e258bab39d8073040761fb21e3bbd7c5ebd2ac2a19e54541fa21956bf8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZDcwNzU4YzdhZTI4ZDg2MDc2MTViNWNlYmE1YzE5ZmFjOTczZmFiYTk1OWIzMTQwOTE4ZGE0MjFiMTU0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEifQ"
+          "resource": "repo://renovate.json#L746-L770",
+          "version": "repo-lines-v1:sha256:ad2dbb5eac3bc91728f576ec588549cb84350be5e71fe8f13173296e005b6dd7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2YzYxYzgzMjg0YmVjMTQzOWE0YWRhOWNkODhjOGI5NzhhYjlmZDI2OTMyNTYyNjc4NGViMTlhYTFjNjNlNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyNDY4MTg0NzVlNTgwZTI0YTcwZmNhMWU1YmFiMmE1ZTNmOWExNDVhMDhmZmZhNDEzNTQ1Yzc4NGVkZGUxYTMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L178-L266",
+          "version": "repo-lines-v1:sha256:053b04fd5cb2def86aeda1b0a90dbe01f25548d405c994d779c7e58dc0bf53ab:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZDcwNzU4YzdhZTI4ZDg2MDc2MTViNWNlYmE1YzE5ZmFjOTczZmFiYTk1OWIzMTQwOTE4ZGE0MjFiMTU0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEifQ"
         },
         {
           "resource": "repo://tools/openwiki-generator/package.json#L1-L11",
           "version": "repo-lines-v1:sha256:1adb9a7b2ce9ad5d0adfa2126808ab0916071faf892e15d1255abb78ebc35df3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L1-L26",
-          "version": "repo-lines-v1:sha256:7bbc7cca772606d863821427d57426ebea3432153e9f742634c653d9c5fa7b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYWNmNWI0ZDM1MDhkNGFmNzQzNDE1OWFmYzViNzgwZmEwZjgyMjNhOGM4ZjM5OTFmNTQ0MGU1ZWQ4MjU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NTJjYjA4MmRkZDFjNTljZWZkMjFhNGY2NzM4NGE3YmU1NGE2ODE0YTExZTZiYzBlOWUxMzE5NDg4OGZjZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tools/openwiki-generator/pnpm-workspace.yaml#L1-L48",
+          "version": "repo-lines-v1:sha256:618d112b778954ac8d9b8454826d4f849994fcabb5845a38c685ea5c04a2fe38:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYWNmNWI0ZDM1MDhkNGFmNzQzNDE1OWFmYzViNzgwZmEwZjgyMjNhOGM4ZjM5OTFmNTQ0MGU1ZWQ4MjU2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTYxMzEzZWE2YTc2ZWRmOTNiOGQ3MmRlN2IzMDI1NmViOTJjMjE0MGY3MzFjMDNhMzM1OTg5MjZjMjQ3NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -177,10 +181,28 @@
           "version": "repo-lines-v1:sha256:0c887da054a266b9a0bfcf8fc0516635e023ef68318fc8140ba2a80d9f5d6c19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY0NzY3MmEwN2NjNDlkYWJhZWFkN2IyZjNlNzJjZGY4MGU3NzVmNzMxMTNiNTYxYjA3ODc5Nzc3ZDUxMWRkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk5NmJmNzUxM2FiMDhkYzBlYzlhMzY0ZWFjMTk1YWNkYmVjZjA2MmExMTEzYjExYzQ3NDAwZDQ4MmU3NmU1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJhZTYyNTUyNzA2ZTkwNzk2MDkxZTAyOTg2ZmU0N2RlNTJiODRhNWI5MmUyYWE3NmRlMWI1MTI0NDNiNTE2ZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_bda4089fc528402e8bc23e8c991dcb69",
+      "statement": "The wiki-maintain job's guard forbids resolving the generator fresh at run time: it rejects an `npm install -g`, an `npx ... openwiki`, a `pnpm add`/`pnpm dlx`, or an `npm install ... openwiki` in the workflow's command lines, requires the locked binary at tools/openwiki-generator/node_modules/.bin to be placed first on $GITHUB_PATH with a `command -v openwiki` check so a global on the runner's PATH cannot stand in, and requires the installed-generator checks to read the locked install through OPENWIKI_ROOT (and to fail rather than pass when a check skips).",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/wiki-maintain.yml#L146-L193",
+          "version": "repo-lines-v1:sha256:6bd91afe331dfb8e292f939033ef5c84784a44261af54a6560806db95c0ceb60:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MGQ5MDAxYzk4MzczMDJmMzY0YjA4Mjk5MmNkOGRjYWQ0Njg1NjNjZDgwMmUxODhmYjJkMjJlYzJjMDcxZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlNjNmZGZhYmNiMTYwZGI2ODQyZTI4Yjk5MDMwMmU2ZGMzY2U1NDY4ODAzMjI4MTEyNmQzYmNkNTNkN2UwM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MTI1NjI0NmM0Mzc3NDI2YTU2ZGQ1ODZhZTk3MzlmOGJlMGNkOTVkMGRkODAwMmY3MGRkZmMwZmI5MTYzNDAifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L143-L157",
+          "version": "repo-lines-v1:sha256:36abc38fc6c355558629b74abaef3b6c185d9a264987897c22d21c9598442879:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZmIzNDQxMGRiYjYzYTk3N2IwZjdkMTY0YzM0MmJmNzNhZDA2MDIwYjM0MTQ0MWEzYmVhYjk4OGMwMzA5NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YjEzZmFiOGMyZTk2NGQyN2M3N2JlYWEyNjQ3MGE3Y2JmYWYwMDc4MTE3ZDgwNjRkODQyNTlhMmQ2ZmZjOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZTgyNzgzZWRiOTkxYTFhYzQ5ZWNiNjFhMjNkNzQwMTE1N2FkMmRlZjkzNjQ2ZDY1NmZiOTA5YjcyZTA4MGYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/wiki-maintain.guard.test.mjs#L181-L197",
+          "version": "repo-lines-v1:sha256:9aab554228a6640b8b05637950f79952bd673be8f45a99b9836152c22d524824:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NGE5NDI3ZTJkNzJjZGNhOWRlNmZiYWQ5Yzc0MzNhYmEwNjllZDlhYTY4M2Q1YWU5OWM2ZmVkZGFmZDMwOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMTI0MzJlZTJiMDMzMjE2MDIzZTI1NDg4MTQzZDJiZjY5ZWRhZGExNzhkYmRkYzlmYWI4MTBiNzlhZDc5YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlYjk3Mzg1NjgyNzA5YmRjMzA1MmM3NTYwZDVmMmIzZDQ2MjkyYzcyZGI1ZTRhYTk2Zjc2NjVjMjAyMjczN2IifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-17T03:12:52.160Z"
+    "at": "2026-11-01T13:34:04.956Z"
   }
 }
