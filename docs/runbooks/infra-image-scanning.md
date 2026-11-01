@@ -310,7 +310,7 @@ like a scan failure rather than a config gap:
 
 ```bash
 docker volume create trivy-cache
-docker run --rm -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0 image --quiet \
+docker run --rm -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.76.1 image --quiet \
   --scanners vuln \
   --db-repository ghcr.io/aquasecurity/trivy-db:2 \
   --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
@@ -340,7 +340,7 @@ cat > /tmp/trivy-shim/bin/trivy <<'EOF'
 exec docker run --rm -v trivy-cache:/root/.cache/trivy \
   -e TRIVY_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-db:2 \
   -e TRIVY_JAVA_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-java-db:1 \
-  aquasec/trivy:0.74.0 "$@"
+  aquasec/trivy:0.76.1 "$@"
 EOF
 chmod +x /tmp/trivy-shim/bin/trivy
 PATH="/tmp/trivy-shim/bin:$PATH" node scripts/infra-image-scan.mjs
