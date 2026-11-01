@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:00b9da7a075504f8f85c47efdb06e012959013e0c9c2a273a1142d61471c5fca",
+  "pageVersion": "sha256:caa1a8d5f6f87c970c199f85f92ba52f0400e42eb98f8fd343ce677e1ceaf3d8",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -61,8 +61,8 @@
       "statement": "The scan and the verdict are two commands so that one exit code carries one meaning: scripts/infra-image-scan.mjs runs Trivy with --format json and no --exit-code (non-zero therefore means only that the scanner could not run), and scripts/check-infra-image-findings.mjs carries the vulnerability verdict from the normalized report. scripts/cd/scan-app-image.sh is the single per-image contract that wires the pair together, mapping a failed scan to exit 10 and a failed gate to exit 11 (0 clean, 2 usage), and it is the ONLY place the two commands run: cd-deploy's scan-push.sh calls it before each `docker push`, and app-ci's `app-image-scan` job calls it on the six images `app-e2e` built, so the PR and the deploy share one Trivy pin, one set of flags and one allowlist — and an accepted finding lives in security/infra-images/allowlist.yaml instead of a .trivyignore nobody reviews.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1781-L1881",
-          "version": "repo-lines-v1:sha256:23fff8710768ac2bf99c58bd8c3c923c8fe405c9f8f92c86fa44e090e41b6ff2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMWQwYjk5ZGZmOTA5ZjA2YWFhMDM0NTIxMWQwNmRmYzgyOTg4ZmI3MDNmMjQxZDQ3MTkxMjdmODg4NDNiZGI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxM2UxMmRmMGYzN2ZiMTljOGUzZTU3ZTc2NjA1Y2NhZjhhYmQyZGQxNzkzOTJlNWViYzJhMDBiN2M3MWZlNWM2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NTYxZjg5NmJlNWVjNDQ1OGUyZDM0MGZhYzc2ODY4MDcxYTNlZGJlZjE0NWZmZDVmMmRiMDUwYmRiY2I0MTZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZTIyMzY5ZmJmZjY2YThlMjhjZDZiYjU5NjEzMzAwZWI2MjM4ODdjOTAyYzg4MGEyNWM4MWIzZjg3MDg0MjlmIn0"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
           "resource": "repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs",
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -112,7 +112,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/publish-sweep-verdict.mjs",
@@ -126,7 +126,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -150,7 +150,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -192,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -216,7 +216,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/check-infra-image-findings.mjs",
@@ -230,11 +230,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/infra-image-scan.mjs",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         }
       ]
     },
@@ -258,7 +258,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
@@ -272,11 +272,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -286,7 +286,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -310,7 +310,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -352,7 +352,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://scripts/cd/scan-push.sh",
@@ -366,7 +366,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -376,7 +376,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         }
       ]
     },
@@ -386,7 +386,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:61cb9bf0e50c7120620c9db441e694c6587391c410c2ac939aea9152c0fe1cba"
+          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
@@ -417,24 +417,20 @@
       "statement": "The Trivy install in `.forgejo/workflows/infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` is version-pinned rather than floating: the install script is fetched from a version tag rather than the moving branch `main`, the same tag is passed as the script's positional argument, and one `TRIVY_VERSION` assignment per file is interpolated into both sites so a bump cannot move one and strand the other. There are three such sites since spec 084 US3 (app-ci's `app-image-scan` must scan the PR's images with the scanner the deploy will use, or a green PR says nothing about the deploy). `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the RESOLVED state across all three files — each pinned, each script ref equal to its installed tag, and all three agreeing on one version, because a disagreement means one gate can block what another passes — and that the `aquasecurity/trivy` customManager (datasource `github-releases`) covers all three files and actually captures a `currentValue` in each, since a manager whose regex misses is indistinguishable from no manager at all.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1827-L1841",
-          "version": "repo-lines-v1:sha256:8358e1c00620adf589e3f5892971c93e60453128ebbd5a20498483c86fb8d97a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNjYwYzhmZWQ0YTBkNDNiNjY0Y2IxOTg3Y2EzYzNjNWQ3YjY5NmFhYjE2MTQwZDdhMmQ1NjA5ODcyNWQ4M2YifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L205-L221",
-          "version": "repo-lines-v1:sha256:565e126864118eef9f069369b6e14ce739ecaa9c44e26894907923bd4611e564:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YzE1ZWE5ZWFjNjQzZDk2ZDA5OTI2MGNiY2RhYjEzZTBiZDA0MWViZTk5ODU3MGE5YzFiNmE4OTMzZjFmZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZTE1NjhlOTMxYTIwZDhkOTAxN2NlOWYwYzhhYWJhODRjMTE2YWY3MWVkMTAxMzNlMGQ1N2QzMmY3ZGEyMzQifQ"
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml",
+          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
         },
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L178-L195",
-          "version": "repo-lines-v1:sha256:969deaa9271503a215aa777dde015a98f19844b0c9ef3bba99fc66356e8e62d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZjE5NWE5OGNjYmJhYWNjZGY3Zjk4N2FjNjgyOGY4ODk1OTcxMTZkMjFlZDMzNTJjM2Y0ODFmM2IwOWEzMjUifQ"
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
-          "resource": "repo://renovate.json#L208-L247",
-          "version": "repo-lines-v1:sha256:0fa40d060e7d3695ead69161517e02939ef4a588994e7241800ecf412ee9366a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDIxMWI5YzM4MDRkYTYxOGUzNWQ0OWExYTQwZDQ2NTc5NWE5MGQwYjgzMjAwNTU2ZjliMjU1YjdhZTQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNDExM2IwYWRlYzM5NmZkMjk2NWYyYjQzMDZmOGM1NjZmMzA0ODgwNmJkZTJhOTIyMjJjYWY1NDJkMTUzNjUifQ"
-        },
-        {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L1999-L2113",
-          "version": "repo-lines-v1:sha256:064d91c5b0db83142114ddfd4bb8f0341d907d2166af3c83d78d2739bb16f868:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyY2QwZTJmOTk1NDJmNTA2OTA2OTA1NjhhYjljOTlhMjA3YzUxNjIyN2IxOGVmYWY0OTE1MWY5MThjNzdkNzIyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmUzMTRkZTM3ODI3MzAxMjA4NWYyMTg0OTE4MDgwYWFhOGRkMGI5OTRiZjg2NmYwZTc5YjAxMmI1MGM5OTI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTE0ZTM0ZDE2Yjg4ZDI1ZDAzNWIxYmVjOTMwM2JiNTYzOTFjMDJjNDhiNmZjZGI2YjgyZTU1NDliNzRlNTZhIn0"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -701,16 +697,16 @@
       "statement": "The shared per-image pipeline is what moved the deploy gate onto the pull request (spec 084 US3, item #822): app-ci's required `app-image-scan` job runs `scripts/cd/scan-app-image.sh` on the six images `app-e2e` already built, which `app-e2e` tags `app-scan/<name>:run-<run id>` so a later rebuild of `:latest` on the persistent daemon cannot change what is scanned. The job needs `[changes, app-e2e]` but is `always()`-guarded so a skipped `app-e2e` cannot skip it, runs on the `kvm` runner holding the images, passes early and explicitly when no app path changed, fails naming a missing scan tag rather than passing on images it could not find, scans every image even after one fails so one run names every blocking image, removes the run-scoped tags under `always()`, and is required by `trigger-cd` so a red scan on `main` blocks the dispatch before any deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1781-L1921",
-          "version": "repo-lines-v1:sha256:102b18ca7ac2d84a53f2bf3c641f42282c8fd9e8c0ad48dedfd220c1b0ce2a74:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMWQwYjk5ZGZmOTA5ZjA2YWFhMDM0NTIxMWQwNmRmYzgyOTg4ZmI3MDNmMjQxZDQ3MTkxMjdmODg4NDNiZGI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYmU1YmU0ZGQzNmM3NjU0Y2U2ZTM1YzcyNTc0MzkzMDY0NjBmOWRlNDNiYTg5YTNjMjA2OTFjMGYyZDBiYTE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NTYxZjg5NmJlNWVjNDQ1OGUyZDM0MGZhYzc2ODY4MDcxYTNlZGJlZjE0NWZmZDVmMmRiMDUwYmRiY2I0MTZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3YzUzOTYzNTI3MDZjNWQ4ZDA3N2NiOGZlNGYzYmVlNDlkNmM5MDViNzEwNDJjNTY1MzE3MGE4M2FhOTc4OWVkIn0"
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L490-L521",
-          "version": "repo-lines-v1:sha256:a007fdd212309d6d87288bb26e2168ebcba5d869594a2a00360065f04f47f370:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDhiNWFmNjZjODcwZTA1NWJmMGZlMWVmY2FiM2Y0Y2VmNDVhYTAxNWJhMjIzZDI1ODZlNDAzM2M2MmQ4NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZTk0MmI0OGI4YmI1YTE1MDBhNmUxOGM1YjMwZTE3NjRiNWRkNzVkZTg3NTExYzljMzQ1NDIyZGI3NDg3ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMWRkNzY1YTgyNTk1NDNlMTM2YmU2Mzc0NzBlODg2MDMwMDc2ZTViOTllYTcyZWY1NThmNzU2NmQzNmI4ZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZThhNzMzMTAwMDFjNDExMDMxOTcyZjIwYTFkYmQ2OTgxOWQ0ZmViZDg4MjBiZDViMWZmYjZiZTAwYTVhNmMifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
         },
         {
-          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L150-L203",
-          "version": "repo-lines-v1:sha256:31e7017343d1ca3a28de1b1e1f75ef9facbcf9671461596f1490f1f9e481cee8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNDc0ZDY2M2U5MjYwZjUxOTJmNjk1MTE1YzM0Yzc2NmFkMTk4NmEwY2NlMDJhM2Y4OGQ1MmU4MWMyMGEyZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzgwNTY1ODZkMjZiNTI5ZmZiOTI2ZmY1MDc3ZGE2MTlmNDQ4YjJiMmMwY2JjMjlmMDY0M2FlMTAzYjY4ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YTczNTAwZGEyZDA3ODBmYThlNDhjZWY2MTRkMDQ0MWRhODA0MjJhMDc2YTdhZmQ5YWRhMzY4MTI5NDUyN2EifQ"
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs",
+          "version": "repo-file-v1:sha256:2095db85c3152f7f39564202c3f528cc046f25bc85aad5e406cfdab09504226c"
         }
       ]
     },
@@ -735,10 +731,20 @@
           "version": "repo-lines-v1:sha256:702c1375b38376ab963a79160185a85f0daa67ee0d8471f055fddff86a4dea85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMTg2NzU4YWZkMmRkNjM3MDFlNGM0NmVhNjIzMTg3MjUzMjYwNDBmODFjYzg3MzAzOGRmNzc2MzI2MDM4OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YjczNzgzNTg4YmNhZWM0Zjc1M2JhMjI2NDg4NTQ2NmVmNGVhMzQ1ODU3OGMwYzIwYjUzMWQxMzhjY2U0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f852e26f4f694402a9c54e49bc1ebe77",
+      "statement": "The `generatedForImages` scoping check tolerates a report that is explicitly marked absent (`reportAbsent: true` — the marker the gate's own ENOENT path sets under `--check-expiring`) by returning an empty result set, which is what stopped the weekly allowlist-expiry step crashing on a report no scan had produced; the exemption is keyed on that explicit marker and never on the field merely being missing, so a report that EXISTS and omits `generatedForImages` is still a hard `GateError` and a producer that stops writing the field fails rather than silently restoring all-in-scope unmatched detection.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-infra-image-findings.mjs",
+          "version": "repo-file-v1:sha256:bd43b42c85fcd5e48ab458a82d08090ac7b9466fd24f599fa73669663fa3fa3d"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T19:43:53.507Z"
+    "at": "2026-11-01T05:36:38.857Z"
   }
 }

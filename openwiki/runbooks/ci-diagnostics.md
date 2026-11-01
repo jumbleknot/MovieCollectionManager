@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T23:07:57.553Z
+    at: 2026-11-01T05:36:38.857Z
 ---
 
 # CI self-serve diagnostics
@@ -189,7 +189,9 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   (`security/infra-images/allowlist.yaml`), with the Trivy version pinned **in each workflow that
   installs it** (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) and
   `renovate-workflow.guard.test.mjs` failing if those pins disagree or drift from the version-tagged
-  install script — over the images `app-e2e` already built. `app-e2e` tags
+  install script — over the images `app-e2e` already built. A single `aquasecurity/trivy` customManager
+  in `renovate.json` covers all three files and the guard asserts its patterns still match each of them,
+  so the three-way pin is maintained rather than left to rot. `app-e2e` tags
   each of them `app-scan/<name>:run-<run id>` immediately after the build, so a later run rebuilding
   `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to `main` too, and
   `trigger-cd` now `needs:` it, so a vulnerability-database change shows as a red on `main` **before** a
@@ -881,13 +883,15 @@ and run weekly by [`.forgejo/workflows/registry-retention.yml`](../../.forgejo/w
 name regex, so they cannot protect a digest a git file names; they live only in the web UI; and they
 have no report-only run.
 
-**Report-only is the default, and a delete needs two keys in two places.** A bare invocation, the
-weekly schedule and any dispatch all produce a **report**; `--apply` is passed only by a
+**Report-only is the script's default, and a delete needs two keys in two places.** A bare invocation,
+the weekly schedule and any dispatch all produce a **report**; `--apply` is passed only by a
 `workflow_dispatch` whose `apply` input is `true`, and the script refuses it (exit 2, naming the
-mismatch) unless the committed config also says `mode: apply`. So the sequence is report → review → a
-one-line PR flipping `mode: report` to `mode: apply` that links the reviewed report → a dispatch with
-`apply: true`. Neither key alone deletes anything, and the schedule never passes `--apply`. Each
-version is kept by its **first** reason, else deleted:
+mismatch) unless the committed config also says `mode: apply`. Neither key alone deletes anything, and
+the schedule never passes `--apply`. The procedure is report → review → a one-line PR flipping
+`mode: report` to `mode: apply` that links the reviewed report → a dispatch with `apply: true` — and
+that flip has already happened: the committed config has said `mode: apply` since the first report was
+reviewed (run 6350, item #863), so a dispatch is what deletes today while the schedule still only
+reports. Each version is kept by its **first** reason, else deleted:
 
 | Keep reason | What it keeps |
 |---|---|
@@ -963,8 +967,8 @@ hardening details are in
 statement of the AGit rule and of the `POST /pulls` credential split, and the item 823 exit codes and
 the `scan-app-image.sh` exit meanings are contracted in
 [spec 084's CLI contract](../../specs/084-silent-failure-visibility/contracts/cli-contracts.md). The
-registry-retention procedure itself — how to read a report and what to check before flipping `mode` —
-lives in
+registry-retention procedure itself — how to read a report, what to check before a delete dispatch, and
+the `mode` flip the delete path rests on — lives in
 [the server-setup runbook](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5),
 not here.
 

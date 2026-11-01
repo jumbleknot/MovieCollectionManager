@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Infra-image CVE scanning
-description: How the project keeps the third-party server images it pulls but does not build (Keycloak, Postgres, Redis, Mongo, Vault, RustFS and the rest of infrastructure-as-code) free of known fixable Critical CVEs, and how to read or triage a red result — keyless Trivy on a twice-weekly non-path-gated sweep ordered ahead of the Renovate window, one scanner per image, the fixable-Critical-only gate, the allowlist-as-baseline rules with version- or digest-keyed entries, the bounded retry, the one shared per-image scan pipeline that both the PR and the deploy call, and the publish-versus-promote split.
+description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the shared per-image pipeline both the PR and the deploy call, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
@@ -64,7 +64,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T19:43:53.507Z
+    at: 2026-11-01T05:36:38.857Z
 ---
 
 # Infra-image CVE scanning
@@ -89,13 +89,15 @@ it keeps only the `renovate.yml` crons that fire exactly one hour-of-week slot, 
 `0 3 * * *` — seven slots, the schedule-exempt security channel — drops out and the single-slot Friday
 window cron is what the sweep is ordered against. Adding another single-slot cron to `renovate.yml`
 therefore changes what the ordering is asserted against, and a sweep cron that lands later than it
-fails the build. The same test also fails if the workflow stops recording *why* its
-cron sits where it does — the file must still carry the `item #487` reference — because an
-unexplained time is the one a later reader tidies. The Tuesday run (item #642) means an advisory published early in the
-week is visible with three days in hand instead of surfacing at the moment the window's PRs already
-exist and inherit a red nobody had seen — GHSA-vcvr-r3jv-pc5j, on the unchanged `langfuse:4` pins,
-was published 2026-09-22 and first surfaced at 04:00 on 2026-10-02. Tuesday 04:00 is hour-of-week 52,
-far ahead of the window, so the ordering guard still compares against Friday 04:00.
+fails the build. The same test also fails if the workflow stops recording *why* its cron sits where it
+does — the file must still carry the `item #487` reference — because an unexplained time is the one a
+later reader tidies. The Tuesday run (item #642) means an advisory published early in the week is
+visible with three days in hand instead of surfacing at the moment the window's PRs already exist and
+inherit a red nobody had seen — GHSA-vcvr-r3jv-pc5j, on the unchanged `langfuse:4` pins, was published
+2026-09-22, was absent from Trivy's DB for the 2026-09-25 sweep, and first surfaced at 04:00 on
+2026-10-02. It runs the same steps as Friday's, including the expiry check and the
+`infra-image-scan/weekly` verdict, which Friday's run then overwrites before the window. Tuesday 04:00
+is hour-of-week 52, far ahead of the window, so the ordering guard still compares against Friday 04:00.
 
 **The object store is a pulled image again, and feature 080 is why.** From feature 069 until feature
 080 the S3 object store was built from source and scanned by its own builder; feature 080 replaced it
@@ -122,20 +124,24 @@ flowchart TD
   H -->|"nothing blocking"| J["gate green"]
   I --> K
   J --> K
-  K["always() — every non-PR run posts infra-image-scan/expiry"]
-  K --> L["scheduled runs only: the expiry check over both allowlists, then the infra-image-scan/weekly verdict"]
+  K["always() — the observability steps run even in the week the gate is red"]
+  K --> L["scheduled runs only: the allowlist expiry check over both allowlists"]
+  L --> M["every non-PR run: posts infra-image-scan/expiry carrying the measured event, gate and expiry outcomes"]
+  K --> N["scheduled runs only: posts infra-image-scan/weekly carrying the sweep's verdict"]
 ```
 
 Trigger-to-verdict flow. The `changes` job only ever *gates* the Trivy steps; the required
-`infra-image-scan / infra-image-scan` context is posted by the job either way. The two observability
-contexts at the foot are posted by `always()`-guarded steps — which is why they still run in the week
-the gate is red — and neither can gate anything.
+`infra-image-scan / infra-image-scan` context is posted by the job either way. The expiry check is
+scheduled-only and runs *before* the recorder that measures it, so the recorder's `expiry_step` field
+is a statement about a step that has already had its chance to run. Both statuses at the foot are
+posted by `always()`-guarded steps — which is why they still run in the week the gate is red — and
+neither can gate anything.
 
 ## Entrypoints
 
 | entrypoint | what it does |
 |---|---|
-| `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact). |
+| `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact, and how the shared per-image script below drives both callers). |
 | `node scripts/check-infra-image-findings.mjs` | the gate: exit 1 on any `blocking` finding not suppressed by a live allowlist entry; `--check-expiring` is the report-only hygiene tier; `--selftest` proves fail/suppress/expiry without Trivy. |
 | `bash scripts/cd/scan-app-image.sh <local-tag>` | the SHARED per-image scan-and-verdict block (spec 084 US3): runs the scan then the gate on one local image and returns two exit codes — `0` clean, `10` scanner error (nothing was assessed), `11` blocking finding, `2` usage. Both consumers call it rather than reimplementing the pipeline: `scripts/cd/scan-push.sh` before each `docker push`, and app-ci's `app-image-scan` job on the six images `app-e2e` built. |
 | `pnpm nx infra-scan infrastructure-as-code` | the Nx target wrapping the orchestrator, alongside the `sast`/`dast` targets. |
@@ -151,9 +157,13 @@ findings readable.
 
 ## Gotchas
 
-- **Not path-gated on the authoritative run.** A twice-weekly full sweep is the scan of record
-  precisely because a new advisory can land against an image nobody changed — an on-change check on
-  infrastructure edits exists only for fast feedback, not as the source of truth.
+- **Not path-gated on the authoritative run — and an ordinary merge to `main` never re-scans.** A
+  twice-weekly full sweep is the scan of record precisely because a new advisory can land against an
+  image nobody changed; the on-change check on infrastructure edits exists only for fast feedback. The
+  `push` trigger keeps its `paths:` filter while the `pull_request` trigger has none, so a non-infra
+  merge runs no Trivy at all: a newly published advisory surfaces on whichever infra-touching PR (or
+  cron) runs next — and because branch protection's glob also matches the push-event context, an infra
+  CVE with no bearing on that PR's diff can make it unmergeable.
 - **The `changes` job's PR-only `if:` is load-bearing — removing it silently kills the sweep.** The
   `dorny/paths-filter` step is gated on `github.event_name == 'pull_request'` because dorny derives its
   diff base from the PR event and, on any other event, falls back to the repository's default branch —
@@ -256,13 +266,12 @@ findings readable.
   written for *and every future one in the same image*, silently and permanently. That is not an
   accepted risk with a review date, it is a permanent hole.
   Where the reference is a floating major, or the advisory survives a version move, the **digest** is
-  the dischargeable half: the OpenSearch entry is keyed to `opensearchproject/opensearch:3@sha256:bcc17975…`
-  rather than to `opensearch:3`, so an upstream rebuild — not a tag move — ends it, and it was
-  re-keyed from the 2.x digest to the 3.x one when the OpenSearch 3 major did **not** clear the
-  advisory. The Unleash entry names both (`^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242`),
-  so any image change re-blocks — and it has already been re-keyed once, 8.2.0 → 8.2.1 in the
-  2026-10-30 Renovate window (PR #878), after the new digest was re-measured and still carried
-  proxy-addr 2.0.7 with the boolean `trust proxy` that keeps the CVE unreachable.
+  the dischargeable half: the OpenSearch entry is keyed to a digest rather than to `opensearch:3`, so an
+  upstream rebuild — not a tag move — is what ends it, and it had to be re-keyed from the 2.x digest to
+  the 3.x one when the OpenSearch 3 major did **not** clear the advisory. The Unleash entry names both
+  version and digest, so any image change re-blocks, and it has already been re-keyed once in a Renovate
+  window after the new digest was re-measured and still carried the vulnerable package under a
+  configuration that keeps the advisory unreachable.
   `scripts/__tests__/infra-image-scan.test.mjs` asserts both directions for every formerly-floating
   repository: the key still matches today's pin **and** stops matching a later version derived by
   incrementing the pin's last number (a hand-written "next version" literal silently stopped meaning
@@ -315,82 +324,54 @@ findings readable.
   halves of the wrapper (start as root to re-own, drop before mongod) on the dev AND prod compose files,
   runs the wrapper against stubs so the assertion is about what it does rather than how it is spelled,
   and requires at least one matching service per file so a rename cannot make every assertion pass
-  vacuously.
-- **What the allowlist actually holds today, and how to read the cohorts.** Fourteen entries in four
-  cohorts. Two are the un-expiring **baseline** — the same Go-stdlib Critical, `CVE-2025-68121`, on
-  `postgres:18\.6-alpine3\.23` and `postgres:18-alpine` (the shipped binary carrying it is
-  `usr/local/bin/gosu`) — kept because no reachable tag clears it, with the measurement recorded per
-  entry rather than assumed. A third seed entry for the same CVE, on
-  `mongodb/mongodb-community-server:8\.0\.8-ubi9`, is **discharged rather than re-keyed** (feature 081
-  US8a, T057): every mongo ref moved to `9.0-ubi9`, which scans at zero blocking findings on that
-  advisory, and a re-keyed entry would have matched nothing. The later `CVE-2026-114406` cohort is a
-  different entry — operator-approved on the 8.0.8 pin on 2026-10-23 and re-keyed to `9.0-ubi9` with
-  PR #817 — and lives below with the rest of that cohort. With the ceiling gone, a mongodb MAJOR now
-  rides the same successor gate as vault's — a dashboard tick — while patch and minor stay automatic
-  and scan-gated.
-  Four are **time-boxed to `2026-11-20`** and are what remains of the 2026-10-23 operator-approved
-  `CVE-2026-114406` (ca-certificates) cohort on `langfuse/langfuse:4\.68\.0`,
-  `langfuse/langfuse-worker:4\.68\.0` and `mongodb/mongodb-community-server:9\.0-ubi9`, plus
-  `@sentry/nextjs` `CVE-2026-114139` on `langfuse/langfuse:4\.68\.0`. All four flag EXPIRING from
-  `2026-11-06`, which is the re-check date. The cohort's fifth entry, on `grafana/otel-lgtm:0\.37\.0`,
-  is **discharged rather than re-keyed**: the 2026-10-30 Renovate window moved otel-lgtm to
-  `0.38.1@sha256:0df9bc14…730af7`, a clean rebuild on which the advisory is reported neither blocking
-  nor allowlisted (PR #878), so a re-keyed entry would have matched nothing and failed the expiry
-  check.
-  Two more are time-boxed to `2026-12-01`:
-  `opensearchproject/opensearch:3@sha256:bcc17975…` (CVE-2026-75595, netty) and
-  `^unleashorg/unleash-server:8\.2\.1@sha256:c6eaaede7242` (CVE-2026-90711, proxy-addr). Both were
-  re-measured, not re-dated, when renewed, and both are deliberately keyed so that a rebuild or an
-  upgrade discharges them; the Unleash key was itself re-keyed 8.2.0 → 8.2.1 in the same 2026-10-30
-  change, after the new digest was re-measured.
-  The newest six are the **`CVE-2026-111497` brotli cohort** (operator-approved
-  2026-10-29), also time-boxed to `2026-11-20`, and they are the file's only entries keyed to the
-  **digest alone** with no version in the key: `^caddy:2\.11\.7-alpine@sha256:d8542f48d34a`,
-  `^curlimages/curl:8\.23\.0@sha256:11e64e28c5f5`, `^httpd:2\.4@sha256:454942557d44`,
-  `^postgres:18-alpine@sha256:77f585114c32`, `^postgres:18\.6-alpine3\.23@sha256:697c180dbf24` and
-  `^rustfs/rustfs:1\.0\.3@sha256:9ca9559533b5`. That keying is the point: Renovate proposes from the
-  registry, not from this file, so it still offers every rebuild, the new digest is scanned
-  **unsuppressed**, and the PR itself proves whether the rebuild carries the fixed brotli rather than
-  inheriting the acceptance — while the old entry stops matching. Reachability was not measured here;
-  the entry is time-boxed instead. The RustFS entry is that design mid-flight: the tree now pins
-  `rustfs/rustfs:1.0.4@sha256:ed9210d6…`, so the `1.0.3` digest key matches none of the images a run
-  actually scans — and because unmatched detection is scoped to the scanned set (item #423), it is
-  therefore **silent** rather than reported. The `EXPIRING`/`EXPIRED` tiers are not scoped, so the
-  `2026-11-06` window is what will surface it: a digest-keyed entry whose digest has moved is
-  invisible until its own expiry window opens, which is the price of keying to content rather than to
-  a version. Five of the six keys still match a reference the sweep actually scans; delete each as its
-  digest bump lands rather than renewing it without re-scanning. A comment block above an
-  absent entry is the file's history, not a live suppression — several cohorts (Keycloak 26.7.4, `langfuse:4`, the
-  otel-lgtm amqp091-go trio, the `next` pair) were deleted once a scan showed the fix had landed, and
-  their prose was kept.
-- **The 2026-10-23 cohort is the file's normal shape: advisories landing on images nobody changed.**
-  `CVE-2026-114406` (base-image `ca-certificates`), the `next` GHSAs and `CVE-2026-114139`
-  (`@sentry/nextjs`) were published against images already running in prod, and turned
-  `infra-image-scan` red for every compose / `renovate.json` PR (#836, #837) — the same
-  unchanged-pin shape as the 2026-08-29 Keycloak case. Nothing upstream cleared the survivors at the
-  time: `langfuse`/`langfuse-worker` 4.68.0 still ship the pre-fix `ca-certificates`, and on the
-  newest `9.0-ubi9` build (9.0.4-ubi9-20261023T064549Z, index `sha256:2cb58a8d…`) the same advisory
-  is the image's **only** blocking finding, so no newer 9.0 UBI9 build clears it — while Keycloak
-  cleared the *same* CVE by a same-version digest refresh (PR #838), which is what this cohort is
-  expected to follow. Every survivor is **version-keyed to the pin the run actually scans**, so a bump
-  re-blocks and forces a fresh scan rather than inheriting the suppression, and each justification
-  states that the entry is deleted once a clean rebuild ships — a time-box to force a re-check, not an
-  accepted risk without one. Three of the original seven have already been through such a bump, and
-  each time the entry was **re-keyed** in the same change — same CVE, same expiry — rather than
-  deleted, because the new pin still shipped the pre-fix CA bundle: the window moved otel-lgtm
-  `0.36.0` → `0.37.0` (PR #836, 2026-10-24); spec 081 US8a moved the mongo store `8.0.8-ubi9` →
-  `9.0-ubi9` (PR #817), which also deleted the 8.0.8 entry it replaced so it could not fail as
-  UNMATCHED; and spec 081 US8 PR 8d moved web and worker `4.56.0` → `4.68.0` (item #839, 2026-10-25),
-  re-keying the `CVE-2026-114406` and `CVE-2026-114139` entries after a **verify-RED** run on the new
-  digests confirmed both still block. The cohort has now produced both endings, and the difference is
-  measured rather than assumed: that same change **deleted** the two `next` GHSAs instead — a
-  discharge, not a re-key: 4.68.0 ships next 16.4.2 and neither advisory appears on either image at
-  any severity, so a re-keyed entry would have matched nothing and failed `--check-expiring`
-  (item #303) — and the 2026-10-30 window **discharged** the otel-lgtm entry the same way, because
-  `0.38.1@sha256:0df9bc14…730af7` is a clean rebuild that reports the CVE neither blocking nor
-  allowlisted (PR #878). Re-keying is what keeps the discharge property live for the entries that
-  remain: the next bump (a newer 9.0 UBI9 build, a Langfuse release past 4.68.0) stops matching and
-  re-blocks, which is the whole point of keying on the version rather than on the repository.
+  vacuously. The observability postgres rode the same successor rule when spec 081 US8b moved it to 18.
+- **How to read the allowlist's cohorts — the file is a baseline, not a record of what is currently
+  risky.** What matters is the *shape* of an entry, because that shape is what decides whether it can
+  ever end:
+  - **Baseline (no `expiry`).** The only entries allowed to suppress indefinitely, for an advisory no
+    reachable tag clears — a Go-stdlib Critical inside a binary the postgres images ship is the standing
+    example — and each one records its own measurement rather than assuming it. A bump cannot clear
+    these, which is why they carry no date.
+  - **Time-boxed (`expiry` in the near future).** The default shape for a newly published advisory on an
+    unchanged pin. The date forces a re-check instead of an indefinite acceptance, and the 14-day
+    warning window makes the weekly sweep red before it lapses. Cohorts are deliberately dated together
+    so the re-triage is one sitting rather than a dribble.
+  - **Version-keyed, or version+digest-keyed.** The key names the pin the run actually scans, so a bump
+    re-blocks and forces a fresh scan rather than inheriting the suppression.
+  - **Digest-only-keyed.** Used where the suppression has to be discharged by a **rebuild** rather than
+    by a tag move. Renovate proposes from the registry rather than from this file, so every rebuild is
+    still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether
+    the rebuild carries the fix instead of inheriting the acceptance. The price is stated below: once
+    the digest moves, the key matches nothing.
+  - **Discharged, not re-keyed.** Where a bump or a same-version digest refresh measurably clears the
+    advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
+    fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
+    above an absent entry are the file's history, not a live suppression.
+  - **The three tiers the gate reports** are `EXPIRING SOON` (inside the 14-day window, still
+    suppressing), `EXPIRED` (no longer suppressing, and the line names the date and who added it), and
+    `UNMATCHED ENTRIES` (suppressed nothing this run — which names three causes, not two: already
+    remediated, the scanner changed identifier namespace, or the rule could not run and so found
+    nothing). Only `expired` stops suppression; an entry suppresses through the whole of its final day,
+    and classification is computed on UTC date boundaries so neither a runner's timezone nor a DST
+    transition can move it.
+- **A digest-keyed entry whose digest moves goes silent, not stale.** Unmatched detection is scoped to
+  the images the run actually scanned (item #423), so an entry whose `image` regex matches none of them
+  is out of scope by design and is *not* reported as `UNMATCHED`. Only the `EXPIRING`/`EXPIRED` tiers,
+  computed over the whole allowlist, will ever surface it — so a digest-keyed entry whose rebuild has
+  already landed is invisible until its own expiry window opens. That is the price of keying to content
+  rather than to a version, and the recorded cue is to delete each such entry as its digest bump lands
+  rather than renew it without re-scanning.
+- **A published advisory on an unchanged pin is the file's normal shape, and whether the bump
+  remediates it is measured, never assumed.** Advisories land against images already running in prod and
+  turn `infra-image-scan` red for every compose / `renovate.json` PR at once, with nothing in the diff
+  responsible. The same advisory can be cleared by a **same-version digest refresh** on one image while
+  the newest upstream build of another still ships the pre-fix package, so "bump the tag" is not
+  automatically the remediation: the new digests are scanned first, and only then is each entry re-keyed
+  to the new pin or deleted. Where the new pin still carries the advisory the entry is re-keyed in the
+  same change (same CVE, same expiry); where it does not, the entry is deleted, because a re-keyed entry
+  that matches nothing keeps failing `--check-expiring` whatever its date. Every surviving justification
+  states that the entry is deleted once a clean rebuild ships — a time-box that forces a re-check, not
+  an accepted risk without one.
 - **The floating-tag exception set is EMPTY — that is correct, not a regression.** The date-tagged
   object-store images left the tree with feature 069, and their from-source successor left with feature
   080, so nothing is referenced by a tag the classifier cannot order. The old rule ("a floating count
@@ -463,7 +444,9 @@ findings readable.
   item #562, where from 2026-09-12 until 2026-10-02 both checkers threw on the absent report they
   announce as legitimate, and because the step runs `cmd1 && cmd2` under `bash -e` the infra-image half
   never ran at all. Look for a `GateError` stack trace in the step log before treating it as an
-  allowlist problem.
+  allowlist problem. The exemption that closes it is keyed on an **explicit `reportAbsent` marker**,
+  never on the field merely being missing: a report that *exists* and omits `generatedForImages` is
+  still a hard error, which is the property item #423 wrote the scoping for in the first place.
 
   > The `event_name` value here is also the standing answer to a forge trap that has cost a session
   > once already: `/actions/runs` reports `event: push` for a cron run, and only `trigger_event` says
@@ -479,9 +462,10 @@ findings readable.
   local enumeration (`--list`, which needs no Trivy and works anywhere) as equivalent to a real scan
   result. The Linux dev container is not one of the machines without Trivy: the binary is absent from
   `PATH` but Trivy runs from its own image, and a full local sweep of every pulled image is a
-  documented recipe in `docs/runbooks/infra-image-scanning.md` (which also records the two silent
-  blockers — the install script downloading nothing, and the default DB mirror not resolving — and the
-  ghcr mirrors and `--severity CRITICAL --ignore-unfixed` invocation that route round both).
+  documented recipe in [the source runbook](../../docs/runbooks/infra-image-scanning.md) (which also
+  records the two silent blockers — the install script downloading nothing, and the default DB mirror
+  not resolving — and the ghcr mirrors and `--severity CRITICAL --ignore-unfixed` invocation that route
+  round both).
 - **Triaging an advisory you cannot scan: scan first, and read the build definition only as a
   fallback.** "Trivy is absent from the dev container" is wrong — what is absent is the binary on
   `PATH`, and it runs from its own image; an inference is owed only when a *pull* genuinely fails (a
@@ -518,8 +502,8 @@ findings readable.
 Feature 080 (item #560) replaced the from-source object-store image with upstream `rustfs/rustfs`,
 digest-pinned in every compose file that pins it, and deleted the build, its workflow, its promoter,
 its Renovate rule and its four allowlist entries. The full case study lives in
-`docs/runbooks/infra-image-scanning.md` § "The from-source object store … — retired by feature 080";
-what matters here is that four of its lessons are about the *shape*, not about that image.
+[the source runbook](../../docs/runbooks/infra-image-scanning.md); what matters here is that four of
+its lessons are about the *shape*, not about that image.
 
 - **Publishing is not promoting.** A rebuilt, published image is not a deployed one: PR #559 bumped the
   builder base image as a security bump, the workflow rebuilt and published, and every compose ref
@@ -570,7 +554,8 @@ what matters here is that four of its lessons are about the *shape*, not about t
 | `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` | the deploy path: no bare `trivy --exit-code`, the shared pipeline is used, the gate runs before `docker push` and inside the per-image loop, `set -euo pipefail` still governs the step, both failure modes are reported in words rather than left to an exit code, and a fixable Critical still blocks while an unfixable one does not and is never classified transient. |
 | `scripts/__tests__/app-image-scan.test.mjs` | the shared per-image pipeline and its two callers (spec 084 US3): `scripts/cd/scan-app-image.sh` returns 0/10/11/2 with the right message, neither caller runs the scanner or the verdict itself, both scan exactly the six images `scan-push.sh` pushes, the job runs on `kvm` after `app-e2e` with `always()` and is not restricted to pull requests, a missing scan tag fails the job naming it, the run-scoped tags are removed under `always()`, and `app-ci / app-image-scan*` is in `ci-status`'s required globs with `scripts/cd/scan-app-image.sh` in the `app` path filter. |
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the weekly `--check-expiring` step exists exactly once, stays schedule-guarded, and the `infra-image-scan/expiry` and `/weekly` contexts cannot match the required branch-protection glob. |
-| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): both `infra-image-scan.yml` and `cd-deploy.yml` install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. Also the discharged datastore holds, asserted as their **successors** rather than as absent ceilings (spec 081): no `allowedVersions` on any track for vault, opensearch, langfuse, the observability postgres or mongodb, a `dependencyDashboardApproval` gate on every major, an automatic patch stream, and — as the control — that neither hold has widened onto caddy or otel-lgtm. |
+| `scripts/__tests__/allowlist-expiry.test.mjs` | the expiry lifecycle both gates share: the 14-day window, both boundaries inclusive (exactly 14 days out is `expiring`; `expiry === today` is still `expiring`, not `expired`), only `expired` stops suppression, whole-day arithmetic on UTC boundaries, and the wording of the `EXPIRING`/`EXPIRED`/`UNMATCHED` lines — including that the unmatched line names three causes rather than two. |
+| `scripts/__tests__/renovate-workflow.guard.test.mjs` | the cron ordering (item #487): the latest sweep cron fires strictly before the earliest Renovate window cron, with at least a two-hour gap, both are UTC-fixed 5-field expressions, and the workflow still states why the cron is where it is — so a later "tidy the crons together" cannot silently undo it. The window cron is selected structurally (exactly one hour-of-week slot), not by naming the nightly, so adding another single-slot `renovate.yml` cron moves what the ordering is asserted against rather than passing vacuously. Also the Trivy pin (item #303): all **three** installing workflows (`infra-image-scan.yml`, `cd-deploy.yml`, `app-ci.yml`) install from a version-tagged script with the same tag, agree on the version, and are actually captured by the `aquasecurity/trivy` customManager. Also Renovate visibility for the object store (item #560, test `(080b)`): every git-tracked compose file pinning `rustfs/rustfs` matches a `docker-compose` `managerFilePattern` and is not excluded by `ignorePaths`, with the file set derived from `git ls-files` rather than listed by hand. Also the discharged datastore holds, asserted as their **successors** rather than as absent ceilings (spec 081): no `allowedVersions` on any track for vault, opensearch, langfuse, the observability postgres or mongodb, a `dependencyDashboardApproval` gate on every major, an automatic patch stream, and — as the control — that neither hold has widened onto caddy or otel-lgtm. |
 | `scripts/__tests__/publish-sweep-verdict.test.mjs` | the weekly verdict mapping as a pure function: gate-red, scan-could-not-run, job-failed-elsewhere, green, and the cancelled run that publishes nothing. |
 | `scripts/__tests__/no-minio-references.guard.test.mjs` | that no live file names the retired object store, with a closed list of reasoned exemptions and history blocks that may — a stale exemption fails, exactly as a stale allowlist entry does. |
 | `scripts/__tests__/mongo-data-owner.guard.test.mjs` | the MongoDB re-own wrapper that made the 8.0.8 → 9.0 move safe (spec 081 US8a): every service in the dev *and* prod compose files that mounts `/data/db` starts as `0:0` only to `chown` the volume and then drops to the image's `mongod` user with `setpriv`, with the wrapper executed against stubs so the assertion is about what it does rather than how it is spelled — and a per-file floor on the number of matching services so a rename cannot make every assertion pass vacuously. |
@@ -581,4 +566,4 @@ coverage hole, a retry that would have masked a finding, a gate that ran after t
 could be tidied back into a race with the window, a rename that missed one runbook line.
 
 Full scanner-vs-scanner coverage table, the allowlist entry shape and seeding steps, the local Trivy
-recipe, and the remediation ownership: `docs/runbooks/infra-image-scanning.md`.
+recipe, and the remediation ownership: [the source runbook](../../docs/runbooks/infra-image-scanning.md).

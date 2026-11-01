@@ -59,7 +59,7 @@ sources:
     resource: repo://scripts/mobile-flows.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T16:05:45.295Z
+    at: 2026-11-01T05:36:38.857Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
