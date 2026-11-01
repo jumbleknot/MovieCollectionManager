@@ -71,21 +71,11 @@
 # Renovate bump to 0.38.1 (sha256:0df9bc14…730af7) is a clean rebuild: Trivy 0.74.0, gate pipeline
 # (run 6190), reports the CVE neither blocking nor allowlisted on it. A re-keyed entry would match
 # nothing and fail guard (063); if the advisory returns, it re-blocks.
-- image: 'langfuse/langfuse:4\.68\.0'
-  id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: 'langfuse/langfuse-worker:4\.68\.0'
-  id: 'CVE-2026-114406'
-  justification: 'Base-image CA bundle (ca-certificates), fixed only by a RHEL/UBI 9.8 rebuild (2026.2.92_v9.0.319-90.3.el9_8). Trivy 0.74.0, gate pipeline, DB 2026-10-23 07:12 UTC: the NEWEST upstream langfuse-worker 4.68.0 still ships the pre-fix package, so no bump clears it today; Keycloak cleared the same CVE by a same-version digest refresh (PR #838) and these are expected to follow. Internal-only (backend-network, no published port). Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06 (re-check upstream then), stops suppressing 2026-11-20. Delete the entry once the image is bumped to a clean rebuild. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
-- image: 'langfuse/langfuse:4\.68\.0'
-  id: 'CVE-2026-114139'
-  justification: '@sentry/nextjs 10.64.0 bundled in langfuse 4.56.0 (fix 10.75.2). NO clean upstream yet: langfuse 4.68.0 (newest, 2026-10-22) still bundles 10.64.0 (Trivy-verified 2026-10-23). Re-key to the new pin if langfuse is bumped before upstream ships the fix. Internal-only. Operator-approved 2026-10-23; flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20. Re-keyed 4.56.0 -> 4.68.0 with the langfuse bump (item #839, spec 081 US8 PR 8d, 2026-10-25): Trivy 0.74.0, gate pipeline, on the exact 4.68.0 digests, this advisory is still blocking; same CVE, same expiry.'
-  addedBy: 'claude (operator-approved, steve)'
-  expiry: '2026-11-20'
+# langfuse/langfuse + langfuse-worker 4\.68\.0: ALL THREE entries DISCHARGED 2026-11-01 (item #895), not
+# re-keyed — CVE-2026-114406 (ca-certificates, web + worker) and CVE-2026-114139 (@sentry/nextjs, web).
+# Both refs moved to 4.72.0 (web sha256:c311fd9db4b6…, worker sha256:aa1724b989a0…), which Trivy 0.76.1
+# (`--severity CRITICAL --ignore-unfixed`, ghcr DB 2026-11-01) scans at ZERO fixable Criticals on each.
+# A re-keyed entry would match nothing and fail guard (063); if either advisory returns, it re-blocks.
 # mongodb/mongodb-community-server:9\.0-ubi9 CVE-2026-114406: entry DISCHARGED 2026-11-01, not re-keyed. Upstream's
 # UBI 9.8 rebuild of the SAME 9.0.4 (9.0.4-ubi9-20261031T064800Z, index sha256:3d40c6fa895f) ships the fixed
 # ca-certificates 2026.2.92_v9.0.319-90.3.el9_8: Trivy 0.76.1 (ghcr DB 2026-11-01) reports ZERO fixable
