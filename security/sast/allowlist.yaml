@@ -264,9 +264,9 @@
 - scanner: "pnpm-audit"
   id: "GHSA-mrhx-c7xc-m3w5"
   locationPattern: "^zod@3\\.25\\.7[56]$"
-  justification: "Memory exhaustion while validating oversized constrained collections. Fixed ONLY in zod 4.6.6+ (OSV: introduced 0, fixed 4.6.6); no 3.x release carries the fix. zod 3.25.76/3.25.75 are pinned by the BFF agent stack, not first-party code: @ag-ui/core/client/proto 1.0.2, @a2ui/web_core 0.10.4, @ai-sdk/* 2.x/3.x (anthropic, gateway, google, google-vertex, mcp, openai-compatible) and @microsoft/agents-activity/-hosting 1.9.1 (lockfile re-measured 2026-10-23); the app itself is on zod 4.6.7. Forcing zod 4 onto libraries written against the zod 3 API would break the agent runtime, so remediation is upstream (CopilotKit / ag-ui / ai-sdk moving to zod 4). The agent endpoints sit behind BFF session auth. Time-boxed: flags EXPIRING from 2026-11-06, stops suppressing 2026-11-20 — re-check the dependents' zod ranges then."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-20"
+  justification: "Memory exhaustion while validating oversized constrained collections. Fixed ONLY in zod 4.6.6+ (OSV: introduced 0, fixed 4.6.6); no 3.x release carries the fix. zod 3.25.76/3.25.75 are pinned by the BFF agent stack, not first-party code: @ag-ui/core/client/proto 1.0.2, @a2ui/web_core 0.10.4, @ai-sdk/* 2.x/3.x (anthropic, gateway, google, google-vertex, mcp, openai-compatible) and @microsoft/agents-activity/-hosting 1.9.1 (lockfile re-measured 2026-10-23); the app itself is on zod 4.6.7. Forcing zod 4 onto libraries written against the zod 3 API would break the agent runtime, so remediation is upstream (CopilotKit / ag-ui / ai-sdk moving to zod 4). The agent endpoints sit behind BFF session auth. RENEWED 2026-11-01 to 2026-12-01 after re-measuring: the lockfile still resolves zod 3.25.76 under the same agent-stack dependents, and upstream still hard-requires zod 3 at its newest releases — @ag-ui/client 1.0.3 (zod ^3.25.76), @a2ui/web_core 0.14.0 (^3.25.76), @copilotkit/runtime 1.83.0 (^3.25.18) and @copilotkit/shared 1.83.0 (^3.23.3). (ai 7, @ai-sdk/* and @modelcontextprotocol/sdk now accept zod 4, so CopilotKit/ag-ui are the remaining blockers.) Re-check those three by the expiry."
+  addedBy: "claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)"
+  expiry: "2026-12-01"
 
 # ── graphql-scalars GHSA-x8rm-f576-gq67 (published 2026-10-28, operator-approved 2026-10-29) ───────
 # NOT REACHABLE, measured 2026-10-29 in the shipped dist of the exact versions the lockfile pins. The ReDoS
@@ -280,9 +280,9 @@
 - scanner: "pnpm-audit"
   id: "GHSA-x8rm-f576-gq67"
   locationPattern: "^graphql-scalars@1\\.26\\.0$"
-  justification: "ReDoS in the GraphQLPhoneNumber regex only. Not reachable: @copilotkit/runtime@1.79.1 imports only GraphQLJSON/GraphQLJSONObject, and type-graphql@2.0.0-rc.1 only GraphQLTimestamp/GraphQLDateTimeISO (shipped dist grepped 2026-10-29), so no PhoneNumber type exists in our schema for graphql-js to parse. Fixed only in 2.0.1, outside both dependents' ^1 ranges. Version-keyed, so a different graphql-scalars version re-blocks. Time-boxed: re-check the copilotkit range by the expiry."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-20"
+  justification: "ReDoS in the GraphQLPhoneNumber regex only. Not reachable: @copilotkit/runtime@1.79.1 imports only GraphQLJSON/GraphQLJSONObject, and type-graphql@2.0.0-rc.1 only GraphQLTimestamp/GraphQLDateTimeISO (shipped dist grepped 2026-10-29), so no PhoneNumber type exists in our schema for graphql-js to parse. Fixed only in 2.0.1, outside both dependents' ^1 ranges. Version-keyed, so a different graphql-scalars version re-blocks. RENEWED 2026-11-01 to 2026-12-01 after re-measuring: lockfile still graphql-scalars 1.26.0 / @copilotkit/runtime 1.79.1 / type-graphql 2.0.0-rc.1, so the dist measurement stands; the newest @copilotkit/runtime (1.83.0) still declares graphql-scalars ^1.23.0, so a CopilotKit bump does not discharge this. Re-check the copilotkit range by the expiry."
+  addedBy: "claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)"
+  expiry: "2026-12-01"
 
 # ── decode-uri-component GHSA-qr28-fpjm-wq7f (published 2026-10-29 16:41Z, operator-approved the same day) ──
 # A quadratic-time DoS on malformed percent-encoded input. The only path to it is expo-router@57.0.29 >
@@ -299,9 +299,9 @@
 - scanner: "pnpm-audit"
   id: "GHSA-qr28-fpjm-wq7f"
   locationPattern: "^decode-uri-component@0\\.2\\.2$"
-  justification: "Quadratic-time DoS on malformed percent-encoded input. Only path: expo-router@57.0.29 > query-string@7.1.3, used solely by the client-side URL-to-navigation-state linking code. web.output is server with no server rendering, so no BFF request reaches it (by reading the packed expo-router 2026-10-29). Fix 0.5.1 is ESM-only and query-string@7 calls a CommonJS function export, so an override breaks client URL parsing. Version-keyed, so another version re-blocks. Time-boxed: re-check expo-router's query-string range by the expiry."
-  addedBy: "claude (operator-approved, steve)"
-  expiry: "2026-11-20"
+  justification: "Quadratic-time DoS on malformed percent-encoded input. Only path: expo-router@57.0.29 > query-string@7.1.3, used solely by the client-side URL-to-navigation-state linking code. web.output is server with no server rendering, so no BFF request reaches it (by reading the packed expo-router 2026-10-29). Fix 0.5.1 is ESM-only and query-string@7 calls a CommonJS function export, so an override breaks client URL parsing. Version-keyed, so another version re-blocks. RENEWED 2026-11-01 to 2026-12-01 after re-measuring: lockfile still expo-router 57.0.29 > query-string 7.1.3 > decode-uri-component 0.2.2, and 57.0.29 is the newest expo-router 57. expo-router 58 no longer depends on query-string at all, so the remediation route is the Expo SDK 58 upgrade, not an override. Re-check by the expiry."
+  addedBy: "claude (operator-approved, steve; renewed 2026-11-01 on re-measurement)"
+  expiry: "2026-12-01"
 
 # ── 2026-10-10: braces GHSA-vfj7-8cjw-p6xm in tools/openwiki-generator (item #721) ──────────────────
 # Operator-approved 2026-10-11 (steve). Not the root entry above re-used: the root entry is anchored at
