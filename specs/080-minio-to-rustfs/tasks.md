@@ -827,12 +827,20 @@ evidence; it never runs these.
 - [ ] T046 Run the final validation checklist (`openwiki/invariants/feature-validation-checklist.md`),
   including the web E2E regression; run `speckit-analyze` over spec/plan/tasks and resolve findings.
 
-- [ ] T047 **[OPERATOR]** After the rollback window (default 14 days, Open Question 2), M7: delete
+- [x] T047 **[OPERATOR]** After the rollback window (default 14 days, Open Question 2), M7: delete
   `observability-langfuse-minio-data`, the dev and Nx-cache MinIO volumes, the Komodo Variable
   `LANGFUSE_MINIO_ROOT_PASSWORD`, and the `jumbleknot/minio` registry package; remove
   `/home/prod/minio/`.
+  *Done 2026-10-24/25, ahead of the window at the operator's choice (item #826 comments): the four
+  MinIO containers and both volumes removed (`docker volume ls -q | grep -i minio` empty on prod);
+  `/home/prod/minio` removed with the matching `backup.sh` line; `~/nx-cache/nx-cache.env.minio-bak`
+  removed; the Komodo Variable deleted; the `jumbleknot/minio` package deleted, including its 19
+  untagged `sha256:` versions (`type=container&q=minio` → `X-Total-Count: 0`). The first nightly
+  backup after it, 2026-10-25 03:30, was clean (snapshot `d01b721f`, 0 missing-path lines). The dev
+  container is the only dev machine; its daemon holds 0 MinIO volumes, containers or images
+  (re-checked 2026-11-01).*
 
-- [ ] T048 Cleanup PR: delete `scripts/object-store-migration.mjs`,
+- [x] T048 Cleanup PR: delete `scripts/object-store-migration.mjs`,
   `scripts/__tests__/object-store-migration.test.mjs` and `object-store-migration.rehearsal.mjs`.
 
   **Verify RED**: `node --test scripts/__tests__/no-minio-references.guard.test.mjs` → **Expected
@@ -841,6 +849,12 @@ evidence; it never runs these.
   **Verify GREEN**: same command → pass; `node --test scripts/__tests__/*.test.mjs` → pass. Close
   item #560 only when this PR merges (its acceptance criteria are superseded by this feature — say so
   in the closing comment rather than ticking boxes that were not done as written).
+  *Done 2026-11-01 (item #826): the four tool files deleted (`object-store-migration.sh` too);
+  `pinnedRustfsRef` moved into `object-store-service.guard.test.mjs`, its only other consumer. Verify RED:
+  G3 `stale path exemption(s) — delete them:` naming exactly the four files. Both TEMPORARY rows (path and
+  production-resource tokens) removed from the guard and the contract; the token mutation test now plants
+  the remaining spec-citation token. The runbooks' live cutover text is wrapped in history blocks.
+  Verify GREEN: the guard and the full `scripts/__tests__` run.*
 
 ---
 

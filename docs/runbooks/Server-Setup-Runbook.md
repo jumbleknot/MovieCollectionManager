@@ -792,6 +792,10 @@ prod$ docker compose up -d
 prod$ docker compose logs createbucket     # ends with "bucket ready"
 ```
 
+<!-- history:begin -->
+**Completed 2026-10-21; the old store and its directory were removed on 2026-10-24 (item #826), and the migration
+tool was deleted by spec 080 T048. Kept as the record of how it was done.**
+
 **Migrating the existing store (feature 080, contract M8).** Until this is done the host still runs
 the previous store from `/home/prod/minio/` on the volume `minio_minio-data`. The data is rebuildable
 (a cold cache costs time, not correctness), so recreating empty is an accepted alternative — but the
@@ -827,7 +831,6 @@ take it off the list in that same step. Take each store's secret from its own `.
 next pasted line as its input; and list env-file keys with `^[A-Z0-9_]+=`, not `^[A-Z_]+=`, which silently
 skips every `S3_…` line.
 
-<!-- history:begin -->
 **Done on prod 2026-10-21** (spec 080 T044): copy, not recreate; `verify` pass 1360 → 1360 objects. Host
 facts that are not in git: the old store was the compose project `minio` (container `minio-minio-1`,
 network `minio_default`, service `minio`, S3 on `0.0.0.0:9000`, console on `0.0.0.0:9001`) on the volume

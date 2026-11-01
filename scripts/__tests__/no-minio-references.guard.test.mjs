@@ -42,13 +42,6 @@ export const PATH_EXEMPTIONS = [
   { path: 'openwiki/**', why: 'Generated; regenerated from sources this guard covers. Pages summarising specs 069/070 legitimately name MinIO.' },
   { path: 'pnpm-lock.yaml', why: 'Third-party package names, not ours to rename.' },
   { path: 'scripts/__tests__/no-minio-references.guard.test.mjs', why: 'The guard holds the pattern.' },
-  // TEMPORARY — removed with the tool in the cleanup PR (tasks.md T048). The tool must name
-  // `.minio.sys`, MinIO's SSE marker and its own provenance; the rehearsal must name the deployed
-  // MinIO image; the wrapper documents the volume it is run against.
-  { path: 'scripts/object-store-migration.mjs', why: 'TEMPORARY (T048): reads MinIO\'s on-disk structures by name.' },
-  { path: 'scripts/object-store-migration.sh', why: 'TEMPORARY (T048): the production wrapper names the volume it migrates.' },
-  { path: 'scripts/__tests__/object-store-migration.test.mjs', why: 'TEMPORARY (T048): the tool\'s unit tests.' },
-  { path: 'scripts/__tests__/object-store-migration.rehearsal.mjs', why: 'TEMPORARY (T048): seeds a drive with the deployed MinIO image.' },
 ];
 
 /** G2 — line exemptions: only lines in `path` that match `line` are exempt. */
@@ -101,17 +94,6 @@ export const TOKEN_EXEMPTIONS = [
     token: /specs\/0(?:69|70|80)-minio-[a-z0-9-]+|no-minio-references\.guard\.test\.mjs|no-minio-guard\.md/g,
     scope: () => true,
     why: 'Citations of the 069/070/080 spec directories, and of this guard and its contract, whose names are fixed.',
-  },
-  {
-    // TEMPORARY — until the rollback window closes (M7 / tasks.md T047) and the cleanup PR (T048).
-    // These are the REAL names of production resources that still exist and ARE the rollback target:
-    // the original volume, the Komodo Variable the revert needs (and the old store's access-key id,
-    // which the cutover's manifest step authenticates with), the containers the cutover stops,
-    // the host-managed Nx-cache store, and the registry package rollback pulls. An operator must be
-    // able to find them in the runbook on the night; deleting the names would not delete the things.
-    token: /observability-langfuse-minio-data|LANGFUSE_MINIO_ROOT_PASSWORD|S3_ACCESS_KEY=minio\b|langfuse-minio-init|langfuse-minio|minio_minio-data|\/home\/prod\/minio\/?|jumbleknot\/minio/g,
-    scope: (file) => file.startsWith('docs/runbooks/') || file === 'infrastructure-as-code/komodo/stacks.toml',
-    why: 'TEMPORARY (T047/T048): names of production resources that exist until M7 and are the rollback target.',
   },
 ];
 
@@ -228,9 +210,10 @@ test('G3: every TOKEN exemption strips at least one occurrence', () => {
 
 test('mutation: a line naming an exempt token AND MinIO otherwise still fails', () => {
   const runbook = 'docs/runbooks/prod-control-tower.md';
-  const r = scan([runbook], plant(runbook, 'Stop langfuse-minio, then start MinIO again.'));
+  // T048 removed the production-resource tokens with the resources; the spec-citation token remains.
+  const r = scan([runbook], plant(runbook, 'See specs/080-minio-to-rustfs/spec.md, then start MinIO again.'));
   assert.equal(r.violations.length, 1, r.violations.join('\n'));
-  const ok = scan([runbook], plant(runbook, 'docker stop langfuse-minio-init langfuse-minio'));
+  const ok = scan([runbook], plant(runbook, 'See specs/080-minio-to-rustfs/spec.md for the cutover.'));
   assert.deepEqual(ok.violations, []);
 });
 
