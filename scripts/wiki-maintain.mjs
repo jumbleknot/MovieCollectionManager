@@ -1440,13 +1440,17 @@ export function runMaintenance({
 //
 // Sized 2026-09-28 from measurement (feature 078, research R9, operator sign-off: "~8 pages per run,
 // timeout 60"). On DeepSeek V4.1 Flash at page concurrency 4, one invocation of up to 8 pages is two
-// waves of page workers and measured 15–23 min; WORST_INVOCATION_SECONDS allows 30. The job timeout has
+// waves of page workers and measured 15–23 min. RE-DERIVED 2026-11-01 (item #613) from the committed
+// run records: invocations that ended on their own took up to 2958 s, so WORST_INVOCATION_SECONDS
+// allows 65 (the same +30%), and the guard test derives it from that fixture. The job timeout has
 // to hold the in-job debounce sleep, setup, the start deadline, one worst-case invocation and the
 // publishing around it; a 4-minute start deadline is what fits that inside 60 minutes with 5 minutes' margin (the
 // guard test's own arithmetic caught a 5-minute first draft at 4). In practice a run is ONE invocation —
 // a second starts only if the first finished inside 4 minutes — and
 // a retry happens only after a fast failure; anything else is carried to the next run. Declared
-// EFFECTIVE CEILING: ≤16 pages / ~34 minutes of generation (FR-011a). The guard test derives the
+// EFFECTIVE CEILING: ≤16 pages / ~69 minutes of generation (FR-011a) — MORE than a merge-triggered run's
+// ~37-minute generator window (60 − 15 debounce − setup − DEADLINE_RESERVE_MS), so a worst-case
+// invocation fits only a dispatched run; a push run stops it at the deadline and carries it (#613). The guard test derives the
 // workflow's timeout-minutes from these constants rather than remembering a number.
 //
 // The wall-clock budget bounds RUNNER OCCUPANCY (FR-011c) — there is one CI runner and a paid job
@@ -1456,8 +1460,12 @@ export function runMaintenance({
 
 export const PAGE_BUDGET = MAX_PAGES_PER_INVOCATION;
 
-/** One worst-case generator invocation (8 pages, concurrency 4): measured ≤23 min, +30% (078 R9). */
-export const WORST_INVOCATION_SECONDS = 30 * 60;
+/**
+ * One worst-case generator invocation: the measured worst that ended on its own, +30%. 078 R9 had
+ * ≤23 min → 30; the committed run records since measure 2958 s → 65 (item #613). Derived from
+ * scripts/__tests__/fixtures/wiki-maintain/measured-invocations.json by wiki-maintain.guard.test.mjs.
+ */
+export const WORST_INVOCATION_SECONDS = 65 * 60;
 /** CI time outside the budget, from the forge's step durations (078 R9): checkout, installs, plan, guard. */
 export const CI_SETUP_SECONDS = 2 * 60;
 /** CI time around the generator inside the execute step: preflight, verification, publishing (078 R9). */

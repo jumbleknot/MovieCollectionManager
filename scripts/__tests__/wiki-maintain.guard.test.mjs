@@ -115,6 +115,19 @@ test('the job timeout sits above the effective ceiling, derived — not a rememb
   assert.equal(job()['timeout-minutes'], 120, 'the operator-approved ceiling (2026-10-02) — changing it is a decision, not a tidy-up');
 });
 
+test('WORST_INVOCATION_SECONDS is DERIVED from measured runs, not remembered (item #613)', () => {
+  // 078 R9 set 30 min from "measured ≤23 min, +30%". The committed run records then measured
+  // invocations that ended on their own at up to 2958 s (49 min) — so the 30-min figure was false, and
+  // the ceiling built on it was too. The same rule (+30% over the measured worst, whole minutes) is
+  // applied here to the fixture, so the constant cannot drift from the data again.
+  const { invocations } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'wiki-maintain', 'measured-invocations.json'), 'utf8'));
+  assert.ok(invocations.length >= 30, `too few measured invocations to derive from: ${invocations.length}`);
+  const worst = Math.max(...invocations.map((i) => i.elapsedSeconds));
+  const derived = Math.ceil((worst * 1.3) / 60) * 60;
+  assert.equal(WORST_INVOCATION_SECONDS, derived,
+    `WORST_INVOCATION_SECONDS is ${WORST_INVOCATION_SECONDS / 60} min; the measured worst is ${worst} s, so +30% is ${derived / 60} min`);
+});
+
 test('the job records a deadline in its FIRST step: dispatch = timeout-minutes, push held to 60 (#613)', () => {
   // wiki-maintain runs the generator under this deadline so a hang ends as a failed slice with a
   // committed run record. It has to be the first step: the debounce sleep and setup count against

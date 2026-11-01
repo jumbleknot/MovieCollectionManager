@@ -682,7 +682,8 @@ test('budget: the defaults are the 078 R9 decision — one 8-page invocation per
   assert.equal(mod.PAGE_BUDGET, mod.MAX_PAGES_PER_INVOCATION, 'one invocation\'s worth of pages per run');
   assert.equal(mod.MAX_PAGES_PER_INVOCATION, 8);
   assert.equal(mod.TIME_BUDGET_SECONDS, 4 * 60, 'a start deadline, not a run length');
-  assert.equal(mod.WORST_INVOCATION_SECONDS, 30 * 60, 'measured 23 min worst for two waves, +30%');
+  // 30 → 65 on 2026-11-01 (item #613): derived from the measured fixture in wiki-maintain.guard.test.mjs.
+  assert.equal(mod.WORST_INVOCATION_SECONDS, 65 * 60, 'measured 2958 s worst that ended on its own, +30%');
   const header = readFileSync(SCRIPT, 'utf8');
   const c6 = header.slice(header.indexOf('C6 — the run budget'));
   // FR-011a/FR-011c/FR-011d must be stated where someone changing the numbers will read them.

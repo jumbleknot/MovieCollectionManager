@@ -321,8 +321,10 @@ continues where it left off.
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
 after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
 page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
-backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~34 min
-of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
+backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~69 min
+of generation**, re-derived on 2026-11-01 from the committed run records (item #613): the worst invocation that ended on
+its own took 2958 s. That is more than a merge-triggered run's ~37-minute generator window, so the worst case fits only
+a dispatched run; a push run stops it at the deadline and carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
