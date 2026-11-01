@@ -1453,6 +1453,9 @@ jobs:
           # so a failure is inspectable out-of-band (ssh ci@runner: ~/mcm-ci-last-failure) even after
           # teardown. Only the latest failure is kept. This is the durable debug trail (the Forgejo API
           # exposes no step logs/artifacts).
+          # Item #645: stamp the bundle with the run and job that wrote it. The digest refuses a bundle
+          # whose stamp is not its own, because this directory outlives the run and dast shares it.
+          echo "run=${GITHUB_RUN_ID:-?} job=${GITHUB_JOB:-?} sha=${GITHUB_SHA:-?} written=$(date -u +%FT%TZ)" > container-logs/_bundle-owner.txt
           rm -rf "$HOME/mcm-ci-last-failure" && cp -r container-logs "$HOME/mcm-ci-last-failure" 2>/dev/null || true
           # Quick-glance to the job log (visible inline, no artifact download needed).
           echo "::group::container status + health"; cat container-logs/_ps.txt 2>/dev/null || true; \
@@ -1725,7 +1728,7 @@ jobs:
             docker inspect --format '{{json .State.Health}}' "$c" > "container-logs/$c.health.json" 2>/dev/null || true
           done
           docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' > container-logs/_ps.txt 2>&1 || true
-          echo "run=${GITHUB_RUN_ID:-?} job=dast sha=${GITHUB_SHA:-?} written=$(date -u +%FT%TZ)" > container-logs/_bundle-owner.txt
+          echo "run=${GITHUB_RUN_ID:-?} job=${GITHUB_JOB:-?} sha=${GITHUB_SHA:-?} written=$(date -u +%FT%TZ)" > container-logs/_bundle-owner.txt
           rm -rf "$HOME/mcm-ci-last-failure" && cp -r container-logs "$HOME/mcm-ci-last-failure" 2>/dev/null || true
           echo "::group::container status + health"; cat container-logs/_ps.txt
           for h in container-logs/*.health.json; do [ -s "$h" ] && { echo "-- $h --"; cat "$h"; echo; }; done

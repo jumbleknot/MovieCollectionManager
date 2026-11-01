@@ -1384,6 +1384,8 @@ function mobileFailureHome({ bulkBytes = 2_000, screenshot = PNG_1PX } = {}) {
   const attempt = join(bundle, '_mobile-diagnostics', 'assistant-config-gating-attempt1');
   mkdirSync(join(attempt, 'maestro'), { recursive: true });
   writeFileSync(join(bundle, '_ps.txt'), 'NAMES  STATUS\nmc-service  Up\n');
+  // Stamped as this run's (item #645) — evidence241 runs as run `x`, job unset → `local`.
+  writeFileSync(join(bundle, '_bundle-owner.txt'), 'run=x job=local sha=abc written=2026-10-02T00:00:00Z\n');
   writeFileSync(join(bundle, 'mc-service.log'), 'c'.repeat(bulkBytes));
   writeFileSync(join(bundle, 'mc-service.health.json'), JSON.stringify({ Status: 'unhealthy', Log: [{ Output: 'nope' }] }));
   writeFileSync(join(attempt, 'logcat-react.log'), 'ReactNativeJS: TypeError: undefined is not an object\n');
@@ -1784,4 +1786,68 @@ test('(#241k) the bulk dump is still CARRIED when there is room — demoted, not
   assert.ok(kept.includes('logs/_mobile-diagnostics/f-a1/maestro/g/screen-hierarchy/s.json'));
   assert.ok(kept.includes('logs/_mobile-diagnostics/f-a1/maestro/g/logs/device-logcat.txt'),
     'the bulk dump was excluded rather than demoted — it is still evidence when there is room');
+});
+
+// ── Item #645: a container bundle from ANOTHER run or job is refused, never shown as this one's ──
+//
+// `~/mcm-ci-last-failure` lives in the runner's $HOME and survives between runs. Measured
+// 2026-10-02: dast run 4445 shipped a 09-30 Keycloak log, and run 4460 a log of the Keycloak version
+// PR #638 ran, both beside a health table saying `healthy` for the container that had just failed.
+// The bundle is stamped by its writer (`_bundle-owner.txt`); the reader checks the stamp.
+
+import { readdirSync as readdir645, readFileSync as readFile645 } from 'node:fs';
+
+function stampedBundleHome(stamp) {
+  const home = mkdtempSync(join(tmpdir(), 'digest-645-'));
+  const bundle = join(home, 'mcm-ci-last-failure');
+  mkdirSync(bundle, { recursive: true });
+  writeFileSync(join(bundle, 'keycloak-service.log'), '2026-09-30T09:52:00Z realm grumpyrobot token event\n');
+  writeFileSync(join(bundle, 'keycloak-service.health.json'), JSON.stringify({ Status: 'healthy', Log: [{ Output: 'ok' }] }));
+  if (stamp !== null) writeFileSync(join(bundle, '_bundle-owner.txt'), `${stamp}\n`);
+  return home;
+}
+const evidence645 = (home, env) => collectEvidence({ home, cwd: mkdtempSync(join(tmpdir(), 'cwd-645-')), env });
+
+test('(#645a) a bundle stamped by THIS run and job is collected', () => {
+  const ev = evidence645(stampedBundleHome('run=4460 job=dast sha=abc written=2026-10-02T12:00:00Z'), { GITHUB_RUN_ID: '4460', GITHUB_JOB: 'dast' });
+  assert.ok(ev.excerpts.some((e) => e.source === 'keycloak-service.log'), 'this run\'s own bundle was not collected');
+  assert.equal(ev.health.length, 1);
+});
+
+test('(#645b) a bundle stamped by ANOTHER run is refused and named under Not collected', () => {
+  const ev = evidence645(stampedBundleHome('run=4438 job=app-e2e sha=old written=2026-09-30T09:52:00Z'), { GITHUB_RUN_ID: '4445', GITHUB_JOB: 'dast' });
+  assert.equal(ev.excerpts.filter((e) => e.source === 'keycloak-service.log').length, 0, 'another run\'s container log was shown as this run\'s');
+  assert.equal(ev.health.length, 0, 'another run\'s health table was shown as this run\'s');
+  assert.ok(ev.absent.some((a) => /bundle belongs to run 4438 \/ job app-e2e/.test(a)), `the refusal was not stated: ${JSON.stringify(ev.absent)}`);
+});
+
+test('(#645c) the same run but a DIFFERENT job is refused — app-e2e and dast share $HOME', () => {
+  const ev = evidence645(stampedBundleHome('run=4445 job=app-e2e sha=abc written=x'), { GITHUB_RUN_ID: '4445', GITHUB_JOB: 'dast' });
+  assert.equal(ev.health.length, 0, 'the sibling job\'s bundle was shown as this job\'s');
+  assert.ok(ev.absent.some((a) => /bundle belongs to run 4445 \/ job app-e2e/.test(a)), JSON.stringify(ev.absent));
+});
+
+test('(#645d) an UNSTAMPED bundle is refused — absence of a stamp is not proof of ownership', () => {
+  const ev = evidence645(stampedBundleHome(null), { GITHUB_RUN_ID: '4445', GITHUB_JOB: 'dast' });
+  assert.equal(ev.health.length, 0, 'an unattributable bundle was shown as this run\'s');
+  assert.ok(ev.absent.some((a) => /no owner stamp/.test(a)), JSON.stringify(ev.absent));
+});
+
+test('(#645e) every workflow step that writes ~/mcm-ci-last-failure stamps it with ITS run and job', () => {
+  // The guard criterion: the next job added that writes a bundle without a stamp would have its own
+  // evidence refused by (#645d), so it must fail here, at review time, rather than silently in CI.
+  const wfDir = join(dirnamePath(toPath(import.meta.url)), '..', '..', '.forgejo', 'workflows');
+  const writers = [];
+  for (const name of readdir645(wfDir).filter((n) => /\.ya?ml$/.test(n))) {
+    // A step is everything from one `- name:` to the next; that is the unit that must stamp.
+    const steps = readFile645(join(wfDir, name), 'utf8').split(/\n\s*- name: /);
+    for (const step of steps) {
+      if (!/cp -r \S+ "\$HOME\/mcm-ci-last-failure"/.test(step)) continue;
+      writers.push(`${name}: ${step.split('\n')[0]}`);
+      assert.match(step, /_bundle-owner\.txt/, `${name} step "${step.split('\n')[0]}" writes the bundle without an owner stamp`);
+      assert.match(step, /run=\$\{GITHUB_RUN_ID[^}]*\} job=\$\{GITHUB_JOB[^}]*\}/,
+        `${name} step "${step.split('\n')[0]}" stamps something other than its own run and job`);
+    }
+  }
+  assert.ok(writers.length >= 2, `expected the app-e2e and dast writers, found: ${JSON.stringify(writers)}`);
 });
