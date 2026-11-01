@@ -6,21 +6,28 @@
     {
       "area": "runbooks",
       "pages": [
-        "prod-data-tier-auth.md",
-        "wiki-maintenance.md",
-        "server-setup.md",
         "renovate.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md"
+      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "prod-control-tower.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 911,
-    "headCommit": "5d707346d83612c5ee4421d76fbe5244f653cb5b",
+    "headCommit": "25dafef80a2c7486191a3f082bb569f077995906",
     "markerBefore": "ebf11f234497c03967b0319449ebda6cb3d15c2f",
     "slices": [
       {
@@ -44,74 +51,65 @@
         "subjects": {},
         "areaExists": true,
         "reason": "drift: frontend/mcm-app/src/bff-server/session-manager.ts changed after the page's stamp; drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "prod-data-tier-auth.md",
+          "wiki-maintenance.md",
+          "server-setup.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
       }
     ],
-    "updatedAt": "2026-11-01T18:49:47.899Z"
+    "updatedAt": "2026-11-01T21:44:09.348Z"
   },
   "lastRunBudget": {
     "pagesWritten": 9,
-    "elapsedSeconds": 2204,
-    "stoppedAtBudget": false
+    "elapsedSeconds": 3104,
+    "stoppedAtBudget": true
   },
   "escalations": {
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-01T18:49:47.410Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-01T18:49:47.410Z",
-      "failuresAtLow": 0
-    },
     "runbooks/renovate.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-01T18:49:47.410Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/prod-data-tier-auth.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-01T18:49:47.410Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 558,
+    "calls": 575,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2219359,
-    "cached": 47411740,
+    "uncached": 3142892,
+    "cached": 53693354,
     "cacheWrite": 0,
-    "output": 979017,
-    "reasoning": 821365,
-    "ms": 6320817,
-    "estCostUsd": 2.1251,
+    "output": 823319,
+    "reasoning": 691577,
+    "ms": 5476543,
+    "estCostUsd": 2.253,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/sast.md",
         "runbooks/prod-data-tier-auth.md",
         "runbooks/wiki-maintenance.md",
         "runbooks/server-setup.md",
-        "runbooks/renovate.md",
-        "gotchas/session-lifecycle-and-eviction.md",
-        "gotchas/keycloak-service-account.md"
+        "runbooks/renovate.md"
       ],
-      "effort": null,
+      "effort": "low",
       "deadlineStop": true,
-      "estCostUsd": 2.1251,
+      "estCostUsd": 2.253,
       "rateLimited": null
     }
   ],
