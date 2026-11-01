@@ -393,6 +393,15 @@ jobs:
           CI_LOG_STEP
       - name: Gate — fail on any un-allowlisted High/Critical blocking finding
         run: bash scripts/ci-log-step.sh sast-gate node scripts/check-sast-findings.mjs
+      # Item #776 — a PR must not move a package INTO a known advisory, in ANY scope. The gate above
+      # never blocks a dev-scope finding, so nx 23 pulling undici 7.29.1 -> 7.29.0 (10 advisories, 2
+      # High) went green; this compares the base and head lockfiles against the advisory ranges the
+      # scan above already fetched. PR-only: a push has no base to have regressed from.
+      - name: Gate — no package resolution moves INTO a known advisory (item #776)
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/ci-log-step.sh sast-downgrade-gate node scripts/check-dependency-downgrade.mjs --base "origin/$BASE_REF"
       - name: Upload scan reports (findings.json + SARIF + summary + native)
         if: ${{ always() }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3

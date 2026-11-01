@@ -500,11 +500,24 @@ function pnpmAuditJson(workspace, extra) {
   });
 }
 
+/**
+ * The id a pnpm-audit finding is reported (and allowlisted) under. Shared with
+ * check-dependency-downgrade.mjs (item #776) so that gate names the SAME id this report does — an
+ * allowlist entry written against one must match the other.
+ */
+export function pnpmAdvisoryId(adv, key) {
+  return String(adv.github_advisory_id || (adv.cves || [])[0] || adv.id || key);
+}
+
+/** The location a pnpm-audit finding is reported under: `[<workspace>:]<module>@<version>`. */
+export function pnpmFindingLocation(workspace, moduleName, version) {
+  return `${workspace === '.' ? '' : `${workspace}:`}${moduleName}@${version}`;
+}
+
 export function normalizePnpmAudit(full, prodKeys, map, workspace = '.') {
-  const prefix = workspace === '.' ? '' : `${workspace}:`;
   const out = [];
   for (const [key, adv] of Object.entries(full.advisories ?? {})) {
-    const id = String(adv.github_advisory_id || (adv.cves || [])[0] || adv.id || key);
+    const id = pnpmAdvisoryId(adv, key);
     const scope = prodKeys.has(String(key)) || prodKeys.has(String(adv.id)) ? 'runtime' : 'dev';
     const severity = normalizeSeverity('pnpm-audit', adv.severity, map);
     const fix = adv.patched_versions && adv.patched_versions !== '<0.0.0' ? String(adv.patched_versions) : null;
@@ -512,7 +525,7 @@ export function normalizePnpmAudit(full, prodKeys, map, workspace = '.') {
     for (const version of versions.length ? versions : ['*']) {
       out.push({
         scanner: 'pnpm-audit', kind: 'sca', id, title: String(adv.title ?? id),
-        location: `${prefix}${adv.module_name}@${version}`, ecosystem: 'npm',
+        location: pnpmFindingLocation(workspace, adv.module_name, version), ecosystem: 'npm',
         nativeSeverity: String(adv.severity), severity, scope,
         blocking: deriveBlocking({ kind: 'sca', severity, scope }), fixAvailable: fix,
       });
