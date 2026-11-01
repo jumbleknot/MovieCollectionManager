@@ -491,7 +491,20 @@ Starts after the parallel Langfuse minor PR has merged (same compose files).
   | `bff_db.user_agent_config` | 1 |
 
   (PR #817 was merged before this record existed, so it is recorded here and on item #819 instead.)
-  **Still open: §6.4 FCV raise to `9.0`** after the 7-day soak — not before 2026-10-31; tracked as a backlog item.
+  ~~Still open: §6.4 FCV raise to `9.0`~~ **Done 2026-11-01 (item #850), by the operator on the prod host, runbook §6.4:**
+  - **Soak.** 9.0.4 at FCV 8.0 from the 2026-10-24 cutover: `restarts=0`, 0 E/F log lines. The only recreation of
+    the stores was CD's routine digest-promote deploy at 09:18Z (`98d88d4f`), not a crash. The host has been up
+    since 2026-10-24. That recreation also discarded the logs from before it.
+  - **F1.** Fresh counts, index lists and `mongodump` archives were taken into `~/mongo-upgrade-081-fcv`:
+    `GZIP-OK`, `done dumping` 4 and 7, `NO-DUMP-ERRORS`, mc index list 19 lines. This is the §6.5 restore point.
+    Counts: `mc_db.movie_collections` 2, `mc_db.movies` 2313, `bff_db.app_settings` 1,
+    `backup_destinations` 1, `backup_jobs` 1, `backup_runs` 9, `user_agent_config` 1.
+  - **F2.** `setFeatureCompatibilityVersion: "9.0"` returned `ok: 1` on both stores. They read back
+    `FCV=9.0 term-in-config=true` (mc) and `FCV=9.0` (bff).
+  - **F3/V4.** `MC-COUNTS-EQUAL`, `BFF-COUNTS-EQUAL`. mc-service was restarted and logged its index pass
+    (`MC-SERVICE-INDEX-PASS-OK`), then `MC-INDEXES-EQUAL`. The app check passed (sign-in, collection, paging,
+    search, Settings → Backups, assistant settings), then `BFF-INDEXES-EQUAL`, with 0 BFF Mongo errors in
+    30 min. The root-password files were shredded afterwards.
 
 **PR 8b — observability postgres 16 → 18 (Langfuse + Unleash together)**
 
