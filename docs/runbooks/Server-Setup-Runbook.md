@@ -682,10 +682,14 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > `id -u ci` differs). The jobs install the Docker CLI themselves if the host lacks one. The `app-ci`
 > workflow **fails loud** if `/dev/kvm` is absent — it never silently skips the mobile suite.
 >
+> Verify on the host, **as `ci`** (the job's own identity, not your admin user):
+> `sudo -u ci sh -c 'id -nG | tr " " "\n" | grep -x kvm; ls -l /dev/kvm; test -r /dev/kvm -a -w /dev/kvm && echo kvm-ok'`.
+> Expect `kvm`, then `crw-rw-rw- … root kvm …` (or `crw-rw----` with a udev rule), then `kvm-ok`.
+>
 > Until commit `235f2f4c` the emulator job ran on `ubuntu-latest` with `/dev/kvm` passed into the job
 > *container* via a runner `config.yaml` (`./forgejo-runner generate-config > config.yaml`, then
 > `options: "--device /dev/kvm"` under `container:`, plus `--config /home/ci/runner/config.yaml` on the
-> daemon `ExecStart=`; check: `docker run --rm --device /dev/kvm node:22-bookworm ls -l /dev/kvm`). A
+> daemon `ExecStart=`; its check was a `docker run --device`, which no longer applies). A
 > runner provisioned that way still has that config, which is harmless — but it must also carry the
 > `kvm:host` label.
 
