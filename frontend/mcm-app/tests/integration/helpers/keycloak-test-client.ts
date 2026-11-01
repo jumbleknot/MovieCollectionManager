@@ -217,6 +217,22 @@ export async function getUserSessions(userId: string): Promise<KeycloakSession[]
 }
 
 /**
+ * End every Keycloak session the user has (Admin API `POST /users/{id}/logout`).
+ *
+ * Their access tokens stay signature-valid until `exp`, but Keycloak no longer honours them where
+ * it checks the session — the token-exchange endpoint among them. Feature 085 uses this to make the
+ * identity provider genuinely refuse a member's credential, with nothing mocked.
+ */
+export async function logoutAllUserSessions(userId: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  const res = await fetch(`${ADMIN_BASE}/users/${userId}/logout`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  if (!res.ok) throw new Error(`logoutAllUserSessions failed (${res.status})`);
+}
+
+/**
  * Ensure the ROPC test client issues access tokens whose `aud` includes the app
  * client (`movie-collection-manager`). Idempotent.
  *

@@ -58,35 +58,47 @@ export async function createSession(userId: string): Promise<Session> {
   return session;
 }
 
+export type LiveSessionResult =
+  | { session: Session }
+  | { expired: 'absolute' | 'idle'; userId: string }
+  | { expired: 'missing' };
+
 /**
- * Retrieve and validate a session by ID.
- * Returns null if the session does not exist or has expired.
+ * Read a session and say why it is not live, when it is not (feature 085 US5, FR-012).
+ *
+ * Absolute is checked BEFORE idle, so a session past its maximum length is reported as that even
+ * when it is also idle. An expired session is deleted here. The distinction is the point: the
+ * previous `getValidSession` returned null for both, and every caller reported "idle".
  */
-export async function getValidSession(sessionId: string): Promise<Session | null> {
+export async function readLiveSession(sessionId: string): Promise<LiveSessionResult> {
   const session = await getSession(sessionId);
-  if (!session) return null;
+  if (!session) return { expired: 'missing' };
 
   const now = Date.now();
-
-  // Check absolute timeout
   if (now > session.expiresAt) {
     await deleteSession(session.sessionId, session.userId);
-    return null;
+    return { expired: 'absolute', userId: session.userId };
   }
-
-  // Check idle timeout
-  const idleElapsed = now - session.lastActivityAt;
-  if (idleElapsed > env.sessionIdleTimeoutMs) {
+  if (now - session.lastActivityAt > env.sessionIdleTimeoutMs) {
     await deleteSession(session.sessionId, session.userId);
-    return null;
+    return { expired: 'idle', userId: session.userId };
   }
-
-  return session;
+  return { session };
 }
 
 /**
- * Update the lastActivityAt timestamp for an active session.
- * Called on each authenticated request to reset the idle timeout.
+ * The live session, or null when it is missing or expired (either way). Callers that must report
+ * WHY use `readLiveSession`.
+ */
+export async function getValidSession(sessionId: string): Promise<Session | null> {
+  const result = await readLiveSession(sessionId);
+  return 'session' in result ? result.session : null;
+}
+
+/**
+ * Slide the idle window of an active session. Called where idle expiry is enforced: on
+ * `/bff-api/auth/user` (via validateSessionTimeout) and `/bff-api/auth/refresh` — not on every
+ * authenticated request (feature 085 FR-013 records where it actually happens).
  */
 export async function touchSession(sessionId: string): Promise<void> {
   const session = await getSession(sessionId);

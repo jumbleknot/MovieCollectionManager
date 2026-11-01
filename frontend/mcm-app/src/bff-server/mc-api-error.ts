@@ -19,6 +19,18 @@ import { logger } from '@/bff-server/logger';
 import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
+/**
+ * Security headers plus whatever the refusal itself carries: cookies clearing a session that has
+ * just ended, and a Retry-After on a retryable 503 (feature 085). Each cookie is its own
+ * Set-Cookie line; joining them with commas would let the browser keep all but the first.
+ */
+export function authErrorHeaders(err: AuthError): Headers {
+  const headers = securityHeaders();
+  for (const cookie of err.clearCookies ?? []) headers.append('Set-Cookie', cookie);
+  if (err.retryAfterSeconds !== undefined) headers.set('Retry-After', String(err.retryAfterSeconds));
+  return headers;
+}
+
 export function handleMcApiError(err: unknown, action: string): Response {
   // Auth errors (401, 403) — audit-log; other 4xx — warn-log (010 US2, FR-005–FR-007).
   // Every 4xx the boundary returns is logged, so a client error (e.g. a 400 from
@@ -33,7 +45,7 @@ export function handleMcApiError(err: unknown, action: string): Response {
     }
     return Response.json(
       { error: err.message, code: err.code },
-      { status: err.statusCode, headers: securityHeaders() },
+      { status: err.statusCode, headers: authErrorHeaders(err) },
     );
   }
 

@@ -4,10 +4,17 @@
  * Enforces per-session rate limiting and updates Redis session cache.
  */
 
-import { refreshTokens } from '@/bff-server/keycloak';
+import { refreshTokens, revokeToken } from '@/bff-server/keycloak';
 import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
-import { touchSession, getValidSession } from '@/bff-server/session-manager';
-import { buildAuthCookies, extractSessionId, parseCookies, REFRESH_TOKEN_COOKIE } from '@/bff-server/auth';
+import { touchSession, getValidSession, terminateSession } from '@/bff-server/session-manager';
+import {
+  buildAuthCookies,
+  buildClearAuthCookies,
+  extractSessionId,
+  parseCookies,
+  REFRESH_TOKEN_COOKIE,
+} from '@/bff-server/auth';
+import { validateJwt } from '@/bff-server/token-service';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
@@ -50,6 +57,26 @@ async function _post(req: Request): Promise<Response> {
     }
 
     const tokens = await refreshTokens(refreshToken);
+
+    // Feature 085 US2 (item #607, FR-006/FR-007): extend ONLY the caller's own session. The refresh
+    // credential is client-supplied, so a caller holding someone else's session reference could
+    // otherwise keep that session alive with their own token. The other session endpoints already
+    // refuse this (009 finding #9). On a mismatch nothing is extended and nothing is issued: the
+    // tokens just minted are revoked, and the session, now paired with a foreign credential, ends.
+    const { payload } = await validateJwt(tokens.access_token);
+    if (payload.sub !== session.userId) {
+      await Promise.allSettled([
+        revokeToken(tokens.refresh_token, 'refresh_token'),
+        terminateSession(sessionId, session.userId),
+      ]);
+      logger.audit('session_refresh_owner_mismatch', { userId: session.userId });
+      const clearHeaders = securityHeaders();
+      for (const cookie of buildClearAuthCookies()) clearHeaders.append('Set-Cookie', cookie);
+      return Response.json(
+        { error: 'Session could not be renewed.', code: AuthErrorCode.SESSION_OWNER_MISMATCH },
+        { status: 401, headers: clearHeaders },
+      );
+    }
 
     await touchSession(sessionId);
 

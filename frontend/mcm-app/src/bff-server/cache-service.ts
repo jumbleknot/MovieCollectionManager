@@ -129,22 +129,6 @@ export async function getUserSessionCount(userId: string): Promise<number> {
   return redis.scard(userSessionsKey(userId));
 }
 
-export async function updateSessionActivity(sessionId: string, now: number): Promise<void> {
-  const redis = await getRedis();
-  const raw = await redis.get(sessionKey(sessionId));
-  if (!raw) return;
-
-  let session: Session;
-  try {
-    session = JSON.parse(raw) as Session;
-  } catch {
-    await redis.del(sessionKey(sessionId)).catch(() => {});
-    return;
-  }
-  session.lastActivityAt = now;
-  await redis.set(sessionKey(sessionId), JSON.stringify(session), 'EX', sessionTtlSeconds(session));
-}
-
 // ─── User profile cache ────────────────────────────────────────────────────────
 
 export async function cacheUserProfile(profile: UserProfile): Promise<void> {

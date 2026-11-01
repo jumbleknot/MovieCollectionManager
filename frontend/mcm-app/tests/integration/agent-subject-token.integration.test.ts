@@ -16,6 +16,7 @@ import {
   mintSubjectToken,
   isSubjectTokenExchangeConfigured,
   SUBJECT_TOKEN_MAX_TTL_SECONDS,
+  AgentIdentityError,
 } from '@/bff-server/agent-subject-token';
 import { AuthError } from '@/types/errors';
 import {
@@ -26,6 +27,7 @@ import {
   deleteTestUser,
   getTestTokens,
   assignRole,
+  logoutAllUserSessions,
   type TestUser,
 } from './helpers/keycloak-test-client';
 
@@ -98,4 +100,27 @@ describeOrSkip('mintSubjectToken vs real Keycloak', () => {
   it('rejects a malformed subject token with a typed AuthError', async () => {
     await expect(mintSubjectToken('not-a-valid-token')).rejects.toBeInstanceOf(AuthError);
   }, 20_000);
+
+  // Feature 085 (item #844, FR-001, SC-001). A member whose Keycloak sessions were ended still holds
+  // a signature-valid access token; the exchange is where Keycloak refuses it. That refusal must be
+  // classified as AUTH — the 401 the client renews from, then sign-in — never as an outage, and never
+  // swallowed into an identity-less run. This also MEASURES Keycloak's real answer, which the
+  // classifier's unit tests otherwise only assume.
+  it('a token whose Keycloak sessions were ended is refused as an auth failure, not an outage', async () => {
+    const victim = await createTestUser('agent-subject-revoked');
+    try {
+      await assignRole(victim.userId, 'mc-user');
+      const { accessToken } = await getTestTokens(victim.username, victim.password);
+      await logoutAllUserSessions(victim.userId);
+
+      const refusal = await mintSubjectToken(accessToken).then(
+        () => { throw new Error('expected the exchange to be refused'); },
+        (err: unknown) => err,
+      );
+      expect(refusal).toBeInstanceOf(AgentIdentityError);
+      expect(refusal).toMatchObject({ outcome: 'auth', statusCode: 401, code: 'AGENT_IDENTITY_REJECTED' });
+    } finally {
+      await deleteTestUser(victim.userId);
+    }
+  }, 30_000);
 });

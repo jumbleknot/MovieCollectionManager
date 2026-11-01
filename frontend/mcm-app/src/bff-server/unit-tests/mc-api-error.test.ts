@@ -175,3 +175,25 @@ describe('handleMcApiError — 4xx logging (010 US2)', () => {
     expect(serialized).not.toMatch(/Bearer |eyJ|password|sessionId/i);
   });
 });
+
+// Feature 085: a refusal that ends a session must clear its cookie on the same response, and a
+// retryable refusal must say when to retry. Both ride on the AuthError the auth layer throws.
+describe('handleMcApiError — headers carried by the AuthError (feature 085)', () => {
+  it('appends one Set-Cookie per clearCookies entry', () => {
+    const err = new AuthError(AuthErrorCode.SESSION_NOT_FOUND, 'No session', 401, {
+      clearCookies: ['a=; Max-Age=0', 'b=; Max-Age=0'],
+    });
+    const res = handleMcApiError(err, 'test');
+    expect(res.status).toBe(401);
+    expect(res.headers.getSetCookie()).toEqual(['a=; Max-Age=0', 'b=; Max-Age=0']);
+  });
+
+  it('sets Retry-After on a retryable refusal', () => {
+    const err = new AuthError(AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE, 'Unavailable', 503, {
+      retryAfterSeconds: 5,
+    });
+    const res = handleMcApiError(err, 'test');
+    expect(res.status).toBe(503);
+    expect(res.headers.get('retry-after')).toBe('5');
+  });
+});

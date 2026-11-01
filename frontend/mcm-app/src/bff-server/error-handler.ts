@@ -77,6 +77,14 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
     'Authentication required.',
   [AuthErrorCode.FORBIDDEN]:
     'You do not have permission to access this resource.',
+  [AuthErrorCode.SESSION_OWNER_MISMATCH]:
+    'Your session could not be renewed. Please log in again.',
+  [AuthErrorCode.SESSION_RENEWAL_PENDING]:
+    'Your session is being renewed. Please try again in a moment.',
+  [AuthErrorCode.AGENT_IDENTITY_REJECTED]:
+    'Your session has expired. Please log in again.',
+  [AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE]:
+    'The assistant is temporarily unavailable. Please try again.',
   [AuthErrorCode.VERIFICATION_TOKEN_INVALID]:
     'This verification link is invalid or has already been used.',
   [AuthErrorCode.VERIFICATION_TOKEN_EXPIRED]:

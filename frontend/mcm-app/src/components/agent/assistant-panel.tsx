@@ -33,6 +33,7 @@ import { useAgent, useRenderToolCall, type ToolCall } from '@copilotkit/react-na
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { ImportProgress } from '@/components/agent/import-progress';
+import { useAssistantRunFailureNotice } from '@/components/agent/assistant-run-failure';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
@@ -166,6 +167,7 @@ function AssistantPanel() {
   const rawMessages = (agent?.messages ?? []) as ChatMessage[];
   const items = buildDockItems(rawMessages, renderToolCall);
   const isRunning = agent?.isRunning ?? false;
+  const runFailureNotice = useAssistantRunFailureNotice();
 
   // Bump the shared data revision when a run that applied an approved write transitions
   // running → idle, so the collection/movie/home lists re-fetch the now-changed server state.
@@ -221,6 +223,11 @@ function AssistantPanel() {
           )
         }
       />
+      {runFailureNotice ? (
+        <View testID="assistant-run-failure" style={styles.message}>
+          <ChatBubble sender="assistant" message={runFailureNotice} />
+        </View>
+      ) : null}
       {approvalElement}
       {/* FR-014a: ONE surface that updates in place. It renders nothing once the gateway clears
           the counters at the end of the run, so the report replaces it (FR-014b). */}

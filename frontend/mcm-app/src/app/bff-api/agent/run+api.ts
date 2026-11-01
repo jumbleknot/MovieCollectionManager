@@ -17,9 +17,9 @@
  * T023/T025: the gateway URL is resolved by `agent-gateway-client` (mode-aware) and,
  * when token exchange is configured, the BFF mints a run-scoped RFC 8693 subject token
  * (`agent-subject-token`) and attaches it to the AG-UI `HttpAgent` so backend tool calls
- * (US1) carry the user's downscoped identity. The current supervisor graph is tool-free,
- * so a mint failure is non-fatal here — logged and the run proceeds without a token;
- * once US1 tools land, the backend calls will require it.
+ * (US1) carry the user's downscoped identity. A refused mint refuses the request (feature 085):
+ * 401 when Keycloak rejects the member's credential, a retryable 503 when it is unreachable — never
+ * a run without identity, which is what surfaced as "No caller identity is available".
  */
 
 import {
@@ -50,15 +50,14 @@ import {
   getAgentImportFile,
   clearAgentImportFile,
 } from '@/bff-server/cache-service';
-import { logger } from '@/bff-server/logger';
 import { audit } from '@/bff-server/audit-sink';
 
 const ENDPOINT = '/bff-api/agent/run';
 
 /**
- * Best-effort mint of the run-scoped subject token. Returns undefined when token
- * exchange is unconfigured, no user token is present, or the exchange fails — the
- * tool-free graph still runs. The minted token is never logged or checkpointed (SC-004).
+ * Mint the run-scoped subject token. Undefined only when token exchange is not configured for this
+ * environment (FR-004) or there is no member token; a refused exchange throws (feature 085). The
+ * minted token is never logged or checkpointed (SC-004).
  */
 async function resolveSubjectToken(
   headers: Record<string, string | string[] | undefined>,
@@ -66,14 +65,11 @@ async function resolveSubjectToken(
   if (!isSubjectTokenExchangeConfigured()) return undefined;
   const userToken = extractRawToken(headers);
   if (!userToken) return undefined;
-  try {
-    const { token } = await mintSubjectToken(userToken);
-    return token;
-  } catch {
-    // Non-fatal for the tool-free graph; US1 tool calls will surface a hard failure.
-    logger.warn('Proceeding without agent subject token', { action: 'agent_run' });
-    return undefined;
-  }
+  // Feature 085 (item #844): a refused mint is NOT swallowed. It propagates as an
+  // AgentIdentityError — 401 (renew, then sign in) or a retryable 503 — and the route answers with it
+  // before the gateway is reached, so no assistant step runs without the member's identity.
+  const { token } = await mintSubjectToken(userToken);
+  return token;
 }
 
 /**
