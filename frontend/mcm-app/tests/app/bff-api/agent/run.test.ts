@@ -16,7 +16,6 @@ jest.mock('@copilotkit/runtime', () => ({
 
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn(),
-  extractRawToken: jest.fn().mockReturnValue('raw-jwt'),
 }));
 jest.mock('@/bff-server/request-context', () => ({
   withRequestContext: jest.fn((fn: () => unknown) => fn()),
@@ -62,7 +61,7 @@ const mockUser = { id: 'user-1', username: 'u', roles: ['mc-user'], accountStatu
 function makePost(): Parameters<typeof POST>[0] {
   return {
     url: 'http://localhost/bff-api/agent/run',
-    headers: new Headers({ cookie: 'mcm_access_token=tok' }),
+    headers: new Headers({ cookie: 'mcm_session_id=sid' }),
     clone: () => ({ text: () => Promise.resolve('{"operationName":"generateCopilotResponse"}') }),
   } as unknown as Parameters<typeof POST>[0];
 }

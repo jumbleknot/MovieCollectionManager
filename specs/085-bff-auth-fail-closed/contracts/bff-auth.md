@@ -8,10 +8,10 @@ authenticates a request**, **which cookies are set**, and **which failures are d
 | Request carries | Result |
 |---|---|
 | a valid `mcm_session_id` cookie for a live session | authenticated as the session owner. `Authorization` is ignored entirely, even if present (US3 AS-2). |
-| only `Authorization: Bearer <valid JWT>` | `401 {code: "SESSION_NOT_FOUND"}`, in **every** environment (FR-008, FR-009) |
+| no `mcm_session_id` cookie at all — including a request with only `Authorization: Bearer <valid JWT>` | `401 {code: "UNAUTHORIZED"}` (the pre-085 code for "no credential"), in **every** environment (FR-008, FR-009) |
 | a session cookie past its absolute lifetime | `401 {code: "SESSION_ABSOLUTE_TIMEOUT"}`, audit `session_expired {reason:"absolute"}` |
 | a session cookie idle past the window | `401 {code: "SESSION_IDLE_TIMEOUT"}`, audit `session_expired {reason:"idle"}` |
-| only the retired `mcm_access_token` / `mcm_refresh_token` cookies | `401 {code: "SESSION_NOT_FOUND"}`, with `Set-Cookie` clearing all three names (FR-022) |
+| only the retired `mcm_access_token` / `mcm_refresh_token` cookies | `401 {code: "UNAUTHORIZED"}`, with `Set-Cookie` clearing all three names (FR-022); beside a stale `mcm_session_id`, `SESSION_NOT_FOUND` |
 | a live session whose server-side renewal Keycloak **rejects** | `401 {code: "REFRESH_FAILED"}`. The session is deleted and the cookies are cleared. |
 | a live session whose renewal hits a **transient** Keycloak failure | `503 {code: "KEYCLOAK_UNAVAILABLE"}`, `Retry-After: 5`. The session is kept. |
 | a concurrent request whose renewal is still in progress past 5 s | `503 {code: "SESSION_RENEWAL_PENDING"}`, `Retry-After: 1`. The session is kept. |

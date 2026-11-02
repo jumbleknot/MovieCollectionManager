@@ -18,11 +18,11 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
 
 const bff = createBffClient();
@@ -42,8 +42,8 @@ describeLive('backup consent route', () => {
   let tokenA: string;
   let tokenB: string;
 
-  const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
-  const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
+  const authA = () => ({ headers: { Cookie: tokenA } });
+  const authB = () => ({ headers: { Cookie: tokenB } });
 
   beforeAll(async () => {
     await ensureRopcAudienceMapper();
@@ -51,8 +51,8 @@ describeLive('backup consent route', () => {
     userB = await createTestUser('t053-consent-b');
     await assignRole(userA.userId, 'mc-user');
     await assignRole(userB.userId, 'mc-user');
-    tokenA = (await getTestTokens(userA.username, userA.password)).accessToken;
-    tokenB = (await getTestTokens(userB.username, userB.password)).accessToken;
+    tokenA = (await loginSession(userA.username, userA.password)).cookie;
+    tokenB = (await loginSession(userB.username, userB.password)).cookie;
   });
 
   afterAll(async () => {

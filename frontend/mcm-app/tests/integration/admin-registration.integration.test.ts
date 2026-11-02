@@ -21,12 +21,12 @@ import { randomUUID } from 'node:crypto';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   findUsersByUsername,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 import { getAppSettingsCollection, closeMongo } from '@/bff-server/mongo-client';
 import { APP_SETTINGS_GLOBAL_ID, type AppSettingsDoc } from '@/types/app-settings';
@@ -46,7 +46,7 @@ async function setRegistration(token: string, allowSelfRegistration: boolean) {
   return bff.patch(
     '/bff-api/admin/settings',
     { allowSelfRegistration },
-    { headers: { Authorization: `Bearer ${token}` } },
+    { headers: { Cookie: token } },
   );
 }
 
@@ -63,11 +63,11 @@ describe('US3 admin disables self-registration — integration (real BFF + Keycl
 
     admin = await createTestUser('us3-admin');
     await assignRole(admin.userId, 'mc-admin');
-    ({ accessToken: adminToken } = await getTestTokens(admin.username, admin.password));
+    adminToken = (await loginSession(admin.username, admin.password)).cookie;
 
     plain = await createTestUser('us3-user');
     await assignRole(plain.userId, 'mc-user');
-    ({ accessToken: plainToken } = await getTestTokens(plain.username, plain.password));
+    plainToken = (await loginSession(plain.username, plain.password)).cookie;
 
     // Snapshot the shared global settings doc so afterAll can restore it exactly.
     initialDoc = await readSettingsDoc();
@@ -109,7 +109,7 @@ describe('US3 admin disables self-registration — integration (real BFF + Keycl
     const before = await readSettingsDoc();
 
     const get = await bff.get('/bff-api/admin/settings', {
-      headers: { Authorization: `Bearer ${plainToken}` },
+      headers: { Cookie: plainToken },
     });
     expect(get.status).toBe(403);
 

@@ -1,13 +1,17 @@
 /**
- * BFF /logout endpoint (T-106)
- * Invalidates the session in Redis, revokes the refresh token in Keycloak,
- * and clears auth cookies. Only terminates the current session.
+ * BFF /logout endpoint (T-106; server-held tokens since feature 085).
+ *
+ * Ends the caller's OWN session. The session reference comes from the `mcm_session_id` cookie,
+ * which is the credential now that the client holds no token (FR-016). For a live session it
+ * revokes the SERVER-HELD refresh token at Keycloak, ends the member's Keycloak SSO sessions, and
+ * deletes the session with its tokens (FR-020); then clears the cookies. Only the current session
+ * is terminated.
  */
 
 import { revokeToken, logoutUserSessions } from '@/bff-server/keycloak';
-import { terminateSession } from '@/bff-server/session-manager';
-import { getSession } from '@/bff-server/cache-service';
-import { buildClearAuthCookies, extractSessionId, parseCookies, requireAuth, REFRESH_TOKEN_COOKIE } from '@/bff-server/auth';
+import { readLiveSessionWithTokens, terminateSession } from '@/bff-server/session-manager';
+import { openSessionTokens } from '@/bff-server/session-tokens';
+import { buildClearAuthCookies, extractSessionId } from '@/bff-server/auth';
 import { checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
@@ -25,43 +29,27 @@ async function _post(req: Request): Promise<Response> {
 
     await checkLogoutRateLimit(ip);
 
-    // Cookie clearing is best-effort even if the token is expired, BUT server
-    // session + IAM SSO termination must only happen for an AUTHENTICATED caller
-    // acting on their OWN session (009 finding #9): an unauthenticated request
-    // carrying a victim's X-Session-Id must not force-logout the victim.
     const sessionId = extractSessionId(headers);
-    let refreshToken: string | undefined;
-
-    let authUserId: string | undefined;
-    try {
-      const { payload } = await requireAuth(headers);
-      authUserId = payload.sub;
-    } catch {
-      // Token missing/expired — proceed to clear cookies only; no termination.
-    }
-
-    // Extract refresh token from cookie
-    const cookieHeader = req.headers.get('cookie') ?? '';
-    refreshToken = parseCookies(cookieHeader)[REFRESH_TOKEN_COOKIE];
-
-    // Terminate the caller's own current session only — never a foreign session id.
     let userId: string | undefined;
-    if (authUserId && sessionId) {
-      const session = await getSession(sessionId).catch(() => null);
-      if (session && session.userId === authUserId) {
-        userId = session.userId;
-        await terminateSession(sessionId, session.userId).catch(() => {});
+    if (sessionId) {
+      const live = await readLiveSessionWithTokens(sessionId).catch(() => null);
+      if (live && 'session' in live) {
+        userId = live.session.userId;
+        let refreshToken: string | undefined;
+        try {
+          refreshToken = live.tokensRaw ? openSessionTokens(live.session, live.tokensRaw).refreshToken : undefined;
+        } catch {
+          // An unopenable record still names a live session of this owner; end it regardless.
+        }
+        // logoutUserSessions uses the Admin API, which ends the SSO user session itself (not just
+        // the client/token session), so the browser's Keycloak cookie is stale on the next sign-in.
+        await Promise.allSettled([
+          refreshToken ? revokeToken(refreshToken, 'refresh_token') : Promise.resolve(),
+          logoutUserSessions(userId),
+          terminateSession(sessionId, userId),
+        ]);
       }
     }
-
-    // Revoke refresh token and terminate all Keycloak SSO sessions for the user.
-    // logoutUserSessions uses the Admin API which actually ends the SSO user
-    // session (not just the client/token session), so Chrome's SSO cookie becomes
-    // stale on the next auth request.
-    await Promise.allSettled([
-      refreshToken ? revokeToken(refreshToken, 'refresh_token') : Promise.resolve(),
-      userId ? logoutUserSessions(userId) : Promise.resolve(),
-    ]);
 
     // Emit ONE Set-Cookie header per cleared cookie. Joining them into a single
     // comma-separated Set-Cookie value is invalid — the browser parses only the first

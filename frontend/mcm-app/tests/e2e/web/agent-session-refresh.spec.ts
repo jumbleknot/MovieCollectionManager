@@ -1,78 +1,65 @@
 /**
- * 013-inc4: server-side proof of the agent transport's 401 → refresh → retry recovery.
+ * Server-side token renewal is invisible to the member (feature 085 US6 — AS-2, FR-018, SC-009).
  *
- * The CopilotKit agent `/run` fetch authenticates via the BFF `mcm_access_token` cookie (RN's
- * XMLHttpRequest defaults `withCredentials=true`, so the cookie rides along). That access cookie is
- * short-lived (~5 min). When it expires mid-session, `utils/agent-fetch-refresh.createRefreshingFetch`
- * is supposed to: see a 401, call `silentRefresh()` (POST /bff-api/auth/refresh), then retry once.
- * The client ORCHESTRATION is unit-tested (agent-fetch-refresh.test.ts); THIS test proves the
- * SERVER chain it depends on actually works end-to-end on a real browser-PKCE session:
+ * Before 085 the access token lived in a browser cookie and expired every ~5 min; the agent
+ * transport (`utils/agent-fetch-refresh`) and the axios interceptor recovered by calling
+ * /bff-api/auth/refresh on a 401. Since 085 the tokens are held by the BFF, inside the session, and
+ * the BFF renews them itself when a request finds the access token due — so an expiry mid-session
+ * produces NO 401 at all, and the browser never holds a token.
  *
- *   1. authenticated → a protected route returns 200 (baseline)
- *   2. drop ONLY the access cookie (faithfully simulates the ~5-min expiry; refresh+session remain)
- *   3. the protected route now 401s with `no_token` (exactly what the agent /run sees)
- *   4. POST /bff-api/auth/refresh ROTATES and re-sets a fresh `mcm_access_token` cookie
- *   5. the retry (same context, new cookie) returns 200 — recovered
+ * This proves that chain on a real browser-PKCE session against the dev BFF container:
+ *   1. authenticated → a protected route returns 200, and the cookie jar holds ONLY mcm_session_id
+ *   2. the session's server-held access token is aged to "expired" (its clear expiry field)
+ *   3. the protected route STILL returns 200 — the BFF renewed transparently; no 401, no token set
+ *   4. the renewal really happened (the expiry moved forward), and /auth/refresh — still the
+ *      client's fallback — succeeds with the session cookie alone and sets nothing but it.
  *
- * This closes the gap flagged as "headless-untestable" for /auth/refresh (a Node/ROPC client can't
- * get a browser-PKCE refresh token, but a Playwright browser context can). Run against the dev BFF
- * container (the same target as the rest of the agent E2E):
- *   E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/agent-session-refresh.spec.ts
- *
- * Suite-safety: this rotates the refresh token for its own worker's session. Rotation invalidates
- * only the OLD refresh token, and since feature 052 each worker holds its own session, so no other
- * worker shares this one's refresh token or its rate-limit bucket.
- *
- * NOTE ON THE "~5 min" ABOVE (feature 052): that is the dev/prod access-token lifespan. In CI it is
- * 3600s — Playwright's per-test BrowserContext reloads a frozen storageState, so a 300s token left
- * every test after minute five needing a refresh, at a measured 1.9s median interval against a limit
- * of 2 per 30s. This test is UNAFFECTED by that value either way: step 2 clears the access cookie
- * explicitly rather than waiting for expiry, which is what keeps it a real test of the recovery
- * chain rather than a race against a clock.
+ * Suite-safety: each worker holds its own session (feature 052), so renewing it touches no other
+ * worker's tokens or rate-limit bucket.
  */
 
 import { test, expect } from './fixtures/worker-session';
-import { type BrowserContext, type APIRequestContext } from '@playwright/test';
+import { type APIRequestContext, type BrowserContext } from '@playwright/test';
 
-const ACCESS_COOKIE = 'mcm_access_token';
-const PROTECTED = '/bff-api/auth/user'; // requireAuth-guarded; 200 authed, 401 no_token otherwise
+import { ageServerHeldAccessToken, serverHeldAccessExpiry } from './setup/bff-session-store';
 
-async function accessCookie(context: BrowserContext): Promise<string | undefined> {
-  const c = (await context.cookies()).find((x) => x.name === ACCESS_COOKIE);
-  return c?.value;
+const PROTECTED = '/bff-api/auth/user';
+const RETIRED_TOKEN_COOKIES = ['mcm_access_token', 'mcm_refresh_token'];
+
+async function sessionId(context: BrowserContext): Promise<string> {
+  const c = (await context.cookies()).find((x) => x.name === 'mcm_session_id');
+  expect(c, 'the worker session should carry mcm_session_id').toBeTruthy();
+  return c!.value;
 }
 
-test.describe('Agent session recovery — 401 → refresh → retry (server chain)', () => {
-  test('an expired access cookie recovers via /auth/refresh and the retry succeeds', { tag: '@gate' }, async ({
+test.describe('Server-held tokens — renewal is transparent (085 US6)', () => {
+  test('an expired server-held access token is renewed with no 401 and nothing stored client-side', { tag: '@gate' }, async ({
     page,
   }) => {
     const context = page.context();
     const api: APIRequestContext = page.request; // shares the context cookie jar + storageState
 
-    // 1. Baseline: the shared authenticated session can read a protected route.
-    const baseline = await api.get(PROTECTED);
-    expect(baseline.status(), 'baseline protected call should be authenticated').toBe(200);
-    const originalAccess = await accessCookie(context);
-    expect(originalAccess, 'an access cookie should exist before expiry').toBeTruthy();
+    // 1. Baseline, and the client holds the session reference only (FR-016, SC-007).
+    expect((await api.get(PROTECTED)).status(), 'baseline protected call should be authenticated').toBe(200);
+    const names = (await context.cookies()).map((c) => c.name);
+    for (const retired of RETIRED_TOKEN_COOKIES) expect(names, `${retired} must not be held`).not.toContain(retired);
+    const sid = await sessionId(context);
 
-    // 2. Simulate the ~5-min access-token expiry: drop ONLY the access cookie. The refresh cookie
-    //    (Path=/bff-api/auth/refresh) and the session cookie remain, exactly as on a real expiry.
-    await context.clearCookies({ name: ACCESS_COOKIE });
-    expect(await accessCookie(context)).toBeUndefined();
+    // 2. The access token "expires" — on the server, where it lives.
+    const { before } = await ageServerHeldAccessToken(sid);
 
-    // 3. The protected route now fails the way the agent /run does: no access token → 401.
-    const expired = await api.get(PROTECTED);
-    expect(expired.status(), 'a missing access cookie must 401 (no_token)').toBe(401);
+    // 3. No 401: the BFF renews it on this very request (FR-018).
+    const after = await api.get(PROTECTED);
+    expect(after.status(), 'an expired server-held token must be renewed, not answered with 401').toBe(200);
+    expect(after.headersArray().filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value).join(';'))
+      .not.toMatch(/mcm_(access|refresh)_token=[^;]/);
 
-    // 4. silentRefresh()'s server call: POST /auth/refresh rotates + re-sets a fresh access cookie.
+    // 4. The renewal happened, and the client fallback still works on the session cookie alone.
+    expect((await serverHeldAccessExpiry(sid)) ?? 0, 'the server-held token was renewed').toBeGreaterThan(Date.now());
+    expect(before).toBeGreaterThan(0);
     const refreshed = await api.post('/bff-api/auth/refresh');
-    expect(refreshed.status(), '/auth/refresh should succeed with the refresh cookie').toBe(200);
-    const newAccess = await accessCookie(context);
-    expect(newAccess, 'refresh must re-set the access cookie').toBeTruthy();
-    expect(newAccess, 'the access cookie should be rotated (a new value)').not.toBe(originalAccess);
-
-    // 5. The retry (what createRefreshingFetch does) now authenticates with the fresh cookie.
-    const retry = await api.get(PROTECTED);
-    expect(retry.status(), 'the retry after refresh must succeed (recovered)').toBe(200);
+    expect(refreshed.status(), '/auth/refresh renews the session on the session cookie alone').toBe(200);
+    const setCookies = refreshed.headersArray().filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value);
+    expect(setCookies.map((v) => v.split('=')[0])).toEqual(['mcm_session_id']);
   });
 });

@@ -17,12 +17,12 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   findUsersByUsername,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
 
 const bff = createBffClient();
@@ -45,8 +45,8 @@ describeLive('account deletion routes', () => {
   let tokenA: string;
   let tokenB: string;
 
-  const authA = () => ({ headers: { Authorization: `Bearer ${tokenA}` } });
-  const authB = () => ({ headers: { Authorization: `Bearer ${tokenB}` } });
+  const authA = () => ({ headers: { Cookie: tokenA } });
+  const authB = () => ({ headers: { Cookie: tokenB } });
   // The callback answers with a 302 by design; axios must not follow it, or the assertion
   // would be about wherever it landed rather than about what this route returned.
   const noFollowA = () => ({ ...authA(), maxRedirects: 0 });
@@ -58,8 +58,8 @@ describeLive('account deletion routes', () => {
     userB = await createTestUser('t019-route-b');
     await assignRole(userA.userId, 'mc-user');
     await assignRole(userB.userId, 'mc-user');
-    tokenA = (await getTestTokens(userA.username, userA.password)).accessToken;
-    tokenB = (await getTestTokens(userB.username, userB.password)).accessToken;
+    tokenA = (await loginSession(userA.username, userA.password)).cookie;
+    tokenB = (await loginSession(userB.username, userB.password)).cookie;
   });
 
   afterAll(async () => {

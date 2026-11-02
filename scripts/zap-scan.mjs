@@ -165,8 +165,8 @@ function planFile(mode) {
  */
 async function probeAuthenticatedUrls(cookies) {
   const bffBase = process.env.DAST_BFF_BASE_URL ?? 'http://localhost:8082';
-  const cookieHeader = ['mcm_access_token', 'mcm_refresh_token', 'mcm_session_id']
-    .filter((k) => cookies[k]).map((k) => `${k}=${cookies[k]}`).join('; ');
+  // Feature 085: the session reference is the BFF's only credential; the tokens are server-held.
+  const cookieHeader = cookies.mcm_session_id ? `mcm_session_id=${cookies.mcm_session_id}` : '';
   const url = `${bffBase}/bff-api/collections`;
   try {
     const res = await fetch(url, { headers: { Cookie: cookieHeader } });

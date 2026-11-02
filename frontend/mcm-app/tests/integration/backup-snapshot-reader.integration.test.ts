@@ -21,17 +21,21 @@ import { createBffClient } from './helpers/bff-test-server';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
+  getTestTokens,
 } from './helpers/keycloak-test-client';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 
 let user: TestUser;
 let token: string;
-const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
+// The BFF is reached with a real session (feature 085); `token` is a real access token used only
+// IN-PROCESS, for calls this suite makes to mc-service as the member (as the BFF itself does).
+let session: string;
+const auth = () => ({ headers: { Cookie: session } });
 
 // mc-service's default page size. Seeding past it is what makes the paging assertion real; if
 // this ever drops below the seeded count the test still passes for the wrong reason, so the
@@ -69,6 +73,7 @@ beforeAll(async () => {
   await ensureRopcAudienceMapper();
   user = await createTestUser('bk-snap');
   await assignRole(user.userId, 'mc-user');
+  session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
   const big = await bff.post('/bff-api/collections', { name: `Snap Big ${randomUUID().slice(0, 8)}` }, auth());

@@ -405,3 +405,27 @@ export async function assignRole(userId: string, roleName: string): Promise<void
   );
   if (!assignRes.ok) throw new Error(`assignRole: assignment failed (${assignRes.status})`);
 }
+
+/** Remove an app-client role from a user (the inverse of `assignRole`). */
+export async function removeRole(userId: string, roleName: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  const authz = { Authorization: `Bearer ${adminToken}` };
+  const clientsRes = await fetch(
+    `${ADMIN_BASE}/clients?clientId=${encodeURIComponent(APP_CLIENT_ID)}`,
+    { headers: authz },
+  );
+  const clientInternalId = ((await clientsRes.json()) as Array<{ id: string }>)[0]?.id;
+  if (!clientInternalId) throw new Error(`removeRole: client ${APP_CLIENT_ID} not found`);
+  const roleRes = await fetch(
+    `${ADMIN_BASE}/clients/${clientInternalId}/roles/${encodeURIComponent(roleName)}`,
+    { headers: authz },
+  );
+  if (!roleRes.ok) throw new Error(`removeRole: role ${roleName} not found (${roleRes.status})`);
+  const role = (await roleRes.json()) as { id: string; name: string };
+  const res = await fetch(`${ADMIN_BASE}/users/${userId}/role-mappings/clients/${clientInternalId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...authz },
+    body: JSON.stringify([role]),
+  });
+  if (!res.ok) throw new Error(`removeRole: removal failed (${res.status})`);
+}

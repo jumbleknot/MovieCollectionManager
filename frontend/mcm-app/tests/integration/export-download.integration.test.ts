@@ -5,7 +5,7 @@
  * stores a built workbook under `export:file:<handle>` + `export:name:<handle>`; this route streams
  * it once (single-use) to an authenticated mc-user, with a `Content-Disposition` attachment. We
  * seed those keys directly in the BFF's Redis (db 0) — bypassing the gateway — then exercise the
- * route. `requireAuth` accepts a raw Bearer token, so a ROPC access token drives the auth paths.
+ * route. Calls carry a real session cookie (helpers/bff-session.ts, feature 085).
  *
  * Covers: US3-AC5, FR-028 (single-use, ownership-by-capability, 404 on expired).
  */
@@ -14,11 +14,11 @@ import Redis from 'ioredis';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession, loginSessionWithoutAppRole } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
@@ -42,10 +42,10 @@ describe('/bff-api/agent/export-download — integration (real BFF + Redis + Key
     await ensureRopcAudienceMapper();
     mcUser = await createTestUser('int-export');
     await assignRole(mcUser.userId, 'mc-user');
-    ({ accessToken: mcToken } = await getTestTokens(mcUser.username, mcUser.password));
+    mcToken = (await loginSession(mcUser.username, mcUser.password)).cookie;
 
     noRoleUser = await createTestUser('int-export-norole');
-    ({ accessToken: noRoleToken } = await getTestTokens(noRoleUser.username, noRoleUser.password));
+    noRoleToken = (await loginSessionWithoutAppRole(noRoleUser)).cookie;
   });
 
   afterAll(async () => {
@@ -60,7 +60,7 @@ describe('/bff-api/agent/export-download — integration (real BFF + Redis + Key
     await seedExport(handle, bytes, 'movie-collections-export.xlsx');
 
     const res = await bff.get(`/bff-api/agent/export-download?handle=${handle}`, {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
       responseType: 'arraybuffer',
     });
     expect(res.status).toBe(200);
@@ -71,7 +71,7 @@ describe('/bff-api/agent/export-download — integration (real BFF + Redis + Key
 
     // Single-use: the keys are consumed → a second download misses.
     const again = await bff.get(`/bff-api/agent/export-download?handle=${handle}`, {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
     });
     expect(again.status).toBe(404);
     expect(await redis.exists(FILE_KEY(handle))).toBe(0);
@@ -79,14 +79,14 @@ describe('/bff-api/agent/export-download — integration (real BFF + Redis + Key
 
   it('returns 404 for an unknown/expired handle', async () => {
     const res = await bff.get('/bff-api/agent/export-download?handle=does-not-exist', {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
     });
     expect(res.status).toBe(404);
   });
 
   it('returns 400 when the handle is missing', async () => {
     const res = await bff.get('/bff-api/agent/export-download', {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
     });
     expect(res.status).toBe(400);
   });
@@ -98,7 +98,7 @@ describe('/bff-api/agent/export-download — integration (real BFF + Redis + Key
 
   it('returns 403 for an authenticated user lacking mc-user', async () => {
     const res = await bff.get('/bff-api/agent/export-download?handle=x', {
-      headers: { Authorization: `Bearer ${noRoleToken}` },
+      headers: { Cookie: noRoleToken },
     });
     expect(res.status).toBe(403);
   });

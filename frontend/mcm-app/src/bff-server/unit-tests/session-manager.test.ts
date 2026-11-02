@@ -19,26 +19,49 @@ import {
   terminateSession,
   getActiveSessionCount,
   readLiveSession,
+  readLiveSessionWithTokens,
 } from '@/bff-server/session-manager';
+import { openSessionTokens } from '@/bff-server/session-tokens';
 import type { Session } from '@/types/auth';
 
 import {
   cacheSession,
+  cacheSessionTokens,
   deleteSession,
   getSession,
+  getSessionWithTokens,
   getUserSessionIds,
   getUserSessionCount,
+  touchSessionRecord,
 } from '@/bff-server/cache-service';
 
 // ─── Mock cache-service ───────────────────────────────────────────────────────
 
 jest.mock('@/bff-server/cache-service', () => ({
   cacheSession: jest.fn(),
+  cacheSessionTokens: jest.fn(),
   deleteSession: jest.fn(),
   getSession: jest.fn(),
+  getSessionWithTokens: jest.fn(),
   getUserSessionIds: jest.fn(),
   getUserSessionCount: jest.fn(),
+  touchSessionRecord: jest.fn(),
 }));
+jest.mock('@/config/env', () => ({
+  env: {
+    maxConcurrentSessions: 10,
+    sessionIdleTimeoutMs: 1_800_000,
+    sessionAbsoluteTimeoutMs: 86_400_000,
+    agentConfigEncKey: Buffer.alloc(32, 3).toString('base64'),
+  },
+}));
+
+const TOKENS = {
+  accessToken: 'eyJ.member-access.sig',
+  refreshToken: 'eyJ.member-refresh.sig',
+  accessExpiresAt: Date.now() + 300_000,
+  refreshExpiresAt: Date.now() + 1_800_000,
+};
 
 const mockedCacheSession = cacheSession as jest.MockedFunction<typeof cacheSession>;
 const mockedDeleteSession = deleteSession as jest.MockedFunction<typeof deleteSession>;
@@ -74,7 +97,7 @@ describe('createSession', () => {
   it('allows new session when session count is below max (count = 9)', async () => {
     mockedGetUserSessionCount.mockResolvedValue(9);
 
-    const session = await createSession('user-123');
+    const session = await createSession('user-123', TOKENS);
 
     expect(session.userId).toBe('user-123');
     expect(typeof session.sessionId).toBe('string');
@@ -101,7 +124,7 @@ describe('createSession', () => {
     mockedGetUserSessionIds.mockResolvedValue(sessions.map((s) => s.sessionId));
     sessions.forEach((s) => mockedGetSession.mockResolvedValueOnce(s));
 
-    await createSession('user-123');
+    await createSession('user-123', TOKENS);
 
     // evictOldestSession sorts by lastActivityAt ascending and removes the first
     expect(mockedDeleteSession).toHaveBeenCalledTimes(1);
@@ -127,7 +150,7 @@ describe('createSession', () => {
     mockedGetUserSessionIds.mockResolvedValue(sessions.map((s) => s.sessionId));
     sessions.forEach((s) => mockedGetSession.mockResolvedValueOnce(s));
 
-    await createSession('user-123');
+    await createSession('user-123', TOKENS);
 
     // Sort is stable — first element (sess-1) is evicted when all equal
     expect(mockedDeleteSession).toHaveBeenCalledWith('sess-1', 'user-123');
@@ -137,7 +160,7 @@ describe('createSession', () => {
     mockedGetUserSessionCount.mockResolvedValue(0);
 
     const before = Date.now();
-    await createSession('user-abc');
+    await createSession('user-abc', TOKENS);
     const after = Date.now();
 
     expect(mockedCacheSession).toHaveBeenCalledTimes(1);
@@ -236,7 +259,7 @@ describe('Redis unavailability', () => {
   it('propagates error when Redis is unavailable during createSession', async () => {
     mockedGetUserSessionCount.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    await expect(createSession('user-123')).rejects.toThrow('ECONNREFUSED');
+    await expect(createSession('user-123', TOKENS)).rejects.toThrow('ECONNREFUSED');
   });
 
   it('propagates error when Redis is unavailable during getValidSession', async () => {
@@ -249,24 +272,57 @@ describe('Redis unavailability', () => {
 // ─── touchSession ─────────────────────────────────────────────────────────────
 
 describe('touchSession', () => {
-  it('updates lastActivityAt for an active session', async () => {
+  // Feature 085: the session record alone, only if it still exists (SET … XX), with no second read —
+  // the authenticator already holds the session it just validated.
+  it('slides lastActivityAt on the session record only', async () => {
     const before = Date.now();
     const session = makeSession({ lastActivityAt: before - 10_000 });
-    mockedGetSession.mockResolvedValue(session);
 
-    await touchSession('sess-001');
+    await touchSession(session);
 
-    expect(mockedCacheSession).toHaveBeenCalledTimes(1);
-    const updated = mockedCacheSession.mock.calls[0]?.[0] as Session;
+    expect(touchSessionRecord).toHaveBeenCalledTimes(1);
+    const updated = (touchSessionRecord as jest.Mock).mock.calls[0]?.[0] as Session;
     expect(updated.lastActivityAt).toBeGreaterThanOrEqual(before);
+    expect(mockedCacheSession).not.toHaveBeenCalled();
+    expect(mockedGetSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('createSession — server-held tokens (feature 085 US6)', () => {
+  it('stores the tokens SEALED beside the new session, bound to it', async () => {
+    mockedGetUserSessionCount.mockResolvedValue(0);
+    const session = await createSession('user-123', TOKENS);
+
+    expect(cacheSessionTokens).toHaveBeenCalledTimes(1);
+    const [forSession, raw] = (cacheSessionTokens as jest.Mock).mock.calls[0];
+    expect(forSession).toEqual(session);
+    expect(raw).not.toContain('eyJ');
+    expect(openSessionTokens(session, raw as string)).toEqual(TOKENS);
+  });
+});
+
+describe('readLiveSessionWithTokens', () => {
+  it('returns the live session and its sealed record', async () => {
+    const session = makeSession();
+    (getSessionWithTokens as jest.Mock).mockResolvedValue({ session, tokensRaw: 'sealed' });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ session, tokensRaw: 'sealed' });
   });
 
-  it('does nothing when session is not found', async () => {
-    mockedGetSession.mockResolvedValue(null);
+  it('reports absolute before idle, and deletes the expired session', async () => {
+    const now = Date.now();
+    const both = makeSession({ expiresAt: now - 1, lastActivityAt: now - 3_600_000 });
+    (getSessionWithTokens as jest.Mock).mockResolvedValue({ session: both, tokensRaw: 'sealed' });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ expired: 'absolute', userId: both.userId });
+    expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', both.userId);
+  });
 
-    await touchSession('nonexistent-session');
-
-    expect(mockedCacheSession).not.toHaveBeenCalled();
+  it('reports idle, and missing', async () => {
+    const now = Date.now();
+    const idle = makeSession({ lastActivityAt: now - 1_900_000 });
+    (getSessionWithTokens as jest.Mock).mockResolvedValueOnce({ session: idle, tokensRaw: 'sealed' });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ expired: 'idle', userId: idle.userId });
+    (getSessionWithTokens as jest.Mock).mockResolvedValueOnce({ session: null, tokensRaw: null });
+    await expect(readLiveSessionWithTokens('gone')).resolves.toEqual({ expired: 'missing' });
   });
 });
 
@@ -317,7 +373,7 @@ describe('createSession concurrent-cap trim', () => {
       async (id: string) => sessions.find((s) => s.sessionId === id) ?? null,
     );
 
-    await createSession('user-123');
+    await createSession('user-123', TOKENS);
 
     // At least one eviction occurred to bring the set down to the cap.
     expect(mockedDeleteSession).toHaveBeenCalled();

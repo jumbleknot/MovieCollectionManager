@@ -35,6 +35,10 @@ function sessionTtlSeconds(session: Session): number {
 // ─── Key builders ──────────────────────────────────────────────────────────────
 
 const sessionKey = (sessionId: string) => `session:${sessionId}`;
+// Feature 085: the member's sealed tokens, beside the session record rather than inside it. A touch
+// rewrites the record, and if the tokens lived there a touch racing a renewal would write the
+// PRE-renewal refresh token back — which Keycloak's rotation has already revoked.
+const sessionTokensKey = (sessionId: string) => `session-tokens:${sessionId}`;
 const profileKey = (userId: string) => `profile:${userId}`;
 const userSessionsKey = (userId: string) => `user-sessions:${userId}`;
 const rateLimitKey = (endpoint: string, identifier: string) =>
@@ -50,6 +54,7 @@ let redisClient: RedisLike | null = null;
 
 interface RedisLike {
   get(key: string): Promise<string | null>;
+  mget(...keys: string[]): Promise<(string | null)[]>;
   set(key: string, value: string): Promise<unknown>;
   set(key: string, value: string, expiryMode: 'EX', exSeconds: number): Promise<unknown>;
   set(
@@ -57,7 +62,7 @@ interface RedisLike {
     value: string,
     expiryMode: 'EX',
     exSeconds: number,
-    setMode: 'NX',
+    setMode: 'NX' | 'XX',
   ): Promise<string | null>;
   del(...keys: string[]): Promise<void>;
   incr(key: string): Promise<number>;
@@ -99,9 +104,7 @@ export async function cacheSession(session: Session): Promise<void> {
   await redis.expire(userSessionsKey(session.userId), ttl);
 }
 
-export async function getSession(sessionId: string): Promise<Session | null> {
-  const redis = await getRedis();
-  const raw = await redis.get(sessionKey(sessionId));
+async function parseSession(redis: RedisLike, sessionId: string, raw: string | null): Promise<Session | null> {
   if (!raw) return null;
   try {
     return JSON.parse(raw) as Session;
@@ -113,9 +116,46 @@ export async function getSession(sessionId: string): Promise<Session | null> {
   }
 }
 
+export async function getSession(sessionId: string): Promise<Session | null> {
+  const redis = await getRedis();
+  return parseSession(redis, sessionId, await redis.get(sessionKey(sessionId)));
+}
+
+/**
+ * The session record and its sealed tokens in ONE round trip (feature 085): every authenticated
+ * request reads both, so a second GET would add latency to every request the BFF serves.
+ */
+export async function getSessionWithTokens(
+  sessionId: string,
+): Promise<{ session: Session | null; tokensRaw: string | null }> {
+  const redis = await getRedis();
+  const [rawSession, tokensRaw] = await redis.mget(sessionKey(sessionId), sessionTokensKey(sessionId));
+  return { session: await parseSession(redis, sessionId, rawSession ?? null), tokensRaw: tokensRaw ?? null };
+}
+
+/** Store a session's sealed tokens (feature 085). Same TTL as the session record. */
+export async function cacheSessionTokens(session: Session, sealedRecord: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(sessionTokensKey(session.sessionId), sealedRecord, 'EX', sessionTtlSeconds(session));
+}
+
+export async function getSessionTokensRecord(sessionId: string): Promise<string | null> {
+  const redis = await getRedis();
+  return redis.get(sessionTokensKey(sessionId));
+}
+
+/**
+ * Rewrite the session record — and ONLY the record — if it still exists. `XX` is the point: a touch
+ * racing a logout would otherwise re-create the record the logout just deleted (feature 085).
+ */
+export async function touchSessionRecord(session: Session): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', sessionTtlSeconds(session), 'XX');
+}
+
 export async function deleteSession(sessionId: string, userId: string): Promise<void> {
   const redis = await getRedis();
-  await redis.del(sessionKey(sessionId));
+  await redis.del(sessionKey(sessionId), sessionTokensKey(sessionId));
   await redis.srem(userSessionsKey(userId), sessionId);
 }
 

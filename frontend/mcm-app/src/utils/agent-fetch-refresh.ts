@@ -1,22 +1,21 @@
 /**
  * Agent transport refresh-retry wrapper (feature 012).
  *
- * Auth model: BFF cookies (constitution §Frontend App "Client Auth Model", Option A — web AND
- * native). The agent /run request is credentialed because CopilotKit's RN streaming-fetch polyfill
- * uses `XMLHttpRequest`, whose `withCredentials` defaults to `true` in React Native, so the native
- * cookie jar's `mcm_access_token` rides along automatically (the polyfill itself does NOT read
+ * Auth model: the BFF session cookie (constitution §Frontend App "Client Auth Model", Option A —
+ * web AND native). The agent /run request is credentialed because CopilotKit's RN streaming-fetch
+ * polyfill uses `XMLHttpRequest`, whose `withCredentials` defaults to `true` in React Native, so the
+ * native cookie jar's `mcm_session_id` rides along automatically (the polyfill itself does NOT read
  * `init.credentials` — the cookie is carried by RN's default, NOT by an explicit flag; if a future
  * RN/CopilotKit upgrade flips that default, this breaks silently → the android-e2e harness must
  * regression-cover it).
  *
- * The CopilotKit runtime fetch to `/bff-api/agent/run` does NOT go through the axios token-refresh
- * interceptor (`utils/token-refresh`), so when the short-lived `mcm_access_token` cookie expires
- * (Keycloak access-token lifespan, ~5 min) the agent route 401s. The refresh-token cookie is
- * `Path=/bff-api/auth/refresh`, so the only lever is client-side: on a `/run` 401, call
- * `silentRefresh()` (axios → /auth/refresh → BFF re-sets the cookies in the shared RN cookie jar)
- * and retry the run once with the fresh cookie. (Whether this recovery fires correctly on a real
- * mid-session expiry — vs the failures seen under the unstable Windows-Metro harness — is the open
- * item the android-e2e workflow exists to confirm: see diagnosis-mobile-agent-no-token.md.)
+ * Since feature 085 the member's tokens are held by the BFF and renewed there, so an access-token
+ * expiry mid-session no longer reaches the client at all. A `/run` 401 now means the session or its
+ * identity was refused (e.g. AGENT_IDENTITY_REJECTED); this wrapper answers it the way it always
+ * has — `silentRefresh()` (POST /auth/refresh renews the server-held tokens) and one retry — because
+ * the CopilotKit runtime fetch does NOT go through the axios interceptor (`utils/token-refresh`).
+ * A 503 (temporarily unavailable) is passed straight through: an outage is no reason to touch the
+ * session.
  *
  * `createRefreshingFetch` is a pure factory (inject baseFetch + refresh) so it is unit-testable
  * without any global. `installAgentFetchRefresh` wraps `globalThis.fetch` once, before CopilotKit

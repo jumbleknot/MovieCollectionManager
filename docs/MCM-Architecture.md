@@ -133,6 +133,21 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
 Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent never receives or forwards the user's full session token to a backend. This preserves least-privilege and **decouples token lifetime from how long a run (or HITL pause) lasts**.
 
 - **The BFF stays the sole token custodian.** On each run **invocation and each HITL resume** — both of which originate from an authenticated BFF request — the BFF supplies the Agent Gateway a **short-lived subject token** representing the user, passed as an **ephemeral, non-checkpointed run value**. Raw tokens (subject *or* exchanged) are **never** written to checkpointed agent state (`agent-db`), traces, or logs.
+- **The member's own session tokens are server-held too (feature 085).** The access and refresh
+  tokens Keycloak issues at sign-in never reach the client. They are sealed beside the Redis session
+  (AES-256-GCM with `AGENT_CONFIG_ENC_KEY`, bound to the session id and its owner) and renewed by the
+  BFF itself, at most once per session at a time, behind a short Redis lock. The client holds
+  exactly one credential, the opaque `mcm_session_id` cookie. A bearer credential presented to the
+  BFF is refused in every environment. The subject token below is minted from that server-held
+  access token.
+- **A refused subject-token mint fails closed (feature 085, item #844).** When Keycloak rejects the
+  member's token at the BFF's exchange, the run or resume is refused with
+  `401 AGENT_IDENTITY_REJECTED`: the client renews once, then sends the member to sign in.
+  - **Measured:** Keycloak 26.5 answers `400 invalid_request "Invalid token"`, not the RFC's
+    `invalid_token`.
+  - When Keycloak is unreachable or errors, the turn is refused with a retryable
+    `503 AGENT_IDENTITY_UNAVAILABLE`.
+  - The gateway is never called identity-less.
 - **Exchange happens at tool-call time.** When a specialist agent calls a tool, the gateway's shared MCP client exchanges the subject token at Keycloak for a **downscoped, audience-bound (`aud=mc-service`), short-TTL** access token, attached as `Authorization: Bearer` to the MCP server, which forwards it unchanged to the backend. OPA authorises the exchange ("may this agent act for this user against this audience?").
 - **Robust across long HITL pauses (the reason for this design).** A paused run holds **no token** — only the checkpointed graph state plus the non-sensitive `userId`/`threadId`. A token need only remain valid for an **active run segment** (the initial turn, or a single resume), never the pause. Because every resume is an authenticated BFF request, the BFF always supplies a fresh subject token on resume — so pause length is irrelevant. If the user's session has lapsed by approval time, they re-authenticate at the BFF first.
 - **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `grumpyrobot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.

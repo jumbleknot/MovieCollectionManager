@@ -5,13 +5,12 @@
  * API. No mocking (constitution v1.3.0). Verifies BOTH the stored-session
  * deletion AND the Keycloak SSO session termination (the constitution's Session
  * Invalidation requirement) — the SSO session is created by the ROPC login and
- * asserted gone via the Admin API after logout.
+ * asserted gone via the Admin API after logout. Since feature 085 the member signs in through the
+ * real code + PKCE flow (helpers/bff-session.ts) and the session cookie is the only credential.
  */
-import { randomUUID } from 'node:crypto';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   getUserSessions,
@@ -19,25 +18,21 @@ import {
 } from './helpers/keycloak-test-client';
 import { createBffClient } from './helpers/bff-test-server';
 import {
-  bffSeedSession,
-  bffSessionExists,
+  bffRawSessionValues,
   bffCleanupUser,
   closeBffRedis,
 } from './helpers/bff-redis-client';
-import type { Session } from '@/types/auth';
+import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
 
 describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admin)', () => {
   let user: TestUser;
-  let accessToken: string;
 
   beforeAll(async () => {
     await ensureRopcAudienceMapper();
     user = await createTestUser('int-logout');
     await assignRole(user.userId, 'mc-user');
-    // ROPC login creates a real Keycloak SSO user session.
-    ({ accessToken } = await getTestTokens(user.username, user.password));
   });
 
   afterAll(async () => {
@@ -48,16 +43,12 @@ describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admi
 
   it('deletes the stored session AND terminates the Keycloak SSO session (US4-AC1/AC2)', async () => {
     const now = Date.now();
-    const session: Session = {
-      sessionId: randomUUID(),
-      userId: user.userId,
-      createdAt: now,
-      lastActivityAt: now,
-      expiresAt: now + 86_400_000,
-    };
-    await bffSeedSession(session);
-
-    // sanity: the ROPC login created at least one Keycloak SSO session
+    // A real sign-in: a Keycloak SSO session plus a BFF session holding the tokens server-side.
+    const signedIn = await loginSession(user.username, user.password);
+    const sessionId = signedIn.setCookies
+      .map((c) => c.split(';')[0]!)
+      .find((pair) => pair.startsWith('mcm_session_id='))!
+      .slice('mcm_session_id='.length);
     expect((await getUserSessions(user.userId)).length).toBeGreaterThan(0);
 
     const res = await bff.post(
@@ -65,19 +56,20 @@ describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admi
       {},
       {
         headers: {
-          Cookie: `mcm_session_id=${session.sessionId}; mcm_access_token=${accessToken}`,
+          Cookie: signedIn.cookie,
           'X-Forwarded-For': `198.51.100.${Math.floor(now % 200) + 1}`,
         },
       },
     );
 
     expect(res.status).toBe(200);
-    expect(await bffSessionExists(session.sessionId)).toBe(false); // FR-013: Redis session deleted
+    // FR-013 + 085 FR-020: the session AND its server-held tokens are gone.
+    expect(await bffRawSessionValues(sessionId)).toEqual({ record: null, tokens: null });
     expect((await getUserSessions(user.userId)).length).toBe(0); // SC-005: Keycloak SSO terminated
 
-    // Logout must clear ALL THREE auth cookies, each as its own Set-Cookie header with Max-Age=0.
-    // (Regression: joining them into one comma-separated Set-Cookie value left mcm_refresh_token
-    // and mcm_session_id uncleared — the browser parses only the first cookie.)
+    // Logout clears the session cookie AND the two retired token cookies (085 FR-022), each as its
+    // own Set-Cookie header with Max-Age=0. (Regression: joining them into one comma-separated
+    // Set-Cookie value left all but the first uncleared — the browser parses only the first.)
     const setCookie: string[] = res.headers['set-cookie'] ?? [];
     const cleared = (name: string): boolean =>
       setCookie.some((c) => c.startsWith(`${name}=;`) && /max-age=0/i.test(c));

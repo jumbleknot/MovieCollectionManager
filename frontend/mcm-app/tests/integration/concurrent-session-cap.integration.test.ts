@@ -5,6 +5,7 @@
  * above the configured maximum (the pre-add count check is TOCTOU-racy; the
  * post-add trim enforces the cap). Asserted against REAL Redis (db 1).
  */
+import { placeholderSessionTokens } from './helpers/session-token-fixture';
 import { randomUUID } from 'node:crypto';
 import { createSession, getActiveSessionCount } from '@/bff-server/session-manager';
 import { env } from '@/config/env';
@@ -32,7 +33,7 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
     const max = env.maxConcurrentSessions;
 
     // Fire max + 5 logins concurrently to exercise the race.
-    await Promise.all(Array.from({ length: max + 5 }, () => createSession(userId)));
+    await Promise.all(Array.from({ length: max + 5 }, () => createSession(userId, placeholderSessionTokens())));
 
     expect(await getActiveSessionCount(userId)).toBeLessThanOrEqual(max);
   });
@@ -47,10 +48,10 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
 
     // Fill exactly to the cap SEQUENTIALLY, so the next create is the one that must evict.
     // (The concurrent case above exercises the race; this one needs a deterministic trigger.)
-    for (let i = 0; i < max; i += 1) await createSession(userId);
+    for (let i = 0; i < max; i += 1) await createSession(userId, placeholderSessionTokens());
 
     const entries = await captureLogEntries(async () => {
-      await createSession(userId);
+      await createSession(userId, placeholderSessionTokens());
     });
 
     const evictions = auditEntriesFor(entries, 'session_evicted');
@@ -68,10 +69,10 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
     const max = env.maxConcurrentSessions;
 
     const created: string[] = [];
-    for (let i = 0; i < max; i += 1) created.push((await createSession(userId)).sessionId);
+    for (let i = 0; i < max; i += 1) created.push((await createSession(userId, placeholderSessionTokens())).sessionId);
 
     const entries = await captureLogEntries(async () => {
-      await createSession(userId);
+      await createSession(userId, placeholderSessionTokens());
     });
 
     const evictions = auditEntriesFor(entries, 'session_evicted');

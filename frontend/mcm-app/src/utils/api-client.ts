@@ -3,8 +3,9 @@
  *
  * Auth model: BFF cookies (constitution §Frontend App "Client Auth Model", Option A). The client
  * sends NO `Authorization: Bearer` header — `withCredentials: true` carries the BFF's HttpOnly
- * session/access cookies (web same-origin; native via RN's cookie jar). On a 401 the response
- * interceptor silently refreshes (POST /auth/refresh re-sets the cookies) and retries once.
+ * session cookie — the only credential the client holds since feature 085; the BFF keeps the
+ * tokens server-side (web same-origin; native via RN's cookie jar). On a 401 the response
+ * interceptor silently refreshes (POST /auth/refresh renews the server-held tokens) and retries once.
  *
  * WHY THIS LIVES IN THE UTILS-LAYER (feature 077 / item #566). It used to sit under
  * `src/bff-server/`, which named the thing it TALKS TO rather than where it RUNS — and it runs in

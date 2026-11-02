@@ -5,7 +5,7 @@
  * from an mc-user stashes the file bytes under `import:file:<handle>` and remembers a per-user
  * `{handle, filename}` reference (`agent-import-file:<userId>`); the opaque handle is NOT returned
  * to the client. We assert the per-user reference appears in the BFF's Redis (db 0) and that
- * type/auth are enforced. `requireAuth` accepts a raw Bearer token, so a ROPC token drives auth.
+ * type/auth are enforced. Calls carry a real session cookie (helpers/bff-session.ts, feature 085).
  *
  * Covers: FR-006 (upload → stash), FR-022 (reject unsupported type), agent auth guard.
  */
@@ -14,11 +14,11 @@ import Redis from 'ioredis';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession, loginSessionWithoutAppRole } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
@@ -41,10 +41,10 @@ describe('/bff-api/agent/import-upload — integration (real BFF + Redis + Keycl
     await ensureRopcAudienceMapper();
     mcUser = await createTestUser('int-import');
     await assignRole(mcUser.userId, 'mc-user');
-    ({ accessToken: mcToken } = await getTestTokens(mcUser.username, mcUser.password));
+    mcToken = (await loginSession(mcUser.username, mcUser.password)).cookie;
 
     noRoleUser = await createTestUser('int-import-norole');
-    ({ accessToken: noRoleToken } = await getTestTokens(noRoleUser.username, noRoleUser.password));
+    noRoleToken = (await loginSessionWithoutAppRole(noRoleUser)).cookie;
   });
 
   afterAll(async () => {
@@ -56,7 +56,7 @@ describe('/bff-api/agent/import-upload — integration (real BFF + Redis + Keycl
 
   it('stashes the upload + a per-user handle reference, returns the filename (FR-006)', async () => {
     const res = await bff.post('/bff-api/agent/import-upload', csvUpload('my-films.csv'), {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
     });
     expect(res.status).toBe(200);
     expect(res.data.filename).toBe('my-films.csv');
@@ -76,7 +76,7 @@ describe('/bff-api/agent/import-upload — integration (real BFF + Redis + Keycl
     const form = new FormData();
     form.append('file', new Blob(['nope'], { type: 'text/plain' }), 'notes.txt');
     const res = await bff.post('/bff-api/agent/import-upload', form, {
-      headers: { Authorization: `Bearer ${mcToken}` },
+      headers: { Cookie: mcToken },
     });
     expect(res.status).toBe(400);
   });
@@ -88,7 +88,7 @@ describe('/bff-api/agent/import-upload — integration (real BFF + Redis + Keycl
 
   it('returns 403 for an authenticated user lacking mc-user', async () => {
     const res = await bff.post('/bff-api/agent/import-upload', csvUpload('x.csv'), {
-      headers: { Authorization: `Bearer ${noRoleToken}` },
+      headers: { Cookie: noRoleToken },
     });
     expect(res.status).toBe(403);
   });

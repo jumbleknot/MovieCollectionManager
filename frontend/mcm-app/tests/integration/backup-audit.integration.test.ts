@@ -30,8 +30,9 @@ import {
   assignRole,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { inProcessSessionCookie } from './helpers/bff-session';
 
-import { getTestTokens, ensureRopcAudienceMapper } from './helpers/keycloak-test-client';
+import { ensureRopcAudienceMapper } from './helpers/keycloak-test-client';
 
 import { POST as restoreRoute } from '@/app/bff-api/backups/jobs/[jobId]/restore+api';
 
@@ -85,7 +86,9 @@ describeBackupTargets('backup audit coverage', () => {
     await ensureRopcAudienceMapper();
     user = await createTestUser('t068-audit');
     await assignRole(user.userId, 'mc-user');
-    token = (await getTestTokens(user.username, user.password)).accessToken;
+    // The restore route is driven IN-PROCESS below (to capture this process's audit output), so the
+    // session must live in the store that in-process handler reads (feature 085).
+    token = await inProcessSessionCookie(user);
   });
 
   afterAll(async () => {
@@ -211,7 +214,7 @@ describeBackupTargets('backup audit coverage', () => {
       const res = await restoreRoute(
         new Request(`http://localhost:8082/bff-api/backups/jobs/${job.id}/restore`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          headers: { Cookie: token, 'Content-Type': 'application/json' },
           body: JSON.stringify({ key: foreignKey }),
         }),
         { jobId: job.id },

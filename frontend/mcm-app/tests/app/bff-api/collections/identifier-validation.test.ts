@@ -6,7 +6,6 @@
 
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn().mockResolvedValue({ user: { id: 'u1', roles: ['mc-user'] } }),
-  extractRawToken: jest.fn().mockReturnValue('jwt-token'),
 }));
 
 jest.mock('@/bff-server/role-check', () => ({

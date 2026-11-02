@@ -14,11 +14,11 @@
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSessionWithoutAppRole } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
@@ -77,7 +77,7 @@ describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {
     await assignRole(mcUser.userId, 'mc-user');
 
     noRoleUser = await createTestUser('agent-auth-norole');
-    ({ accessToken: noRoleToken } = await getTestTokens(noRoleUser.username, noRoleUser.password));
+    noRoleToken = (await loginSessionWithoutAppRole(noRoleUser)).cookie;
   });
 
   afterAll(async () => {
@@ -92,7 +92,7 @@ describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {
   });
 
   it.each(AGENT_ROUTES)('$method $path returns 403 for a user lacking mc-user', async ({ method, path, body }) => {
-    const res = await call(method, path, body, { Authorization: `Bearer ${noRoleToken}` });
+    const res = await call(method, path, body, { Cookie: noRoleToken });
     expect(res.status).toBe(403);
     expect(res.data.code).toBe('FORBIDDEN');
   });

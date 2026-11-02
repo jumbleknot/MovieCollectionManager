@@ -6,14 +6,13 @@
 
 import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
-import { getCachedUserProfile, cacheUserProfile, getSession } from '@/bff-server/cache-service';
+import { getCachedUserProfile, cacheUserProfile } from '@/bff-server/cache-service';
 import { getUserById } from '@/bff-server/keycloak';
 import { extractRoles } from '@/bff-server/token-service';
-import { validateSessionTimeout } from '@/bff-server/session-timeout';
-import { extractSessionId } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
+import { authErrorHeaders } from '@/bff-server/mc-api-error';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 import type { UserProfile } from '@/types/auth';
 import { env } from '@/config/env';
@@ -26,21 +25,10 @@ async function _get(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
 
-    // Authenticate BEFORE any session side effect (009 finding #9): an
-    // unauthenticated caller must never be able to trigger session timeout
-    // enforcement on an attacker-supplied X-Session-Id.
+    // requireAuth enforces the session's absolute and idle limits and slides its idle window on
+    // every authenticated request (feature 085 FR-023) — this route no longer does it separately.
     const { payload, user } = await requireAuth(headers);
     requireMcUser(user);
-
-    // Validate/slide the idle window ONLY for the caller's own session — never a
-    // session id that does not belong to the authenticated user.
-    const sessionId = extractSessionId(headers);
-    if (sessionId) {
-      const session = await getSession(sessionId).catch(() => null);
-      if (session && session.userId === payload.sub) {
-        await validateSessionTimeout(sessionId);
-      }
-    }
 
     const userId: string = payload.sub;
     const roles = extractRoles(payload, env.keycloakClientId);
@@ -72,7 +60,7 @@ async function _get(req: Request): Promise<Response> {
     if (err instanceof AuthError) {
       return Response.json(
         { error: err.message, code: err.code },
-        { status: err.statusCode, headers: securityHeaders() },
+        { status: err.statusCode, headers: authErrorHeaders(err) },
       );
     }
     logger.error('user: unhandled error', { action: 'user_error', error: err });

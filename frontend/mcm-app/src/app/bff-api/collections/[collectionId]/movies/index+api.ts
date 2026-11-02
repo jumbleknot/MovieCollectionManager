@@ -6,7 +6,7 @@
  *
  * Handler:
  *   1. Validate the JWT via requireAuth (throws UnauthorizedError if missing/invalid)
- *   2. Extract the raw JWT string via extractRawToken (safe after requireAuth validates)
+ *   2. Take the member's server-held access token from requireAuth (feature 085)
  *   3. Forward the request to mc-service via createMcServiceClient(jwt)
  *   4. Return the mc-service response (status + body) to the client
  *   5. Propagate mc-service error responses (RFC 9457) unchanged
@@ -16,7 +16,7 @@
  *   decade, owned, ownedMedia, ripped, ripQuality
  */
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { createMcServiceClient } from '@/bff-server/mc-service-client';
 import { withRequestContext } from '@/bff-server/request-context';
@@ -40,10 +40,10 @@ export async function GET(req: Request, { collectionId }: { collectionId: string
 async function _get(req: Request, collectionId: string): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const { user } = await requireAuth(headers);
+    const { user, accessToken } = await requireAuth(headers);
     requireMcUser(user);
     validateObjectId(collectionId, 'collectionId');
-    const jwt = extractRawToken(headers)!;
+    const jwt = accessToken;
     const client = createMcServiceClient(jwt);
 
     // Forward all list query params to mc-service
@@ -74,10 +74,10 @@ export async function POST(req: Request, { collectionId }: { collectionId: strin
 async function _post(req: Request, collectionId: string): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const { user } = await requireAuth(headers);
+    const { user, accessToken } = await requireAuth(headers);
     requireMcUser(user);
     validateObjectId(collectionId, 'collectionId');
-    const jwt = extractRawToken(headers)!;
+    const jwt = accessToken;
     const client = createMcServiceClient(jwt);
 
     const body = await req.json();

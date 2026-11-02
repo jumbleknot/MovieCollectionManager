@@ -17,9 +17,9 @@
  * client: an unregistered URI is refused outright rather than redirected to.
  */
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser, isAdmin } from '@/bff-server/role-check';
-import { countUsersInClientRole, decodeJwtPayload } from '@/bff-server/keycloak';
+import { countUsersInClientRole } from '@/bff-server/keycloak';
 import { buildStepUpRequest, buildNativeStepUpRequest } from '@/bff-server/account-step-up';
 import { setPendingAccountDeletion } from '@/bff-server/cache-service';
 import { checkAccountDeletionRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
@@ -39,7 +39,7 @@ async function handle(req: Request): Promise<Response> {
   try {
     await checkAccountDeletionRateLimit(ip);
 
-    const { user } = await requireAuth(headers);
+    const { user, payload } = await requireAuth(headers);
     requireMcUser(user);
 
     // FR-013. Counted only for an administrator, so an ordinary deletion costs no admin round
@@ -65,11 +65,9 @@ async function handle(req: Request): Promise<Response> {
     //
     // It is also what FR-010 actually asks for: the proof must postdate the authentication the
     // SESSION was established with.
-    const sessionClaims = (() => {
-      const raw = extractRawToken(headers);
-      return raw ? decodeJwtPayload(raw) : null;
-    })();
-    const sessionAuthTime = (sessionClaims as { auth_time?: unknown } | null)?.auth_time;
+    // The validated server-held token's claims (feature 085). Keycloak carries the ORIGINAL
+    // authentication's auth_time across refreshes, so a server-side renewal does not move the floor.
+    const sessionAuthTime = (payload as { auth_time?: unknown }).auth_time;
     // Absent is possible in principle; the freshness window below still bounds the proof, so
     // fall back to a floor that cannot reject a valid step-up rather than one that might.
     const authTimeFloor = typeof sessionAuthTime === 'number' ? sessionAuthTime : 0;

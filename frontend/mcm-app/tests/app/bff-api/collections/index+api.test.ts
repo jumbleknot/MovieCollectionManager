@@ -19,7 +19,6 @@ const mockMcClient = {
 
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn(),
-  extractRawToken: jest.fn().mockReturnValue('raw-jwt-token'),
   extractSessionId: jest.fn().mockReturnValue(null),
 }));
 
@@ -46,7 +45,7 @@ jest.mock('@/bff-server/security-headers', () => ({
 }));
 
 import { GET, POST } from '@/app/bff-api/collections/index+api';
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { createMcServiceClient } from '@/bff-server/mc-service-client';
 import { UnauthorizedError } from '@/types/errors';
 
@@ -55,7 +54,7 @@ import { UnauthorizedError } from '@/types/errors';
 function makeGetRequest(): Parameters<typeof GET>[0] {
   return {
     url: 'http://localhost/bff-api/collections',
-    headers: new Headers({ cookie: 'mcm_access_token=tok' }),
+    headers: new Headers({ cookie: 'mcm_session_id=sid' }),
     json: () => Promise.resolve({}),
   } as unknown as Parameters<typeof GET>[0];
 }
@@ -63,7 +62,7 @@ function makeGetRequest(): Parameters<typeof GET>[0] {
 function makePostRequest(body: unknown): Parameters<typeof POST>[0] {
   return {
     url: 'http://localhost/bff-api/collections',
-    headers: new Headers({ cookie: 'mcm_access_token=tok' }),
+    headers: new Headers({ cookie: 'mcm_session_id=sid' }),
     json: () => Promise.resolve(body),
   } as unknown as Parameters<typeof POST>[0];
 }
@@ -103,8 +102,7 @@ const noRoleUserProfile = { ...mockUserProfile, roles: [] };
 describe('GET /bff-api/collections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile });
-    (extractRawToken as jest.Mock).mockReturnValue('raw-jwt-token');
+    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
     mockMcClient.get.mockResolvedValue({ status: 200, data: { items: mockCollectionSummaries } });
   });
 
@@ -122,7 +120,7 @@ describe('GET /bff-api/collections', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (extractRawToken as jest.Mock).mockReturnValueOnce('specific-jwt-for-this-request');
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'specific-jwt-for-this-request' });
     await GET(makeGetRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('specific-jwt-for-this-request');
   });
@@ -134,7 +132,7 @@ describe('GET /bff-api/collections', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
     const res = await GET(makeGetRequest());
     expect(res.status).toBe(403);
   });
@@ -153,8 +151,7 @@ describe('GET /bff-api/collections', () => {
 describe('POST /bff-api/collections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile });
-    (extractRawToken as jest.Mock).mockReturnValue('raw-jwt-token');
+    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
     mockMcClient.post.mockResolvedValue({ status: 201, data: mockCreatedCollection });
   });
 
@@ -173,7 +170,7 @@ describe('POST /bff-api/collections', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (extractRawToken as jest.Mock).mockReturnValueOnce('post-jwt');
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'post-jwt' });
     await POST(makePostRequest({ name: 'X' }));
     expect(createMcServiceClient).toHaveBeenCalledWith('post-jwt');
   });
@@ -185,7 +182,7 @@ describe('POST /bff-api/collections', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
     const res = await POST(makePostRequest({ name: 'X' }));
     expect(res.status).toBe(403);
   });

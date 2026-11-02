@@ -2,21 +2,19 @@
  * /bff-api/auth/user integration tests (T009) — FR-015.
  *
  * HTTP-level against the running BFF (http://localhost:8081) + real Keycloak —
- * no mocking (constitution v1.3.0). `requireAuth` accepts a raw token via the
- * `Authorization: Bearer` header (auth.ts extractToken), so no session seeding is
- * needed: a real ROPC access token drives the success and role paths.
- *
- * NOTE: PKCE code exchange is out of scope (feature-003 E2E). These begin after
- * token acquisition.
+ * no mocking (constitution v1.3.0). Each member signs in the way a member does — Keycloak's
+ * code + PKCE flow, then the BFF login (helpers/bff-session.ts) — and every call carries only the
+ * resulting session cookie: since feature 085 the BFF honours no bearer credential, in any
+ * environment.
  */
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession, loginSessionWithoutAppRole } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
@@ -31,10 +29,10 @@ describe('/bff-api/auth/user — integration (real BFF + Keycloak)', () => {
     await ensureRopcAudienceMapper();
     roleUser = await createTestUser('int-user');
     await assignRole(roleUser.userId, 'mc-user');
-    ({ accessToken: roleToken } = await getTestTokens(roleUser.username, roleUser.password));
+    roleToken = (await loginSession(roleUser.username, roleUser.password)).cookie;
 
     noRoleUser = await createTestUser('int-user-norole');
-    ({ accessToken: noRoleToken } = await getTestTokens(noRoleUser.username, noRoleUser.password));
+    noRoleToken = (await loginSessionWithoutAppRole(noRoleUser)).cookie;
   });
 
   afterAll(async () => {
@@ -44,7 +42,7 @@ describe('/bff-api/auth/user — integration (real BFF + Keycloak)', () => {
 
   it('returns 200 + profile for an mc-user (FR-015)', async () => {
     const res = await bff.get('/bff-api/auth/user', {
-      headers: { Authorization: `Bearer ${roleToken}` },
+      headers: { Cookie: roleToken },
     });
     expect(res.status).toBe(200);
     expect(res.data.username).toBe(roleUser.username);
@@ -59,7 +57,7 @@ describe('/bff-api/auth/user — integration (real BFF + Keycloak)', () => {
 
   it('returns 403 for an authenticated user lacking mc-user (US-forbidden)', async () => {
     const res = await bff.get('/bff-api/auth/user', {
-      headers: { Authorization: `Bearer ${noRoleToken}` },
+      headers: { Cookie: noRoleToken },
     });
     expect(res.status).toBe(403);
     expect(res.data.code).toBe('FORBIDDEN');

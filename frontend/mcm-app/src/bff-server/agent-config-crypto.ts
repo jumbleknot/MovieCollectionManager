@@ -124,3 +124,20 @@ export function backupEncryptionKey(): string {
   }
   return keyBase64;
 }
+
+// ─── Server-held session tokens (feature 085) ──────────────────────────────────
+//
+// The member's access and refresh tokens are sealed with the SAME key as their assistant
+// credentials (AGENT_CONFIG_ENC_KEY), on the operator's direction: it is already required in every
+// environment, so moving the tokens server-side adds no deploy step. The cost is blast radius — this
+// key plus a Redis dump now yields live session tokens too. A dedicated key is a backlog follow-up
+// (specs/085-bff-auth-fail-closed/research.md R3).
+
+/**
+ * AAD for a session's sealed tokens — binds the blob to its session AND its owner, so a record
+ * copied to another session, or another member's session, fails authentication instead of
+ * authenticating someone as the wrong person.
+ */
+export function sessionTokensAad(sessionId: string, userId: string): string {
+  return `${sessionId}:${userId}:sessionTokens`;
+}

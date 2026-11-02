@@ -11,15 +11,15 @@ import { randomUUID } from 'node:crypto';
 import {
   createTestUser,
   deleteTestUser,
-  getTestTokens,
   assignRole,
   ensureRopcAudienceMapper,
   type TestUser,
 } from './helpers/keycloak-test-client';
+import { loginSession, loginSessionWithoutAppRole } from './helpers/bff-session';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
-const auth = (t: string) => ({ headers: { Authorization: `Bearer ${t}` } });
+const auth = (t: string) => ({ headers: { Cookie: t } });
 const uniqueTitle = () => `IntMovie_${randomUUID().replace(/-/g, '').slice(0, 12)}`;
 
 // mc-service CreateMovieRequest requires every field present (non-Option Rust fields).
@@ -53,14 +53,14 @@ describe('movie proxy — integration (real BFF + mc-service)', () => {
     await ensureRopcAudienceMapper();
     userA = await createTestUser('int-mov-a');
     await assignRole(userA.userId, 'mc-user');
-    ({ accessToken: tokenA } = await getTestTokens(userA.username, userA.password));
+    tokenA = (await loginSession(userA.username, userA.password)).cookie;
 
     userB = await createTestUser('int-mov-b');
     await assignRole(userB.userId, 'mc-user');
-    ({ accessToken: tokenB } = await getTestTokens(userB.username, userB.password));
+    tokenB = (await loginSession(userB.username, userB.password)).cookie;
 
     userNoRole = await createTestUser('int-mov-norole');
-    ({ accessToken: tokenNoRole } = await getTestTokens(userNoRole.username, userNoRole.password));
+    tokenNoRole = (await loginSessionWithoutAppRole(userNoRole)).cookie;
 
     const coll = await bff.post('/bff-api/collections', { name: `IntMovColl_${randomUUID().slice(0, 8)}` }, auth(tokenA));
     collectionId = coll.data.collectionId;

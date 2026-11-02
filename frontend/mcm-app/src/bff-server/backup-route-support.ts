@@ -12,7 +12,7 @@
 
 import { z } from 'zod';
 
-import { requireAuth, extractRawToken } from '@/bff-server/auth';
+import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
@@ -60,11 +60,11 @@ export async function withBackupRoute(
   return withRequestContext(async () => {
     try {
       const headers = Object.fromEntries(req.headers.entries());
-      const { user } = await requireAuth(headers);
+      const { user, accessToken } = await requireAuth(headers);
       requireMcUser(user);
       // The ONLY identity any handler ever sees. Nothing downstream can read a userId from the
       // path, the query or the body, because nothing downstream is given one.
-      return await body({ userId: user.id, jwt: extractRawToken(headers)! });
+      return await body({ userId: user.id, jwt: accessToken });
     } catch (err) {
       if (err instanceof BackupDestinationInputError) return problem('Invalid destination', 400, err.message);
       if (err instanceof BackupJobInputError) return problem('Invalid backup job', 400, err.message);

@@ -146,7 +146,7 @@ interface TokenExchangeResponse {
 
 /**
  * Mint a run-scoped subject token by exchanging the user's session access token.
- * @param userAccessToken the user's validated JWT (from `extractRawToken`).
+ * @param userAccessToken the member's server-held access token (from `requireAuth`), already validated.
  * @throws AuthError if token exchange is not configured; AgentIdentityError if Keycloak refuses it.
  */
 export async function mintSubjectToken(userAccessToken: string): Promise<SubjectToken> {
