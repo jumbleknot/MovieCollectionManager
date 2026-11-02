@@ -729,8 +729,12 @@ Research R15. The runner can take another run's `app-e2e`, `dast` or `build-depl
   section: a `missing scan tag(s)` red on a run whose `app-e2e` passed is no longer expected, and
   what a hold left over by a cancelled run looks like.
   **Done** 2026-11-02: a holds paragraph and the `missing scan tag(s)` row updated.
-- [ ] T079 [US3] Verify item #915's criteria on the PR's own run (its `app-image-scan` green after
+- [x] T079 [US3] Verify item #915's criteria on the PR's own run (its `app-image-scan` green after
   another run's job ran in between, if the queue provides one), comment the evidence, and close it.
+  **Done** 2026-11-02, on the fix's merge run rather than the PR's own run, where nothing ran in the
+  gap. On `main` `3e9c291e`, run 6509: app-e2e ended 08:45:54. Two prunes followed, PR #909's dast
+  (08:49) and its app-e2e (09:00), and the run's app-image-scan then passed at 09:40, with app paths
+  changed so the scan was required. Item #915 is closed with that timeline.
 
 ---
 
