@@ -1,7 +1,7 @@
 {
   "coveredCommit": "01ec22c86a167322869dd8cec70edfcf6e3447de",
   "coveredAt": "2026-11-02T04:30:26.778Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "decisions",
@@ -25,7 +25,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md"
+      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
@@ -82,38 +83,45 @@
     "updatedAt": "2026-11-02T04:30:27.631Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 24,
-    "elapsedSeconds": 1983,
+    "pagesWritten": 0,
+    "elapsedSeconds": 2201,
     "stoppedAtBudget": true
   },
-  "escalations": {},
+  "escalations": {
+    "decisions/adr-0003-claims-and-fingerprints.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-02T07:45:55.724Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 346,
+    "calls": 377,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1725506,
-    "cached": 28814960,
+    "uncached": 1446071,
+    "cached": 38708054,
     "cacheWrite": 0,
-    "output": 454837,
-    "reasoning": 361598,
-    "ms": 3569627,
-    "estCostUsd": 1.2363,
+    "output": 692790,
+    "reasoning": 605453,
+    "ms": 5118281,
+    "estCostUsd": 1.4974,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/renovate.md"
+        "decisions/adr-0003-claims-and-fingerprints.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 1.2363,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 1.4974,
       "rateLimited": null
     }
   ],
