@@ -1,33 +1,37 @@
 {
-  "coveredCommit": "ebf11f234497c03967b0319449ebda6cb3d15c2f",
-  "coveredAt": "2026-11-01T14:25:43.974Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "01ec22c86a167322869dd8cec70edfcf6e3447de",
+  "coveredAt": "2026-11-02T04:30:26.778Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
-      "area": "runbooks",
+      "area": "decisions",
       "pages": [
-        "renovate.md"
+        "adr-0003-claims-and-fingerprints.md"
       ],
-      "kind": "refresh",
+      "kind": "create",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
+      "reason": "new source, not yet covered: docs/decisions/ADR-0003-claims-and-fingerprints.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/decisions/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/decisions/adr-0003-claims-and-fingerprints.md. The openwiki/decisions/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/decisions/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
       "pages": [
-        "prod-control-tower.md"
+        "prod-control-tower.md",
+        "server-setup.md",
+        "ci-diagnostics.md",
+        "wiki-maintenance.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
+      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 911,
-    "headCommit": "25dafef80a2c7486191a3f082bb569f077995906",
+    "headCommit": "f0608c3fb6899bbbfc22ef21e930d2f4af4010b5",
     "markerBefore": "ebf11f234497c03967b0319449ebda6cb3d15c2f",
     "slices": [
       {
@@ -63,36 +67,39 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "renovate.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md"
       }
     ],
-    "updatedAt": "2026-11-01T21:44:09.348Z"
+    "updatedAt": "2026-11-02T04:30:27.631Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 9,
-    "elapsedSeconds": 3104,
+    "pagesWritten": 24,
+    "elapsedSeconds": 1983,
     "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/renovate.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-01T18:49:47.410Z",
-      "failuresAtLow": 1
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 575,
+    "calls": 346,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3142892,
-    "cached": 53693354,
+    "uncached": 1725506,
+    "cached": 28814960,
     "cacheWrite": 0,
-    "output": 823319,
-    "reasoning": 691577,
-    "ms": 5476543,
-    "estCostUsd": 2.253,
+    "output": 454837,
+    "reasoning": 361598,
+    "ms": 3569627,
+    "estCostUsd": 1.2363,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -102,14 +109,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/prod-data-tier-auth.md",
-        "runbooks/wiki-maintenance.md",
-        "runbooks/server-setup.md",
         "runbooks/renovate.md"
       ],
       "effort": "low",
-      "deadlineStop": true,
-      "estCostUsd": 2.253,
+      "deadlineStop": false,
+      "estCostUsd": 1.2363,
       "rateLimited": null
     }
   ],
