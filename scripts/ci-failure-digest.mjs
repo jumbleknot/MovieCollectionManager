@@ -713,8 +713,8 @@ function readIfPresent(path) {
  * Collect whatever evidence this runner actually has, and record what it does not.
  *
  * Degrades deliberately: container jobs (`ubuntu-latest` / node:22-bookworm) have NO Docker CLI, and
- * `~/mcm-ci-last-failure/` is written by exactly one job today (app-ci/app-e2e). Missing evidence is
- * the normal case, not an error.
+ * `~/mcm-ci-last-failure/` is written by app-ci/app-e2e and app-ci/dast, and read only when its owner
+ * stamp names this run and job (item #645). Missing evidence is the normal case, not an error.
  */
 /**
  * The per-run, PER-JOB directory scripts/ci-log-step.sh mirrors step output + the failing-step
@@ -826,6 +826,22 @@ export function readStepDurations(env = process.env, home = env.HOME ?? '') {
   }
 }
 
+/**
+ * Whose bundle `~/mcm-ci-last-failure` is (item #645), as `{ run, job }`, or null when unstamped.
+ *
+ * The directory lives in the runner's $HOME, so it survives every run; app-e2e and dast share it.
+ * Each writer stamps `_bundle-owner.txt` with `run=$GITHUB_RUN_ID job=$GITHUB_JOB`, and the reader
+ * accepts the bundle only when both match. Measured 2026-10-02: dast run 4445 published a 09-30
+ * Keycloak log and a `healthy` row for the container its own bring-up had just failed on.
+ */
+export function readBundleOwner(bundleDir) {
+  const raw = readIfPresent(join(bundleDir, '_bundle-owner.txt'));
+  if (!raw) return null;
+  const run = raw.match(/\brun=(\S+)/)?.[1];
+  const job = raw.match(/\bjob=(\S+)/)?.[1];
+  return run && job ? { run, job } : null;
+}
+
 export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const binaries = [];
@@ -855,7 +871,22 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
   }
 
   const bundleDir = join(home, 'mcm-ci-last-failure');
-  if (existsSync(bundleDir)) {
+  const owner = existsSync(bundleDir) ? readBundleOwner(bundleDir) : null;
+  const thisRun = env.GITHUB_RUN_ID || 'local';
+  const thisJob = env.GITHUB_JOB || 'local';
+  if (existsSync(bundleDir) && !owner) {
+    // Fail closed: an unstamped bundle predates the stamp or came from a writer that skips it, and
+    // either way nothing says it is this job's. Showing it is how a stale log reads as live.
+    absent.push(
+      'container logs + health — the ~/mcm-ci-last-failure bundle on this runner carries no owner stamp, ' +
+        `so it cannot be attributed to run ${thisRun} / job ${thisJob}; not shown`,
+    );
+  } else if (owner && (owner.run !== thisRun || owner.job !== thisJob)) {
+    absent.push(
+      `container logs + health — the ~/mcm-ci-last-failure bundle belongs to run ${owner.run} / job ${owner.job}, ` +
+        `not this run ${thisRun} / job ${thisJob}; not shown (this job wrote no bundle of its own)`,
+    );
+  } else if (existsSync(bundleDir)) {
     // RECURSIVE (item #241). A flat listing dropped every directory silently.
     let entries = [];
     try {
@@ -903,7 +934,7 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
   } else {
     absent.push(
       'container logs + health — no ~/mcm-ci-last-failure bundle on this runner ' +
-        '(container jobs have no Docker CLI; only app-ci/app-e2e writes one today)',
+        '(container jobs have no Docker CLI; only app-ci/app-e2e and app-ci/dast write one)',
     );
   }
 

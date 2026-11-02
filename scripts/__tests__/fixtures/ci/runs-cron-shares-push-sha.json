@@ -1,0 +1,106 @@
+{
+  "_measured": "GET /actions/runs?head_sha=7d27f72f… on 2026-11-01 (item #563): the Friday cron 6172 and push run 6164 of infra-image-scan.yml share one sha; schedule runs report event=push, trigger_event=schedule. Trimmed to the fields run matching reads.",
+  "total_count": 10,
+  "workflow_runs": [
+    {
+      "id": 6216,
+      "workflow_id": "renovate-health.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T11:00:27Z"
+    },
+    {
+      "id": 6191,
+      "workflow_id": "lockfile-refresh-check.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T10:00:27Z"
+    },
+    {
+      "id": 6174,
+      "workflow_id": "renovate.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T07:00:27Z"
+    },
+    {
+      "id": 6173,
+      "workflow_id": "devcontainer-image.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T06:00:27Z"
+    },
+    {
+      "id": 6172,
+      "workflow_id": "infra-image-scan.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T04:00:27Z"
+    },
+    {
+      "id": 6171,
+      "workflow_id": "renovate.yml",
+      "event": "push",
+      "trigger_event": "schedule",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T03:00:27Z"
+    },
+    {
+      "id": 6165,
+      "workflow_id": "wiki-maintain.yml",
+      "event": "push",
+      "trigger_event": "push",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T01:23:48Z"
+    },
+    {
+      "id": 6164,
+      "workflow_id": "infra-image-scan.yml",
+      "event": "push",
+      "trigger_event": "push",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T01:23:48Z"
+    },
+    {
+      "id": 6163,
+      "workflow_id": "guardrails.yml",
+      "event": "push",
+      "trigger_event": "push",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T01:23:48Z"
+    },
+    {
+      "id": 6162,
+      "workflow_id": "app-ci.yml",
+      "event": "push",
+      "trigger_event": "push",
+      "status": "success",
+      "commit_sha": "7d27f72f840008639e44b17ffee5e26c741044e8",
+      "prettyref": "main",
+      "created": "2026-10-30T01:23:48Z"
+    }
+  ]
+}

@@ -1,0 +1,339 @@
+{
+  "_measured": "Every invocation that ENDED ON ITS OWN in the committed run records (openwiki/.maintenance-state.json history on main, 2026-10-08..2026-11-01): one invocation in the run, deadlineStop=false, outcome not failed. elapsedSeconds is lastRunBudget.elapsedSeconds, the whole execute step, so it over- rather than under-states the generator. Deadline-stopped invocations are excluded because their true length is unknown (censored at the deadline). Extracted for item #613; regenerate by re-mining the same history.",
+  "invocations": [
+    {
+      "coveredAt": "2026-10-08T03:25",
+      "pagesRequested": 1,
+      "pagesWritten": 3,
+      "elapsedSeconds": 2862,
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-10T03:00",
+      "pagesRequested": 1,
+      "pagesWritten": 7,
+      "elapsedSeconds": 2064,
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-10T10:18",
+      "pagesRequested": 1,
+      "pagesWritten": 1,
+      "elapsedSeconds": 1429,
+      "pages": [
+        "runbooks/ci-evidence-pipeline.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-11T17:21",
+      "pagesRequested": 1,
+      "pagesWritten": 3,
+      "elapsedSeconds": 2699,
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-11T23:58",
+      "pagesRequested": 1,
+      "pagesWritten": 7,
+      "elapsedSeconds": 894,
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-12T00:56",
+      "pagesRequested": 3,
+      "pagesWritten": 3,
+      "elapsedSeconds": 2876,
+      "pages": [
+        "runbooks/devcontainer-sandbox.md",
+        "runbooks/renovate.md",
+        "runbooks/infra-image-scanning.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-12T19:22",
+      "pagesRequested": 1,
+      "pagesWritten": 5,
+      "elapsedSeconds": 1707,
+      "pages": [
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-13T10:59",
+      "pagesRequested": 1,
+      "pagesWritten": 5,
+      "elapsedSeconds": 790,
+      "pages": [
+        "invariants/published-port-reservation.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-14T00:12",
+      "pagesRequested": 1,
+      "pagesWritten": 1,
+      "elapsedSeconds": 1005,
+      "pages": [
+        "projects/infrastructure-stacks.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-14T00:34",
+      "pagesRequested": 1,
+      "pagesWritten": 1,
+      "elapsedSeconds": 701,
+      "pages": [
+        "projects/stacks.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-14T01:24",
+      "pagesRequested": 3,
+      "pagesWritten": 3,
+      "elapsedSeconds": 2231,
+      "pages": [
+        "runbooks/server-setup.md",
+        "runbooks/prod-control-tower.md",
+        "runbooks/prod-reboot-resilience.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-14T01:43",
+      "pagesRequested": 1,
+      "pagesWritten": 1,
+      "elapsedSeconds": 576,
+      "pages": [
+        "runbooks/devcontainer-sandbox-lifecycle.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-14T02:14",
+      "pagesRequested": 2,
+      "pagesWritten": 2,
+      "elapsedSeconds": 1212,
+      "pages": [
+        "runbooks/prod-control-tower.md",
+        "runbooks/prod-reboot-resilience.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-15T02:37",
+      "pagesRequested": 2,
+      "pagesWritten": 5,
+      "elapsedSeconds": 2400,
+      "pages": [
+        "projects/stacks.md",
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-15T10:51",
+      "pagesRequested": 3,
+      "pagesWritten": 4,
+      "elapsedSeconds": 2396,
+      "pages": [
+        "runbooks/phase-15-operator-checklist.md",
+        "runbooks/devcontainer.md",
+        "runbooks/renovate.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-15T23:43",
+      "pagesRequested": 1,
+      "pagesWritten": 3,
+      "elapsedSeconds": 440,
+      "pages": [
+        "projects/stacks.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-16T02:16",
+      "pagesRequested": 1,
+      "pagesWritten": 3,
+      "elapsedSeconds": 712,
+      "pages": [
+        "projects/stacks.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-17T03:47",
+      "pagesRequested": 1,
+      "pagesWritten": 23,
+      "elapsedSeconds": 2099,
+      "pages": [
+        "runbooks/renovate.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-17T14:11",
+      "pagesRequested": 3,
+      "pagesWritten": 3,
+      "elapsedSeconds": 2811,
+      "pages": [
+        "projects/bff.md",
+        "projects/expo-app.md",
+        "projects/stacks.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-18T03:48",
+      "pagesRequested": 2,
+      "pagesWritten": 5,
+      "elapsedSeconds": 2859,
+      "pages": [
+        "projects/repository.md",
+        "runbooks/android-emulator.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-18T17:47",
+      "pagesRequested": 2,
+      "pagesWritten": 9,
+      "elapsedSeconds": 1467,
+      "pages": [
+        "runbooks/android-emulator.md",
+        "runbooks/devcontainer.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-19T01:15",
+      "pagesRequested": 3,
+      "pagesWritten": 8,
+      "elapsedSeconds": 2517,
+      "pages": [
+        "projects/repository.md",
+        "projects/expo-app.md",
+        "runbooks/renovate.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-22T00:38",
+      "pagesRequested": 1,
+      "pagesWritten": 12,
+      "elapsedSeconds": 2958,
+      "pages": [
+        "runbooks/server-setup.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-23T11:40",
+      "pagesRequested": 4,
+      "pagesWritten": 7,
+      "elapsedSeconds": 1636,
+      "pages": [
+        "projects/repository.md",
+        "projects/mc-service.md",
+        "runbooks/ci-evidence-pipeline.md",
+        "runbooks/wiki-maintenance.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-24T02:40",
+      "pagesRequested": 2,
+      "pagesWritten": 6,
+      "elapsedSeconds": 1567,
+      "pages": [
+        "projects/mcp-servers.md",
+        "projects/keycloak.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-25T16:49",
+      "pagesRequested": 1,
+      "pagesWritten": 22,
+      "elapsedSeconds": 2055,
+      "pages": [
+        "runbooks/backups.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-25T18:56",
+      "pagesRequested": 1,
+      "pagesWritten": 4,
+      "elapsedSeconds": 1427,
+      "pages": [
+        "gotchas/expo-router-and-transport-traps.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-26T04:23",
+      "pagesRequested": 1,
+      "pagesWritten": 5,
+      "elapsedSeconds": 2273,
+      "pages": [
+        "runbooks/backups.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-27T23:53",
+      "pagesRequested": 1,
+      "pagesWritten": 5,
+      "elapsedSeconds": 2684,
+      "pages": [
+        "projects/backup.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-30T00:57",
+      "pagesRequested": 1,
+      "pagesWritten": 8,
+      "elapsedSeconds": 1912,
+      "pages": [
+        "runbooks/server-setup.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-30T01:51",
+      "pagesRequested": 2,
+      "pagesWritten": 2,
+      "elapsedSeconds": 1088,
+      "pages": [
+        "projects/backup.md",
+        "runbooks/server-setup.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-31T03:56",
+      "pagesRequested": 1,
+      "pagesWritten": 8,
+      "elapsedSeconds": 982,
+      "pages": [
+        "runbooks/renovate.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-31T06:50",
+      "pagesRequested": 1,
+      "pagesWritten": 1,
+      "elapsedSeconds": 1282,
+      "pages": [
+        "runbooks/ci-diagnostics.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-31T09:58",
+      "pagesRequested": 1,
+      "pagesWritten": 2,
+      "elapsedSeconds": 689,
+      "pages": [
+        "runbooks/server-setup.md"
+      ]
+    },
+    {
+      "coveredAt": "2026-10-31T14:17",
+      "pagesRequested": 1,
+      "pagesWritten": 2,
+      "elapsedSeconds": 1003,
+      "pages": [
+        "runbooks/ci-diagnostics.md"
+      ]
+    }
+  ]
+}

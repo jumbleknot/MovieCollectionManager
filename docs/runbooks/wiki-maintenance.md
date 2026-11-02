@@ -321,8 +321,10 @@ continues where it left off.
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
 after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
 page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
-backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~34 min
-of generation**. The page count comes from **files that actually appeared in the working tree**, not from what the
+backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~69 min
+of generation**, re-derived on 2026-11-01 from the committed run records (item #613): the worst invocation that ended on
+its own took 2958 s. That is more than a merge-triggered run's ~37-minute generator window, so the worst case fits only
+a dispatched run; a push run stops it at the deadline and carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
@@ -670,6 +672,17 @@ pages on #606 stopped maintenance until #610 recovered it. The OKF gate's V16 no
 To correct a covered page by hand, **uncover** it in the same commit: remove its manifest entry,
 delete its sidecar, and delete its front-matter `verified:` event. openwiki then leaves it for full
 review, and the correction stands until the page is next regenerated.
+
+**G11 on a page that was valid on `main` (item #777).** Symptom: `guardrails / okf` and `naming` fail with
+`(G11) … is NEITHER derived nor authoritative` on a page that `main` cites a `resource` for, and its header now
+reads `type: "Reference"`, a double-quoted `title`, and `openwiki_generated: true`, with no `resource`, `description`
+or `tags`. Cause: the model wrote front matter that did not parse as YAML, and openwiki 0.7.1 rebuilt a minimal header
+in its place without telling the agent (`repairOkfFrontmatter` → `rebuildMinimalConcept`). It hit #775, #791 and
+#857. Since 2026-11-01 `verifySlice` restores `type`, `description`, `resource` and `tags` from `HEAD` on any page
+carrying that marker and carries the Claims hash, so this should no longer reach a proposal; the run log says
+`restored … from HEAD in <page>`. If it still does, the page lost its keys **without** the marker. That was the
+model's own edit, and the governance gate refuses it in the run. To fix it by hand, uncover the page as above and
+restore its header from `main`.
 
 The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
 from there, and only while its proposal is **open** (a closed one's commits are not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,

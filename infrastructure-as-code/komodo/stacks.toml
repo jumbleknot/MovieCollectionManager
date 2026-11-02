@@ -185,9 +185,8 @@ TAILNET_HOST=[[TAILNET_HOST]]
 # ↑ TAILNET_HOST is an EXISTING prod-auth Variable, reused for LangFuse's NEXTAUTH_URL on the tailnet
 #   (:19030) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
 #   Feature 080: LANGFUSE_RUSTFS_SECRET_KEY (the RustFS store's secret) must exist as a Komodo Variable
-#   BEFORE the deploy that needs it. REGISTRY_HOST and LANGFUSE_MINIO_ROOT_PASSWORD left this block with
-#   the from-source object-store image; the Komodo VARIABLES are kept until the rollback window closes,
-#   because reverting this change restores these lines and needs them (research R11).
+#   BEFORE the deploy that needs it. REGISTRY_HOST and the old store's password left this block with the
+#   from-source object-store image; that Komodo Variable was deleted on 2026-10-24 (item #826).
 
 [[stack]]
 name = "prod-vault"                              # US3 — dormant, prod-shaped Vault (uninitialized + sealed)

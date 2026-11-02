@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): the 15-min
     # debounce SLEEPS INSIDE this job, then setup, then the generator's 4-min start deadline plus one
-    # worst-case 8-page invocation (30 min at concurrency 4), then publishing — ~55 min, 5 min margin.
+    # worst-case invocation (65 min since item #613 re-derived it from measured runs), then publishing.
     # 60 was the operator-approved hold on the one shared runner. RAISED TO 120 on 2026-10-02 (operator
     # decision, items #525/#613): at the measured 70-80 tok/s one uncovered page can need 60-75 min.
     # 120 is the HARD CEILING and only a dispatched run may use it — the deadline step below still holds

@@ -53,7 +53,6 @@ fail-fast). **15 new Variables** (13 observability + 2 audit); Vault dormant nee
 
 - **audit (2):** `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (strong — OpenSearch rejects weak), `OPENSEARCH_AUDIT_WRITER_PASSWORD`.
 - **observability (13):** `LANGFUSE_SALT`, `LANGFUSE_ENCRYPTION_KEY` (64-hex), `LANGFUSE_NEXTAUTH_SECRET`, `LANGFUSE_PG_PASSWORD`, `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_RUSTFS_SECRET_KEY` (feature 080 — the RustFS store's secret; access key is the literal `langfuse`), `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`, `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`, `UNLEASH_CLIENT_TOKEN`.
-- **kept for rollback until the feature-080 window closes (M7):** `LANGFUSE_MINIO_ROOT_PASSWORD`. No longer referenced by `stacks.toml`, but reverting the feature-080 merge restores the line that needs it — and a revert cannot recreate a Komodo Variable.
 - **reused (NOT new):** `TAILNET_HOST` (already seeded for prod-auth) — LangFuse's tailnet `NEXTAUTH_URL`. The R10 operator-UI binds are `0.0.0.0` since feature 028, so they need no IP Variable.
 
 The `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `_SECRET_KEY` are the **same** values the gateway consumes (the
@@ -79,6 +78,10 @@ so they can't collide with the CI runner's LangFuse/Grafana on the shared host (
 overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `check-prod-ci-port-collision.mjs`).
 
 ## One-time: cut prod Langfuse storage over to RustFS (feature 080, item #560)
+
+<!-- history:begin -->
+**Completed.** Langfuse moved to RustFS on 2026-10-16. The MinIO volumes, the Komodo Variable `LANGFUSE_MINIO_ROOT_PASSWORD` and the `jumbleknot/minio` package were removed on 2026-10-24, which closed the rollback window early (item #826). The migration tool was deleted by spec 080 T048. What follows is the record of the cutover, not a procedure: the commands it names no longer exist.
+
 
 **The authoritative step list is the contract**, `specs/080-minio-to-rustfs/contracts/migration-procedure.md`
 (M0–M8). This section is the operator's orientation: the order, why it is that order, and the commands
@@ -175,6 +178,8 @@ pulls it until then), then the cleanup PR removes the migration tool.
 4. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep
    the window short and re-check the old store is still stopped before `copy`.
 
+
+<!-- history:end -->
 ## One-time: cut prod over to Langfuse 4 + ClickHouse 25 on RECREATED volumes (feature 072, item #433)
 
 Langfuse 4 requires ClickHouse 25, and `specs/072-langfuse-4-major/` verifies the pair **on empty volumes**.
@@ -213,6 +218,10 @@ above. A freshly-created MinIO volume failed to initialise in dev *even when cor
 (`Unable to initialize backend: file access denied`), so recreating it risks not getting the stack back for
 no benefit. The orphaned blobs are harmless.
 <!-- history:end -->
+
+<!-- history:begin -->
+**Record, not a procedure.** The commands below ran on 2026-09-13; `langfuse-minio` and its volume no longer exist (spec 080, item #826).
+
 
 `langfuse-redis` has **no volume** — its queue state clears on restart by itself.
 
@@ -290,6 +299,8 @@ git revert --no-edit <merge-sha> && git push origin HEAD:main
 re-blocks if the advisory ever returns. Watch the first scheduled `infra-image-scan` afterwards and confirm
 `--check-expiring` reports no UNMATCHED entry.
 
+
+<!-- history:end -->
 ## One-time: OpenSearch 2 -> 3 for the audit sink, PRESERVING the history (feature 071, item #439)
 
 Unlike the Langfuse cutover, this one **keeps its data**. [ADR-0002 §4a](../decisions/ADR-0002-stateful-major-upgrades.md)

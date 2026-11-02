@@ -659,9 +659,11 @@ images, so the hand pin needs no config change and no release-age exclusion is a
   `docs/runbooks/renovate.md` (the override-widening trap and the new holds), and the CI-diagnostics runbook
   if T004 changed the upload-artifact fact. **Done when**: `pnpm nx okf-governance infrastructure-as-code`
   passes. *(2026-11-01: `renovate.md` already recorded the override-widening trap and the SDK-pinned holds. It now also records the upload-artifact <4 and java-jdk 17 holds (items #912, #913), and `ci-diagnostics.md` records the upload-artifact fact. okf-governance passes.)*
-- [ ] T070 SC-001 audit: a table of every research R1 pending major → outcome (merged PR, or backlog item
+- [x] T070 SC-001 audit: a table of every research R1 pending major → outcome (merged PR, or backlog item
   with re-check rule); post it as a comment on item #254 and close the item only if no row is empty.
   **Done when**: zero rows without an outcome.
+  **Done** 2026-11-01: the table is posted on item #254 with every row filled. Each major is either
+  merged, with its PR, or held, with its item (#792–#795, #815, #912, #913). Item #254 is closed.
 
 ---
 

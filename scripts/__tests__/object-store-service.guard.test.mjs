@@ -31,7 +31,19 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 
-import { pinnedRustfsRef } from '../object-store-migration.mjs';
+/**
+ * The ONE digest-pinned rustfs/rustfs reference in a compose file. Moved here from the migration
+ * tool when spec 080 T048 deleted it; this guard was its only other consumer.
+ */
+function pinnedRustfsRef(composeText) {
+  const refs = [...String(composeText).matchAll(/rustfs\/rustfs:[^\s"'@]+(?:@sha256:[0-9a-f]+)?/g)].map((m) => m[0]);
+  const unique = [...new Set(refs)];
+  if (unique.length === 0) throw new Error('no rustfs/rustfs image reference found');
+  if (unique.length > 1) throw new Error(`more than one rustfs/rustfs reference: ${unique.join(', ')}`);
+  if (!/@sha256:[0-9a-f]{64}$/.test(unique[0])) throw new Error(`rustfs/rustfs reference is not digest-pinned: ${unique[0]}`);
+  return unique[0];
+}
+
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 

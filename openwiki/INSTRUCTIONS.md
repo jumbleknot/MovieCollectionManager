@@ -155,6 +155,11 @@ Every page needs a `type`. Beyond that, populate `title`, `description`, `tags`,
 `timestamp` wherever they apply — `description` in particular, since the per-directory `index.md`
 navigation is built from it, and a missing description degrades retrieval for everyone.
 
+**Front matter must parse as YAML, and you must keep the keys a page already has.** When a header does not
+parse, the generator silently replaces it with a minimal one (`type: "Reference"`, `openwiki_generated: true`) and
+every other key is lost. Double-quote a `description` that contains `: `, `{`, `[` or `${`. Never repeat a key. When
+you rewrite an existing page, carry its `resource` and `tags` over unchanged.
+
 **A `description` never contains `#`.** The generator ends the `index.md` entry at the first `#`, so
 "… reasoning effort of item #525" is listed as "… reasoning effort of item". Name an item in the page body,
 or write "item 525" if the description must name it.

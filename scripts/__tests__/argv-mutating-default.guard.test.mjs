@@ -182,12 +182,6 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     // than a violation of it. See the ci-failure-digest tests below for the evidence.
     'ci-failure-digest.mjs': 'guarded',
 
-    // Feature 080 — born guarded, and INVERTED like the prune script: every subcommand is read-only
-    // except `copy`, which is REFUSED without `--apply` (there is no dry-run spelling to mistype).
-    // It moves production data, so the fall-through this table exists to catch must be inert here
-    // too. (Its predecessor in this slot, item #577's image-digest promoter, was deleted with the
-    // from-source object-store build it promoted.)
-    'object-store-migration.mjs': 'guarded',
   };
 
   const scriptsDir = resolve(REPO_ROOT, 'scripts');
