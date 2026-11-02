@@ -700,6 +700,38 @@ PR CI built.
 - [x] T058 [US3] Verify item #822's criteria, comment the evidence (T055–T057), and close it.
   **Done** 2026-10-31: item #822 closed with the evidence (mutation run 6326, exit 11).
 
+### US3 follow-up: another run's prune deletes the scan images (item #915)
+
+Research R15. The runner can take another run's `app-e2e`, `dast` or `build-deploy` between a run's
+`app-e2e` and its `app-image-scan`, and that job's `docker image prune -af` deletes the scan tags.
+
+- [x] T076 [US3] Test, in `scripts/__tests__/app-image-scan.test.mjs`, the **prune race** cases:
+  - app-e2e's tag step holds each `app-scan/<name>:run-<id>` image with a container labelled
+    `mcm.app-scan-hold`, after tagging it, replacing any hold left by an earlier attempt of the run;
+  - every `docker image prune -af` in `app-ci.yml` and `cd-deploy.yml` follows, in the same step, a
+    `docker container prune` that is filtered to `label=mcm.app-scan-hold` AND to an `until=` age, so
+    it removes only stale holds and never another container;
+  - app-image-scan's `always()` cleanup removes the run's holds before its tags.
+  **Verify RED**: `node --test --test-name-pattern="prune race" scripts/__tests__/app-image-scan.test.mjs`.
+  Expected: failing, because no hold exists.
+  **Done** 2026-11-02: RED, 3 of 3 failing for the stated reasons (no hold; the app-e2e prune has
+  no sweep; the cleanup never removes holds).
+- [x] T077 [US3] Implement R15 in `app-ci.yml` (tag step, both prune sites, cleanup step) and in
+  `cd-deploy.yml` (the build-deploy prune). Correct the tag step's comment, which promised that the
+  next run's prune removes a leftover tag.
+  **Verify GREEN**: `node --test scripts/__tests__/app-image-scan.test.mjs`, all pass; then the
+  scripts suite, and one mutation per new case.
+  **Done** 2026-11-02: `app-image-scan.test.mjs` 20/20. Five mutations killed: no hold; the
+  cd-deploy sweep without its age; the app-e2e sweep without its label; a cleanup that keeps the
+  holds; no `rm -f` before the create on a re-run. The docker behaviour R15 relies on was checked on
+  a real daemon first, label-scoped.
+- [x] T078 [US3] Add the race and its fix to `docs/runbooks/ci-diagnostics.md`'s `app-image-scan`
+  section: a `missing scan tag(s)` red on a run whose `app-e2e` passed is no longer expected, and
+  what a hold left over by a cancelled run looks like.
+  **Done** 2026-11-02: a holds paragraph and the `missing scan tag(s)` row updated.
+- [ ] T079 [US3] Verify item #915's criteria on the PR's own run (its `app-image-scan` green after
+  another run's job ran in between, if the queue provides one), comment the evidence, and close it.
+
 ---
 
 ## Phase 8: US5: the package registry keeps what is needed (P2), PR E, item #863

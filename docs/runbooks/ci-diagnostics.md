@@ -510,9 +510,24 @@ run 5745 on 2026-10-21 is the shape).
 | What you see | Meaning | What to do |
 |---|---|---|
 | `no app path changed — images identical to main's` | Nothing to scan; passes in seconds | Nothing |
-| `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images | Fix `app-e2e`; this job never passes on images it could not find |
+| `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images, or the scan waited more than 24 h (see the holds below) | Fix `app-e2e`, or re-run; this job never passes on images it could not find |
 | exit **10**, `✗ SCANNER ERROR for <image>` | Trivy could not complete (vulnerability DB or registry, after its retries). **Not a verdict**: nothing was assessed | Re-run the job |
 | exit **11**, `✗ BLOCKING FINDING in <image>` | An un-allowlisted Critical with an upstream fix. The verdict's table above it names the CVE and the package | Patch it (bump the base image or the dependency), or add a reviewed, justified, **expiring** entry to `security/infra-images/allowlist.yaml` |
+
+**The images are held between the two jobs (item #915).** The single runner can run another run's
+`app-e2e`, `dast` or `build-deploy` between a run's `app-e2e` and its `app-image-scan`, and each starts
+with `docker image prune -af`. Before the fix that prune deleted the bare tags. PR #909 failed
+`missing scan tag(s)` twice on images nobody had scanned, after its own `app-e2e` had passed. Now:
+- `app-e2e` holds each tag with a stopped container named `app-scan-hold-<run id>-<image>` and
+  labelled `mcm.app-scan-hold`. Prune never removes an image that has a container.
+- `app-image-scan` removes its holds, then its tags, under `always()`.
+- Every prune site first runs `docker container prune -f --filter label=mcm.app-scan-hold --filter
+  until=24h`. So a cancelled run whose scan never ran pins its images for at most a day.
+
+`docker ps -a --filter label=mcm.app-scan-hold` on the ci daemon lists the holds. Holds from runs that
+finished more than a day ago mean a prune site has lost its sweep. The guard in
+`scripts/__tests__/app-image-scan.test.mjs` exists to catch that. Design and rejected alternatives:
+spec 084 research R15.
 
 Every image is scanned even after one fails, so one run names every blocking image. An allowlist entry
 works in both places at once, because the PR and the deploy read the same file. Key it to the

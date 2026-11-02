@@ -130,6 +130,9 @@ jobs:
       - name: Free daemon disk space
         run: |
           bash scripts/ci-log-step.sh build-deploy-free-daemon-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Release the scan-image holds of runs whose app-image-scan never ran (item #915). Only
+          # holds, only older than 24 h: a run still waiting for its scan keeps its images.
+          docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h || true
           docker image prune -af || true
           # Build cache too, not just images (2026-10-03): `image prune` never touches it, and on the ci daemon it
           # had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk. --reserved-space keeps the most
