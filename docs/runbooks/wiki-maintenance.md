@@ -84,7 +84,7 @@ a default; an empty value is unset (how an Actions repository variable that was 
   work. A run's usage line and record carry `effort=<value>` when it is set. **Under trial** (item #525):
   latency is roughly output tokens ÷ generation speed, and a lower effort means fewer reasoning tokens
   per call — but possibly a weaker page. In CI it is the `reasoning-effort` input of a **dispatched** run,
-  so a trial never changes what a merge-triggered run sends; do not set the repository variable until a
+  so a trial never changes what a scheduled run sends; do not set the repository variable until a
   trial's page has been reviewed.
 
 **In CI** these are repository **variables** (Settings → Actions → Variables), so switching back to
@@ -314,23 +314,25 @@ continues where it left off.
 | Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries; it never stops an invocation, the job deadline does |
 | Job deadline | window − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of its window (see below) |
 | Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
-| Window (push) | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
-| Window (dispatch) | 120 min | the whole job — a dispatched run has no debounce and may need it (see below) |
-| Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a push run is held to its 60-minute window by the deadline, not by this |
+| Window (schedule) | 60 min | the shared-runner hold. No wait inside the job since item #613, so generation gets about 49 minutes |
+| Window (dispatch) | 120 min | the whole job, for the work a scheduled window cannot hold (see below) |
+| Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a scheduled run is held to its 60-minute window by the deadline, not by this |
 
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
 after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
 page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
 backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~69 min
 of generation**, re-derived on 2026-11-01 from the committed run records (item #613): the worst invocation that ended on
-its own took 2958 s. That is more than a merge-triggered run's ~37-minute generator window, so the worst case fits only
-a dispatched run; a push run stops it at the deadline and carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
+its own took 2958 s. A scheduled run's generator window is about 49 minutes (it was about 37 while the run waited out
+the quiet period inside the job). That holds the median invocation (1636 s) and only just the measured worst, not the
++30 % ceiling of 65 minutes. So the worst case fits only a dispatched run; a scheduled run stops it at the deadline and
+carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
-event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `push` gets `PUSH_MINUTES=60` — so the runs
-every merge starts keep the shared-runner hold, and raising the ceiling cannot lengthen them. The guard test pins both
-(`DISPATCH_MINUTES` equals `timeout-minutes`, `PUSH_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
+event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `schedule` gets `SCHEDULE_MINUTES=60` — so the runs
+the schedule starts keep the shared-runner hold, and raising the ceiling cannot lengthen them. The guard test pins both
+(`DISPATCH_MINUTES` equals `timeout-minutes`, `SCHEDULE_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
 reserve for verification, publishing and the run-record commit; a slice with under 5 minutes left is not started and
 carries forward (exit 3). A deadline stop does **not** by itself fail the slice: after the revert below, the slice is
 judged like any other, by what landed. In practice a stopped generator leaves a requested page unwritten or stale, so
@@ -343,8 +345,8 @@ grandchild; that holds while nx uses no pseudo-terminal, which it does only when
 timeout, so the OpenAI SDK's **10-minute** default applies, and at page concurrency above 1 openwiki retries **5** times:
 one model request accepted and never answered was about 60 silent minutes. The generator's environment now sets
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator value wins), bounding that at about 30 minutes; the deadline
-above bounds the rest. A merge-triggered run also spends its first 15 minutes in the debounce, so it has about 45
-minutes, not 60 — size the work for that window.
+above bounds the rest. A scheduled run spends about 3 minutes on checkout, the quiet check and setup before it
+generates. Size the work for about 49 minutes, not 60.
 
 **Why dispatched runs get 120 minutes (operator decision, 2026-10-02).** An *uncovered* page — one with no
 `.page-manifest.json` entry, left by openwiki "for full review" — needs about 1.65× the output per call and over 1.6× the
@@ -467,7 +469,7 @@ gates have no skip flag and no allowlist by design, because an allowlisted leak 
 ### Escalation after a deadline failure (078 US6)
 
 When the job deadline stops the generator (it exits 124 or 137 from `timeout`), every requested page that did not
-land is **tagged**. The next run, whether merge-triggered or dispatched, gives the tagged pages invocations of their
+land is **tagged**. The next run, whether scheduled or dispatched, gives the tagged pages invocations of their
 own at `reasoning_effort: low`, before any other work. Everything else runs at the default effort.
 
 - **Only a deadline stop tags.** A worker that "exited without submitting", a provider 429, an openwiki state error
@@ -546,28 +548,44 @@ an `item`, a `since` date and a `reason`. Check the result offline with `node sc
 
 ## 4. What CI does, and why it waits
 
-Merge-triggered on `main`, with a **~15-minute quiet period**: `concurrency` +
-`cancel-in-progress: true` + an initial `sleep`. A new push cancels the sleeping run and a fresh one
-starts, so a burst of merges produces exactly one run covering all of them.
+**Scheduled every 30 minutes, generating only once `main` has been quiet for 15 minutes** (item #613,
+operator option A, 2026-11-01; feature 078 research R19). Each fire runs `scripts/wiki-quiet.mjs`
+**before any install**. It reads the run record's `coveredCommit`, lists `main`'s first-parent commits
+past it, and decides:
 
-A merge stream that never goes quiet would starve maintenance exactly when drift is fastest, so beyond
-a **6-hour maximum deferral** the wait is skipped. That age is derived from **git** — the commit date
-of the oldest commit the run record has not covered — because the waiting run gets *cancelled*, and
-any timer it was holding dies with it. Git state survives cancellation; run state does not.
+| Uncovered commits (the job's own ignored) | Result |
+|---|---|
+| none | ends: `nothing uncovered` |
+| the newest is under 15 minutes old | ends: `not yet — main is not quiet`; the next fire looks again |
+| the newest is 15 minutes old or more | generates now |
+| the oldest is 6 hours old or more, however busy `main` is | generates now (the maximum deferral) |
+
+A "not yet" costs one checkout and one node process, about a minute of the shared runner. After the
+last merge, a run starts 15 to 45 minutes later.
+
+Before item #613 this was a push trigger with `cancel-in-progress` and a `sleep 900` inside the job.
+That spent 15 of the run's 60 minutes waiting, which left about 37 for generation.
 
 `workflow_dispatch` bypasses the wait entirely.
 
-The run **does not trigger itself**: the `[skip ci]` marker commit and a bundle-only change (its own
-proposal landing) are both recognised and skipped.
+The run **does not trigger itself**: commits carrying `[skip ci]` (the record marker, and CD's digest
+promotes) and bundle-only commits (its own proposal landing) are not counted as activity.
 
-**Overlapping runs (#748).** `cancel-in-progress` does not always cancel: two merges **in the same second**
-(#745 and #746, 2026-10-13) made two push runs, and the forge queued the second behind the first. Spacing
-merges 10 s apart worked, and the older run was cancelled. Three mechanisms keep a queued run from repaying
-work or corrupting the record when it happens anyway:
+**A failed quiet check is loud.** If the record's `coveredCommit` is not in `main`'s history (after a
+history rewrite), or the record is missing, the step exits 1 and the run is red. It is never read as
+"nothing to do", which would stop maintenance silently. Fix the record's `coveredCommit` through a pull
+request.
 
-- **It runs from the tip, not its event commit.** After the quiet period the job moves to the current
-  `origin/main`, so it plans from the record the earlier run committed. The skip decision still reads the
-  event commit, because it is about what that push changed. If `main`'s record moves again before planning,
+**Runs never overlap, and a fire never cancels one.** `cancel-in-progress` is `false`. A fire that
+arrives during a generation queues behind it, then finds the record covered and ends.
+
+**Overlapping runs (#748).** Found under the old push trigger: two merges **in the same second** (#745 and
+#746, 2026-10-13) made two push runs, and the forge queued the second behind the first. Under the schedule
+a queued run is the normal case. Three mechanisms keep a queued run from repaying work or corrupting the
+record:
+
+- **It runs from the tip, not its event commit.** Once the quiet check says run, the job moves to the
+  current `origin/main`, so it plans from the record the earlier run committed. If `main`'s record moves again before planning,
   `--execute` stops before any paid generation and exits 0, saying the checkout's record is behind. Nothing
   is recorded, and the next run plans from the current record.
 - **The record commit merges; it never replays.** The step merges three ways: this run's record, `main`'s

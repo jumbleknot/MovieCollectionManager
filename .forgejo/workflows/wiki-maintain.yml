@@ -1,24 +1,26 @@
-# Feature 044 (US2) — merge-triggered OpenWiki knowledge-bundle maintenance.
+# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance, run once `main` has gone quiet.
 #
-# Freshness without a human remembering: after a merge to `main` settles, plan the documentation work
+# Freshness without a human remembering: after merges to `main` settle, plan the documentation work
 # that landed, generate it in bounded slices, verify each slice by what actually appeared in the
 # working tree, and open ONE always-current proposal for review. Never auto-merged (FR-013).
 #
 # ── Four properties in this file are load-bearing and easy to break by accident ──────────────────
 #
-# 1. THE DEBOUNCE IS `concurrency` + `cancel-in-progress` + AN INITIAL SLEEP. A new push cancels the
-#    sleeping run and a fresh one starts, so a burst of merges produces exactly ONE run covering all
-#    of them (SC-008a). Removing cancel-in-progress does not "make it safer" — it makes every push in
-#    a burst eventually run, which is the opposite of a debounce.
+# 1. THE DEBOUNCE IS THE SCHEDULE, NOT A SLEEP (item #613, 078 research R19). Until 2026-11 a push
+#    started a run that slept 15 minutes inside the job — a quarter of its 60-minute window, leaving
+#    ~37 for generation. Now a fire every 30 minutes runs scripts/wiki-quiet.mjs FIRST, before any
+#    install: it generates only when main's newest uncovered commit is ≥ 15 min old, and otherwise
+#    ends in about a minute so the next fire can look again. A `push` trigger would be pointless — a
+#    push is by definition not quiet. cancel-in-progress is FALSE for the same reason it used to be
+#    true: cancelling was the old debounce, and under a schedule it would kill a generation mid-run.
 #
-# 2. THE MAXIMUM DEFERRAL IS GIT-DERIVED, and it has to be: the waiting run gets CANCELLED, and any
-#    timer it held dies with it. `--should-wait` computes the age of the oldest commit the run record
-#    has not covered, so a merge stream that never goes quiet still triggers a run at the ceiling
-#    (SC-008b) rather than starving maintenance exactly when drift is fastest.
+# 2. THE MAXIMUM DEFERRAL IS GIT-DERIVED. wiki-quiet.mjs runs anyway once the OLDEST uncovered commit
+#    is 6 h old, so a merge stream that never goes quiet still triggers a run (SC-008b) rather than
+#    starving maintenance exactly when drift is fastest. Nothing is held in run state between fires.
 #
 # 3. THIS RUN MUST NOT TRIGGER ITSELF (FR-009a). It pushes a `[skip ci]` marker commit to `main`, and
-#    its own proposal is bundle-only; both are recognised and skipped below. SC-005a requires a merged
-#    proposal to produce no further run.
+#    its own proposal is bundle-only; wiki-quiet.mjs does not count either as activity. SC-005a
+#    requires a merged proposal to produce no further run.
 #
 # 4. IT IS NEVER A REQUIRED CONTEXT (FR-019). This job is paid and occasionally slow; it must never
 #    gate an unrelated merge. Do not add it to branch protection.
@@ -39,8 +41,10 @@
 name: wiki-maintain
 
 on:
-  push:
-    branches: [main]
+  # Every 30 minutes (R19): each fire is a queued job on the one shared runner, so 15 would double them
+  # for half the lag. Nearly every fire ends after the checkout and one git query.
+  schedule:
+    - cron: '*/30 * * * *'
   # An operator run bypasses the quiet period entirely (FR-009c).
   workflow_dispatch:
     inputs:
@@ -57,38 +61,38 @@ on:
         required: false
         default: ''
 
-# The debounce. Keyed per branch so a dispatch and a push do not fight, and cancelling is the whole
-# mechanism: the newest trigger wins and restarts the quiet period.
+# Runs never overlap. NOT cancel-in-progress (property 1): a fire that arrives during a generation
+# queues behind it, then finds the record covered and ends — it must never kill the run in progress.
 concurrency:
   group: wiki-maintain-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   maintain:
     runs-on: ubuntu-latest
-    # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): the 15-min
-    # debounce SLEEPS INSIDE this job, then setup, then the generator's 4-min start deadline plus one
+    # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): setup and
+    # the quiet check (no wait inside the job since item #613), then the generator's 4-min start deadline plus one
     # worst-case invocation (65 min since item #613 re-derived it from measured runs), then publishing.
     # 60 was the operator-approved hold on the one shared runner. RAISED TO 120 on 2026-10-02 (operator
     # decision, items #525/#613): at the measured 70-80 tok/s one uncovered page can need 60-75 min.
     # 120 is the HARD CEILING and only a dispatched run may use it — the deadline step below still holds
-    # a merge-triggered run to 60, so raising this cannot lengthen the runs every merge starts.
+    # a scheduled run to 60, so raising this cannot lengthen the runs the schedule starts.
     timeout-minutes: 120
     steps:
-      # FIRST, before the debounce sleep and setup that count against the same timeout (item #613).
+      # FIRST, before the checkout and setup that count against the same timeout (item #613).
       # wiki-maintain runs the generator under this deadline (minus a reserve for verify, publish and
       # the record commit), so a hung model request ends as a failed slice WITH a committed run
       # record — instead of the platform killing the job with nothing recorded (runs 4385/4386).
       # The window is PER EVENT: a dispatched run may use the whole job (DISPATCH_MINUTES must equal
-      # timeout-minutes); a merge-triggered run keeps the 60-minute shared-runner hold. The guard test
+      # timeout-minutes); a scheduled run keeps the 60-minute shared-runner hold. The guard test
       # wiki-maintain.guard.test.mjs asserts both.
       # ci-log-step-exempt: this step runs BEFORE Checkout, so scripts/ci-log-step.sh does not exist
       # yet; it is a single arithmetic echo into $GITHUB_ENV with no output to capture.
       - name: Record the job deadline
         run: |
-          PUSH_MINUTES=60
+          SCHEDULE_MINUTES=60
           DISPATCH_MINUTES=120
-          MINUTES=$PUSH_MINUTES
+          MINUTES=$SCHEDULE_MINUTES
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then MINUTES=$DISPATCH_MINUTES; fi
           echo "WIKI_JOB_DEADLINE=$(( $(date +%s) + MINUTES * 60 ))" >> "$GITHUB_ENV"
           echo "job deadline: ${MINUTES} min (${{ github.event_name }})"
@@ -101,41 +105,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.CD_PUSH_TOKEN }}
 
-      # ── property 3: do not trigger yourself ─────────────────────────────────────
-      - name: Decide whether this push is our own work
-        id: self
+      # ── properties 1, 2 and 3: has main gone quiet? ───────────────────────────────
+      # BEFORE any install: node built-ins only, so a "not yet" costs this checkout and one node process.
+      # It ignores the job's own commits ([skip ci] markers, bundle-only proposals), runs at the 6-hour
+      # maximum deferral, and exits 1 on a git failure rather than reading it as "nothing to do".
+      - name: Has main gone quiet? (decides before any install)
+        id: quiet
         run: |
-          bash scripts/ci-log-step.sh maintain-decide-whether-this-push-our bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-log-step.sh maintain-has-main-gone-quiet bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "manual dispatch — proceeding"
-            exit 0
-          fi
-          MESSAGE="$(git log -1 --pretty=%B)"
-          CHANGED="$(git diff --name-only HEAD~1..HEAD || true)"
-          # The marker commit this job pushes.
-          if printf '%s' "$MESSAGE" | grep -qF '[skip ci]'; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "SKIP: this is the run-record marker commit"
-            exit 0
-          fi
-          # Our own proposal, merged: bundle-only. Nothing outside openwiki/ changed, so there is no
-          # new documentation impact to cover, and covering it would loop forever.
-          if [ -n "$CHANGED" ] && ! printf '%s\n' "$CHANGED" | grep -qv '^openwiki/'; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "SKIP: bundle-only change — this is our own proposal landing"
-            exit 0
-          fi
-          echo "skip=false" >> "$GITHUB_OUTPUT"
+          DISPATCH=""
+          [ "${{ github.event_name }}" = "workflow_dispatch" ] && DISPATCH="--dispatched"
+          node scripts/wiki-quiet.mjs $DISPATCH >> "$GITHUB_OUTPUT"
           CI_LOG_STEP
 
       - name: Enable pnpm (corepack, version from package.json packageManager)
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: bash scripts/ci-log-step.sh maintain-enable-pnpm corepack enable
 
       - name: Install JS dependencies
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         # The orchestrator imports `yaml`, a root dependency. Without this the run dies on
         # ERR_MODULE_NOT_FOUND before planning anything — 043's okf job failed its first CI run on
         # exactly this.
@@ -163,7 +152,7 @@ jobs:
       # plain `text` fence, the run still exits 0, and every gate still passes. Kept at the version the
       # dev container's .devcontainer/toolchain.Dockerfile installs; the guard test fails a mismatch.
       - name: Install the OpenWiki generator from its committed lockfile
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-install-openwiki-generator bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
@@ -177,7 +166,7 @@ jobs:
       # SKIP fails the step: a skipped check reads as a pass, and a mismatched AGENTS.md block would fail
       # every slice of the run that follows (078 research R12).
       - name: Verify the installed generator matches what this repository expects
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-verify-installed-generator bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
@@ -192,31 +181,14 @@ jobs:
           grep -qE '^# skipped 0$' /tmp/generator-guard.tap || { echo "::error::a generator check SKIPPED — a skip is not a pass here"; grep -B2 '# SKIP' /tmp/generator-guard.tap; exit 1; }
           CI_LOG_STEP
 
-      # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
-      - name: Wait out the quiet period unless the maximum deferral is reached
-        if: steps.self.outputs.skip != 'true'
-        run: |
-          bash scripts/ci-log-step.sh maintain-wait-out-quiet-period-unless bash -e /dev/stdin <<'CI_LOG_STEP'
-          set -euo pipefail
-          DISPATCH=""
-          [ "${{ github.event_name }}" = "workflow_dispatch" ] && DISPATCH="--dispatched"
-          WAIT="$(node scripts/wiki-maintain.mjs --should-wait $DISPATCH)"
-          if [ "$WAIT" = "wait=true" ]; then
-            echo "Waiting 15 minutes for main to go quiet. A newer push cancels this run and restarts the wait."
-            sleep 900
-          else
-            echo "Not waiting — either dispatched manually, or the oldest uncovered commit has reached the maximum deferral."
-          fi
-          CI_LOG_STEP
-
       # #748: run from the CURRENT tip, not the event commit. A run the forge queued rather than cancelled
       # (two merges in the same second, measured 2026-10-13) starts after an earlier run has committed
       # its record; planning from the event commit's older record repaid four pages (~$1.35) that could
-      # not be published. The skip decision above stays on the event commit — it is about what THAT push
-      # changed. `start` is the record's base for the three-way merge in the record-commit step.
+      # not be published. Still needed under the schedule: a fire can sit queued behind another run.
+      # `start` is the record's base for the three-way merge in the record-commit step.
       - name: Move to the current tip of main
         id: tip
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-move-to-current-tip bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
@@ -228,18 +200,18 @@ jobs:
 
       # Free, offline, and always safe: this is what makes a paid run reviewable before it happens.
       - name: Plan (offline, no credential, no model)
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: bash scripts/ci-log-step.sh wiki-maintain-plan node scripts/wiki-maintain.mjs --plan
 
       - name: Configure git identity for the proposal and marker commits
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.name 'openwiki-maintenance'
           bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.email 'openwiki-maintenance@users.noreply.local'
 
       - name: Maintain the bundle and propose the result
         id: run
-        if: steps.self.outputs.skip != 'true'
+        if: steps.quiet.outputs.run == 'true'
         env:
           # The model credential. Used ONLY by generation, and never passed as an argument (FR-024).
           # Per-surface secret (048 US4): wiki-maintenance spend must be separable from CI spend in
@@ -261,7 +233,7 @@ jobs:
           MCM_WIKI_SERVICE_TIER: ${{ vars.MCM_WIKI_SERVICE_TIER }}
           MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY || '4' }}
           # Item #525 trial (operator 2026-10-05): a per-dispatch reasoning effort, so a trial run never
-          # changes what a merge-triggered run sends. A push run has no inputs, so it falls through to the
+          # changes what a scheduled run sends. A scheduled run has no inputs, so it falls through to the
           # repository variable, which is unset — the model default. wiki-provider.mjs rejects any value
           # Fireworks does not document, and the preflight sends it, so a bad value fails before paid work.
           MCM_WIKI_REASONING_EFFORT: ${{ github.event.inputs.reasoning-effort || vars.MCM_WIKI_REASONING_EFFORT }}
@@ -326,7 +298,7 @@ jobs:
       # a run that created no proposal (FR-012). `[skip ci]` keeps it from triggering this job again
       # (FR-009a) — the same mechanism cd-deploy's digest-promote commit uses.
       - name: Commit the run record
-        if: always() && steps.self.outputs.skip != 'true'
+        if: always() && steps.quiet.outputs.run == 'true'
         env:
           # The commit the run started from (the `tip` step), as the record merge's base. Passed as an
           # environment variable, never interpolated into the script.
@@ -385,7 +357,7 @@ jobs:
           CI_LOG_STEP
 
       - name: Report the outcome
-        if: always() && steps.self.outputs.skip != 'true'
+        if: always() && steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-report-outcome echo "outcome=${{ steps.run.outputs.outcome }} (exit ${{ steps.run.outputs.exit-code }})"
           bash scripts/ci-log-step.sh maintain-report-outcome echo "A 'nothing-to-do' outcome means the marker advanced at no cost. It is NOT a failure, and"

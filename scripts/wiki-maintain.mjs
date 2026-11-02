@@ -924,65 +924,12 @@ function freshOnRef(root, ref) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// FR-009 — when a merge should actually trigger a run
+// FR-009 — when a run should actually happen: see scripts/wiki-quiet.mjs
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 //
-// Debounce: wait for ~15 quiet minutes on the default branch, so a burst of merges produces ONE run
-// rather than one per merge. In the workflow this is `concurrency` + `cancel-in-progress` + an initial
-// sleep: a new push cancels the waiter and a fresh one starts (research R3).
-//
-// Maximum deferral: a merge stream that never goes quiet would otherwise starve maintenance exactly
-// when drift is fastest. So beyond a ceiling the wait is skipped. The age is derived from GIT — the
-// commit date of the oldest commit the run record has not covered — because the waiting run gets
-// CANCELLED, and any timer it was holding dies with it. Git state survives cancellation; run state
-// does not, and that is the whole reason this is computed the way it is.
-
-export const DEBOUNCE_SECONDS = 15 * 60;
-export const MAX_DEFERRAL_SECONDS = 6 * 60 * 60;
-
-/**
- * Should this trigger wait for the quiet period, or run now?
- *
- * At-or-above the threshold it RUNS: a strict `>` would let a stream that keeps the age pinned exactly
- * at the ceiling defer forever.
- */
-export function shouldDeferMaintenance({
-  oldestUncoveredAgeSeconds = null,
-  dispatched = false,
-  maxDeferralSeconds = MAX_DEFERRAL_SECONDS,
-} = {}) {
-  if (dispatched) return { defer: false, reason: 'manually dispatched — the debounce is bypassed (FR-009c)' };
-  if (oldestUncoveredAgeSeconds === null) {
-    return { defer: true, reason: 'nothing uncovered — there is nothing to hurry for' };
-  }
-  if (oldestUncoveredAgeSeconds >= maxDeferralSeconds) {
-    return {
-      defer: false,
-      reason: `the oldest uncovered commit is ${Math.round(oldestUncoveredAgeSeconds / 60)} min old, at or past the ${Math.round(maxDeferralSeconds / 60)}-min maximum deferral — running now`,
-    };
-  }
-  return {
-    defer: true,
-    reason: `the oldest uncovered commit is ${Math.round(oldestUncoveredAgeSeconds / 60)} min old, within the maximum deferral — waiting for a quiet period`,
-  };
-}
-
-/** The age of the oldest commit the run record has not covered, in seconds. Git-derived. */
-export function oldestUncoveredAgeSeconds({ root = REPO_ROOT, record = null, nowMs = null } = {}) {
-  const runRecord = record ?? readRunRecord(root);
-  if (!runRecord.coveredCommit) {
-    // Never covered: the oldest uncovered commit is the first commit in the range, so the run should
-    // not be deferred indefinitely on a fresh checkout either.
-    const first = spawnSync('git', ['log', '--reverse', '--format=%ct', '--max-count=1'], { cwd: root, encoding: 'utf8' });
-    if (first.status !== 0 || !first.stdout.trim()) return null;
-    return Math.max(0, Math.floor((nowMs ?? Date.now()) / 1000) - Number(first.stdout.trim().split('\n')[0]));
-  }
-  const r = spawnSync('git', ['log', '--reverse', '--format=%ct', `${runRecord.coveredCommit}..HEAD`], { cwd: root, encoding: 'utf8' });
-  if (r.status !== 0) return null;
-  const first = r.stdout.trim().split('\n').filter(Boolean)[0];
-  if (!first) return null;
-  return Math.max(0, Math.floor((nowMs ?? Date.now()) / 1000) - Number(first));
-}
+// The debounce and the maximum deferral used to live here, as a CLI mode feeding a `sleep 900`
+// inside the merge-triggered job. Since item #613 (078 research R19) a scheduled check decides
+// OUTSIDE the paid work, before any install, so it lives in a module with no dependencies.
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // FR-026f — an event-driven path whose event happened, but whose document does not exist
@@ -1448,9 +1395,10 @@ export function runMaintenance({
 // guard test's own arithmetic caught a 5-minute first draft at 4). In practice a run is ONE invocation —
 // a second starts only if the first finished inside 4 minutes — and
 // a retry happens only after a fast failure; anything else is carried to the next run. Declared
-// EFFECTIVE CEILING: ≤16 pages / ~69 minutes of generation (FR-011a) — MORE than a merge-triggered run's
-// ~37-minute generator window (60 − 15 debounce − setup − DEADLINE_RESERVE_MS), so a worst-case
-// invocation fits only a dispatched run; a push run stops it at the deadline and carries it (#613). The guard test derives the
+// EFFECTIVE CEILING: ≤16 pages / ~69 minutes of generation (FR-011a) — MORE than a scheduled run's
+// ~49-minute generator window (60 − setup and the quiet check − DEADLINE_RESERVE_MS; it no longer waits
+// inside the job, 078 R19), so a worst-case invocation fits only a dispatched run; a scheduled run
+// stops it at the deadline and carries it (#613). The guard test derives the
 // workflow's timeout-minutes from these constants rather than remembering a number.
 //
 // The wall-clock budget bounds RUNNER OCCUPANCY (FR-011c) — there is one CI runner and a paid job
@@ -2498,7 +2446,6 @@ export function parseArgs(argv) {
     pageBudget: PAGE_BUDGET,
     timeBudgetSeconds: TIME_BUDGET_SECONDS,
     propose: false,
-    dispatched: false,
     base: null,
     ours: null,
     theirs: null,
@@ -2518,7 +2465,6 @@ export function parseArgs(argv) {
     if (a === '--plan') setMode('plan');
     else if (a === '--execute') setMode('execute');
     else if (a === '--selftest') setMode('selftest');
-    else if (a === '--should-wait') setMode('should-wait');
     else if (a === '--normalize-links') setMode('normalize-links');
     else if (a === '--claims-audit') setMode('claims-audit');
     else if (a === '--merge-record') setMode('merge-record');
@@ -2526,7 +2472,6 @@ export function parseArgs(argv) {
     else if (a === '--ours') opts.ours = wants(++i, '--ours');
     else if (a === '--theirs') opts.theirs = wants(++i, '--theirs');
     else if (a === '--propose') opts.propose = true;
-    else if (a === '--dispatched') opts.dispatched = true;
     else if (a === '--json') opts.json = true;
     else if (a === '--dry-run') opts.dryRun = true;
     else if (a === '--since') opts.since = wants(++i, '--since');
@@ -2540,7 +2485,7 @@ export function parseArgs(argv) {
     else throw new Error(`unknown argument: ${a}`);
   }
 
-  if (opts.mode === null) throw new Error('one of --plan, --execute, --claims-audit, --normalize-links, --merge-record, --should-wait or --selftest is required');
+  if (opts.mode === null) throw new Error('one of --plan, --execute, --claims-audit, --normalize-links, --merge-record or --selftest is required');
   const files = ['base', 'ours', 'theirs'];
   if (opts.mode === 'merge-record') {
     for (const f of files) if (opts[f] === null) throw new Error(`--merge-record requires --${f} <file>`);
@@ -2559,7 +2504,6 @@ const USAGE = [
   '  node scripts/wiki-maintain.mjs --execute [--since <ref>] [--max-slices <n>] [--dry-run] [--json]',
   '  node scripts/wiki-maintain.mjs --normalize-links [--dry-run] [--json]  # bundle-wide link form, offline',
   '  node scripts/wiki-maintain.mjs --claims-audit [--json]  # pages openwiki will force into the next run, offline (#707)',
-  '  node scripts/wiki-maintain.mjs --should-wait [--dispatched]   # debounce decision, offline',
   '  node scripts/wiki-maintain.mjs --merge-record --base <file> --ours <file> --theirs <file>  # the record to commit, on stdout (#748)',
   '  node scripts/wiki-maintain.mjs --selftest',
   '',
@@ -3176,16 +3120,6 @@ async function main(argv) {
   } catch (err) {
     console.error(`[wiki-maintain] ${err.message}`);
     return 2;
-  }
-
-  if (opts.mode === 'should-wait') {
-    // The debounce decision, offline and free. Printed as `wait=<bool>` on stdout so a shell step can
-    // read it directly; the reasoning goes to stderr, where it is visible without being parsed.
-    const age = oldestUncoveredAgeSeconds({ root: REPO_ROOT });
-    const decision = shouldDeferMaintenance({ oldestUncoveredAgeSeconds: age, dispatched: opts.dispatched });
-    console.log(`wait=${decision.defer}`);
-    console.error(`[wiki-maintain] ${decision.reason}`);
-    return 0;
   }
 
   if (opts.mode === 'normalize-links') {
