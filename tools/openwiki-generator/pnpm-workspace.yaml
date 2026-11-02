@@ -24,15 +24,11 @@ allowBuilds:
 # died on a transitive two minutes old.
 minimumReleaseAge: 4320
 
-# Exclusions are SECURITY-FLOOR exceptions only, and never for impatience: this code runs with the
-# generator's model credential. Each entry is ONE exact version that an `overrides:` floor below
-# requires, so it can admit nothing else, and it becomes moot once that version clears the window.
-# wiki-maintain.guard.test.mjs fails a name-only or ranged entry, or one with no matching floor.
-minimumReleaseAgeExclude:
-  # ADDED 2026-11-01 by operator override of the cooldown: @azure/identity 4.14.1 (published
-  # 2026-10-29 22:16 UTC) is the first release requiring @azure/msal-node ^7.1.0, the fix for
-  # GHSA-xcx6-jx8p-x3h5. Clears the window 2026-11-01 22:16 UTC; remove at the next bump after that.
-  - '@azure/identity@4.14.1'
+# Exclusions (`minimumReleaseAgeExclude:`) are SECURITY-FLOOR exceptions only, and never for
+# impatience: this code runs with the generator's model credential. An entry is ONE exact version that
+# an `overrides:` floor below requires, so it admits nothing else; wiki-maintain.guard.test.mjs fails a
+# name-only or ranged entry, or one with no matching floor. None is needed today: the last one,
+# '@azure/identity@4.14.1' (2026-11-01), was removed once it cleared the window on 2026-11-01 22:16 UTC.
 
 # Security floors. The root workspace's `overrides:` do not reach here (this is its own root), so a
 # floor the generator's tree needs is repeated in this file.
