@@ -27,6 +27,8 @@ sources:
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-900e4fa48a3671f4d583c11d
     resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
+  - id: openwiki-source-2c4ab3ecf382cf5390cc484c
+    resource: repo://scripts/__tests__/ci-log-step.test.mjs
   - id: openwiki-source-85895d0ff4bd77f9e7c359df
     resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
@@ -49,6 +51,8 @@ sources:
     resource: repo://scripts/ci-mobile-full-flows.sh
   - id: openwiki-source-5b730a5e86c359beda7597f1
     resource: repo://scripts/ci-mobile-lib.sh
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
   - id: openwiki-source-38de5a41429287f01c1b5bfd

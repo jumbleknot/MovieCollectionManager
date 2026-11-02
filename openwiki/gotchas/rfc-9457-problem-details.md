@@ -42,8 +42,22 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
   - id: openwiki-source-c786c5a1c827d520806eec6b
     resource: repo://frontend/mcm-app/src/bff-server/security-headers.ts
+  - id: openwiki-source-442db89b066101672cb08c70
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts
+  - id: openwiki-source-ef24b6b5e3c8860863d47d11
+    resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
+  - id: openwiki-source-9f5cd019c7d352918b45965b
+    resource: repo://frontend/mcm-app/src/hooks/use-movies.ts
+  - id: openwiki-source-2bbbece9f7d33db6a5983a55
+    resource: repo://frontend/mcm-app/src/types/errors.ts
+  - id: openwiki-source-4c6b12521b6244abd725b6ac
+    resource: repo://frontend/mcm-app/src/utils/errors.ts
+  - id: openwiki-source-0fb6c962529d8642ba15acb9
+    resource: repo://specs/013-post-agent-enhancements/contracts/bff-movies-count.md
   - id: openwiki-source-8d4741ebc7bb90623f915acc
     resource: repo://specs/046-authenticated-authz-tests/contracts/authenticated-http-authorization.md
+  - id: openwiki-source-763b090afb3624a565f133dc
+    resource: repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
 ---

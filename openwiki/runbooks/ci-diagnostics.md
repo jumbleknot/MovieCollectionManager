@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/branch-reaper.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-96c32d20fcdefc48cf9ec296
     resource: repo://backend/mc-service/src/api/collections/create.rs
   - id: openwiki-source-c3e333457ea705ec015d1cbd
@@ -23,12 +25,24 @@ sources:
     resource: repo://docs/runbooks/ci-diagnostics.md
   - id: openwiki-source-f003db5a1a23dba30ccf3b03
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
+  - id: openwiki-source-7b223ba4df7203eeb5667fa8
+    resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-3adf769c2d4e02405ca6896b
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-c138086948681bd36101354f
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-fa3a87df52d837aa49b86894
     resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-afea6a4b73f1abee8610bd58
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
@@ -39,14 +53,26 @@ sources:
     resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
   - id: openwiki-source-b50d19f23836b85abeaed26d
     resource: repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json
+  - id: openwiki-source-f2acfc0bf32b6ad4708d5aed
+    resource: repo://scripts/__tests__/fixtures/ci/branch-protections.json
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-2c2f0032bb5935673fca7b18
     resource: repo://scripts/__tests__/reap-merged-branches.test.mjs
+  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
+    resource: repo://scripts/__tests__/registry-retention.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
     resource: repo://scripts/cd-dispatch-gate.mjs
+  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
+    resource: repo://scripts/cd/publish-apk.mjs
+  - id: openwiki-source-b86ccae465a7267495c319ec
+    resource: repo://scripts/cd/scan-app-image.sh
+  - id: openwiki-source-fe6babf23c099d13c73c6b6f
+    resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-478a776ff0b75f2af5dc3190
     resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
@@ -59,12 +85,16 @@ sources:
     resource: repo://scripts/e2e-failure-set.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # CI self-serve diagnostics
@@ -75,6 +105,13 @@ pushes a curated digest into channels the API can already read, and the script r
 "is this commit/PR mergeable" and "why did it fail" without a human copy-pasting logs into the session.
 Its four entry points are `status`, `watch`, `failure` and `durations`, plus `--selftest`; it resolves the
 forge host from the `origin` remote **at runtime**, so no host literal exists to keep in sync.
+
+**Workflows cannot use `actions/upload-artifact` v4 or later on this forge either.** It refuses any
+server other than github.com *before* it uploads anything (`GHESNotSupportedError`), measured four
+times and most recently on both runner labels on 2026-10-16 (spec 081 research T004), so the action
+stays on **v3** under a Renovate ceiling (item #912). A Forgejo release note claiming support does not
+lift it; re-run the two-label probe and read the step outcome. That is one more reason the digest goes
+to a channel the API can read rather than to an artifact.
 
 Two facts decide almost every reading:
 

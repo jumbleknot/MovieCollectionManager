@@ -15,6 +15,8 @@ sources:
     resource: repo://backend/mc-service/tests/integration/common/mod.rs
   - id: openwiki-source-f98f56169006fd5a5bdf85b9
     resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-1acbc1141c6fb60b1c86c33a
+    resource: repo://backend/mc-service/tests/integration/pool_test.rs
   - id: openwiki-source-e201e686a785f09b6d899f0b
     resource: repo://compose.yaml
   - id: openwiki-source-f84ce669ebf8d13e89ba2f75
@@ -31,6 +33,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
   - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
     resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-0ff61f596da1302e58282fa2

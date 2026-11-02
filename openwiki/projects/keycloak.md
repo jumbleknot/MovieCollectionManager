@@ -41,6 +41,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-a5bf09947adc24a8d59ab587
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-4bb9aed3e8acb9d5ea822f53

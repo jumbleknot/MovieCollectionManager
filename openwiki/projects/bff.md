@@ -101,18 +101,36 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts
   - id: openwiki-source-78eeb348d704a1098ef44480
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts
+  - id: openwiki-source-0f0468d2dfbbe35d07fa383c
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts
   - id: openwiki-source-719cd734e5ed87032a5fd55b
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-run-api.test.ts
+  - id: openwiki-source-e742ab8c1f246ff662696421
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-subject-token.test.ts
   - id: openwiki-source-c5a2ed751f38e7e326a9bb90
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
+  - id: openwiki-source-442db89b066101672cb08c70
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts
   - id: openwiki-source-badb43d18671bffd37053c83
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
+  - id: openwiki-source-a5bf09947adc24a8d59ab587
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
+  - id: openwiki-source-a864e7e3b109550c7018e359
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-2bbbece9f7d33db6a5983a55
+    resource: repo://frontend/mcm-app/src/types/errors.ts
+  - id: openwiki-source-0b95b2665c338088eef0db7e
+    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
+  - id: openwiki-source-19609c73bc9a3a34e47ab18d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
   - id: openwiki-source-bfd1dcd66339cb51fd41729c
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
   - id: openwiki-source-11fb40898d5d9eecbab09373
     resource: repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts
+  - id: openwiki-source-5c85c1fbf0ef1e7187656dba
+    resource: repo://frontend/mcm-app/tests/integration/agent-subject-token.integration.test.ts
   - id: openwiki-source-fe13721a7608b6a93a9e93f2
     resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
   - id: openwiki-source-a772a7e2a660182428f932f2

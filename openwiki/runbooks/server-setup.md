@@ -9,8 +9,12 @@ sources:
     resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-6186a866b56089a82cce5c62
+    resource: repo://.forgejo/workflows/devcontainer-image.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-23175e1d10427daa3344d3ec
     resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
@@ -29,6 +33,8 @@ sources:
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-62d227af87c6a9ae6df49e2f
@@ -37,6 +43,10 @@ sources:
     resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
+    resource: repo://scripts/__tests__/registry-retention.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66
     resource: repo://scripts/backup-install-manifest.mjs
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -51,6 +61,8 @@ sources:
     resource: repo://scripts/object-store-migration.mjs
   - id: openwiki-source-8d48276c31ac9a4e5887d2ca
     resource: repo://scripts/object-store-migration.sh
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }

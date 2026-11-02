@@ -4,9 +4,6 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point to this repository's OpenWiki bundle — what the bundle is and is not, how to query it by type, tag, resource or directory, a task-routing map to the major concept areas, and how the coverage rule and the derived-versus-authoritative split decide where a new learning belongs.
 tags: [openwiki, navigation, quickstart]
 resource: openwiki/INSTRUCTIONS.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-25T16:15:01.685Z
 sources:
   - id: openwiki-source-f003db5a1a23dba30ccf3b03
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
@@ -14,6 +11,10 @@ sources:
     resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-78ec32b51a25a8fb66d5b292
+    resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
+    resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-98792bbc9621de1ad3e22856
@@ -26,7 +27,10 @@ sources:
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T16:15:01.685Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -84,7 +88,7 @@ bundle before anyone checked (item 491).
 | Deploying or operating production | [infrastructure stacks](./projects/infrastructure-stacks.md), [the CI/CD pipeline](./projects/ci-cd-pipeline.md), [server setup](./runbooks/server-setup.md), [control tower](./runbooks/prod-control-tower.md), [data-tier authentication](./runbooks/prod-data-tier-auth.md), [reboot resilience](./runbooks/prod-reboot-resilience.md), [port reservation](./invariants/published-port-reservation.md), [ADR-0001](./decisions/adr-0001-prod-secrets-management.md), [ADR-0002](./decisions/adr-0002-stateful-major-upgrades.md) |
 | Diagnosing a red build or a flaky test | [CI self-serve diagnostics](./runbooks/ci-diagnostics.md), [the CI evidence pipeline](./runbooks/ci-evidence-pipeline.md), [E2E testing](./runbooks/e2e-testing.md), [testing tiers](./invariants/testing-tiers.md), [Renovate](./runbooks/renovate.md) |
 | Running or triaging a security scan | [SAST & SCA project page](./projects/sast.md), [the SAST/SCA runbook](./runbooks/sast-scanning.md), [DAST](./runbooks/dast-scanning.md), [infra-image scanning](./runbooks/infra-image-scanning.md), [secrets-management posture](./invariants/secrets-management.md) |
-| Touching backups or account deletion | [per-user collection backups](./runbooks/backups.md), [the BFF](./projects/bff.md) |
+| Touching backups or account deletion | [per-user collection backups](./runbooks/backups.md), [the prod host restic backup](./projects/backup.md), [the BFF](./projects/bff.md) |
 | Picking up work | [the agent-driven backlog](./runbooks/backlog.md), [spec-driven development](./process/spec-driven-development.md), [PR batching](./process/pull-request-batching.md), [feature-branch test scope](./process/feature-test-scope.md) |
 | Maintaining this wiki | [bundle maintenance](./runbooks/wiki-maintenance.md), [the process view of it](./process/wiki-maintenance.md), [the regeneration policy](./policy.yaml), [the protection manifest](./protected.yaml) |
 
@@ -103,8 +107,9 @@ bundle before anyone checked (item 491).
   [three scoped MCP servers](./projects/mcp-servers.md), the
   [infrastructure-as-code stacks](./projects/infrastructure-stacks.md), the
   [dev-stack env-file contract](./projects/stacks.md), the
-  [CI/CD pipeline](./projects/ci-cd-pipeline.md), and
-  [SAST & SCA static security scanning](./projects/sast.md).
+  [CI/CD pipeline](./projects/ci-cd-pipeline.md),
+  [SAST & SCA static security scanning](./projects/sast.md), and the
+  [prod host backup (restic)](./projects/backup.md) with its failure alerting.
 - **[invariants/](./invariants/)** — cross-cutting rules that span projects and are easy to violate: the
   [authentication and authorization chain](./invariants/auth-chain.md), the
   [final validation checklist](./invariants/feature-validation-checklist.md), the
@@ -180,5 +185,9 @@ authoritative, and into a new concept when none covers the subject. Never append
 derived page, and never to `CLAUDE.md`, which is an index into this bundle.
 
 Both gates that police the bundle run offline and keyless, so checking it never needs the paid
-generator: `pnpm nx okf-lint infrastructure-as-code` for conformance and
-`pnpm nx okf-governance infrastructure-as-code` for the policy, protection and classification rules.
+generator: `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1–V16) and
+`pnpm nx okf-governance infrastructure-as-code` for the policy, protection and classification rules
+(rules G0–G13, where G13 keeps Claims sidecars off authoritative pages). Both are fail-closed — an
+absent or partially-written bundle, or a missing governance file, is a violation rather than a skip —
+and neither has a skip flag or an allowlist, so a rejected page is fixed in
+[the generation brief](./INSTRUCTIONS.md) and regenerated rather than accepted in place.

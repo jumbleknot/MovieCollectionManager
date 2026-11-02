@@ -23,6 +23,8 @@ sources:
     resource: repo://rust-toolchain.toml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-c4b92dabf869c989f00aa0e8
+    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
   - id: openwiki-source-cf7a80239370178114067d03
     resource: repo://scripts/__tests__/check-override-consistency.test.mjs
   - id: openwiki-source-1813b4b5c82e84caead4e177
@@ -35,6 +37,8 @@ sources:
     resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
+  - id: openwiki-source-6515c9bbb2befe56115dab03
+    resource: repo://scripts/check-dependency-downgrade.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-3597b8f7b798d708bd7e75a1

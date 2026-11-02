@@ -15,6 +15,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
   - id: openwiki-source-d5b1faab58eeb909bb999298
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-852cc196002c1a675baddf5c
     resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
   - id: openwiki-source-b6d5c062815f2af4f3aec768

@@ -7,6 +7,41 @@ tags: [auth, sessions, redis, bff, keycloak]
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-01T18:13:07.622Z
+sources:
+  - id: openwiki-source-7f9b1fa4fc54b7046b359b1f
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts
+  - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
+  - id: openwiki-source-04ddeebeb466c7a075e05fbf
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
+  - id: openwiki-source-c92d4507a4929906f77d6560
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/user%2Bapi.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
+  - id: openwiki-source-ac55e963094bcd7298e35e63
+    resource: repo://frontend/mcm-app/src/bff-server/cache-service.ts
+  - id: openwiki-source-d0d28e7151ad566c8e7e4594
+    resource: repo://frontend/mcm-app/src/bff-server/session-manager.ts
+  - id: openwiki-source-a6c3104b0286d20c67faf4bc
+    resource: repo://frontend/mcm-app/src/bff-server/session-timeout.ts
+  - id: openwiki-source-9a64f46b136f24b7215ddf7d
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts
+  - id: openwiki-source-9d73069f0774f86045a81104
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/session-timeout.test.ts
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-4eda77b1de92ba48c68288c8
+    resource: repo://frontend/mcm-app/src/hooks/use-auth.tsx
+  - id: openwiki-source-efdce4ddfb93ad71c55d8829
+    resource: repo://frontend/mcm-app/src/types/auth.ts
+  - id: openwiki-source-ed2df48ea080e434190abed3
+    resource: repo://frontend/mcm-app/src/utils/session-storage.ts
+  - id: openwiki-source-b4dbb7a1709b21c7fd21d5ca
+    resource: repo://frontend/mcm-app/tests/integration/auth-session-side-effects.integration.test.ts
+  - id: openwiki-source-20312136c8bc905b5cec8a91
+    resource: repo://frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts
+  - id: openwiki-source-0c7c2ca7a19a57261c431539
+    resource: repo://frontend/mcm-app/tests/integration/session-manager.integration.test.ts
 ---
 
 # Session ID vs JWT — Redis session lifecycle and concurrent-session eviction

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security/lockfile/docker-base-image/docker-digest-pin/routine channels and their Friday-window-versus-nightly-cron cadences, the prPriority ranking that allocates the five in-window PR slots (lockFileMaintenance 5, docker base images 3, docker digest pins 2, everything else 0) and why it must be neither inverted nor silently inherited, the CVE sweep's Friday run deliberately three hours ahead of the window on a one-runner Friday cron ladder (item 487, twice-weekly since item 642), the budget that binds before the schedule and blocks branch creation too, the mandatory empirical live-vs-dry check (every introspective route is dead on this Forgejo build), the database majors that wait in Pending Approval where a tick IS the migration decision, the five version ceilings that were discharged into approval gates rather than deleted (vault, opensearch, langfuse, the observability postgres, MongoDB), the scheduled check that tells an unaided lockfile refresh from a forced one, and the silent-failure themes that read as health when they are not — toolchain-missing channels, pinDigest/digest collisions (items 308/350), timestamp-pending-forever registries and DIGEST-class updates aged against the wrong lookup (items 349/350/412), Docker Hub's page-11 403 (dockerMaxPages), unmatched compose files and packageRules with no extractor feeding them (items 412/560), lockstep packages a lockfile refresh moves alone (item 695), the health digest that used to read only an advisory column and only the newest scheduled sweep (items 485/563), the pinned-toolchain gotchas for Rust (devcontainer rebuild), Python (packageRules ordering) and uv (one repeated version string), the item 879 branch reaper that deletes merged branches heading no open PR, and the two-place config validator that needs both `--strict` and `--no-global` to catch anything.
+description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0) that allocates the five in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
 tags: [renovate, ci, dependencies, runbook]
 sources:
@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T03:40:23.288Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # Renovate dependency bot
@@ -169,6 +169,17 @@ branch exists.
   explicit number, which is what still stops the last rule in the file (docker datasource,
   `pinDigest`/`digest`, no `groupName` and no `prPriority`) from carrying `docker base images`' 3
   through.
+- **A pin on a floating tag is on a cooldown treadmill — pin by full version.** Renovate can only
+  offer the *current* digest of a floating tag (`langfuse/langfuse:4@sha256`, `node:24-bookworm`),
+  aged against that tag's own `tag_last_pushed`. An upstream that repushes more often than
+  `minimumReleaseAge` (3 days) therefore never clears the cooldown at a Friday window, and **no bump
+  is ever proposed** — the same "absence reads as health" shape as everything below, with the
+  cooldown as the cause. Measured on Langfuse: `:4` was repushed six times between 2026-09-23 and
+  2026-10-01 while a Critical (GHSA-vcvr-r3jv-pc5j) sat on our pin and reddened `infra-image-scan`
+  for every PR; the identical shape hit `node:24-bookworm`. Pin by **full version**
+  (`4.35.0@sha256`) so each release ages on its own tag and Renovate offers the newest one that has
+  cleared the cooldown. This is the one hold-shaped failure where the fix is a *more* specific
+  version, not a ceiling.
 
 ## Forcing a run, and verifying what it actually did
 
@@ -379,6 +390,18 @@ lookups: placed after `docker digest pins`, all eight digest refreshes silently 
 ranges the code already supports, not deployment pins, and joining them would turn a range into a
 decision. A guard test asserts both the ordering and the exclusion.
 
+**Python: does an interpreter minor need the four `uv.lock` files regenerated? No — and no check needs
+adding.** A uv lock is *universal* across its `requires-python` range, and that range already admits the
+new minor, so the existing lock resolves unchanged. (Renovate would produce no lockfile update for such
+a move in any case: it re-locks only manifests it has itself edited, and this move edits none.) **The
+check that fails if the interpreter and the locks ever disagree already runs**: `uv sync --frozen
+--no-dev` inside all four image builds — `--frozen` means *do not update the lockfile; error if it is out
+of date* — via `scripts/agent-stack.mjs` (which names all four Dockerfiles) under `pnpm nx up-agents-prod`
+in `app-ci`. Verified on the 3.13 → 3.14 move: all four images built, `Installed 44/44/47/169 packages`.
+Do **not** check this with `docker build -q`: it suppresses the output and leaves exit 0 as the only
+evidence, which cannot distinguish "uv resolved N packages" from "a cached layer replayed". Use
+`--progress=plain`, and `--no-cache` when the layers are warm.
+
 **uv: one version string, one source of truth, deliberately not a shared file.** The string is
 repeated at every site (install-script URL path, five `setup-uv` inputs each marked with a
 `# uv-version` comment so the manager's matchString claims only that key, and four image tags), held
@@ -403,8 +426,8 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
 | `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
 | majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
-| `actions/upload-artifact` | `<4` | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
-| `java-jdk` (from `actions/setup-java`) | `/^17\./` | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
+| `actions/upload-artifact` | `<4` (item #912) | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
+| `java-jdk` (from `actions/setup-java`) | `/^17\./` (item #913) | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
 | `test-renderer` | `/^1\.[0-2]\./` | feature 081 US5c: 1.3.x pulls `react-reconciler` 0.34, which peers on `react ^19.3`, and the workspace runs 19.2.3 (Expo-pinned); in its own group so the held member does not gate every routine npm bump batched with it |
 | `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
 
@@ -424,7 +447,18 @@ uses `semver-partial` versioning, and Renovate tries the dep's own versioning be
 `allowedVersions: "<18"` admitted exactly JDK 18.0 and blocked 17, and the 2026-10-17 dashboard proposed
 `java-jdk 17 -> 18` straight through the hold. A regex is evaluated before any versioning, so `/^17\./`
 means what it says. The guard models `semver-partial`'s own matcher and asserts both halves: 17.x
-patches still flow, and 18.0.2/21/25 are refused.
+patches still flow, and 18.0.2/21/25 are refused. **Item #913 also fixes where it moves**: the JDK is an
+Android toolchain pin that has to match what the Expo SDK's Gradle/AGP template asks for, so it moves in
+the Expo SDK PR that changes `jvmToolchain`, never with `actions/setup-java` — re-check at each SDK move
+and lift only when that plugin leaves 17.
+
+**`actions/upload-artifact` stays below v4 (item #912), and the measurement is a probe, not a release
+note.** v4+ refuses any non-github.com server before it uploads anything, so a Forgejo release note
+claiming support does not lift the hold. The measurement is a two-label probe — the same job, same
+payload, `upload-artifact@v3` as the control — and the error text was read by running the v4+ dist
+against this forge's server URL, because the forge serves no job log. Lift it by re-running that
+two-label probe and reading the step outcome, never by reading a changelog. A digest refresh within v3
+is still wanted, which is why this is `allowedVersions` and not `enabled: false`.
 
 **Both CI-action holds must stay AFTER the `ci actions` group rule**, because the last matching rule
 wins: placed earlier, the group rule pulls the dep back out and the ceiling stops applying. The guard
@@ -576,6 +610,37 @@ back to the major on 2026-10-10 (44.149.2 installed). It does not replace the gu
 catch different failure classes: the validator catches a key Renovate does not know at all; the guard
 test catches a key Renovate knows but ignores depending on where it is written (for example,
 `prPriority` set inside `lockFileMaintenance` instead of at the packageRule level).
+
+**The validator job is deliberately NOT path-gated, and that reverses the proposal that created it.**
+The plan assumed the ~240 MB `npx` pull was too heavy to run on every PR; measured, a **cold** run took
+**27 s** wall-clock, in a workflow whose `naming` job already runs `pnpm install --frozen-lockfile`. A
+path filter would have bought seconds and cost the property that matters — that a green board means the
+validator *ran*. The guard test asserts the job carries no `if:` and no `needs:`, so a future "make it
+conditional" edit reddens rather than going quiet.
+
+## Accepted residuals — decided, not overlooked
+
+Each of these was *seen* and *decided* rather than overlooked, so the next reader does not rediscover it
+as a suspected defect:
+
+- **`engines.node` is a FLOOR, not a pin, and it stays one.** Every pin runs 24.x; the floor states
+  compatibility, not reality. `check-toolchain-consistency.mjs` checks *satisfaction*, deliberately.
+  Raise the floor only when a tool requires it.
+- **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
+  (github-actions manager); a Dockerfile `FROM node` rides `docker base images`. A Node bump can
+  therefore arrive as two PRs, and the pins already differ between the workflows and the app
+  Dockerfile. Accepted **while the gate floor-checks** — none of this can merge unsafe. If Node drift
+  ever bites for real, the fix is the nx/playwright/pnpm pattern: one group, one guard.
+- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager. On this forge's act_runner
+  the label maps to a runner-side container, so a "bump" of it would be meaningless — if such a
+  proposal ever appears, close it as not applicable. It is not a `lockFileMaintenance` PR, so the
+  never-hand-close rule's measured exception does not cover it; the intent here is exactly to close it.
+- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it.** It is shell text in a `run:`
+  block, invisible to every manager, and is documented in `renovate.yml` as a deliberate, reviewed
+  residual with its own bump procedure: raising the major is a deliberate act that requires reading the
+  new major's breaking changes and re-running the validator against `renovate.json` first. The pin is
+  about config *semantics* only — it says nothing about the runtime, which is why the `setup-node` step
+  is the thing that covers an `engines` bump.
 
 ## Related
 

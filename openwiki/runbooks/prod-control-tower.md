@@ -37,10 +37,14 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
     resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
+  - id: openwiki-source-12b683eb33d44031555ec7f2
+    resource: repo://scripts/__tests__/langfuse-v4-read-path.guard.test.mjs
   - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-482173336861a06249bf1372
     resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
@@ -63,10 +67,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -649,7 +653,11 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 `allowedVersions: "<17"` hold: a Postgres major now rides the stateful-datastore
 `dependencyDashboardApproval` tick like every other database image here (see
 [the Renovate runbook](./renovate.md) for what ticking it means, and
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it). One line of that
+runbook now trails this change: its "database MAJOR waits in Pending Approval" paragraph still says the
+observability postgres is "held below 17 outright … so it never reaches this list". That was true before
+US8b; the ceiling is discharged, and `renovate.json`'s stateful-datastore rule plus
+`renovate-workflow.guard.test.mjs` are the current reading.
 
 ## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839) — done in production
 

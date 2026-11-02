@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1143db9cd1a4c5fd23cd74f73d5833e9633dd09c8dcbc16db972b5a4cc872a23",
+  "pageVersion": "sha256:9b6902aef2fdadd74d3a3590aa49e39a63a02aeccdeda99cd47e202b232d1831",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -328,15 +328,15 @@
     },
     {
       "id": "claim_98a3026e34e14bd7a6ba18a9cd6f6c96",
-      "statement": "The feature 081 US8a production cutover ran on 2026-10-24 and was deployed by CD rather than by hand: both stores are on `9.0-ubi9` (9.0.4) at FCV `\"8.0\"`, each having logged its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the pre-flight files — and the only step still outstanding is §6.4's FCV raise to `\"9.0\"` after the 7-day soak, not before 2026-10-31, so the FCV-8.0 state still describes production.",
+      "statement": "The feature 081 US8a production cutover ran on 2026-10-24 and was deployed by CD rather than by hand: both stores came up on `9.0-ubi9` (9.0.4), each having logged its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the pre-flight files. The upgrade is now complete end to end: after the 7-day soak the §6.4 raise to FCV `\"9.0\"` was executed on 2026-11-01 (item #850, operator-run on the prod host), so both stores run FCV `\"9.0\"` and the FCV-8.0 state no longer describes production; the §6.5 rollback — a dump restored onto a fresh 8.0.8 volume — remains available and is unaffected by the raise.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L483-L500",
           "version": "repo-lines-v1:sha256:9c69f104fbb79d65aff547394c5adf46d99f1d96c1f0f19c874313105c5a0397:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDE3MGFjZjkxMzJiM2M3YmY4ZDI2ZmQwZWFhZTJkOTBmNjk4MDBiYTJhNGI2NmEyMWY2YzJlZjhiNjJkNGYifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L476-L494",
-          "version": "repo-lines-v1:sha256:68a4a24b4e33470e733ca9fa40128556a7bdc557c0a22190fa9dfa394883a5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjRiOGUzMTFjMjhkNTgzMjg3NmI4NjQxMmMwNDA3NWIxOTZjOWExZjA5NTZhNmEzYzc2MmJhOTQzYzQ3YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOGIzNzc0OTkxZDk0NGNlYTA2ODQ1ZGM5MDE2YmE3MjlhYTk2NGQxNmQ2Y2MyZTU0NmQwODRiOTc5YmFmOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlM2VmODkyNDBhY2YxNzkwOGIwMjk5NTFkMjg4YjgxODRmZDNhODk1MzhjN2MyM2Q1OTM2NzE3MmY5NWVhMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L476-L507",
+          "version": "repo-lines-v1:sha256:bdd40ac8c70be9b4e6dbfc9644ae9b5acca640fe3c9c04da3f28b82f3f8b3e36:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjRiOGUzMTFjMjhkNTgzMjg3NmI4NjQxMmMwNDA3NWIxOTZjOWExZjA5NTZhNmEzYzc2MmJhOTQzYzQ3YWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YWEwZjEzMTRmOTU5YWUxZTdlZTJmZDI4NWZiOWFhYTZiNDcwOWRkYjc0NGQ1ZGQ0YzZlZmUyNzgyZTRiYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlM2VmODkyNDBhY2YxNzkwOGIwMjk5NTFkMjg4YjgxODRmZDNhODk1MzhjN2MyM2Q1OTM2NzE3MmY5NWVhMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
         }
       ]
     },
@@ -411,10 +411,24 @@
           "version": "repo-file-v1:sha256:4010131c6ca9854d983181a8a84aa037c8105d3cc411cbf96bd0dcab3113c344"
         }
       ]
+    },
+    {
+      "id": "claim_8b61d5291b8d42a1910aeb5cc4120560",
+      "statement": "The 2026-11-01 FCV raise was gated on and preceded by a recorded soak and verification: 9.0.4 ran at FCV 8.0 from the 2026-10-24 cutover with `restarts=0` and 0 E/F log lines (the only recreation of the stores was CD's routine digest-promote deploy at 09:18Z, not a crash), then §6.4's F1 took fresh counts, index lists and `mongodump` archives into `~/mongo-upgrade-081-fcv` as the §6.5 restore point, F2 returned `ok: 1` from `setFeatureCompatibilityVersion: \"9.0\"` on both stores reading back `FCV=9.0 term-in-config=true` (movie store) and `FCV=9.0` (BFF store), and F3/V4 confirmed `MC-COUNTS-EQUAL`, `BFF-COUNTS-EQUAL`, `MC-SERVICE-INDEX-PASS-OK`, `MC-INDEXES-EQUAL`, `BFF-INDEXES-EQUAL` and 0 BFF Mongo errors over 30 minutes, after which the root-password files were shredded.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L483-L507",
+          "version": "repo-lines-v1:sha256:f3bb3312d220fd4cb893df84112d7988bd42b5451b25dd261a168b415c471f49:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDYyYTRhODNkZTIyNGUyNDcyMWZkNTZlMjVkOTU2YzVkMzE1YmRjZWJjOGJhMDU5OGFlNzYxYTk2OWY2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjczNTZhYzVlODZmNzRiYjhjYmZlZTUxMTQxNzIwOTI3ZDc0M2ExNTJjNDA5NTdlYThhMmI0YzM1ZTg2ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiYmVhZmZjODc2MjRjNGQ3ZGVhN2MyMjU2NTczMzRmOTViMWQ2NTJmN2MwZDhiMWNhNzY4YTZiNDcxMTI0ZTAifQ"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L494-L507",
+          "version": "repo-lines-v1:sha256:ab0a5e531b5556d908f48679a649d584444aa0ad9b2ab6218f5400bce8eee5f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NGFmOTA0YjY0MGU1YjYxZjA3YzU1NjNmZDdjZDJiYzU3YTU2MDlhNDZlMDZhMzM2ZTJhN2Q4OGRjZTczZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YWEwZjEzMTRmOTU5YWUxZTdlZTJmZDI4NWZiOWFhYTZiNDcwOWRkYjc0NGQ1ZGQ0YzZlZmUyNzgyZTRiYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2YjJmZTk0OTk3OWYwM2M4NjMxNmQ5YTI3MDZhZTk1ZGE1NDQ5OGMzZTNmOGEzZjA4MDM2ZmYzOWE3ZGYzYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

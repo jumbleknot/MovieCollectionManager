@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
-description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production at FCV 8.0 with the post-soak FCV raise the one step still outstanding.
+description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production on 2026-10-24 and completed by the post-soak FCV raise to 9.0 on 2026-11-01.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
 sources:
@@ -19,6 +19,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-852cc196002c1a675baddf5c
     resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
+  - id: openwiki-source-b6d5c062815f2af4f3aec768
+    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-fa3a87df52d837aa49b86894
@@ -31,6 +33,8 @@ sources:
     resource: repo://scripts/cd-dispatch-gate.mjs
   - id: openwiki-source-91fe8d515f906bfe802750e0
     resource: repo://scripts/cd/health-probe.sh
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-f7c18c5bafd858a90cb17c5d
     resource: repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md
   - id: openwiki-source-2d334ad195e0817c343e894d
@@ -39,10 +43,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -71,19 +75,19 @@ pointer to the exact commands, not as a queue of pending chores:
   `mcm-bff-store-mongo` with `--auth`. The cutover sequence below is what you reach for on a fresh
   store, a credential rotation or a recovery, not for first-time enablement.
 - **Feature 081 US8a (8.0.8 → 9.0).** The production cutover ran on 2026-10-24 and the deploy landed
-  through CD, not by hand. Both stores are on `9.0-ubi9` (`9.0.4`) at FCV `"8.0"`, each having logged
+  through CD, not by hand. Both stores came up on `9.0-ubi9` (`9.0.4`) at FCV `"8.0"`, each having logged
   its one-time `mongo-data-owner` re-own, with per-collection counts and index lists equal to the
-  pre-flight files. The pinned digest has since moved: the upgrade itself ran on the 2026-10-23 build of
-  `9.0-ubi9`, while every Mongo ref — compose and runbook alike — now pins a later rebuild of the *same*
-  mongod 9.0.4 on a patched UBI 9 base (the 2026-10-28 rebuild, in the 2026-11-01 change, PR #896). That
-  rebuild is what cleared the `CVE-2026-114406` ca-certificates finding which had landed on every UBI 9
-  image after the first scan. The pin is a digest, never a floating tag, so a re-run or a rollback uses
-  the image production actually runs; the expected outputs are unchanged. The one step still outstanding
-  is §6.4's **FCV raise to `"9.0"`**, gated on a 7-day soak
-  that began at the 2026-10-24 cutover — so it was not to be run before 2026-10-31, and that window has
-  now elapsed: the raise is the next action, not a pending pre-condition. Until it runs, everything below
-  about FCV `"8.0"` still describes production. The measured record (before/after counts, the V1–V4
-  output, the kernel-gate result) is in
+  pre-flight files. After the 7-day soak, **§6.4's FCV raise to `"9.0"` was executed on 2026-11-01**
+  (item #850, operator-run on the prod host) — so both stores now run FCV `"9.0"`, the upgrade is
+  complete end to end, and the raise is no longer pending. What remains available is the §6.5 rollback,
+  which is unchanged by the raise: it restores a dump onto a fresh 8.0.8 volume.
+  The pinned digest has since moved: the upgrade itself ran on the 2026-10-23 build of `9.0-ubi9`, while
+  every Mongo ref — compose and runbook alike — now pins a later rebuild of the *same* mongod 9.0.4 on a
+  patched UBI 9 base (the 2026-10-28 rebuild, in the 2026-11-01 change, PR #896). That rebuild is what
+  cleared the `CVE-2026-114406` ca-certificates finding which had landed on every UBI 9 image after the
+  first scan. The pin is a digest, never a floating tag, so a re-run or a rollback uses the image
+  production actually runs; the expected outputs are unchanged. The measured record (before/after counts,
+  the V1–V4 output, the kernel-gate result, and the F1–F3 raise) is in
   [`specs/081-major-dependency-upgrades/tasks.md`](../../specs/081-major-dependency-upgrades/tasks.md)
   T059, not in the runbook — the runbook is the procedure.
 
@@ -179,11 +183,11 @@ flowchart TD
   Up --> Verify["Operator verification: counts, index lists, app smoke"]
   Verify -->|"difference or crash-loop"| Rb["Rollback: restore a dump onto a fresh 8.0.8 volume"]
   Verify --> Soak["Soak 7 days at FCV 8.0"]
-  Soak --> Raise["Raise FCV to 9.0 with confirm true"]
+  Soak --> Raise["Raise FCV to 9.0 with confirm true — done 2026-11-01"]
   Raise -->|"problem found"| Rb
 ```
 
-The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore. The pre-flight through verification and the FCV-8.0 soak are complete in production; the FCV raise is the step still ahead, and its soak window has now elapsed.
+The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises the FCV, and rollback is always a restore. Every step has now been run in production — pre-flight, deploy, verification, the FCV-8.0 soak and the FCV raise — so the procedure stands as a repeatable path for a future re-run or a recovery rather than as a queue of pending work. The rollback path (§6.5) remains live and is unaffected by the raise.
 
 ### Gotchas (the upgrade)
 
@@ -221,7 +225,14 @@ The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises
   raise to `"9.0"` happens only after a **7-day soak**, with `confirm: true` — without it the command
   refuses (measured), and it is idempotent, so re-running is safe. On the replica set the raise
   implicitly reconfigures `rs.conf()` to carry the `term` field. The soak is the point: while the FCV is
-  8.0 the store has not written anything 9.0-only, and nothing is gained by raising early.
+  8.0 the store has not written anything 9.0-only, and nothing is gained by raising early. In the
+  production run the raise followed exactly this shape: §6.4's F1 (fresh counts, index lists and
+  `mongodump` archives into `~/mongo-upgrade-081-fcv` as the §6.5 restore point), then F2
+  (`setFeatureCompatibilityVersion: "9.0"` returning `ok: 1` on both stores, reading back
+  `FCV=9.0 term-in-config=true` on the movie store and `FCV=9.0` on the BFF store), then F3/V4
+  (`MC-COUNTS-EQUAL`, `BFF-COUNTS-EQUAL`, the movie service's index pass and `MC-INDEXES-EQUAL`, an app
+  pass, `BFF-INDEXES-EQUAL`, 0 BFF Mongo errors over 30 minutes), after which the root-password files
+  were shredded.
 - **There is no image-revert rollback.** MongoDB supports a binary downgrade from 9.0 only to the
   *latest* 8.0 patch — never to 8.0.8 — and the volume has been re-owned to uid 1000, so 8.0.8 cannot
   open it at all. Rollback is **a dump restored onto a fresh 8.0.8 volume**, rehearsed both ways: the
@@ -306,6 +317,7 @@ is [§6](../../docs/runbooks/prod-data-tier-auth.md#6-mongodb-808--90-upgrade-da
 The acceptance oracles are `specs/026-prod-data-auth-vault/quickstart.md` (Scenarios 1–5) and the
 contract `specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md`; the upgrade's premise,
 rehearsal table and measurements are in `specs/081-major-dependency-upgrades/research.md` R8, and the
-production execution record — what the deploy actually did, with the before/after counts — is in
+production execution record — what the deploy actually did, with the before/after counts, and the
+2026-11-01 §6.4 FCV raise — is in
 [`specs/081-major-dependency-upgrades/tasks.md`](../../specs/081-major-dependency-upgrades/tasks.md)
 T059.

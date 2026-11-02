@@ -35,8 +35,12 @@ sources:
     resource: repo://scripts/__tests__/backup-staleness.test.mjs
   - id: openwiki-source-df39e2c4cf5113ffc6347c6f
     resource: repo://scripts/__tests__/backup-units.test.mjs
+  - id: openwiki-source-52b88a36070958af2c52bb72
+    resource: repo://scripts/__tests__/host-shims-cleanup.test.mjs
   - id: openwiki-source-95bfea7e625c030a4806299d
     resource: repo://scripts/__tests__/host-shims.mjs
+  - id: openwiki-source-114e2014f61c24ac4ed68005
+    resource: repo://scripts/__tests__/host-shims.test.mjs
   - id: openwiki-source-715432c2fa445bfbb51b85ee
     resource: repo://scripts/__tests__/komodo-cron-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d99b2d25d5bdaa5f029a9f37a1c7123b53a621eff78a116c7733cfc6c29af877",
+  "pageVersion": "sha256:8833913d7b672ee22da27f3b98d0ec301a6f1e12115a9aacbdd204acd74eb5c1",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -26,11 +26,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
         },
         {
           "resource": "repo://scripts/check-openwiki-governance.mjs",
-          "version": "repo-file-v1:sha256:35fbdd66e851c47c771fa6b9b4de823302c7d8f44a0335a05e600821373ac89c"
+          "version": "repo-file-v1:sha256:fa801caa9b7068dd6b96eed7f6663bd58245f7cac493698dfcfd033d4a273973"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -43,7 +43,7 @@
       "statement": "openwiki/index.md, openwiki/INSTRUCTIONS.md, openwiki/log.md and openwiki/quickstart.md are reserved navigation/support files rather than concepts: the governance gate skips them when classifying pages as derived or authoritative, which is why this quickstart page carries a `resource` without appearing under `authoritative:` in the protection manifest.",
       "evidence": [
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs#L52-L53",
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L53-L54",
           "version": "repo-lines-v1:sha256:05a9d3e3986cab196d424bcce13eea62d853555fb2da6203e52e3ea0fee9a9ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUzOTllNWRlY2YxYzY3NTUwNmEyNjNlZWQzYWMxMTI0NzU5M2Q3ODNhZjkyNzRjOGY1YjI4Zjg3YjY2ZDMwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjMTUxZmExZjZkZWUyYmRjODc2MWM2OTQ2NTQ4NzNhMThkMWY1MjRkMmZiNjg2MDY4Y2NmOTI2M2VkMjVjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY4NDcxNGFhZjY3NDBhMzU2YzdkODdiZmUzZTQ2ZWMwMTZkZDM4ZDIyNGYxZjhlOWUyNGM3NmE3MGQyZDViNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjRhNzljNTYzNDA5ZTEyOWFjM2U1MDZjZmMxNDNhOGI2ZWRhZjJmNWU2ZTg3YzZlYmQ0NjQ1YmQzNzE1ZTkwYiJ9"
         }
       ]
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -110,29 +110,43 @@
     },
     {
       "id": "claim_ac67c6ca90354dbd911d5bb8fa1aae35",
-      "statement": "The two gates that police the bundle — `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1-V16) and `pnpm nx okf-governance infrastructure-as-code` for policy, protection and classification (rules G0-G12) — run offline and keyless and are fail-closed: an absent or partially-written bundle, or a missing governance file, is a violation rather than a skip, and there is deliberately no skip flag and no allowlist.",
+      "statement": "The two gates that police the bundle — `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1–V16) and `pnpm nx okf-governance infrastructure-as-code` for policy, protection, classification and Claims scope (rules G0–G13, where G13 keeps Claims sidecars off authoritative pages) — run offline and keyless and are fail-closed: an absent or partially-written bundle, or a missing governance file, is a violation rather than a skip, and there is deliberately no skip flag and no allowlist, so a rejected page is fixed in openwiki/INSTRUCTIONS.md and regenerated rather than accepted in place.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:9f7e3cada487d2c599e4a1ed4d29167c84e678e75d91ab76608bbe5def0fbd81"
+          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
         },
         {
-          "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "resource": "repo://infrastructure-as-code/project.json#L224-L243",
+          "version": "repo-lines-v1:sha256:ca16aa42c2448df306a3c06c8327c1d60d7ba9c53fe5357dc45707f29f3ee6d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhOWQ1NjYzODYyNDFmNDYwNDY1Y2E0MTYwNDI3MDQwZTc5YTI3N2E1OGRmYzc2NjYyNWJhMGZhYTA0OTIyZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkZTk5YjYzZmM4ZDI4YzUxZTFhYTU2YjIyZjM4NDcxMDJhZjE0MWQwZDI5ZjM3YzI5NTQzYjA0NzdhZDY2ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3YTE1MDM3ZjFiZDk5Y2Q1ZTExM2ZiMTg2NmNmMWUyMTRmMjVkNmI1ZDQyM2E0ZDQxZGEzM2U3YWUxMDllY2IifQ"
         },
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs",
-          "version": "repo-file-v1:sha256:35fbdd66e851c47c771fa6b9b4de823302c7d8f44a0335a05e600821373ac89c"
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L232-L346",
+          "version": "repo-lines-v1:sha256:1a91e5a48deb9ca1961b3d5e8188c1f58fb7187307ebaddd3772279205871efc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MGFkMjk1Y2QzZTA5MDg0MDdkZWNlNTlhZDQzY2M0M2UyZTEzMGZiMzg4ZTU5NGM1YTRlYTc1MjBkYjI1ZjFmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZmM4ZDVjMjViMWJiZjM0MTVkMzYwNTE2NGI4YWU4MzZhOTRhODVjODk3ZmY3NTNmMDZkNzY5MDc1MzU5MjU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZDA4YWQ4ODllMjFkN2VmZTZkZjRlNmRmOTE4OWI1ZDYyNzI2NzFjZmE3MGI5MTA5OTg1ZWExYjBjZmI3MmE2In0"
         },
         {
-          "resource": "repo://scripts/check-openwiki-okf.mjs",
-          "version": "repo-file-v1:sha256:35c6d41c37a0ca28cf11d263ae710b3c117ca0be16250ac3e71f5731a10b5239"
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L15-L20",
+          "version": "repo-lines-v1:sha256:7ab095f08f7d90846547726d3cf3589cd5b6fd8d73788836a443d3eff2496634:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI4YzUxZjhhZDE1NDBhOTk2OTJjODU3NWI1ZWFiZDNjZGE4ZjUyY2YyNzZkNGZlYmMxOGNhMDcxNjYzMGIzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVjOTYxYTRlMzVlYTg3NTAyMTQwYzM0YTY5ZDdiYTYxMDUyMTM4NzNiYWI1NjdhNTM5OWM4Mzk0ZTFiZGY5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzRiOTA1MzJiNzcxMTJmZTgxNmQxMTY1MzI0ZGFhYzgxNTIyOTFjZjZmZDNmNTRmZjhmYmZjZTdlOGIwNjM1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVlNTQyYmQyMzY0NDMwNTYyOTg3YjY0MDVkZTIxYjM5ODI4ZGQ0NDlkNTIyZDYxMDY3YzUzZDdiOGMwYzM0NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_85d64e5eb922437892b6c7809b25c890",
+      "statement": "The prod host's nightly restic backup — its per-service dumps, checks, retention and the two independent alerting paths — is documented by the canonical infrastructure-as-code/backup/README.md, which the bundle covers with the openwiki/projects/backup.md concept; the quickstart's routing map points anyone touching backups or account deletion at that concept alongside the per-user collection backups runbook and the BFF.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md",
+          "version": "repo-file-v1:sha256:16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh",
+          "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T16:15:01.685Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3d96fad8446f2b7e8d35584db8cb4e93533847d01632f1921e03bb35148e0923",
+  "pageVersion": "sha256:93f58b896785ad3ee48cedb5b0bb050e672bae6331c59448575e137f1ce1938f",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -22,11 +22,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -36,11 +36,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -50,11 +50,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -64,11 +64,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -82,7 +82,7 @@
         },
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:03b875795878ce1b6eb8e266423121cec5ad2258318b04db3794e2ff6906a7ab"
+          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
         },
         {
           "resource": "repo://.forgejo/workflows/lockfile-refresh-check.yml",
@@ -108,7 +108,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -132,7 +132,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -156,11 +156,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -170,11 +170,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -188,7 +188,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -198,7 +198,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -208,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -218,11 +218,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -232,7 +232,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -241,11 +241,11 @@
       "statement": "A database MAJOR of postgres, mongodb/mongodb-community-server, redis, clickhouse/clickhouse-server, opensearchproject/opensearch or langfuse/* waits in Pending Approval and ticking it is the migration decision, because app-e2e never starts the observability stack and a green CI therefore said nothing about the PR #698 clickhouse and redis majors; the within-major patch stream stays automatic and a guard test asserts approval on major but not on patch. The observability postgres, once hard-held below 17 so a postgres major could not migrate Unleash as a side effect, is no longer an exception and rides this tick like keycloak's and agent-db's postgres.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L1152-L1176",
+          "resource": "repo://renovate.json#L1154-L1178",
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3158-L3254",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3166-L3262",
           "version": "repo-lines-v1:sha256:a5cacb30d39add7dd5469cc2eb3b2b5065633849a2abe1dcdc3d222d1f85bc68:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxN2VkOTg0MzQ4NGY0NTYwMjMyMzExOTdjNmFhZmZiMDRkODM1ZTRhMjA2MmIxZmNmM2IwYmZkYTY1NGNjYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDEwNzQzOWQ1YTVmNjY2MzY1N2U1ZjA2MWI3OTY0YjJmNWNhMGIyMTA2NWQ3YTc1NzhkN2EzYWE4NmE0YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -259,11 +259,11 @@
           "version": "repo-lines-v1:sha256:efd76fa7593e1ac8cd9ab171f36f3f96a8e504e9fc8a62e43c04e82221b543ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOTEzYTY2MjlmODE4MDhiZDg0MWFiNjc3MDZiYzcxZjUyNjYwM2Q2ZmJhZGU2Y2ZhNmM5NGQzNjU3MzQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMGNjYzQwZGI0NTBkODNiZDQyYzc3MzU1MDNlZTBmMmUyMTczMjZiNTZmNDJjZjk0NmI0OTg2Y2JiZWI0ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNzM1YjdmYTM5ZTliMjQ5MDVmZmE5YTZjZjk2NWEyYWM2NGRiNWQxOThkMDNkNjNkM2Q2NGVmY2MyM2IxYjQifQ"
         },
         {
-          "resource": "repo://renovate.json#L1152-L1176",
+          "resource": "repo://renovate.json#L1154-L1178",
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3213-L3254",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3221-L3262",
           "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -274,7 +274,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://scripts/backlog.mjs",
@@ -288,7 +288,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
         },
         {
           "resource": "repo://agents/movie-assistant/.python-version",
@@ -296,7 +296,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://rust-toolchain.toml",
@@ -304,7 +304,7 @@
         },
         {
           "resource": "repo://scripts/sast-scan.mjs",
-          "version": "repo-file-v1:sha256:505239881fdaaafa2c773f9e63781d212c6f8a27a40963188a3b960b35911bd9"
+          "version": "repo-file-v1:sha256:860197c7d345f1eba71f2cabd07b8cc98ee8074d4c38ab0ba167855e49767f0f"
         }
       ]
     },
@@ -318,7 +318,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -332,7 +332,7 @@
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://rust-toolchain.toml",
@@ -346,11 +346,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -360,11 +360,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -374,7 +374,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -384,11 +384,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -398,11 +398,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -412,7 +412,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/check-override-consistency.mjs",
@@ -426,7 +426,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -436,7 +436,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
@@ -474,11 +474,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -488,7 +488,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/check-toolchain-consistency.mjs",
@@ -502,11 +502,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -516,11 +516,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -530,7 +530,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -540,7 +540,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -554,7 +554,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -564,7 +564,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -574,7 +574,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -584,11 +584,11 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -598,7 +598,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
     },
@@ -608,7 +608,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/guardrails.yml",
-          "version": "repo-file-v1:sha256:a1e67e41500dc70d7febcbf95c6dd95ff79bf3b7661a4b8d94beab808b237dfc"
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
         },
         {
           "resource": "repo://.forgejo/workflows/renovate.yml",
@@ -616,7 +616,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:7747bfa88e89b34295d1485bfb56e329e0fd5d46f340111f10377624ee0aca55"
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
         }
       ]
     },
@@ -626,11 +626,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         }
       ]
     },
@@ -640,7 +640,7 @@
       "evidence": [
         {
           "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:2fa6b39e08c2dc152cf0ed447fe2b5c459af08e572d2b0fbbad63f13d1e2c90e"
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
         },
         {
           "resource": "repo://scripts/renovate-health.mjs",
@@ -657,7 +657,7 @@
           "version": "repo-lines-v1:sha256:6b389c85cd305fed735104e41dbf545709e2a885078d40d7469c8747472a2faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIzODljODVjZDMwNWZlZDczNTEwNGU0MWRiZjU0NTcwOWUyYTg4NTA3OGQ0MGQ3NDY5Yzg3NDc0NzJhMmZhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTRmNTc0OWQxZDg3MzdmODk3MTczMjA1YjVmNDFkZmEzZDM3NWMyYzNjOTMwYTJiZDEwNGM5OWU2M2U3M2I4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc5NWY0ZWRhNTI1NzBhN2VkNGVkMGM0ZTY3OWNiYWE1ZDQ2M2ViOGM3ZWY2MzRhYjM0Mzk3ZmU0Zjc4NDQyNSJ9"
         },
         {
-          "resource": "repo://renovate.json#L982-L1035",
+          "resource": "repo://renovate.json#L984-L1037",
           "version": "repo-lines-v1:sha256:24feedb02faf31d49642906afd3e082189f2c770a18a6ea6f3d6f559a0224f87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2ZDc5ODVkMTI1ZmY4OTNmMDExNGNhOGJlNDEwZGM2ZDMwMDFlNTQ5N2E3ZGU0ZjA0ODYyNmJmMzgzZmQ4MGIifQ"
         },
         {
@@ -671,7 +671,7 @@
       "statement": "A discharged hold is replaced rather than deleted, because a hold someone deleted and a hold deliberately discharged are indistinguishable from the absence of allowedVersions: vault (<1.19), opensearch (<3), langfuse (<4), the file-scoped observability postgres (<17) and MongoDB (<9, held one day) each ended as a matchUpdateTypes [major] plus dependencyDashboardApproval rule, and the guard test asserts the successor gate and the ordering rather than merely the missing ceiling — a stale ceiling left behind blocks the version actually deployed, and a stale <9 would make Renovate propose a MongoDB downgrade.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L1104-L1176",
+          "resource": "repo://renovate.json#L1106-L1178",
           "version": "repo-lines-v1:sha256:9a95827b1cce64c039be35c1f0588183a3ef2416c4c2308a10050c4ab0ecee89:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjODQ5M2I3NTJiMDkxODgyOWNhM2ZmZWFjZjNhYzFhZjhhZGU2ZGUwZDI0NGYxNzJkYjFhOGZiMmM5MTgzZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMGMxMzBkZjU2NzMzMzhkMmU4YTAzMjVlOGFiZTcxYTkxNTNjMWIyOTk3MDY0ZjkyZDdkOWRjNDk0OGIxNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
@@ -679,7 +679,7 @@
           "version": "repo-lines-v1:sha256:d243f8f5fed2d2625c69debb90863b524f128145e8e2d4f2c4b894063fba0205:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNzBhZTRhZWQ2NTcwZWI5NzEyOThmNjVkMmQwY2U5ZGI4OWEwMGM0YzM4NGQ0Y2JlYzQ2MjAzNTgwZjMxNDIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YmViOGVmYmNlOGNmMzBkMDZmYjcyN2FlNjE4YjYyODQ0MWYwZDAxYzYwNTMwMjQ1MTZjMWVlNmM3ODgwODk4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYjViMDU2NzgyYzkzZjRkYjcxZDhjMGY2NTczN2IzNjc1ZGRmNDQzZGFkZjJkOThkZWFiMjNkNzE3Y2ZiY2QyIn0"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3254",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3189-L3262",
           "version": "repo-lines-v1:sha256:a668d1ab5fb0dacc4bb86cf8e31df1962d0da4e2bd523849f532d7ef96bc2e40:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MDZiYzM2MWUxOWYyNTVmMzM2MDMyY2IyMTkyYjFkOTE3NzZiN2UzYTdkN2UwZGVlMTQ3ZjAxNDc4MTAxNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -689,7 +689,7 @@
       "statement": "test-renderer is held below 1.3 by the regex ceiling /^1\\.[0-2]\\./ in a group of its own: 1.3.x pulls react-reconciler 0.34, which peers on react ^19.3 while the workspace runs the Expo-pinned 19.2.3, and a held member left inside js patch/minor would gate every routine npm bump batched alongside it; the guard asserts the ceiling on every track, the group, and the ordering after the broad npm rules.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L862-L881",
+          "resource": "repo://renovate.json#L864-L883",
           "version": "repo-lines-v1:sha256:e5be3db63087af8034a6b8291d89571399c208a38658bfb7953cbb4abe7018c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MWM4MTRlOTlhOWRhN2MwODBlZjNiNjBkYzBhODdiMjE3YmNkYzA5NDgyZTA4MTE1ZDE3M2QxOGZjMTQ4NWMifQ"
         },
         {
@@ -703,11 +703,11 @@
       "statement": "The MongoDB <9 hard hold was discharged into a major-approval gate rather than deleted: spec 081 US8a (item #819, PR #817) removed the ceiling because PR #817 itself moved every mongo pin to 9.0 and a leftover <9 would block the deployed version and make Renovate propose a downgrade; the guard test asserts no allowedVersions on patch, minor or major, dependencyDashboardApproval on a major, and an automatic patch stream.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L1152-L1176",
+          "resource": "repo://renovate.json#L1154-L1178",
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3181-L3211",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3189-L3219",
           "version": "repo-lines-v1:sha256:4f04f3908fd5d14cc4e195a77d4fcc42da4af59e2dae16b1b1fa3a36a05a0793:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MDZiYzM2MWUxOWYyNTVmMzM2MDMyY2IyMTkyYjFkOTE3NzZiN2UzYTdkN2UwZGVlMTQ3ZjAxNDc4MTAxNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYmM3MDZkY2U0MmY2NzBlYWMyZDkxMmNjMTZiYTBmNTUwZmE1NWNhZjM4MjAyMzU5MDUzMDY4ZGY4NTJjZjYifQ"
         }
       ]
@@ -750,17 +750,119 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:812180ee10618a3b4d855ef8f5b4fbc6d9959a468c678a5d2d3be9941a90e3dd"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://scripts/reap-merged-branches.mjs",
           "version": "repo-file-v1:sha256:9dda456294635e374ff2e2c3855fa85ed3f4a5474b3e20046fda3c81bb3e2eb2"
         }
       ]
+    },
+    {
+      "id": "claim_71064be2ca47475ea1f940ec53f21d02",
+      "statement": "A pin on a floating tag sits on a cooldown treadmill: Renovate can only offer that tag's current digest, aged against its own tag_last_pushed, so an upstream repushing more often than the 3-day minimumReleaseAge never clears the cooldown at a Friday window and no bump is ever proposed — measured on langfuse/langfuse:4, repushed six times between 2026-09-23 and 2026-10-01 while a Critical sat on the pin and reddened infra-image-scan, with the same shape on node:24-bookworm; pinning by full version (4.35.0@sha256) makes each release age on its own tag.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d4ee1dcb4f34621ae469e94e28846ef",
+      "statement": "An interpreter minor move needs no uv.lock regeneration, because a uv lock is universal across its requires-python range and that range already admits the new minor; the check that fails if the interpreter and the locks ever disagree already runs as uv sync --frozen --no-dev inside all four image builds via scripts/agent-stack.mjs under pnpm nx up-agents-prod in app-ci, and it must not be verified with docker build -q, whose exit 0 cannot distinguish a resolution from a cached layer.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6254cf77fcf40e094217151bb632b5a",
+      "statement": "The java-jdk hold is an Android toolchain decision (item 913), not a CI-action one: the JDK must match the Expo SDK's Gradle/AGP template, so it moves in the Expo SDK PR that changes jvmToolchain rather than with actions/setup-java, and the hold is re-checked at each Expo SDK move and lifted only when that plugin leaves 17.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c38e1bc39bb44a5be1bcece595d5c57",
+      "statement": "The actions/upload-artifact hold is a measurement, not a documentation claim: this forge's runner refuses v4+ before it uploads anything (GHESNotSupportedError), established by a two-label probe with a v3 control whose error text was read by running the v4+ dist against this forge's server URL because the forge serves no job log, so the hold is lifted only by re-running that probe; it stays an allowedVersions ceiling rather than enabled: false because a digest refresh within v3 is still wanted.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8e192928a79484e8dcd9d240dd0c758",
+      "statement": "The config-validator job is deliberately not path-gated, reversing the assumption that created it: a cold npx pull was measured at 27 s wall-clock against a workflow whose naming job already runs pnpm install --frozen-lockfile, and a path filter would cost the property that a green board means the validator ran, so the guard test asserts the job carries no if: and no needs:.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
+          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ee7014552d0480388b3434f1f9bf95f",
+      "statement": "Accepted residuals, each seen and decided rather than overlooked: engines.node stays a floor that check-toolchain-consistency.mjs checks for satisfaction rather than a pin, and Node rides two Renovate groups (workflow node-version entries under ci actions, a Dockerfile FROM node under docker base images) so a Node bump can arrive as two PRs — both accepted while the gate floor-checks.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        }
+      ]
+    },
+    {
+      "id": "claim_aeba42e614554a31ae79725c01d51a65",
+      "statement": "Two further accepted residuals: runs-on: ubuntu-latest is extracted by the github-runners manager and a proposal to bump it should be closed as not applicable on this forge's act_runner, and npx --yes renovate@44 is major-pinned shell text inside a run: block that Renovate cannot see, so raising it is a deliberate reviewed act that requires reading the new major's breaking changes and re-running the validator against renovate.json first — and it says nothing about the runtime, which is why the setup-node step, not the pin, covers an engines bump.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T03:40:23.288Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

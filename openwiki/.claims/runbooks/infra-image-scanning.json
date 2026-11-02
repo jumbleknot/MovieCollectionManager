@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:aced56561dda2ae550efbb60bbf452a15d0744c66ac6e9a248e7031ca827b184",
+  "pageVersion": "sha256:4f10c4c2e7531bfe7ef9017040318e67480d6266ea020f1a77e67821fa17d179",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -385,7 +385,7 @@
       "statement": "The transferred lesson 'a rule is not an update channel — extraction is' is recorded in docs/runbooks/renovate.md (item #560) and restated in renovate.json's `rustfs/rustfs` rule description, and reinforced by a guard here: a Renovate `packageRule` can resolve, and a rule-level guard can pass, while nothing extracts the dependency it describes, so the per-file counts under the Dependency Dashboard's Detected Dependencies are the only statement of what was actually extracted; `scripts/__tests__/infra-image-scan.test.mjs`'s `(412)` test asserts VISIBILITY (every compose file carrying an `image:` matches a docker-compose managerFilePattern, with `docs/proposals/**` excluded via `ignorePaths`) rather than configuration.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L866-L907",
+          "resource": "repo://docs/runbooks/renovate.md#L878-L919",
           "version": "repo-lines-v1:sha256:3b9b975b1f767c0e26ed1e96d1a218c4f246d042887da6ec1f1af3f11c6670f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMGUyYjZjZjIwOWQyYWM1ZTRmZjlkZTdiNDZmMGE3YWI2ZTVkMmMzOGQ0ZGIwMzFlYjdjYzY5OTFmN2JhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYjA1ZGJmNTU0MzViYzcyZWJlNGM4ZTdkMmUwNjIxZGQ0MDZiMDQ4MTY4NjAzM2JmYzM5NjkwNTM0ODdlNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhNDlhMGI3MmVhMmUyMTIzOWQ1YWMyNGNjNDU3YTY3NDlkYTk1MzZkMzNjMjIzNWQ3MzFkNjE3ZmRlMDkwZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYmRiYjc2OWZkYzhjODIwNTY4NjE3OGI3NDgzYjRjNmZhNWNhMjNkZGFmMDVkM2RlNWQyMGZlOGY5MmFkZjYifQ"
         },
         {
@@ -439,7 +439,7 @@
       "statement": "Renovate visibility of the object store is asserted twice at two scopes: `scripts/__tests__/infra-image-scan.test.mjs`'s `(412)` test covers every compose file carrying an `image:` against the docker-compose `managerFilePattern`s (plus the `ignorePaths` exclusion for `docs/proposals/**`), while `scripts/__tests__/renovate-workflow.guard.test.mjs`'s `(080b)` test adds the RustFS-specific case — deriving the file set from `git ls-files` rather than a hand-written list and requiring each file pinning `rustfs/rustfs` to match a `docker-compose` pattern and not be ignored — so a later compose file in an unmatched directory fails the build instead of silently joining the set nothing proposes updates for.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L902-L907",
+          "resource": "repo://docs/runbooks/renovate.md#L914-L919",
           "version": "repo-lines-v1:sha256:0860eb21c70667d5991e1f86f12ae2fd7614f6b2ef3b85f2ce8bb47c896638a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI0MzUxMzVlZGFkNTg2NzU1YTkwOGY0NmQ3MGI2N2M4ZmU1MWRhYjk2NTkzYjkxZWI4NGFlOTNjOGEwMDkxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiMDVkYmY1NTQzNWJjNzJlYmU0YzhlN2QyZTA2MjFkZDQwNmIwNDgxNjg2MDMzYmZjMzk2OTA1MzQ4N2U0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzIxZGIwYmI4Y2IwZDc3MjdkYmNiNTgzNWQ2YmEwMGRkZjNjZTk2NjhlNjlhMDQ4NWRhZWM0YzMwMTgxNTFiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZiZGJiNzY5ZmRjOGM4MjA1Njg2MTc4Yjc0ODNiNGM2ZmE1Y2EyM2RkYWYwNWQzZGU1ZDIwZmU4ZjkyYWRmNiJ9"
         },
         {
@@ -561,7 +561,7 @@
           "version": "repo-lines-v1:sha256:d1dd8ec609e15eec137a1d2302b3745c55cd0b1e8d20706860764b8695ba6eeb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNjIzMmU4YjZhMDM5OTI1MGNjM2ZkNzdhZDMxOTkyMmZmNzE0ZWRiZDQyN2QxMGQ0NDY0MWFjYTZlM2VjYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNWRiN2JkZDAzMzkzNGM5ZGM4ZjU1ZmQwYmIwNzI1MWQxYzQ4MDAzMWNjYTc4ZTBmNDkxN2FiYmQwMTVhYTcifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L538-L565",
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L551-L578",
           "version": "repo-lines-v1:sha256:4066798670161c4e3780ed76bbae2f5ecd1ead69c7fd79e806dc102b67f77670:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMjllODQ3ODlhOGEwMTgzNGY0ODRjOWVjOTE3YmRlOTBjZTZiNjhiNjBhYjBhYWE4OTc1ZDliYzdhMTQzYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMjYwNDNhNjI2ODYyZWY4YjIxMzkyMzVhNTliZTIyNjczODc0NjEzZDI4YjI2MTM2ZjFkNjEyMDc4NDliYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlYTRjMjljNDljMTc3ZjU5ZTg1MzIxNTUwNGQ2YjFiMGNmMDE4YjkzODcwMjkzYTI2M2RhMGMxNWY4NzAyMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2MjkyOGM4ZTI0MjQwMjFjMDhjZjZhZjg4NDRjYjIxODk2NzQ0MjA3NjQyNWFkODJhMWI4YmE1Yzg1OTRjM2QifQ"
         }
       ]
@@ -629,7 +629,7 @@
           "version": "repo-lines-v1:sha256:1fc80d9febec7e3ff6b0138fcc4101d08001d3a16875e11e695d59d558f33369:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MTBhY2I2ODA3Mzk1OTA0NGQ1OWFiMWU3NWY0ZmRlNjM2MDRjMWRhMGM4ZWEwMzMxNmI5MDVlNmY3MDg0MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYTFjM2Y0MzJjMDQyZWUxZmE3MDc2ODJlYmZiMTlkYjhlNWMxMTY2OWQzMmYxOTNjNzU2MTQ4M2U0NDUwYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiN2M5YjQ0YTA2Y2E0NjUwMzk1OTMxMWY3MWU0ZjY2Y2U1ZmZhZTEzZGM0YmI5OWIxOWE5OWIwMTgwNDJmNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNzU3NjZjNmQ0NTkyOGQ5NjU1NWE3MmVhZDhhMWFkNDgwYzdhNTg5Njg0NmNhMzA4ZTNlNjZhZWM0ZTE1YWQifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L556-L565",
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L569-L578",
           "version": "repo-lines-v1:sha256:b2bd175c35eb110415a6623bc3b8d4b9dcf901a5f3a71c29595e4cc78e95c2b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0Y2NhM2E1M2Q5NGIxMTMwYTAwMWM2Yjc1ZDY3MDJmMzU1OTM4MzA4NWM1Zjk5ZDQ1OTc4N2Q4MzA0YWI1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMjYwNDNhNjI2ODYyZWY4YjIxMzkyMzVhNTliZTIyNjczODc0NjEzZDI4YjI2MTM2ZjFkNjEyMDc4NDliYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyZmZhZWI0NGQ1MmMzZTkzMmE4MTVkYWRkMDkzNTZjNDNkYjllOThkNmY2NDIxMDAwOWRmMTM4MmZiZGVlODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2MjkyOGM4ZTI0MjQwMjFjMDhjZjZhZjg4NDRjYjIxODk2NzQ0MjA3NjQyNWFkODJhMWI4YmE1Yzg1OTRjM2QifQ"
         }
       ]
@@ -698,7 +698,7 @@
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/__tests__/app-image-scan.test.mjs",
@@ -755,10 +755,24 @@
           "version": "repo-lines-v1:sha256:930d29e6ebbd1fe84d28408b564bb7cdd7965fbee0e1f664f8bdb60d1edb9109:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NzBmYjNjMWJiODFkZDdhMzgzNTFlNThhZGIxZmI1ZWFiNjgzYjU4ZGFlMzllMzEyZjRkYzVhNmUxNmRiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTc2YWJlMGI3NzcwY2U0NDUxYzg5MDM5OGNlYWJhMGIzYTI5YTZiMzkyNDhlNjk1ZWEwNzM5OGM4MTI0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyYzRhNzAwNGUwNmYwOTY0NzI5MzEwYTc2ZWE4NmUyYTczZTQ5NGM0ODE4NzM3ZWJkMDJhYjMyMTQ1NTg2N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3cb23293658a4b7bb80d3004a71bba72",
+      "statement": "app-ci's `app-image-scan` job fails closed when the `changes` job did not succeed, because whether the app images changed is then unknown and an unknown diff must not read as \"nothing to scan\"; the early pass is reserved for the measured case where `needs.changes.outputs.app` is not `true`. Past that decision the job verifies all six run-scoped scan tags with `docker image inspect` before scanning anything and fails naming every missing one, and each image then runs in its own step under `always() && RUN_SCAN == 'true' && SCAN_READY == 'true'` so one failing scan does not stop the rest and a single run names every blocking image.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1795-L1891",
+          "version": "repo-lines-v1:sha256:3223edde47986adeffdaa30a118d0a5634f657c5942c43cd04ab394e4686f9a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZjE0MTY1MzBkZmI3NTZkYWVhYTBiODA0ZmU2YzJjYWE3NDVkNTExNTliODc5Y2Q0NDFiOGQyNWFlOGNlMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNjMxYWQxMWM4YjgyNmY0OWRmY2MzNDdiN2RmM2M4OTlmY2IwY2NhMzQzMWYxOWRkMjFlODc2NGMyMmMwYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMDQ5ZWYzOTZlNjA4NjBmMTI4ODFjMGZmNjI4NzA5YzZlMjdiNmI0Yjg1NjYzZThiMGNlOTNlYzY0ZDczY2IifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L150-L203",
+          "version": "repo-lines-v1:sha256:31e7017343d1ca3a28de1b1e1f75ef9facbcf9671461596f1490f1f9e481cee8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNDc0ZDY2M2U5MjYwZjUxOTJmNjk1MTE1YzM0Yzc2NmFkMTk4NmEwY2NlMDJhM2Y4OGQ1MmU4MWMyMGEyZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzgwNTY1ODZkMjZiNTI5ZmZiOTI2ZmY1MDc3ZGE2MTlmNDQ4YjJiMmMwY2JjMjlmMDY0M2FlMTAzYjY4ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YTczNTAwZGEyZDA3ODBmYThlNDhjZWY2MTRkMDQ0MWRhODA0MjJhMDc2YTdhZmQ5YWRhMzY4MTI5NDUyN2EifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

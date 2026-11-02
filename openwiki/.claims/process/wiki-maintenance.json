@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cc0f8c974245a5e8770d6748f9768b8ab0a9b6e322c6c1b30d28c398aa334167",
+  "pageVersion": "sha256:37d587bd831fcd34d7a2a9e200e7dc73e12272f3470883f22277d8fd3f01a24e",
   "claims": [
     {
       "id": "claim_48336ae10f46486caf689e37d3d26063",
@@ -241,7 +241,7 @@
           "version": "repo-lines-v1:sha256:8f82a13dd8ef2659cf355b62c844dfacf4915dea91a606383be7831dad735fc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYzU3NmNlNmY2OWY1NWUxZjU3ZDRjODM2MThhNzAwOTdmZDFmODlmNTBhMGRmMTM1M2FjMjA0ZTVmNDg4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYWQ0MGNkMDMwNGU1NjVjNzJjNTdlYjRkNTMyMDJkNTkwM2QzYmEzZjdmYzllZTY4YzkwYTY1Yzc0YmM5MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs#L283-L288",
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L284-L289",
           "version": "repo-lines-v1:sha256:e990b402ba2007b213406cc5263f27d00d36912a159d5a0cd8fda470d7803571:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQxYmExNTBjZTJkMGI4ZGNhNWFhNTQ3MzM4NGMzNzQ2M2ZlNTFkODVlZjBkNzVjYzgyYWVhMTU1MTNmZWNjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGYyODViYzM3NzJhNjgxNmMxZGQzNmY3NjlkMGIxOGJkNjk1NGI3NTVmZDYwM2Q2NTkzMjZlNTI3YTIyZmExNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyJ9"
         }
       ]
@@ -273,7 +273,7 @@
           "version": "repo-lines-v1:sha256:4bb19bab021cbd59eb40cdc1664c4f2ef7568009780540afbe32858a56acac54:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OWJjNTIwNzEyZjIxN2VlNjI4NGVlZjUyZjQzNzA2MDU1NGMzYmM0YjY1ZGZjZTdhNThjMDcwZjUwMzQyMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMGJlNzVjZGYxOWJjZWUxMjY0YzVmMGUxN2FhNDJmNDAyMmI4OTFiMDM0NjcyNTg4YjE5ZDhmZDc0NmY5M2UifQ"
         },
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs#L320-L340",
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L321-L341",
           "version": "repo-lines-v1:sha256:74fcd923851580e8084c56fea1aa04267079ffef9fd5032a2fc3424d5bbcb256:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmYwZTQwODE5ZDllYjE3YjUxYTYxMDE2MmUzYWExNDY1M2QyMjEyNjJlOGFjNDBiNTdiZmY0ZmUxMzQzZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzNTAxMTczMGQ4OTkwNTE3NmRhMmQ3Y2VkYTYxNWE4OWNlOTUyM2VjNDI4ZjFkNmE5OGQwNTkzMzM0MDZjYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkMDhhZDg4OWUyMWQ3ZWZlNmRmNGU2ZGY5MTg5YjVkNjI3MjY3MWNmYTcwYjkxMDk5ODVlYTFiMGNmYjcyYTYifQ"
         }
       ]
@@ -291,7 +291,7 @@
           "version": "repo-lines-v1:sha256:b7014254af3b78781a507d4113aa2a3a9318f2d152f5b4a1539ae28eaf6ccb3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcwMTQyNTRhZjNiNzg3ODFhNTA3ZDQxMTNhYTJhM2E5MzE4ZjJkMTUyZjViNGExNTM5YWUyOGVhZjZjY2IzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcwMTQyNTRhZjNiNzg3ODFhNTA3ZDQxMTNhYTJhM2E5MzE4ZjJkMTUyZjViNGExNTM5YWUyOGVhZjZjY2IzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk4YTliMGVjMzY1NGUyNWZhZTA1YmNhODkzOWY1MzQwYmFiODE1OWE5YTA0MmJjNzJmMjVhYTUxM2Q1MzFiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTcwOWMzNzU1NjgxZTgyODQ0OTY5ZjZiYzlhYzAzM2M4YjY4MTY4MDViODJkNzUwMzc5NGRjYjk1ODc0M2RlNyJ9"
         },
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs#L240-L300",
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L241-L301",
           "version": "repo-lines-v1:sha256:e05e93bd6efdaef12787b584c8deed465f0960454e0e94908ba1599132d1dad6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MTdjMjExNGIwYzI0YThmZmYxNTk4YmFiMmI4MDQ0Njk4ZGQ0MDJlNWIxNGNiMjg3MGFjMzc0ZTgwYWE0NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NmI0NDBiYjcxMTk2N2NlNTZhMjFlOThlNmE1YWNiMDgzZWQzNjAzN2I3YzQxM2QyYWZlM2EyODU2MjlhNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkYTU3YzU4YzU0MGI0NWY1M2YyOTA3MWNlZTkxNzc3YWE1ZDk5NjA0ZGQ2N2I4ZmVjZDAzZGY3NGYxMzFlMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3NGI1MTllZTMyZTZiNGJjZTU3Y2U3YTY4ZmJkNmNjNWFmMjQ4NDM4N2RjNWIxOGU4OTNmZjRkZjEyNDkxYzEifQ"
         }
       ]
@@ -460,7 +460,7 @@
       "evidence": [
         {
           "resource": "repo://scripts/openwiki-claims.mjs",
-          "version": "repo-file-v1:sha256:9aa3742082e7cc9ea3b7af0da7d036ad2d31845f9eac0f462151ec2bb9b7c1e4"
+          "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/data-model.md#L59-L77",
@@ -605,10 +605,54 @@
           "version": "repo-lines-v1:sha256:42326ceb19f879c778686117debfc4e2bffa835a67170cbc2bd25bec4e0a938b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwY2Q2OTdjNDgwMTc1NzJkM2Y2OGQ1ODRhNThmYmM4NDljYzliMGM4NjdiNzNmNTE4MWEwOWU0ZDQzNTUzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmU5YjdkY2QxNDkwMjY0NDIwOGFiNzdhMmE3ODIzOWRkNmFmMTQ0YTRkNGM1ZDc5Nzc1NzVhYWVlMmI1MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NWY3NDkwOGIxNTMyNjFjOGYyMTQwYTljMDY4ZWEwNzhiMzVlYWVmNzI3ZjhhY2U2OTUxODRmOTllMWQ3NWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_17797b1b014548ecab04667fc2f77e84",
+      "statement": "The governance gate's G13 (item #513, ADR-0003) enforces the disjoint scope of the bundle's two protection mechanisms: Claims certify generator-written facts on derived pages while `protected.yaml` fingerprints protect authoritative pages, so `claimsScopeFindings` in `scripts/openwiki-claims.mjs` fails an authoritative page carrying a Claims sidecar or a `.page-manifest.json` entry, a sidecar with no page, and a page carrying a front-matter `verified:` event with no sidecar.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L13-L19",
+          "version": "repo-lines-v1:sha256:d0aaaae6ca74394827eccafac8aff38aea64fa7854ad0fac1c44c21f89a90ff6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVlMDBiNjczNDAzYjFjMTYyODNkZDQzYjIyOGUxZDIyN2FiNTZhODQ4MzY3MWVmYjgzN2M0ODExMDYwYTExMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFkMGM1MTkwZTg5YzY5NzJiMmEzNmI3NDJmOGM1MmZhYjE1YWU3NWE2YzdiMjI0ZWQ0M2M3NmFlMzljOTdkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ2M2E5MDhkYTUzNjhmZmQ5Y2ZmNjA2ODc1MDViYjNiM2NiMWY5NGZlOTNkMmM0MTgwOGJkN2FlZDRjNmE4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/openwiki-claims.test.mjs#L109-L139",
+          "version": "repo-lines-v1:sha256:46849cc45d83338dfe955d87537cd12b566e1bd11eeaa671523c48e82d4e3376:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MDkzYjhjZjI5Njg2MTY5YjRlYWI4NWRiZDNiOGIzNjBlZTZmMmJiMTNlOGYwNWMxYmM0YjkwNmJmZWI0NzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NWYyNDM5MDdkYWFjNzU2Yjc1YjQ1NjIzODVjNjQ3NzJhMGEwZDFkZTY3MjMyMTIzMTQ2MjE4OGY3NWFkMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOTRkN2E3Zjc2YmE5ZGI3MGVlODkzMDhlYmNkMWM2NDg5ODJhMWU3ZDM2OWEyNWRiMTg1MTA0MWQ5NDVkMjUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L343-L346",
+          "version": "repo-lines-v1:sha256:8f20e68be49b1df70b11c7cbc4e95a0e4f59e03958834a4085aede1213c7bd16:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE0YzcwNDY3ZTUxZTY2ZWFiY2RjOWEwZGFjNDZjNjE4MzVjYzUxOGM1YTE3Y2M1OWE5YzZiMTZmZWM2ZDQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwOGFkODg5ZTIxZDdlZmU2ZGY0ZTZkZjkxODliNWQ2MjcyNjcxY2ZhNzBiOTEwOTk4NWVhMWIwY2ZiNzJhNiJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L131-L165",
+          "version": "repo-lines-v1:sha256:54d40bc6141c55a4fc7987b6fffecb59650c248c4479d18e7daa37d0901d6177:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTMzZTQ0OWVjZDU1ZGVjNTAzYjdlMDdhZTAxMzYzYjA4ODY1ZDk5MjczMWZlODNkMTIyZGRlZWZhNDhhNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyNzg3Zjg2OWMxNTk0ZjhjYzg2Yjg3YjAwNWZhNjBiNDViNzRhM2E3ZjVlODIyOWIwMWM1MmIwYmMxZDc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f10b2608178496e8851d778c7877661",
+      "statement": "The governance gate `scripts/check-openwiki-governance.mjs` runs rules G1–G13 (plus the fail-closed G0), not the G1–G12 range its original feature introduced: G13 (Claims scope) was added for item #513 under ADR-0003, so the documented rule range is G0–G13.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L872-L872",
+          "version": "repo-lines-v1:sha256:613c05bac48869e1ed47644602233ddf2abcda5ac3627a6fdb401bac613dfa8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjEzYzA1YmFjNDg4NjllMWVkNDc2NDQ2MDIyMzNkZGYyYWJjZGE1YWMzNjI3YTZmZGI0MDFiYWM2MTNkZmE4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjEzYzA1YmFjNDg4NjllMWVkNDc2NDQ2MDIyMzNkZGYyYWJjZGE1YWMzNjI3YTZmZGI0MDFiYWM2MTNkZmE4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGY5Y2Y0NWQzZmQzNzhjOGQ5ZTIyMDk5MDU2ZmRlODBjNWM3ZDdjMGMxNTRjN2JjM2E4MGNjMzMzZjgwM2FjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGI3ZWUyMDY1NzViYjdiZjJjZWY0YjI0ZjZhZDAxOGM2MDVjY2VhZDA3YjM4ZWM1YmE2NDQwNDY1Y2YzZTU0ZSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/check-openwiki-governance.test.mjs#L276-L282",
+          "version": "repo-lines-v1:sha256:1cd2ce6695d5efb9337d645485616da7e690bec430daa6f5f8e803aeb7fbca30:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlkZDM3YjI2Y2FiN2MxOTRlOWFjN2VlNTVmNzljOTY3YjBiZjc5NGZmMTY1ZjNjZTMwYzZjMDhlZjQ3Mjg0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRiNDFhYWZjOGM4YTEyNDRhYzNiZTRmMzhhYzk4Mzc0YmNkN2IzZDJlYWYzZTM4NTQxMWNmMGMyN2QxMjNiZSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L343-L346",
+          "version": "repo-lines-v1:sha256:8f20e68be49b1df70b11c7cbc4e95a0e4f59e03958834a4085aede1213c7bd16:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE0YzcwNDY3ZTUxZTY2ZWFiY2RjOWEwZGFjNDZjNjE4MzVjYzUxOGM1YTE3Y2M1OWE5YzZiMTZmZWM2ZDQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwOGFkODg5ZTIxZDdlZmU2ZGY0ZTZkZjkxODliNWQ2MjcyNjcxY2ZhNzBiOTEwOTk4NWVhMWIwY2ZiNzJhNiJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-policy.mjs#L1-L8",
+          "version": "repo-lines-v1:sha256:5f5b18486d901142506d62f2a3260e66b9127113099562c51c696be9d638ad90:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODFkOTA0Y2M2NGM0YzQ5NWFlNmY1OWRmYmQ2MmEwYjdiMDJiZTllMjMxNGM3ZmNjMjdhYjMyMWFmODdiZWU2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAxZWFkOTM2YTIyODFkNTNkY2MwNjRiN2UyYTJhYjBkNTNiOTJlZjNlZjdiMzRiNjY4NjczMDA3ODk1Yzg2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDA3OGZlOGJlMDg3NDYwOTE5ZDc5NjIzNDE1YmZlOTkwNjI2OGJkNDBjZGY5ZDk4ZWI4MzQxNWM5YWQxNDk3MyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

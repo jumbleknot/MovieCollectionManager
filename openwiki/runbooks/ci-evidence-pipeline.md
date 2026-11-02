@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-3c099d9af7cba6b30d6eaf07
     resource: repo://.gitattributes
   - id: openwiki-source-c3e333457ea705ec015d1cbd
@@ -23,6 +25,8 @@ sources:
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
   - id: openwiki-source-900e4fa48a3671f4d583c11d
     resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-c87b16f17fb0c4f5c8105cae
     resource: repo://scripts/__tests__/check-ci-digest-coverage.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328

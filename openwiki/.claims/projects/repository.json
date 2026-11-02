@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:41c9098a53a8697fc66829500da7d3c6d570cd520ded149531c8267e7b29de09",
+  "pageVersion": "sha256:10647fb6505e0d06e246e065b7fecd7d25d8aafd2748bd1fce881ba2b1c90b63",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -108,15 +108,19 @@
     },
     {
       "id": "claim_92efebf75d9f4acfa0e4cd8f1644977d",
-      "statement": "A PR's head must be a real branch (`git push origin HEAD:<branch>`), not an AGit push (`HEAD:refs/for/main`). An AGit push yields a `refs/pull/N/head` head that Forgejo runs with NO Actions secrets — every `${{ secrets.* }}` is empty. This cost two sessions on issue #126.",
+      "statement": "A PR opened with an AGit push (`HEAD:refs/for/main`) has no backing branch — its `head.ref` is `refs/pull/N/head` — and Forgejo treats a non-branch head as untrusted, running it with every `${{ secrets.* }}` arriving as the empty string. The failure never mentions secrets: the empty `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` makes nx report `Misconfigured remote cache endpoint`, which reads as a cache or credential fault while jobs that never touch the nx cache pass. Measured 2026-08-01 on PR #126, this cost two sessions most of a day; the tell is the secret's length inside the job (`0`, sha256 `e3b0c44298fc`) versus `64` on a branch-backed PR, and the same commits reopened from a real branch (#129) passed first try. A PR's head must therefore be a real branch (`git push origin HEAD:<branch>`).",
       "evidence": [
         {
           "resource": "repo://CLAUDE.md#L8-L8",
           "version": "repo-lines-v1:sha256:67f97dd647965610c9495cf40f2271575e1b4f95287528ecf4d4a59142764001:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWExOGVkY2IyNjNkYTI5ZWZhMDkwOWY4MTdlNDY3MGRlZTU0YmM1NWNiMGExODVmOWM5OWU2YjE4MzA5Y2U0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxMTNkZGVmZDRkMmIyYmYzNDg4OWM1ZDBlZWVlZGU1Mzc2MzAzZWM2ZDZjMzg5MGU1MjViZTg5NzFmNTM0OSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1-L16",
-          "version": "repo-lines-v1:sha256:eef041abc54fd0632ab73a5265310803d82c913bc8e227fc5cfaf08b2eaae194:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MzFjZjE3MTBjZmQ2OWYzYjg0NTYzNmUzNWRhMmZiZjU0MWRiNTM0YjA3M2VkYTYzOTJhOTY4MTI1OGFhNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MjJhMGFjNDk2ZTZhNzlmMDljNmM0NjY0NGI5ZjE1MjU0NWJjMDY4ODFhMWNlNWJiMTcwNjA0OTg4Y2RkZWEifQ"
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1010-L1033",
+          "version": "repo-lines-v1:sha256:61b72f8ae438fac72766483a3659a71242604e31696f82fe05b9f49fdba47e80:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YmNmZTFlZDRjMWRiNTY0OTljZWE1NGQxYzBhNzVmNTcwNjc2MTMzNTdlNDEwOTRiYjMwN2FlYTUxYjQyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMDM1Nzk1ZGU5MTM5OTAxMjc4NWUyYjllYmRiMzhmOTQ5ZmYyZDZmYTNjNjZmZmVkZmZkYjYwNWVlZjA4NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFiNTc2MzhhNmUyY2M2YmU4NGRlNTQ1NzQxZGExMTU5ODU0YWNjMDBmM2U5YjAyOGZjNzZhNDM4OWM5NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzOTI3OTAxNWRmZDExNzFhYzUxOTVkZjdkMjYxYTQxODQyNGFjNzYxMDI2Y2NhN2JmMWYyZTNiOGI4N2QwMzYifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1082-L1094",
+          "version": "repo-lines-v1:sha256:c92c2821627bf2e32ee8002023acf6e249d7ea8f6e91951a0b91f1a801ab5f01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZDFiOTIyNmNkMGYyNTcyMjQxNDlhYWE5NDg1ODkzZGUxMjJmN2RjOWRlZDRjYzk3YjdhZDA5ZmUwYWJkOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0OWZkYTgwZjhhYmVlZjk5ZTlkN2Y0ZDM0Mzg1ZDg2ZTJhMGViOWEzMzJiZGNhOTEzMDBjNGE5MGRjYWE3NjQifQ"
         }
       ]
     },
@@ -567,7 +571,7 @@
           "version": "repo-lines-v1:sha256:0ca6ac61c780e51255e2010ce77b3e1b9f326ca874d8b053b804eadc161c6554:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGZlZmRmNDI5ZDA4OTc5MzRmMzA2ZTJiYWIzOWQxYjZiZTI3Y2FhMzZmODM0YWIzYWFkNmMzZWNlOTk3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNzA2Njg4ZDFlN2VmMjk5NDEzZWJiMmY0YTU2MzY1NGZkNWRlNjk1OGEzNjBlNzAyNmVhNmEzMDUyMGY0OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOWQ1MDk0Mjc5NjM1MDZiNmYyMmVkNjdiYzYwZWQxMDI0YTU3NjY1ZTc2ZTM2MGZkNTUxOGM3ZDBmNGM1ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDAyNGQ5MDc1YjQzOGNmYjljZDU3MDcyNjBiM2IxMTY2ZmNmYmVmMWE3YzcyY2ZiZjUxNzlhNThlZTgzYjQifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L979-L988",
+          "resource": "repo://docs/runbooks/renovate.md#L993-L1002",
           "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
         },
         {
@@ -665,7 +669,7 @@
       "statement": "Feature 081 takes every major dependency the bot proposes to a decided end state — upgraded, or held with a measured reason and a re-check rule — one stage per pull request in a fixed order. Majors that cannot land are stopped in `renovate.json` rather than left to propose weekly: keyed security overrides in `pnpm-workspace.yaml` have `major` updates disabled because the npm manager reads the override value as a direct range and would widen its cap to the newest major, and each SDK- or lint-pinned held toolchain major gets its own group behind a `dependencyDashboardApproval` tick, since renovate@44 sets a branch's approval flag from `upgrades.some(...)` and one tick would otherwise release every held js major at once.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L840-L862",
+          "resource": "repo://docs/runbooks/renovate.md#L842-L864",
           "version": "repo-lines-v1:sha256:74eeb7d5d84230360c2ae4fe77db6a965c25fc2f74cb49b5012954dc87fdc23a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODQxMDk0ZGMzZDRjN2UyMTEyYjBlMzQwOTc0ZGMwYTlhOTI3OTgyMzEwYzVmZmZjMjIyN2Q3MmZhYzk4OWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjMwY2Q2YzE1NzIzMWMwMDNmMzFjY2QwNzE4ZjQzYmRmOGYyODJkZTUyYTZlNWJlOTM1YzdmZmRmZDlkZGEifQ"
         },
         {
@@ -743,7 +747,7 @@
           "version": "repo-lines-v1:sha256:e83dfb5c7260364ed7ef1ed22b24ff2601c039fa17b0817bb9a475a3e0fd9813:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZjExYjI0ZmNkNjdhMTYzNTc2MDI3NGY2MmJlMzA0OTNlNWQ4NDJiNzIzYzVlYWMwMzVjNzYyYmViOTQ4MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2Y2Q0MDI2ZmUwZmZmZGU3ZjJkNTAyOTliMWFhOGQ5ZTc2ZDRlM2MwZTNjNGM3OWNhYzc1MjZlNTliYjFhOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhODdhODA4NjlmNzczM2MxOTQ4MzA2MTJiOWM1Y2Y5OGYyNmNkNGQ1NDc0Y2Q5ZDA0Yzc0NGQ5ZDdhNTQ3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNjY2ODI0NWQyYjc2NTA0MzE0YmRjMTIyNDMxYWYyZGJjNWVkNjkzMmY2YmRkOWY5ZmJiMzBhYmI2MzE1MGUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/renovate.md#L979-L988",
+          "resource": "repo://docs/runbooks/renovate.md#L993-L1002",
           "version": "repo-lines-v1:sha256:a49b3295d00d310c4faac55c97872b096fdc51d14c9646cc219ba63eb524275b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE3YmI5NzIxMTk0NDJjYTI2OWJkYWQ1Y2QwZmY1ODVhZjU5NGNlOThhNzUxNjViMWFmNzlmNDNlNTc5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NjgzMGYwNDEzYWNlYzRlODhiMWY0OTU0N2FjY2NkZDBkZjk4MjRkNmYwZWRlZDRlMmZhZDk5OWNhYzdkNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNmVkYjQ5ZWI3YjIwNDk1NDk4YmM0ZDI0MjEwNDExMTMzMzliNTI4NjM2NTg0MDM5NjY0ZDI5ZmFhODg3YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYjk3NTFiZWFjNjE3NjZiZmRmYzg3MzJkZWE0MjFkZGI2YTg5MjU1NGMxNGNmZThhZDIyNTM0OGRiMzVjMTEifQ"
         },
         {
@@ -755,10 +759,38 @@
           "version": "repo-lines-v1:sha256:710a798a647ea76e201febd6d08e12ab0d2142d7317655c8591715cdff76f9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYjc1ZjhiNzFhNTE1MzVjZDAwNTlkNDUzNDhhNWJiMGM1NmFiMDE0ZTJjODViNTBhNzdlM2Y2ZDZlMmJmYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTMxZmU5OGJjNDFiYzllOTBjMjQ2YWIyZDQ4NDdjYzBhZmJmNGViZTQyYTQzY2NlYTVjNjczYzY0NGFjN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NGJiYTA0NzIwYTNhZDk5ZmYzY2E4Nzg3YzEwM2UwMmE4OWUzNmM5YjkwMmI2YTdlZmQyZjRjZTUxNTI1ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhMjk0OThiYzRhYTNjY2Y1ZTYzNTc4ZjlhMzA2MzkxNzViYWZiMmIwOGZlN2I5YzcxZGQ2ZDFlNDljYzU0ZGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5a012b0c1ffc4c819bc4a900922a45c1",
+      "statement": "Opening a PR from a session requires two different credentials with different capabilities: the `POST /pulls` call must use the `git credential fill` credential (write-capable at repository scope, and forwarded non-interactively inside the dev container by VS Code's Dev Containers credential-helper proxy), while `MCM_FORGE_TOKEN` is the read token and answers `403 token does not have at least one of required scope(s): [write:repository]`. In a bare `devcontainer exec` session with no VS Code attached, `git credential fill` returns nothing and the documented fallback is to push the branch and open the PR in the web UI — never to fall back to AGit.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L8-L8",
+          "version": "repo-lines-v1:sha256:67f97dd647965610c9495cf40f2271575e1b4f95287528ecf4d4a59142764001:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWExOGVkY2IyNjNkYTI5ZWZhMDkwOWY4MTdlNDY3MGRlZTU0YmM1NWNiMGExODVmOWM5OWU2YjE4MzA5Y2U0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxMTNkZGVmZDRkMmIyYmYzNDg4OWM1ZDBlZWVlZGU1Mzc2MzAzZWM2ZDZjMzg5MGU1MjViZTg5NzFmNTM0OSJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1035-L1066",
+          "version": "repo-lines-v1:sha256:729ea70d02eca019851d239843c03072e5693bb786ca2a795a7a0e7438d99d12:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NzQxN2U3NDgyNTAwZTc2YzAxODVlNTM4NjkzYjkzNGFiN2ZmNTVkODk5YmY4NmEzOGMzMzczM2FlNjJkMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZWRkYTk3MzhkMzZmMzVmNTEyNGQyZWIyZjU0ODk2MWY5NDBlZjljNjFkYWNkODc5NjA5ZjIxMWUwZDNiMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5MDZjNjc4MzdiNzc5MDZiNTgzZWU0N2FiMzhkYmFlZGUyZTU4OGFkYmZkM2EwM2I5Yzk0YTZjMzM1OTQ5YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDU0OTQ4MDJlZjQyMGMwNTc0YjY5MjVkMDBiYmRjZTg4MmM2OTMxNGRmZTg3ZjhiNzU2OTgwZDEyOGVjOWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9fca9e0045c84cf6a3629af70049332c",
+      "statement": "Because a detached head is invisible in the web UI, which shows a normal-looking PR, `scripts/ci-status.mjs` prints a DETACHED HEAD warning that names the `refs/pull/N/head` head and states that runs from a non-branch head get no Actions secrets. The warning is suppressed for a PR whose state is not `open`, because a closed or merged PR reports `refs/pull/N/head` once its branch is deleted — routine tidy-up, not a detached PR.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1032-L1033",
+          "version": "repo-lines-v1:sha256:54990c6da1f6675134e9a3dd5cf3a1d9b9c15a8d964e2d435d91dffda08db288:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY1ZmYxMGFkMDYwZTlmMTRkMWIzMTY5M2Q0Y2M2M2M5MGRkZWQwZDgxMjEzYzI1NWEyYTBhMjJkZWZkN2ZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQwMzU3OTVkZTkxMzk5MDEyNzg1ZTJiOWViZGIzOGY5NDlmZjJkNmZhM2M2NmZmZWRmZmRiNjA1ZWVmMDg0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlkNzc3MDIxOWFkNzBmODJjMTRkZjE5ZWY3N2JkYTBkYWNjNjdlMmZlZGE1ZTU1NGI1MTdlYWQzZWUwMGJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM5Mjc5MDE1ZGZkMTE3MWFjNTE5NWRmN2QyNjFhNDE4NDI0YWM3NjEwMjZjY2E3YmYxZjJlM2I4Yjg3ZDAzNiJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1096-L1114",
+          "version": "repo-lines-v1:sha256:684d39a3d9551b6f434cc7d6051d823aecafae1b24995f49e6989364397614b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYTcxMWRiNDNiYzdlZWIxZTAyNmQ0NjViYTUwYTczNjE3NDFlNWJjNmE4YmE5MTRiNGNiNDE1MTljZjg5NGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkYjQyNzA4NGExZmI0M2Q3NTY0ZjU2ZDNhMmFhYWI5YzhjYjk1MjA4OTQ5YjljMTQ1ZWZiMGI2N2RhZmZjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkODhhZjhkNmM1MDllNGIxMmMzZjA4OGYwNTAzYTRhZTg3NGNhNDgwMmJlZGNjZjM3ODU3N2QyNjM2MzM5M2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T00:28:11.002Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

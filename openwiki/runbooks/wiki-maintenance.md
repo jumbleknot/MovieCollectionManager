@@ -73,10 +73,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 
@@ -388,7 +388,7 @@ flowchart TD
     C -->|"no - anything else"| F["Whole invocation failed, exit 1 - every page returns"]
     C -->|yes| D{"Every written path permitted by policy.yaml?"}
     D -->|no| F
-    D -->|yes| M{"Governance gate still passes, G0 to G12?"}
+    D -->|yes| M{"Governance gate still passes, G0 to G13?"}
     M -->|"no - a page lost its resource (run 6049)"| F
     M -->|yes| E{"A requested page left stale?"}
     E -->|"yes - its source commit is newer than its stamp"| P
@@ -755,7 +755,7 @@ The figures in the example are illustrative.
   than failing one page), a written path was not permitted by
   `openwiki/policy.yaml` — which includes a write into `docs/runbooks/`, a path that *is* `regenerate`
   but is governed by an **agent**, not the generator — the bundle broke openwiki **governance**
-  (`check-openwiki-governance.mjs`, rules G0–G12 — see the governance gotcha below) — or a
+  (`check-openwiki-governance.mjs`, rules G0–G13 — see the governance gotcha below) — or a
   **requested page was left stale** (items #587, #616):
   a requested page that cites a `resource` whose last **commit**
   is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
@@ -1104,16 +1104,22 @@ The figures in the example are illustrative.
   version hash of that source). On a later refresh a claim is marked `stale` when its evidence's
   version no longer matches, or `unresolved` when the evidence cannot be resolved, and the generator
   must confirm, revise, or retract it — the rules a page like this one is itself following.
-  `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
-  `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` touches Claims in three
+  `openwiki/policy.yaml` declares `openwiki/.claims/**` and `openwiki/.page-manifest.json` as their own
+  entries (`regenerate`, `actor: generator`) rather than leaving them to the `openwiki/**` catch-all, so
+  their scope is stated rather than inherited. `okf-lint` touches Claims in three
   places: V5 validates the ISO-8601 shape of the page's `verified.at` events, which OpenWiki writes as
   a **list** (via `stampValues` in `scripts/openwiki-stamp.mjs`); V12 counts the newest `verified.at`
   as a candidate stamp; and **V16 reads the sidecars themselves** — see the durability contract below.
   The operator decided on 2026-09-27 that
   Claims are required and valuable (item #513), and the decision's details, plus any gates or lifecycle
-  rules that follow from it, are recorded under that item. **Nothing yet checks that a sidecar's claims
-  are *true*:** the only gate on sidecars is V16's durability check, so a sidecar records what the
-  generator asserted about a page, not reviewed content.
+  rules that follow from it, are recorded under that item. Claims and the fingerprints in
+  `openwiki/protected.yaml` are complements with **disjoint scopes**: a Claim certifies a
+  generator-written fact on a derived page, a fingerprint freezes prose on an authoritative page, and
+  the governance gate's **G13** (`claimsScopeFindings`, the same `scripts/openwiki-claims.mjs` module)
+  fails a break of that — an authoritative page carrying a sidecar or manifest entry, a sidecar whose
+  page does not exist, or a page carrying a front-matter `verified:` event with no sidecar. **Nothing
+  yet checks that a sidecar's claims are *true*:** the only gate on sidecars is V16's durability check,
+  so a sidecar records what the generator asserted about a page, not reviewed content.
 - **A churn citation is a recurring bill, and `.openwikiignore` is how a path is retired from citation
   (item #739).** Every `repo://` citation is re-resolved before every run, so a citation of a file that
   routine commits rewrite forces its page into that run as a mandatory reconciliation — a full paid
@@ -1159,7 +1165,7 @@ run — exactly when it matters:
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
 pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
-pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G13
 node --test scripts/__tests__/wiki-maintain*.test.mjs
 node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
 ```

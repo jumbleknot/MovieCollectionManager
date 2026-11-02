@@ -23,6 +23,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts
   - id: openwiki-source-7f78c834443744c0dcf8d134
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts
+  - id: openwiki-source-a5bf09947adc24a8d59ab587
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055

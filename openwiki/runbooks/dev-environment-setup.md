@@ -7,6 +7,25 @@ tags: [setup, toolchain, host, runbook]
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-01T13:34:04.956Z
+sources:
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
+  - id: openwiki-source-36295b95c290f53e6f6e79a7
+    resource: repo://.forgejo/workflows/wiki-maintain.yml
+  - id: openwiki-source-8cb0da307c90adb4287997a5
+    resource: repo://docs/runbooks/dev-environment-setup.md
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+  - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
+    resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-c8029c93bdccd81963968b22
+    resource: repo://tools/openwiki-generator/package.json
+  - id: openwiki-source-012d67e0a1df20ece216c0d0
+    resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
 ---
 
 # Developer environment setup (host toolchain)

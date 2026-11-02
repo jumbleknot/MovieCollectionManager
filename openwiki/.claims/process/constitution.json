@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1bc0e681ce5e7994978c001e477fc619495db1c67a65c9f8e9def11e8b53c25d",
+  "pageVersion": "sha256:a24f191c5c90364e87d149f080cf7eba04f4e8ecbf3199d680a190ad858c0adb",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
+          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
         }
       ]
     },
@@ -283,10 +283,36 @@
           "version": "repo-file-v1:sha256:4314b3977e85f5fd0a9ab9fcfd70d31e6f7f69b460d791bdcd1eecec1ce5809d"
         }
       ]
+    },
+    {
+      "id": "claim_7f0f4ec18bc44a509ec5155199664b4b",
+      "statement": "The constitution names the document-database image by *tag* (`mongodb/mongodb-community-server:9.0-ubi9`), while the compose files pin that tag to a digest that is re-resolved whenever upstream rebuilds the image: the production cutover ran `sha256:2cb58a8d…` and the current pin is `sha256:3d40c6fa…`, both the same mongod 9.0.4. A digest refresh inside the named tag is ordinary image maintenance and requires no amendment; only a change to the named tag does.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L255-L255",
+          "version": "repo-lines-v1:sha256:81254be171d2da9466cb8a28ea6462b25806888fce9501aa6cdc435455931df3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyNTRiZTE3MWQyZGE5NDY2Y2I4YTI4ZWE2NDYyYjI1ODA2ODg4ZmNlOTUwMWFhNmNkYzQzNTQ1NTkzMWRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyNTRiZTE3MWQyZGE5NDY2Y2I4YTI4ZWE2NDYyYjI1ODA2ODg4ZmNlOTUwMWFhNmNkYzQzNTQ1NTkzMWRmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NjMjMwYzdmYjhiNDA5MGQ0YzFiMTM3MWVjODVlYzVkZjE4NTlmOTQ3N2YzN2ZkMGNhNGU0OTlkNjI4NWVhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRkYzE5NTI3ODE0MWNlNjQyMGRmMzdjZTJjM2RhYmYxZjNiYjViMDNkMTFlODg0NmJmN2IyYjQxMzJhNmIwNCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L355-L358",
+          "version": "repo-lines-v1:sha256:722512a1d362cd7280166f43ac7a91ec6b3f01a0385b6a75104e0537e3337cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDMxMTJlZWFlN2E3OTE0MTI5OTQxNGQ3MTEzNTJiNTUxYjNmYjJiOWVjZDY5ZTEyMzcyZGY1ZDk1ZDJmNjFiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWJiOWIzMzVkNzRlNjgxY2RlY2E3ZWVkZmM3NTE1YzkwZmY3ODdmMmQxYjYyOGEzZjcyMGI3NzdiOWQ2NGVkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTc4NjRmMTY2Y2QyMWJjZDJlMzg2ZjZiN2E4MGJmYmNjNjM3OGE1NjVhYTliMGY1N2M1MTgxZjRlYmUzMjY5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWJhZmU1NWMyZTA3ZTM2NzY1MWNhYTgzMmQyZGJmMGNhNmJkMGM4ZDFkYTk2YWIyYjdiNTJmMzg0ZjAwYTAyNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L133-L133",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkZDExOGQ5ODJjYTE3ZTBmMTk4ZjE4ZWM2NzI1OGRiYWNiYzg2YjIxNTAzM2Q5NzI5ZGM5OWM0ZDFjMjgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQzMjc2ZDgyMmFjYTdlZTA2NDY0YjJjYmIzOTA3ZWIzMGVjOWI2MWNlMzI4M2NmZGQyZDA2MTQxNzc0NDgzYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L5-L5",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWEwMDRkM2EwYjE3NTFlY2RmYWFjZjJmNDczZTQzZWMwNGFiZGFmNDZjNDU1Y2ZmZGY3ZGNjZjU2OWYzNDk2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDljOGIzZjcyMzFlY2ZlNjIwZGNlN2JlZGM0ZTMyZDYxZGFhZjFjYWZhOTcwMWIzNTk4YTZiYWM3Y2FmZDk4ZCJ9"
+        },
+        {
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L478-L481",
+          "version": "repo-lines-v1:sha256:168829a9666e8b4aa28fed399c493729076fc73a580087f25adf8701d58b48a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM2ZWI4NzE4M2Y5YzBlM2UwNTQ1ODdmOTkxYzdiMzE5NjIxNzZhNTM1YzgzYmJjNDAxYjRjMWY4YzE0M2QwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNmYjg0ZmJhYTg5YjNmNzQzZDI3MTkyZDdhZjhiYzFjZWNlOWEzZGZiNjQ2NTdjZWI5MzQ0NWIxMDA5OWJlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTljOTU0ZWIwNzEzODUxODMxZjQwNDZjNThkNTc3Mjg4YWFiZGYyOTA5OTk4OWNkNTZjYWRlOGYxZmU0MjU4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJmN2NiMzcwOWQ4ZjdlNGQ0YjNjMzdkZDA5YTFkNTY4ZTIwNjU3YTg0YzI0YmRlZTBhOTlmMjgzNWFlNjVlNSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T13:33:13.758Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

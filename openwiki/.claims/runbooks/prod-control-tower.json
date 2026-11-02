@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2c55266c6aa9c4538c74de6cbb8f184a480681923e677dab52460b0b2a63d136",
+  "pageVersion": "sha256:c86cb046056f751991d8335b04a05440f717fe71e7a4505cc671d71ef112cbc1",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -552,7 +552,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:6c65d1dcdddfc05e77afe9e22aa015dd1a221bb4daf1a712f5b652e2659d2c65"
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         },
         {
           "resource": "repo://renovate.json",
@@ -588,7 +588,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
+          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
         }
       ]
     },
@@ -602,7 +602,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
+          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
         }
       ]
     },
@@ -620,7 +620,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:442c5b910bad97157b833ad823167dcebbe3a63b8c840e21815f672dffa238a7"
+          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
         }
       ]
     },
@@ -661,7 +661,7 @@
           "version": "repo-lines-v1:sha256:929e7c630588f886bef8367ecee96e4cc66116a94827f9f15d760ff4e8620994:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3OTY2YTcxZTY0MmNlZmQ2YzY1NDRkODA5MWU3MTQ0MDk2ZmEzNTk2MjI5NTUyZTgxYjIyY2Q3OTYwMjk5ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMDVlNDU1NWVlMzA5YTY0MzYzZWM1MGJiZjAwOWE2NjRmMTFhZDhjODU0MjBjODhiMDMzNDA4ZDliNDUzN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyOTU0YzUyOGVkM2ZlYmY5MjE5ODQ4Yjg0ZTM3ZGVkN2EwYTE0M2QyMGE4OWNiZGI0NmY3ZDQwZjFjNzE0MmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDhhYjU0NzM2NmY3Y2UwYjQ1NDgwNzQzNzA5NGRiN2EzOWEzMWMxNTgwMmE5MWEyM2JjMTgyZGQzNmI3Y2UifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L589-L601",
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L602-L614",
           "version": "repo-lines-v1:sha256:7148614761f309f01ac4d521f4efda45eb274a7ea1c8604e95cdb0e125aacbd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NzE5OGFmODFhZDlmMzFiOWQ0ZmU4Y2I0YTk5MzRmNTFhMDY4NDczOWFlMmY0NmU0NDkyZjdlY2FiY2FmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzN2IwMTg0NjM0N2Q3NDFmMmU2NjI2MGUzYzYwODNmYzZiNmUxOTdiZGI0OWU3MWUzNzMzZjZlZDg0ZjM2MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NmM3OGI0YWJiOGI4N2RmMDgxMWZiM2ViODU1MTE3ZDhlZGQ1ZGM2NTQ4NGZkMmI5MGNmOTIzM2M3ZjczZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
@@ -675,7 +675,7 @@
           "version": "repo-lines-v1:sha256:8c4d71edccdd6876ce56d8df56b91407ace94d857483ee901d8610c3c84ad67b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTIwZjllNmQ3OTQwNmVmMTY4NGJjNzE2ZDQxNDQzNTg0NzJlNjFjNDQ0ZTk0ZTRlODZjZDQ5ODU0NTU0YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwODZhYTM3ZGQ3MDg0MDU3ZTNlZDk3N2FhYjhmNGEzM2UyNDg1MGJkYzMzNjA0NjZjNTg4ZGI4OGM2NzhjODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMzFkZDYzYTdmYWM2MWZlOGM4OTE1YmUxODI5ZmQ1ZjhhY2Q2ZGIwMTlhZjY1MjY5YTY4N2NjOTQ4NTMyNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0NjliNGMxMWQ3ODY0MjRiMzgyZWM3YWRiMzk0YjBhZjYxZTUyYTQwN2I1OWUxOTY2N2FmNzM5NDQ2NTY5NTYifQ"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L556-L573",
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L569-L586",
           "version": "repo-lines-v1:sha256:41e29e0b1ad83315b28e51be92bb246ea62379f4e43cc45e6944b46d61c81788:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0Y2NhM2E1M2Q5NGIxMTMwYTAwMWM2Yjc1ZDY3MDJmMzU1OTM4MzA4NWM1Zjk5ZDQ1OTc4N2Q4MzA0YWI1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MmM4M2Q4MzNmYjAzYTczODdlZGQwODhjYTYyNDM4YWVhNWJiZDdiMzU2MmE3MDI4MDg4MmU1MGY3MmU0YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyZmZhZWI0NGQ1MmMzZTkzMmE4MTVkYWRkMDkzNTZjNDNkYjllOThkNmY2NDIxMDAwOWRmMTM4MmZiZGVlODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMDBjODkxNjVkNTI2N2NlN2FmYTlmZmYyYjNiOGVhNmQwOGUxOWQ2ZTdjY2RjNWQyYjQwNWYyNTM2YjQ2OTkifQ"
         }
       ]
@@ -689,7 +689,7 @@
           "version": "repo-lines-v1:sha256:5c0904b9d179c40eb00d7747a8f57406f12ed1216bb6c856ed471d2b379c3a54:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRiYTQ1NDQ2ZGQ0NDAwMDc1ZjI5ZTZjMmE1MDg1NTRiN2I1NGJjMmUzMzRjNGI2YWFhMjdjZmMyYmE1MTg0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcwNzE2ZmVhY2Y0N2I2NzE1YzQxNjlkZGYyNDgyOTkwMGMyMDAyNThhOGZiOWIwNDFiNTEzYTViZWQwYzMzMSJ9"
         },
         {
-          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L574-L588",
+          "resource": "repo://specs/081-major-dependency-upgrades/tasks.md#L587-L601",
           "version": "repo-lines-v1:sha256:dc0140a021de288a1dba62cee9f7baf44ca30fd9c8a367d2bfd6f738bfd15a59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNzljZTU2ZjdiODc3OTJkMWY0OThkMjI3NDI4ODdlZDE2Nzg2N2UyNDAxM2U3YWU4MTBkNWI2MmEzZDdjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NzViNjdlODA5OWEzZTVjMDQ2YWY3MDU1ZWVhZDg3YjgwZTc3ZGI2MzJjNGZmOTY0NmJlNTkzZjhmNmZlOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YzA2NGVjYTRjNmU5OTk0MzMwNTkxY2YxYzMzODc5MGVhOTExNmZlYWRjYmUyYzQ1NmQ4OWQyOWFjN2Y5OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNGQ0ZmY4MTg0ODZhYzg0NDMxNGVjMGI0YzExMzgwMDM1MDU1ZGVmMDExN2M2NWUzYWM5NmJiNDE2ZWI2YzIifQ"
         }
       ]
@@ -779,10 +779,28 @@
           "version": "repo-lines-v1:sha256:7997c164a66d5f55941bbc86bcb2adf6dd25112d544e29c04859f0c5557ed742:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmNzg2ZjQwNDNjNmRlNzcxMjVhMGU2MDY0NDAwZTAwN2EyZjVhYzA2NDBlNmM5ZjRkOWFjZWY0NmYyOGQ5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA4NmFhMzdkZDcwODQwNTdlM2VkOTc3YWFiOGY0YTMzZTI0ODUwYmRjMzM2MDQ2NmM1ODhkYjg4YzY3OGM4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0NDMwMWRiYTAwMWVkZDE1YTI2OTBhMzkwMGZiYjc2OGM0YTUyYjFkYWVjZTIzN2U2YjkwOWNjYjAyNmM5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ2OWI0YzExZDc4NjQyNGIzODJlYzdhZGIzOTRiMGFmNjFlNTJhNDA3YjU5ZTE5NjY3YWY3Mzk0NDY1Njk1NiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_974c08d5ca384a66aa750674af19bfa0",
+      "statement": "One paragraph of docs/runbooks/renovate.md still trails the spec-081 US8b discharge: its \"A database MAJOR waits in Pending Approval\" section describes the observability postgres as held below 17 outright and therefore never reaching the approval list, which was true only before US8b moved the shared Langfuse/Unleash pin to 18 and lifted the ceiling. The current reading lives in renovate.json's stateful-datastore rule (postgres among the database images that require dependencyDashboardApproval on a major) and in renovate-workflow.guard.test.mjs, not in that runbook line — so the page flags the trailing sentence rather than relying on it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L154-L161",
+          "version": "repo-lines-v1:sha256:90d4dc8bb996386f3297fdb2f14378be9fd4637bc51bdd535ab32d02b3ad7844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YmM5OGY5NmI2YWFkOGFiNzMyMzM2Y2Q2YjBhYmEwODI3ODJkYjJhYjUwNzM2YzdhZWM3MTI0YTdkMDU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiYjkyODhkYzdhYzljYWRiNmU2M2VjOGUyNDc5ZDYxMTY1OTJkZDE4NjFiN2RjZGExYzFiMzAyNDNmODkxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQwODcyYjhjNTUwNjc5NWI5ZGMxZjEyYzhhMjdmMmI5NTQ2YzliMThhMzNhNTE0Njk3ZjYwMTA4MWZjOTRjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk1NGQ2YzA1NTUxNmU5ZjFiM2JmZDkzZmY0MzkzOTQ3NjBhYzNjZDExOGZlMTMxZjU5ZDMzZGM0MmZlZmZiZSJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L1155-L1178",
+          "version": "repo-lines-v1:sha256:8fc0668dda83119d600c489d2a9d6db47e03951652783c658b061d53a8578c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3228-L3262",
+          "version": "repo-lines-v1:sha256:a4aaeeb273fc8b616bba224d9354ed8c1a7d60495691a19fafeae597ed2d97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjA2NTY1ZmI3MTY2Yjg1NjVmMzU4MGMwMTgwZWY3YmNlNTJiZTBlYjI1MGM5NTViY2JjNTBkZDNlODk4ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmE5ZjUyZWEwN2JjYzJkYzIxYjhkYjdhMzgzOTBjOTZkNDUzZTZhODZmZTdlMmFmM2Q3MzcxMTdkY2Q3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

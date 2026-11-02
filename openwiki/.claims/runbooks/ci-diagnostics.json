@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:069d93ba101592a28c77a62aeb1f4f92fbaf72242c57748b98d3253b14528836",
+  "pageVersion": "sha256:3a93549cfbb080c285405cf62e5f0caba8b11ec8bb0508304ca5f97f64af5adc",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -138,7 +138,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -196,7 +196,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         }
       ]
     },
@@ -206,7 +206,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -220,7 +220,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -234,7 +234,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -252,7 +252,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -266,7 +266,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -280,7 +280,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -297,7 +297,7 @@
           "version": "repo-lines-v1:sha256:f84cd7f10063117d8738a044c0ab98ca201d8e7473ad9acfe898ef940535474d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MjFmYWQ4MjliNDkyZjZiYTkxMTJkYzU4ZDg5NTZmMmRhMDI1MGQ5ODg3NjNlNGJmMWU4ZGM2ZDdiNDJhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGFkNjRhNzc2N2YyNmFjNDRhMjcxNzgwN2E4NjAzYzQ5ZmQxZTAwMDE1MWZhYzgzYjk1OWE4MDBlYjAzNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L222-L227",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L228-L233",
           "version": "repo-lines-v1:sha256:6493ae54d0caf52b885f8797577111e4495e504b28f3842c839edda6f6bdd872:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI0MGRkNWU1YjE4MzRjMTIyODVjMTFkZDE2OWRjM2NmYjUyNmFhMjFmYzA5YzU3NTQ3NGExNGI4ZjBkMWE1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjczNTY3NmQ5NGVlOGMzODVmYTA2ZGY3YTkyZmE5ODVjNzM1MWE4NWY4MDJiNWYzZTU3Yzc0ZTJlMDFjMzA2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2RhYjIxZDg1OGQ3ZjU4ZThkY2VlNDVhYTVlNjJiOTEyNTgxMDhiZjRkMGE2ZWQzMDdhODIxMmIzZmMyZTkxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMyOGU5NTQ4MzQxNTIxMzY5ZDdlNmEwZTUxZmQxZmIxMTA2MjlkZjFkMjMyZjhhMzc4MTU3NzQyMDkxNDM3MiJ9"
         },
         {
@@ -316,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         }
       ]
     },
@@ -326,7 +326,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -344,7 +344,7 @@
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/reap-merged-branches.mjs",
@@ -358,7 +358,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         }
       ]
     },
@@ -368,7 +368,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -382,7 +382,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -522,7 +522,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-failure-digest.mjs",
@@ -536,7 +536,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         }
       ]
     },
@@ -546,7 +546,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         }
       ]
     },
@@ -584,7 +584,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/__tests__/ci-status.test.mjs",
@@ -606,7 +606,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json",
@@ -624,7 +624,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -642,7 +642,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
@@ -656,7 +656,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://scripts/__tests__/ci-status.test.mjs",
@@ -763,7 +763,7 @@
       "statement": "The residual after spec 084 US3 is real: a green PR can still meet a red deploy, because the vulnerability database moves between the PR's scan and the deploy's and because cd-deploy rebuilds the images (its `mcm-bff` bakes the public Keycloak host into the web bundle, though packages and base image are the same). That is why the job also runs on pushes to `main` so a database change reds before any dispatch, and why `scan-push` stays in place, unchanged in position, as the gate on what is actually pushed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L515-L521",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L521-L527",
           "version": "repo-lines-v1:sha256:3e937c4186c12af6fc0609f6461c50546b7d70e03557384a4160fbe530b3b7bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Y3MGFiOTA3MDBhZTYzMDMzNzE3YjA2MzUyZWFmYjMzZDBlYzQxYjdmMWQ4Mzg2NTFmZjg0YTQ2N2Y0NDlkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFlOTQyYjQ4YjhiYjVhMTUwMGE2ZTE4YzViMzBlMTc2NGI1ZGQ3NWRlODc1MTFjOWMzNDU0MjJkYjc0ODc4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgwMjE5MDBmMDI5OWNlZGE0NjExZTM1ZTVhYmEzODk4M2M5NjI1ZmNjYWRmNzFiNzUxZjNmNzZkMWY0ODQ4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzhlOGE3MzMxMDAwMWM0MTEwMzE5NzJmMjBhMWRiZDY5ODE5ZDRmZWJkODgyMGJkNWIxZmZiNmJlMDBhNWE2YyJ9"
         },
         {
@@ -777,7 +777,7 @@
       "statement": "An allowlist entry suppresses a finding in the PR scan and the deploy gate at once, because both read the same `security/infra-images/allowlist.yaml`; entries must be keyed to the image DIGEST (`^<image>:<tag>@sha256:<prefix>`) so that a rebuild is scanned unsuppressed, and an entry carries a justification, an author and usually an expiry after which it stops suppressing.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L511-L513",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L517-L519",
           "version": "repo-lines-v1:sha256:cdef04391132fd04b9fdd9270698f1d8b3e964c01eeb98d007020bd2f650a15b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAxMjg0MjhmMjkzZmFlZDIyMmJlMDE5Mzc2MTMyYzQ1MDg0MDk5OGY4N2UyYjQ4MGFmOGIyZmQ0YWI5MGJkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhODc1ZDRmZDUyZWNmNDQ3NWQ2MmYzZDY4MGVlNThiMzJkMWFhYWU2NjgzMzQyOTMzMmUzMDgzYWM5MTIyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzNhZGQ3ZTAxYzMyZDRmNjUzOGI5ZGQ4NTRjNzAxOTFmOTgxOTJkM2QwM2M1NTBkNDZmYmM5YWQ0NDU1ZjhhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU5NDBkNzZjNDc5Y2FjYjEyODE0NzdkNWUxNTA0MTkzZjU1MGVjMDA2ZWRiODA4NTM4OWY5YWMzZmEwMGNlMCJ9"
         },
         {
@@ -791,7 +791,7 @@
       "statement": "The fifth measured quirk of `GET /actions/runs` is that a queued run's `started` is the EPOCH, not `null`: a run with `status: waiting` reports `started: \"1970-01-01T00:00:00Z\"`, so the obvious narrowing filter (`select(.started > \"<recent>\")`) silently drops every queued run and reads exactly like `the push triggered nothing` (three runs created for one push were all invisible). Filter on `status` or `id` and read `started` only once the run has begun; a SORT by `Date.parse(started)` is safe because a queued run sorts oldest, but a FILTER on it is not.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L548-L565",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L554-L571",
           "version": "repo-lines-v1:sha256:b57aa007ce80953293f74955900c5a33420bdd24200e5b4610bd9d680ae18c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NjQzYTdkNGEwOWFiMGVlYTNmNDY5MjljOTg4NmM0ZDQwZWI1OWQ0NjZkMTUyMDFmZWIwODlkYTEwYTdmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYzhkNDg5MzFjYjdhMmYwOGYzMTYxMjYyNDc2YmNkODUzMTViMzM3Y2YwMTU2YTdlODA1NzVmMDQ3ZDU1NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NjQ5Yzg4ODUwMWRmY2RiOGE2OWVmY2FiZDdkZTQzMGYzY2JiMmE1OGQ4NjRlNjQyNjM2MGRjYjI0NjUzNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMTI4MmNlYzU4ZjUwNTFhY2IzMTNjNmI2ZDY2MzU5ZDA2MGYyZTA1MWFmNGI3NjViOTdiZTYwNjQ2MDhkZTAifQ"
         }
       ]
@@ -847,7 +847,7 @@
       "statement": "The separator-less self-posted context form (`infra-image-scan/weekly`, `renovate/mode`) is safe to post only because branch protection requires the SPACED glob (`infra-image-scan / infra-image-scan*`) and a context with no ` / ` cannot match it — which is also why the head, not the tail, owns the bundle; and because a bundle that appears absent is often merely mis-named, the package registry should be listed (`GET /api/v1/packages/{owner}?type=generic&q=ci-failures`) before concluding no bundle exists.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L567-L596",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L573-L602",
           "version": "repo-lines-v1:sha256:5fb59d6e49dd25249e0b7f772093679ebedf0c41f19d2c3e2f45eb4cc26b7182:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NmNiZjQ0YTdmOThlYWU3MDMzZjk3YzQwM2JkNjMzYTQxZjM3YjgwZTMwZTEwOWI0ZDllYjFhYjQyZDYxZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxZmEyYWM1ODE5M2VjYjljYzU5YjZiNTIzMzhiMzlkMzg3MDY1ZGIyMTVlMTY4ODcwYzZkMTUyMTJlNWRkMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MTQ2Nzg2YjQ5MDVhZGQwNzY5YzdhNWFmZDljOTEzNGU4ZmIyMjRmMTc4YTU4MDUzMzc4OGFkMTZjMTQ2MGIifQ"
         },
         {
@@ -862,7 +862,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -876,7 +876,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:c955f94d17d65cb9e41eafdc0e0646103181ca38f4c766984d16936f64b73dd6"
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -1109,10 +1109,24 @@
           "version": "repo-lines-v1:sha256:9e7616f2a99cfa5932f8584717849392a254c63295542d0cec067474bd2b373e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjOTAxMmY0N2M1NDM3ZDczYjM4MzBiNmUxNjFkOTdkZTc4YTIwM2Q5ZmIyMTMyNjdkMDJlOGE0NGQ5OGNlN2MifQ"
         }
       ]
+    },
+    {
+      "id": "claim_46a499204f8b4664bc5ddcd1fd817e7d",
+      "statement": "Workflows in this repository cannot use `actions/upload-artifact` v4 or later: this forge's runner refuses any server other than github.com before it uploads anything (`GHESNotSupportedError`), a fact measured four times and most recently on both runner labels on 2026-10-16 (spec 081 research T004), so the action stays on v3 under a Renovate `allowedVersions` ceiling (item #912) and a Forgejo release note claiming support does not lift it. This is one of the reasons CI pushes its evidence digest into a channel the forge API can read rather than to an artifact, since there is no log, artifact or per-run-jobs endpoint to fetch it from either.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/ci-diagnostics.md",
+          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-02T03:57:29.221Z"
   }
 }

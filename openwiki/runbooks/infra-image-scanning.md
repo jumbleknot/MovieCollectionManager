@@ -5,6 +5,8 @@ description: Trivy's keyless, twice-weekly sweep over the third-party server ima
 resource: docs/runbooks/infra-image-scanning.md
 tags: [security, cve, trivy, ci, runbook]
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-7bd434a17ed7c27916b1d2ae
@@ -13,8 +15,12 @@ sources:
     resource: repo://.forgejo/workflows/renovate.yml
   - id: openwiki-source-ea70eb6c045047448e446296
     resource: repo://.gitignore
+  - id: openwiki-source-f83bd1373e0f000fa5d548c0
+    resource: repo://docs/runbooks/ci-diagnostics.md
   - id: openwiki-source-7c76000f237dd683a4fb0536
     resource: repo://docs/runbooks/infra-image-scanning.md
+  - id: openwiki-source-23175e1d10427daa3344d3ec
+    resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-4042a47526d6016cff835628
@@ -29,6 +35,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/vault/compose.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-9569e077273f937a713aad61
     resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
@@ -45,10 +53,14 @@ sources:
     resource: repo://scripts/allowlist-expiry.mjs
   - id: openwiki-source-0af8f352da052e268e893ea2
     resource: repo://scripts/cd/promote-digest.sh
+  - id: openwiki-source-b86ccae465a7267495c319ec
+    resource: repo://scripts/cd/scan-app-image.sh
   - id: openwiki-source-fe6babf23c099d13c73c6b6f
     resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
     resource: repo://scripts/check-infra-image-findings.mjs
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
     resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
@@ -61,10 +73,10 @@ sources:
     resource: repo://security/infra-images/severity-map.yaml
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-30T00:25:37.413Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # Infra-image CVE scanning
@@ -225,6 +237,16 @@ findings readable.
   the per-image loop, the bare `trivy image --exit-code` form stays gone, and an unexpected exit code
   fails closed) and by `scripts/__tests__/app-image-scan.test.mjs`, whose drift guard fails if either
   caller starts scanning on its own.
+- **The PR-time scan fails closed on an unknown app diff — "could not evaluate" is not "nothing to
+  scan".** app-ci's `app-image-scan` reads `needs.changes.outputs.app` to decide whether there is
+  anything to scan, but only after checking `needs.changes.result`: if the `changes` job did not
+  succeed, whether the app images changed is *unknown*, and the job fails rather than taking the early
+  pass. The early pass is reserved for the measured case — the filter said no app path changed, so the
+  images are `main`'s, which the deploy gate already scanned. Past that decision the job verifies all
+  six run-scoped tags with `docker image inspect` *before* scanning anything and fails naming every
+  missing one, and each image then gets its own step under `always() && RUN_SCAN == 'true' &&
+  SCAN_READY == 'true'` so one failing scan does not stop the rest. Pinned by
+  `scripts/__tests__/app-image-scan.test.mjs`.
 - **A Trivy vulnerability-DB blip is bounded-retried, and the retry must not soften the gate.**
   Trivy fetches its DB over the network on every run and this scanner is fail-closed, so an upstream
   blip reds the required context — and recovery costs a full CI cycle, because `/rerun` and

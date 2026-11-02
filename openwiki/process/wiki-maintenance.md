@@ -11,10 +11,16 @@ sources:
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-36295b95c290f53e6f6e79a7
     resource: repo://.forgejo/workflows/wiki-maintain.yml
+  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
+    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
   - id: openwiki-source-c231cd090281b3129aaf6167
     resource: repo://docs/runbooks/wiki-maintenance.md
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-a50c3dca6e011b3f54f51815
+    resource: repo://scripts/__tests__/check-openwiki-governance.test.mjs
+  - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
+    resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-98792bbc9621de1ad3e22856
@@ -25,6 +31,10 @@ sources:
     resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-90247be1c59fce45745bd214
     resource: repo://scripts/openwiki-drift.mjs
+  - id: openwiki-source-31eafb88f9d0f880c0c66a49
+    resource: repo://scripts/openwiki-policy.mjs
+  - id: openwiki-source-de5cc40b364f5505ca211c27
+    resource: repo://scripts/wiki-claims-audit.mjs
   - id: openwiki-source-f7de3a4f5f1323dd23a0c681
     resource: repo://scripts/wiki-generate.mjs
   - id: openwiki-source-e3418ba4f663de6f0edbcde6
@@ -37,10 +47,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-15T01:57:21.062Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -65,7 +75,7 @@ infrastructure-as-code` is the paid execution path; at execution, consecutive sa
 *different* areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` (8)
 pages, because every invocation pays a fixed planning pass — the slice stays the unit of the backlog
 and of carry-forward. `pnpm nx okf-governance infrastructure-as-code` runs the second, newer gate
-(`scripts/check-openwiki-governance.mjs`, rules G1–G12, plus a fail-closed `G0` that treats a missing
+(`scripts/check-openwiki-governance.mjs`, rules G1–G13, plus a fail-closed `G0` that treats a missing
 or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` as a violation rather than a skip
 and then stops before checking any concept) over the regeneration policy, the protection fingerprints
 and the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`;
@@ -90,7 +100,7 @@ flowchart TD
     Verify --> Proposal["one long-lived proposal, human reviewed"]
     Verify --> Backlog["failed slice back to the committed backlog"]
     Proposal --> Lint["okf-lint, V1 to V16, fail closed"]
-    Lint --> Gov["okf-governance, G1 to G12, fail closed"]
+    Lint --> Gov["okf-governance, G1 to G13, fail closed"]
     Gov --> Review["human review, never auto-merged"]
 ```
 
@@ -195,8 +205,13 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   `scripts/openwiki-claims.mjs` and enforced by openwiki itself before it will start. Measured on
   2026-09-29: four hand-corrected pages on one proposal stopped maintenance until a follow-up
   recovered it. To correct a covered page by hand, **uncover** it in the same commit — drop its
-  manifest entry, its sidecar and its front-matter `verified:` event. The sidecar's own lifecycle is
-  the runbook's subject, not this page's.
+  manifest entry, its sidecar and its front-matter `verified:` event. Where V16 keeps a covered page's
+  bytes honest, the governance gate's G13 (item #513, ADR-0003) keeps coverage off the pages it must
+  never reach: Claims certify generator-written facts on **derived** pages, while an authoritative page
+  is protected by its `protected.yaml` fingerprints instead, so an authoritative page carrying a
+  sidecar or a manifest entry, a sidecar with no page, and a page carrying a `verified:` event with no
+  sidecar all fail — the first three from `claimsScopeFindings` in the same
+  `scripts/openwiki-claims.mjs`. The sidecar's own lifecycle is the runbook's subject, not this page's.
 - **The pinned generator's managed block must already be committed.** OpenWiki rewrites its
   `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block in `AGENTS.md` and `CLAUDE.md` on **every**
   run, and `openwiki/policy.yaml` lets only an `actor: agent` write `AGENTS.md`. If the committed block
