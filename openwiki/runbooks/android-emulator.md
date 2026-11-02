@@ -27,6 +27,8 @@ sources:
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-900e4fa48a3671f4d583c11d
     resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-2c4ab3ecf382cf5390cc484c
     resource: repo://scripts/__tests__/ci-log-step.test.mjs
   - id: openwiki-source-85895d0ff4bd77f9e7c359df
@@ -63,7 +65,8 @@ sources:
     resource: repo://scripts/mobile-flows.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+    at: 2026-11-02T10:14:55.121Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -376,14 +379,21 @@ through `adb reverse`.
 - **CI is the recommended APK build path, not the local Windows build.** A Linux CI runner has no
   Windows path-length wall, and both Forgejo builds use `APK_VARIANT=release` (JS embedded) — there is
   no CI debug/Metro-attached APK. In `app-e2e` the disk-free step is required, not cosmetic, and it has
-  **two halves**: `docker image prune -af` and, added 2026-10-03, `docker builder prune -f
-  --reserved-space 50GB`. `image prune` never touches the build cache, which had reached **375 GB
+  **three prunes**: `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h`,
+  `docker image prune -af`, and, added 2026-10-03, `docker builder prune -f --reserved-space 50GB`. The
+  first (item #915) sweeps only *stale* scan-image holds — stopped, labelled containers that pin the
+  run-scoped `app-scan/*` tags `app-image-scan` later consumes — so a cancelled run's images are
+  released while a run still waiting for its scan keeps them; it must run **before** the image prune,
+  because a bare tag has no container and `image prune -a` would delete it (PR #909 failed the scan on
+  exactly that, twice). `image prune` never touches the build cache, which had reached **375 GB
   (355 GB reclaimable) of a shared 914 GB disk** on the ci daemon; `--reserved-space` keeps the most
   recent 50 GB so warm layers still hit and rebuilds stay fast. Without the reclamation the native build
-  exhausts runner disk and dies mid-compile with no clean error. The `|| true` on both lines is
+  exhausts runner disk and dies mid-compile with no clean error. The `|| true` on those lines is
   deliberate — a prune that finds nothing must not fail the step — but it is **not a licence to be
   wrong**: `--reserved-space` was checked against the **docker 27.5.1** CLI the job's host-runner setup
-  installs, precisely so a bad flag could not become a silent no-op. Contrast `cd-deploy`'s `prod-apk`
+  installs, precisely so a bad flag could not become a silent no-op.
+  `scripts/__tests__/app-image-scan.test.mjs` pins the sweep ordering and the label/age filters at every
+  image-prune site (app-e2e, dast, `build-deploy`). Contrast `cd-deploy`'s `prod-apk`
   job, which builds an APK too but has no Docker CLI and no images, so its disk step **only reports**:
   it is named `Report disk space (nothing to reclaim — see item #457)`, says so in words, carries no
   `|| true` (a failing `df` fails the step) and exports its measurement as a commit status under

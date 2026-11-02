@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e427daae5143e2a5bd1dd98547688a5eeb5cc0f4cf3b2a173afe3fd4eee1e082",
+  "pageVersion": "sha256:0942441e91f82f35c9f4f63c2eef99ea53b2883b362ed5b2d68e809fa07e4d12",
   "claims": [
     {
       "id": "claim_2123b3ce75ce47ebb5c30c3772814284",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://docs/runbooks/android-emulator.md",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://frontend/mcm-app/scripts/build-apk.mjs#L70-L92",
@@ -39,7 +39,7 @@
       "statement": "The release APK build is self-guarded two ways: the CI step asserts that the string localhost:8082 appears inside assets/index.android.bundle (a string that is not a source literal, so its presence proves the EXPO_PUBLIC_* env was re-inlined in this build), and the build disables the Gradle daemon because a reused daemon keeps the environment it started with and would bake a stale backend URL.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1235-L1257",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1245-L1267",
           "version": "repo-lines-v1:sha256:3e96b5f320f53bcc5e6f1ae11ff0f88e6a3b9f423e1bbbbb89de8419a7077ce3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjVhYWVhZDA3NGM1YWU0OTI0YTlmMWU2YzE4ZTdiMGFmNGI2NDQyMmQ5NmNmMjVjOWU5Y2QyYmE0N2I4ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MjE4YjU2NDBkYjg0MDI5YzViMWQzOWZmYmI1Njk2NDFkZGRkMzhmZDkxODk3MWY5ZmEwNjE3YzRiODQ1NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlZDdhOTJlYWNkNmFhMTdhODZlOTI4ZjI1MzI4NWJmMGRkNzZiYzNhOGZhYTQyYTNhM2IzYTQ2NGYyMWZjNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzI5ZWNhOWRmMzkyMTM0ZWJlMTMxZjM2MzM3OGM3NTdjZjM0ZDU4NmQxNWQ5ZTQ2NDMxZTcxYTQ5OGUyYTQifQ"
         },
         {
@@ -53,7 +53,7 @@
       "statement": "The CI emulator runs an API-34 google_apis_playstore x86_64 image rather than an AOSP one, because the Play Store image ships Chrome, whose Custom Tabs service hands Keycloak's mcm-app:// custom-scheme redirect to the OS; the AOSP WebView shell drops that redirect so native-auth-callback never mounts and login never completes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1292-L1310",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1302-L1320",
           "version": "repo-lines-v1:sha256:ed4d87120819be2a93c0d7d9c792f8a1f68f56499766430aa713e4a5d5ab0b27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZTNmOTEzMzIwOWE1Y2FhNmRiNmZhMzBlNDA2ZmU2YzExY2FhODg3ZTc5OTIwMmM2OTBjODYyZGM4NWU5MDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNWM5MTU1MjZiMmMwMjlkNGQyZjE3ZjhmNGFmODMwODk1MzE2NzFiMzBlMDc3YmRhM2QzM2ViNDYzYjA1NzYifQ"
         }
       ]
@@ -143,7 +143,7 @@
       "statement": "The production APK is published by cd-deploy's prod-apk job to the forge's generic package registry as package mcm-app-android, version <expo.version>-<sha7>, with a sha256sum-format sidecar, because this forge exposes no Actions-artifact API (the endpoint is a missing route, not an empty result). publish-apk.mjs prunes at publish time to the newest five versions by created_at and never prunes a version ending in -keep, and it always exits 0 so a registry hiccup cannot fail the non-blocking job.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L507-L532",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L510-L535",
           "version": "repo-lines-v1:sha256:a0491cd921028d23fa7f7eb52a9e7b3146259e364a2d4c71120bb975dfe0e62c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGFmNWYyNTgxMmM3MDViOTA4MzIyNTczOWE1MzFjZmY5NmM4MDE3M2UyMTJmMzAzZWZjYjg5ZWU0MDc3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
@@ -186,19 +186,27 @@
     },
     {
       "id": "claim_83a5a509ae4443738d53b85e627afd18",
-      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's `Free daemon disk space` step (wrapped as app-e2e-free-daemon-disk-space) is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It has two halves — `docker image prune -af` and (added 2026-10-03) `docker builder prune -f --reserved-space 50GB` — because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on both lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI this host-runner job's setup step installs, so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile.",
+      "statement": "CI is the recommended APK build path: both Forgejo builds use APK_VARIANT=release so there is no CI debug/Metro-attached APK, and app-e2e's `Free daemon disk space` step (wrapped as app-e2e-free-daemon-disk-space) is load-bearing because it reclaims space by pruning the rootless Docker daemon rather than by deleting files. It runs three prunes in order: `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h` (item #915 — sweeps only the stale scan-image holds, the stopped labelled containers that pin the run-scoped `app-scan/*` tags app-image-scan later consumes, so a cancelled run's images are released while a run still waiting for its scan keeps them; it must precede the image prune because a bare tag has no container and `docker image prune -a` would delete it, which failed the scan on PR #909 twice), then `docker image prune -af`, then (added 2026-10-03) `docker builder prune -f --reserved-space 50GB`, because image prune never touches the build cache, which had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk; `--reserved-space` retains the most recent 50 GB so warm layers still hit. The `|| true` on those lines is deliberate but not a licence to be wrong: the flag was checked against the docker 27.5.1 CLI this host-runner job's setup step installs, so a bad flag cannot become a silent no-op. Without the reclamation the native build exhausts runner disk and dies mid-compile. `scripts/__tests__/app-image-scan.test.mjs` pins the sweep ordering and the label/age filters at every image-prune site, and `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the contrasting cd-deploy prod-apk step (reports only, no `|| true`, no sudo anywhere).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L511-L525",
+          "version": "repo-lines-v1:sha256:6a31a2cce09f30219fd1863ff8c6f22a180aa800e780fb6b587570d9c50f0879:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNzJjZTA2NDNjNjI0YjIzZmQ5MGZhODU2OGE5NGRkMWU1MzE1MGI1MjIxMTk2ZGVmYTY1ZGI0ZDg5NjIwN2QifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L817-L831",
+          "version": "repo-lines-v1:sha256:8ba58803e091d8b2b333d4abb73659ea791c479e1dd8ace39e1fbbf6fa7aec76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzOGM4NzIyNjc0NDA5NGE0ZDNhNjljYjQxZWE4NjBlMzVlOTM3N2I4ODJmMmVlNGI2NzJlODg2YWQ1ZjY1NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0YWRmMjQxMTIxNzcxOTY3ZjViNWZjNWY0YzA3ZDE4NjVkNmM2ZGQyNzZhZTc1NjVmZjQxNjBjNTg0NmYzMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs",
-          "version": "repo-file-v1:sha256:301254e46e4afad0a13e35fa4a88467bc94e869b6c094770170199682550e65e"
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L130-L143",
+          "version": "repo-lines-v1:sha256:efcae5989739fa19badca4bf8a2e8487bc738dff4a7b260d982c9951da4c08f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjYjFmYjlkY2U4NWIxY2IyMjI3NzQ3N2NmZmFjNTY2NDk1NDQzMTlhYWU2ZjBiZWJlY2RiMTk0ZGFlMjU0MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NDFjZGYyZjhjMjc2MGU3NmI2YWFiNDZjMWQ2Y2FmYWJhOGExZjU1MDBmMDA4Yzk2MDQ5ODIxYjhlM2U4MjkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L242-L277",
+          "version": "repo-lines-v1:sha256:cdd4e5d91b64ada055c27baf9e766b9d91e9272ce94143c00e2557b76fb835c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNTlmY2EzMjg3NWNmNTFiMjE1Yjc1NDRhZjk1YjM2MGRiOGRiZGY2MWY0MWYwNzdlM2QxN2Q4MDIxYzJhYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ZjQ4MTMxNDI5MjcxN2E3M2NjM2U3OWFiNmFlODBjNjAyOWMxZjk1Y2JjNzE3N2NiYTdlYTdmODZjZTc5NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYWJlMDU5MWRhNjUwZjMzYmZjYWQwYTZlMDgxOTY0ZmJmNjU5MmQ3ZDU5NWRhODAwNGI4YzMyODkyOWE1YjkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs#L65-L116",
+          "version": "repo-lines-v1:sha256:0f618085d7bab8db95103cc26ba3973284274512943205a9517644011920c09a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MzI3MzZmMTFkODk3OTYxMjEyNzRlODM2YmU5NmQ4ZWExMDQ3NzA1OTA1ZTJmNTBlOGMyZDI2YTNhNDI0MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Mzk4ZTBmZGY0MjA4OTJlN2I4MmI2MjU3N2EwYjI1NmQ0NDYzNzk0ZWQ4MTZhYWNlODE1MWQ1Y2Y5YzE2NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YjQyMTlmYjFmMGVhZmJlOGJjZjM1MTkwMDljNDUyMGI5MWFjODQ0ZTY5OTg2NWU4NzQzZTE4ZThhYjUwZmMifQ"
         }
       ]
     },
@@ -257,7 +265,7 @@
           "version": "repo-lines-v1:sha256:446638a7050d8644aef8ebd81ac3355a96ac5145cd717c3f47158a599eff000a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNDFhNzExOTM0MGViODdhM2Q4MzZhOTg3ODdlMDZkYjk2NmZmYzQ3OTdhNzNhYzJkYzRhOTcwNGNiMmM4ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NmY5ZDhlMzYxNjhmODE2NDE0OGY5MjNiZGE1OGI0NjM2YWZjYTNhOTZlYWEzNWEyMzUwMjQwOTAwYjc2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwODRjODBmMzc0NGIzOGEyMmQ0ZGU0MjRlNDMzNThiMjI4NjE1ZTQxMjJkZDNmOGM2NjZkNmY3MzU5YjI5OTcifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L524-L538",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L527-L541",
           "version": "repo-lines-v1:sha256:93ad570bc15eafa6f9765fa44486b5aa8e6582d905e16ed0566848f2f9d362f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
         },
         {
@@ -285,7 +293,7 @@
       "statement": "The CI emulator's AVD is deliberately oversized for Chrome — 4 GB guest RAM, a 576 MB heap and 3 cores — because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat: CustomTabActivity 'WIN DEATH … app died'), which surfaced as a flaky login rather than as a crash.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1292-L1311",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1302-L1321",
           "version": "repo-lines-v1:sha256:08f5a4fdd421fea3cfe6cf60c0cb0c2df45e403bd40a4c959191af320a64fed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDFmYzk4Y2VmYzNjY2JiMjk1MjI5YjZhMDVlNDMwNzgwZTIwMjkxMWRkOGQ1ZDhmOGU3Zjc0YzIyZGE4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTQwNDA3MDM5ZjlhZjY3NzM3YWYwNGY3YWQ5OTU2YjgwMzJmNDdmZTMzYzljODg0Zjc0NjY0MTEyOWU2ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNWI5NmM5ZDQ4Mzk1ZmQzMzBmZGY3ZGYzNzY4NTc2MmE3NTQ0NDYzNWNjOGE3ZWYwMzU0OWRhYTc3YmNjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZDMwN2M2MzgxZWJjZWRlY2FlN2Y0ODI5OGJmM2M3MGE2YzdmMWU5NzVhNDQ4MDdiM2U5NjkxYjUwM2NjNGUifQ"
         }
       ]
@@ -295,7 +303,7 @@
       "statement": "The reactivecircus/android-emulator-runner `script:` block is executed line-by-line in separate shells, so multi-line constructs such as a for loop with backslash continuations fail there; that is why the whole per-file Maestro flow loop lives in scripts/ci-mobile-agent-flows.sh and the workflow step is a single bash invocation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1312-L1320",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1322-L1330",
           "version": "repo-lines-v1:sha256:da06e821284269f7dcfdafcda24c975dd3d37d1592e29ddee33e461512b2deb7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZiZTAwNDQ4MTAyNmZmNzExNGNiZDA1ZWE0NTU4NDRkMmQ2M2Q2NGZhZGYwZGNhMDI4NjM2ZTBjMTk3ZmNhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjZmFiZWNlZGQyOGFlMDE1Y2I3MTI1NGQ1YTFiZmYxN2M2N2IxNDNkYjdlOGYxZjZhZDRkNDc1MGU2NDNhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmViZDJlNTIyMDBiZTNhYTZkOGExZTNiZDJjZTliYWJiOGVmMTY5ZjhmNGU3ODlhOTY3ZTE1ZTg2YWZmNGM3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdiZWFlMzAzNDc4NGIyOTA1MjZhNmRiMWVhMGIwNjRhZjcyM2Y3MGI3N2E1NTFiMWJmNTRhYmU0OGUwOTM1MSJ9"
         },
         {
@@ -310,7 +318,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L2976-L3000",
@@ -334,7 +342,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/ci-mobile-agent-flows.sh",
@@ -365,11 +373,11 @@
       "statement": "cd-deploy's prod-apk job, unlike app-e2e, has no Docker CLI and builds no images, so its disk step only REPORTS: it is named `Report disk space (nothing to reclaim — see item #457)`, states in words that no reclamation is attempted, carries no `|| true` (a failing `df` fails the step), and exports avail_gb/use_pct as step outputs that a separate `always()` step posts as a commit status under `cd-deploy/prod-apk-disk`. scripts/__tests__/prod-apk-disk-step.guard.test.mjs pins those properties, asserts that the recorder cannot match any required branch-protection context glob, and fails any workflow step anywhere that invokes `sudo`, which no runner here provides.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L336-L385",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L339-L388",
           "version": "repo-lines-v1:sha256:5a85b9685c4a69bb33c1286498a55f51a1883706ef5e703df44bb4fb1359c80e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZDUxYzkxZjMwNWE0MmJhZTVlNzBjNGQwN2Y3OWM2NmIxZTBjMWNlZjUyNzU4Mjc5MzRkYjIzYWMzNDE3MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MGI1NTVlZWRlMGIwNDA0NzE3OWY1ZWE3OTk1YjMwM2VmNDY0NDIzMTAyMzliOWZiZWQ1NmYwMTIzMmI0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3MDZjNDJiYzRjNTZlZmIyM2EzOWQxZjUwMDZkNDBkOTAxZWY3MjJjNzIzMDlkZGI0ZjFjZThjYmRmM2Q0MTkifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L431-L449",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L434-L452",
           "version": "repo-lines-v1:sha256:c5b36f83a9c9300ebcba3d1a90eece7b0dca3bf08fd80df3ff415ae6aa15c7a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZDVlOWM2NWQ4MmJlNzQ5MDc4ZTIxNWMyMjhmMzhhZDUyMTI0NzJlNTBkYTVkNTMwMjE5ZmE4Y2IzOTQ2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjZiODlmZjJmOTYyYjlhOWNmNzQ4YTM1MDc4OWY2NWM0MjhiOTE2MDMzMmMwZTRiMzQ5MDJjZmEwY2FjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZmNhNzViM2E0NDgxYTI3YTZmZWMzODk4MjRjMzYyNWNhNGNjNzEwYTdhYTE4NGJkN2E0NTE5YzhlODI4MDcifQ"
         },
         {
@@ -412,7 +420,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L80-L136",
@@ -448,7 +456,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs#L138-L145",
@@ -498,7 +506,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/__tests__/ci-maestro-debug.test.mjs",
@@ -516,7 +524,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:238eead3ad73761b7ea7f72f4ee52b4c1f12de294aa9070512934843742e9378"
+          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
         },
         {
           "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs",
@@ -537,7 +545,7 @@
           "version": "repo-lines-v1:sha256:3a470088121a90b98035f886fe34c6f542fe8c23d316ca6da748329a985e2761:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMzZkMmFhNWQ3MjQ2ZmIyODc0MTkxMGZmZDhlN2Q1NTQ3YmQ5NGU3NGNiMTc1MTBjNjlkZDMwYzAzZTM4YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWE4Mzg3MWNiNzZiMGQ2N2Y3MzVlYjUxODJhOTY2ODNkYzllMzVkMmE4YjBhZWI1OTg4ZDlhMWJlYzFhNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZjEwYWIwNzZmODJmZjYzM2YzYjM3NWRiOGZjNzFiNGEzYzY0NWI3NGE1MzYzYWQwM2U0ZGIwYmU1NjYzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1489-L1500",
+          "resource": "repo://scripts/ci-status.mjs#L1519-L1530",
           "version": "repo-lines-v1:sha256:3688204822921c84bc44149a128a35f6c71e565ea62fd21be4518497af6a20df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YmIwZmI5N2Y2NTUxYjQ2MjA4MTBhYzk1OThkM2I4MjllYzhmZDFjZDI3MWJkMzY4YTI1ZTIzYmM1MWJhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NGM1M2IwNjRhZWFiYjllYzUwZjU3ZWZlNzhmZWNjYTc0NGYxYzEzZDZhZTgwMmIwOGYzM2FhZTBjMGRlNGEifQ"
         },
         {
@@ -551,11 +559,11 @@
       "statement": "The app-e2e Android SDK install names its packages explicitly (`packages: 'platform-tools'` on android-actions/setup-android) instead of relying on the action's default, because that default was `tools platform-tools` and `tools` — the legacy SDK Tools package superseded by cmdline-tools — was removed from Google's package index, so the step died on its first package (`Failed to find package 'tools'`) before reaching `platform-tools`; `platform-tools` itself is not optional because the emulator half drives `adb` directly (`adb reverse tcp:8082`/`tcp:8099`, `adb install`), and the value must stay in step with cd-deploy's prod-apk, which pins the same value.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L558-L582",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L561-L585",
           "version": "repo-lines-v1:sha256:c105e5cb7611681723634924d38cb2cbad8603b6b3557ea9d1452e32d871baee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNDQ1MWJlZThiNjhjODQzMTZmMDJlMmExZDJhMGU3ZmU0YzM1NWM2MDE0MzA5NzdlZjU5MjkxNWQyZmZiNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMThjZWNlOTBhNjE3YmJlMmM0Nzc4MTIxYzE5MDUyZDE5YmZkNDQ3MDc5YzcwMGE0YzI2NjA0MDcwZWVkYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzUzYmU2ZmVjNmYzNmUwOTg1ZGNkNWU4ZGQyNDAyOTg2MzJkZDcwYjBiY2FkZDRhYjI1OTAwNjhjNzJiNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMDZiMTE5OTBkMGYxMWY0MWJlMTJkODdjMzgzYzNjNDhmN2IwYjQzYjA2YTlhZWNmY2U0MWQ0YTQ1ZGI0MzQifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L481-L486",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L484-L489",
           "version": "repo-lines-v1:sha256:6c79788b4892006cd402a47d66db63250b87ab99ad360841f256a9a043e68d3f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ3YTQ0M2E4MzJmMjRmNDAwNWQ2YmYzNTNkZWI1OTZjYjZmMGE2OGVlMTQyMWU5M2RhNWZmOGRiZTVlYWU4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMxOGNlY2U5MGE2MTdiYmUyYzQ3NzgxMjFjMTkwNTJkMTliZmQ0NDcwNzljNzAwYTRjMjY2MDQwNzBlZWRhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFhYWUyYWUwYzlhOTk1YmQxOTU1MDBhMjAyZjU2MjEyNzhlNzI5NTNjNjBjYTczYWMyM2I0MTRjODhkZWM0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc3YjM2Y2M2ODI5NmE4ZTY1NjUzODlhYmU1MmE0YWJlY2YwYThiYTFkNjVlNzExNjIwY2M4NTdlMmMxYmQxMSJ9"
         }
       ]
@@ -563,6 +571,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

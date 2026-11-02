@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6a0c33f97aff82bfbb3d1217ad94593ee84fe42db0ca34a4bd61b48dd3e58a99",
+  "pageVersion": "sha256:a66ae3519c67a802d6bfbeba0d2559ab98cdf6a312226c4d0271bd303ae38f94",
   "claims": [
     {
       "id": "claim_95cb33eaf9164a0bb4732cc9977a5b54",
       "statement": "Every CI job publishes a failure digest through exactly one `if: always()` + `continue-on-error: true` step running `scripts/ci-failure-digest.mjs`, whose three absolute rules are that it must never change the job's outcome (FR-009), that everything published passes the fail-closed redactor first (FR-005), and that a job belonging to a cancelled run publishes nothing (FR-001a). Counted today: 24 such steps, one per job, across the eleven `.forgejo/workflows/*.yml` files — including the newest job, `app-ci / app-image-scan`, and the two scheduled reporting jobs `registry-retention` and `renovate-health`. The count is not monotonic, which matters if you are counting to check coverage: it was 22 across ten files before feature 080 retired `minio-image.yml` together with its `build-publish` job. The `21 jobs in 9 workflows` figure in `check-ci-digest-coverage.mjs`'s own header is a 2026-10-22 snapshot and the `16 jobs` figure in its test file is an older one, so header and tree no longer agree — both are prose rather than assertions and neither fails anything.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1893-L1904",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1911-L1922",
           "version": "repo-lines-v1:sha256:229af94af8c210eaec3d8935425456ce0be69500761ebfbccd8d2a893b253e35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Y2RiM2FjOGNhYzVkYmRkYTQ4Y2M4ZTViMTczMTkwOTYwM2QwNGY2Y2FiOGI0ZmNkMWFiODJiMmQ1NzZmYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNWJmNjI5ZmU0ZGIwYmVmYjA1ZmViNTYwZjdjMDJhZjE4YmYxMGUzYjQ3YTU2NmQxODRkZWVlM2JlOGQ1OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOTM4MjczNTNlNTYyNTAwMGZlZDgzM2EzNGM0YjI5ODFmYWQ3MGVmNzcxNWM3OTRiNDJkZjU1OTk3YmI3YWYifQ"
         },
         {
@@ -45,7 +45,7 @@
           "version": "repo-lines-v1:sha256:c07f7766c1a423a0d46c93b6627a627d5a2880560766ca4cd5970339c9564621:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzIyZTFkZGU2YWU5NGNiNzNkY2Q0YWY0NzBiN2M5ODRmNzBmODE1ZTMzOWRjNWIxZmMxNDI5M2I5NTBjOGJkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM5ZWNmMzdmZjVmNDYxY2I3ODI3ZWI4ZmJkMmIyNDA5NjNiMjBhNDliMWIyNTg2NTMwYzkzZGZiMzgzOTEyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThmZWZmNjZiZGE2ZDQ3YzU4YjA3NjcyMTUzYTJiYTNiNmE0OTJhNWJlNDI4Yzg0ODk2NjMzZTgxNWY2YmRiMyJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L936-L936",
+          "resource": "repo://scripts/ci-status.mjs#L966-L966",
           "version": "repo-lines-v1:sha256:af85a7b3e8272e407418e8dfc8a5b19dfc79846bf0908e1dc62516a6bf665891:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4NWE3YjNlODI3MmU0MDc0MThlOGRmYzhhNWIxOWRmYzc5ODQ2YmYwOTA4ZTFkYzYyNTE2YTZiZjY2NTg5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTUzOWUyOTc0NThmMWM0YzhhODNmMjI5NzVkZTM2ZDRkNWU5Mjc3ZTliZDk4ZTliYjQ2NzE2Yzc4YTI2MzBjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZhMTg2YjA1ZjNhYTQ2NDY3ZWIzNjdjZGUzYTgwOTA3OTI3MTc5OTJkZmJkNTlkM2MxNTlkY2RkNmJmZmNiNCJ9"
         }
       ]
@@ -59,7 +59,7 @@
           "version": "repo-lines-v1:sha256:7b4c2edefc09079821dd4a8e080086ef138a329943359c6dd9d87aac28ceda52:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgyN2MxZjc3MGFlZjZjNmRiOTBlZTJmNDlmNmE3NDQ0YzBjZmMxZTQxN2U4ZTA0ODg4NDc2MTdmYjEyZjQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJmN2VhY2E1ZTM1OWJhNDBjM2JlZmU5MDliYWQwYTJhYWY0Yzg3ODdkOTBjMmQ4ZmE2MjJhNjdmNGU3NmQyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI4ZWVjNjA0YmU2NTA4MDY0MmU4NGI5MmQzZTg2NmMyNTVkOWNlZjliMmMzODI3M2FjZmFjNTMwZmVjZTk3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYyYWM2MmY2N2NkNjk5ZGRiMTVkMWY4MWNmOWUxZjNlNGNhNmU4MjI5OTJiNDY1MjhmZTJjNmJkMmZjYmY0ZSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1472-L1482",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1503-L1513",
           "version": "repo-lines-v1:sha256:eff842a78c59f5dd86b327c3e190fddec38c70baef01c0d633d25001d1f3de49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZmE1YzM0OWRiNWFjMmFiZGJlNDZjNjE0ZTI0MDM2OTBmMDRlMmU1MTBiYTcxYTQ3ZjJiYjU4YTA3ZGE5YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiM2JlZDAwMTBmODM3YjdlYzM5NzgzNmE4MjdiZjA5MzJlN2I0YjIzZjdlNzkzMzExYTBlNjQzN2YyMDRhMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MjlmZTQ5ZjE2ZjUwZjRkMGZlZTc5MzU1Y2JmMGU5NjgyMTNiYmI1Mzc0OGZmMGM1OTE5MjI4ZmZhYzgyNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNWRmNGFkYjhmMjZjOWI4YTk2ZWE3NjcwZDRiMDExZDcyMjQ0OGFhMWM2YTExYzEyNTdkZjgwYmE4NTdjNTIifQ"
         }
       ]
@@ -111,7 +111,7 @@
           "version": "repo-lines-v1:sha256:3508ecd5639b67bd6f2c12ff0cf4163cc8539c84c2107404a57a1403c2af2257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzgzNzAwZDU5MDI5YjM0ZjM5YzJhYmQ3NTQ1YjdlNDM5OTAyNDE1ZTcxNzc2ZjcyNGYxYWMwNDM1MGUwMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNzgxOWIzMGQ4NTVkZjgzYjQ2ZDc2Njg5NjU4Yjg4Njc4NjllYWI2ZTM1OThhNzBlYmZiZmVhMTM0YjkwMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliMGE5MDAwYWM0MDhiODJiNjk3YzU0MDMzOTNlZTE5ZjE3NzBmMDQwNjY4MDUwNDZmMjI4YzkyMDNhOGYxN2UifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1009-L1027",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1040-L1058",
           "version": "repo-lines-v1:sha256:558d1d44ad8333e32dd8d6b1f769335e21f1d736c3b0eeb78a6fca306f5fbac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYThlNGVkMjRhOWI2OTcwNWJmM2QzYTUwMGIwOWQxNmRkODQ0YTIzMzU2NjM1NDE3YjJiNDcwMTZiMjQyYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZjBlMWQ2ODMxYTEwYzhkMTA0MmVmNzEzMjc1ZGY2NTlhZGJjZjI5OGIwY2JhOGQ0ZDZiOWMyYTk3MDRiMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlNzY2MGYwYmMwZGI5ZDQwYTZiMzc2NzA0ZjYxYzY2YzJiNzFkMDAzZGZlYzBiOWI1NzM5MTI1YWZiMjRiNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMzNiZGNmNmRkMjhkZTE4MzA4YzJmOTMzNGJkMzQxNjI2NDFhOTU3NTFlZDhkNzU1MzgxNWYwZmY3Njk3ZGEifQ"
         }
       ]
@@ -125,7 +125,7 @@
           "version": "repo-lines-v1:sha256:160a9ff834fae709440801067f36f5253e5c45217915203b9fc8477af172cdb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0M2JlNDJkNzMzOThkMDZkYjNmN2VjNjc2NGEyYjQzNDhkMGY0MDY4MGI2ZGQzZWYxNTZmZjA5ZTI2NTcxZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MjFiNWZjNzEyMjg5ZTllMWExNDY3OWU1NjNmNjM3MzExZmU3NzM1YzdjZjI0Mjk1MjY0YTFmMTBjMjVkMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MDM4NmQxODg1ZDBhYmM0MDhlYWNjN2ViODE4ZTFkYmQ2N2VhOWU5YjU3YzY5OWJmOTdmZTBkM2JhMGMyM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1399-L1403",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1430-L1434",
           "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
         }
       ]
@@ -135,11 +135,11 @@
       "statement": "The digest is embedded in the bundle it describes, the bundle manifest is planned before the digest is rendered so a cap-dropped source is named in the digest, and publication happens before the bundle upload so the bundle can record whether publication reached its channel (`meta.publish = {published, channel, reason}`); if the upload itself fails, the job-log line is the only surviving signal, which is why both exist.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1399-L1403",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1430-L1434",
           "version": "repo-lines-v1:sha256:301d0971290361a2b4939ac60c8555eca4b6bff1be145fdaeb9e1c88ffee2495:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEyNzIyZjU2NWViMWU4NzViYjM5OGJkY2IxMWQxZTg0NTExOWEwM2QzYzMyNzUyYTczMzhkYzMwNWMzZWZhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhZWEwOTM1YjBjNmJiZmU2MDY4NTZmNDg4MDc1YjA3ODFhOTMyODgzMDBiMjZiZTRlNTk4NDNmNTQ4MmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjhhM2UwODUyN2YyY2ZiMzFhZDhiYjQ4YmIzOWM3Zjk2OWNhOTAyZDJiNjZkMmYwMzA3MWI3ZDBhODUwMzJmZSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1454-L1470",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1485-L1501",
           "version": "repo-lines-v1:sha256:86a9e5ad8c8783ea573a2d134832060cda44631f279bce9e2e43f0b6af28e214:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZWMwYWIxMzNmZTJjZmQ4MGVlZjNkZmFlMmNhMDVlMmRkMTkxOWFkMzliNjFmNzc2NTcyNTIyMDg4NzM2MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOTI5MzM1NGM4ODJmNTlkNWQ4NWUxNWYwYjc5NDg1ZWQwNGM2MmRjNWRkOGJkNDkwZDE5NTkzOWQ2NTEyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNDYwNDNkYmNjMjVmNzdjNmIxMzQ3OGNjNDQ5NjgwZTA5ZWM5MzFhZDBhYjZhODAzNjlkMjJiNzY2MjllYzYifQ"
         }
       ]
@@ -153,7 +153,7 @@
           "version": "repo-lines-v1:sha256:a2cc7ef06e17505236dfaf2c97213bee0bb62b5403fca95d07e3b92b57572517:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWU2OGQwNDcxZTlkM2EzNTlkZjI1MzRiOWE4Yjg3NGI3ZDQwYTcyZThiMjI0Y2Q1N2YyYzg4NGIzYTU1ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NmI4MWQ5NWZmNjljZmU3M2EwYzhiMWI0NzYwNTkzZThiMmEzNzliMGI2MjFlYTI1OGMyOGQyYmI2MTZhZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMzFlOGU4MDZlMDhiZjEzZGYyZDVkMDg1MGNiMzQxZGNjMzQ3ZGY0MzBkZjZmZWJhZGU3NWEwNzExNmNjMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNzJiNzg2M2E1ZGJlMGRjMGE3Y2Q4NGNiMWU4ODBjNTQxZmFiNDQ3NWE0ZmQ3NmQ5N2UxMTZkMTllYWQzMDAifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1407-L1442",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1438-L1473",
           "version": "repo-lines-v1:sha256:e1a74f00018b2fdbc6621a4db0aae79767f96722eeb9c5e61d0adcf1fd320cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzhhNjU5NDU4YzdkODgwYzU2ZTZhMzYwMzI3NTBjYWRmYTc1ZjI5Yjg0ZjQzNGIzYWNlODRmOWVjZmY5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4YTNlMDg1MjdmMmNmYjMxYWQ4YmI0OGJiMzljN2Y5NjljYTkwMmQyYjY2ZDJmMDMwNzFiN2QwYTg1MDMyZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjVmMTYyZjYwZTVlMmI3OGQ0ZTlhM2EwYTdkZTE2N2JlNmQ2MzZiYWFkYTA3MGVlODUxZjcxMzM3NzhiZDMifQ"
         }
       ]
@@ -217,7 +217,7 @@
           "version": "repo-lines-v1:sha256:157050282bd850dd95a0281969015b7fd95bd64651652c2059f18bfd4f6a44c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMDViZGM3NDNjNmEyZGExZjUxMmFmYjNjM2IyY2U3OTJhMTdlMzNiODg0NmMwYTNlNDY0YmJjZjY2ZDgwNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNWE4Mzg3MWNiNzZiMGQ2N2Y3MzVlYjUxODJhOTY2ODNkYzllMzVkMmE4YjBhZWI1OTg4ZDlhMWJlYzFhNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNTNiNjYwN2FkNzAwMzZkOTgwYjU0YjBiOWNjZTNlOTUwN2FmMDYwYmIxMWI5NjA0NGVkMzgxODE2NzVmNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1489-L1500",
+          "resource": "repo://scripts/ci-status.mjs#L1519-L1530",
           "version": "repo-lines-v1:sha256:3688204822921c84bc44149a128a35f6c71e565ea62fd21be4518497af6a20df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YmIwZmI5N2Y2NTUxYjQ2MjA4MTBhYzk1OThkM2I4MjllYzhmZDFjZDI3MWJkMzY4YTI1ZTIzYmM1MWJhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NGM1M2IwNjRhZWFiYjllYzUwZjU3ZWZlNzhmZWNjYTc0NGYxYzEzZDZhZTgwMmIwOGYzM2FhZTBjMGRlNGEifQ"
         }
       ]
@@ -467,7 +467,7 @@
       "statement": "A green run has a third publication mode: `shouldPublish` keys on an explicit `success` and returns `counts`, which uploads a small counts-only bundle on the same `{runId}--{jobSlug}` version a failure bundle would use — no PR comment, no health block, no container logs, no `digest.md` — and which requires the purpose-scoped credential because the run-provisioned token can only write a commit status. What it carries is `selectCountsSources`: the `[e2e-gate]` counts, the model tier's own gate log (feature 056), the `[e2e-contention]` tally, the `[e2e-turns]` verdict, the opt-in full mobile suite's per-flow table, and the `web-e2e` log reduced to its `[global-setup]` / `[playwright]` lines rather than carried whole. The source list is self-limiting BY CONSTRUCTION to steps only `app-e2e` produces, so every other green job finds nothing and publishes nothing (`digest-outcome=not-needed`); an unknown job status publishes nothing at all rather than falling into counts mode, because a job that once lost `CI_DIGEST_JOB_STATUS` published a spurious digest on a green run and treating unknown as cheaply-publishable would resurrect that bug. Retention prunes on this path too, since publishing on every green run is what makes unbounded growth reachable, and a transport failure here still exits 0.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1353-L1368",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1363-L1378",
           "version": "repo-lines-v1:sha256:67a1ae082cb5109cc97d3814a28328a29d83e9ff2583811de70d435cc3b072b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOGFlZGE3NGQxZmYyMmZjNmQyYWIxYjFjZTliMDZhNDRmZmQwNDE3YWU4MGRjNzBkNzVhYjlmN2ZjOWQ1NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmEyZjU2ZjlhOGE3NDY1MmEzMzFkZWNjOGU1OGU0NDE4MDgxNjExODkzMjAxNmQxNGY0MmI0MmUyZGJhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YmVhZTMwMzQ3ODRiMjkwNTI2YTZkYjFlYTBiMDY0YWY3MjNmNzBiNzdhNTUxYjFiZjU0YWJlNDhlMDkzNTEifQ"
         },
         {
@@ -479,7 +479,7 @@
           "version": "repo-lines-v1:sha256:80ad40950ad1b52aa219706362f730834b9642b32f885788473eecafa8756800:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYTFmODRhNmUzNzM4ZjM1MmEwNGYxZGQ2MmNhZmVkZjk2NzRlZTY3ODExNmNlN2RmMTdiNmViYzg4MTkwYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViZGQzMWY3MTQ1MDQ0ODNiY2NkN2UyZDNmNjk2N2ZjNGMzZjhjNzFiMGZmMjFhZDBkYjFmODY5ODJhOGM5Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNWM0YmU4M2ZmNzc3NjU0OWQzYzBjYzc1NDY0MDMwMTM3Y2FiZWRlYzAyM2M2ZTE3ZmFmZDQ3NzA1MzAxYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMTBhMGQ3NzU5ZTM4YzA2YzMyN2FiNGVlZjA4MDZhYTc0MDI2ZDU5ZGNjYzdkZDQ5OTNkYmI5ZmRkNmZlNjMifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1503-L1564",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1534-L1595",
           "version": "repo-lines-v1:sha256:44536d3110adfea7ef8191604d005ad48dc0ce663efa9390e8450de67f38d026:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTRlZmE0ZmE0ZDBlODQwYWM0YjdhZTlhNGIyODgzYWE3NjY4Nzc1MWM4Mzg3MzZjMmFlYTY4Yzc5NjI4NDEifQ"
         },
         {
@@ -497,7 +497,7 @@
       "statement": "The bundle records the publication outcome twice: `meta.publish = {published, channel, reason}` for whether the digest reached its channel, and `meta.digestOutcome` for the same fact in the three-way `not-needed` / `published` / `failed` vocabulary the reader renders. The older `publish` field is kept alongside rather than replaced, because bundles published before the split still carry it and a reader comparing two bundles should not have to work out which superseded which.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1580-L1598",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1611-L1629",
           "version": "repo-lines-v1:sha256:d838e3a3087e2e1c41da24d996a5ece39a15d738b41d4c3205b7339f6da0e27f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1OGMzNjE0MTJiZTYwNDgyYjdmZjllN2RmYTAxZTJiNmExYmQ0ZDBiNmQzOTM0YWU0ZmZhZGE1MmE2ODFkYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZWQ0NDE0ZDU2NzE4NGUwYjBjMTJhOTRiNmI0ZmVmNjZiOGMxMTY2OWRiMjA1NzkwYTQyNzcxZTI4ZjY4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOWU2OTc4MjM5NGFkNzA2YTUwNzE5NjA5YzViNDUzYTY3YWRlYWEwZjdhMjhlOGZiZjZlMmQ1YzE1ZTFhNTkifQ"
         }
       ]
@@ -518,11 +518,23 @@
     },
     {
       "id": "claim_4f727e743ead40ff84d547e282f4cd88",
-      "statement": "The digest's own absence message still claims only `app-ci / app-e2e` writes `~/mcm-ci-last-failure/`, and that is stale: `app-ci / dast` captures into the same directory too (item #645), overwriting it with its own per-container `docker logs`/`docker inspect` captures plus an owner stamp, because the digest had been presenting the previous `app-e2e` failure's logs as dast's own.",
+      "statement": "The `~/mcm-ci-last-failure/` bundle is written by TWO jobs, not one: `app-ci / app-e2e` and `app-ci / dast` (item #645). dast overwrites the directory with its own per-container `docker logs` / `docker inspect` captures plus an owner stamp, because the digest had been presenting the previous `app-e2e` failure's logs as dast's own (measured 2026-10-02: a 09-30 Keycloak log on run 4445, beside a `healthy` row for the container its own bring-up had just failed on). Each writer stamps `_bundle-owner.txt` with `run=` / `job=`, and the digest's own absence message names both writers rather than claiming only `app-ci / app-e2e`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1693-L1716",
-          "version": "repo-lines-v1:sha256:6b4d6adbace00993069ac79b412cdfd7db114663d25c2f4689eeee2a572e110b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0N2MwOTU4MDg1MjZkMjE2OWY3MzM5NDM0MWVhZGU2MjJiZmI1M2Y3ZDkwOTFlMDcyNGIwNTQ0ZjYxNzAzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNjE1YTRhZGM3OTU1NDAwZTM4NTRiYzIyZmZkYWE4NmFmOGUwOWExZWMyN2JlMzMwOGI0NDUyNmFlOTIyNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYjJiNjY1NmM3YjhiYWQ4ZjExZjA2ZjlmOTkyOWRiMDQ1MmMxZjkyZDgyYTE0YTI0YTJjNWY5MjkxMDkxZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYThmNmQyYTc2NGZhNDI2MWQ5MzkyMWI4NTcxOTlhNTQzMmMxNmUxMTQyOTBjOGJhODQwMDRiNjNlZTk0M2YifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1452-L1459",
+          "version": "repo-lines-v1:sha256:02ff14bda071d60fa307c6ae455ca56c9ec57df771fa7785f1a4ca3703a8d258:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVkYjM4YTgzMjczNWQ4N2YzMzhlNmUxNjRlMTc3Y2Y1Y2U3ZDU3YzQ0NTA2M2ZhYTg3ZTBkYTRjNTY3YjViMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI2MTVhNGFkYzc5NTU0MDBlMzg1NGJjMjJmZmRhYTg2YWY4ZTA5YTFlYzI3YmUzMzA4YjQ0NTI2YWU5MjI0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAxM2ZhYTNmMjA1Yzk2YzZiYjY3MjdhZDgzZjQyMWJhZTMyN2JkMDNlYmNjOGQ4OWQyMzBiMzQ0ZjhkODc0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjFiYzU4ZDYwZmMzOGU5MWM1MGM2NDUzMGMwY2E0MDYxMjQ5NmZlNmFmYjNhOTlmOTQ5OTJjMDRlNTkyM2JlMyJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1709-L1737",
+          "version": "repo-lines-v1:sha256:63557c9594656063622932f3190732393242d3f16b3aefb8bb507eb41275570f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0N2MwOTU4MDg1MjZkMjE2OWY3MzM5NDM0MWVhZGU2MjJiZmI1M2Y3ZDkwOTFlMDcyNGIwNTQ0ZjYxNzAzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYjJiNjY1NmM3YjhiYWQ4ZjExZjA2ZjlmOTkyOWRiMDQ1MmMxZjkyZDgyYTE0YTI0YTJjNWY5MjkxMDkxZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkOGM4ZjBhYmNlNWQ5MGRkNTJkZTNiYTM5NmRlMGEyYjZlNjAzZjhmNDA5ZDM1OGQ5YmQ4YzdmZjA5NmYyNzAifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L712-L718",
+          "version": "repo-lines-v1:sha256:e0db431f84b46605a4b99c69ff5bb7d0906cacdefede7bd6095426caa6898018:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTFmMzVkYTliMDE5Yzc4ZmI5OGRiYjQ2Nzc1YTlhYTI4M2NmZTgzMWQ3YTE4OGY1NjVhNDdiNmQ4ZmUyNDI2MiJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L934-L939",
+          "version": "repo-lines-v1:sha256:d05ac17885c07579a0d264ca12465f27650099cc58f14f9f8d7a9e9a1cdbf240:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY5ZGUxMTZhYTE5NGVkMTRjZmE3MTg4YTBiZjIwYThlZTliMDY4YzRmZmM5ZDUzYzkwZWFmNTVlMjk1MzkwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA5NWNiYmIzODRiYTZmNDExMjk2YzY5OTkyYmU1Y2RjYTkzYTA3YmJiMzBhMGViMjFhN2RkY2IwMmY5NjlmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjIzZjgyNGE2MjAxNzIxNTBiZmI4MTE4MDc2MjcwZGJmY2E4YTQwZmYyNjEyN2RjMzhjZmQ4Mjc1MzAwZmI0NCJ9"
         }
       ]
     },
@@ -531,7 +543,7 @@
       "statement": "The ceiling table's commented `ON THE BACKSTOP` block lists EIGHTEEN steps, not the single one the `app-e2e` workflow comment still claims (\"today exactly one step is on it\" — read that line as stale). Twelve are the spec 084 US3 image-scanning family: `app-e2e-tag-scan-images` (which tags the six images inside `app-e2e`) and the eleven `app-image-scan-*` steps of the `app-image-scan` job, recorded rather than calibrated because they have no observations yet, and bounded by that job's own `CI_STEP_TIMEOUT_SECONDS` of 900 s rather than by `app-e2e`'s backstop — `scripts/__tests__/app-image-scan.test.mjs` fails if any of them is neither calibrated nor listed on the backstop, so the family cannot be added silently. The other six are `app-e2e`'s own and all bounded by the 2700 s backstop: `app-e2e-build-images` and `app-e2e-bring-up-backup-destinations` (split out of `app-e2e-bring-up-keycloak` by feature 073, no observations yet under their new names, the first being the cache-dependent half and the second existing precisely because folding it back killed the job), `app-e2e-collect-container-logs` (n=2, the only backstop row with a measured sample, because it runs only on the failure path), `app-e2e-collect-maestro-debug` (new in spec 084 FR-019b, a find+cp of this run's Maestro output, also failure-path only), and the opt-in full mobile suite's `maestro-full-flows` and `maestro-full-results`. None of the six has the 10 observed samples a calibration needs; the last two run only on `mobile-e2e-full` / `mobile_suite=full` runs and so accumulate samples slowly, and the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode so the backstop plus the digest step still fit inside it.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1789-L1791",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1805-L1807",
           "version": "repo-lines-v1:sha256:c08353cc42a886242b4dfe62ee9b7ae45a9cf696e42f6aeeb9747263029b8bb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJjZjUyYjZmYzQzYjgwMGFlMzNiNWFkYTkzMWY1ZDdhMmM2NTI3MWZlYTIwOTE4NDNmYWI1ZmRmZjE3NTViOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZDdiZDljZWMxZDY5NzJkMTBjYzRkMWMwOGQ1M2YwNzNlMWYwNzc0MjEyOWIzMDhiNTA2MjI3NTRmN2NjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMwOWZlYjBhYjJjMGM5OWUyZDY4NGFiZWNhOWZkOGEzNjllMjU3NjIyNmViNTQwMThkZTI3MzAzNWMxZTA1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjE2MzFhZDExYzhiODI2ZjQ5ZGZjYzM0N2I3ZGYzYzg5OWZjYjBjY2EzNDMxZjE5ZGQyMWU4NzY0YzIyYzBhOSJ9"
         },
         {
@@ -575,11 +587,11 @@
       "statement": "The `maestro-debug` artifact upload is fed from a staging directory holding THIS run's Maestro output only, in two halves of `scripts/ci-maestro-debug.sh`: `start` (run inside the `app-e2e-install-maestro` step) wipes `./maestro-debug`, recreates `maestro-debug/tests` and touches the `.run-start` mark, and `collect` (run on the failure path, before the upload) copies only `~/.maestro/tests/*` directories newer than that mark via `find -newer` + `cp -r`. The staging is required because `app-e2e` runs on the `kvm` host, where `~/.maestro/tests` is the `ci` user's persistent home pruned only at ~14 days, so uploading it whole re-shipped every earlier run — measured at 330,497 rows / 11 GB by 2026-10-26.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1278-L1281",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1288-L1291",
           "version": "repo-lines-v1:sha256:8e89676510fc35a52eab1b031fb224c6ae420838cad5732dee4e3dc658c3fba0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFhNDdhOWIzM2IyOThhZjcwNjk0Mjg0YTE2NjE4ZmY4MWUzN2MyMDI4YjFiOWJiZTEwMjM1NmU4ZTg4YzNjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY5YjExZDAxMjI5NGU5ZDYxMmJkMjhjYTQ5NzM5Mjg2MWNhZjg4OWE0OTViZWQ5MjFjNWEyOWJhMjliYzU0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmMwMmY0ZGRhYjdlMGVkOTYyYTdiZjA1MWM3N2IzN2MwMTUyMDZjMGE0OGNmMzgyZGVkM2JhOTQ5ZjlkMjg0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEwYzJiMzA1Yjg3MTYxMWE2YThmMmYxY2NkMDVmYTJlNDc5YTVjZjk5OTBmZDU4OGM1MzY0MDMxZjU2ZGY4YSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1370-L1375",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1380-L1385",
           "version": "repo-lines-v1:sha256:72f7c9ab3f1e2dbb35515625d8a2120aa83ed225c5742408732083af1d42129e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFiNTc5MTkwZWNlY2U4NzgyMWE1OTE4NTliMWJiNjYyNDNiZThmMjVlOGQwMzk0Yzg3MzNkN2EwOTZhYWQ3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDYwMTAyODViOWE0YjZkYTU1N2RjOWMzM2E5ZmZhZjYyMmEzNzE5ODM5NGE5MDQzNDg3YzQ0OTExNzBiZThiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZiYWNmOTkyZmNkNzM1YjQyYjllZTljNWUwZWJiNTIzNjg4NzlkMGUxOTY0MWFiOTJkMzdkOGMyMDEzNDJjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDlkYzI0N2ZhMmI4YTg2YmNjMDNlMjJiOGRkN2ExY2NmYjRhMGZlNmJmOTI2ZjQzNmZhNDE4ZDY2MGQ2ZjBkNSJ9"
         },
         {
@@ -607,18 +619,40 @@
       "statement": "The digest's device-capture check used to look for a `maestro-debug` directory in the workspace — a name that is the ARTIFACT's and never a path on disk — so it reported `maestro debug output — not present` on every run, including ones that had captured a full debug tree; the corrected check distinguishes three states (carried as `_mobile-diagnostics`, captured on the runner at `~/.maestro/tests` but not folded in, genuinely not present), because \"the capture did not happen\" and \"the capture happened and this bundle could not carry it\" demand opposite next steps from a reader.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1433-L1438",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1443-L1448",
           "version": "repo-lines-v1:sha256:cb8b69da8b55b8b534bfaf237563c5261973e32a05f602d6f0bc835fa81f021f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxODJmYWNjZGEwNDI0YjJmODE0YTJhMDU2YWNlOGEwZDZmMmFlN2Y5NmUzNjkzOTA3NDJlZGJkYjI2ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGUwYTdiMmI0ZTBhYTBlZmYwZWQzOWI4YzkwYmYwMmI1MzQ5ZTE5MGVmNTAzZGJlM2YyMWNlNzcwN2E0NTU2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E4OGY5ODQ0YmJjYjg2YmI4ZDk0YTMzOTBmYTNmM2Q5YzY0Y2Q2Y2U4NjA1Nzg0ZjczNjkzOGQ3ZDg3OTNhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDAxM2ZhYTNmMjA1Yzk2YzZiYjY3MjdhZDgzZjQyMWJhZTMyN2JkMDNlYmNjOGQ4OWQyMzBiMzQ0ZjhkODc0ZSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L945-L962",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L976-L993",
           "version": "repo-lines-v1:sha256:1672e462b6fda6793b678c4f4d607947ffdbe122c9b28e81a622b8aaaee5d403:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYmY5OTRiZmQ1M2UxZWNkZDA1MzkwYWEyM2E2NjI5NzEyMjVlMTMzYWNhNDY3NDk5ODlmOTBiMDg0NDJmYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MzA4NjYxYmM5ZGFjOWFlZGVjNDllYTRmMmYzMjE2OWZhMGY5MjU2ZDQ2NTMxODBlNDc1MjA4N2NmYTlkZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_75e152e2674d44659023a20df196c25a",
+      "statement": "Because `~/mcm-ci-last-failure/` lives in the runner's `$HOME` and survives between runs, the digest accepts a bundle only when its `_bundle-owner.txt` stamp names its own run AND job: a bundle stamped by another run, or by the sibling job (`app-e2e` and `dast` share `$HOME`), is refused, and an unstamped bundle is refused too, because the absence of a stamp is not proof of ownership. Every refusal is stated under `Not collected` with the owner the bundle actually belongs to, rather than silently showing stale evidence as live. `(#645e)` in `scripts/__tests__/ci-failure-digest.test.mjs` fails the build if any workflow step that copies into `$HOME/mcm-ci-last-failure` omits the stamp or stamps something other than its own run and job, so the next writer cannot ship evidence the reader will discard.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1456-L1459",
+          "version": "repo-lines-v1:sha256:a64b003c47e17faaddfb26d9a6d8c05fc556e33faf626c63a026728dfb867a69:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU5OTk4NjNiZmZmYTQzZTlmYzlmMzNiMmNjYzc1NGNhOGUwYmQ5YzQyOTJmM2VlMzkzNmZmMzYxZDg0ZjY1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI2MTVhNGFkYzc5NTU0MDBlMzg1NGJjMjJmZmRhYTg2YWY4ZTA5YTFlYzI3YmUzMzA4YjQ0NTI2YWU5MjI0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY4MTcwNDhmM2I0YTg1Y2Y0OGRjYzkxZTA2ZGVkMjNlOWZlYmY5M2RjMjE4YzZkMjU1YThhOTMxNGU5MjRjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjFiYzU4ZDYwZmMzOGU5MWM1MGM2NDUzMGMwY2E0MDYxMjQ5NmZlNmFmYjNhOTlmOTQ5OTJjMDRlNTkyM2JlMyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-failure-digest.test.mjs#L1811-L1852",
+          "version": "repo-lines-v1:sha256:57efc0b59e51a1189311f002aa8237f99a8a134fdf2e9e7641e1cc4e110b0fb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0YmQ1ZGMxMzk0ZmQyYTljODcxNmNhYzZmM2IzYzM5MDIxMGMxY2NlZmE0NzdiMjVmMjc2ZGU4YWU4MjNhYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MmU1NjFiZTgyODFjZDEzYzNiMjdlYWM4MGU3NzFlMjgxNGViMDZlNzMwNmIwOThkMmY4MWU1YzJmZjQ1ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YjRhZWE5YTQ5MTBmNTg3ZWNjOGRmMWI3NzBiOGYxOWE0N2Y2ZDhkMTA5MDZiOTBkMDdlNmMxM2Y3MmRjNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L829-L843",
+          "version": "repo-lines-v1:sha256:574623feafe14447b7946a49e8839b23261e7c5f1bb540ad40bde3e759a99416:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMmEwODlhZWNlZGY2NjFlZGI0OThjZjJiYjEwYmEyOTEwYzcxOGI2YmNiMzJkZTk0NWM4ZDlmYTkzM2VjNmIifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-failure-digest.mjs#L873-L888",
+          "version": "repo-lines-v1:sha256:241f578f724b95b81c2fe98779c31c3a89fa894e1b57ef6a89517e44325ae640:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmUyODM2NGQ3YTI4YTUzNjJlNTZiMTU3MzRlNmI3MzgyZDcwYzhiYzZiNWJmZjA4NjU4YWY1ZTc4ZGRmNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNmY4NzRkY2ZmMGY5ZDNkN2M4NjBkYjdjYmMzNjQxZWVjNjJlOTlhYTFlYTFhODcxZmFlYmY2NjZmZGUwZDYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T16:05:45.295Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2acd0e47cbbc7aece394bdfd251eed05b5ff440aa50f282bd821bcfefcb94c66",
+  "claims": [
+    {
+      "id": "claim_aa5c4b9bf494429e9a92e1207fa1f10b",
+      "statement": "ADR-0003 (item #513, accepted 2026-11-01) decides that Grounded Claims and the fingerprints in openwiki/protected.yaml are complements with disjoint scopes: Claims live on derived pages only (a concept citing a resource, written by the generator), fingerprints live on authoritative pages only (listed under authoritative: with no upstream document), and no page is both — enforced as governance rule G13.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L13-L19",
+          "version": "repo-lines-v1:sha256:d0aaaae6ca74394827eccafac8aff38aea64fa7854ad0fac1c44c21f89a90ff6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVlMDBiNjczNDAzYjFjMTYyODNkZDQzYjIyOGUxZDIyN2FiNTZhODQ4MzY3MWVmYjgzN2M0ODExMDYwYTExMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFkMGM1MTkwZTg5YzY5NzJiMmEzNmI3NDJmOGM1MmZhYjE1YWU3NWE2YzdiMjI0ZWQ0M2M3NmFlMzljOTdkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ2M2E5MDhkYTUzNjhmZmQ5Y2ZmNjA2ODc1MDViYjNiM2NiMWY5NGZlOTNkMmM0MTgwOGJkN2FlZDRjNmE4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b86cbffe6334c1680740cd703093107",
+      "statement": "G13 is implemented by claimsScopeFindings in scripts/openwiki-claims.mjs and invoked by scripts/check-openwiki-governance.mjs; it fails three shapes — an authoritative page carrying a Claims sidecar or a .page-manifest.json entry, a sidecar with no page, and a page carrying a front-matter verified: event with no sidecar.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs",
+          "version": "repo-file-v1:sha256:fa801caa9b7068dd6b96eed7f6663bd58245f7cac493698dfcfd033d4a273973"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs",
+          "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cff9b3a4e874dbabbd0af46099b6e50",
+      "statement": "The disjointness of Claims and fingerprints holds through existing policy rather than by luck: G3 permits actor: generator only under openwiki/ while every authoritative page is event-driven with actor: agent, G11 requires every concept to be exactly one of derived (resolving resource) or authoritative (listed in protected.yaml), and G7 rejects a protected passage on a page that declares a resource.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L36-L40",
+          "version": "repo-lines-v1:sha256:09c3c448ad04caae1099591d2b071e267c796e6945d1899a590e2f419f73787b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY0YThmZWU0MDAyYTFjN2U1MTVjZmNkMjY2ZjM1YzQxZmMyYjdiY2E3ZWNhOTk1OGVmODMxYWQ1MWZkMmY4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQxOGMyZTU3ZWEyMTE3MjA2MmI3MjkwNWZiNDMwMDEwNzk4NTU3ZTQwODM1ZmUxZTg0YzVmMjU2ZWM4Mjk3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZmZDk2NTA4Y2E1MDY4NDFiODE0YWRmNTM2ODYxZTQwMjgyODYxZDFlOTY0NmRhMDFjMjY2NWRiMjMzNjMzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs",
+          "version": "repo-file-v1:sha256:fa801caa9b7068dd6b96eed7f6663bd58245f7cac493698dfcfd033d4a273973"
+        },
+        {
+          "resource": "repo://scripts/openwiki-policy.mjs",
+          "version": "repo-file-v1:sha256:da23a99a011b5dff2184fb5fbc28a0c8e987c72555b89ba455ae3153e0c9a7b5"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a1072a95d68469992a49a548becc067",
+      "statement": "V16 and G13 are independent invariants that both read Claims sidecars: V16 (claimsDurabilityFindings in scripts/openwiki-claims.mjs) checks that a page with a .page-manifest.json entry still hashes to the pageVersion its sidecar certifies, and does not check pages with no manifest entry, while G13 only checks where coverage may exist and never inspects page bytes.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L70-L79",
+          "version": "repo-lines-v1:sha256:0bde497ae79ca81388d0dff9023ba15b3e9e908c48cacb424132336706309acf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNWMzMDAyMThkMjBhMzYzNDhkYzM0MjhmMWY0YmViM2E1NmFiM2ZiZmNjZTg1NDg1MzhlNTg0N2Y4YTY4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDU0Y2IyMWE5Y2U0OWE1YWQxN2UyZDE0YjEwNjZlMDYwN2NiNTAyMzYzYjlkZTg0MjBkMmZmNjQ3YTMwMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjMxNDA1OTZjYjJmOTM1YmZlZmNlY2Q5ZGJhNTgwZjQ2NDQ5ZWU0OTQyNDZiOTA4ZjIxZDJlZjk0NTI3MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMjAxMWM4OTJjMWU0N2E1NmViOWQ0NDUxMjZkNzFjOTkwNmM0MWMzYjI3ZTJiNWY3ZGM3ZmYxNWIyYThmMjEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs",
+          "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ecc141c40604ab5bfc59eb4c09caf0b",
+      "statement": "Swapping either mechanism into the other's scope would defeat it: a Claim on an authoritative page would have nothing to cite but the page itself, and a fingerprint on a derived page would fail every legitimate refresh the derived page exists to receive.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L53-L56",
+          "version": "repo-lines-v1:sha256:870fc41894d500622d291674c129ca80ab0c212d2cadc673fdca57ffa140dc43:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBkZjgzMjE2ZmQ4MjNmNDYyNGQ5ZTgyOWEzNmJjMzY3NDZkYTI3NTFlNjE3ODk2ZWMxMTMwMzJhY2I2NmIwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ1NTk2Y2M5MzNkNWFjY2FkNTI2OGYwZTBlZGIwODFlNWFmZjY3OTJmNzY3MGZkMjU1NzJhZTgwMmE5ZTk2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU5ZjVmNTMxNGFmMjZhYTlmYTllYjQxZGM4NmFhZmI2NjMyYWNiZTkxZTU5MzY0OTc5YWM1MzFhMDlmZjViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzViNDU3M2RmOWZiZTE4MTA5OWRjMjk0ZTZmNmRlMTM1NWU0NDA4Mzg1NTRjOWQyODcxZDAxYWZlYmMzMWM5MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9eba640c40f5454fa29a0e78fed3ba0a",
+      "statement": "The rejected alternative — Claims superseding fingerprints for some pages — would convert those authoritative pages into derived ones, each needing an upstream document to derive from that does not exist yet; that is a content migration requiring a spec, not a policy edit, and no measured problem called for it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L58-L64",
+          "version": "repo-lines-v1:sha256:b6ea4ef4db3ab16a2acc639e8b317450aab1fe5c48525334b532e15ca23a511d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1YmE1MTJlYzQxNThiM2FkNTI4NzdmOTdkOGFhNjk3OGRjYTFmMTliMDRkZDEyMmVlM2FkMDdlNjFhMTIzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcwOTBmMDNhYTZjMjNiNjA2MzAxOWUyMWQzYWMyMzc0MTExZWViNDIyYjc2ZGNiN2EzMGZmZTcyOTllZDFmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRlNzRjNDI1MGJkYWU4YzViNGQ0YTJkMmFmMmFjMzMxM2Q3M2U2ZDY2YjQ4NzEyODY5M2Q2ZjM3MTNmZDkxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c11806c146f74d719c72f7c22fa2f7b4",
+      "statement": "V12 drift remains the only drift signal for derived pages that carry no Claims, while for pages covered by Claims the evidence recheck is the richer signal.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L82-L83",
+          "version": "repo-lines-v1:sha256:56fc55d91394866c9ddbfbfa6f9bce3d9875d91f3fdfc1609ac0b6633801991f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgxMTk2Mjc2ZmRkZjdhOTk3YTNjYTBjNTk1OTViNGFjMjc1ZWI2ZDkwM2Y3M2I1YTc5NDY0MDMwNTQ5ODY4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJlYTEyNzYzMDIxODFjMmZjYjU3YmY0Y2YyYWYzMGYyNjQ1NTJiMjY3MzgyNGU0ZTljMTVlMmY0MTMxMjY4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVmZThjZDk5Y2M5OWM0MWQ4M2RlYmJiY2YwNzFjZjNkZDMwMmNkZjBiM2U3NGQ5NDg1ODc2ZjViM2QyZTcxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE2MzViYzRhZGU4ZjZiZGMyMTI3ZGUwYWU3MGVmNGViNmVkMDM3NGU3MTBkNDZiMTg4Mjk1NzczMjQzNzk0ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9dc83495c964b22890c40ae2390c3ef",
+      "statement": "The ADR's stated re-check trigger is a change in where openwiki writes Claims — for example Claims on pages it did not generate, or evidence that may cite the page itself — and G13 is what surfaces the first of those cases rather than letting it silently become a second, conflicting protection.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L87-L91",
+          "version": "repo-lines-v1:sha256:15cb01f04c3dceea05bfb6c79ebde261376e6a0a30deea3b61578630e4ddb908:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjODhkYmU5NjRhMjRmZjQ0OWUxNGNjZWNlOWE0OTBiZjVjNjA0Zjc3OWI3OGJhYjRjY2Q3N2IyNTg4OGQxZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ4MTVkN2RjMTljNGJlMWE4OTA2NjkwNzNkOTY2NWQ1MjY5NTM0ZjZhYjdmZmRkZjU0NTY2ZDAxMmMyMjY3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGE2MzViYzRhZGU4ZjZiZGMyMTI3ZGUwYWU3MGVmNGViNmVkMDM3NGU3MTBkNDZiMTg4Mjk1NzczMjQzNzk0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_db64c8a2896e4686aeb725b775625837",
+      "statement": "The scope check G13 runs is pinned by tests in scripts/__tests__/openwiki-claims.test.mjs, which assert the three failure shapes and the clean cases, and the governance gate's --selftest proves G13 still detects its case.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-openwiki-governance.test.mjs",
+          "version": "repo-file-v1:sha256:0e6a02ccb72008aaf324495d9dfaa3e4691ea0515cd78746d3fff1ebf3b27379"
+        },
+        {
+          "resource": "repo://scripts/__tests__/openwiki-claims.test.mjs",
+          "version": "repo-file-v1:sha256:56225595258a0a550241b02e4e2eb075f69642afbf4c5e78d806082a112dc89f"
+        }
+      ]
+    },
+    {
+      "id": "claim_16e65597e5d0423d9a3d0297b120871f",
+      "statement": "The operator handling of a failed evidence recheck — a claim marked stale when its evidence's version no longer matches or unresolved when the evidence cannot be resolved, and how to uncover a covered page before a hand edit — is documented in the wiki-maintenance runbook's Claims-sidecar section, not on this decision page.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md",
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-11-02T10:14:55.121Z"
+  }
+}

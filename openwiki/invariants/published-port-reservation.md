@@ -39,7 +39,8 @@ sources:
     resource: repo://specs/029-prod-ci-port-isolation/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
+    at: 2026-11-02T10:14:55.121Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 ---
 
 # Published-port reservation convention
@@ -132,7 +133,9 @@ block or a committed `additional_env_files` entry. So `KC_HOSTNAME_ADMIN` and `T
 quietly drop out of the stack TOML while the composes still require them — and the guard's own second
 test proves it is not vacuously green by deleting a real Variable and asserting the gap is reported. It
 also strips comment lines before scanning, so a `${VAR:?}` written in a `#` comment is not counted as a
-requirement. The guard runs as part of the `naming` job's script-unit-test step in
+requirement, and it deliberately gates **only** the fail-fast `${VAR:?}` form — an optional `${VAR}` or
+`${VAR:-default}` reference is by definition allowed to be absent, so adding one to a prod compose is not
+a change to that stack's declared inputs. The guard runs as part of the `naming` job's script-unit-test step in
 `.forgejo/workflows/guardrails.yml` (`node --test scripts/__tests__/*.test.mjs`) and in
 `scripts/preflight.mjs`, so a broken stack↔compose input coupling fails CI, not a deploy. Note its
 limit: it verifies a required Variable is **supplied**, not that the port inside its value is the

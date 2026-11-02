@@ -73,10 +73,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 
@@ -466,8 +466,8 @@ leaves at least 5 minutes of margin), so changing one without the other fails of
 | Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
 | Time budget | **4 min** | a deadline for **starting** work — an invocation or retry under way is never interrupted |
 | Job deadline | window − 8 min | each invocation is wrapped in GNU `timeout` with the time left minus an 8-minute reserve (item #613) |
-| Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
-| Window (push) | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
+| Worst-case invocation | 65 min | re-derived 2026-11-01 from the committed run records (item #613): the worst invocation that ended on its own took 2958 s, +30%; the guard test derives it from a committed fixture of measured invocations, so the constant cannot drift from the data |
+| Window (push) | 60 min | the shared-runner hold: 15-min debounce (it sleeps **inside** the job) + setup + the start deadline + publishing; a worst-case invocation exceeds it, so the deadline stops it and carries the rest |
 | Window (dispatch) | 120 min | the whole job — a dispatched run has no debounce and may need it |
 | Job timeout | 120 min | the hard ceiling; a merge-triggered run is still held to 60 by the deadline, not by this |
 
@@ -476,7 +476,8 @@ and a retry only after a fast failure; everything else carries forward in the ba
 slices the **plan** defers past the page budget, before any generation: until 2026-10-09 those were
 printed as "carried forward" but never written to the backlog, so the marker advanced past their range
 and they were lost. Declared
-effective ceiling: **≤16 pages / ~34 min of generation**. The page count comes from **files that
+effective ceiling: **≤16 pages / ~69 min of generation** — more than a merge-triggered run's generator
+window, so the worst case fits only a dispatched run. The page count comes from **files that
 actually appeared in the working tree**, not from what the generator says it wrote. **Neither budget is
 a monetary bound** — the wall-clock budget bounds runner occupancy.
 
@@ -807,6 +808,19 @@ The figures in the example are illustrative.
   skipped and says so out loud rather than silently passing. This is the same family as the canonical-home
   rule below: a concept with no determinable home has nowhere for a learning to go, which is why G11
   refuses it.
+- **A page whose front matter openwiki *rebuilt* has its repository keys restored from `HEAD` before
+  the gates read it (item #777).** openwiki 0.7.1 repairs a page whose model-written YAML does not parse
+  by silently rebuilding a minimal header — `type: "Reference"`, a quoted `title`, `openwiki_generated: true` —
+  dropping `resource`, `description` and `tags`, and it does not tell the agent. That is the real cause of
+  the G11 failures on #775, #791 and #857, and the brief cannot guarantee valid YAML from a model, so the
+  harness fixes it deterministically the way it fixes link form: on any page the slice wrote that carries
+  the `openwiki_generated: true` rebuild marker, `verifySlice` restores `type`, `description`, `resource`,
+  `tags` and `timestamp` from `HEAD` (taking `HEAD`'s `type`, since the rebuild's `"Reference"` is a
+  fallback rather than a classification), removes the marker, and carries the Claims hash with the header
+  exactly as a link rewrite does — logging `restored … from HEAD in <page>`. **Only** on that marker: a page
+  that dropped `resource:` without it is the model's own edit, and the governance gate still refuses it in
+  the run, so the #857 guard keeps its meaning. A brand-new page (not at `HEAD`) carrying the marker is left
+  alone, since there is nothing to restore from.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.

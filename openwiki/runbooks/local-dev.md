@@ -59,8 +59,6 @@ sources:
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-9718a90a7733637f39e0b867
     resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-8dd20ff5f3c23521e132240b
-    resource: repo://scripts/__tests__/object-store-migration.rehearsal.mjs
   - id: openwiki-source-85a6abb4f828129c0cce9653
     resource: repo://scripts/check-no-inline-secrets.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
@@ -71,12 +69,16 @@ sources:
     resource: repo://scripts/gen-dev-secrets.mjs
   - id: openwiki-source-ac2000cc53be6b0ffb997de7
     resource: repo://scripts/up-mcm-agents.mjs
+  - id: openwiki-source-2e80450c72b5a1cbf460cfc1
+    resource: repo://specs/080-minio-to-rustfs/research.md
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-16T02:04:22.270Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -325,7 +327,11 @@ carries no secret values on any path.
   rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus
   recreating every consumer of that key — no volume is touched. That is a measured property, not an
   assumption: starting RustFS on a migrated drive with a different pair was readable by the new pair
-  and not the old. **Recreate the consumers together, because the key reaches more than the server.**
+  and not the old. The measurement is recorded as research R6 step 5 in
+  `specs/080-minio-to-rustfs/research.md`; the migration rehearsal harness that produced it was
+  deleted at the feature-080 cleanup (T048), so the spec, not a test in the tree, is the surviving
+  record — a change that made the key drive-persistent would not turn any current suite red.
+  **Recreate the consumers together, because the key reaches more than the server.**
   On the backup side that is the `mcm-bff-backup-rustfs` service **and its bucket-init one-shot**
   (which passes the same pair to `curl`) — plus the host-side backup suites, which read the value out
   of `frontend/mcm-app/.env.local`, the file `gen-dev-env.mjs` re-projects from `stacks/mcm.env` on

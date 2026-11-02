@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3a93549cfbb080c285405cf62e5f0caba8b11ec8bb0508304ca5f97f64af5adc",
+  "pageVersion": "sha256:acf4b76de24a4fa45096727d9a80a55ed48187a62f5e4d032c4b3a5648d65663",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -8,11 +8,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -21,11 +21,11 @@
       "statement": "ci-status.mjs prints one of three skip-cause annotations derived by walking `needs:` edges parsed out of .forgejo/workflows/*.yml, because the commit-status payload for a skipped job never states why it was skipped: '(path-gated -> satisfied)' when every needs: dependency passed, '(NOT run - needs: X, which did not pass)' when a declared dependency failed, and '(skipped - cause not determined: ...)' when the workflow can't be parsed or the dependency hasn't reported yet.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-status.mjs#L335-L349",
+          "resource": "repo://scripts/ci-status.mjs#L363-L377",
           "version": "repo-lines-v1:sha256:8a611b1a99871920db10a30536310fd86819a95d23f71fb23b7582039048224d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZThiNzUyZWJkNmMwOGRhNDRhNTE1MWM5Yzc4ZmIxMDY3YzVlNzNhN2JmM2NkOTE3YTZkYjhiYzgzZjY2OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZDY2MzQzY2QyMDVmMThlNDc2MGY0MTEwYjU4MmE3M2IzZjhjOGY4MjI3MDU1MDc0YzczMzI3NjZlOWY3MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0YTg1OWQ4ZDdkOGQwMGViZjg0ZDU0NmIxOWUyYzI2OWJmNGQzOWFjNGI1OWQ2ZDQ1YzA5OWRjZTMyMzI3NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxZDAwZjNiMjAzNzViOGQ1OWE4YTU1NGQxNzA3NzAxZjU0MWNlZjFjOTQ5MGMyMDBlMGU3OWVkMTc1MTkzOTcifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L479-L479",
+          "resource": "repo://scripts/ci-status.mjs#L507-L507",
           "version": "repo-lines-v1:sha256:10976fa88c8115ce8b1ded9bb1352b3164e268cf19005299626560d76a947fff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5NzZmYTg4YzgxMTVjZThiMWRlZDliYjEzNTJiMzE2NGUyNjhjZjE5MDA1Mjk5NjI2NTYwZDc2YTk0N2ZmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzllNzJjMmM4N2EwZDY1OGIwZDYzODM1Nzg5NThkNmMxOWYyODI2MjBjODBhOTY3NmRjYzQ1NTFmY2QyMTA1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQzZmVmNzlhMzEzZjIyYjRjNzllZDAyMTliM2MwMjM1Y2UyNDQ1MjZhZjU3NWM1ZmZmNWM2ZDZmYTliODIwYyJ9"
         }
       ]
@@ -71,8 +71,8 @@
           "version": "repo-lines-v1:sha256:ac8623b8bfe9de124c1ee053c6bec4110b0470b0b225c7819d8b9fc8349215b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZTI5N2JhZGNiNWE3ZjY4Y2ZjZTZlMmFhNjRjYmUxODE5ZWU5MTNjMjlkYzE4YmYwOWZhMzUzMjFlNWNmOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllN2U3NWU4OGUwMDg1ZTRmOWEwYWU4ZWM0N2Y3ZjFiNzdhYjYxNzQxYTkzYzliN2E1MDlkMGYzMGM2ZDk2OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZDg0NWZlOWI0NGRjNDliMTZkMmQ4YTM3YmNjNzEwZDZmZGUzYjFmMGZmOGY1ZGJiNDY5M2VlYmIzZThjOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOWM5N2I3YzEwNTVmMjQ4NWI2Y2IxOTRkNzg1YjRkNDNmZjYwNmE5YzQwZTYxMTdiYjQ5Y2RlNTY5OTFhZjgifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L214-L263",
-          "version": "repo-lines-v1:sha256:ffc7221a059b53cb2f4ea5a70dd3e3cdde866e6ca7f17c39c64a621190b74579:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDNhMzlkZWUxNTkzZDBmYzI5MTc2NGI0OTdkZGY5NTczMDNiMGVkZDA1MGUzY2Y1MjdlOWE0ZDE2MWIyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNGM2ZmQyYWIyMjZhNGI4NTg3ZjE1Y2YyNjUzNmIzMzJkYTY4OWRhNzBkNDU4OGJiZjE3MDY5NzY0NmVjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZTczMjdlYjU1MDFlMzY1OGNiNGM4YTM3ZTI5NmY2MTVjZmQ2OGIwYWIzOGY3OWU1ZjQ2NTRkZDRjZTY3YTUifQ"
+          "resource": "repo://scripts/ci-status.mjs#L214-L341",
+          "version": "repo-lines-v1:sha256:8bb14e6eb13c1e88aabc812b4700bee658456913c5e7c426b8c797460516fa62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiODAzYTM5ZGVlMTU5M2QwZmMyOTE3NjRiNDk3ZGRmOTU3MzAzYjBlZGQwNTBlM2NmNTI3ZTlhNGQxNjFiMjIyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZDRjNmZkMmFiMjI2YTRiODU4N2YxNWNmMjY1MzZiMzMyZGE2ODlkYTcwZDQ1ODhiYmYxNzA2OTc2NDZlYzNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWU3MzI3ZWI1NTAxZTM2NThjYjRjOGEzN2UyOTZmNjE1Y2ZkNjhiMGFiMzhmNzllNWY0NjU0ZGQ0Y2U2N2E1In0"
         }
       ]
     },
@@ -81,8 +81,8 @@
       "statement": "Because a branch-protection required-check glob like `guardrails*` or `app-ci / app-e2e*` matches a context regardless of its event suffix, ci-status.mjs separates the whole-commit verdict (which evaluates every context any required glob matches, across all events, the same way branch protection does) from the single-event view chosen by --pr/--event; a verdict that only looked at one event previously reported VERDICT mergeable for a commit whose required context had actually failed on a different event, and the subsequent merge call was rejected by the forge.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-status.mjs#L214-L263",
-          "version": "repo-lines-v1:sha256:ffc7221a059b53cb2f4ea5a70dd3e3cdde866e6ca7f17c39c64a621190b74579:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDNhMzlkZWUxNTkzZDBmYzI5MTc2NGI0OTdkZGY5NTczMDNiMGVkZDA1MGUzY2Y1MjdlOWE0ZDE2MWIyMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNGM2ZmQyYWIyMjZhNGI4NTg3ZjE1Y2YyNjUzNmIzMzJkYTY4OWRhNzBkNDU4OGJiZjE3MDY5NzY0NmVjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZTczMjdlYjU1MDFlMzY1OGNiNGM4YTM3ZTI5NmY2MTVjZmQ2OGIwYWIzOGY3OWU1ZjQ2NTRkZDRjZTY3YTUifQ"
+          "resource": "repo://scripts/ci-status.mjs#L214-L341",
+          "version": "repo-lines-v1:sha256:8bb14e6eb13c1e88aabc812b4700bee658456913c5e7c426b8c797460516fa62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiODAzYTM5ZGVlMTU5M2QwZmMyOTE3NjRiNDk3ZGRmOTU3MzAzYjBlZGQwNTBlM2NmNTI3ZTlhNGQxNjFiMjIyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZDRjNmZkMmFiMjI2YTRiODU4N2YxNWNmMjY1MzZiMzMyZGE2ODlkYTcwZDQ1ODhiYmYxNzA2OTc2NDZlYzNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWU3MzI3ZWI1NTAxZTM2NThjYjRjOGEzN2UyOTZmNjE1Y2ZkNjhiMGFiMzhmNzllNWY0NjU0ZGQ0Y2U2N2E1In0"
         }
       ]
     },
@@ -115,7 +115,7 @@
       "statement": "Only app-e2e publishes a counts bundle on an explicit green run: counts mode is self-limiting BY CONSTRUCTION because COUNTS_SOURCES names only step logs app-e2e produces, so every other green job finds no sources and reports `digest-outcome=not-needed` — leaving no bundle, no per-job log endpoint and no commit status for what its steps measured (measured on cd-deploy run 3430, where the job's success left no trace and the prod-apk disk measurement had only ever been readable because the job failed). The pattern used to recover a measurement from an otherwise-silent green job is to have the step export its value to $GITHUB_OUTPUT and add an always()-gated, continue-on-error recorder that curls it onto the commit as its own commit status, with the state always 'success' and the finding carried in the description, values passed through raw including `<unset>`, and a context name verified against the live required-check glob list so it cannot accidentally start gating merges.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L431-L449",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L434-L452",
           "version": "repo-lines-v1:sha256:c5b36f83a9c9300ebcba3d1a90eece7b0dca3bf08fd80df3ff415ae6aa15c7a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZDVlOWM2NWQ4MmJlNzQ5MDc4ZTIxNWMyMjhmMzhhZDUyMTI0NzJlNTBkYTVkNTMwMjE5ZmE4Y2IzOTQ2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjZiODlmZjJmOTYyYjlhOWNmNzQ4YTM1MDc4OWY2NWM0MjhiOTE2MDMzMmMwZTRiMzQ5MDJjZmEwY2FjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZmNhNzViM2E0NDgxYTI3YTZmZWMzODk4MjRjMzYyNWNhNGNjNzEwYTdhYTE4NGJkN2E0NTE5YzhlODI4MDcifQ"
         },
         {
@@ -123,7 +123,7 @@
           "version": "repo-lines-v1:sha256:2073e9562fee4daba8c77c15cbfe5ade6c12c324f2627fb6b7611dfc548c6b43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMzc1MTFiMWRiOGU2Y2U2YzI2MGE2ZGVkNzFjYzdmMjM1MGFlYmE5MTg5ZWFhNzY2M2YzZmE4NDAyNmFhOWQ0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMGJjMjJmZWU5MzVmY2Q5N2I3Njg5M2I0ZWRjYTYyZTVmZDU0ZWIxMjI3MGFhOWQwMTc4MmZjNGNkYmY4MTU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1514-L1540",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1545-L1571",
           "version": "repo-lines-v1:sha256:34080285b612f55cbfa245010417e2f16276c446ee266f93974306efed60ff5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmN2U5ZTc1MzQzMzQ0ZDMwNjYxMjUwYzA4ZGI3MWU2N2U2Zjg2ZDUzYmM2NGEzMzBjYmIyZDU5NjExZTJlZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MGFlYzAxYjE0OWQ4YTFmMTIyZGNiMDJhMjg4ZjA4MTJmZWI2YmYxN2MyZDA0NzViY2IxOGFhNmE0M2Y4YTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODkzNDc1NjFlNmU5YTYwY2M3YjQwNmVjYjNlMjZmMGI2MTQ0ZjM5YTQyZTUyNDQwYjhkZDk2NmU4MzlhOTcifQ"
         },
         {
@@ -138,11 +138,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -196,7 +196,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         }
       ]
     },
@@ -206,11 +206,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -220,11 +220,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -234,11 +234,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
@@ -252,11 +252,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -266,11 +266,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -280,11 +280,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -293,7 +293,7 @@
       "statement": "cd-dispatch / trigger-cd is not a CI result: it is published by scripts/cd-dispatch-gate.mjs and is the only place a declined deploy is visible (before item #230 a run that declined to dispatch and a run that deployed looked identical from outside, and a merged commit went undeployed for a day — measured 2026-08-22 on PR #217). A superseded tip or 'nothing deployable changed since the last deploy' is published as success (a correct non-deploy), while a guardrails failure, an unfinished guardrails run or no guardrails at all is published as failure and also reds the job, so this status must be read before concluding a deploy was lost.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1941-L1960",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1959-L1978",
           "version": "repo-lines-v1:sha256:f84cd7f10063117d8738a044c0ab98ca201d8e7473ad9acfe898ef940535474d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MjFmYWQ4MjliNDkyZjZiYTkxMTJkYzU4ZDg5NTZmMmRhMDI1MGQ5ODg3NjNlNGJmMWU4ZGM2ZDdiNDJhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGFkNjRhNzc2N2YyNmFjNDRhMjcxNzgwN2E4NjAzYzQ5ZmQxZTAwMDE1MWZhYzgzYjk1OWE4MDBlYjAzNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -316,7 +316,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         }
       ]
     },
@@ -326,11 +326,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -344,7 +344,7 @@
         },
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/reap-merged-branches.mjs",
@@ -358,7 +358,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         }
       ]
     },
@@ -368,11 +368,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -382,11 +382,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -395,7 +395,7 @@
       "statement": "The deploy gate decides on the EFFECTIVE TIP of main, not on the commit that triggered it: cd-dispatch-gate.mjs computes the newest commit that will actually run a workflow (skipping commits carrying a `[skip ci]`-family marker, because cd-deploy's own promotion commit is pushed with one and would otherwise make the commit that legitimately owns the deploy look superseded), reports `superseded` as a non-fatal success when an older commit hands off, and only dispatches when guardrails are green on the tip. The dispatch sends `{\"ref\":\"main\"}` rather than the verified sha, so dispatching from a superseded commit would deploy a tree whose CI was never checked; the tip question is therefore answered BEFORE guardrails are read, because a superseded commit's guardrails legitimately report `failure`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1962-L1981",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1980-L1999",
           "version": "repo-lines-v1:sha256:8fa5c97d9e1b631029bea02345f40f0a2701f23a35c09499df1424cae964752b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMDlhNGQyZGJiZDgzNDJiODJkMmJmNzUxMjAwY2E2YjkzNjllZDk4ZGM1YTc3YTQ3NDUwMWYyY2EzN2UzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YzIxMzFkOTFkNTAwNzFmOWZkYWQ4ODhjYmQyMDEzMmZkODM5ZTU5N2UyM2U2ZjcxODU1MGE2MDk3NTVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZDVjNDMzYjcwOWEyNjZiOWE3MWExMDNjYTViNDQwNTIzYWVkNTY2NTEyNWE3ZTQ5MjNhNWM0ZjNkYzkxMDQifQ"
         },
         {
@@ -427,7 +427,7 @@
       "statement": "The deploy gate's decision is a pure function (`decide()`), tested against the item #230 incident's own payloads in scripts/__tests__/cd-dispatch-gate.test.mjs, and its workflow wiring is separately pinned by scripts/__tests__/app-ci-trigger-cd.guard.test.mjs — which asserts the checkout (fetch-depth: 0, so `git diff <last promotion commit>..HEAD` can resolve its base) precedes the gate step and that the dispatch step is conditional on the gate's `dispatch` output, because a pure function nothing calls is decoration and a shallow clone would silently disable the redundant-deploy skip on every run.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1936-L1960",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1954-L1978",
           "version": "repo-lines-v1:sha256:448e25cf69f282ef2c4447202a33193272b9c063bc675eafbf4b05b361cbb6ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MjMyZTA0OWE3YjM0MmYxYmFiZGFmZTg4NGJmNDczNjAyNzlmNmU5ZTUzNjAxMDYxNjliODk5MDE2MDA0ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZGY1NThjOGM2MzEyZjhkYmUyNWViMjgzMjVlY2ZlNTRkZDE4ZmJjMmYxM2FjYWYyZTNlNDVmM2NmNmEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -463,11 +463,11 @@
       "statement": "A green app-e2e's counts bundle is small and deliberately narrow: it carries the `[e2e-gate]` counts (gate tier and model tier), the `[e2e-contention]` tally, the `[e2e-turn-tally]` verdict, the opt-in full mobile suite's per-flow table, and the `web-e2e` log reduced to its `[global-setup]`/`[playwright]` setup lines only — no PR comment, no health blocks, no container logs, and never a commit status. It needs the purpose-scoped CI_DIGEST_TOKEN because the package registry requires a scope the run-provisioned token lacks; without it the counts are still printed to the job log unconditionally, so the outcome is narrowed rather than lost, and the same counts path also runs bundle retention because publishing on every green run is what makes unbounded growth reachable.",
       "evidence": [
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1500-L1512",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1531-L1543",
           "version": "repo-lines-v1:sha256:8bbf3587d667b8fa75407580fd5be213a6dd4ff1d695ba531a5aa8440e54d284:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZTYzODc4NTk5ZTA0MjlmNmY0YzZiM2ZlZDQ3NTY5NjMwZjY0ZjBjNDA3Y2RmMGMyMzk4YTlhMzIxZTQ3MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZDFmZDdjMGQ1N2M2OTkxMGI1M2E0NTVlNmJhODFiMjEzNWNlMmNjOWFmMTBmMWE4MWFiNGNiNzk0ZDFkNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYTQ5OTE0YWI0M2QwZDE2MDM2NWI2MWRkYTRjM2ViNWM1Y2VhMzg3ZTg4OTBkMmVhYmI1ZTg3NzgxMjFhOWEifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1517-L1563",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1548-L1594",
           "version": "repo-lines-v1:sha256:6ed536b6a43f91440dffeb8b6ab2bad4097b7e25a24df63886486f0c8cd1aebe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxM2IyNWNmMGMzY2RhZjMyNWJjODhmNTBkMWIxZDdhODQ1MjZlMjgyZjI5ZGUxMTFkM2Q0OGEwYzFhNjkzMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0NGVhYjc3YjJlYzUxNjcwOTQxYjAyZWM1NTRjMjUzODVmZDE0NDg4MmEyMzczYzViNWQ4ZGMyMDg3NmMyZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         },
         {
@@ -481,11 +481,11 @@
       "statement": "On a green app-e2e the job judges its own counts rather than relying on someone reading the bundle: app-ci runs `node scripts/e2e-failure-set.mjs gate <web-e2e.log>` (and a separate non-blocking model-tier gate) which fails on `skipped > 0`, `did not run > 0` or a log with no summary at all — never re-failing on `failed > 0` — and runs `scripts/e2e-contention-tally.sh --gate`, which fails on `refresh_429 > 0` or `session_evicted > 0` but deliberately stays silent when the source is `unavailable`, since that implies bring-up already failed. Neither gate may carry `continue-on-error`: with it restored the step still runs and still prints its failure, so the log looks identical while the job passes regardless. The `flaky` count and the identities of the flaky tests reach no artifact on the green path except through this step's log, which is what the counts bundle publishes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1139-L1154",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1149-L1164",
           "version": "repo-lines-v1:sha256:669db90a16e88e27428d1b9099f8ae33b8cb84f1ea84b90a7e6905311d8e6404:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjVjMzJlNDQ2MDI2NzJlMmEyYzYxZmQwMTUzMTcxMzc4Y2EwY2IyNDkxNjNiYjhlY2IyYTljODY4ZGQxMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYWM4NjZlYzAwNjFhNTQ0NmFhZjBhNTNmYzQxYjdjZDM0ZWQ1ZjM4NTc4MWRjZTJlOGE4M2NjNDFlOTljZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0ZGM1OTI4YzViOTY2Y2UwMGM4OGQzMjdmMWRlNjNmYWZmNDA4MWE2YTE0YzhkODVmYmRjOGFjZjE0MTM0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZTEwZDUyYjJlOGEwMWFmZThhNWRhNzVhMWQ4YTA4M2Q1OGY1YWY1ZGM1ZThjNzMzMGU5N2RkYzU1YjJmZGUifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1183-L1185",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1193-L1195",
           "version": "repo-lines-v1:sha256:a22e0e16bf3dd4e722b271a5228c5ff20522a36a6fb3f0654d7c705ad46c52a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdhMWU3ZWEzOTI2MjcyMDc4MWY4NTlkOWZhMmE4MzRjZTI4ZGFlMzY1MmY4NmU3YjFhNmFlYWQ2ZWFmMmRjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiNGFiMWIzYmU0NTUwZGY1MjY5ZGJjMzU1YTE1NThiMzIxOGMxY2U5MDRhNWM0OGI3MTE4YTFkYzY3ZjZkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGFkZDBjZDFmYzk4NjQ3ZjllZWVlNTk1NzFlZDQyMWMzM2RlYjI1ZDRiMDczMjMxNGYwODg1NjBlZjM1OTViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNjNjA0NDg1MjkwNzUyOTVlYTM0OTJkM2MzNWMzM2NiNTNjMjFkYmE5OGFkMGRlYzU2YTM4MjYyOThmNjZkMSJ9"
         },
         {
@@ -522,11 +522,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-failure-digest.mjs",
-          "version": "repo-file-v1:sha256:d70e9eb9720286c2ab27a1390e71d18c54e836ba73dbe2daf029ae9c8b5a076c"
+          "version": "repo-file-v1:sha256:43bd6e5f5a9a5e7ff3cd7819e25c3a869c2caf935dae042c866776afee481ae8"
         }
       ]
     },
@@ -536,7 +536,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         }
       ]
     },
@@ -546,7 +546,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         }
       ]
     },
@@ -584,15 +584,15 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/__tests__/ci-status.test.mjs",
-          "version": "repo-file-v1:sha256:bba24f02c63ebed1c9eb3e1dfdddb29beea1f89c79ea9145970f1ffb9477e19b"
+          "version": "repo-file-v1:sha256:c35bf265367353c306be6e23caa51450f3760743a7f533a58e451b1c8c4bb964"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
@@ -606,7 +606,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json",
@@ -614,7 +614,7 @@
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -624,11 +624,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
@@ -642,11 +642,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -656,15 +656,15 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://scripts/__tests__/ci-status.test.mjs",
-          "version": "repo-file-v1:sha256:bba24f02c63ebed1c9eb3e1dfdddb29beea1f89c79ea9145970f1ffb9477e19b"
+          "version": "repo-file-v1:sha256:c35bf265367353c306be6e23caa51450f3760743a7f533a58e451b1c8c4bb964"
         },
         {
           "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:8cf6ed1d25ed554d1610276da6f36e14029c1796d49b5a76f38baeb9e40ac3f7"
+          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
         }
       ]
     },
@@ -673,7 +673,7 @@
       "statement": "`app-ci / app-image-scan` is a REQUIRED app-ci job that needs [changes, app-e2e], runs with `always()` (so a skipped app-e2e cannot cascade-skip it and a required context always posts) on the `kvm` runner against app-e2e's own rootless daemon socket, passes early in seconds when `changes.outputs.app` is not `true` (`no app path changed — images identical to main's`), fails closed when the `changes` job itself did not succeed (an unknown app diff must not read as nothing to scan), and verifies all six `app-scan/<name>:run-<run id>` tags exist before scanning any of them — so it never passes on images it could not find.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1772-L1860",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1788-L1876",
           "version": "repo-lines-v1:sha256:7c3ce051f647992c1d6ca875a00740edaeb653e7887f0c363db3f4ed6d1bbff5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjhjNWViYTQ2Yjg0N2M5YWY1ZjM5ZGFkOTI4NjljM2Q3ODJkOTBjNzhjNTFlNGJkMmI1NzQzNmMxMDNmZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllZDA4MmUwNGFlNTg5MjA1OTEyZmFmYzUxZTlmMTE4YTRjZDJmM2RiOTVkMDA1NjVhZTNlNTQ2YTA3MjIyMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3Njc2M2JmMmQ0NDM1NzcyYzkwOWM4NDEwNTA0ZWRjZTk2ZTM5MGM2OTJmYmEwMmI1MWIzNzUzNTM2NGYzZmUifQ"
         },
         {
@@ -687,12 +687,12 @@
       "statement": "`app-e2e` tags each of the six app images `app-scan/<name>:run-<run id>` unconditionally and immediately after they are built (before the E2E steps, so a later failing step still leaves the scan its images), and `app-image-scan` removes those run tags at the end with `always()` while leaving the `:latest` images in place; the per-RUN tag is what stops a later run rebuilding `:latest` on the persistent daemon from changing what is scanned.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1883-L1891",
-          "version": "repo-lines-v1:sha256:197e8684506312efe161d8f7eb8641e973520a5991136ae02936fa4d2b02314f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVmNmU0MzU5MDY0YTcyMWYyMWUwZGJkMDk1NzNmMzhmZmZmYTYxZGM5YzQ2MTc3YTIxMTFmNmZmMzNkODVhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlMDQ4NTdhNDg5NmU1ZWZiMGI5Yjg0MmE1NDY2NDFhNWMwZDUzZDIxYmJiNjE4MGFkZTNkZGFiNGU5ZDZjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E4ODljMTNjZjNkYjc3ZGRiOTUyNzc2ZTI1ZDRkNzE2NDEwMzNjMjI3ZmI1ZmE4MDBiZjYzNDkwZDk1YTk2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMwNDllZjM5NmU2MDg2MGYxMjg4MWMwZmY2Mjg3MDljNmUyN2I2YjRiODU2NjNlOGIwY2U5M2VjNjRkNzNjYiJ9"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1899-L1909",
+          "version": "repo-lines-v1:sha256:7ee92af9b3df2ed369d6b7d040e311b3e1e26842a332994771ebec1ded7c390c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZjZlNDM1OTA2NGE3MjFmMjFlMGRiZDA5NTczZjM4ZmZmZmE2MWRjOWM0NjE3N2EyMTExZjZmZjMzZDg1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhODg5YzEzY2YzZGI3N2RkYjk1Mjc3NmUyNWQ0ZDcxNjQxMDMzYzIyN2ZiNWZhODAwYmY2MzQ5MGQ5NWE5NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMDQ5ZWYzOTZlNjA4NjBmMTI4ODFjMGZmNjI4NzA5YzZlMjdiNmI0Yjg1NjYzZThiMGNlOTNlYzY0ZDczY2IifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L808-L821",
-          "version": "repo-lines-v1:sha256:a303aeae255d1ac6f684c22be4017a6679afc5a1f6c8eb0ae85bfbe50efa06bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L811-L831",
+          "version": "repo-lines-v1:sha256:314c3f4ff8c63b2664c7176e9ee0383e5970fb16f49e7ce4a83e58d68c3709eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
         },
         {
           "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L186-L203",
@@ -705,7 +705,7 @@
       "statement": "`trigger-cd` gained `app-image-scan` as a `needs:` dependency and requires its result to be exactly `success`, so a red scan on `main` blocks the CD dispatch as well as the merge; because the scan job is itself `always()` and posts `success` when there was legitimately nothing to scan, only a skipped or failed scan is prevented from reaching a deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1906-L1921",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1924-L1939",
           "version": "repo-lines-v1:sha256:d09cea38d4ee53153ba85ee408041ca2e6857bf3b48ab577d00d8b6893431cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTViZTRkZDM2Yzc2NTRjZTZlMzVjNzI1NzQzOTMwNjQ2MGY5ZGU0M2JhODlhM2MyMDY5MWMwZjJkMGJhMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTM5NjM1MjcwNmM1ZDhkMDc3Y2I4ZmU0ZjNiZWU0OWQ2YzkwNWI3MTA0MmM1NjUzMTcwYTgzYWE5Nzg5ZWQifQ"
         },
         {
@@ -741,7 +741,7 @@
       "statement": "The PR-time scan and the deploy run ONE pipeline: both callers invoke `scripts/cd/scan-app-image.sh` and neither runs `trivy image`, `infra-image-scan.mjs` or `check-infra-image-findings.mjs` itself, so a PR and the deploy that follows it share one set of flags and one allowlist (`security/infra-images/allowlist.yaml`); the Trivy version is pinned separately in each workflow that installs it (app-ci.yml, cd-deploy.yml, infra-image-scan.yml) and `renovate-workflow.guard.test.mjs` fails if those pins disagree or are not both pinned and agreeing with the version-tagged install script, while a drift guard in `scripts/__tests__/app-image-scan.test.mjs` fails if either caller starts scanning on its own or if the PR's image list and `scan-push.sh`'s image map disagree.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1825-L1841",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1841-L1857",
           "version": "repo-lines-v1:sha256:a2490e53a820cd09cae1d46208ffc955a2589678dd25b7bb53a0cbde387d15e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMDQyNjM4YjZmYmZmNjQyZTYwZTQ5ZjM2M2UzNDZjNGU4ZWZmMWExZGYzOGI5ODVkNGUzMmIwZmY5ZDQxYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczNTgwZDg1MTE5N2Q2ODZlZTg2MmRiZTdjYWUxMTY5MDQwN2QyMzdkYjkyNzM5YTRjNGVmNTljOTM3NTEyYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNjYwYzhmZWQ0YTBkNDNiNjY0Y2IxOTg3Y2EzYzNjNWQ3YjY5NmFhYjE2MTQwZDdhMmQ1NjA5ODcyNWQ4M2YifQ"
         },
         {
@@ -763,7 +763,7 @@
       "statement": "The residual after spec 084 US3 is real: a green PR can still meet a red deploy, because the vulnerability database moves between the PR's scan and the deploy's and because cd-deploy rebuilds the images (its `mcm-bff` bakes the public Keycloak host into the web bundle, though packages and base image are the same). That is why the job also runs on pushes to `main` so a database change reds before any dispatch, and why `scan-push` stays in place, unchanged in position, as the gate on what is actually pushed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L521-L527",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L536-L542",
           "version": "repo-lines-v1:sha256:3e937c4186c12af6fc0609f6461c50546b7d70e03557384a4160fbe530b3b7bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Y3MGFiOTA3MDBhZTYzMDMzNzE3YjA2MzUyZWFmYjMzZDBlYzQxYjdmMWQ4Mzg2NTFmZjg0YTQ2N2Y0NDlkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFlOTQyYjQ4YjhiYjVhMTUwMGE2ZTE4YzViMzBlMTc2NGI1ZGQ3NWRlODc1MTFjOWMzNDU0MjJkYjc0ODc4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgwMjE5MDBmMDI5OWNlZGE0NjExZTM1ZTVhYmEzODk4M2M5NjI1ZmNjYWRmNzFiNzUxZjNmNzZkMWY0ODQ4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzhlOGE3MzMxMDAwMWM0MTEwMzE5NzJmMjBhMWRiZDY5ODE5ZDRmZWJkODgyMGJkNWIxZmZiNmJlMDBhNWE2YyJ9"
         },
         {
@@ -777,7 +777,7 @@
       "statement": "An allowlist entry suppresses a finding in the PR scan and the deploy gate at once, because both read the same `security/infra-images/allowlist.yaml`; entries must be keyed to the image DIGEST (`^<image>:<tag>@sha256:<prefix>`) so that a rebuild is scanned unsuppressed, and an entry carries a justification, an author and usually an expiry after which it stops suppressing.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L517-L519",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L532-L534",
           "version": "repo-lines-v1:sha256:cdef04391132fd04b9fdd9270698f1d8b3e964c01eeb98d007020bd2f650a15b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAxMjg0MjhmMjkzZmFlZDIyMmJlMDE5Mzc2MTMyYzQ1MDg0MDk5OGY4N2UyYjQ4MGFmOGIyZmQ0YWI5MGJkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhODc1ZDRmZDUyZWNmNDQ3NWQ2MmYzZDY4MGVlNThiMzJkMWFhYWU2NjgzMzQyOTMzMmUzMDgzYWM5MTIyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzNhZGQ3ZTAxYzMyZDRmNjUzOGI5ZGQ4NTRjNzAxOTFmOTgxOTJkM2QwM2M1NTBkNDZmYmM5YWQ0NDU1ZjhhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU5NDBkNzZjNDc5Y2FjYjEyODE0NzdkNWUxNTA0MTkzZjU1MGVjMDA2ZWRiODA4NTM4OWY5YWMzZmEwMGNlMCJ9"
         },
         {
@@ -791,7 +791,7 @@
       "statement": "The fifth measured quirk of `GET /actions/runs` is that a queued run's `started` is the EPOCH, not `null`: a run with `status: waiting` reports `started: \"1970-01-01T00:00:00Z\"`, so the obvious narrowing filter (`select(.started > \"<recent>\")`) silently drops every queued run and reads exactly like `the push triggered nothing` (three runs created for one push were all invisible). Filter on `status` or `id` and read `started` only once the run has begun; a SORT by `Date.parse(started)` is safe because a queued run sorts oldest, but a FILTER on it is not.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L554-L571",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L569-L586",
           "version": "repo-lines-v1:sha256:b57aa007ce80953293f74955900c5a33420bdd24200e5b4610bd9d680ae18c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NjQzYTdkNGEwOWFiMGVlYTNmNDY5MjljOTg4NmM0ZDQwZWI1OWQ0NjZkMTUyMDFmZWIwODlkYTEwYTdmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYzhkNDg5MzFjYjdhMmYwOGYzMTYxMjYyNDc2YmNkODUzMTViMzM3Y2YwMTU2YTdlODA1NzVmMDQ3ZDU1NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NjQ5Yzg4ODUwMWRmY2RiOGE2OWVmY2FiZDdkZTQzMGYzY2JiMmE1OGQ4NjRlNjQyNjM2MGRjYjI0NjUzNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMTI4MmNlYzU4ZjUwNTFhY2IzMTNjNmI2ZDY2MzU5ZDA2MGYyZTA1MWFmNGI3NjViOTdiZTYwNjQ2MDhkZTAifQ"
         }
       ]
@@ -801,7 +801,7 @@
       "statement": "The built-in fallback required-check list carries a seventh glob, `app-ci / app-image-scan*` (spec 084 US3), and the fallback is a SUBSET of live branch protection by design — it may lag, but an extra glob would mark a check required that is not and block a mergeable PR, so a guard test asserts every fallback glob is present in the branch-protection payload.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L880-L896",
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L919-L935",
           "version": "repo-lines-v1:sha256:c1e6fe0394397e5f433e918a021f0ef193755f90b652981eb3786e4c30bf8aca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZWJmYWI4MDYwYTQ4OTI4ZWVmNGE5NTVmMGUzMjMzZjZiNmM1N2M0NzQxZjdlNjFjZTlmNzhlMDMxYTUzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNmI4M2RhY2E4ZGNhNWFjNmJlODQ5ODQ3OTViMTkyMGEyOGI5ODE2YmEwYTkzZDBlYmY1MTdkNGRjMTc1YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyMWMwZWMzYmJiNmZjZWVlMGQ4YjE4NWZiMTJiMjIwYWRjMWRkZWRjZjM1NmNjMjhmYWRkYjg3NTVkZGFjMjkifQ"
         },
         {
@@ -809,7 +809,7 @@
           "version": "repo-lines-v1:sha256:bbd9b83ee4aeac358807b8001380e2e5f6251899cb5732113cc31cac478fc448:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZDJiMTkzNDkzMTY5MTY2OWNjMzVhODc2MTk1MTgwMTUzMzYyMTNkZGEwYTYwZmUxYjA5ZjliOGUzZTk5M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjNWI4MTUwMDkwNDkwMzlkOWE2YmJkOTY1N2YzYTE0MmFiZDI3OWEzYTY4NTlkYTM5OTVjZTEyZjgwYTUyMDgifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L515-L524",
+          "resource": "repo://scripts/ci-status.mjs#L543-L552",
           "version": "repo-lines-v1:sha256:702c1375b38376ab963a79160185a85f0daa67ee0d8471f055fddff86a4dea85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMTg2NzU4YWZkMmRkNjM3MDFlNGM0NmVhNjIzMTg3MjUzMjYwNDBmODFjYzg3MzAzOGRmNzc2MzI2MDM4OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YjczNzgzNTg4YmNhZWM0Zjc1M2JhMjI2NDg4NTQ2NmVmNGVhMzQ1ODU3OGMwYzIwYjUzMWQxMzhjY2U0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
         }
       ]
@@ -833,7 +833,7 @@
       "statement": "Every `app-image-scan` step is on the `CI_STEP_TIMEOUT_SECONDS` backstop today — listed by name in `scripts/ci-step-ceilings.tsv`'s `ON THE BACKSTOP` block with no observations yet — and the job bounds them with its own `CI_STEP_TIMEOUT_SECONDS: '900'` below its 30-minute job ceiling, so a hung scan fails its step and the failure digest still runs.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1785-L1791",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1801-L1807",
           "version": "repo-lines-v1:sha256:340a5837b7c31eb0137d277bb73ec1a947fa0c023c3680d2349ce3ff4fb286f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFmNGZmNWZkZmY4MDA4MjU0YTg5ZTdjMzk1ZjFhNDU2OTAwYjA3ZTQ3ZDAxNjkzMjE0NTVhMzViZDk2MzA1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZDdiZDljZWMxZDY5NzJkMTBjYzRkMWMwOGQ1M2YwNzNlMWYwNzc0MjEyOWIzMDhiNTA2MjI3NTRmN2NjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzVhOGIwZjRmMDI3NzE2YzZkMzk0ZjZkZjQ2ZTllYTdmNTI5MjgxYWY0YzQ0MjljODVmMTVjYzkyZWJhZDcyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjE2MzFhZDExYzhiODI2ZjQ5ZGZjYzM0N2I3ZGYzYzg5OWZjYjBjY2EzNDMxZjE5ZGQyMWU4NzY0YzIyYzBhOSJ9"
         },
         {
@@ -847,7 +847,7 @@
       "statement": "The separator-less self-posted context form (`infra-image-scan/weekly`, `renovate/mode`) is safe to post only because branch protection requires the SPACED glob (`infra-image-scan / infra-image-scan*`) and a context with no ` / ` cannot match it — which is also why the head, not the tail, owns the bundle; and because a bundle that appears absent is often merely mis-named, the package registry should be listed (`GET /api/v1/packages/{owner}?type=generic&q=ci-failures`) before concluding no bundle exists.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L573-L602",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L588-L617",
           "version": "repo-lines-v1:sha256:5fb59d6e49dd25249e0b7f772093679ebedf0c41f19d2c3e2f45eb4cc26b7182:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NmNiZjQ0YTdmOThlYWU3MDMzZjk3YzQwM2JkNjMzYTQxZjM3YjgwZTMwZTEwOWI0ZDllYjFhYjQyZDYxZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxZmEyYWM1ODE5M2VjYjljYzU5YjZiNTIzMzhiMzlkMzg3MDY1ZGIyMTVlMTY4ODcwYzZkMTUyMTJlNWRkMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MTQ2Nzg2YjQ5MDVhZGQwNzY5YzdhNWFmZDljOTEzNGU4ZmIyMjRmMTc4YTU4MDUzMzc4OGFkMTZjMTQ2MGIifQ"
         },
         {
@@ -862,7 +862,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -876,7 +876,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -901,7 +901,7 @@
           "version": "repo-lines-v1:sha256:6f83d65ae2b50aa902a5d3f343d8d5070e14d65abb195a52b4d8605f9b8f3847:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjc4ZDE3MzNjY2E4Yjg1MGQ1ZjA4NzNmZjlkZjYxYTMxZDI3YTEzNzA5NjdhNTM3OGNhODYxY2ExODBhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNWNjOThmZGVmMjI1ZTJiMDYzOTY0YmIyNzgxMDdhMjhjMTIwYWFmOTVhNWE3Yjc2N2NlYmU4OWI3MTVkNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNTRiODljODdlOWY0MTcxYzY3NWQ4NjYwNGU0MjFmOWQ2ZDY4NjA3MWQ4ZmJiMDc4NGNmYmQ2NDBiOWMxZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmOThiMGFkZWM3ZmJiZDE1MmQ1MDI2OTI0YzRkY2JhYzJjY2E1NTc0ODNiNWU1NWZhODFkOWQ1MjZlYzc0NzkifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1011-L1012",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1042-L1043",
           "version": "repo-lines-v1:sha256:69e26e9965f03a04ec932cb048e5e274592c3d63687a259ef6b5d1ba7def536b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM5ZjhkZDA0YTFhYWRiYjcwMmQzZjJlOGYxYjMzN2FmNjhiZjA2ZmIwNjMzYTM3Zjc2NWY2ZDFkMWNkM2RkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0MGRjNWE1ZGNjZWQ5YWUzODdmYWQ1MTMyYzNiZGVlZDQzZGI3OTRhOTQyMjBmMzU4YWQ0ZGZlNDcyNTA4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA4M2EyZTRlNDhlYzI0MWU0Y2E4Y2Y5NDA2NTg1ODEzZDczY2RlMmNiNDJkYTIzN2QwMzAwMTBjZmM5OGQ3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjYjlhZThlMjRiYTJiMzBjNmRiODYwMjE5NTg4NTNhMzQyNTJhYmNmZWJlOTk4OWFhMTdjYjljNmNlZjE2NSJ9"
         },
         {
@@ -934,7 +934,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L7-L36",
@@ -952,7 +952,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L199-L208",
@@ -1036,7 +1036,7 @@
         },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L367-L376",
@@ -1089,7 +1089,7 @@
       "statement": "The forge's GENERIC package registry has no scheduled sweep — each publisher prunes opportunistically at publish time, which is why registry retention owns only the container images. `scripts/ci-failure-digest.mjs` deletes `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS` (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — invoked by `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by `created_at` plus any version whose name ends in `-keep`, which is never pruned and does not consume one of the 5 slots. That retention is COUNT-based rather than a day window because a quiet month would otherwise delete every installable APK, and a prune failure in either publisher is logged and swallowed rather than allowed to red a deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L523-L523",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L526-L526",
           "version": "repo-lines-v1:sha256:187f0d41da3f3812aacbc47c9efdcda27d677a8a0c59272e32e05e218d3a4165:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA4YzE0ODYyMDQzMWYxZmU3ZjhkYjg3NWQwM2U3Y2I5ODFmNzgyMGE4MTBkMzUwNDA2MDNkMTIwZGQzMjVhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI4NjVmMDFiYWI3NmYzZDkyMDA2Yzg0YzlhOTk4ZGY2YzQ2YmRlNGIxNzRmYjI4NThkZmFhZGJmYjM4ZTMyOSJ9"
         },
         {
@@ -1101,11 +1101,11 @@
           "version": "repo-lines-v1:sha256:22190b526e98787c46c8e1ae6bfbfec829d8d214bfb25d60952da755f73d62e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmODg4ODAxYWJlNWFiNTVmZjhjMDlkNjkwMDY3NjJhNjdkMjEyMDIzMTIxYWQ4OTZlMjZkMGRmZDc4ZjFiZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2NmFkYzU5NDk5ZjVjY2RiOTU1NDM3MWE3ZWY0Y2ZkN2U5OWIyMDMyMzM5ZmZkODFjYTQyYTM1ZDIxNzM0OWYifQ"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1011-L1012",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1042-L1043",
           "version": "repo-lines-v1:sha256:69e26e9965f03a04ec932cb048e5e274592c3d63687a259ef6b5d1ba7def536b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM5ZjhkZDA0YTFhYWRiYjcwMmQzZjJlOGYxYjMzN2FmNjhiZjA2ZmIwNjMzYTM3Zjc2NWY2ZDFkMWNkM2RkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0MGRjNWE1ZGNjZWQ5YWUzODdmYWQ1MTMyYzNiZGVlZDQzZGI3OTRhOTQyMjBmMzU4YWQ0ZGZlNDcyNTA4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA4M2EyZTRlNDhlYzI0MWU0Y2E4Y2Y5NDA2NTg1ODEzZDczY2RlMmNiNDJkYTIzN2QwMzAwMTBjZmM5OGQ3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjYjlhZThlMjRiYTJiMzBjNmRiODYwMjE5NTg4NTNhMzQyNTJhYmNmZWJlOTk4OWFhMTdjYjljNmNlZjE2NSJ9"
         },
         {
-          "resource": "repo://scripts/ci-failure-digest.mjs#L1189-L1200",
+          "resource": "repo://scripts/ci-failure-digest.mjs#L1220-L1231",
           "version": "repo-lines-v1:sha256:9e7616f2a99cfa5932f8584717849392a254c63295542d0cec067474bd2b373e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjOTAxMmY0N2M1NDM3ZDczYjM4MzBiNmUxNjFkOTdkZTc4YTIwM2Q5ZmIyMTMyNjdkMDJlOGE0NGQ5OGNlN2MifQ"
         }
       ]
@@ -1116,17 +1116,57 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
-          "version": "repo-file-v1:sha256:886721e565a96603f344050d8a5ef922b2be4efddbfebffcab90e22a92c521b4"
+          "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
           "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
         }
       ]
+    },
+    {
+      "id": "claim_a55b0ddaf80e4c34bf491e65bf873715",
+      "statement": "The `app-scan/<name>:run-<run id>` tags must be HELD by a container between `app-e2e` and `app-image-scan`, because on this single runner another run's `app-e2e`, `dast` or `build-deploy` can take the daemon in between and each begins with `docker image prune -af`, which deletes a bare tag (measured on PR #909, where `missing scan tag(s)` failed twice on images nobody had scanned after its own `app-e2e` had passed). `app-e2e` therefore holds each tag with a stopped container named `app-scan-hold-<run id>-<image>` and labelled `mcm.app-scan-hold`, which `image prune -a` never removes; `app-image-scan` removes its holds before its tags under `always()` (an `image rm` of a held tag only untags it), the hold is `rm -f`'d before being created because a re-run attempt keeps the same run id, and every one of the three image-prune sites first runs `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h` so a cancelled run's images are released after at most a day while a run still waiting for its scan keeps them. `docker ps -a --filter label=mcm.app-scan-hold` lists the holds, and holds from runs finished more than a day ago mean a prune site lost its sweep; `scripts/__tests__/app-image-scan.test.mjs` pins the sweep's label and age filters, their ordering before the image prune at all three sites, the site count, and that the hold is removed before the tag.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1899-L1909",
+          "version": "repo-lines-v1:sha256:7ee92af9b3df2ed369d6b7d040e311b3e1e26842a332994771ebec1ded7c390c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZjZlNDM1OTA2NGE3MjFmMjFlMGRiZDA5NTczZjM4ZmZmZmE2MWRjOWM0NjE3N2EyMTExZjZmZjMzZDg1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhODg5YzEzY2YzZGI3N2RkYjk1Mjc3NmUyNWQ0ZDcxNjQxMDMzYzIyN2ZiNWZhODAwYmY2MzQ5MGQ5NWE5NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMDQ5ZWYzOTZlNjA4NjBmMTI4ODFjMGZmNjI4NzA5YzZlMjdiNmI0Yjg1NjYzZThiMGNlOTNlYzY0ZDczY2IifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L811-L831",
+          "version": "repo-lines-v1:sha256:314c3f4ff8c63b2664c7176e9ee0383e5970fb16f49e7ce4a83e58d68c3709eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L130-L136",
+          "version": "repo-lines-v1:sha256:9d6edbd50b8b4782fdbb578e298ddafeafe51952a5fde44d03fa7ddfeb375ba3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUzYTEzNmZhMTliNWJhOTg5OWU3Y2E4ZWI4MjBjM2FmY2Y3ZjdiNTEwZmY3NTFjY2Y4NzA5ZDY0MDMyZjliYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUyNDFkNzhlNDk4ZTRhY2Y2NjIwNTM5MjUxMzFiNTMxMTI4MTA3MjEzZjlhMmI2MDA2ZWZhMTRhODg5NjVkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNiMWZiOWRjZTg1YjFjYjIyMjc3NDc3Y2ZmYWM1NjY0OTU0NDMxOWFhZTZmMGJlYmVjZGIxOTRkYWUyNTQxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDUyNzhmN2ExZGMyMjk3NGM5MmRiNjc0OGYxZWZlOTgzYTQ0MTUyNjQ2YTgwOTUyN2VhMzdiOWZmNzM4MTE3ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-image-scan.test.mjs#L231-L288",
+          "version": "repo-lines-v1:sha256:dc612d705b24529007b7fab14d5824b9d1ede512f292b5a459b30730d67392fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NzkyNzlhMjg4Y2QyMjNjZDRmYjk3NDEwMmU2ZTFkNTA1MjMzY2ZhNWViMDJmMGQ0NzM0Mjk4OTdhMjkxZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d0487d93442a4b83b802c7d4a08240f1",
+      "statement": "Matching a commit-status context to the run that produced it must key on the workflow file AND the run's trigger (`trigger_event || event`), never on `event` alone, because the same workflow runs several times on one sha and a cron run misreports `event: push`: measured 2026-11-01 on `7d27f72f`, the Friday cron (6172) and a push run (6164) of `infra-image-scan.yml` shared the sha, and the `event`-keyed match handed the push-suffixed check `infra-image-scan / infra-image-scan (push)` the CRON's run id — which is the id `failure --full` derives the evidence bundle from and the run whose `cancelled` status `classifyCheckState` reads, so the wrong id means a wrong bundle and a wrong superseded/failed call. A narrow, separator-less status carries no `(event)` suffix, so the events that post it cannot be read off the context and are declared in `NARROW_STATUS_EVENTS` (derived from each posting step's `if:` — `infra-image-scan/weekly` is `schedule` only, `renovate/mode` is `workflow_dispatch` only); an unlisted one falls back to 'the first run of that workflow on the sha', which is right only by list order, so a guard test fails when a workflow posts a separator-less status the table does not declare.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L243-L279",
+          "version": "repo-lines-v1:sha256:7cc6e9455a8d23a0163b9d404b7ef4df2e2999e326d433a7965946addfa809af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZWIzMzdmOWU0N2U2ZDBjM2FlNjg3ODA0NjA0ZDk0OGVlOTVlOTA0M2Q0NzY4MmI4MjM4OTY2NTk1YTU3YTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjJhZGE4Njk5NTJjMDYyMThkMTIyZWI1M2EzMmNiZDNjMzhlNDVmNTZkZTI5ZjA4OTNmZjg3OTgzMTc4YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyMjlmY2VhNDBiZmUxZTY4NjNjMGIwMmQyN2I1NTJkYzY5YTYyZjQ5YmY0OGMyNDZhNGYwNWFjNjYzNTk1NjQifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/fixtures/ci/runs-cron-shares-push-sha.json",
+          "version": "repo-file-v1:sha256:89650bf0181899b3c5cb858021434d77a43e1613547992ac02806b9401f699c8"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L252-L291",
+          "version": "repo-lines-v1:sha256:c73671c516c2d5ff3da010d743bde76b7dab030311e4e9ee5c13b24810af7de2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZjUzNWFlMDQ5ZjMxNTczN2I1MGNkZGNlZDcyMDlmZGQ1YzM5ZjBiZDk1ZjU4NjJiY2ExY2VhOTJhNTdkNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZWIxNDk0YjVhMzBmYzJmODkyMWRiOWE5OGVhOTczOGY1OTA5ZTliZDA2NDU2YzA0NjBjYzYwN2I0OGUzMTgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T03:57:29.221Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

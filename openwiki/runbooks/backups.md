@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "Per-user collection backups (scheduled & on-demand)"
-description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
+description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, the proxy-scheme trap that breaks the consent callback in production, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
 resource: docs/runbooks/backups.md
 tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
@@ -14,16 +14,22 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-2335f107cbd84a8f7aed9777
     resource: repo://frontend/mcm-app/src/app/bff-api/account/delete%2Bapi.ts
+  - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
   - id: openwiki-source-a344c8ab57b1d157819a0fd2
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
+  - id: openwiki-source-b497c3432bb5e7ba66ec8b46
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/jobs/%5BjobId%5D/index%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-8b28b8f7ca849a6400dddf6f
     resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
   - id: openwiki-source-98d68c854e7c7955c9f2546f
     resource: repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
   - id: openwiki-source-8ff4ea0c4e9c1b88a4c0eee7
     resource: repo://frontend/mcm-app/src/bff-server/audit-sink.ts
   - id: openwiki-source-f3703151c1ce1fae30ed6c7b
@@ -44,6 +50,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-efdc9f208512d58f170a0e44
+    resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-20919697827cd36ef7f9b62b
@@ -54,8 +62,12 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
   - id: openwiki-source-77b77a1d89a52ebe7205f42b
     resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
   - id: openwiki-source-f873d74e3a5ee524df98c4b4
     resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
     resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
   - id: openwiki-source-839571d2c51f49a930537d1b
@@ -68,10 +80,12 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
   - id: openwiki-source-511cf70d08e685e1be0170b8
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+  - id: openwiki-source-c0e733b8e0e04c7181715668
+    resource: repo://specs/085-bff-auth-fail-closed/baseline.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-27T23:08:42.159Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -170,6 +184,20 @@ this page distills the load-bearing gotchas an operator needs before touching th
   syncing it: re-running must not orphan every stored destination secret and offline token. The
   allow-list is an **exact** host match with no port, so adding a NAS means editing the Variable and
   Redeploying.
+- **In production the BFF must be told it is behind a TLS-terminating proxy, or the consent callback
+  never reaches Keycloak.** Cloudflare terminates TLS and `cloudflared` reaches the BFF over plain
+  HTTP; `@expo/server`'s express adapter builds every request URL from `req.protocol`, so without
+  express's `trust proxy` the consent route derived
+  `redirect_uri=http://mcm.…/bff-api/backups/consent` and Keycloak refused it ("Invalid parameter:
+  redirect_uri") because the client registers the `https://` URI — the schedule silently never turns
+  on. `server.js` sets `app.set('trust proxy', 1)` **only** when `TRUSTED_PROXY=true`, which
+  `infrastructure-as-code/docker/bff/compose.prod.yaml` supplies; `1` trusts exactly the immediate
+  hop, and only the *scheme* moves (the adapter reads the raw `Host` header, which `trust proxy`
+  does not touch, so `X-Forwarded-Host` cannot move the origin). With `TRUSTED_PROXY` unset a
+  directly exposed BFF keeps ignoring a client-supplied `X-Forwarded-Proto`. CI and dev never saw
+  this: there the BFF serves HTTPS itself on `:8443`. The account-deletion step-up callback has the
+  same dependency. Pinned by `tests/unit/bff-server-trust-proxy.test.ts`; the hosting trap is
+  described in [Expo Router and transport traps](../gotchas/expo-router-and-transport-traps.md).
 - **Retention's load-bearing safety property is that a failed or partial run prunes nothing.**
   Pruning on the failure path would turn "today's backup didn't happen" into "and yesterday's is
   gone too." Separately, a prune failure never fails the run — it is recorded on its own
@@ -185,17 +213,22 @@ this page distills the load-bearing gotchas an operator needs before touching th
   leaves a job pointing at a destination that no longer exists. What triggers the revoke is
   *any* remaining enabled job carrying a schedule, not the job that was just touched — revoking on
   the first disable would silently break every other schedule the user still has, and the symptom
-  would appear days later on an unrelated job.
+  would appear days later on an unrelated job. The route wiring is part of the rule: only an
+  explicit `schedule: null` (or `enabled: false`) on `PATCH /bff-api/backups/jobs/{jobId}`, and
+  `DELETE` of the job, call the revoke *after* the store change — an **omitted** `schedule` means
+  "leave it alone", so a client that serialises `undefined` away sends an empty patch and quietly
+  never gives the permission up. A refusal at the identity provider answers **502**: the job change
+  has already happened, but the BFF will not report the permission gone while a live offline token
+  remains.
 - **Revoking a backup grant issued to the LOGIN client ends that member's sign-in session**, so
   since feature 083 the consent round trip runs as its own Keycloak client (`mcm-backup-consent`,
   selected by `BACKUP_CONSENT_CLIENT_ID`). The member's browser already holds their SSO cookie, so
   Keycloak answers the consent round trip from the existing session and attaches the offline grant
   to it; revoking that grant removes the login client from the session. The member's access token
   still validates at the BFF, which checks JWTs locally, but Keycloak then refuses what it must
-  honour itself — the agent subject-token exchange fails with `invalid_token` (the assistant
-  answers *"No caller identity is available for this action"*) and the next refresh fails with
-  `Session not active`, signing the member out. Measured on Keycloak 26.8.0. See the section
-  below.
+  honour itself — the agent subject-token exchange is refused with `invalid_token` and the next
+  refresh fails with `Session not active`, signing the member out. Measured on Keycloak 26.8.0. See
+  the section below.
 - **The audit-sink redaction rule strips any key containing `token` plus an explicit redact
   list — it does not name `secretEnc`, `accessKeyId`, or a destination password.** Those fields
   are kept out of the audit trail by construction (they are simply never placed on the audited
@@ -234,10 +267,21 @@ The consent request asks for `scope=openid offline_access` and Keycloak, finding
 attaches the offline grant to it. Revoking a grant issued to the **login** client removes that
 client from the session, and the session dies with the grant:
 
-- the agent subject-token exchange fails with
-  `TOKEN_EXCHANGE_ERROR … error="invalid_token", reason="subject_token validation failure"`, so the
-  assistant answers *"No caller identity is available for this action"*;
+- the agent subject-token exchange is refused — `TOKEN_EXCHANGE_ERROR … error="invalid_token",
+  reason="subject_token validation failure"` on Keycloak 26.8.0 — and since feature 085 (item #844)
+  that refusal is no longer swallowed: `/bff-api/agent/run` and `/resume` answer 401
+  `AGENT_IDENTITY_REJECTED` and the gateway is never reached, so the member is sent through the
+  existing re-sign-in path instead of getting an identity-less turn. (Before 085 the mint failure was
+  best-effort, the turn ran without identity, and the member saw an unexplained *"No caller identity
+  is available for this action"* from inside the assistant. See the
+  [BFF project overview](../projects/bff.md).)
 - the next refresh fails with `Session not active`, so the member is signed out.
+
+Measured on Keycloak 26.8.0 for the session model; the subject-token classification was re-measured
+against Keycloak 26.5, where a revoked subject token is answered `400 invalid_request` with the
+description `Invalid token` rather than `invalid_token` — the BFF treats both as a credential
+rejection and answers 401, while any other exchange failure (including an unreachable or misconfigured
+identity provider) is a retryable 503 that does not sign the member out.
 
 This is a production defect, not a test artefact: a member who disables their last schedule,
 deletes its job, or has their grant revoked loses assistant identity at once and is signed out at

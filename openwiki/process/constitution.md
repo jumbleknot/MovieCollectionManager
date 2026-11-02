@@ -33,6 +33,8 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-4388ebe240b6b1a6c540d5c5
     resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
   - id: openwiki-source-db3aa5ac2ffb577a529916ad
@@ -43,10 +45,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/spec.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # The governing constitution
@@ -98,10 +100,12 @@ amendment must land in the same pull request as the change it authorises, with h
 
 The document-database line also shows the difference between a *tag* and a *digest*. The constitution
 names the tag (`9.0-ubi9`); every compose reference pins that same tag by digest, currently
-`9.0-ubi9@sha256:3d40c6fa…` — the 2026-10-28 UBI rebuild of the same mongod 9.0.4. The pinned digest
-has already been re-resolved twice since v2.7.0 was ratified (the 2026-10-24 production cutover ran
-`sha256:2cb58a8d…`) with no further constitution change. Refreshing a digest inside a named tag is
-ordinary image maintenance; moving the named tag is the amendment.
+`9.0-ubi9@sha256:3d40c6fa…` — a UBI 9.8 rebuild of the same mongod 9.0.4. The pinned digest has been
+re-resolved twice since v2.7.0 was ratified with no further constitution change: the 2026-10-24
+production cutover ran `sha256:2cb58a8d…`, and the 2026-11-01 move to `sha256:3d40c6fa…` was a
+same-version rebuild that shipped a fixed `ca-certificates` and so discharged the
+`CVE-2026-114406` allowlist entry. Refreshing a digest inside a named tag is ordinary image
+maintenance; moving the named tag is the amendment.
 
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),
@@ -204,7 +208,9 @@ version history.
   `mongodb/mongodb-community-server:9.0-ubi9`; the compose files pin that tag to a digest that is
   re-resolved whenever upstream rebuilds the image (twice since v2.7.0 — the production cutover ran
   `sha256:2cb58a8d…`, the current pin is `sha256:3d40c6fa…`, both the same mongod 9.0.4). A digest
-  refresh is image maintenance and needs no amendment; only a change to the named tag does. Read the
+  refresh is image maintenance and needs no amendment; only a change to the named tag does — and a
+  same-version rebuild can still change what the gate sees, since the `3d40c6fa…` UBI 9.8 rebuild
+  shipped a fixed `ca-certificates` and discharged the `CVE-2026-114406` allowlist entry. Read the
   compose file, not just the constitution line, when you need to know the exact bytes that run.
 - **A named library can be aspirational — the amendment history is not a description of the running
   system.** The Backend Services stack section requires `medi-rs` to route commands, queries and

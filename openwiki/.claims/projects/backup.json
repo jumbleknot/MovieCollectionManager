@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3a89628b788a35487b05d3812b878b2872cee779fb6faaae842340ed67a5b740",
+  "pageVersion": "sha256:6f969d40fce4a01be141a2fef5a5fd082246f304f817e08c319121caad7fea79",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
       "statement": "The prod host backup is the operator's host-level disaster recovery: a restic snapshot of every stateful prod service (Forgejo, Komodo, Keycloak, agent-db and both Mongo instances), the service config directories, and the release APKs a rebuild cannot reproduce, pushed to a remote the operator controls. It is explicitly not the same system as feature 073's per-user collection backups, and neither replaces the other: a user's own backup does not protect the host, and the host snapshot cannot be restored per user.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1099-L1109",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1102-L1112",
           "version": "repo-lines-v1:sha256:be3c602482a1ff37a3a3d405115e8388d7d1bbcff7d633b0420a6f35b01e2cfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMWVmZmUxNGNkZmFkZDY3NjQxZDg1ODg5MWRkNDdhNGE0M2U3ZTY0ZTIwYzc0NDBjY2FlZThmZGM2MTQ5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZmYxMTUzM2NhNTg1MTQwMmNlYTZkZTc2ZGVlZTdmZTQxMjZlMGY1OTZkZThmY2I5MTMzZTVlM2ExZDU0NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YTE2MjUyMzE3YTVlZGMxYWMxMzI3M2ZhZjY2YzQxN2NlYmMyZTdkNzgyZDJhZjIwNTljZGU0YzljMmM3MGUifQ"
         },
         {
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -90,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -108,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
@@ -125,7 +125,7 @@
       "statement": "Alerting has two independent paths onto one backlog item, titled 'Prod backup: failed or stale'. Path one is the run's own failure: backup.sh exits 1 and OnFailure=homelab-backup-alert@%n.service on homelab-backup.service runs backup-alert.sh failed <unit>, with a run killed by TimeoutStartSec=2h reported as hung rather than failed. The measured run time makes that timeout unambiguous: about 65 s for the eight-dump format (2026-10-29) against 8-10 min for the old single forgejo dump (2026-10-22..26). Path two is a separate 6-hourly staleness timer and service running backup-staleness.sh, which reads the newest homelab snapshot from the backup repository itself and alerts stale past 36 h, or staleness-unreadable when it cannot read the age at all - 'could not tell' is never reported as fresh. Neither the alert unit nor the staleness service declares OnFailure=, so a failing alert does not recurse and a stale check is not double-reported.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1121-L1121",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1124-L1124",
           "version": "repo-lines-v1:sha256:4b2be711eb1c9d9d91cc5e6c89a836159ed9630554007fa78aa035108fe89483:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyYmU3MTFlYjFjOWQ5ZDkxY2M1ZTZjODlhODM2MTU5ZWQ5NjMwNTU0MDA3ZmE3OGFhMDM1MTA4ZmU4OTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyYmU3MTFlYjFjOWQ5ZDkxY2M1ZTZjODlhODM2MTU5ZWQ5NjMwNTU0MDA3ZmE3OGFhMDM1MTA4ZmU4OTQ4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMyZGVmODVjODhkOTMwZDRjMWYxMzA5M2FiZTIwNDJkMGQ5NWQyYTIxYTIzMmQzZGM1NTZlNTU4OTljMTIyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEzNDU5MmUyYzE4ZjUxNWZlNjg2ZjA2OTk4YjBiMWIzZDg2OGYzZGIwMTJjNmJlODA3M2E5M2VlMTE1Mzg0MyJ9"
         },
         {
@@ -164,7 +164,7 @@
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/research.md",
-          "version": "repo-file-v1:sha256:1a522fc16cb8edc5faa41e495f82c2c61953a0ba945b266dd32b54888eac5745"
+          "version": "repo-file-v1:sha256:c4c23a035f60b7cbffd73da9eef668225fcc19b7cb1f29e9567a4399cf2d3e06"
         }
       ]
     },
@@ -234,7 +234,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
@@ -307,7 +307,7 @@
       "statement": "The dump list is now eight dumps — forge-db, forge-data, komodo, keycloak, agent-db, mc-service-mongo, bff-mongo and release-apks. The single forge dump was split into a pg_dump custom-format database dump plus a tar of the forge's /data, and release-apks was added as the one registry artefact a rebuild cannot reproduce.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1125-L1134",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1128-L1137",
           "version": "repo-lines-v1:sha256:00f5a7609fb00b5b301e9d0ee21345a5b8d1d72d6bf6278f92afb7130f8a8423:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMWE3OTkxNTYxM2U0MDQyOWVjNmI1MGIzMmVjZjUwNmQ4MjIzYzFkZmI0ZDYxYjc1Yjg3YjVhZmU4YzIwZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNTc5ZmVjNzdlMjcyYzhiODE1Y2JiNzE0NzM4OGMxYTY0NzY1ZWIwOWJlYzE1YjdmNDBlMzk5YjU2YmU0ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzQ1OTJlMmMxOGY1MTVmZTY4NmYwNjk5OGIwYjFiM2Q4NjhmM2RiMDEyYzZiZTgwNzNhOTNlZTExNTM4NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZDJhM2QzZDhkYzA1ZjVmNWJkMTEzNTkzZGU5OWQyMDE4YTZhNjA3YjAyN2ExYTgyY2FkZmQ3MmY3M2Y3ZGYifQ"
         },
         {
@@ -325,7 +325,7 @@
       "statement": "The forge data tar is deliberately uncompressed: restic chunks content-defined and de-duplicates an unchanged file, so a mostly-unchanged tar costs roughly the day's real change, whereas the old forgejo dump --type tar.gz changed from its first changed byte onwards and de-duplicated nothing — 19.8-21.1 GiB added to the repository every night.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1155-L1155",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1158-L1158",
           "version": "repo-lines-v1:sha256:f70b5d6d97629511a808d21b036c6e14a0cf9ce50c27c70a712802f7da7b206a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwYjVkNmQ5NzYyOTUxMWE4MDhkMjFiMDM2YzZlMTRhMGNmOWNlNTBjMjdjNzBhNzEyODAyZjdkYTdiMjA2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwYjVkNmQ5NzYyOTUxMWE4MDhkMjFiMDM2YzZlMTRhMGNmOWNlNTBjMjdjNzBhNzEyODAyZjdkYTdiMjA2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg0MGU1NTJhMjgwNjBhZTllNGNhNjVmOWVmNDRlNzUyNDliYjBiOWRhYjVkYjg0YTcwOTg4NTAzNWQ3NmRhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmMyZDY4NzVjMThlMTdhMWNhZjM4NmM2NmI5YWIzMGMxYTY3NWE1MmFkYjAxMDM0ZGUzYzM1MjQ1MTk4MDU0NiJ9"
         },
         {
@@ -340,7 +340,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -447,7 +447,7 @@
       "statement": "A restore drill (spec 084 FR-006) is the only proof that a backup's contents can actually be restored, so it must be run after any change to what the backup carries and at least quarterly - a change to the dump format invalidates the previous proof. It must not be run between 03:00 and 04:00, because restic forget --prune needs an exclusive lock, so a drill still reading the repository at 03:30 fails that night's run loudly through the alert. It costs about 2 GB free under ~/backup and about 1.5 GB downloaded from the NAS, runs in a prod session, and never touches a live service: the scratch containers start with --network none and need no credentials, while the live containers are read only to copy their image or count their rows.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1201-L1217",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1204-L1220",
           "version": "repo-lines-v1:sha256:e590e688ca696323728c80ffc258076ae35e95b9bc0e86c3be8f9eb890b5b512:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYmJlY2FiYzJiODg4ODg5YWYyMWE0MjEwNjE4Nzg2YzQ0OTA0MzYzZDVjMDBmMDZlNmE5Y2QxMWU2Njk5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZDIwODNiOGYxMTliNjY3Zjk0ZWI5OTRmZjEyMGEwM2JlODU1ZWY3OGVjYjgxMDk0Y2RiYmZiZjI3NzM2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMGNjZGI5MjI3MWU2MTE0ZGJlZDFlMTA5ZjRiN2U4ZTRiYmY4YTQ5ZDc0ZmJhMzMzZTNkMDA0OGUxMTVkYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWQ3MWRhYmZjZDIwZTUyNTY4OTU2N2NkNmZlODBiM2FkZDBhMGFkZTA0ODQyZjUxMzQ0ZTM0MTE3Y2RlMGQifQ"
         },
         {
@@ -465,7 +465,7 @@
       "statement": "The drill restores the three dumps that matter most and judges each: forge-db into a scratch Postgres with its repository, user and action-run counts compared against the live forge; forge-data untarred into a scratch directory with git fsck --connectivity-only run over every restored repository, not only the main one; and mc-service-mongo through mongorestore --archive --gzip with the collections counted. A drill passes when the forge database restores with no errors, fsck reports bad=0, and Mongo has more than 0 collections. It cannot run in CI - it needs the real host, repository and restic password - so it is an operator acceptance step and the runbook's drill log (one row per drill: date, snapshot, each restore's seconds and counts, result) is the record of what has been proven, not a test.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1218-L1271",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1221-L1274",
           "version": "repo-lines-v1:sha256:64449030e211a5d28f9d4f30ac1d0c959ab39b9e1dccc4e1f38eebca7f2f6d8e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YTA0ODBkNDE3ODNkY2U4ODVlMGZlNWRjN2YwNzY5Zjc0MDcwMGM4NmE4NDY5ZGYyMTk3YjVlYTdjMmRmNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZjdjYWNiYjRkNzM1MWMzYTE3ZjQxYjI3NTUxM2UzYzFhMjVkNzEyZmNlZTUwZGIwZGNmNGFmYzkyYzE2MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTU3MmU1ODA4ZjE1ZjY1NTMxZjFlYzNjZjE2NTFjZWIzMGQzM2JhYjM2MjhjZThmOWJjN2ZhNzQwNzA1OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Y2ZiMzZhMTJmMDgyMjVlNWRmMTRhMWVjNWFjZjQ2YWE4NWFjYWYzNmZlMWMzZTFjNDNhMTI0NDE4NmZlZTkifQ"
         },
         {
@@ -483,11 +483,11 @@
       "statement": "The post-spec-084 forge-db + forge-data restore is PROVEN: the restore drill run on 2026-10-31 against snapshot 443ebb58 (the third night on the new format) restored forge-db in 14 s with 0 errors and 2 repositories / 1 user matching the live forge, untarred forge-data in 23 s with fsck ok=2 bad=0, and restored mc-service-mongo in 2 s with 2,315 documents in 2 collections — a pass, recorded as a row in the runbook's drill log. The old forgejo dump SQL restore, proven 2026-07-05, is now the historical record rather than the interim fallback, and because a change to what the backup carries invalidates the previous proof, the next such change needs a drill row of its own.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1194-L1194",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1197-L1197",
           "version": "repo-lines-v1:sha256:8210c6b25eb39e8cdcb75ba67c4a08e698e4273c2cfe4400cdece1e024f3f2a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxMGM2YjI1ZWIzOWU4Y2RjYjc1YmE2N2M0YTA4ZTY5OGU0MjczYzJjZmU0NDAwY2RlY2UxZTAyNGYzZjJhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBiMTJjOGE0N2QzNzRhMDI5MGU3MzJhOGJlZTMyMWQxN2JiZWE5MzQ2ZjMwYzA5ZDVhNWUxNjMyNjQxMWE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg4NWMzNTc5OTFmYzE2NTY3OTQ3NzEyZGZlOWM3ZDE4ZWExZTFiNjE4NGFmYjZkNjZlN2E4OWM4ZWRiYWQ3NSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1267-L1273",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1270-L1276",
           "version": "repo-lines-v1:sha256:73a987acf256c4887b990b61ede97dd79d4e471863540d7ae9560d5ad9798cbd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxMjIwMmM1Y2VmMTE1OTk2NTc0ODNhNWQ2OWFmMWMyMjgyMDgyMDg1N2Y3ZGRiMDI3NjZmNmFkMzVhNTAxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFmY2NjODg0NDgxODUxNWIwMGFjMDBkMjI0OWQ1YzAzODY0MTk2YWYyNzQ3OWY3YWMyNjYzZTUwYTJjNjBlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFkYjJhZjViYjRjMjczYTI1NTZjOGIyZDhkYzVjMmRjN2NhNWNmZDcyNmQ4ZTBhZjIxOWE4M2NkMjkwOTIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjNmYwOTJlYjdmZGY1OTBhMDRhNTgxZDliZjY5NjVmNGYzMzkyNTEzNGEyNWY4NGIxMjg4N2NiMDdlYWFmMSJ9"
         },
         {
@@ -505,11 +505,11 @@
       "statement": "The forge repositories are copied while the forge is live (there is no forge stop at 03:30), so a push that lands mid-copy can leave a ref ahead of the objects it points at in the archive; git fsck reports that on restore as a FSCK FAILED line naming the repository. It is the same exposure the old forgejo dump had, and it is documented rather than engineered around. A drill against the next night's snapshot distinguishes it from real damage: an error that disappears on a later snapshot was a push caught mid-copy, one that persists is corruption.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1153-L1153",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1156-L1156",
           "version": "repo-lines-v1:sha256:97211874904754d56d720ec6d8aeb819706795b05c65eb363b1390ee8839bb18:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMTE4NzQ5MDQ3NTRkNTZkNzIwZWM2ZDhhZWI4MTk3MDY3OTViMDVjNjVlYjM2M2IxMzkwZWU4ODM5YmIxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMTE4NzQ5MDQ3NTRkNTZkNzIwZWM2ZDhhZWI4MTk3MDY3OTViMDVjNjVlYjM2M2IxMzkwZWU4ODM5YmIxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGVkYTIzNjIwMGY5MWMxZmJmYWY3MGZiYTY3MTVjZmNiZmI3ZmZmZmYwZDU1MTI4ZjdmYWExMjljNDA3NTEyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY5NjViMzc2YjMwZTE4NDJjNDk0N2QwMWE2MjQ4ZDZhODdhZGRiNzlmOTdiNzIzZWUwODI2MGYzMDk2NWFiMSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1230-L1242",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1233-L1245",
           "version": "repo-lines-v1:sha256:35f329556976cd0bfc98d24da6c67155e4e37146d9e832300c4ed6be17d814c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0YTI4Nzk0NzFiMDIxNTU5M2I5NTU3MzViZTYwMzRmOWZmNmUwODdkOGJjZWQyMGMwOWE3N2M1MmFmZjFhOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZDIwODNiOGYxMTliNjY3Zjk0ZWI5OTRmZjEyMGEwM2JlODU1ZWY3OGVjYjgxMDk0Y2RiYmZiZjI3NzM2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0Y2U2MjA5MmI4MTY0NDk5Y2Y0ZDU1MGUwOWY5NmMyNTUwMjA5ZWZkYzY5ZjYwNzg1ODkxMzI5M2VkZTRkNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MWY2M2IxYzBhOWVlMjg2YTg2NjQ5MWI4MzhiYTdjZmQzMDAxNzJhMTkzNjQ3M2VlMjFiMDliNDhhMGY1NzMifQ"
         },
         {
@@ -524,7 +524,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:d1db160f1d07186a49ddb37ff004f04b2ec01b5be61d54279316dad650419bee"
+          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
@@ -545,10 +545,38 @@
           "version": "repo-file-v1:sha256:5a61dad9ac17fa21d364106ce9f011678271d2b608411108fb555f5ef7cf400c"
         }
       ]
+    },
+    {
+      "id": "claim_702fe41260714972809b6a804248722d",
+      "statement": "The post-spec-084 format's steady state is measured in the repository itself: on 2026-11-01 the newest snapshot (ff20c0fe) was 1.533 GiB with 12 snapshots retained, and the per-dump sizes were forge-db 202,727,910 B plus forge-data 601,910,272 B (a forge share of about 0.80 GB, from 22.5 GB), komodo 85,162,249 B, release-apks 639,088,640 B, mc-service Mongo 813,102 B, Keycloak 381,023 B, BFF Mongo 3,289 B and agent-db 670 B.",
+      "evidence": [
+        {
+          "resource": "repo://specs/084-silent-failure-visibility/spec.md#L79-L84",
+          "version": "repo-lines-v1:sha256:697c25f3ec4bc88fbd09e58055a3bc4353930bc2af712acf99556f033be90add:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWViYWVjYWUwOGExYTlhZmM4MjdhYmZlNjE1NjBlMDJiYTdmMTVlZjE3M2M1ZGI1ZjY5ZGNhMmI0YTBmMmFjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE4NzM3OWJlYmEwZWZiZGQ5NDhiNjc2ZmEwYTBhNmZmOTc0OGVlMWQ3MTUzOGM4ZTBiYjM4MDZlZDY2NjRmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY3ZDBhMjliZDA2NjRlMzczYzBiNzEyNjM5YjAxYzdlMTFhM2U1NjkxOGVhMWJlNDk5ZWY4MDBmZDA0MTJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDRjYWZlMTNhYzk0YmUzMmFjNTQ2NzU3OGIzZjllMDJlY2I2N2RjMGRhYzkxMTZmZWQwMjg4NWJhMWI5YThmYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2077a9ac032040c48125f992aae1e989",
+      "statement": "The registry excluded from the snapshot does not grow without bound: since spec 084 US5 a weekly registry-retention sweep (scripts/registry-retention.mjs, configured by infrastructure-as-code/forgejo/registry-retention.yaml and run by .forgejo/workflows/registry-retention.yml on Sundays 06:00 UTC) deletes old package versions while protecting every digest pinned in an infrastructure-as-code/docker/*/.env.deploy on main and the five promotions before it, so the exclusion remains safe for rollback.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L394-L445",
+          "version": "repo-lines-v1:sha256:86d29325885e456d7eae5050456598f61f0c7ee3797204f1b515eaa423c91032:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZjA5YjU2MTA3OTc5OWI4MDVhODYxMWE2NTM4NWNhNmJkNGQ4MDU1MWY3Y2Y5NjIyZDQzYTVlNGU2MDU4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NDFhOWU5Y2FkNjhjOTdhMTZjNTZmYWEwMDAzZDQ5NGM1M2JiYzNlNTVmMzU5OTI1ODYyMGM1MDA3YmQyOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNDcyMTkwN2QxYWU3YmVlMzBkNTZhMWE4ZTg5NWU3YTcyZTU0YzI1YmNkM2Y2OWRjMmY0Yjc0ODgyOWM3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4OTYyZjljMTMwZmU3OTQxMDg5NTZkZTYwOTAwZWUwZWQ0NmViMzBkYmY3MGNkNGI5NWYyZDMzNzJiOWJjOTgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs",
+          "version": "repo-file-v1:sha256:26cdf425bfce9039f624b123f40768515f3893b2cff479113a609b813b655f28"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

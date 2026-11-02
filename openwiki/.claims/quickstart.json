@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8833913d7b672ee22da27f3b98d0ec301a6f1e12115a9aacbdd204acd74eb5c1",
+  "pageVersion": "sha256:63c7db4954f265dc4e2a7b01df3cde8fed1ead3f9176e787584ab06ac1650a67",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
         },
         {
           "resource": "repo://scripts/check-openwiki-governance.mjs",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -114,7 +114,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:957974efd1a7849d84f842fe8136613eb068d4fadf5d84cb9f2538680ab3c075"
+          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json#L224-L243",
@@ -143,10 +143,28 @@
           "version": "repo-file-v1:sha256:384e287f3552e86ded8908f48fa31e525bdd1d0eb14dffc21fbc8d2389fa90d7"
         }
       ]
+    },
+    {
+      "id": "claim_2383467a07de4fc8a42fbcecf7b73a88",
+      "statement": "The derived-versus-authoritative classification is a ratified governance decision, not just a convention: ADR-0003 makes Grounded Claims and the `protected.yaml` fingerprints complements with disjoint scopes — Claims live on derived pages only, fingerprinted passages on authoritative pages only, and no page is both — enforced by governance rule G13 (`claimsScopeFindings`), which is why the quickstart routes a reader to that decision when explaining what a page's `resource` field means.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md",
+          "version": "repo-file-v1:sha256:6fa85e5a873bebbdf7c26056e056dd13f7fe5c2f062e45d5d0a93f7058e78cf3"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L343-L346",
+          "version": "repo-lines-v1:sha256:8f20e68be49b1df70b11c7cbc4e95a0e4f59e03958834a4085aede1213c7bd16:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE0YzcwNDY3ZTUxZTY2ZWFiY2RjOWEwZGFjNDZjNjE4MzVjYzUxOGM1YTE3Y2M1OWE5YzZiMTZmZWM2ZDQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwOGFkODg5ZTIxZDdlZmU2ZGY0ZTZkZjkxODliNWQ2MjcyNjcxY2ZhNzBiOTEwOTk4NWVhMWIwY2ZiNzJhNiJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs",
+          "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T03:57:29.221Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

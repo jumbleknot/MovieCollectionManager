@@ -5,6 +5,8 @@ description: The root entry point to this repository's OpenWiki bundle — what 
 tags: [openwiki, navigation, quickstart]
 resource: openwiki/INSTRUCTIONS.md
 sources:
+  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
+    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
   - id: openwiki-source-f003db5a1a23dba30ccf3b03
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
   - id: openwiki-source-3428fee3ac79873bee5650fc
@@ -21,16 +23,18 @@ sources:
     resource: repo://scripts/check-openwiki-governance.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
     resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-efa55c3a8c70016f55bf6266
+    resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-c1cb21a9b44d0d18ad2c030a
     resource: repo://scripts/openwiki-links.mjs
   - id: openwiki-source-219168cc26e2918922e603f9
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -43,10 +47,11 @@ reading every source document from scratch.
 
 Every concept page in this bundle follows the same shape: a short **distilled summary** of the
 subject, its **load-bearing gotchas** (the non-obvious traps that cost a developer a session when
-missed — the highest-value content on any page), and a `resource` link to the authoritative source for
-full detail. If you need the complete step-by-step procedure, follow the `resource` link; the page
-itself will not replay it. See [the generation brief](./INSTRUCTIONS.md) for the scope, the exclusions,
-and the rule for where a new learning belongs.
+missed — the highest-value content on any page), and — when the page is a derived summary — a
+`resource` link to the authoritative source for full detail. If you need the complete step-by-step
+procedure, follow the `resource` link; the page itself will not replay it. See
+[the generation brief](./INSTRUCTIONS.md) for the scope, the exclusions, and the rule for where a new
+learning belongs.
 
 ## How to query this bundle
 
@@ -64,9 +69,15 @@ page is a derived summary). Use these fields rather than guessing filenames:
 - **By `resource`** — every derived page cites its canonical source as a repository-relative path
   (verified to resolve by the conformance gate) or an external URL. A page with **no** `resource` is
   *authoritative* — canonical in its own right, and listed under `authoritative:` in
-  [the protection manifest](./protected.yaml). If a document under `docs/runbooks/`, `docs/decisions/`,
-  or the architecture docs has no citing concept page, that is a real gap, not an oversight — the brief
-  requires every such document to be reachable by a metadata query.
+  [the protection manifest](./protected.yaml). That split is a ratified decision, not a convention:
+  [ADR-0003](./decisions/adr-0003-claims-and-fingerprints.md) makes Grounded Claims and the
+  `protected.yaml` fingerprints complements with **disjoint scopes** — Claims on derived pages only,
+  fingerprints on authoritative pages only, never both — and governance rule **G13** enforces it. The
+  four reserved bundle files (`index.md`, `INSTRUCTIONS.md`, `log.md` and this quickstart) are not
+  concepts at all, so the classification check skips them; that is why this page may carry a
+  `resource` without appearing under `authoritative:`. If a document under `docs/runbooks/`,
+  `docs/decisions/`, or the architecture docs has no citing concept page, that is a real gap, not an
+  oversight — the brief requires every such document to be reachable by a metadata query.
 - **By directory** — each section below is one directory under `openwiki/`, with its own `index.md`
   listing every page and its description. The conformance gate fails a directory that has concepts but
   no index, and a page its own index does not list.
@@ -90,7 +101,7 @@ bundle before anyone checked (item 491).
 | Running or triaging a security scan | [SAST & SCA project page](./projects/sast.md), [the SAST/SCA runbook](./runbooks/sast-scanning.md), [DAST](./runbooks/dast-scanning.md), [infra-image scanning](./runbooks/infra-image-scanning.md), [secrets-management posture](./invariants/secrets-management.md) |
 | Touching backups or account deletion | [per-user collection backups](./runbooks/backups.md), [the prod host restic backup](./projects/backup.md), [the BFF](./projects/bff.md) |
 | Picking up work | [the agent-driven backlog](./runbooks/backlog.md), [spec-driven development](./process/spec-driven-development.md), [PR batching](./process/pull-request-batching.md), [feature-branch test scope](./process/feature-test-scope.md) |
-| Maintaining this wiki | [bundle maintenance](./runbooks/wiki-maintenance.md), [the process view of it](./process/wiki-maintenance.md), [the regeneration policy](./policy.yaml), [the protection manifest](./protected.yaml) |
+| Maintaining this wiki | [bundle maintenance](./runbooks/wiki-maintenance.md), [the process view of it](./process/wiki-maintenance.md), [ADR-0003: Claims and fingerprints](./decisions/adr-0003-claims-and-fingerprints.md), [the regeneration policy](./policy.yaml), [the protection manifest](./protected.yaml) |
 
 ## Concept areas
 
@@ -122,9 +133,11 @@ bundle before anyone checked (item 491).
   [package-manager enforcement (pnpm only)](./invariants/package-manager-enforcement.md), and
   [RTK token compression](./invariants/rtk-token-compression.md).
 - **[decisions/](./decisions/)** — ratified architecture decision records:
-  [ADR-0001: Production secrets-management standard](./decisions/adr-0001-prod-secrets-management.md)
+  [ADR-0001: Production secrets-management standard](./decisions/adr-0001-prod-secrets-management.md),
+  [ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4](./decisions/adr-0002-stateful-major-upgrades.md),
   and
-  [ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4](./decisions/adr-0002-stateful-major-upgrades.md).
+  [ADR-0003: Grounded Claims and protected-passage fingerprints are complements](./decisions/adr-0003-claims-and-fingerprints.md),
+  the governance decision that makes the derived-versus-authoritative split above enforceable.
 - **[gotchas/](./gotchas/)** — standalone, non-obvious traps not scoped to a single invariant or project,
   covering SSRF guarding, cascade deletes, Docker-internal DNS, `.env` inline comments, Expo Router
   server export and transport traps, collection routing, external-ID URL opening, Keycloak

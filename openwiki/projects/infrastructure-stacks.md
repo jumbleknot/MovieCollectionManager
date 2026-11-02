@@ -4,9 +4,6 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
 sources:
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
@@ -124,10 +121,14 @@ sources:
     resource: repo://scripts/up-mcm-agents.mjs
   - id: openwiki-source-c5e086204a303667bdcd03f5
     resource: repo://specs/025-observability-audit-vault-prod/tasks.md
-  - id: openwiki-source-2e80450c72b5a1cbf460cfc1
-    resource: repo://specs/080-minio-to-rustfs/research.md
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-02T10:14:55.121Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -382,9 +383,13 @@ capability whose keys are *optional* has no `${VAR:?}` for a guard to see. See
 Two names left `prod-observability`'s block with feature 080, which swapped the from-source object-store
 image for upstream `rustfs/rustfs`: `REGISTRY_HOST` (the stack no longer pulls a
 `${REGISTRY_HOST}/jumbleknot/…` ref) and `LANGFUSE_MINIO_ROOT_PASSWORD`, replaced by
-`LANGFUSE_RUSTFS_SECRET_KEY`. The Komodo **Variables** for both are deliberately kept until the
-rollback window closes, because reverting the merge restores the lines that need them and a revert
-cannot recreate a Variable. New Variables must be seeded *before* the sync that first references them:
+`LANGFUSE_RUSTFS_SECRET_KEY`. The two departed names met different fates. `REGISTRY_HOST` is still a
+declared input for the three CI-built stacks, which interpolate it into their image refs.
+`LANGFUSE_MINIO_ROOT_PASSWORD` is gone: the rollback window was closed **early** on 2026-10-24 (item
+#826), when the MinIO volumes, the Komodo Variable and the `jumbleknot/minio` registry package were
+deleted together — the input was retired only once the merge it guarded was no longer revertible, so a
+revert can no longer restore the lines that referenced it, and the `stacks.toml` comment records the
+deletion. New Variables must be seeded *before* the sync that first references them:
 an unseeded `[[VAR]]` interpolates empty, and the `${VAR:?}` guard in the compose then aborts the
 deploy — the intended fail-fast, not a silent default.
 
@@ -396,8 +401,9 @@ compose loads with `env_file:`, so it reached the container as a `KC_*` variable
 option (harmless, but a reminder that removing the consumer does not remove the input). `TS_ADMIN_IP`
 followed the same path: feature 028 made the two operator-UI binds `0.0.0.0`, so no compose bind had
 read it since, and `stacks.toml` stopped passing it to `prod-observability` on 2026-10-13. No stack or
-compose file reads either name any more, so both Komodo Variables can be retired — leaving one seeded
-cannot fail a deploy, the only cost is dead config. The admin *URL* was always a separate, live var
+compose file reads either name any more, so both Komodo Variables are retirable — the operator checklist
+records `TS_ADMIN_IP`'s as already removed — and leaving one seeded cannot fail a deploy, the only cost
+being dead config. The admin *URL* was always a separate, live var
 (`KC_HOSTNAME_ADMIN`) and is the one a port move must keep in sync. See
 [prod reboot resilience](../../docs/runbooks/prod-reboot-resilience.md) for the full retired-variable
 record.
@@ -604,9 +610,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   `prod-observability` after feature 028 made the operator-UI binds `0.0.0.0`, and was dropped on
   2026-10-13. No stack or compose file reads either name now. Retire the `stacks.toml` line and the
   Komodo Variable together, and read the effective value from `.env.prod` rather than from a historical
-  comment. The mirror image is deliberate: `REGISTRY_HOST` and `LANGFUSE_MINIO_ROOT_PASSWORD` are *out*
-  of `prod-observability`'s block yet their Variables are kept until feature 080's rollback window
-  closes, because a revert restores the lines that need them. See
+  comment. The mirror image is deliberate and has both outcomes on record: `REGISTRY_HOST` is *out* of
+  `prod-observability`'s block while its Variable lives on because `prod-mc-service`, `prod-mcm-bff` and
+  `prod-movie-assistant` still interpolate it, whereas `LANGFUSE_MINIO_ROOT_PASSWORD` left the same block
+  and its Variable was deleted on 2026-10-24 once feature 080's rollback window closed early (item #826).
+  The rule is the same in both cases: an input is retired only once the change it guarded can no longer be
+  reverted. See
   [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
   the port-move rule.
 - **A stack `environment` key that nothing *requires* fails open, and a sync that only rewrites

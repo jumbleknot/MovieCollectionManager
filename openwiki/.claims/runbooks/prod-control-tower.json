@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c86cb046056f751991d8335b04a05440f717fe71e7a4505cc671d71ef112cbc1",
+  "pageVersion": "sha256:4a715197e2274b3ed442e06f17146efa39f39b49ec8e7a81c4d68f044adf7a46",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -8,11 +8,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "version": "repo-file-v1:sha256:c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e"
         }
       ]
     },
@@ -21,7 +21,7 @@
       "statement": "A deployed support stack does not by itself change application behavior: the consumer composes reference every Control-Tower variable as plain ${VAR}, never ${VAR:?}, and each capability is gated in the consumer's own source (audit_sink on OPENSEARCH_URL, observability on LANGFUSE_*/OTEL_*, opa on OPA_URL, flags on UNLEASH_URL), so unset means a silent no-op. Rollback is therefore removing the consumer env and/or deleting the support [[stack]] block, with no app redeploy needed to disable a capability.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L730-L738",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L741-L749",
           "version": "repo-lines-v1:sha256:83b799765026fbf9bf09cd4cd00a2a0325f067d0f3d9aabdcf54fe3434926af4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U0NGM1M2JlNmViYjg3ZjU1OWI5ZjdiOGU0Yjg2M2YzNmY5YmRhMjk0NTFjNmY0Njg2YmU4ZWZlZjQ2MTc4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY4YWVmN2Y1NGRiNGNlMmVlM2Y3NTYwY2RhZDIzZmIyYWJjYzVjNzNlYjI1MWE3NWVhNGEwMWZmNDA2ZjU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlhMjcyY2RmNzE2MDgyZTRhZmViMTc2NzdmZTQyMzBkYmIxM2IzMGFkZWZhYjkzMGJjZGU2MDZmMjk1MTFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ5YjYzMzY0Mzg3N2UwM2RmNDQzNjdiNGE1MDM3OGU4Y2UxOTZiNzdjYTJiOGYzZjA3OWQwOGFiZjhiMGZlMyJ9"
         },
         {
@@ -36,15 +36,19 @@
     },
     {
       "id": "claim_c86f59815d4a4d719737a46a37f8d454",
-      "statement": "The support composes are fail-fast (every credential is ${VAR:?}) while the consumer composes are not, so an unseeded Komodo Variable aborts a support deploy by design but can never abort the app; fifteen new masked Variables are needed (13 observability + 2 audit), the dormant Vault needs none, and TAILNET_HOST is reused from prod-auth for LangFuse's tailnet NEXTAUTH_URL. The object store's Variable is LANGFUSE_RUSTFS_SECRET_KEY, while the retired LANGFUSE_MINIO_ROOT_PASSWORD has left stacks.toml but is deliberately retained in Komodo until the cutover's rollback window closes, because a revert restores the line that needs it and a revert cannot recreate a Komodo Variable.",
+      "statement": "The support composes are fail-fast (every credential is ${VAR:?}) while the consumer composes are not, so an unseeded Komodo Variable aborts a support deploy by design but can never abort the app; fifteen new masked Variables are needed (13 observability + 2 audit), the dormant Vault needs none, and TAILNET_HOST is reused from prod-auth for LangFuse's tailnet NEXTAUTH_URL. The object store's Variable is LANGFUSE_RUSTFS_SECRET_KEY. The retired LANGFUSE_MINIO_ROOT_PASSWORD was deliberately retained in Komodo through the RustFS cutover's rollback window — a revert restores the line that needs it, and a revert cannot recreate a Komodo Variable — and was then deleted together with the old volume and the registry package on 2026-10-24, when the operator closed that window early (item #826); nothing in the tree reads it any more.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L80-L114",
+          "version": "repo-lines-v1:sha256:700d2f2b749348771991b39179b4131f695679f8432b6a151de9bfb71d67fe01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NWFjMjZkZTlmNDMzZDZkNDAzMzk4YjFlNTQxNjU4OTg4ZjM5YjJkNWE1NzlhMTNkZGY2ZDc5MjM1ZWE0M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMzA4YzZmYTk5NWI0OTc0N2U2Mzk2OTVhZTI0M2EyNjUzZWI3MjkxNWE1NTYzZmEwZmNjZmI1ZjRmODAzNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MTgxZDA3ZjQ3NGQ3OGY0NmJiODc3ZTQ2NGVmYjI2NTg4Y2FiNDEzN2VhYzI1YzcwYmZiMTBiNWViYzNkMzEifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L189",
+          "version": "repo-lines-v1:sha256:6a16d6f001b80c5d2b761f616a2a1b8fe760c2add46517f98dc8db7c3c2e279a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMTk0MmUzMTc1MTExZmI3YTZkNmU0MzEzY2U3NjhjNzc1NjZhNmVjMDBkMmQ5ZGY3Yjg1MzRlYzMzOTNiM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
     },
@@ -68,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -86,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -94,7 +98,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs",
-          "version": "repo-file-v1:sha256:0abfa8036002b090a30745946bbffb4fdf969c4d50c85dc1e6439b1a22549237"
+          "version": "repo-file-v1:sha256:54bbabb49beb814c7df9d00ac706346d65d38ec058ef5a5e554fc4521bfbd2e4"
         }
       ]
     },
@@ -104,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
@@ -121,7 +125,7 @@
       "statement": "The working Vault configuration needs all four of /vault/file (a vault-owned image dir, so an empty volume inherits vault:vault and no chown is needed), disable_mlock = true, cap_add: IPC_LOCK and command: [\"server\"] together, and each rationale is stated in place: vault.hcl carries the mount path (because /vault/data is absent from the image and would land root-owned, so vault uid 100 could not create vault.db) and disable_mlock (the prod daemon's memlock rlimit is finite, so mlockall fails even with the cap, and raft/BoltDB mmaps are the recommended case for it), while the vault compose carries the cap and the bare `server` command (the entrypoint already appends -config=/vault/config, so passing the file explicitly loads the listener twice and the second instance dies with `bind: address already in use`). The cap's original second reason — without it the entrypoint took a fallback path that double-started vault — no longer applies to the shipped hashicorp/vault:2.2 image (spec 081 US8c), whose changelog drops the build-time cap_ipc_lock, but the cap is kept deliberately: it is harmless and the line matters again if the image is ever rolled back to 1.x. The page repeats the rationale in its prod-only gotchas table.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L196-L211",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L201-L216",
           "version": "repo-lines-v1:sha256:f918c29efdfbb83d855a7cbeff67099358a08d300ad3278e7810cf9d1a1189fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiN2EzNjg1YWU2Yjk2ZGQ4ZDM5M2IxMmQ1NzIyMWQ4NzU5ZTBhODkwNjYxYTZiYjVlZGY5MGJjNGY5Mjc3MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MDI4NGNlNThlYzdkMzI0MDExMzk4OTlhN2I0N2Q2M2U0MzFiMmQzM2ZlNDdiMDM4YWYwZWJlYzM0ZmU3MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNTA5YzEwZDg5NWYxNmMyOGM5YjJlOGI4NWRhYWEzMzc2Njg3YzU4MDFkZjBlNTM1ZjJhYTY4Y2RkYzUwZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NDhmNzRiMzEwYjA2MWYxMjNhMzYzNDY4ZGEzOTA4NzQ4NzcyNjdmMzJkN2Y0YzhiNjAyYTNhY2MzMzkzZTQifQ"
         },
         {
@@ -144,7 +148,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/vault/compose.prod.yaml",
@@ -158,7 +162,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://docs/runbooks/prod-reboot-resilience.md",
@@ -194,7 +198,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         }
       ]
     },
@@ -204,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         }
       ]
     },
@@ -227,7 +231,7 @@
       "statement": "The OpenSearch 2 → 3 audit-sink upgrade preserves history by snapshot and restore, which forces two deploys in a non-negotiable order because path.repo is a static setting: Deploy A adds the snapshot volume and path.repo while still on 2.x, restarts, registers the repository and snapshots; Deploy B starts 3.x on a NEW empty data volume, re-registers the repository (cluster state does not survive a new cluster) and restores. One deploy cannot work — it would mean snapshotting before the repository exists or replacing the data volume before the snapshot is taken.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L293-L362",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L304-L373",
           "version": "repo-lines-v1:sha256:5a5986696d503f5cbe48bdb6187ccc0c85987b9f768e9bd37451e3de9c79baa2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMzZkM2Q4ZjgzNjgxZGIxMWQ2ZDViY2U4MWRiZjViZWQ0ZGIyYTRhZjhiMTMxZGYxZWRiMzdkYzNlMDc0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNDNmYjg5ZGQ3MTM5MTcwNmJiNjU1MzM3MTM5YWU2NmFjMTBmYWNjNDI2MmJjZDI0OGMyMjljZjBlMjVkMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjMjE1MzIzZGQxMmZiMzIxYTFjNTk5NWJkMjhjYzBmYjQ4OTQ4MGQyMmU2MDZjYzY2ZmM0MDQ2N2NmNGVmMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2Q4ZDI2MTNhYzdmNTc0MGZiNWQ4ZDk5OTNkNWEwZDNiMGY4NWI0OTUyZjE0N2UwZWU0Mjk5MmI5Mjc0NzcifQ"
         },
         {
@@ -241,11 +245,11 @@
       "statement": "Because 3.x starts on a new volume and the 2.x data volume is never touched, two independent copies of the audit history exist throughout the OpenSearch upgrade and its rollback is non-lossy — reverting Deploy B's compose to the 2.x digest and the ORIGINAL data volume restores the previous state, with the snapshot as a second way back. Deleting the old volume or the snapshot is a separate deliberate act and is not part of the procedure.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L312-L317",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L323-L328",
           "version": "repo-lines-v1:sha256:540c5caf00d5ff13375ff5d85d551b4f745d42ddc39445148a870a6939568ac3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUyMTEyMjU4YzUyOTBmOWRjMDY5NmUzM2QzYzZjMDM2MDljNjliOWI4NjU2NzRiODhhZWViNTMyOWMwNmUwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmNTRhN2Y3Mzc5MDYyNWE4NzZiZjk0Yzc2YzNmM2YwZGZjYWM5ZGE5NmYxNzliYmIwYmM3YWE5ZGYyY2Q4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcwM2M1ZTZmNzZiYzk5OTlmNWZlMmUyNDEyM2EwZjdlMTRlYWRjMTcyYjE4Y2EwN2Y1MzJjM2Y3ZGYyOTAwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGVkZWY1MWQyZDdlYWNlOTZlM2QzZjQ5MDYzYWMzNzgxODA3NDhiOGQyNzNhNGZmZWMyMGU3YWU1MjM0ZjhmNSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L413-L423",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L424-L434",
           "version": "repo-lines-v1:sha256:1e000b2efbc1d5ec48de64080c028dea4b9d5c6225dc8aa31a09e27306a1fb6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YzI1MDc2NzNlOTA2MzgxYWMzNDUyYzk3NDA2MDczMjI3NzAzNzc1NWQ2Y2Q3NzJlMTI5MzFmYzRiZjVkZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YWQyN2QxMjlmNzk1YjZmMzVhYmIxNmQ2OTJlM2JiYWY3ZWRmNzVhMWQwMDA1ZWVhYTkwNTE2M2RkMzkzZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyODMxYTEyMWQ1NDMzMDg5NTVkZTVlNGFkZjgzMjNjMjE3MWIwZTc4YzI1NmM3YzkzNmE0NjExYTI2ZWE4NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTMxM2U4ZDYxZjEwMzBmYjA0MTVlZmI0Y2I3NGVlNmMyZDhjNjY3YzI4ZTEzMTNjY2M2NDhlMmFkMTRhMjgifQ"
         }
       ]
@@ -259,7 +263,7 @@
           "version": "repo-lines-v1:sha256:785baf9ffad77a378576b666aa05e801a5b29c559addd29c83257ac0d111c918:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTMyNDVjOGI1OWMwZTlkMmZlMmI1YmZlMTg4OTg4YzZjYmMxOTdkZTI3OGVmODk5Y2NiNzExZTBkOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmJiNmQyMzg0NGZmMDRkMGYxZTZmZjJkZjFkNDNjYzcxMTAwZDI1YzM0ZjdjY2ExZjc0OWQ5ODEyMmVhYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYjI4Y2ViMTkwNDU5ZGJlZGI1ZWY3NjhjZDY3OGNhNWY2MzY4YmJjMDRhNzg5YTdiODE5MTg5Nzk1MTE4YWEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L341-L406",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L352-L417",
           "version": "repo-lines-v1:sha256:8728c5321089d0454100754b98ff02b3fc0563d79eb4d2ef7a407f4dfeb0c3ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZmEyY2JiMWM5Y2E1NTBlNGM3YTQ0YjEwZDNjMmIxYWU2MjA2ZGY3YzFjYzg4NWEzMDFlZjY0NDgwZjU3MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMjFhMTFmNzgwOWZjNjEwZGJmNTY5OWY0ODYxNTRlYzEwN2FmMzFjNzFiYjYwOWIzMGU0NWE3ZWZkMWRmM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyOTg5M2FmMGI0ZWJkNWNkMTBiNjI4OGVlOGQyOTQ4NjAzYzI1MTljZDcyMzU0MmVlOGI2OGE1YTQ0MTgyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA2MTk4YWY1Nzk5YTRlMjVmMzhiM2I0ZjZlZGZkMzA2ZjA0OGNmN2QzYmU0ZGJjYWU2ZmExNDI3NGM4NWEifQ"
         }
       ]
@@ -273,7 +277,7 @@
           "version": "repo-lines-v1:sha256:785baf9ffad77a378576b666aa05e801a5b29c559addd29c83257ac0d111c918:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTMyNDVjOGI1OWMwZTlkMmZlMmI1YmZlMTg4OTg4YzZjYmMxOTdkZTI3OGVmODk5Y2NiNzExZTBkOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmJiNmQyMzg0NGZmMDRkMGYxZTZmZjJkZjFkNDNjYzcxMTAwZDI1YzM0ZjdjY2ExZjc0OWQ5ODEyMmVhYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYjI4Y2ViMTkwNDU5ZGJlZGI1ZWY3NjhjZDY3OGNhNWY2MzY4YmJjMDRhNzg5YTdiODE5MTg5Nzk1MTE4YWEifQ"
         },
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L350-L354",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L361-L365",
           "version": "repo-lines-v1:sha256:95490abf17d60f48d759a27904511ac26d9533e85614f8db4f4d1f7abd67ae60:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JkNGU2N2Y3Y2FmZjA2NDIyZDM0ODczY2I3MTA1MWUzMWNhMjlkMDlmZWI4ZjFkZDYwM2MzY2JhMjQwYWVjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzg2M2VjOTRhYTgwZGFlMGZkMzJmNDAzZDI1NGRmMzZhZWY5OTk4Yzg0NzI5MDAwZmFkOTMyNTVjNGE1NTk3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2YyNjE2ZTlmNTU4NTFlMmJhMzdkMGMzY2ZkMzMyMDQ2ZDNkMTIyZGUwMzBjYjk4NzAzYzJjZWEzY2M2YTI0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgwYjllYmE5ODdjNDJlOGMyMGNmNDg5YTZkYjRjZWYwMTA2Y2I1NDcxZDc2ZTAxYjhlOGQ2YzBmN2E0YmNlMiJ9"
         }
       ]
@@ -283,7 +287,7 @@
       "statement": "During the OpenSearch upgrade the agent-audit-init container must be stopped before the restore, because init-audit-user.sh POSTs a verification document on startup and the writer role carries create_index, so on the empty 3.x volume the stack re-creates mcm-agent-audit first and the restore fails with `cannot restore index [mcm-agent-audit] because an open index with same name already exists in the cluster` — measured on the 2026-09-13 cutover. The recovery, if it happens anyway, is safe only while docs.count is ~1 (the init-verify doc); anything else means another writer and a stop.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L370-L406",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L381-L417",
           "version": "repo-lines-v1:sha256:bae3b038e9e30c2648b93a6f64011920fdf98a86f83ea3eae0a4deeba7adb167:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNWExMTM2NGM0NDhhMjg2YzY3MjU3ZDdjZmY1YzdiY2E2Yjc2ZGU4MTI3ODIwZTYzNzFlNzhiZjdmZjE2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMjFhMTFmNzgwOWZjNjEwZGJmNTY5OWY0ODYxNTRlYzEwN2FmMzFjNzFiYjYwOWIzMGU0NWE3ZWZkMWRmM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwZDk0ZDBlZmJiNjIzMGI2NTY4Zjk2NTdhMWY1OTJkNzNlMGRiMmIyZDg5OTU1ODJjN2M4ZTYwZmI3NWE1ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA2MTk4YWY1Nzk5YTRlMjVmMzhiM2I0ZjZlZGZkMzA2ZjA0OGNmN2QzYmU0ZGJjYWU2ZmExNDI3NGM4NWEifQ"
         }
       ]
@@ -307,7 +311,7 @@
       "statement": "The prod-only failure table's two smaller traps are still load-bearing: the audit-init container must use an image shipping both bash and curl (init-audit-user.sh is #!/usr/bin/env bash, so curlimages/curl cannot run it) and its entrypoint pre-creates the sibling stacks dir the script cd's into before its guard, or set -euo pipefail aborts everything; and the BFF's audit POST needs OPENSEARCH_INSECURE_TLS=true because OpenSearch serves a self-signed cert and the sink sets rejectUnauthorized:false only when that flag is truthy, while the gateway's httpx sink needs no flag.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L689-L707",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L700-L718",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -325,7 +329,7 @@
       "statement": "The OPA healthcheck is driven through the opa binary rather than a shell utility, because the -debug variant's busybox ships no wget, curl or nc — the previous wget check failed on every run, leaving OPA marked unhealthy from ~2026-09-10 with a FailingStreak of 130,247 by 2026-10-03 while it served fine; the -debug variant itself is still required because the distroless image has no shell at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L701-L703",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L712-L714",
           "version": "repo-lines-v1:sha256:06ac48960510a8088754b78cf046d207ef8378bbeec2cac87c63932049b9986f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0MWU1NjRkNTFhNDhkZDQzYzUyZTBjYmJmYmY1NTFiZTdjYjM5N2YzMjY2NWQxN2NiMmU2NmU5M2M4MTBkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg0OGFiNTQ3MzY2ZjdjZTBiNDU0ODA3NDM3MDk0ZGI3YTM5YTMxYzE1ODAyYTkxYTIzYmMxODJkZDM2YjdjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY1ZTQ5NmJhNGU2NzhkZGE3MDNhZjY3NTIyOThlZTJjZDM5MTJmYWVlYmIxMmFhZGVhOGU1ODdmZmZmMzcxNSJ9"
         },
         {
@@ -339,7 +343,7 @@
       "statement": "Enabling prod-observability followed a capacity check on the shared prod host rather than an assumption of headroom: ~48 GiB RAM was available against ~2.2 GiB of actual container RSS, and observability (~6-7 GiB) plus the audit sink (~1.5 GiB) left ~40 GiB free, so the decision was always-on with no opt-in fallback and ClickHouse's mem_limit retained; the check is to be re-run before any future footprint increase.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L681-L687",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L692-L698",
           "version": "repo-lines-v1:sha256:eb29b1783692dbe350773fbee2df111638eba7319b09daab71601bcabc953f9a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThhZWUyMGZlNmJkNWJhN2FhNzI3OTBmMDk0YTE1ODhkYTIyNTAzNWIzOWI0OTUyN2YzMzIwNjI0Mzc0OWQwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwN2I1YjZhZDkwODI0OWU3MTliNWFmZGQyZjg5MDkzZjNkYWI2ODM4M2Q5ZDc5MjllYjEwOGJhOTNmMzE4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgwMzg1NzE1NDVjOTYzNTNlY2JjODQ0MzgwMTk2NDk4OTU5ZWM4Y2NlZGZkYjFkNmI5YzRiNjI2OTgyYzQ4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg4MDkwYzU3NjQ2ZDY0ZGFkMzQ5Njk0YmZkZGQzM2MzN2M0ODk2NjgxMjUyMmNlMjFiYjcwNGM2Nzk3NWRiMCJ9"
         }
       ]
@@ -363,7 +367,7 @@
       "statement": "init-audit-user.sh no longer echoes the credentials it provisions. It used to print both passwords in full, and once agent-audit-init began running it in production that output went to container stdout, leaving both live credentials in docker logs agent-audit-init, in Komodo's log view and in anything shipping those logs — a direct violation of the stack's never-log list. It now prints where the credentials live (dev: the gitignored stacks/audit.env; prod: Komodo Variables), never what they are.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L689-L707",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L700-L718",
           "version": "repo-lines-v1:sha256:a3bf893efd1138844161af6e5d1c00c033e2d3d4c697d361fada6477d0f6adac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTNhOTI3NTQ2ZjYzNDJmMDg5MmFjMGZkYjI4NmQ2NWIzMTVjOWQ0Njg0YTE2YWJjN2FmOWRmM2Y0YzA4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OTdlZDNmMTNkMjAyMWM3MzBlNmNlMzZiNjYxNzdhMDRkYTQxODQ1YmJhZTEyZWQ1M2NmNmNlMWU0NzI0M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYmQ5Zjc2MGIwNDE4ODQ2ZWNkNzc4ZDg5MjhkNjk3MDhmYTgxODE2ZDJhZDk1NTJhN2E0MmNlODU3ZGExMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYmY3Y2FjN2ExOTE0Y2E3ZmZmZGZhMWVkNjY3ZDNlZGMzM2QyNWVkMTU5NTY1MWQ0ZmY5NzM3NTBjNjdjYmMifQ"
         },
         {
@@ -378,14 +382,14 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L165-L169",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L177-L181",
           "version": "repo-lines-v1:sha256:7aeb44fc3301a755943cf437e173d561581888a9f25e9c47e2afc3fe6c65fd64:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjczMGRhOWY5NDhlNDYyOGFhN2Y5MGU3YjhiZTlhZGY4N2VlODNlZWZiZjM5YjJmNzhlNWQ1YWY1OTg2OGZlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ1ZjQyNDFjYmJlNzA3ODYxODgzMzgzNDgxZmU5NzBmYzMzNTU1NmMwN2YyODM1MTIzNTFmZmUzMTUzNTgyYSJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L44-L45",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L56-L57",
           "version": "repo-lines-v1:sha256:323badf94eda03eedb893617c16fe19328504f5e53235f86685776420fdd7ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhlNDAxYWY5NzRmMjMyOGIzMzc0MGEzZTU0ZTRjYmNlMjgwODBlZjE0MTI5N2RmYzdmMTgwMWU2MjhmZTllZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E2YWU1OGIwNjY2YjJiNzQzMjJmYjZiNTgzYmEwZTQ3ZGI2NGFkZGNhMTAxYWJkZTM0MmIwZDI3MzNlM2Q4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTFhNWVmMTBmNDljNGZjNDE5OWVmY2MwYjJlMTVlMGQzMzcyNmJmZGI0ZjZiOTMwYjBiYWMwOTZjOGZjMjI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ3ZDA5MzgwZDhjZGNjN2M0NmFhZTVmNTc3M2Q2Yjk2MjkzMDY0MmU2YmE1OWFiYmRhMTQyMzAxZDlmNjcxNCJ9"
         },
         {
@@ -400,7 +404,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
@@ -414,53 +418,61 @@
     },
     {
       "id": "claim_8c20947a006a4def82aba14fc6c7763c",
-      "statement": "The object-store migration tool runs ON the prod host from a repository checkout through scripts/object-store-migration.sh, because the host has no `node`: the wrapper copies the Docker CLI out of a digest-pinned image, runs the tool in a digest-pinned node container with the host's rootless socket mounted, copies the evidence directory in and back out, and passes S3 credentials by NAME from the shell environment rather than on a command line.",
+      "statement": "The object-store migration tool ran ON the prod host from a repository checkout through scripts/object-store-migration.sh, because the host has no `node`: the wrapper copied the Docker CLI out of a digest-pinned image, ran the tool in a digest-pinned node container with the host's rootless socket mounted, copied the evidence directory in and back out, and passed S3 credentials by NAME from the shell environment rather than on a command line. This is now the record of a completed cutover rather than a procedure — the tool and its wrapper were deleted by spec 080 T048 (2026-11-01), so the commands the runbook's history blocks name no longer exist.",
       "evidence": [
         {
-          "resource": "repo://scripts/object-store-migration.sh",
-          "version": "repo-file-v1:sha256:a4dd429bf581881b3cfc075a53f30b1e29dc8d1f142b5ab36d4e2f59dd456ae3"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L299-L307",
+          "version": "repo-lines-v1:sha256:ee11109973ac36ba72866c61d7edd50bf7faf998750a630d6e97a094a4e82c02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ExZmM2YWYyZjE2ZTVkNTFiMjdjZTE0OWRkZWU2ZWFhZDcwZjAyMDY1MWQ5N2U5YWU5ZjA1YTMxODNlNDIwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY3ODc5NTQ5OGMwZmIzZDYxNDNiYWEzYmU3ZDYyODU0ZGI2MWQ3YzFmYTMzMGY1YTM1NTUzMWYwMTczMmIxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDNmZDE5ODQxMmE4OWJkZDdjZDQzMjNhYTQ1ZjA0MTlmMDhkMGFiMDBlYTNlODBjZjUwNmFkOGY2MTljY2JiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmU3ZDgxZmJlZmJlNjM5ZDNiNTQxYWU0OWRiZjRlMThiNjA1MGViYjkxODZhNzY3NzY3YTgwODZiODJkNWVmNCJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
-          "version": "repo-file-v1:sha256:85f687c8bea3906e4d9581dba5065c7f4c31d16760c5c47fbbf133baae8b2d83"
+          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md#L10-L28",
+          "version": "repo-lines-v1:sha256:7a7a9c9079573f503f582d7953f006dd238a09c17d4f692d693c9f74f8ba006e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MDY4MDI4N2E3N2QyZDFhZjRmNjU2MmZjNDhlZGIxMGM0YTUzNGY4YWI4ODgzMjY3MGVhNjY5YjQwNGE3OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZTUzMzBlNDcyMTQ3MDJiMTQ2N2U0MzkyYTRiNTY0ZTkzMThhZDVhNDIwNzAxNTJkNTk1MDUwYmM1NmZlMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MDU2MTA4MTRhMTIxMmZkMmI1NjNmN2JlNTgxYzM0NTdjZjU5M2ZlYjllMWU4Mzc2ZTliYWVmMTkzNTVlMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L843-L857",
+          "version": "repo-lines-v1:sha256:743b588dbb6bf3d503b51a543129821d8209c692c2c28cbd1d4905cae90e2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZjdiOTM4YmFiMWEzYTY1OGM5ZWJmZmQ5MWUxZDA4MTZlNmQwNWQ2OGI0MWFkYTJhMjU5YzZiM2MzY2RmN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzk0ZmNhZGNiODA4NWU5YzIyOGY0OTk0MjljNGQ4YThkZGI5OTI5ZGZiMmM3OWUwZmQyY2IyZThmYjkxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
     },
     {
       "id": "claim_ff102f9eac7542eeb1d658bdaa8b8a8c",
-      "statement": "The migration tool refuses rather than guesses at every step: `copy` without `--apply` is refused (there is no dry-run spelling — `inventory` is how you look) and the wrapper refuses it before any container exists, as it does `rehearse`; the tool also refuses an existing target volume, a source still mounted by a running container, a volume that does not exist (it is never created by looking at it), and an inventory whose search instrument failed its self-test, because a BusyBox grep in its default locale misses markers inside a binary xl.meta so a zero proves nothing until the search has been shown to find a planted marker. A drive classifies as migratable only if its format is xl-single with exactly one set and one drive and there are zero SSE and zero tiered objects.",
+      "statement": "The migration tool refused rather than guessed at every step: `copy` without `--apply` was refused (there was no dry-run spelling — `inventory` was how you looked) and the wrapper refused it before any container existed, as it did `rehearse`; the tool also refused an existing target volume, a source still mounted by a running container, a volume that did not exist (it was never created by looking at it), and an inventory whose search instrument failed its self-test, because a BusyBox grep in its default locale misses markers inside a binary xl.meta so a zero proved nothing until the search had been shown to find a planted marker. A drive classified as migratable only if its format was xl-single with exactly one set and one drive and there were zero SSE and zero tiered objects.",
       "evidence": [
         {
-          "resource": "repo://scripts/object-store-migration.mjs",
-          "version": "repo-file-v1:sha256:3f992d50a047980deadeea347e953213bf67e05b27028cea4eb5b4f7e85c789a"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L309-L321",
+          "version": "repo-lines-v1:sha256:4b1f2564fa8560cb5e43e49c698bb07a82f4b347025b94dcec2aabde13648c76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYjllNTg1ZDA4YmQyOGMxMmJhZDdjMGFlNDViNjI1MWFlY2IxOGYyMWQ4MDllYWNiMThiYWJkMzMwMDgyZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGJjYjAyNjU2MmJhZmM3NGRhZThhNzRkZjg5NDMyOGYyZmYyYzFjMGNhZjRhMzgwMjUwNjE4YjNiNGYwZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmYWQ4YzRhMjYzNzVlYzIyMzBlNjU1NWRkNDVjZmEyOWMzODgyODcwOGEwNjMzYWY4MjY2OGE4MzMxYmI1YTYifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
-          "version": "repo-file-v1:sha256:85f687c8bea3906e4d9581dba5065c7f4c31d16760c5c47fbbf133baae8b2d83"
+          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md#L68-L87",
+          "version": "repo-lines-v1:sha256:7dd7b1f30322a3ac2416de9dda9a77b9c5f570bf23d8da1ece1ca1952b552ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZjA1NWIzY2M4YjVjM2UzMzhkYzczYjEzOWI5YjM0YTIxMmM0ODYyNjYxOGE2YzVkMmM5OTE2MjQzOGM1NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZDczN2M3YmY3NzY3NTI5NDg5NDU0OWIwYzY1NDFlNTUxMmRlOWQ0Y2Y1OGRlMWQ3ZGE4ZmUzNWYyNTdhMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YTE5MmUxZDU3M2Y0YmEwYjRmZTNmOGQxZmE2YzdiMmNhODg3MGRkNTVmZjQ5MGM3ZmFiYWMxZWY1YzRiZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyYWI0MzkzN2I1MjcxMjk2M2FmODUzZWUzY2Q1YmYwZWUxNGNiYzc4ZDBjYTNmOWU1MjY2YzgxZDVhODZhODYifQ"
         }
       ]
     },
     {
       "id": "claim_4cef0689c65e4e76a941914b72714984",
-      "statement": "The cutover's own acceptance records are asserted, not just produced: copy.json must show targetPreexisted false, entriesNotOwnedByRuntimeUid 0 and equal source digests before and after — a source that changed during the copy is no longer a valid rollback target and the tool says so instead of continuing — and `verify` compares the running new store against the pre-migration manifest and exits non-zero on any discrepancy.",
+      "statement": "The cutover's own acceptance records were asserted, not just produced: copy.json had to show targetPreexisted false, entriesNotOwnedByRuntimeUid 0 and equal source digests before and after — a source that changed during the copy was no longer a valid rollback target and the tool said so instead of continuing — and `verify` compared the running new store against the pre-migration manifest and exited non-zero on any discrepancy.",
       "evidence": [
         {
-          "resource": "repo://scripts/object-store-migration.mjs",
-          "version": "repo-file-v1:sha256:3f992d50a047980deadeea347e953213bf67e05b27028cea4eb5b4f7e85c789a"
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L318-L321",
+          "version": "repo-lines-v1:sha256:97bf2d0d5e0951363a59e8cc462bdd036ef9b1eb6b7c88a1d35eedec388c36d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2RiOWU1ODVkMDhiZDI4YzEyYmFkN2MwYWU0NWI2MjUxYWVjYjE4ZjIxZDgwOWVhY2IxOGJhYmQzMzAwODJlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGIwZTQxZjhkZjBkZGRkMWNlZjk1N2M1ZTQ1MGU1NjkwNTI4ZWMzNTBlNTgxNTUwZDc2M2M1NDE2YWFlMjJiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmZhZDhjNGEyNjM3NWVjMjIzMGU2NTU1ZGQ0NWNmYTI5YzM4ODI4NzA4YTA2MzNhZjgyNjY4YTgzMzFiYjVhNiJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md",
-          "version": "repo-file-v1:sha256:85f687c8bea3906e4d9581dba5065c7f4c31d16760c5c47fbbf133baae8b2d83"
+          "resource": "repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md#L79-L107",
+          "version": "repo-lines-v1:sha256:157757ef42064d37d0b99d0b9970c741fa482428e05831fb0bfcbc4b5249f439:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOTllYzAzODAwZjM5MDY0NDA2MDY2YTk2ODA0ZTczYTNjNGE2Yjg1MWIzYzE2YTFiNjZiMGQ5ZjA2MjVhZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MDZiOTJjOTgxNTA3YzI3YTVlNjk3ODYwNzU1ZWNjOTdmNjhiNzczZWY1NjVhMjUzNTBkMzA1YjA5Nzk5NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwZGEwOTRjZmZmY2Y2NTgyZjc4NDQ4ZDNhN2ZjZjU5YWQ2ZjNkYThhZTY4NDYyYmE3NjY2MzljNzZmOGQ0MTYifQ"
         }
       ]
     },
     {
       "id": "claim_6bbc5722f08b4e63abb8a619c19042c6",
-      "statement": "A guard test (scripts/__tests__/no-minio-references.guard.test.mjs) scans every tracked file's path and content for the old object store's name against a closed exemption list, so a missed runbook line cannot survive the RustFS cutover; the exemptions naming the migration tool and its tests are themselves temporary and are removed with the tool in the cleanup PR.",
+      "statement": "A guard test (scripts/__tests__/no-minio-references.guard.test.mjs) scans every git-tracked file's path and content case-insensitively for the retired object store's name against a closed exemption list, and proves it read the tree rather than a handful of files (a floor of ~1,800 scanned text files). The exemptions are of three kinds — path exemptions for places where the name is legitimately history (specs/**, docs/decisions/**, docs/proposals/**, the generated openwiki/**, pnpm-lock.yaml and the guard itself), line exemptions for live files that must name the literal (the secret scanner's detection set, the dev-env generator's pre-080 migration, the naming gate's RETIRED_KEYS line and the object-store guard's prohibition on the retired MINIO_* aliases), and token exemptions that strip citations of the fixed spec-directory and guard/contract names. Every entry must match at least one real file or line or it fails as stale, exactly as an unmatched allowlist entry does; anything else — a runbook case study included — must be wrapped in a `<!-- history:begin -->` … `<!-- history:end -->` block, honoured only under docs/runbooks/**, and the exemptions that named the migration tool were removed with the tool.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs",
-          "version": "repo-file-v1:sha256:31eeb5369a01dce4e74a1b8f8ddf7afb953d8fe5fdaef0604e455ff7f0232b55"
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L178-L246",
+          "version": "repo-lines-v1:sha256:95cd367add492997df184236607cd7781f31327ed8c8688a7a2638e04e2c8eee:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNmU5NzhhMzc4NzIwOGYzNmQ4MDViOWQxZTRmNmVhMGYwNjMwYTE1ODQzMzAxNzBjNGNhMjhmNzg2YzFiMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNjYwOGRkYzNhYjdjNTY1YWE0MjEyYmUzNjJmYzkxMGQ1YzBiNjhiYzc3NTY5NWE5Yjg2OTRkNTgxMTA3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZjMxMDg3OTQzMTAyYTdlMjk0YTdlZmU4ZDAxYTZkYTUyNWJmM2JiNjAxYmJhNWQ4NjFhYTBkMjM3MmJkY2UifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L33-L110",
+          "version": "repo-lines-v1:sha256:bce476fd255c60e0dd845ba2b86be9f220ec62a280fa350a110b8b52b0dad408:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYmI2ODg5YTM2ZGRjYTAwZDYwNTk1ZjQzY2FmYTIzNWRhNTNjYTAzMGQzODhiYTFhNWQwZjMzYjVlMDU1NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YTE3NTg1Y2ZiOWQzYmQ2MDlkODQxZmY1NzI2ZWM5ZDYxMzczNmY0MDIwOWU2N2FjYjI0MTkwODI2NGVlMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczODBiOTc5ZWVhMWQ2NTU0ZTNjMmY1MzlkYmIzZTYyM2QxNWQzOTg5YjM2MjJjMTczYTJmYzM2Yzk0NGE5ZWEifQ"
         }
       ]
     },
@@ -484,7 +496,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -498,7 +510,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
@@ -516,7 +528,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
@@ -538,7 +550,7 @@
         },
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -570,7 +582,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -584,11 +596,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
+          "version": "repo-file-v1:sha256:fcc3cb3d01171d5b4195f9210784ba1aee75918f6b7a8501583f605861b428f1"
         }
       ]
     },
@@ -598,11 +610,11 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
+          "version": "repo-file-v1:sha256:fcc3cb3d01171d5b4195f9210784ba1aee75918f6b7a8501583f605861b428f1"
         }
       ]
     },
@@ -612,7 +624,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
@@ -620,7 +632,7 @@
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
-          "version": "repo-file-v1:sha256:67dd326c25f2d7652f81166422492e9fa30b3132b7b656204413e0e291e32bfd"
+          "version": "repo-file-v1:sha256:fcc3cb3d01171d5b4195f9210784ba1aee75918f6b7a8501583f605861b428f1"
         }
       ]
     },
@@ -630,7 +642,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
@@ -644,7 +656,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-control-tower.md",
-          "version": "repo-file-v1:sha256:babcf026ae7598f523b769bfbf25732e8275c100c290ea36e040eaf3892d1909"
+          "version": "repo-file-v1:sha256:1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
@@ -657,7 +669,7 @@
       "statement": "The Langfuse 4.56.0 → 4.68.0 minor completed in production on 2026-10-25 (PR #852 merged pinned to ef2f199f as 89bd8acd) and closed PR 8d. Unlike the app stacks there was no cd-deploy promote commit: the Komodo sync deployed prod-observability directly, because this change builds no image. The operator pre-merge backup ran at ~01:04 UTC (ClickHouse 319M and Postgres `15 MB|449` read before, pg_dumpall marker found at 0.9 MB, ClickHouse cold copy tar exit=0 / CH-HEALTHY / GZIP-OK at 138 MB, WEB-OK on 4.56.0) and is kept on the host at ~/839-langfuse-468. Post-deploy both containers ran 4.68.0 Up with health {\"status\":\"OK\",\"version\":\"4.68.0\"} and {\"status\":\"ok\"}, _prisma_migrations read 460, ClickHouse migrations 52/u create_audit_logs and 53/u add_skill_observation_references were applied, web and worker logged zero error lines, and a trace landed via the worker's ClickhouseWriter — the same acceptance reading the runbook prescribes.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L686-L697",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L697-L708",
           "version": "repo-lines-v1:sha256:929e7c630588f886bef8367ecee96e4cc66116a94827f9f15d760ff4e8620994:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3OTY2YTcxZTY0MmNlZmQ2YzY1NDRkODA5MWU3MTQ0MDk2ZmEzNTk2MjI5NTUyZTgxYjIyY2Q3OTYwMjk5ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMDVlNDU1NWVlMzA5YTY0MzYzZWM1MGJiZjAwOWE2NjRmMTFhZDhjODU0MjBjODhiMDMzNDA4ZDliNDUzN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyOTU0YzUyOGVkM2ZlYmY5MjE5ODQ4Yjg0ZTM3ZGVkN2EwYTE0M2QyMGE4OWNiZGI0NmY3ZDQwZjFjNzE0MmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDhhYjU0NzM2NmY3Y2UwYjQ1NDgwNzQzNzA5NGRiN2EzOWEzMWMxNTgwMmE5MWEyM2JjMTgyZGQzNmI3Y2UifQ"
         },
         {
@@ -685,7 +697,7 @@
       "statement": "The 4.68.0 upgrade path was measured on the dev stack rather than inferred from a fresh start: the stack was first brought up on 4.56.0 and an agent turn traced, then web and worker alone were moved to 4.68.0 on the SAME volumes, which is how the migration path itself got verified. Prisma applied 11 migrations (460 total, including add_audit_log_staging and its failure columns), ClickHouse applied 52 create_audit_logs and 53 add_skill_observation_references with schema_migrations 53 / dirty 0, both containers logged zero error/warn lines, and both the pre-move and post-move traces sit in ClickHouse events_core — written by the worker's ClickhouseWriter — with October history still readable.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L703-L710",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L714-L721",
           "version": "repo-lines-v1:sha256:5c0904b9d179c40eb00d7747a8f57406f12ed1216bb6c856ed471d2b379c3a54:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM4M2Y4ODA3YmNmYzJhMmJhOGEzMmZjYjI1Nzc5ODYzMDIyMWE1OTkyNzE0NDc4NjI4MGM0ZDQxYTc1YWQ1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRiYTQ1NDQ2ZGQ0NDAwMDc1ZjI5ZTZjMmE1MDg1NTRiN2I1NGJjMmUzMzRjNGI2YWFhMjdjZmMyYmE1MTg0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcwNzE2ZmVhY2Y0N2I2NzE1YzQxNjlkZGYyNDgyOTkwMGMyMDAyNThhOGZiOWIwNDFiNTEzYTViZWQwYzMzMSJ9"
         },
         {
@@ -735,7 +747,7 @@
       "statement": "The sixth one-time stateful cutover is the Langfuse 4.68.0 → 4.72.0 minor (item 895), the same shape as the 4.68 minor applied to the next version: the merge IS the migration, the pre-merge backup is what turns a rollback into a restore, and a digest revert ALONE would not roll back because 4.68.0 cannot run on a store carrying three Prisma migrations it has never seen. Measured 2026-11-01 on copies of the dev observability volumes: 4.72.0 adds 3 Prisma migrations so `_prisma_migrations` goes 460 → 463, ClickHouse adds no migrations so `schema_migrations` stays at 53, and the backup restores into 4.68.0 (which comes up healthy with a pre-upgrade trace present and a post-upgrade trace absent). It also differs from the 4.68 minor in backing up the object store, because the langfuse-rustfs volume holds the raw OTLP ingestion objects.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L655-L679",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L666-L690",
           "version": "repo-lines-v1:sha256:769aecd96c7fb0a27c0c086c7b1fb27fcbb849ee89c5bc82aa36e36230ead21c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3ZWJlNjc4ZmU4ZjdlYWEyMjUyMDhmOGIzMGVlZGFiYTY2YTZiYzMzYWJmMGUyNGU5NTQxMzUwZGJmMzE3OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZjFiODAwN2Q5YTU4OWQzMWIzZDM0ZGNiZGM4Nzk2OTdjZmNjMGQ2MWFhZTkwMDQxZTBiZDIxY2NhOWJkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmJkNWNkZWM4ODRmNmZhYzA1MDFjN2JiZDQ3NWNlN2Q5NDZiNzg5OWRiMGYwZjcwNTdiOGJhMzE3MTZjMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTMxM2U4ZDYxZjEwMzBmYjA0MTVlZmI0Y2I3NGVlNmMyZDhjNjY3YzI4ZTEzMTNjY2M2NDhlMmFkMTRhMjgifQ"
         },
         {
@@ -753,7 +765,7 @@
       "statement": "Langfuse 4 traces live in ClickHouse's v4 events model: with `LANGFUSE_MIGRATION_V4_WRITE_MODE=events_only`, `GET /api/public/traces/{id}` reads the legacy `traces` table, which is no longer written, so the trace-landed check for the 4.72.0 cutover counts rows in `events_full` instead of using that endpoint; the legacy `trace-create` ingestion event is refused with 400 and traces arrive over `POST /api/public/otel/v1/traces`. `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` must not be used as a fix — it restores INGESTION only and would mask an unmigrated read path rather than repair it, which is why a guard test polices removed v4 read APIs in source rather than the ingestion side.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/prod-control-tower.md#L668-L679",
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L679-L690",
           "version": "repo-lines-v1:sha256:e846fc6c5d0d04763757a5ab035d3219ac4a9a5fa83f801aba1510d27cbb15ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ODc3OWUyY2UxMDUwODJhNzM3ODY1NDZlNjBiOGFjNjhmODAwNjE4YzI5NjFhZGZlNjVmM2Q0YzA2NWE2OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZjFiODAwN2Q5YTU4OWQzMWIzZDM0ZGNiZGM4Nzk2OTdjZmNjMGQ2MWFhZTkwMDQxZTBiZDIxY2NhOWJkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3MGEzNTk4OGI4M2U3Y2VlOGEyMzMyNzQyNWJlMDgzN2Q0ZTdjODE1OGE4Yjk2MTMzMTBjZDU1ZDUwMWUxNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTMxM2U4ZDYxZjEwMzBmYjA0MTVlZmI0Y2I3NGVlNmMyZDhjNjY3YzI4ZTEzMTNjY2M2NDhlMmFkMTRhMjgifQ"
         },
         {
@@ -797,10 +809,24 @@
           "version": "repo-lines-v1:sha256:a4aaeeb273fc8b616bba224d9354ed8c1a7d60495691a19fafeae597ed2d97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjA2NTY1ZmI3MTY2Yjg1NjVmMzU4MGMwMTgwZWY3YmNlNTJiZTBlYjI1MGM5NTViY2JjNTBkZDNlODk4ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmE5ZjUyZWEwN2JjYzJkYzIxYjhkYjdhMzgzOTBjOTZkNDUzZTZhODZmZTdlMmFmM2Q3MzcxMTdkY2Q3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1314c58a6bf0491db778d2262a512ec9",
+      "statement": "The feature-080 RustFS object-store cutover is complete and closed out: production moved to RustFS on 2026-10-16, the cleanup ran early on 2026-10-24 (item #826) deleting the old volume, the Komodo Variable LANGFUSE_MINIO_ROOT_PASSWORD and the jumbleknot/minio registry package, and the migration tool, its wrapper and its tests were deleted by spec 080 T048 (2026-11-01), with the guard's temporary exemptions removed and the runbook's live cutover text wrapped in history blocks. The section survives only as the shape of the cutover and the traps it was built around, and the runbook's commands are explicitly not to be looked for.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L253-L271",
+          "version": "repo-lines-v1:sha256:ec373b1fb441a53331fd430e7438284ae3346c5beda43bac6a263ebfee49c677:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNmY0YTM1ODEwNDk4OWIzYjIwZDcwMGNlMWY0ZDcxMTRjNTY0M2U1NDEyMzE1NDE3ODg5MGY4MTQwZDZjOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjdjNWQ1MTQ4OTEyNWEwNWQ3YTE4OGZhZTczZTRhOGM3ZDI5MGNjZWViNWYzMzM5ZmE0ZmVkNWZhNjQwMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxNmEyYjFmYWNmMjVmOTEzODkwMDM5NDA0NGQ4NWE0YTZlZDAzODJkZTZhMjk4ODUwM2VhZTgzNTM3MmIzYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwY2ZiYjZiYTU4ZTMxYTQ1OTcxMTY3OWFmYzllMjc4OTgzM2M2YjE5MjI4MjY3MjRjMjc2MWI2N2YxYzYzNzIifQ"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L857",
+          "version": "repo-lines-v1:sha256:cffd85db90eb4249dfa4511ebeba353ed70c3ced7073f1c8abd6d96ae1adef40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T03:57:29.221Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

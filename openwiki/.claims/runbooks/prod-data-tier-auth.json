@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9b6902aef2fdadd74d3a3590aa49e39a63a02aeccdeda99cd47e202b232d1831",
+  "pageVersion": "sha256:28266c50b8aff509488447ab0a067a3ddbad85eebfa9384d3bf2cb683ef48cae",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -70,7 +70,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "version": "repo-file-v1:sha256:c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e"
         }
       ]
     },
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:6cfcb0ef2231bdb94a466651e42f9ad47d364615e9220c22e94e8b988169ce11"
+          "version": "repo-file-v1:sha256:893444688993724abbd0ee437be07034d9e39bd7a048df90fdb18a076f0b2e1f"
         },
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
@@ -97,7 +97,7 @@
       "statement": "The post-deploy health probe polls only the Keycloak OIDC issuer and the public app host for HTTP 200, so it cannot detect a broken MongoDB; verifying the upgraded stores is the operator's responsibility immediately after the deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L274-L283",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L277-L286",
           "version": "repo-lines-v1:sha256:d8bd6e55e182636a81007b863f42cb822c17ab7943fb83309408e7c035af195a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjQ2ODUzMWFkNTkzZjM1YzM0ZjQ3ZmFiNTg5NjlkMTcyNjgyYTFkZDMxNmRhMTc3MjNmZjBjNDZkMDE4NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Y2I0ZjYxNDVjN2M1Mzc4YTI0OTg2MDE3MWNjNmVkYjY1MmE4YjJkYjk4NjQ2OTA2NDhmNTlkMTNhMjc5MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNWEyYTYzNzUxNGU4NjQxOGVhYTJiYmU1MDUzYWYzNDkzYzRkMGUyMzM3YmE3MjJkODI2ZDRjYzgzNmM2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxYmYyNTRmNjYyZmJmYTFiY2U5MmY3OTM0MWQ0MDExMzJlMzk2ZDA3NjBkZWI5M2ExZGM1ZmE4M2NmNjQzNjIifQ"
         },
         {
@@ -363,7 +363,7 @@
       "statement": "The deploy path a merge triggers is conditional at two levels, not automatic. First, `app-ci`'s `trigger-cd` job exists only for a `push` to `main` whose `needs:` are satisfied: `affected` and `mc-service-checks` must succeed, `app-e2e` and `dast` may be `success` or `skipped` (so a path-gated skip does not swallow a config-only merge), and `app-image-scan` must be exactly `success`. Second, the remaining decision is delegated to `scripts/cd-dispatch-gate.mjs`, which declines a commit that is no longer the effective tip of `main` (a newer non-`[skip ci]` commit supersedes it), a range where nothing in `DEPLOYABLE_PATHS` changed since the last `chore(cd): promote …` commit, and a commit whose `guardrails*` contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status because `trigger-cd` is advisory; the dispatch itself requests `main`'s tip, not the merged sha. `cd-deploy` is correspondingly `workflow_dispatch`-only with no `push:` trigger (`deploy=false` default, so a manual mint builds/scans/pushes/promotes digests without firing the webhook or probe) and serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false` so a later merge never cancels an in-flight production deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1906-L1993",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1924-L2011",
           "version": "repo-lines-v1:sha256:ae09f0060240ced08920a0da7f1d651a9100f6e156335ea3b0b17aa4f0137ded:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -386,15 +386,23 @@
     },
     {
       "id": "claim_be698420a65f4ffaba26caef90ff4342",
-      "statement": "The MongoDB 9.0 image pin moved after the production upgrade: the cutover itself ran on the 2026-10-23 build of `9.0-ubi9`, while every Mongo ref — both prod compose files and every §6 command in the runbook — now pins a later rebuild of the same mongod 9.0.4 on a patched UBI 9 base (the 2026-10-28 rebuild, adopted in the 2026-11-01 change, PR #896), which is what cleared the CVE-2026-114406 ca-certificates finding that had landed on every UBI 9 image after the first scan. The pin is a digest rather than a floating tag, so a re-run or a rollback uses the image production actually runs and the expected outputs are unchanged.",
+      "statement": "The MongoDB 9.0 image pin moved after the production upgrade: the cutover itself ran on the 2026-10-23 build of `9.0-ubi9` (`sha256:2cb58a8d…`), while every Mongo ref — both prod compose files and every §6 command in the runbook — now pins upstream's later same-version UBI 9.8 rebuild of mongod 9.0.4 (`9.0.4-ubi9-20261031T064800Z`, index `sha256:3d40c6fa…`, adopted in the 2026-11-01 change, PR #896), which cleared the CVE-2026-114406 ca-certificates finding that had landed on every UBI 9 image after the first scan. The pin is a digest rather than a floating tag, so a re-run or a rollback uses the image production actually runs and the expected outputs are unchanged.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L354-L363",
           "version": "repo-lines-v1:sha256:8de06a5e557c058385874bb04fe696c4e3bbeef348c27594ed850cb41624cd08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjFkOGQzNmQzM2RlYTA5MzljNmY1YTg4OWFjNjcwZDRiMWI0M2I2ZmM5MTYxYzBjZDA2MjdkNjNjMzM3OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NTYzMzk1NTQ3YzUyNDU0MWVmNWZlODEwZTdmNTI4ZTc3NWE2MzhkZDhkYjUyMDZmY2I0NzcxNzFjZDA1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhYzE1MWRiNGRhYThlY2I1MDg3MGY1YTNmNjhmOTNmNjc2MWQ3MzFhNGUzNDZiMTcyYjBlY2UwNDhiYzc0MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2YTAzNWI5ZGUyYTI0YWNkMzQyZTZjNTg1N2YyMmRkYWZjZmVlYmY3YjdhYzE4NDdmOGE2ODVhMjk1Mzk4OGIifQ"
         },
         {
-          "resource": "repo://security/infra-images/allowlist.yaml",
-          "version": "repo-file-v1:sha256:2bed67c5670f9304e1f3f5fd4cd7dfc5ec50694b3c5ce59bb0b88c9ffcedca96"
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L133-L133",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkZDExOGQ5ODJjYTE3ZTBmMTk4ZjE4ZWM2NzI1OGRiYWNiYzg2YjIxNTAzM2Q5NzI5ZGM5OWM0ZDFjMjgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQzMjc2ZDgyMmFjYTdlZTA2NDY0YjJjYmIzOTA3ZWIzMGVjOWI2MWNlMzI4M2NmZGQyZDA2MTQxNzc0NDgzYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L25-L25",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NhMzk2MTg4ZDk0OTJmNmM1Mjk5YzAxN2QyNzQ4YzA4ZDNkM2E0NmQ5NmYzMWI3MGRjZTBiYzUyMjA3YjdhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhY2I5YmQ4MmQ2MDdlNTBhZTIzZDMxZTE4YmUzOGI1NTI4NzViNzZmY2ExNmFiYTYxZTg2YzU2YTRhOTYzYSJ9"
+        },
+        {
+          "resource": "repo://security/infra-images/allowlist.yaml#L79-L82",
+          "version": "repo-lines-v1:sha256:c4c457c52367d17341f05aeaeb5f200495bb889a4a1404429c020b698f36670c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdkZGE3ZTcxZDRlZThhMmQzNjdjMmE4MDY3YWU4YzBlYjhkNTVmNjI2OTVkOTBkNWYxNjIzYjMxNGZkZWM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ViZDMzYWVmODEzN2EwMjEwNjE0NmJkMmYwMWE5NzJlYzhlMDYzZjhlNDU2MDA0NmEyYjhmN2NkNTk1ZGI0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVkNzYyNDYzMjE0YzZhNDM0MGIyODMzNjJhOWQyYzZmZGRiM2FmMzVhOTk3MDE0ZjgwY2E3NTIwNWEwYzVkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjE4ZWNkNjBkNGE2NmY5MjQ3YjY5ZDhjZjZiMDM3YWE3MjAxZTMzMGIwMGEzZjQ2MTg1NjA5ZmRkNWJkNDAzMCJ9"
         }
       ]
     },
@@ -429,6 +437,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T03:57:29.221Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

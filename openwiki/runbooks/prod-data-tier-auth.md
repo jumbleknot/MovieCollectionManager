@@ -43,10 +43,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -81,9 +81,10 @@ pointer to the exact commands, not as a queue of pending chores:
   (item #850, operator-run on the prod host) — so both stores now run FCV `"9.0"`, the upgrade is
   complete end to end, and the raise is no longer pending. What remains available is the §6.5 rollback,
   which is unchanged by the raise: it restores a dump onto a fresh 8.0.8 volume.
-  The pinned digest has since moved: the upgrade itself ran on the 2026-10-23 build of `9.0-ubi9`, while
-  every Mongo ref — compose and runbook alike — now pins a later rebuild of the *same* mongod 9.0.4 on a
-  patched UBI 9 base (the 2026-10-28 rebuild, in the 2026-11-01 change, PR #896). That rebuild is what
+  The pinned digest has since moved: the upgrade itself ran on the 2026-10-23 build of `9.0-ubi9`
+  (`sha256:2cb58a8d…`), while every Mongo ref — compose and runbook alike — now pins a later rebuild of
+  the *same* mongod 9.0.4 on a patched UBI 9 base: upstream's `9.0.4-ubi9-20261031T064800Z` UBI 9.8
+  rebuild, index `sha256:3d40c6fa…`, adopted in the 2026-11-01 change (PR #896). That rebuild is what
   cleared the `CVE-2026-114406` ca-certificates finding which had landed on every UBI 9 image after the
   first scan. The pin is a digest, never a floating tag, so a re-run or a rollback uses the image
   production actually runs; the expected outputs are unchanged. The measured record (before/after counts,

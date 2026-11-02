@@ -4,6 +4,9 @@ title: Prod host backup (restic) and its failure alerting
 description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-02T10:14:55.121Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -25,6 +28,8 @@ sources:
     resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
     resource: repo://infrastructure-as-code/backup/README.md
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
   - id: openwiki-source-5560229e88c2aa91002a3238
     resource: repo://scripts/__tests__/backup-alert.test.mjs
   - id: openwiki-source-62d227af87c6a9ae6df49e2f
@@ -45,6 +50,8 @@ sources:
     resource: repo://scripts/__tests__/komodo-cron-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66
     resource: repo://scripts/backup-install-manifest.mjs
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
   - id: openwiki-source-75f8add1789d37f1c762c383
@@ -55,10 +62,7 @@ sources:
     resource: repo://specs/084-silent-failure-visibility/spec.md
   - id: openwiki-source-5159dca913823c87d5dcf112
     resource: repo://specs/084-silent-failure-visibility/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 ---
 
 # Prod host backup (restic) and its failure alerting
@@ -127,7 +131,8 @@ the repository every night.** An uncompressed tar of mostly-unchanged files adds
 change instead, and that is measured rather than argued: **389.6 MiB** and **412.1 MiB** were added on
 2026-10-30/31 (576.2 MiB on 2026-11-01) against a **2 GiB** target, and the forge's own share of the
 snapshot fell from 22.5 GB to about 0.8 GB. What remains is mostly `forge-db`: `pg_dump -Fc` compresses
-itself, so it barely de-duplicates between nights.
+itself, so it barely de-duplicates between nights. By 2026-11-01 the newest snapshot was **1.533 GiB**,
+with 12 snapshots in the repository.
 
 ### Komodo's scheduler history
 
@@ -312,7 +317,9 @@ contract, at the level of what each piece achieves:
   with `MCM_BACKUP_STALE_HOURS=0`.
 - **A restore is a Phase 14 procedure, not a script here.** The registry and repository archives are
   excluded on purpose because they are rebuildable; after a restore, `cd-deploy` must be re-run once
-  before a rollback to an older digest is available.
+  before a rollback to an older digest is available. The excluded registry does not grow without bound
+  either: since spec 084 US5 a weekly `registry-retention` sweep deletes old versions while protecting
+  every digest pinned in `infrastructure-as-code/docker/*/.env.deploy` on `main`.
 - **A dump that passes its format check is still not a proven backup.** The checks prove the file was
   written and is the right shape; only a restore proves the content. That is what the drill below is
   for.
