@@ -869,7 +869,7 @@ intended, and `--fingerprint <concept> "<anchor>"` prints the new value.
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
 pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
-pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G13
 node --test scripts/__tests__/wiki-maintain*.test.mjs
 node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
 ```
@@ -979,9 +979,9 @@ verified to load and reject a malformed fence from the locked install.
 
 OpenWiki 0.5.2 records **Claims** for the pages it writes: atomic, evidence-backed propositions that
 the page body relies on. They live beside the bundle, one JSON sidecar per page, mirroring the page's
-path — `openwiki/.claims/runbooks/backups.json` belongs to `openwiki/runbooks/backups.md`. Twelve
-exist at the time of writing, all written by the generator since 2026-09-20, and each of the twelve
-pages carries a matching `verified:` entry (`by: openwiki/0.5.2`, `at: <ISO time>`) in its front
+path — `openwiki/.claims/runbooks/backups.json` belongs to `openwiki/runbooks/backups.md`. There
+were 43 on 2026-11-01, all written by the generator, every one on a derived page, and each of those
+pages carries a matching `verified:` entry (`by: openwiki/<version>`, `at: <ISO time>`) in its front
 matter.
 
 A sidecar holds `schemaVersion`, a `pageVersion` hash of the page, a `verification: {by, at}` event,
@@ -994,8 +994,16 @@ package's `dist/claims/guidance.js` states those rules.
 
 What this repository does with them today:
 
-- **Policy.** `openwiki/policy.yaml` has no rule of its own for `.claims/`; the sidecars are permitted
-  only by the `openwiki/**` catch-all (`regenerate`, `actor: generator`).
+- **Scope: derived pages only (ADR-0003, item #513).** Claims and the fingerprints in
+  `openwiki/protected.yaml` are complements with disjoint scopes. A fingerprint freezes prose we
+  wrote, on an authoritative page that has no upstream source. A Claim certifies a fact the generator
+  wrote, on a derived page, against the source it was derived from. A Claim on an authoritative page
+  would cite the page itself; a fingerprint on a derived page would fight the refresh it exists to
+  allow. Policy keeps the generator off authoritative pages, and **G13** in `okf-governance` fails a
+  break of that.
+- **Policy.** `openwiki/.claims/**` and `openwiki/.page-manifest.json` have their own entries in
+  `openwiki/policy.yaml` (`regenerate`, `actor: generator`), so their scope is declared rather than
+  inherited from the `openwiki/**` catch-all.
 - **Gates.** `okf-lint` touches Claims in three places. V5 validates the ISO-8601 shape of every
   `verified.at`, and V12 counts it as a stamp (the newest of `generated.at`, `verified.at` and
   `timestamp`). **V16 reads the sidecars:** every page with a `.page-manifest.json` entry must have a
@@ -1004,8 +1012,29 @@ What this repository does with them today:
   `generation/page-manifest.js`), defined once in `scripts/openwiki-claims.mjs`. A page with no
   manifest entry is not checked; openwiki leaves it for full review. The same module lets
   wiki-maintain's link normalization carry a covered page's certified hash across a pure link
-  rewrite, so the harness cannot break the invariant it enforces.
-- **Decision.** The operator decided on 2026-09-27 that Claims are required and valuable (item
-  **#513**). The decision's details, and any gates or lifecycle rules that follow from it, are being
-  recorded under #513. The only gate on sidecars today is V16's durability check (above); nothing
-  checks that a sidecar's claims are *true*, so do not treat one as reviewed content.
+  rewrite, so the harness cannot break the invariant it enforces. **G13** in `okf-governance`
+  (`claimsScopeFindings`, same module) fails:
+  - an authoritative page with a sidecar or a manifest entry;
+  - a sidecar whose page does not exist;
+  - a page carrying `verified:` with no sidecar, which claims a verification that nothing records.
+- **What no gate checks.** Nothing checks that a sidecar's claims are *true*, so do not treat one as
+  reviewed content. V12 drift stays the only drift signal for derived pages that have no Claims.
+
+### A failed evidence recheck: `stale` and `unresolved`
+
+On each refresh openwiki rechecks every claim's evidence against the repository.
+
+- **`stale`**: the cited source still exists but its bytes changed. This is normally the system
+  working: the generator confirms, revises or retracts the claim in that run, and nothing needs doing
+  by hand. **The exception is a file rewritten on every deploy.** That claim goes stale on every run
+  and forces its page into every slice. The precedent is CD's digest-promote rewriting every
+  `.env.deploy` (item #525, commit 27220387). Add such a file to `.openwikiignore` so it is never
+  cited again, then **uncover** each page that cites it.
+- **`unresolved`**: the cited source cannot be read at all, usually because it was moved or deleted.
+  The generator revises or retracts the claim on the next refresh of the citing page
+  (`dist/claims/guidance.js`). If the page is not due for a refresh, uncover it so the next run
+  reviews it in full.
+- **Uncovering** is the only safe way to hand-edit a covered page. Remove its `.page-manifest.json`
+  entry, delete its `.claims` sidecar and delete its front-matter `verified:` event, all in the same
+  change. openwiki then leaves the page for full review. Removing only some of the three fails V16 or
+  G13 in the PR, rather than failing the next paid run.

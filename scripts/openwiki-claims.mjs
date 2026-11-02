@@ -17,8 +17,8 @@
 // directory is being checked, so fixtures outside a real `openwiki/` directory work the same way.
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 
 export const PAGE_MANIFEST = '.page-manifest.json';
 export const CLAIMS_DIR = '.claims';
@@ -120,4 +120,47 @@ export function carryClaimsHash(bundleDir, rel, oldBytes, newBytes) {
   const mText = readFileSync(manifestPath, 'utf8');
   writeFileSync(manifestPath, entry.pageVersion ? mText.split(entry.pageVersion).join(newHash) : mText);
   return true;
+}
+
+const walk = (dir, ext, base = dir) => (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []).flatMap((e) => {
+  const p = join(dir, e.name);
+  if (e.isDirectory()) return e.name === CLAIMS_DIR ? [] : walk(p, ext, base);
+  return e.name.endsWith(ext) ? [relative(base, p).split(sep).join('/')] : [];
+});
+
+/**
+ * Where Claims may exist at all — item #513, ADR-0003. Claims (facts the generator wrote, with their
+ * evidence) and protected.yaml fingerprints (prose we wrote, byte-exact) are complements with DISJOINT
+ * scopes: Claims on derived pages only, fingerprints on authoritative pages only. Policy is what keeps
+ * the generator off authoritative pages; this is what makes a break of that visible. Findings:
+ * an authoritative page with a sidecar or manifest entry, a sidecar with no page, and a page carrying
+ * a `verified:` event with no sidecar (it claims a verification nothing records). `authoritative` is
+ * protected.yaml's list, relative to the bundle.
+ */
+export function claimsScopeFindings(bundleDir, authoritative) {
+  const findings = [];
+  let covered = new Set();
+  try {
+    const manifest = readJson(join(bundleDir, PAGE_MANIFEST));
+    covered = new Set(Object.keys(manifest?.pages ?? {}).map((k) => k.slice(PAGE_PREFIX.length)));
+  } catch { /* absent, or reported by V16 */ }
+  for (const rel of [...authoritative].sort()) {
+    const has = [existsSync(join(bundleDir, sidecarRel(rel))) && sidecarRel(rel), covered.has(rel) && `a ${PAGE_MANIFEST} entry`].filter(Boolean);
+    if (has.length > 0) {
+      findings.push({ page: rel, message: `is authoritative (protected.yaml) but carries Claims coverage (${has.join(', ')}). Claims certify generator-written facts on DERIVED pages; an authoritative page is protected by its fingerprints instead (ADR-0003). Remove the coverage, or the generator wrote a page policy does not let it write` });
+    }
+  }
+  for (const sc of walk(join(bundleDir, CLAIMS_DIR), '.json')) {
+    const rel = sc.replace(/\.json$/u, '.md');
+    if (!existsSync(join(bundleDir, rel))) {
+      findings.push({ page: rel, message: `has a Claims sidecar at ${sidecarRel(rel)} but no page. Delete the sidecar and its ${PAGE_MANIFEST} entry` });
+    }
+  }
+  for (const rel of walk(bundleDir, '.md')) {
+    const fm = /^---\n([\s\S]*?)\n---/u.exec(readFileSync(join(bundleDir, rel), 'utf8'));
+    if (fm && /^verified:/mu.test(fm[1]) && !existsSync(join(bundleDir, sidecarRel(rel)))) {
+      findings.push({ page: rel, message: `carries a front-matter \`verified:\` event but no Claims sidecar at ${sidecarRel(rel)}, so nothing records what was verified. ${FIX}` });
+    }
+  }
+  return findings;
 }

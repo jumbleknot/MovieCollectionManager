@@ -16,7 +16,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const { claimsDurabilityFindings, carryClaimsHash } = await import(pathToFileURL(join(REPO_ROOT, 'scripts', 'openwiki-claims.mjs')).href);
+const { claimsDurabilityFindings, carryClaimsHash, claimsScopeFindings } = await import(pathToFileURL(join(REPO_ROOT, 'scripts', 'openwiki-claims.mjs')).href);
 
 const sha = (text) => `sha256:${createHash('sha256').update(text).digest('hex')}`;
 const PAGE = '---\ntype: Gotcha\ntitle: P\n---\nBody.\n';
@@ -103,4 +103,47 @@ test('carry: an ALREADY-inconsistent page is not laundered by a rewrite', () => 
 
 test('carry: an uncovered page is left alone', () => {
   within((dir) => assert.equal(carryClaimsHash(dir, 'gotchas/p.md', PAGE, `${PAGE}x`), false))({ manifest: { schemaVersion: 1, pages: {} } });
+});
+
+// Item #513: Claims and protected.yaml fingerprints are COMPLEMENTS with DISJOINT scopes (ADR-0003).
+// Claims certify facts the generator wrote on a DERIVED page; a fingerprint freezes prose we wrote on
+// an AUTHORITATIVE one. Policy keeps the generator off authoritative pages, so the two never meet,
+// but nothing checked it: an openwiki that began writing Claims for pages it did not generate would
+// break it silently. These pin the scope check the governance gate runs as G13.
+
+const VERIFIED = PAGE.replace('title: P\n', 'title: P\nverified:\n  - by: openwiki/0.7.1\n    at: 2026-11-01T00:00:00Z\n');
+
+test('scope: a consistent derived covered page, not authoritative, has no findings', () => {
+  within((dir) => assert.deepEqual(claimsScopeFindings(dir, []), []))();
+  within((dir) => assert.deepEqual(claimsScopeFindings(dir, ['gotchas/other.md']), []))();
+});
+
+test('scope: an AUTHORITATIVE page with a Claims sidecar or a manifest entry is a finding', () => {
+  within((dir) => assert.match(claimsScopeFindings(dir, ['gotchas/p.md'])[0].message, /authoritative/))();
+  within((dir) => assert.match(claimsScopeFindings(dir, ['gotchas/p.md'])[0].message, /authoritative/))({ sidecar: null });
+  within((dir) => assert.match(claimsScopeFindings(dir, ['gotchas/p.md'])[0].message, /authoritative/))({ manifest: null });
+});
+
+test('scope: a sidecar whose page does not exist is a finding', () => {
+  within((dir) => {
+    const f = claimsScopeFindings(dir, []);
+    assert.equal(f.length, 1);
+    assert.equal(f[0].page, 'gotchas/p.md');
+    assert.match(f[0].message, /no page/);
+  })({ page: null, manifest: null });
+});
+
+test('scope: a page carrying `verified:` with no sidecar is a finding; without `verified:` it is the uncovered form', () => {
+  within((dir) => assert.match(claimsScopeFindings(dir, [])[0].message, /verified/))({ page: VERIFIED, sidecar: null, manifest: null });
+  within((dir) => assert.deepEqual(claimsScopeFindings(dir, []), []))({ sidecar: null, manifest: null });
+});
+
+test('scope: a bundle with no .claims directory and no manifest is clean', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'claims-'));
+  try {
+    writeFileSync(join(dir, 'p.md'), PAGE);
+    assert.deepEqual(claimsScopeFindings(dir, ['p.md']), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

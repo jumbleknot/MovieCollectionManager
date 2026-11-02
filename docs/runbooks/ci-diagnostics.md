@@ -6,6 +6,12 @@ The forge API exposes **no log, artifact, or per-run-jobs endpoint** — measure
 confirms the absence is by design in this build. So this inverts the direction: **CI pushes a curated
 digest into a channel the API can already read**, and `scripts/ci-status.mjs` reads it back.
 
+**Workflows cannot use `actions/upload-artifact` v4 or later either.** It refuses any server other
+than github.com before it uploads anything (`GHESNotSupportedError`). That has been measured four
+times, most recently on both runner labels on 2026-10-16 (spec 081 research T004). The action stays
+on v3 under a Renovate ceiling (item #912), which is one more reason the digest goes to a channel the
+API can read rather than to an artifact.
+
 **There is also no RE-RUN endpoint** — measured 2026-08-31, all three plausible shapes answer `404`:
 `actions/runs/{id}/rerun`, `actions/tasks/{id}/rerun`, `actions/runs/{id}/rerun-failed-jobs`. Nothing
 can re-run a job in place, and there is no way to re-run *one* failed job at all. Re-triggering means

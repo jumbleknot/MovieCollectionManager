@@ -89,6 +89,20 @@ paths:
     actor: generator
     rationale: "Derived summaries of a canonical document, freely refreshed from it. The ONLY place `actor: generator` is permitted (FR-026c)"
 
+  # Grounded Claims: openwiki's evidence records for the derived pages above. Declared rather than
+  # inherited from the catch-all so that their scope is stated. They live on DERIVED pages only;
+  # authoritative pages are protected by protected.yaml fingerprints instead, and G13 fails a page
+  # that has both (item #513, ADR-0003).
+  - glob: "openwiki/.claims/**"
+    policy: regenerate
+    actor: generator
+    rationale: "Grounded Claims sidecars, written by the generator alongside the derived page they certify. Never hand-edited: a covered page is uncovered (sidecar, manifest entry and `verified:` removed together) before a hand edit. Never on an authoritative page (G13, ADR-0003)"
+
+  - glob: "openwiki/.page-manifest.json"
+    policy: regenerate
+    actor: generator
+    rationale: "openwiki's page-coverage manifest: which derived pages carry verified Claims. Kept consistent with the sidecars by V16, and never names an authoritative page (G13, ADR-0003)"
+
   - glob: "openwiki/INSTRUCTIONS.md"
     policy: never-written
     rationale: "The hand-authored generation brief — the scope, exclusion and redaction rules the generator reads but never rewrites. It is the sole remediation surface when a gate rejects generated content (FR-015): fix the brief and regenerate, never allowlist"

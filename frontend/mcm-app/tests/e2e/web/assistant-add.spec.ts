@@ -81,7 +81,14 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('approve creates the collection and adds the movie once (create-if-missing)', { tag: '@gate' }, async ({
+  // @model-decision, not @gate (item #550). Whether the approval card appears at all is the model's
+  // call: it must run enrichment and build a proposal. Measured on identical code: run#3931 failed and
+  // run#3934 passed (2026-09-23), and from 2026-10-24 to 11-01 this test failed its first attempt and
+  // passed the retry in 5 of 31 gate runs (6021, 6061, 6121, 6254, 6381), with no error in any log.
+  // The write after approval is deterministic code and is still asserted here; this tier still runs
+  // on every `main` push and publishes its counts. The reject test below stays @gate: no flake of it
+  // was recorded in that window.
+  test('approve creates the collection and adds the movie once (create-if-missing)', { tag: '@model-decision' }, async ({
     page,
     request,
   }) => {
