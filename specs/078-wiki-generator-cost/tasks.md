@@ -1022,6 +1022,20 @@ Record the first scheduled fire that ends with "not yet", and the first that run
 
 Then comment the evidence on item #613.
 
+### T056: Read the repository from GITHUB_REPOSITORY, not the event payload (found by T055)
+**DONE 2026-11-02**: T055 found every scheduled fire failing. Each one planned, then died in the
+`--execute` step with `the forge client needs FORGE_API_BASE, owner, repo and FORGE_TOKEN` (runs
+6539-6569; the evidence is in bundle `ci-failures:6569--maintain`). The cause was
+`FORGE_REPO: ${{ github.event.repository.name }}`: this job used to be push-triggered, but a scheduled
+fire's payload carries no `repository`. The fix:
+- `forgeRepository()` in `wiki-maintain.mjs` reads `GITHUB_REPOSITORY`, as `reap-merged-branches.mjs`
+  already does, and refuses a malformed value;
+- the workflow no longer sets `FORGE_OWNER` or `FORGE_REPO`;
+- a guard fails any step that reads `github.event.*` other than dispatch inputs.
+
+RED: 2 tests failed. GREEN: 32/32. 4 mutations were all killed. No fire made a model call: each stopped
+before generation, and the run record was left unchanged.
+
 ## Dependencies
 
 T001 → everything. T015a → T015b → T015c; T006 → T015d; T013 + T015c + T015d → T015e. T005→T006→T007→T008. T009, T012 → T013 → T014 → T015. T010 → T011 (independent of T005–T009).

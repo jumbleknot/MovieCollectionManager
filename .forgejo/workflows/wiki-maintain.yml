@@ -240,8 +240,8 @@ jobs:
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1
-          FORGE_OWNER: ${{ github.repository_owner }}
-          FORGE_REPO: ${{ github.event.repository.name }}
+          # Owner and repo are NOT set here: wiki-maintain.mjs reads GITHUB_REPOSITORY, which the runner sets
+          # for every event. `github.event.repository.name` was empty on a scheduled fire (item #613).
           FORGE_BASE_BRANCH: main
           FORGE_REMOTE: origin
           # Dispatch inputs arrive as ENVIRONMENT VARIABLES, never interpolated into the script below.

@@ -1266,6 +1266,17 @@ export function reconcileProposal({ root = REPO_ROOT, record = null, forge, pers
 }
 
 /**
+ * The repository the forge client writes to, from GITHUB_REPOSITORY — which the runner sets for EVERY
+ * event. It used to come from the event payload, which a scheduled fire does not carry (item #613
+ * follow-up: runs 6539-6569 all died here). A malformed value raises; it is never guessed.
+ */
+export function forgeRepository(env = process.env) {
+  const m = /^([^/\s]+)\/([^/\s]+)$/.exec(env.GITHUB_REPOSITORY ?? '');
+  if (!m) throw new Error(`GITHUB_REPOSITORY must be "<owner>/<repo>", got ${JSON.stringify(env.GITHUB_REPOSITORY ?? null)}`);
+  return { owner: m[1], repo: m[2] };
+}
+
+/**
  * The Forgejo REST client. Reads its token from the environment — never from an argument, so it cannot
  * reach a process listing or a log (FR-024).
  */
@@ -3202,7 +3213,7 @@ async function main(argv) {
     let forge = null;
     if (opts.propose) {
       try {
-        forge = forgejoClient({ owner: process.env.FORGE_OWNER, repo: process.env.FORGE_REPO });
+        forge = forgejoClient(forgeRepository());
       } catch (err) {
         console.error(`[wiki-maintain] ${err.message}`);
         return 2;
