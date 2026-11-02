@@ -511,6 +511,9 @@ jobs:
       - name: Free daemon disk space
         run: |
           bash scripts/ci-log-step.sh app-e2e-free-daemon-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Release the scan-image holds of runs whose app-image-scan never ran (item #915). Only
+          # holds, only older than 24 h: a run still waiting for its scan keeps its images.
+          docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h || true
           docker image prune -af || true
           # Build cache too, not just images (2026-10-03): `image prune` never touches it, and on the ci daemon it
           # had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk. --reserved-space keeps the most
@@ -810,13 +813,20 @@ jobs:
       # images from the bring-up above (which rebuilds them, feature 041). The tag is per RUN, so a
       # later run that rebuilds `:latest` on this persistent daemon cannot change what is scanned.
       # Placed straight after the build, not at the end, so a failing E2E step below still leaves
-      # the scan its images. The next run's `docker image prune -af` removes any tag left behind.
+      # the scan its images.
+      # Each tag is also HELD by a stopped container labelled mcm.app-scan-hold (item #915, research
+      # R15): the single runner can take another run's app-e2e/dast/build-deploy before this run's
+      # scan, and its `docker image prune -af` deleted bare tags (PR #909, twice). Prune never removes
+      # an image that has a container. app-image-scan removes the holds; a cancelled run's holds are
+      # swept by age at every prune site. The `rm -f` first: a re-run attempt keeps the run id.
       - name: Tag images for app-image-scan
         run: |
           bash scripts/ci-log-step.sh app-e2e-tag-scan-images bash -e /dev/stdin <<'CI_LOG_STEP'
           for name in mc-service mcm-bff agent-gateway movie-mcp web-api-mcp spreadsheet-mcp; do
             docker tag "$name:latest" "app-scan/$name:run-${{ github.run_id }}"
-            echo "tagged app-scan/$name:run-${{ github.run_id }}"
+            docker rm -f "app-scan-hold-${{ github.run_id }}-$name" >/dev/null 2>&1 || true
+            docker create --label mcm.app-scan-hold=run-${{ github.run_id }} --name "app-scan-hold-${{ github.run_id }}-$name" "app-scan/$name:run-${{ github.run_id }}" true >/dev/null
+            echo "tagged and held app-scan/$name:run-${{ github.run_id }}"
           done
           CI_LOG_STEP
 
@@ -1551,6 +1561,9 @@ jobs:
       - name: Free daemon disk space
         run: |
           bash scripts/ci-log-step.sh dast-free-daemon-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Release the scan-image holds of runs whose app-image-scan never ran (item #915). Only
+          # holds, only older than 24 h: a run still waiting for its scan keeps its images.
+          docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h || true
           docker image prune -af || true
           # Build cache too, not just images (2026-10-03): `image prune` never touches it, and on the ci daemon it
           # had reached 375 GB (355 GB reclaimable) of a shared 914 GB disk. --reserved-space keeps the most
@@ -1884,10 +1897,12 @@ jobs:
         if: ${{ always() }}
         run: |
           bash scripts/ci-log-step.sh app-image-scan-remove-tags bash -e /dev/stdin <<'CI_LOG_STEP'
+          # The hold first: an image rm of a tag whose image still has a container only untags it.
           for name in mc-service mcm-bff agent-gateway movie-mcp web-api-mcp spreadsheet-mcp; do
+            docker rm -f "app-scan-hold-${{ github.run_id }}-$name" >/dev/null 2>&1 || true
             docker image rm "app-scan/$name:run-${{ github.run_id }}" >/dev/null 2>&1 || true
           done
-          echo "scan tags removed (the images themselves stay, under :latest)"
+          echo "scan holds and tags removed (the images themselves stay, under :latest)"
           CI_LOG_STEP
 
       # Feature 042 — publish an agent-readable failure digest, as every job does. `always()` +

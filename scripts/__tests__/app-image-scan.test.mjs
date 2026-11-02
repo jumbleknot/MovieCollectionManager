@@ -227,3 +227,62 @@ test('wiring: every new ci-log-step name is accounted for in ci-step-ceilings.ts
     assert.match(tsv, new RegExp(`^#?\\s*${n}\\t`, 'm'), `${n} is neither calibrated nor listed ON THE BACKSTOP`);
   }
 });
+
+// ── prune race (item #915, research R15) ──────────────────────────────────────────────────────
+// The single kvm runner can take ANOTHER run's app-e2e, dast or build-deploy between this run's
+// app-e2e and its app-image-scan, and each of those begins with `docker image prune -af`. A bare tag
+// has no container, so the prune deleted it and the scan failed `missing scan tag(s)` on code that
+// was never scanned (PR #909, twice). `image prune -a` never removes an image that has a container,
+// so app-e2e holds each scan image with a stopped, labelled one, and every prune site first sweeps
+// only the holds older than a cut-off — a cancelled run's images are still released.
+
+const HOLD = 'mcm.app-scan-hold';
+const CD_TEXT = read('.forgejo/workflows/cd-deploy.yml');
+
+test('prune race: app-e2e holds each tagged scan image with a labelled container, replacing an earlier attempt\'s', () => {
+  const tag = APP_CI.jobs['app-e2e'].steps.find((s) => /Tag images for app-image-scan/.test(s.name ?? ''));
+  assert.ok(tag, 'no "Tag images for app-image-scan" step');
+  const run = code(tag.run);
+  const tagAt = run.search(/docker tag /);
+  const rmAt = run.search(/docker (container )?rm -f "app-scan-hold-/);
+  const createAt = run.search(/docker create /);
+  assert.ok(createAt > tagAt, 'the scan image is not held by a container — another run\'s image prune deletes it');
+  assert.match(run, new RegExp(`docker create [^\\n]*--label ${HOLD.replace(/\./g, '\\.')}=`), 'the hold carries no label, so the sweep cannot tell it from any other container');
+  assert.match(run, /docker create [^\n]*"app-scan\/\$name:run-\$\{\{ github\.run_id \}\}"/, 'the hold is not on the run-scoped tag');
+  assert.ok(rmAt >= 0 && rmAt < createAt, 'a re-run attempt keeps the run id, so its create collides with the first attempt\'s hold');
+});
+
+test('prune race: every image prune first sweeps only STALE holds, by label and age', () => {
+  const sites = [
+    ...['app-e2e', 'dast'].map((j) => [`app-ci ${j}`, APP_CI.jobs[j].steps]),
+    ['cd-deploy build-deploy', parseYaml(CD_TEXT).jobs['build-deploy'].steps],
+  ];
+  let prunes = 0;
+  for (const [where, steps] of sites) {
+    for (const s of steps.filter((x) => /docker image prune -af/.test(code(x.run ?? '')))) {
+      prunes++;
+      const run = code(s.run);
+      const sweep = run.match(/docker container prune [^\n]*/);
+      assert.ok(sweep, `${where}: "${s.name}" prunes images without sweeping stale holds — a cancelled run's images are never released`);
+      assert.ok(sweep.index < run.search(/docker image prune -af/), `${where}: the stale-hold sweep must run BEFORE the image prune`);
+      assert.match(sweep[0], new RegExp(`--filter label=${HOLD.replace(/\./g, '\\.')}(\\s|$)`), `${where}: the sweep is not limited to holds — it would remove other containers`);
+      assert.match(sweep[0], /--filter until=\d+h/, `${where}: the sweep has no age cut-off — it removes the hold of a run still waiting for its scan`);
+    }
+  }
+  assert.equal(prunes, 3, `expected the three known image-prune sites, found ${prunes} — a new one needs the sweep too`);
+  // Nothing else may remove containers wholesale, or the holds are gone again.
+  for (const [name, text] of [['app-ci.yml', APP_CI_TEXT], ['cd-deploy.yml', CD_TEXT]]) {
+    assert.doesNotMatch(code(text), /docker system prune|docker container prune -f\s*(\|\||$)/m, `${name} prunes containers without the hold filter`);
+  }
+});
+
+test('prune race: the scan job removes its holds before its tags, always', () => {
+  const rm = scanJob().steps.find((s) => /Remove the scan tags/.test(s.name ?? ''));
+  assert.ok(rm, 'no "Remove the scan tags" step');
+  assert.match(String(rm.if ?? ''), /always\(\)/);
+  const run = code(rm.run);
+  const holdAt = run.search(/docker (container )?rm -f "app-scan-hold-\$name-\$\{\{ github\.run_id \}\}"|docker (container )?rm -f "app-scan-hold-\$\{\{ github\.run_id \}\}-\$name"/);
+  const tagAt = run.search(/docker image rm /);
+  assert.ok(holdAt >= 0, 'the run\'s holds are never removed — its images stay pinned until the 24 h sweep');
+  assert.ok(holdAt < tagAt, 'remove the hold first: an image rm of a held tag only untags it');
+});

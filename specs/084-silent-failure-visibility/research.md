@@ -398,3 +398,42 @@ The repository copy's sha256 matches the host for all three files: `backup.sh 2c
   it.
 - **The unit has no `OnFailure=`, no `TimeoutStartSec=`, and no `Environment=`.** The script sets
   `DOCKER_HOST` and `RESTIC_*` itself, so the staleness script copies the same three exports.
+
+## R15 — Another run's prune deletes the scan images (US3 follow-up, item #915, 2026-11-02)
+
+**Observed**: `app-image-scan` failed at `app-image-scan-verify-tags` on PR #909 twice (runs 6455 and
+6483), and once on a third PR (task 23077). Each time the run's own `app-e2e` had passed and tagged
+all six images. Between that `app-e2e` and its `app-image-scan`, the single kvm runner picked another
+run's `app-e2e` (or `dast`, or `build-deploy`), whose first step is `docker image prune -af`. The
+`app-scan/*` tags had no container, so the prune deleted them. With several PRs queued it hit both of
+PR #909's runs and a third PR's the same evening. R12's "the next run's prune removes any tag left
+behind" was the defect: the next run's prune can come BEFORE this run's scan.
+
+**Decision**: hold each scan image with a **stopped, labelled container**, and sweep stale holds by
+age.
+
+- `app-e2e`'s tag step also runs `docker create --label mcm.app-scan-hold=run-<id> … true` per image.
+  `docker image prune -a` never removes an image that has a container, running or not.
+- `app-image-scan`'s `always()` cleanup removes its holds before its tags, so its images become
+  prunable again.
+- Every `docker image prune -af` site (app-e2e, dast, cd-deploy's build-deploy) first runs
+  `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h`. A run whose scan
+  never ran (cancelled) therefore releases its images within a day: the daemon cannot grow without
+  bound.
+- `verify-tags` is unchanged, so a run whose `app-e2e` did not tag still fails closed. So does a run
+  whose scan waited more than 24 h, which is acceptable: it is re-run, never passed.
+
+**Verified on a real daemon** (docker 29.8.1, label-scoped so no other image was touched): a held
+image survived `image prune -af`; a fresh hold survived the `until=24h` sweep; a hold older than the
+cut-off was swept, after which the same prune deleted the image.
+
+**Rejected**:
+- *`docker save` to a tarball in `$HOME` and `docker load` in the scan.* Six images, several GB, on
+  every run, to protect against a gap that a container already closes for free.
+- *Scan inside `app-e2e` straight after tagging.* About six minutes more on the critical path of the
+  slowest job, and the scan would no longer post as its own required context.
+- *A marker file per run in `$HOME`, with the prune deleting everything else by hand.* It replaces
+  `docker image prune -af` with a hand-written loop over every reference on the daemon. The container
+  hold keeps docker's own prune, unchanged.
+- *Making the prune skip `app-scan/*`*. `image prune` has no reference filter: `--filter` takes only
+  `label` and `until`, and a label is fixed at build time, not at tag time.
