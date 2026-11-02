@@ -630,10 +630,12 @@ days, Renovate's catch-all), which pnpm enforces twice:
 `minimumReleaseAgeExclude` is reserved for **security-floor exceptions**, because the code runs with a
 model credential. Each entry is one exact `name@x.y.z` that an `overrides:` floor in the same file
 requires, so it admits that version and nothing else, and it becomes moot once the version clears the
-window. The guard fails a name-only or ranged entry, or one with no matching floor. The first and only
-entry (2026-11-01, operator override of the cooldown) is `@azure/identity@4.14.1`, published 2026-10-29
-22:16 UTC. It is the first release that requires `@azure/msal-node` ^7.1.0, the fix for
-GHSA-xcx6-jx8p-x3h5. Remove it at the next generator bump after 2026-11-01 22:16 UTC. Never add one
+window. The guard fails a name-only or ranged entry, or one with no matching floor. There is no entry
+today. The only one so far, `@azure/identity@4.14.1` (an operator override of the cooldown on 2026-11-01, for
+GHSA-xcx6-jx8p-x3h5: it is the first release requiring `@azure/msal-node` ^7.1.0), was removed on
+2026-11-02 after it cleared the window at 2026-11-01 22:16 UTC. Its `overrides:` floor
+(`'@azure/identity@<4.14.1': '>=4.14.1 <5'`) stays, because the floor is the fix and the exclusion only
+let it in early. Never add one
 because a fresh transitive is blocking a branch: wait the window out instead. `better-sqlite3` is the one package allowed to run
 an install script (`allowBuilds`) — openwiki's LangGraph checkpointer loads its native binding at
 runtime, and it ran under the old `npm install -g` too.
