@@ -956,6 +956,72 @@ Then mark US6 done.
 
 ---
 
+## Phase 9: wait for `main` to go quiet outside the job (item #613, research R19)
+
+### T051: Test the quiet decision (RED)
+**DONE 2026-11-02**: RED, module not found. The file has 12 cases.
+
+
+Add `scripts/__tests__/wiki-quiet.test.mjs` for `maintenanceTrigger` and `isOwnCommit`, with commit
+fixtures, no git:
+- nothing uncovered: no run;
+- only the job's own commits (`[skip ci]` or `openwiki/`-only): no run;
+- the newest real commit is under 15 min old: no run;
+- it is 15 min old or more: run;
+- the oldest real commit is 6 h old or more, while the newest is fresh: run;
+- dispatched: run.
+
+Add one case on a temporary git repository: an unknown `coveredCommit` raises and never answers "no
+run". Add one CLI case: an unknown flag exits 2.
+
+**Verify RED**: `node --test --test-concurrency=1 scripts/__tests__/wiki-quiet.test.mjs`. Expected:
+failing, because the module does not exist.
+
+### T052: Update the workflow guards at their cause (RED)
+**DONE 2026-11-02**: RED, 6 of 30 failing for the stated reasons (push trigger, `cancel-in-progress`, no decision step, old exports, self-trigger, `SCHEDULE_MINUTES`).
+
+
+In `scripts/__tests__/wiki-maintain.guard.test.mjs`:
+- "merge-triggered" becomes **scheduled and dispatchable**, with no `push`.
+- "no schedule" becomes **a scheduled check pays for nothing**: the `wiki-quiet.mjs` step runs before
+  `pnpm install`, and every later step is conditional on its `run=true`.
+- "cancel-in-progress true" becomes **false**, so a scheduled fire cannot kill a generation in
+  progress.
+- **No in-job `sleep`.**
+- The timeout ceiling drops the debounce term, and `PUSH_MINUTES` becomes `SCHEDULE_MINUTES`.
+
+**Verify RED**: `node --test --test-concurrency=1 scripts/__tests__/wiki-maintain.guard.test.mjs`.
+
+### T053: Implement R19
+**DONE 2026-11-02**: `wiki-quiet.test.mjs` 12/12, the guard 30/30, the scripts suite 1940 pass, 0 fail, 0 skipped; preflight 27/27. Eleven mutations killed: own commits counted; `>` at the debounce; no maximum deferral; dispatch not bypassing; quiet judged on the oldest commit; an unknown commit read as nothing; an empty diff read as bundle-only; `cancel-in-progress: true`; an install step ungated; the dispatch flag dropped; the decision moved after the installs. The "flag dropped" mutation survived the first draft of the guard, which was then tightened.
+
+
+- Add `scripts/wiki-quiet.mjs` and its CLI.
+- Remove `--should-wait`, `shouldDeferMaintenance` and `oldestUncoveredAgeSeconds` from
+  `wiki-maintain.mjs`, with nothing left to call them.
+- Change the workflow (triggers, concurrency, one decide step replacing the self-skip and the sleep)
+  and contract C1's `--should-wait` row.
+
+**Verify GREEN**: both files pass, then the full scripts suite, plus one mutation per new
+`maintenanceTrigger` branch.
+
+### T054: Runbook and AGENTS.md
+**DONE 2026-11-02**: runbook §4 rewritten, with the budget rows and the window notes updated; AGENTS.md's OpenWiki note updated; contract C1 records the superseded `--should-wait` mode.
+
+
+- `docs/runbooks/wiki-maintenance.md`: the trigger section, the budget table's window row, and the
+  ~45-minute note.
+- The AGENTS.md OpenWiki note, which says "merge-triggered … after `main` has been quiet for about
+  fifteen minutes".
+
+### T055: After merge, observe (no code)
+
+Record the first scheduled fire that ends with "not yet", and the first that runs:
+- its generator time against the ~49-minute window;
+- that no `wiki-maintain` run was cancelled by a later fire.
+
+Then comment the evidence on item #613.
+
 ## Dependencies
 
 T001 → everything. T015a → T015b → T015c; T006 → T015d; T013 + T015c + T015d → T015e. T005→T006→T007→T008. T009, T012 → T013 → T014 → T015. T010 → T011 (independent of T005–T009).

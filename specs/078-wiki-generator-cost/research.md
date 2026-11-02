@@ -461,3 +461,51 @@ raises it for Fireworks only.
 
 The guard test now asserts that a provider may only raise the target's cap.
 
+
+## R19: wait for `main` to go quiet outside the job (item #613, operator option A, 2026-11-01)
+
+**Problem.** The debounce was `concurrency` + `cancel-in-progress` + a `sleep 900` inside the job.
+The sleep counted against the merge-triggered run's 60-minute window. After setup, the start deadline
+and the 8-minute reserve, it left about 37 minutes for generation. The re-derived worst invocation is
+2958 s (49 min; R9's +30 % rule makes 65), so that window was too small (item #613).
+
+**Decision (operator, 2026-11-01: option A).** The run no longer waits inside the job. It decides
+from git whether `main` has been quiet, and either generates at once or ends.
+
+- **Trigger: a schedule plus dispatch.** Every 30 minutes, plus `workflow_dispatch`; the `push`
+  trigger is removed. A push is by definition not quiet, so a push-triggered check could only ever
+  end with "not yet". The schedule is what comes back later.
+- **The decision is `scripts/wiki-quiet.mjs`.** It uses node built-ins only, so it runs before
+  `pnpm install` and a "not yet" costs a checkout and one node process. It reads the run record's
+  `coveredCommit` and lists `main`'s first-parent commits past it. A commit is the job's own if its
+  message carries `[skip ci]` (the record marker, CD's digest promotes) or it changes only
+  `openwiki/` (a merged proposal). Those never counted as activity, because neither ever started a
+  push run. Of the rest:
+  - none → no run;
+  - the oldest is at least `MAX_DEFERRAL_SECONDS` (6 h) old → run (SC-008b, unchanged);
+  - the newest is at least `DEBOUNCE_SECONDS` (15 min) old → run, because `main` is quiet;
+  - otherwise → no run yet.
+- **Dispatch still bypasses the wait (FR-009c).**
+- **`cancel-in-progress: false`.** Cancelling was the old debounce. Under a schedule it would make
+  the next fire kill a generation in progress. A fire that arrives during a run now queues behind it,
+  then finds the record covered and ends.
+- **A git failure fails the check loudly.** An unknown `coveredCommit`, for example after a history
+  rewrite, exits 1. It is never read as "nothing to do", which would end maintenance silently.
+
+**What it buys.** The window is unchanged at 60 minutes, but none of it is spent waiting. Generation
+gets about 49 minutes (60 − ~3 setup and check − 8 reserve), up from about 37. That fits the median
+invocation (1636 s) with room, and the measured worst (2958 s) just about. It does **not** fit R9's
++30 % ceiling (65 min). The deadline (#626) still stops such an invocation cleanly and carries it
+forward, and a dispatched run (120 min) remains the way to finish one. Raising the scheduled window is
+a separate decision about the shared runner.
+
+**Costs, accepted with the option.**
+- Each fire is a queued job on the shared runner: about 48 a day. Nearly all end after the checkout
+  and one git query.
+- After the last merge, a run now starts 15 to 45 minutes later, instead of exactly 15.
+
+**Rejected.**
+- *Keep `push` and drop only the sleep:* every push would answer "not yet", so nothing would come back.
+- *Every 15 minutes:* half the lag, but twice the queued jobs on a runner that was hours deep on
+  2026-11-01.
+- *A longer scheduled window:* not this option, and a runner-capacity decision.

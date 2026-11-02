@@ -60,8 +60,10 @@ Two corrections to the generated block above, which describes OpenWiki's default
 repository:
 
 - **The wiki IS refreshed automatically now (feature 044), but not the way that block says.** It is
-  **merge-triggered** on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`
-  — not a schedule, and not GitHub Actions — after `main` has been quiet for about fifteen minutes.
+  driven by merges, on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`,
+  not GitHub Actions. A check every 30 minutes generates only once `main` has uncovered merges and has
+  been quiet for about fifteen minutes (item #613). It is not a periodic sweep: with nothing merged,
+  nothing is paid for.
   Each run plans bounded slices, verifies every slice by the pages that actually landed in the
   working tree, and opens **one** always-current pull request for review. It is **never** auto-merged.
   See [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md).

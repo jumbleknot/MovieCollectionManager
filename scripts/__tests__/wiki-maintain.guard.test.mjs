@@ -16,9 +16,9 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
 import {
-  shouldDeferMaintenance, MAX_DEFERRAL_SECONDS, DEBOUNCE_SECONDS,
   TIME_BUDGET_SECONDS, WORST_INVOCATION_SECONDS, CI_SETUP_SECONDS, CI_EXECUTE_OVERHEAD_SECONDS,
 } from '../wiki-maintain.mjs';
+import * as WIKI_MAINTAIN from '../wiki-maintain.mjs';
 import { WIKI_PROVIDERS, buildGeneratorEnv } from '../wiki-provider.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -40,62 +40,67 @@ const LOCKED_INSTALL = /pnpm --dir tools\/openwiki-generator install --frozen-lo
 /** renovate.json's catch-all `minimumReleaseAge: 3 days`, in the minutes pnpm counts in. */
 const RENOVATE_COOLDOWN_MINUTES = 3 * 24 * 60;
 
-// ── triggers and debounce (FR-009, research R3) ─────────────────────────────────
+// ── triggers and debounce (FR-009; 078 research R19, item #613) ─────────────────
+// Until item #613 the debounce was `concurrency` + `cancel-in-progress` + a `sleep 900` INSIDE a
+// merge-triggered job, which spent 15 of its 60 minutes waiting. Operator option A (2026-11-01): wait
+// for main to go quiet OUTSIDE the job. A scheduled check decides from git (scripts/wiki-quiet.mjs,
+// whose decision is tested in wiki-quiet.test.mjs) and either generates at once or ends.
 
-test('the run is merge-triggered on the default branch', () => {
-  assert.ok(wf.on.push, 'maintenance is merge-triggered');
-  assert.deepEqual(wf.on.push.branches, ['main']);
+/** The step that runs the quiet decision. */
+const decideIndex = () => steps().findIndex((s) => /wiki-quiet\.mjs/.test(s.run ?? ''));
+
+test('the run is scheduled and dispatchable, never push-triggered — a push is by definition not quiet', () => {
+  assert.ok(!('push' in wf.on), 'a push-triggered check could only ever answer "not yet"');
+  const crons = [].concat(wf.on.schedule ?? []).map((c) => c.cron);
+  assert.equal(crons.length, 1, 'one schedule: the fire that comes back to look again');
+  // Every 30 min (R19): a fire is a queued job on the one shared runner, so 15 would double them.
+  assert.equal(crons[0], '*/30 * * * *');
 });
 
 test('workflow_dispatch exists so an operator can bypass the debounce', () => {
   assert.ok('workflow_dispatch' in wf.on, 'FR-009c: a manual run must not have to wait out the quiet period');
 });
 
-test('debounce is concurrency + cancel-in-progress + an initial wait', () => {
-  // The debounce mechanism IS this trio: a new push cancels the waiting run and starts a fresh
-  // waiter, so the work proceeds only after ~15 quiet minutes. Without cancel-in-progress the waits
-  // stack up and every push in a burst eventually runs — the opposite of debouncing.
-  assert.ok(wf.concurrency, 'a debounce needs a concurrency group');
-  assert.equal(wf.concurrency['cancel-in-progress'], true);
+test('a scheduled fire never cancels a run in progress, and nothing waits inside the job', () => {
+  // cancel-in-progress WAS the debounce. Under a schedule it would let the next fire kill a generation
+  // half-way through; with it false, a fire that arrives mid-run queues, then finds the record covered.
+  assert.ok(wf.concurrency, 'runs must still not overlap');
   assert.match(String(wf.concurrency.group), /wiki-maintain/);
-  assert.match(stepText(), /sleep/, 'and an initial wait for the quiet period');
+  assert.equal(wf.concurrency['cancel-in-progress'], false);
+  assert.doesNotMatch(steps().map((s) => s.run ?? '').join('\n'), /\bsleep\b/, 'the quiet period is waited out by the schedule, not inside the job');
 });
 
-test('there is no schedule trigger — freshness is merge-driven, not periodic', () => {
-  assert.ok(!('schedule' in wf.on), 'a periodic sweep would pay for runs nothing changed under');
+test('a scheduled check pays for nothing: it decides BEFORE any install, and gates every later step', () => {
+  const at = decideIndex();
+  assert.ok(at >= 0, 'no step runs scripts/wiki-quiet.mjs');
+  const firstInstall = steps().findIndex((s) => /pnpm (--dir \S+ )?install|corepack enable/.test(s.run ?? ''));
+  assert.ok(firstInstall > at, 'the decision must come before corepack/pnpm, so a "not yet" costs a checkout and one node process');
+  const decide = steps()[at];
+  assert.ok(decide.id, 'the decision step needs an id for later steps to read');
+  assert.match(decide.run, /DISPATCH="--dispatched"/, 'a dispatch must bypass the wait (FR-009c)');
+  assert.match(decide.run, /wiki-quiet\.mjs\s+"?\$\{?DISPATCH\b/, 'and the flag must actually reach the check');
+  for (const s of steps().slice(at + 1)) {
+    if (/digest|failure/i.test(s.name ?? '') && /always\(\)/.test(String(s.if ?? ''))) continue;
+    assert.match(String(s.if ?? ''), new RegExp(`steps\\.${decide.id}\\.outputs\\.run == 'true'`),
+      `"${s.name}" runs even when the check said not yet — a scheduled fire would pay for it`);
+  }
 });
 
-// ── maximum deferral (FR-009b) ──────────────────────────────────────────────────
-
-test('a maximum-deferral step exists and is git-derived', () => {
-  // A busy day would otherwise starve maintenance exactly when drift is fastest. The age must come
-  // from git, not from a timer held in the cancelled run — cancellation is what destroys that state.
-  assert.match(stepText(), /deferral|deferred|oldest/i, 'the workflow must compute a maximum deferral');
-  assert.match(stepText(), /wiki-maintain\.mjs|git log/, 'and derive it from git rather than from run state');
-});
-
-test('the deferral decision defers below the threshold and runs at or above it', () => {
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: 0 }).defer, true);
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: MAX_DEFERRAL_SECONDS - 1 }).defer, true);
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: MAX_DEFERRAL_SECONDS }).defer, false,
-    'at the threshold the run must proceed — otherwise a never-quiet merge stream never runs');
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: MAX_DEFERRAL_SECONDS * 2 }).defer, false);
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: null }).defer, true,
-    'nothing uncovered means nothing to hurry for');
-  assert.equal(shouldDeferMaintenance({ oldestUncoveredAgeSeconds: 0, dispatched: true }).defer, false,
-    'a manual dispatch bypasses the wait entirely (FR-009c)');
-  assert.ok(MAX_DEFERRAL_SECONDS > DEBOUNCE_SECONDS, 'the ceiling must be longer than the quiet period it overrides');
+test('the old in-job debounce is gone from the orchestrator too', () => {
+  for (const name of ['shouldDeferMaintenance', 'oldestUncoveredAgeSeconds', 'DEBOUNCE_SECONDS', 'MAX_DEFERRAL_SECONDS']) {
+    assert.ok(!(name in WIKI_MAINTAIN), `wiki-maintain.mjs still exports ${name}; the decision lives in wiki-quiet.mjs`);
+  }
+  assert.doesNotMatch(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs'), 'utf8'), /--should-wait/);
 });
 
 // ── self-trigger guard (FR-009a) ────────────────────────────────────────────────
 
 test('the run does not trigger itself', () => {
-  // Two ways it would: the `[skip ci]` marker commit it pushes to main, and a bundle-only change
-  // (its own proposal being merged). SC-005a requires a merged proposal to produce no further run.
-  const text = `${stepText()}\n${raw}`;
-  assert.match(text, /skip ci/, 'the marker commit must be recognised or marked as skippable');
-  assert.match(text, /openwiki/, 'and a bundle-only change must be recognised');
-  assert.match(text, /exit 0|SKIP|skip/i);
+  // Two ways it would: the `[skip ci]` marker commit it pushes to main, and a bundle-only change (its
+  // own proposal being merged). SC-005a requires a merged proposal to produce no further run. Both are
+  // now recognised by wiki-quiet.mjs's isOwnCommit (tested there); here, the job must use it.
+  assert.ok(decideIndex() >= 0, 'the quiet decision is what recognises the job\'s own commits');
+  assert.match(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-quiet.mjs'), 'utf8'), /\[skip ci\][\s\S]*openwiki\//);
 });
 
 // ── budget and timeout (C6) ─────────────────────────────────────────────────────
@@ -103,12 +108,12 @@ test('the run does not trigger itself', () => {
 test('the job timeout sits above the effective ceiling, derived — not a remembered number', () => {
   // Updated 2026-09-28 (feature 078, research R9). The old assertion pinned 45; the premise it stood
   // for is that the platform never kills a run the budget would have stopped cleanly (SC-004). The
-  // debounce SLEEPS INSIDE THIS JOB, so it counts against timeout-minutes like everything else.
-  const ceiling = DEBOUNCE_SECONDS + CI_SETUP_SECONDS + TIME_BUDGET_SECONDS + WORST_INVOCATION_SECONDS + CI_EXECUTE_OVERHEAD_SECONDS;
+  // debounce used to SLEEP INSIDE THIS JOB; since item #613 (R19) it does not, so it is no term here.
+  const ceiling = CI_SETUP_SECONDS + TIME_BUDGET_SECONDS + WORST_INVOCATION_SECONDS + CI_EXECUTE_OVERHEAD_SECONDS;
   const timeout = job()['timeout-minutes'] * 60;
   assert.ok(timeout >= ceiling + 5 * 60,
     `timeout-minutes ${job()['timeout-minutes']} leaves less than 5 min of margin over the ${Math.ceil(ceiling / 60)}-min ceiling ` +
-    '(debounce + setup + time budget + one worst-case invocation + publishing)');
+    '(setup + time budget + one worst-case invocation + publishing)');
   // Raised from 60 to 120 by operator decision on 2026-10-02 (item #525/#613): at the measured
   // 70-80 tok/s, one uncovered page can need 60-75 minutes. 120 is the hard ceiling for DISPATCHED
   // runs only; merge-triggered runs are still held to 60 by the deadline step (asserted below).
@@ -128,7 +133,7 @@ test('WORST_INVOCATION_SECONDS is DERIVED from measured runs, not remembered (it
     `WORST_INVOCATION_SECONDS is ${WORST_INVOCATION_SECONDS / 60} min; the measured worst is ${worst} s, so +30% is ${derived / 60} min`);
 });
 
-test('the job records a deadline in its FIRST step: dispatch = timeout-minutes, push held to 60 (#613)', () => {
+test('the job records a deadline in its FIRST step: dispatch = timeout-minutes, schedule held to 60 (#613)', () => {
   // wiki-maintain runs the generator under this deadline so a hang ends as a failed slice with a
   // committed run record. It has to be the first step: the debounce sleep and setup count against
   // the same job timeout. The WINDOW is per event (2026-10-02): a dispatched run may use the whole
@@ -137,13 +142,13 @@ test('the job records a deadline in its FIRST step: dispatch = timeout-minutes, 
   const first = job().steps[0];
   assert.match(first.name, /deadline/i);
   const run = String(first.run);
-  const push = run.match(/PUSH_MINUTES=(\d+)/);
+  const push = run.match(/SCHEDULE_MINUTES=(\d+)/);
   const dispatch = run.match(/DISPATCH_MINUTES=(\d+)/);
-  assert.ok(push && dispatch, `first step must set PUSH_MINUTES and DISPATCH_MINUTES, got: ${run}`);
+  assert.ok(push && dispatch, `first step must set SCHEDULE_MINUTES and DISPATCH_MINUTES, got: ${run}`);
   assert.match(run, /workflow_dispatch/, 'the dispatch window must be chosen by event');
   assert.match(run, /WIKI_JOB_DEADLINE=\$\(\( *\$\(date \+%s\) *\+ *MINUTES *\* *60 *\)\)/, 'exported from date +%s and the chosen window');
   assert.equal(Number(dispatch[1]), job()['timeout-minutes'], 'a dispatched run may use exactly the whole job');
-  assert.equal(Number(push[1]), 60, 'a merge-triggered run keeps the 60-minute shared-runner hold');
+  assert.equal(Number(push[1]), 60, 'a scheduled run keeps the 60-minute shared-runner hold');
 });
 
 test('CI defaults to Fireworks at concurrency 4, and a repository variable switches it back', () => {
