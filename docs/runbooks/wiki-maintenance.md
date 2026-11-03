@@ -563,6 +563,18 @@ past it, and decides:
 A "not yet" costs one checkout and one node process, about a minute of the shared runner. After the
 last merge, a run starts 15 to 45 minutes later.
 
+**The check reads the tip of `main`, never the commit the fire was for.** A scheduled fire checks out the
+commit the schedule was registered at, and that commit stays put while `main` moves on. Every fire on
+2026-11-03 ran at `4dae8842`, hours after `main` had moved past it. The run record at that commit is stale,
+so the check said `run=true` on every fire. Each one then installed, found nothing to do at the real tip,
+and pushed another marker commit. The job therefore fetches and checks out `origin/main` **before** the
+quiet check, on every fire. A guard test pins that order.
+
+**Under a schedule, read nothing from the event payload except dispatch inputs.** A scheduled fire has no
+`github.event.repository`. Setting `FORGE_REPO` from that field made every fire fail at the forge client
+(runs 6539–6569). Owner and repo now come from `GITHUB_REPOSITORY`, and a guard test fails on any other
+`github.event.*` read.
+
 Before item #613 this was a push trigger with `cancel-in-progress` and a `sleep 900` inside the job.
 That spent 15 of the run's 60 minutes waiting, which left about 37 for generation.
 

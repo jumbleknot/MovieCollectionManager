@@ -1036,6 +1036,27 @@ fire's payload carries no `repository`. The fix:
 RED: 2 tests failed. GREEN: 32/32. 4 mutations were all killed. No fire made a model call: each stopped
 before generation, and the run record was left unchanged.
 
+### T057: The quiet check reads the tip of main (found by T055)
+**DONE 2026-11-03**: once T056 landed, the runs went through, and they showed a second fault. Every
+scheduled fire ran at `4dae8842`, the commit the schedule was registered at, while `main` moved on with
+marker commits. The quiet check ran before "Move to the current tip of main", so it read the stale run
+record at that commit and said `run=true` on every fire. Run 6583 is the example: it installed, found
+nothing at the tip, and pushed a marker commit.
+
+Reproduced locally: the check gives `run=true` at `4dae8842` and `run=false` at the tip `2802914c`.
+
+The fix:
+- the move to the tip now runs before the check, and on every fire;
+- a guard pins that order;
+- runbook §4 records both T056 and T057.
+
+RED: 1 test failed. GREEN: 33/33.
+
+T055 evidence so far:
+- run 6576 generated for 3100 s and stopped at the job deadline, which is the window #613 predicted;
+- runs 6577 (48 min) and 6582 (16 min) completed the work carried forward from it;
+- no run was cancelled.
+
 ## Dependencies
 
 T001 → everything. T015a → T015b → T015c; T006 → T015d; T013 + T015c + T015d → T015e. T005→T006→T007→T008. T009, T012 → T013 → T014 → T015. T010 → T011 (independent of T005–T009).
