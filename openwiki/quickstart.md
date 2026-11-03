@@ -27,14 +27,16 @@ sources:
     resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-c1cb21a9b44d0d18ad2c030a
     resource: repo://scripts/openwiki-links.mjs
+  - id: openwiki-source-31eafb88f9d0f880c0c66a49
+    resource: repo://scripts/openwiki-policy.mjs
   - id: openwiki-source-219168cc26e2918922e603f9
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-03T03:30:53.754Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -64,7 +66,7 @@ page is a derived summary). Use these fields rather than guessing filenames:
   repository), or `Reference` (this page and the repository tour). A page's type does **not** follow
   from its directory: `projects/` mixes `Service`, `Architecture`, `Reference` and `Convention` pages,
   and `process/constitution.md` is typed `Decision`.
-- **By `tags`** — cross-cutting themes such as `auth`, `secrets`, `mongodb`, `ci-gates`, or `openwiki`
+- **By `tags`** — cross-cutting themes such as `auth`, `secrets`, `mongodb`, `ci`, or `openwiki`
   span multiple pages regardless of directory; a tag search surfaces all of them together.
 - **By `resource`** — every derived page cites its canonical source as a repository-relative path
   (verified to resolve by the conformance gate) or an external URL. A page with **no** `resource` is
@@ -76,8 +78,11 @@ page is a derived summary). Use these fields rather than guessing filenames:
   that is both or neither (a dangling citation classifies as neither, not as derived), and **G13**
   keeps Claims sidecars off authoritative pages. The
   four reserved bundle files (`index.md`, `INSTRUCTIONS.md`, `log.md` and this quickstart) are not
-  concepts at all, so the classification check skips them; that is why this page may carry a
-  `resource` without appearing under `authoritative:`. If a document under `docs/runbooks/`,
+  concepts at all, so the governance gate's classification check skips them; that is why this page may
+  carry a `resource` without appearing under `authoritative:`. The conformance gate draws the reserved
+  line more narrowly — it exempts `index.md` from the required `type` and skips `INSTRUCTIONS.md`
+  entirely — so this page is still validated as a concept and must carry a front matter block that
+  parses, with a `type`. If a document under `docs/runbooks/`,
   `docs/decisions/`, or the architecture docs has no citing concept page, that is a real gap, not an
   oversight — the brief requires every such document to be reachable by a metadata query.
 - **By directory** — each section below is one directory under `openwiki/`, with its own `index.md`
@@ -186,7 +191,16 @@ and the architecture documents, so the *absence* of a concept reliably means "no
 than "not covered yet". Two things deliberately have none: `docs/proposals/**` (pre-specification
 ideation, superseded the moment a spec exists — see
 [Spec-driven development](./process/spec-driven-development.md)) and `docs/test-data/**` (a binary
-unit-test fixture). Both are declared `excluded` in [the regeneration policy](./policy.yaml).
+unit-test fixture, not documentation). Both are declared `excluded` — never analyzed, never written —
+in [the regeneration policy](./policy.yaml), and the brief states them explicitly rather than leaving
+them to be inferred from a general binary-asset rule.
+
+That coverage guarantee is scoped to those three document families. `specs/**` is a fourth declared
+state — *analyzable, not a coverage target* — so specs are read freely as context (a measured fact is
+often recorded nowhere else) but there is deliberately no concept per feature, and `specs/*/HANDOFF.md`
+is the named exception because those carry live measured knowledge rather than history. A spec is also
+never the current state: when one disagrees with a runbook, a decision record or the code, the later
+source wins.
 
 The runbooks area covers every live operator document, including
 [the CI evidence pipeline](./runbooks/ci-evidence-pipeline.md) and
@@ -205,4 +219,8 @@ generator: `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1�
 (rules G0–G13, where G13 keeps Claims sidecars off authoritative pages). Both are fail-closed — an
 absent or partially-written bundle, or a missing governance file, is a violation rather than a skip —
 and neither has a skip flag or an allowlist, so a rejected page is fixed in
-[the generation brief](./INSTRUCTIONS.md) and regenerated rather than accepted in place.
+[the generation brief](./INSTRUCTIONS.md) and regenerated rather than accepted in place. Planning the
+bundle is free as well: `pnpm nx wiki-plan infrastructure-as-code`, and the model-free
+`node scripts/wiki-maintain.mjs --claims-audit` that lists the pages openwiki will force into the next
+run, need no credential and make no model call — so read a plan before reaching for the paid
+`pnpm nx wiki-maintain infrastructure-as-code`.

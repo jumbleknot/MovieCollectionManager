@@ -6,7 +6,7 @@ resource: docs/decisions/ADR-0003-claims-and-fingerprints.md
 tags: [adr, claims, fingerprints, governance, decision-record]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-03T03:30:53.754Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -26,6 +26,9 @@ sources:
     resource: repo://scripts/openwiki-claims.mjs
   - id: openwiki-source-31eafb88f9d0f880c0c66a49
     resource: repo://scripts/openwiki-policy.mjs
+  - id: openwiki-source-e3418ba4f663de6f0edbcde6
+    resource: repo://scripts/wiki-maintain.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
 ---
 
 # ADR-0003: Grounded Claims and protected-passage fingerprints are complements
@@ -67,7 +70,7 @@ carries both.
 ## What keeps the two sets disjoint
 
 The ADR is explicit that this is **policy, not luck** — the two sets did not merely happen to be
-separate on the day it was written. Three existing rules do the work:
+separate on the day it was written. Four existing rules do the work:
 
 - **G3 keeps the generator off authoritative pages.** `actor: generator` is permitted only under
   `openwiki/` in [`openwiki/policy.yaml`](../../openwiki/policy.yaml), and every authoritative page is
@@ -76,7 +79,11 @@ separate on the day it was written. Three existing rules do the work:
   a separate decision rather than a convenience edit.
 - **G11 requires each concept to be exactly one of derived or authoritative** — citing a `resource`
   that resolves, or listed under `authoritative:` in the manifest. A page that is both, or neither,
-  fails, so there is no ambiguous middle where the two mechanisms could overlap.
+  fails, so there is no ambiguous middle where the two mechanisms could overlap. A *dangling* citation
+  classifies as neither, not as derived.
+- **G12 keeps an authoritative concept from being `regenerate`.** An authoritative page has no upstream
+  document, so a refresh has nothing to refresh FROM — it could only paraphrase, which is exactly what
+  the fingerprinted passages exist to prevent. `event-driven` is the only coherent policy there.
 - **G7 rejects a protected passage on a page that declares a `resource`.** Freezing a derived summary
   against the document it summarizes would fail every legitimate refresh, which is precisely why
   protection is refused there rather than merely discouraged.
@@ -90,8 +97,10 @@ catch-all, so the coverage mechanism's scope is stated where the other rules are
 
 `claimsScopeFindings` in [`scripts/openwiki-claims.mjs`](../../scripts/openwiki-claims.mjs) implements
 the check; [`scripts/check-openwiki-governance.mjs`](../../scripts/check-openwiki-governance.mjs) runs it
-as rule **G13** in the always-on governance gate. It fails three shapes, and each is a different way for
-the disjointness assumption to break:
+as rule **G13** in the always-on governance gate. That whole gate is also run against the working tree by
+`verifySlice` in [`scripts/wiki-maintain.mjs`](../../scripts/wiki-maintain.mjs) after **every** slice, so
+a slice that broke the split fails inside the run rather than waiting for CI to notice the proposal.
+G13 itself fails three shapes, and each is a different way for the disjointness assumption to break:
 
 1. **An authoritative page carrying Claims coverage** — a sidecar, or an entry in
    `.page-manifest.json`. This is the case a future generator version could produce, and the failure
@@ -110,17 +119,23 @@ governance gate's own `--selftest` proves G13 still detects its case.
 
 Both read Claims sidecars, from the same module, but they ask unrelated questions:
 
-- **G13 is about *where* coverage may exist.** It compares the manifest's `authoritative:` list against
-  sidecars and manifest entries, and never inspects a page's bytes.
+- **G13 is about *where* coverage may exist.** It compares `protected.yaml`'s `authoritative:` list
+  against sidecar files and `.page-manifest.json` keys, and it never hashes a page: the only page bytes
+  it reads are the front matter it scans for a `verified:` event that has no sidecar.
 - **V16 is about *durability*.** It checks that a page with a `.page-manifest.json` entry still hashes
   to the `pageVersion` its sidecar certifies, and a page with no manifest entry is not checked at all —
   openwiki leaves an uncovered page for full review.
-- **V16's failure is severe, and exactly one rewrite is exempt from it.** openwiki re-proves every
+- **V16's failure is severe, and exactly two rewrites are exempt from it.** openwiki re-proves every
   covered page before a run can advance and refuses the **whole run** — every slice, every page, before
   any generation — when a page no longer matches its certified hash, which is why a hand edit has to go
-  red at review time instead of bricking the next paid run. The only rewrite allowed to move a covered
-  page's bytes is wiki-maintain's deterministic link-form normalization, which carries the certified
-  hash across in the same step so the harness cannot break the invariant it enforces.
+  red at review time instead of bricking the next paid run. wiki-maintain is the only harness that moves
+  a covered page's bytes, and it does so in exactly two places, each carrying the certified hash into
+  the sidecar and the manifest entry in the same step so the harness cannot break the invariant it
+  enforces: the deterministic link-form normalization (also exposed as `--normalize-links`), and the
+  restoration of the keys openwiki's own minimal front-matter rebuild dropped (`type`, `description`,
+  `resource`, `tags`, `timestamp`) from `HEAD` (item #777). Both go through `carryClaimsHash`, which
+  declines to carry a hash for a page that was already broken — so neither path can launder a real break
+  into a consistent one.
 
 A covered page whose bytes were hand-edited fails V16; an authoritative page that acquired a sidecar
 fails G13. A change can break either without touching the other, which is why both gates exist.

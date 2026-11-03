@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:85f97899eeddd5602b2ca225af44a38bbf6c546e3619714faf9ffadb31326b6d",
+  "pageVersion": "sha256:d52db3a2d58058cb60c021da231bbcfc7ea88311b1698613d99eb1411a4b4535",
   "claims": [
     {
       "id": "claim_aa5c4b9bf494429e9a92e1207fa1f10b",
@@ -28,33 +28,45 @@
     },
     {
       "id": "claim_4cff9b3a4e874dbabbd0af46099b6e50",
-      "statement": "The disjointness of Claims and fingerprints holds through existing policy rather than by luck: G3 permits actor: generator only under openwiki/ while every authoritative page is event-driven with actor: agent, G11 requires every concept to be exactly one of derived (resolving resource) or authoritative (listed in protected.yaml), and G7 rejects a protected passage on a page that declares a resource.",
+      "statement": "The disjointness of Claims and fingerprints holds through existing policy rather than by luck: G3 permits actor: generator only under openwiki/ (GENERATOR_SCOPE_PREFIX) while every authoritative page is event-driven with actor: agent, G11 requires every concept to be exactly one of derived (resolving resource) or authoritative (listed in protected.yaml), G12 forbids an authoritative concept from being `regenerate` because a refresh would have nothing to refresh FROM and could only paraphrase, and G7 rejects a protected passage on a page that declares a resource.",
       "evidence": [
         {
           "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L36-L40",
           "version": "repo-lines-v1:sha256:09c3c448ad04caae1099591d2b071e267c796e6945d1899a590e2f419f73787b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY0YThmZWU0MDAyYTFjN2U1MTVjZmNkMjY2ZjM1YzQxZmMyYjdiY2E3ZWNhOTk1OGVmODMxYWQ1MWZkMmY4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQxOGMyZTU3ZWEyMTE3MjA2MmI3MjkwNWZiNDMwMDEwNzk4NTU3ZTQwODM1ZmUxZTg0YzVmMjU2ZWM4Mjk3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmZmZDk2NTA4Y2E1MDY4NDFiODE0YWRmNTM2ODYxZTQwMjgyODYxZDFlOTY0NmRhMDFjMjY2NWRiMjMzNjMzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
-          "resource": "repo://scripts/check-openwiki-governance.mjs",
-          "version": "repo-file-v1:sha256:fa801caa9b7068dd6b96eed7f6663bd58245f7cac493698dfcfd033d4a273973"
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L277-L291",
+          "version": "repo-lines-v1:sha256:bb52522bac2df1567b0aa72b45069418a797071caf7508946d44114364ffa430:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2YjBhZmFiMTEzNjNkYzA0OTlmMTZmMzM4N2RhZTIzYjg1NTg4ZGNkOTk0ZDg2N2ViZTQ2MzViYjRhZWY3ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlN2VjYjZmNGViYzA4MDYyNTc1NTlmMTJmMzcxZmUzZTUyMTYyYzdhODBlNzBkZjU1NjgwMGJjNDc5NTU1NWUifQ"
         },
         {
-          "resource": "repo://scripts/openwiki-policy.mjs",
-          "version": "repo-file-v1:sha256:da23a99a011b5dff2184fb5fbc28a0c8e987c72555b89ba455ae3153e0c9a7b5"
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L321-L341",
+          "version": "repo-lines-v1:sha256:74fcd923851580e8084c56fea1aa04267079ffef9fd5032a2fc3424d5bbcb256:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmYwZTQwODE5ZDllYjE3YjUxYTYxMDE2MmUzYWExNDY1M2QyMjEyNjJlOGFjNDBiNTdiZmY0ZmUxMzQzZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzNTAxMTczMGQ4OTkwNTE3NmRhMmQ3Y2VkYTYxNWE4OWNlOTUyM2VjNDI4ZjFkNmE5OGQwNTkzMzM0MDZjYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMjFjMmEzYmM0YTIxYjk0NGNjMzY2MTU3Yzc1NWI2MGFiNTA1MzUwYzg2ZWVmNzdlODBiZTViMzYxNDEzMmIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L348-L366",
+          "version": "repo-lines-v1:sha256:47f304bcad379b47abb16d59b987ade9abd147b1d354541d5486e18f33f7cf43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ZWYyMGVhMzlkMzE5ZDVhZmU0MDdhMWMzZjE3MzExNjZiOTJmNzFlYzNlNjAyZTg4OGE3NTZlMmVhMTM3NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ODY3NTcwNmMwMzU1ZDg5ZGZlNzEyODMzZGQ1YTFjOTlhZTAxY2MzZjYzNzU3M2ZhZGEzNDc2YzA5YWJkM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyYzM0YTJkODQyZGU3ZWIzYTc4Y2M1NjI4NWIyMGY1MDdiMmYwOWQ0ZGI5YWY5NTUzMzYwNmEzZmY1MjEzZjgifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-policy.mjs#L33-L36",
+          "version": "repo-lines-v1:sha256:a244955cb961c0018c23af81a338fe2d76aab67347c8dc688b7a64eee3fa7632:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY0NTEyYTJlYTk2MjNhZTNiMTlkZTk3OGYwNThiNDU2YmYyZmQzYzQ2YmUwNjEzZTEyZjY5MzEzNDc2MTIzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQxMjg5NTk3OWE3YTZmZDhlNmY0ZDgwZTg3OGMzNWY4MTg1MGYyMWU5NWI2ZTZkNzEzNmIwMjgzYTVmMjNmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGFhOGQwZGNkMTM3YjgzNTVlNzg2Yjg2NTJmNjgxMTA1MWM5NmNhYTk1ZTI2YTIyN2Q3ZjMzNDliNTcxMWUwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjRiYTc5ZmZjYjNiNjYzYjgzMGI5ZTllOWJjZjNiNTlmNGIyZGY1NDc4NzhiY2NjNGQ0NmYyN2JlMTdkMzUyZCJ9"
         }
       ]
     },
     {
       "id": "claim_8a1072a95d68469992a49a548becc067",
-      "statement": "V16 and G13 are independent invariants that both read Claims sidecars: V16 (claimsDurabilityFindings in scripts/openwiki-claims.mjs) checks that a page with a .page-manifest.json entry still hashes to the pageVersion its sidecar certifies, and does not check pages with no manifest entry, while G13 only checks where coverage may exist and never inspects page bytes.",
+      "statement": "V16 and G13 are independent invariants that both read Claims sidecars: V16 (claimsDurabilityFindings in scripts/openwiki-claims.mjs) hashes every page carrying a .page-manifest.json entry and fails when it no longer matches the pageVersion its sidecar certifies, and does not check pages with no manifest entry, while G13 only checks where coverage may exist — it compares protected.yaml's authoritative list against sidecar files and manifest keys and scans page front matter for a `verified:` event with no sidecar, but never hashes or otherwise compares page content.",
       "evidence": [
         {
           "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L70-L79",
           "version": "repo-lines-v1:sha256:0bde497ae79ca81388d0dff9023ba15b3e9e908c48cacb424132336706309acf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNWMzMDAyMThkMjBhMzYzNDhkYzM0MjhmMWY0YmViM2E1NmFiM2ZiZmNjZTg1NDg1MzhlNTg0N2Y4YTY4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDU0Y2IyMWE5Y2U0OWE1YWQxN2UyZDE0YjEwNjZlMDYwN2NiNTAyMzYzYjlkZTg0MjBkMmZmNjQ3YTMwMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjMxNDA1OTZjYjJmOTM1YmZlZmNlY2Q5ZGJhNTgwZjQ2NDQ5ZWU0OTQyNDZiOTA4ZjIxZDJlZjk0NTI3MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMjAxMWM4OTJjMWU0N2E1NmViOWQ0NDUxMjZkNzFjOTkwNmM0MWMzYjI3ZTJiNWY3ZGM3ZmYxNWIyYThmMjEifQ"
         },
         {
-          "resource": "repo://scripts/openwiki-claims.mjs",
-          "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
+          "resource": "repo://scripts/openwiki-claims.mjs#L140-L165",
+          "version": "repo-lines-v1:sha256:f0a1841b63c5049540497923a9e61b90526c0025cb46c40120bdd43ccae65d26:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzNhZmRmMjNiNGVhMzViYmRhZGQ0OGEzNWFlOWUzNzYzNjM3MTQxMmY1MzQzZDYzNjU0YjkyMWViMmYxNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTMzZTQ0OWVjZDU1ZGVjNTAzYjdlMDdhZTAxMzYzYjA4ODY1ZDk5MjczMWZlODNkMTIyZGRlZWZhNDhhNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5YjRhOGYzNDZmZTdmMDg4MzEwYjExMDY0ZDU0OTg2M2RiZGExMTFiZWU0MjViZWY3MDQwOGY4NmFmMTdlMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L43-L90",
+          "version": "repo-lines-v1:sha256:75d13521348e277d5a276d9b2279c5d772df7084f4ba6e7817a529c6732dc1d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYzQ3MWU5NWZjNDM0ZDAyMmYwMjY4MGZmMmY2YzdmNTk1YWNlYzI0YzFhNmIwMzVlNmM1NmExMWUzZjY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NmZjMGVmM2U5ODNkM2I1YjczYWFjMDk4NTU0ZTU2ZTNkYzJjNDczNmI3ZGE2NGU2MjcxODgzMDNiMDU3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMmQ5MWIzZDIyMTIwYTZiODA5MjU2OWU1MTJmZTYyZWYzYjRiNDM4Y2RiNTM5NGFhYzVjMjYyODIyMWU3YjAifQ"
         }
       ]
     },
@@ -118,7 +130,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         }
       ]
     },
@@ -134,19 +146,23 @@
     },
     {
       "id": "claim_2dfb25269f4244198fe6ebb25ee1e160",
-      "statement": "A V16 break is severe and has exactly one sanctioned rewrite exemption: openwiki refuses the whole run — every slice, every page, before any generation — when a covered page no longer hashes to the pageVersion its sidecar certifies, and the only rewrite permitted to move a covered page's bytes is wiki-maintain's deterministic link-form normalization, which carries the certified hash into the sidecar and manifest entry in the same step (carryClaimsHash, which declines to launder an already-broken page).",
+      "statement": "A V16 break is severe and has exactly two sanctioned rewrite exemptions: openwiki refuses the whole run — every slice, every page, before any generation — when a covered page no longer hashes to the pageVersion its sidecar certifies, and the only harness rewrites permitted to move a covered page's bytes are wiki-maintain's deterministic link-form normalization and its restoration from HEAD of the keys openwiki's own minimal front-matter rebuild dropped (type, description, resource, tags, timestamp); both carry the certified hash into the sidecar and the manifest entry in the same step through carryClaimsHash, which declines to launder an already-broken page.",
       "evidence": [
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs#L345-L351",
           "version": "repo-lines-v1:sha256:f50bf0799329c678db43c820eb07630a506af1e5987407a4d0f9cea146751241:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM0YmQzMzU2ODI3YzJjZmRjM2RlMDM0NmE3ODE1YTA4MjAxMDdhNThkYTlkMzYyYjlmYjk3N2M3YzU2NDE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmFlOWI4OWQ1MmFhMTM5MDNmMmQ5YTRjNGNhZmVkY2VjZjMyN2JjYzAxYzc3OTU0ODE2ZmIxODhiMGY1NGFhNyJ9"
         },
         {
-          "resource": "repo://scripts/openwiki-claims.mjs#L101-L123",
-          "version": "repo-lines-v1:sha256:cec3223c9405b700fb9d7e62cf80d2200f3f19cf7d528c82999375a227ee30a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMmQwZTZjZDU0MjViYzhiMDQzZDBjNGJhNjE3OTg5NTAwMjYzYzYwOTBhN2Q1M2Y3ODFhOGUzNTcyMWI0YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YWE3NGMzMjQxNGM0NjA0YzA4MDFjYTA2OTdmYWIzMzMzNDE2MWZhZGNmZTM1Nzg1YWM5ZjE0NTY4NDM5MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTE0N2I5NTJjMDBiZDAzODVkZTU3MTgyMjYyMGJlZDQ3N2IxYTBjNDNlYmZmMmM5ODRmNjVlMzY5NTY1MmEifQ"
+          "resource": "repo://scripts/openwiki-claims.mjs#L43-L123",
+          "version": "repo-lines-v1:sha256:19cde76d7a10d31057cdd51d77d80abc576b5348dd813cb92a9de45db2cfb994:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYzQ3MWU5NWZjNDM0ZDAyMmYwMjY4MGZmMmY2YzdmNTk1YWNlYzI0YzFhNmIwMzVlNmM1NmExMWUzZjY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NmZjMGVmM2U5ODNkM2I1YjczYWFjMDk4NTU0ZTU2ZTNkYzJjNDczNmI3ZGE2NGU2MjcxODgzMDNiMDU3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTE0N2I5NTJjMDBiZDAzODVkZTU3MTgyMjYyMGJlZDQ3N2IxYTBjNDNlYmZmMmM5ODRmNjVlMzY5NTY1MmEifQ"
         },
         {
-          "resource": "repo://scripts/openwiki-claims.mjs#L43-L90",
-          "version": "repo-lines-v1:sha256:75d13521348e277d5a276d9b2279c5d772df7084f4ba6e7817a529c6732dc1d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYzQ3MWU5NWZjNDM0ZDAyMmYwMjY4MGZmMmY2YzdmNTk1YWNlYzI0YzFhNmIwMzVlNmM1NmExMWUzZjY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NmZjMGVmM2U5ODNkM2I1YjczYWFjMDk4NTU0ZTU2ZTNkYzJjNDczNmI3ZGE2NGU2MjcxODgzMDNiMDU3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMmQ5MWIzZDIyMTIwYTZiODA5MjU2OWU1MTJmZTYyZWYzYjRiNDM4Y2RiNTM5NGFhYzVjMjYyODIyMWU3YjAifQ"
+          "resource": "repo://scripts/wiki-maintain.mjs#L1474-L1479",
+          "version": "repo-lines-v1:sha256:7da174c2312cd8916a6879365d9762e0bc70b653a566d7909e5a662320ec782b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUxM2E5ZWM0MDdlZjQyOTU5NmFkODk0ZjAwZDgxMGE5ZGNmZDBkOWE4OWZkYThkY2Y3YWY0NGRlMWI1YzNjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU4ZGMzNTg0ZjQ2MzI3ZDgzODVkYTkxMzY1ZmE0ZWEzNDRjNDRlMjkwY2RiMmExYzI5NzY3YmYxYWE5MmQ2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjI5MjMzMjgyNzgzMjM4M2RhMmQ3MWU0N2Q5YjBiNzM4YWU4OTMzMzUwNzI5MGI4YTJjMjQ1YjczYzcxNjM0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg5MGVlZmQ4ZjEyYjdkMzQzMDFlMDU4MjNjMjA3NmUyMDU1NTM2NzY0YWI0NDI1ZmJiYWZlOTIxNGE1NjI5NCJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1543-L1545",
+          "version": "repo-lines-v1:sha256:3d717ac68f8b320e19d3a9d8ec03036bc3922fcfd2f1094ddcee8cc47ee1c55d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNjNWE1OWJjMzJkMzEyODkxYWUyOTFhYWExYWVjYzA2ZjcyMGUwOTVjODM3NWUzZjJiNmViNGY0NDRhYzM4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdlYjFhNzI1NzE5ODEyNmE2MTVjMjgxNTY2NTE0OGRkYzE3N2JmMzQwYmE1OGFjOThjY2FhYWM4MmNjMjY2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWE4MGZjZWZhMzM0MTIwNTYxZTRmNzY2ZWU1NTdkMjNiNWYwMDhiMzJmNmE4MWRjMzkxNzAwMDkyMWViOWVmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNiYjBhNTU0ZDAyZWJiODIzMjkxZmUyMDg1NDVmNGYyNDAwYWI3YzUxMTkwYzU5YWRhYjVmZjhmZGJjMDAwNCJ9"
         }
       ]
     },
@@ -159,10 +175,34 @@
           "version": "repo-lines-v1:sha256:74916bfe65f98e07a58b0ad66685a47e929772e71353e28a41bbbcc289c49612:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYzY1YzlkMTkzMzVlODYwZDQ3YjViZjRmNzhlMzU1ZjMxNjExODQwNWUxM2ZjMDAyYzY3MmVkYjBmYjgxNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzODM2NGRkYmYwNTUwY2VlMDgwMTQ4NmM2ZmNhYTMxYjdiMzBlYWI5M2ExMTYyZmVlNDk1NjRiMzk0MzIzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_331c71648ffe4a1282c02be30f244a4d",
+      "statement": "verifySlice in scripts/wiki-maintain.mjs runs the governance gate — the gate that carries G13 — against the whole root after every slice and turns a non-zero exit into a slice violation, so a slice that put Claims coverage on an authoritative page fails inside the run rather than only at PR time; the check is skipped, out loud, only for a fixture bundle that carries no protected.yaml.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L343-L346",
+          "version": "repo-lines-v1:sha256:8f20e68be49b1df70b11c7cbc4e95a0e4f59e03958834a4085aede1213c7bd16:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE0YzcwNDY3ZTUxZTY2ZWFiY2RjOWEwZGFjNDZjNjE4MzVjYzUxOGM1YTE3Y2M1OWE5YzZiMTZmZWM2ZDQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwOGFkODg5ZTIxZDdlZmU2ZGY0ZTZkZjkxODliNWQ2MjcyNjcxY2ZhNzBiOTEwOTk4NWVhMWIwY2ZiNzJhNiJ9"
+        },
+        {
+          "resource": "repo://scripts/wiki-maintain.mjs#L1863-L1880",
+          "version": "repo-lines-v1:sha256:3af945126b653b42a90f011005c920bb22b0f875bdeb8b01e62be95f981b439a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmM4YTQ1MzZjNWEwYTdlZGU2ZTg4ZWUyMzcyMDg4MzQ0YTQ0MTM0MDc4ZmYzOTRjZDljYmY0OTdiNTEyMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMzZiZTBlNjkwZWZjMDJlZGIzYzE0YzBjMzg1MWVhMjlkNTYyZjFiYzczOTcyMWQ5MDY5NWZmYTRhZjM0ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxZDIyNDYyYTY0ZTQ3YzgzM2YxMzI3YzEzOGVhODZkYzVlZmU2MWY2ZTU0ZGJiYTUxY2ViMDEyMmRkMzg1MGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cf26f70ba93466ab05e6d5195edc209",
+      "statement": "G11 classifies a concept as derived only when its cited resource resolves — an in-repo path that exists, or an external scheme — so a dangling citation classifies as neither derived nor authoritative and fails the gate, which matters because a rename nobody followed and canonical content wearing a citation it does not have are otherwise indistinguishable.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L304-L330",
+          "version": "repo-lines-v1:sha256:5ae4e17b73ea564e8a6f5465152c8e38ff3a3cf6025715e098499723a7e2d474:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmMwODAzYzA4NzQwNGE5Y2Q2NzRjNDAzMjIxY2U1NTc5NmQ3ZDNkZjc2YWFlNmI0OGRjZDE0M2IwYmZkMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMDg1YjFlZTQ5ZWE1NjE3NjFjM2IwZmNlNjJlY2Q3ZmE5YWU3ODhiNGM2ZmUyMDdiZTJjOWFjOTQ1OGI5NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkYjQ1YjRiNTFmNDNmYjZhYjBmNGZmY2JiOTc3ZWNmZDM1ZDMzOTVjZWQ0MGY1MjA4M2RhZjVlNzZhYzI0NmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T00:30:54.344Z"
+    "at": "2026-11-03T03:30:53.754Z"
   }
 }

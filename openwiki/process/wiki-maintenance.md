@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the freshness model in which a scheduled fire decides from git — before installing anything — whether main has gone quiet, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the freshness model in which a scheduled fire moves to the current tip of main and then decides from git — before installing anything — whether main has gone quiet, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -51,10 +51,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-03T03:30:53.754Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -96,10 +96,12 @@ the file that constrains it.
 
 ```mermaid
 flowchart TD
-    Fire["schedule every 30 min, or workflow_dispatch"] --> Quiet["wiki-quiet.mjs: has main gone quiet? before any install"]
-    Quiet -->|"not yet"| NoRun["end after one checkout and one node process"]
-    Quiet -->|"quiet, or 6 h maximum deferral, or dispatched"| Tip["move to the current tip of main"]
-    Tip --> Plan["wiki-plan, offline and free"]
+    Fire["schedule every 30 min, or workflow_dispatch"] --> Tip["move to the current tip of main, on every fire"]
+    Tip --> Quiet["wiki-quiet.mjs: has main gone quiet? before any install"]
+    Quiet -->|"not yet"| NoRun["end: one checkout, one move to the tip, one node process"]
+    Quiet -->|"quiet, or 6 h maximum deferral, or dispatched"| Install["install pnpm, the workspace and the locked generator"]
+    Install --> Guard["verify the installed generator, a skip fails"]
+    Guard --> Plan["wiki-plan, offline and free"]
     Plan --> Maintain["wiki-maintain, paid"]
     Audit["claims audit, offline and free"] --> Maintain
     Maintain --> Generate["wiki-update, runs scripts/wiki-generate.mjs"]
@@ -112,12 +114,16 @@ flowchart TD
     Gov --> Review["human review, never auto-merged"]
 ```
 
-A fire pays nothing until the quiet check says run: the check reads only git, so it comes before
-corepack, `pnpm install` and the generator install, and every later step is gated on its decision.
-From there the job enables pnpm, installs the workspace and then the locked generator, verifies the
-installed generator against what this repository expects, moves to the current tip of `main`, plans for
-free, and only then makes the paid `--execute --propose` call; the record commit and the outcome report
-run even when the execute step fails, and every job in the repository owes a feature-042 failure digest.
+A fire pays nothing until the quiet check says run. The move to the current tip of `main` and the check
+itself read only git, so both come before corepack, `pnpm install` and the generator install, and every
+later step is gated on the check's decision (`if: steps.quiet.outputs.run == 'true'`, the always-on failure
+digest aside). The move comes **first, on every fire, before the check** — a scheduled fire checks out the
+commit the schedule was registered at, which stays put while `main` moves on, so the run record read there
+would be stale and the check would answer `run=true` on every fire. From there the job enables pnpm,
+installs the workspace and then the locked generator, verifies the installed generator against what this
+repository expects, plans for free, and only then makes the paid `--execute --propose` call; the record
+commit and the outcome report run even when the execute step fails, and every job in the repository owes a
+feature-042 failure digest.
 
 The paid path runs from the two free checks through the generator to slice verification and one reviewed
 proposal, and the always-on gates sit after it rather than inside it. The planner shows what the run was
@@ -135,8 +141,13 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   definition not quiet, so a push-triggered check could only ever answer "not yet". A fire does not
   generate on arrival. Its first step records the job deadline (it needs no checkout); then the job
   checks out full history — the marker is a commit and the maximum deferral is the age of the oldest
-  commit past it, so a shallow clone can answer neither — and runs `node scripts/wiki-quiet.mjs`,
-  **before any install**, which decides from git whether `main` has gone quiet. Before item #613 the
+  commit past it, so a shallow clone can answer neither — then, **on every fire and before the check
+  itself**, fetches and moves to the current `origin/main`, and only then runs
+  `node scripts/wiki-quiet.mjs`, **before any install**, which decides from git whether `main` has gone
+  quiet. The move comes first because a scheduled fire checks out the commit the schedule was registered
+  at, which stays put while `main` moves on: read there, the run record is stale, the check answers
+  `run=true` on every fire, and each fire installs, finds nothing and pushes another marker commit. A
+  guard test pins that order and requires the move to be ungated. Before item #613 the
   debounce was a `sleep 900` *inside* a push-triggered job, which spent a quarter of the 60-minute
   window waiting and left about 37 minutes for generation; the schedule is what comes back later, and
   nothing waits inside the job now, so generation gets about 49 minutes of the same 60.
@@ -148,7 +159,8 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   under `openwiki/` (its own proposal landing) — so the workflow cannot trigger itself and a merged
   proposal produces no further run. An **empty** file list is *not* bundle-only: a commit whose diff
   could not be read counts as real work. It prints `run=true|false` on stdout and its reason on stderr;
-  every later step in the workflow carries `if: steps.quiet.outputs.run == 'true'`, so a "not yet"
+  every later step in the workflow carries `if: steps.quiet.outputs.run == 'true'` — the always-on
+  failure digest, whose whole job is to report a red run, being the deliberate exception — so a "not yet"
   costs one checkout and one node process, about a minute of the shared runner. A quiet check that
   **cannot decide** — a `coveredCommit` no longer in history after a rewrite, or a missing run record —
   exits 1 and reds the run rather than reading as "nothing uncovered", which would end maintenance
@@ -304,11 +316,15 @@ asked for; the claims audit shows what openwiki will force in on top of it.
 - **A queued run starts from the current tip of `main`, not from its own event commit.** Under a
   schedule a queued run is the normal case, and a run that planned from its event commit would repay
   work an earlier run had already done and could not publish — measured on two merges in the same
-  second, four pages (~$1.35). So once the quiet check says run, the job moves to the current
-  `origin/main` and plans from the record committed there, and records that commit as the base for the
-  three-way record merge. `--execute` independently re-checks that the checkout's run record is not
+  second, four pages (~$1.35). So the job fetches and moves to the current `origin/main` **before the
+  quiet check, on every fire** (which is also what makes that check read a current run record), plans
+  from the record committed there, and records that commit as the base for the three-way record merge.
+  `--execute` independently re-checks with `recordBehindRemote` that the checkout's run record is not
   behind the remote's and stops before any paid generation (exit 0, nothing recorded, nothing attempted)
-  if it is, so the race is caught even when `main` moves again between the move and the plan.
+  if it is, so the race is caught even when `main` moves again between the move and the plan. That
+  guard only ever stops a run on positive evidence: it fetches the base branch, returns null when the
+  fetch fails or the checkout is not an ancestor of the tip, and compares the record file at `HEAD`
+  with the record file at the fetched tip.
 - **A scheduled fire carries no event payload.** The job used to be push-triggered, so it read
   `FORGE_OWNER`/`FORGE_REPO` from `github.event.repository.name`; a `schedule` event's payload has no
   `repository` field, and after the move every fire planned and then died in the forge client (runs

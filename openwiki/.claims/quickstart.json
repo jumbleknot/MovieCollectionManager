@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:59a4dc81233e9446209a34cf4f3b85665eea7848dc90d0ebb71032b292c8e1e5",
+  "pageVersion": "sha256:f0f7c9b83ca78d57b71e0cbae01eb20174b2c3643d519f0e98db84a0b973783e",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         },
         {
           "resource": "repo://scripts/check-openwiki-governance.mjs",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -114,7 +114,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json#L224-L243",
@@ -171,10 +171,78 @@
           "version": "repo-lines-v1:sha256:5ae4e17b73ea564e8a6f5465152c8e38ff3a3cf6025715e098499723a7e2d474:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmMwODAzYzA4NzQwNGE5Y2Q2NzRjNDAzMjIxY2U1NTc5NmQ3ZDNkZjc2YWFlNmI0OGRjZDE0M2IwYmZkMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMDg1YjFlZTQ5ZWE1NjE3NjFjM2IwZmNlNjJlY2Q3ZmE5YWU3ODhiNGM2ZmUyMDdiZTJjOWFjOTQ1OGI5NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkYjQ1YjRiNTFmNDNmYjZhYjBmNGZmY2JiOTc3ZWNmZDM1ZDMzOTVjZWQ0MGY1MjA4M2RhZjVlNzZhYzI0NmQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_328942eb89054a1abfe59abaeecdbe7f",
+      "statement": "The two gates exempt the reserved bundle files at different widths: the governance gate's classification check skips all four (`index.md`, `INSTRUCTIONS.md`, `log.md`, `quickstart.md`) so a reserved file needs no derived-or-authoritative status, while the conformance gate drops only `INSTRUCTIONS.md` from validation and exempts `index.md` from the required `type` alone — every other file, the root quickstart included, is validated as a concept and must carry front matter that parses and a non-empty `type`, and its body links are checked by V14/V15 either way.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L296-L317",
+          "version": "repo-lines-v1:sha256:03eb982e127d0222080a368328d97ca4adedd57985337269ea25a167d82663a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTUzOTgzYWFiNGNhZTdkMTE3NDEwY2VmMTIzODAxZTQyNDAwNmZkMTM5OWFmMjBlNzA0NzVmZThmN2I1NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZWRjOGU1MmNmOGZlOGVkMTQ5ODZhNzZlMzQ1ZGYxZGEwZWY4ZjdkYTRiNTFkODEwZTZjYTI5NjIwM2FjNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNTAxMTczMGQ4OTkwNTE3NmRhMmQ3Y2VkYTYxNWE4OWNlOTUyM2VjNDI4ZjFkNmE5OGQwNTkzMzM0MDZjYjUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L53-L54",
+          "version": "repo-lines-v1:sha256:05a9d3e3986cab196d424bcce13eea62d853555fb2da6203e52e3ea0fee9a9ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUzOTllNWRlY2YxYzY3NTUwNmEyNjNlZWQzYWMxMTI0NzU5M2Q3ODNhZjkyNzRjOGY1YjI4Zjg3YjY2ZDMwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjMTUxZmExZjZkZWUyYmRjODc2MWM2OTQ2NTQ4NzNhMThkMWY1MjRkMmZiNjg2MDY4Y2NmOTI2M2VkMjVjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY4NDcxNGFhZjY3NDBhMzU2YzdkODdiZmUzZTQ2ZWMwMTZkZDM4ZDIyNGYxZjhlOWUyNGM3NmE3MGQyZDViNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjRhNzljNTYzNDA5ZTEyOWFjM2U1MDZjZmMxNDNhOGI2ZWRhZjJmNWU2ZTg3YzZlYmQ0NjQ1YmQzNzE1ZTkwYiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L171-L176",
+          "version": "repo-lines-v1:sha256:af296d1af25f3078df515fbb371beedb6695340daf257f1a418b902f3196cb7d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIyNDMyMzIzOTE3ODE4Njc4NDJkNmNjYjM2YjY3YzUzOGJjNDc1M2I4YWJjNWIyMzc0OWI0ZmU3NDI4YmM4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI3OWI2ODA1MjBlZDUyNmRjYzRjOGFhMzczNTI3NTkwZTI4MTk1ZTQwZmJlNjEwN2UxZTViNDk1YTQ1NzczNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE1YThjZjk4NGIxZGQyMDRlM2I5NWJlNzNmZWY5NDc3YzcyNjBjYTcxMzRjYTBhYzc5OGUxNmM4OWE3MzU1OCJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L195-L196",
+          "version": "repo-lines-v1:sha256:89b7962ef9537d5915e629a334f830f40b3893fa7b4593b0a5cde49f78fdbbd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ2ZTViM2Q4Mzk3MDkzMmIwNjU1NjE5OTI2YzhhNTAzNmVlOGI0NDRiODEzYmE1OWMwZmY0NmZhMjQ1ZDI3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTM1ZjE5N2YzNjNhNDM3MDBhYmYzOTc5OGEyM2E5MmVmYjFlMjlmMGQ5ZmRkYjZiNzFhNDFlYTEwYjBlZWM4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVlZWZkZDUxMTNkOTkwNTZmMWUxOWRlMWI3ZDViZWRlNmUwYTMwMWY5ZThmN2JlNGVhZDNmOGY4ZGE4NjZjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDhkZWJiYzY3YjFhMWYxMzZiNGFiMDJlZDcyY2YxM2I4ZDAzNWNhZTFmNmM4MTBjYzNjNDhjNmQ5MTU4MWQ2OSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L226-L263",
+          "version": "repo-lines-v1:sha256:3df072cd60ab414664d480eb6e68236b81fbcd9bedf1fdd3fa13fc6bfb99c164:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NGU1NTA4OGI5NzIxZjcyMjg1ZGJlMzU5ZDlmNjBiNWU5ZWUxZjAwMzU0MTJkMWY3ZmE0YTc5MGU4YTg2MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2YjFjYmRhZWQxMGYzMWQ5ZGI4YWZkNDA0ZmJmOTk1NDEzZDE4ODZhOWU3NjllMjcwODU5MWYzOWNmOWQxMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMjA2NmU4OGJhNTM3NmJmYjEyM2ZmYTY5ZDNjNGVmYzRiZTBhMzc0ZDBmYWQ5YmVmYWE2OTU1YjYzNjMwMTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d56b7c2f9e9845ed899fe8c16318a639",
+      "statement": "`openwiki/policy.yaml` resolves a path to exactly one of five declared states, and only two of them (`regenerate` and `event-driven`) are coverage targets. `excluded` means never analyzed and never written, and the write-permission check refuses a write there with the reason `policy: excluded — never analyzed, never written` rather than treating it as an unknown path.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/openwiki-policy.mjs#L180-L185",
+          "version": "repo-lines-v1:sha256:c4da6a78013a987e1b49e1bfe4ddca748fdac1f343afe17ab3273ca8637204eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYxZThkZDNhODgzMGQwOTIwNTY1ZTJjMTg1NjhlN2M3ZDU1MTA3OTkxM2IwZTY2YTg2YTU1YWYxNmJiMmViNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgyNmJkNjdiZWQ0MDE5ODAzOTAwNDEzYWMzMjU2MmZmNDhhMTkzZmQ0M2IwMzM0YmVmMzcxMjA2MGUzYzE4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDkxYjY4OTYwZTgwMzFlMjM5YTVlZTA1Njk0YTc1MjhlMzI5NjZiYTBkMTU3ZmNkYTQyMjcwYjI2NjhlNTI2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQxYmM2ZGVhODM3YzQ4YjA5NGFhYzhhOGIwMDBkYTMxMGRjZDYwNTM0N2ExNDVjZTIzNWEwYTc1MGMxMzhiNiJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-policy.mjs#L21-L31",
+          "version": "repo-lines-v1:sha256:b68d2cb42a33dbb5eac500430d221bef7f6dccd22c3e7ea11a3109327596fe3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhODMwZTAwMGE1ZDcwYjdkNDcwZmIwMWU3YmJhNDQ2MWQwYjIzZGJhMjc2NGQzMGQ2MDI5ZTE0ZDk1YWMyZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMDYzNDUyYWViMDUwZWQ4MWRmOGUwNTgzN2FjN2YxNjU3Yjg4ZTA3ZTlhNGMzMmYzMDU4MDA1OGIzMGVhNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYjgxNmY5MzRiMmU4OGM2ZjEzOTU3OWFkNTYwNTdlOGJiNDljYWExNTBlZWE4Y2E3M2VhZDVhYTViMjZiM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYWQzOTllYThlMzE2MGFlN2Y3MmJmYWUyZTc5YTBjODZhYTdiM2VlMWE2MTkzNDNiMmVmY2MzMGVhN2NhYWUifQ"
+        },
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md#L270-L291",
+          "version": "repo-lines-v1:sha256:3b54a66fa1256145d611c8b573bda489acfabca89b36bfbfc113841e014aed15:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNTgxMmRmMTFkZGMwYTQ1OGZjNGY3NDhiYzQwNjJkNjU1MmE5YzJkODkzYWQ0Zjk4YzYxMjlkNWZhNzZiMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMjZhMWIwZTI0MTFkNjMzOGY1ZTkyZTU1ODUwZmNhYTRkYTliMWE4MDc4ZDczMjZiYjkzOGM2OTQ2Y2JmMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMmJhMzliMTc5MDA4ZWE3YzI3YmI1MGNlNTQ2NDYzYjM5MjA3ZGY4ZDIwNmM2NTQ5NjQ5MDY5ZWJhY2JjODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NjNiODlmOGVlNjFlZTEyNGEyZGFkMzgzY2Q0MGZjODYwYTMwZjFlMDM3MGMxMTU5YTgxNWRjNWE1NDMyNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_573775a4127d4cbab542ae4f1d653113",
+      "statement": "`specs/**` is declared *analyzable, not a coverage target*: specs are read freely as context but there is deliberately no concept per feature, because a merged feature's specification is a historical record superseded by the code it produced. `specs/*/HANDOFF.md` is the named exception, carrying live measured knowledge rather than history. A spec is also never the current state — when it disagrees with a runbook, a decision record or the code, the later source wins.",
+      "evidence": [
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md#L19-L19",
+          "version": "repo-lines-v1:sha256:cf82f0ddcde8b3e377797ab3ec8699ade2a112a3f3cdcad67e5125f8f28426d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Y4MmYwZGRjZGU4YjNlMzc3Nzk3YWIzZWM4Njk5YWRlMmExMTJhM2YzY2RjYWQ2N2U1MTI1ZjhmMjg0MjZkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Y4MmYwZGRjZGU4YjNlMzc3Nzk3YWIzZWM4Njk5YWRlMmExMTJhM2YzY2RjYWQ2N2U1MTI1ZjhmMjg0MjZkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTdjNmMyM2ZiZjVmN2RmYmQ2YzM2NDBiMzU5NWJkYjIxNGIyZjNmZDg1YzU4OTA3NDgxYmU5NWY2Yjc2NjdhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDlhNDUzNTMxNmRjNzAxOGFiY2I3NDI4YWEwZTc5YWNjOTZiODE0MTA1ZmMyZGI4MzAxZDQ4ZTUyMmVlNDY4MiJ9"
+        },
+        {
+          "resource": "repo://specs/044-openwiki-automation-migration/spec.md#L287-L287",
+          "version": "repo-lines-v1:sha256:eddf50352f4b69abdf30692f199ead309ab2e8aa9888916ba3f569f213d25bcb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRkZjUwMzUyZjRiNjlhYmRmMzA2OTJmMTk5ZWFkMzA5YWIyZThhYTk4ODg5MTZiYTNmNTY5ZjIxM2QyNWJjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRkZjUwMzUyZjRiNjlhYmRmMzA2OTJmMTk5ZWFkMzA5YWIyZThhYTk4ODg5MTZiYTNmNTY5ZjIxM2QyNWJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjhkNTUxN2VkNTgwYTA3MjEyMjFhNmE5ZGM3ZjRmNTNkZTI1YmRhYTg5MjIxOWQxMzc3NzZhOThlOWJiNWU0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmE0MmI5NGY0MTA0YjgxZTBlYWI5ZGQyOGMxODMyNjY5ZTljZTQ4MzRjMzgyMWY0OTcyOTA1MjEzOTc0NDcyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b46ba6c1ba2455cace5c254734776e2",
+      "statement": "Reviewing the bundle costs nothing and spending is a separate, explicitly paid step: the `wiki-plan` target runs the planner in `--plan` mode and the `wiki-maintain` target runs `--execute`. The plan is offline, keyless and makes no model call, while `wiki-maintain` is marked PAID because each slice invokes the generator — so a plan is always read before paying.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L204-L221",
+          "version": "repo-lines-v1:sha256:33edd4b1a62456bf4814b492eefa689619843c460d21009610b7a2aafa661695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNDQ2MTgxYWRlYmUxNzkyYTA2M2Y3MmM2NTRjZmQ1ODg4MDNiYTYwZGZiMDA4ZjE0MTFhMzQ3ZDNmMTAyMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDIxMjRiMDg2NTRhMGMyYTZlMGJhZDg0MzgwZjEwYTQ3ODk4MzFiM2FiYWM5Zjk0NzQxZDgwNDJiZGU3N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmMjM4MDFkMTlkZTI2ODM3MTA1ZDQyMGZhYjg0NWVjNTkzN2FjZmJkNTVhZjdmYTQ1ZTFlMDA3MWY5MDU2NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOTU5NGNhYThiMWY1YjQ1MmIyOGM0ZjZkYTEyZGZjNzYzYWM1MDU0ODBjODFlYjFlNDk0MmZlNWU5NmQ2Y2UifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T01:23:06.490Z"
+    "at": "2026-11-03T03:30:53.754Z"
   }
 }

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the scheduled quiet check that decides from git before any install whether a run happens at all, the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the six slice-verification causes that the OKF and governance gates both feed, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the scheduled quiet check that runs at the current tip of main and decides from git, before any install, whether a run happens at all, the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the six slice-verification causes that the OKF and governance gates both feed, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -77,10 +77,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-03T03:30:53.754Z
 ---
 
 
@@ -105,7 +105,8 @@ so a whole-file allowlist citation is ignored but is not churn, and a Dockerfile
 is not ignored. It runs openwiki's own evidence resolver from the install the `openwiki`
 binary on `PATH` belongs to, and exits 2 when there is none. None of the three is triggered by a merge,
 and neither free check runs on every one: `.forgejo/workflows/wiki-maintain.yml` is **scheduled every 30 minutes** plus
-`workflow_dispatch`, with no `push` trigger, and each fire runs `scripts/wiki-quiet.mjs` **before any
+`workflow_dispatch`, with no `push` trigger. Each fire first moves to the current tip of `main` and then
+runs `scripts/wiki-quiet.mjs` **before any
 install** to decide from git whether `main` has gone quiet — so a "not yet" costs one checkout and one
 node process, and a scheduled fire no longer sleeps inside its own job. The paid run is bounded three ways: a page budget, a start deadline, and a
 per-event **job deadline** that a
@@ -150,7 +151,8 @@ slice and invokes nothing, persisting nothing; `--args=--json` is machine-readab
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Quiet: a scheduled fire or a dispatch
+    [*] --> Tip: a scheduled fire or a dispatch
+    Tip --> Quiet: fetch and check out origin/main — every fire, so the check reads the tip's record
     Quiet --> [*]: main is not quiet — the next fire looks again
     Quiet --> Reconcile: quiet, 6 h maximum deferral, or dispatched
     Reconcile --> Plan: previous proposal merged, closed or still open — record reconciled first
@@ -192,7 +194,8 @@ stateDiagram-v2
     BadUsage --> [*]
 ```
 
-The states a maintenance run moves through: a fire first asks whether `main` has gone quiet, and most
+The states a maintenance run moves through: a fire first moves to the current tip of `main` and asks
+whether it has gone quiet, and most
 fires end there; then the previous proposal is **reconciled with the forge before
 planning** (a closed-unmerged one returns its work to the backlog and rolls the marker back, and a run
 whose record is behind the remote's stops free rather than repaying the work), planning is free, the
@@ -840,8 +843,9 @@ The figures in the example are illustrative.
   by design, because an allowlisted leak stays leaked.
 - **The debounce is the schedule, not a sleep, and freshness is decided from git before anything is
   installed (item #613).** The workflow is scheduled every 30 minutes plus `workflow_dispatch`, with
-  **no `push` trigger** — a push is by definition not quiet. Each fire checks out full history and runs
-  `scripts/wiki-quiet.mjs` first; only then does corepack, the workspace install, the generator install
+  **no `push` trigger** — a push is by definition not quiet. Each fire checks out full history, moves to
+  the current tip of `main`, and runs `scripts/wiki-quiet.mjs` — all of it before any install; only then
+  does corepack, the workspace install, the generator install
   and every later step run, so a "not yet" costs one checkout and one node process, about a minute.
   `wiki-quiet.mjs` reads the run record's `coveredCommit` and lists `main`'s **first-parent** commits
   past it, ignoring the job's own (`[skip ci]` marker commits and CD's digest promotes, and any commit
@@ -861,14 +865,32 @@ The figures in the example are illustrative.
   reading as "nothing uncovered", which would end maintenance silently and for ever. The workflow's own
   shape is gated too (`scripts/__tests__/wiki-maintain.guard.test.mjs`): one `*/30 * * * *` schedule and
   **no `push` key at all**, `cancel-in-progress: false`, no `sleep` anywhere in the steps, the quiet
-  check preceding every install step, the `--dispatched` flag actually reaching it, every later step
-  conditional on its `run` output, and the old in-job debounce symbols (`shouldDeferMaintenance`,
+  check preceding every install step, the move to `origin/main` preceding the quiet check and ungated on
+  it, the `--dispatched` flag actually reaching it, every later step
+  conditional on its `run` output, no step reading `github.event.*` except a dispatch input, and the old in-job debounce symbols (`shouldDeferMaintenance`,
   `oldestUncoveredAgeSeconds`, `DEBOUNCE_SECONDS`, `MAX_DEFERRAL_SECONDS`, `--should-wait`) gone from
   `scripts/wiki-maintain.mjs`, because the decision lives in `scripts/wiki-quiet.mjs` — so a fire that
   decides "not yet" cannot pay for anything after the checkout. A failure publishes
   a feature-042 failure digest like every other job and never gates a merge — see
   [CI self-serve diagnostics](ci-diagnostics.md); the process view of this check is
   [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md).
+- **The quiet check reads the tip of `main`, never the commit the fire was for — so the job moves to
+  `origin/main` first, on every fire.** A scheduled fire checks out the commit the schedule was
+  registered at, and that commit stays put while `main` moves on. Every fire on 2026-11-03 ran at
+  `4dae8842` (runs 6576–6583), hours after `main` had moved past it; the run record at that commit was
+  stale, so the
+  check said `run=true` on every fire, and each one then installed, found nothing to do at the real
+  tip, and pushed another marker commit. The job therefore fetches and checks out `origin/main`
+  **before** the quiet check — an early step, ahead of the one that decides, and not gated on it, since
+  it feeds the decision. The guard test pins that order, so a reordering that makes the check read a
+  stale record fails offline. The step also publishes the commit it moved to as the base the record
+  commit's three-way merge uses.
+- **Under a schedule, read nothing from the event payload except dispatch inputs.** A scheduled fire
+  carries no repository in its payload: setting `FORGE_REPO` from that field made every fire fail at the
+  forge client (runs 6539–6569, every 30 minutes). Owner and repo now come from `GITHUB_REPOSITORY`,
+  which the runner sets for every event, and a guard test fails on any other `github.event.*` read. The
+  dispatch inputs (`max-slices`, `since`, `reasoning-effort`) are the deliberate exception — and they
+  arrive as environment variables, never interpolated into a run block.
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
   and never auto-merged.** The runner is a fresh checkout, so the branch exists there only on the
   **remote**: the run checks it out from there, and only while its proposal is **open** (a closed one's
@@ -895,10 +917,12 @@ The figures in the example are illustrative.
   record (#748).** A fire is a queued job on the one shared runner, so a queued run is the normal case
   rather than the exception — and it was found under the old push trigger, where two merges in the same
   second (2026-10-13) produced two push runs and the forge queued the second behind the first instead of
-  cancelling it. First, the job **moves to the current tip of `main`** after the
-  quiet check and plans from the record the earlier run committed — so a run that sat queued behind
-  another plans from what that one actually committed rather than from an older event commit — and
-  `--execute` stops before any
+  cancelling it. First, the job **moves to the current tip of `main`** — an early step, **before** the
+  quiet check and on every fire, because the check has to read the tip's run record rather than the
+  commit the schedule was registered at — and plans from the record the earlier run committed, so a run
+  that sat queued behind
+  another plans from what that one actually committed rather than from an older event commit. The
+  `--execute` step then stops before any
   paid generation, exit 0, when the checkout's record is behind the remote's, so a lost race costs
   nothing. Second, the record commit **merges three ways** instead of replaying: this run's record,
   `main`'s current one, and the record the run started from (`--merge-record`). A field only one side
