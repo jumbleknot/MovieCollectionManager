@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "2802914c072033eaf2346b9ce70e09f8112f910d",
-  "coveredAt": "2026-11-03T02:41:30.987Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "aa0f8e2f3bd72188de5dd9e2bfd13410afcf47f2",
+  "coveredAt": "2026-11-03T04:19:17.860Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 911,
-    "headCommit": "8caac4c0a177ef07b6186e7d3a27458ae13d1ff6",
+    "headCommit": "5cb1c7332ba8af92ada6b55ec4958b6f44f48902",
     "markerBefore": "ebf11f234497c03967b0319449ebda6cb3d15c2f",
     "slices": [
       {
@@ -121,29 +121,40 @@
         "areaExists": true,
         "reason": "source changed: docs/MCM-Architecture.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-03T02:27:04.742Z"
+    "updatedAt": "2026-11-03T04:19:18.855Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 3,
+    "elapsedSeconds": 2910,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 91,
+    "calls": 302,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 536637,
-    "cached": 10622806,
+    "uncached": 1311515,
+    "cached": 30931452,
     "cacheWrite": 0,
-    "output": 130953,
-    "reasoning": 104752,
-    "ms": 844865,
-    "estCostUsd": 0.3819,
+    "output": 614640,
+    "reasoning": 541743,
+    "ms": 3911431,
+    "estCostUsd": 1.3166,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -153,11 +164,11 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "architecture/system-overview.md"
+        "runbooks/wiki-maintenance.md"
       ],
       "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.3819,
+      "estCostUsd": 1.3166,
       "rateLimited": null
     }
   ],
