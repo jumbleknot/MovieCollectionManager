@@ -87,7 +87,8 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-03T02:11:17.233Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T02:11:17.233Z" }
 ---
 
 # System overview (MCM)
@@ -110,23 +111,30 @@ restate them; the *Core Components* section is the canonical list):
 - **BFF** — server-side code inside the same Expo Router process; the sole OAuth2 client, session
   custodian, and the only component that reaches `mc-service`, the Agent Gateway, and the backup
   destinations. It owns its own Redis cache and its own MongoDB, `mcm-bff-db` — physically separate
-  from `mc-db` (see the gotcha below).
+  from `mc-db` (see the gotcha below). It also hosts the **CopilotKit runtime bridge**
+  (`CopilotRuntime` plus the AG-UI `HttpAgent` from `@ag-ui/client`, on a vendored
+  `ExperimentalEmptyAdapter`), which adapts the CopilotKit-runtime protocol the client speaks to the
+  gateway's native AG-UI stream: no LLM call and no orchestration in the BFF. The binding must be the
+  AG-UI `HttpAgent`, **not** `LangGraphHttpAgent` — the latter speaks the LangGraph Platform REST
+  protocol and 404s against an AG-UI-native gateway.
 - **`mc-service`** — owns all movie-collection domain models and business logic; the sole writer to
   `mc-db`. See [mc-service](../projects/mc-service.md) for its Clean Architecture layering, CQRS,
   and specification pattern — the [data model](./data-model.md) page covers its domain entities.
 - **`mc-db`** — a single shared MongoDB database (`mc_db`) with two shared collections:
   `movie_collections` (collection metadata + ACLs) and `movies` (movie records, denormalized owner).
 - **[Keycloak](../projects/keycloak.md)** — external IAM. Expects a client named
-  `movie-collection-manager` in a realm, and two client roles: `mc-admin`, `mc-user`. New
-  self-registrations default to `mc-user`. See [Auth chain](../invariants/auth-chain.md) for how a
-  token flows end to end.
+  `movie-collection-manager` in the realm `grumpyrobot`, and two client roles: `mc-admin`, `mc-user`.
+  New self-registrations default to `mc-user`. See
+  [Auth chain](../invariants/auth-chain.md) for how a token flows end to end.
 - **AI Agents layer** — additive by design: `movie-assistant` (the Python LangGraph supervisor +
   specialist graph), `movie-mcp` (MCP wrapper over the `mc-service` REST API), `web-api-mcp`
   (outbound TMDB/IMDB lookups), `spreadsheet-mcp` (token-free CSV/`.xlsx` parse and build over a
   transient handle), and `agent-db` (a dedicated PostgreSQL holding LangGraph checkpoints, logically
-  isolated from `mc-db`). The gateway and `agent-db` are private-network only: the client never
-  reaches them, and only the BFF starts a run. See [agent-layer](./agent-layer.md) and
-  [mcp-servers](../projects/mcp-servers.md) for detail.
+  isolated from `mc-db`). The specialist agents run as **in-process nodes inside the gateway** (a
+  FastAPI app hosting the graph over AG-UI), reaching MCP tools through one shared in-process MCP
+  client — there is no network call *back* to the gateway. The gateway and `agent-db` are
+  private-network only: the client never reaches them, and only the BFF starts a run. See
+  [agent-layer](./agent-layer.md) and [mcp-servers](../projects/mcp-servers.md) for detail.
 - **Control Tower (optional)** — LangFuse + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/
   Loki), the OpenSearch append-only audit sink, and OPA + Unleash are profile-gated and **no-op with
   a safe in-code default when unconfigured**, so the app and the agent layer run without them and
@@ -189,6 +197,11 @@ assignments live **in the included component files**, not re-declared in the agg
 [Infrastructure stacks](../projects/infrastructure-stacks.md) has the per-stack profile table and
 the production Komodo half; [Dev stack env files](../projects/stacks.md) covers how each stack's
 secrets reach Compose.
+
+The architecture document's *Monorepo locations* paragraph still describes adding `agent-db` and the
+agent services to the repo-root `compose.yaml` under a new agents profile with the existing
+`app`/`keycloak`/`bff` profiles unchanged. Feature 020 retired that aggregator, so read the four
+stacks above as the current shape and that paragraph as historical.
 
 The `mcm` stack is the one holding the application. Its no-profile services are the test infra
 (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds
@@ -259,6 +272,11 @@ Security Boundary* and *Token Custody & Propagation for Agent Runs* sections:
   per-call downscoped token at at most a minute. This is what makes "lifetime decoupled from run
   length" true rather than aspirational — size the delegation token to the p99 *active segment*, and
   never lengthen it to span a pause.
+
+That the second step is a **downscoping exchange rather than an impersonation** is a Keycloak
+constraint, not a preference: Keycloak 26.5's standard token exchange narrows a token through the
+`audience` filter, requires confidential requester clients, and offers no impersonation — so
+audience-bound exchange is the only one of the two available.
 
 The full call chain and the per-user config model are on [agent-layer](./agent-layer.md); the
 end-to-end auth chain, including the server-held-token and fail-closed behaviour, is

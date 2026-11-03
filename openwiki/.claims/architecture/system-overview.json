@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:14d97f378f5ac7bd24003b560a9b53fe90764bf63a18a47b93226dfecee1bc39",
+  "pageVersion": "sha256:fa7a9cf781869446d7628ae251ae5e92647db935595a5d6cf87883961cfe7f87",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -645,10 +645,74 @@
           "version": "repo-lines-v1:sha256:06101f2ea48522d5dc187679a2b859c6dc04f1f4eb28eff1329cc680166492c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMyYjcyYzM0ZDAzNmEwY2NjMDZjNjBlZWM0MGM2MzFhYWM3MTRlYTRmYmRmMjY5NmMzMzQwMTVjZGFiNjBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjc0NjcyMjcxY2ZkMjJiMzUxNzgzYTNjNGQxZjVmMzY3NTk3NDAzNDQ2Y2E0MmU3NTViYTUzYTliN2NiYThkOCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_3e6ba14784554a41a6635a6555ed0513",
+      "statement": "The BFF hosts the CopilotKit runtime bridge (`CopilotRuntime` plus the AG-UI `HttpAgent` from `@ag-ui/client` on a vendored `ExperimentalEmptyAdapter`) that adapts the CopilotKit-runtime protocol the client speaks to the gateway's native AG-UI stream, so the BFF performs no LLM call and no orchestration — and the binding must be the AG-UI `HttpAgent` rather than `LangGraphHttpAgent`, which speaks the LangGraph Platform REST protocol and 404s against an AG-UI-native gateway.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L111-L111",
+          "version": "repo-lines-v1:sha256:4ce5d6c4e1d71b874d30f264e896e51403fb333f49720862315fa6ec410809e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNlNWQ2YzRlMWQ3MWI4NzRkMzBmMjY0ZTg5NmU1MTQwM2ZiMzMzZjQ5NzIwODYyMzE1ZmE2ZWM0MTA4MDllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNlNWQ2YzRlMWQ3MWI4NzRkMzBmMjY0ZTg5NmU1MTQwM2ZiMzMzZjQ5NzIwODYyMzE1ZmE2ZWM0MTA4MDllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDc1MTM4MWZkYTE4ZmFkMWIzOTI5Y2VlYjc0ZjI1YjU5MmMyYzRjYmJkOTI2MTZkZGJlNjJmMWNjNmZkNjViNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY0Y2NhYzJiMzkwZGU1ZDY0MGQwZTYyMTY4MzU2NjFjNTVhMmVkMjkzMDIyMjdmMjkyZjMyMWE3MzM0MzA4YiJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L45-L45",
+          "version": "repo-lines-v1:sha256:169d33371aa46ec73404c52601bb75e8322025ee5104cb34ebf7c0171d5e5e9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY5ZDMzMzcxYWE0NmVjNzM0MDRjNTI2MDFiYjc1ZTgzMjIwMjVlZTUxMDRjYjM0ZWJmN2MwMTcxZDVlNWU5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY5ZDMzMzcxYWE0NmVjNzM0MDRjNTI2MDFiYjc1ZTgzMjIwMjVlZTUxMDRjYjM0ZWJmN2MwMTcxZDVlNWU5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJlNzE2ZTdkZTI4MWI0ZmYwZmQ4YjRkMDJiNThjNGZiNWM1OTc3NmU4Y2IzNzBlNGYxZTVjYjA2MWE4NGFkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTdkMjk1YjFjNGM1ZjUxMzY5N2JhOGU2MmMzNjNiOGZlMWQ4YmQ5NTI5OWM3M2IzNmI4YmQxOWY5MDcwYjI2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_906fd98c429146d09454330952dace9e",
+      "statement": "The Agent Gateway hosts the specialist agents as in-process nodes (a FastAPI app serving the compiled LangGraph graph over AG-UI) that reach MCP tools through the gateway's single shared in-process MCP client, so there is no network call back to the gateway and the agents do not each open their own MCP transports.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L124-L124",
+          "version": "repo-lines-v1:sha256:2554c49df8946477d7e32cf0920e4cfdcb817c32fbbd32313167e966144d7569:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU1NGM0OWRmODk0NjQ3N2Q3ZTMyY2YwOTIwZTRjZmRjYjgxN2MzMmZiYmQzMjMxMzE2N2U5NjYxNDRkNzU2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU1NGM0OWRmODk0NjQ3N2Q3ZTMyY2YwOTIwZTRjZmRjYjgxN2MzMmZiYmQzMjMxMzE2N2U5NjYxNDRkNzU2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTFkMDAwYjg2OThkNjE1NjY1Mzk5YjliNDljZTlkNWM2NzI0OTllZDViMTY1YWI1ZTRiNGQ0NTk3Njc3NjE1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjk0ZmQxY2VhNGRiMDgwMWQyNTBiNWEzNDk1ZGQzOWI5NDkwMTRjMDk1NDRjNzM2ZTQ2OGUzOTc3MmI1NDExOCJ9"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L603-L603",
+          "version": "repo-lines-v1:sha256:437cfe6346c1f4ae8fb34bdd6fedd7872ce64690cf751509e5100170b8258adb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM3Y2ZlNjM0NmMxZjRhZThmYjM0YmRkNmZlZGQ3ODcyY2U2NDY5MGNmNzUxNTA5ZTUxMDAxNzBiODI1OGFkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM3Y2ZlNjM0NmMxZjRhZThmYjM0YmRkNmZlZGQ3ODcyY2U2NDY5MGNmNzUxNTA5ZTUxMDAxNzBiODI1OGFkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ5NTVlNjRmMGQzZWUzOTAzMDYwZTg2MjE3MGIzZWNmNmJhNGZkOWQ0YTAzOWJhYTlhZTc5NzA4NTllNGU2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjY2ZDY3OWIyNzNmYTU1NzMyYWE2OTQwMWE1OTUzZTFjZWM5Mzc4MTU3MjEyNjljMGEyMjJjOGEzMjZlZWU1ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c640c2f4e794ed88788307092e2868d",
+      "statement": "The architecture document's *Monorepo locations* paragraph — adding `agent-db` and the agent services to the repo-root `compose.yaml` under a new agents profile with the existing `app`/`keycloak`/`bff` profiles unchanged — is superseded: feature 020 retired the root aggregator, so the agent services now live in the `mcm` stack's included component compose files (agent-db, agent-gateway, movie-mcp, web-api-mcp, spreadsheet-mcp) behind the stack's `agents` / `agents-metro` profiles.",
+      "evidence": [
+        {
+          "resource": "repo://compose.yaml",
+          "version": "repo-file-v1:sha256:2a2639564267b11b03a3f642345f20c59dcf62e070727a9dba9d6967499a4ec8"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L48-L48",
+          "version": "repo-lines-v1:sha256:404d2120069e12d5f9d4500d164b4836cf8f17ba9b50ab22f5f6e1cea9e76cf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA0ZDIxMjAwNjllMTJkNWY5ZDQ1MDBkMTY0YjQ4MzZjZjhmMTdiYTliNTBhYjIyZjVmNmUxY2VhOWU3NmNmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA0ZDIxMjAwNjllMTJkNWY5ZDQ1MDBkMTY0YjQ4MzZjZjhmMTdiYTliNTBhYjIyZjVmNmUxY2VhOWU3NmNmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M2MjI4ODA1M2U3OGNkNjc2ZjY2NjEwMGVhYzBjZjIxMzE4YzczYWJlOTdkZWQ3NWIyMWRjOGEzNDY1MWY0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkMjlkZmEwNWM0NmNmNTQ4MTc2MDRkMWJjNDMyNjc2OTIwZDg3NDcwODZlZWE2NzFiYWY2YWEwNmY3YzZlYyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L38-L47",
+          "version": "repo-lines-v1:sha256:4c03146e6f661395444c080a107b76148893a02d136ce00f0e9162f5ea0f9d99:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MjQ0YWNjZGQ3OWY1N2E3OTY0YmI1ODQ2NWYzMzhmYTIxZTk0NTUwZTkwYjUwMDQwNTg5NGJmMzgwZDg2Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjM2Y3MDZiMmE1NzZkYzUxMDAzODg2ZGQ2ODVhNzlhMTg1NzJlZGM5YjNjMzBiMjI0MDFkMTY0ZjIwOWFjYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDU2Zjk3YTFmYTAzYzY4ZTc5MGUyYmZlYjNkNTUwNWVhNzcwYmRlY2EzYWMyNjIzMzgyYzU0MGNiNTM1ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml#L7-L13",
+          "version": "repo-lines-v1:sha256:d03ccf4e8ddfe5617ac17465f9fbd0626eee09734aa511310a75151f3aa22b6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFlNjRjYzFjOTU1YmJlMjc1YzU1ODU2MjQ3Y2QxN2Q5YTg4ZTUxMTllNjAzNzRhMWE2Y2JiYzU4YWJiMTE2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMwMjM4ZmUwNWJjZTg1NmM1NDUwYjM0NzQ3ODBiYzg4YzllOGRmOTc4MjVlYjQ1MGJiZGZlY2ZkODE1NjYxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q5MTc3ODgyZmQ3ZWU2ODJmOWFmNGU4Y2MzOWRmZjIwYzM1NGUyYTk5NTM1ZWU4MWY2ZTc2YTM4MGY2YjNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzEzN2M5NmI1NWFjYzMxOTYyM2ZhMmZkYjg1M2E4YTZjODY5MjNkYzU0ZTdlMTE5MDQ1MWM3Y2JmY2RlZjhkYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ca729c2cd5846209e9ba3041e1af0e6",
+      "statement": "The gateway's per-tool-call step is a downscoping token exchange rather than an impersonation because Keycloak 26.5's standard token exchange narrows a token through the `audience` filter, requires confidential requester clients, and offers no impersonation — which is why an audience-bound exchange is the mechanism the design uses to keep the agent process holding only a minimized credential.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py",
+          "version": "repo-file-v1:sha256:4a04b83d831ebd25304c04c9f7fb0b6c450d19bb17a6345536a160ece806a0bd"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L154-L154",
+          "version": "repo-lines-v1:sha256:967146b7c83b219dac0ab199f1034741337c035448b6ac416a6e35174f3d5429:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY3MTQ2YjdjODNiMjE5ZGFjMGFiMTk5ZjEwMzQ3NDEzMzdjMDM1NDQ4YjZhYzQxNmE2ZTM1MTc0ZjNkNTQyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY3MTQ2YjdjODNiMjE5ZGFjMGFiMTk5ZjEwMzQ3NDEzMzdjMDM1NDQ4YjZhYzQxNmE2ZTM1MTc0ZjNkNTQyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjI1MDA2YzQ0MzM3YzVkNGMxYzgwNzNhMGIzMjFmNGE0NDMwZjgzYzBkOGZlY2RkMmQyNWE4MTg1MGEzYWY0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2VlNjY2NzdmODliNzZhZDM4NjE5ODQ3MjQzZjcyNmRkOGE1YTRjNmI3OTY0NjBiNGY2OTJjMTQ2ODUwOGQ3MyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T00:30:54.344Z"
+    "at": "2026-11-03T02:11:17.233Z"
   }
 }
