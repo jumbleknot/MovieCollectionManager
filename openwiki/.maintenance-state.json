@@ -1,37 +1,36 @@
 {
-  "coveredCommit": "4bdcc2592eebda965e7b4da1d30daa192c4c380b",
-  "coveredAt": "2026-11-02T11:01:32.363Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "61da8b64994e25ae8e7c3d45092e14038e3fdcdc",
+  "coveredAt": "2026-11-03T02:10:37.585Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
-      "area": "projects",
+      "area": "architecture",
       "pages": [
-        "mc-service.md",
-        "mcp-servers.md"
+        "system-overview.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md"
+      "reason": "source changed: docs/MCM-Architecture.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
-      "area": "runbooks",
+      "area": "gotchas",
       "pages": [
-        "prod-control-tower.md",
-        "server-setup.md",
-        "ci-diagnostics.md",
-        "wiki-maintenance.md"
+        "keycloak-service-account.md"
       ],
       "kind": "refresh",
+      "drift": true,
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md"
+      "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/gotchas/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/gotchas/keycloak-service-account.md. The openwiki/gotchas/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/gotchas/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 911,
-    "headCommit": "1ea5dfd36df36b34448c87d5400b8a920d12f888",
+    "headCommit": "73399c38b6ce1a468a7535ae11f50ef778089bdc",
     "markerBefore": "ebf11f234497c03967b0319449ebda6cb3d15c2f",
     "slices": [
       {
@@ -109,87 +108,74 @@
         "subjects": {},
         "areaExists": true,
         "reason": "drift: frontend/mcm-app/src/bff-server/session-manager.ts changed after the page's stamp"
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "mc-service.md",
+          "mcp-servers.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/MCM-Architecture.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "prod-control-tower.md",
+          "server-setup.md",
+          "ci-diagnostics.md",
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/sast-scanning.md; source changed: docs/runbooks/prod-data-tier-auth.md; source changed: docs/runbooks/wiki-maintenance.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/prod-control-tower.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/prod-control-tower.md; openwiki/runbooks/server-setup.md; openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-03T01:22:30.931Z"
+    "updatedAt": "2026-11-03T02:10:38.658Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 3102,
-    "stoppedAtBudget": false
+    "pagesWritten": 19,
+    "elapsedSeconds": 2857,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "projects/mc-service.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    },
-    "projects/mcp-servers.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/ci-diagnostics.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/prod-control-tower.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/server-setup.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T01:22:29.949Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 713,
+    "calls": 883,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2364698,
-    "cached": 70456264,
+    "uncached": 3390389,
+    "cached": 86954738,
     "cacheWrite": 0,
-    "output": 1473392,
-    "reasoning": 1253288,
-    "ms": 9766981,
-    "estCostUsd": 2.9002,
+    "output": 1172415,
+    "reasoning": 951852,
+    "ms": 7747560,
+    "estCostUsd": 2.9457,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "architecture/system-overview.md",
         "projects/mc-service.md",
         "projects/mcp-servers.md",
         "runbooks/prod-control-tower.md",
         "runbooks/server-setup.md",
         "runbooks/ci-diagnostics.md",
-        "runbooks/wiki-maintenance.md",
-        "gotchas/session-lifecycle-and-eviction.md"
+        "runbooks/wiki-maintenance.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 2.9002,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 2.9457,
       "rateLimited": null
     }
   ],
