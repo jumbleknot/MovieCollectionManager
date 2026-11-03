@@ -710,7 +710,7 @@ allowlist entries are gone.
   | runbook, inside a history block | GREEN |
   | stale path exemption | RED, `stale path exemption(s) — delete them: scripts/no-such-file.mjs` |
 
-- [ ] T034 [US4] OpenWiki: `pnpm nx wiki-plan infrastructure-as-code` (offline, free) to list the
+- [x] T034 [US4] OpenWiki: `pnpm nx wiki-plan infrastructure-as-code` (offline, free) to list the
   concept pages whose sources changed; do **not** hand-edit pages that carry a `resource`. Regeneration
   happens through the merge-triggered `wiki-maintain` workflow (one always-current PR, never
   auto-merged) — or, if the operator wants it in this PR, `pnpm nx wiki-update infrastructure-as-code`
@@ -730,17 +730,32 @@ allowlist entries are gone.
   - The "Done when" — the wiki-maintain PR after merge describing RustFS — is **post-merge** and is
     still open.
 
+  *Done 2026-10-17: the first wiki-maintain PR after the merge, #767 (merged as `ddcf9098`), carried
+  RustFS into the bundle — `runbooks/prod-control-tower.md` (Langfuse store), `projects/backup.md` and
+  `runbooks/local-dev.md` (backup destination `mcm-bff-backup-rustfs`). `guardrails / okf` passed on
+  `ddcf9098`. Later maintenance PRs kept it current. Recorded under item #826.*
+
 ---
 
 ## Phase 7: CI proof on the pull request
 
-- [ ] T035 Push (`git push origin HEAD:080-minio-to-rustfs` — a real branch, never AGit) and confirm
+- [x] T035 Push (`git push origin HEAD:080-minio-to-rustfs` — a real branch, never AGit) and confirm
   with `node scripts/ci-status.mjs`: `guardrails` green; `app-ci` green **and** its integration step's
   log shows the mcm-app tier with 0 skipped (read the count, do not trust the tick) and `app-e2e`
   (incl. `backups.spec.ts`) green; `infra-image-scan` PR run green with `rustfs/rustfs` in its scanned
   list. The `minio-image / build-publish` advisory context no longer appears.
 
   **Done when**: SC-003 and SC-004 are evidenced by links on the PR.
+
+  *Done 2026-10-16 on PR #730 at `95ccca4c` (`node scripts/ci-status.mjs status --pr 730`): all 11
+  required contexts passed — `guardrails` ×6, `app-ci / changes`, `affected`, `mc-service-checks`,
+  `app-e2e`, and `infra-image-scan / infra-image-scan` — and no `minio-image` context appears.
+  **What is NOT evidenced as written (speckit-analyze F2, 2026-11-03):** the task asks for two facts that
+  live only in job logs, and the forge API exposes no job logs: the integration step's 0-skipped count
+  and `rustfs/rustfs` in the PR scan's list. Neither was read from the log. The rustfs scan is shown
+  instead by T043 (the scheduled sweep's enumerator lists `rustfs/rustfs`). The skip count rests on the
+  green `affected` context plus the local 0-skip proof in T016. The operator accepted this evidence
+  (item #826).*
 
 ---
 
@@ -749,37 +764,67 @@ allowlist entries are gone.
 Follow `contracts/migration-procedure.md` exactly. The agent prepares commands and reads back pasted
 evidence; it never runs these.
 
-- [ ] T036 **[OPERATOR]** Create Komodo Variable `LANGFUSE_RUSTFS_SECRET_KEY` (masked; fresh value by
+- [x] T036 **[OPERATOR]** Create Komodo Variable `LANGFUSE_RUSTFS_SECRET_KEY` (masked; fresh value by
   default — spec Open Question 3). Do **not** delete `LANGFUSE_MINIO_ROOT_PASSWORD` (rollback needs it).
+  *Done 2026-10-16 (item #560, cutover comment): `LANGFUSE_RUSTFS_SECRET_KEY` created;
+  `LANGFUSE_MINIO_ROOT_PASSWORD` and `REGISTRY_HOST` kept for rollback until T047.*
 
-- [ ] T037 **[OPERATOR]** Advance `inventory` against `observability-langfuse-minio-data` with the tool
+- [x] T037 **[OPERATOR]** Advance `inventory` against `observability-langfuse-minio-data` with the tool
   (M0.4); verdict `migratable`; note `bytes` to size the window.
+  *Done 2026-10-16 (item #560): `migratable`, `xl-single`, 1076/1076 control, 0 SSE, 0 tiered, grep
+  self-test passing — the first valid SSE/tiered measurement of prod (research R19).*
 
-- [ ] T038 **[OPERATOR]** M1–M3: stop writers; `manifest`; stop MinIO and its init; `inventory`;
+- [x] T038 **[OPERATOR]** M1–M3: stop writers; `manifest`; stop MinIO and its init; `inventory`;
   `copy --apply` into `observability-langfuse-rustfs-data`.
 
   **Done when**: `copy.json` shows `targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0`, and
   equal source digests.
+  *Done 2026-10-16 (item #560): writers stopped 12:56:39Z. `manifest`: 1066 objects, 572,666,317 bytes,
+  0 versioned buckets, 50 checksummed. Stopped-drive `inventory`: `migratable`, 1077/1077, 0 SSE, 0
+  tiered, `sourceInUse: false`. `copy`: pass, `targetPreexisted: false`,
+  `entriesNotOwnedByRuntimeUid: 0` (uid 10001), source digest before = after (`d703dbb8…`). Evidence
+  JSON in `/home/prod/080-cutover/`.*
 
-- [ ] T039 **[OPERATOR]** M4: merge the PR; watch `app-ci` on `main` → `trigger-cd` → `cd-deploy`
+- [x] T039 **[OPERATOR]** M4: merge the PR; watch `app-ci` on `main` → `trigger-cd` → `cd-deploy`
   `deploy=true` complete.
+  *Done 2026-10-16: PR #730 merged 13:05:02Z as `b8da85d5`; every required context on the merge
+  passed, and `app-ci / trigger-cd` and `cd-dispatch / trigger-cd` passed. Komodo redeployed
+  `prod-observability`: `langfuse-rustfs` and `-init` healthy, `web` and `worker` up, no MinIO
+  container left (item #560).
+  **The deploy path is not the one this task names (speckit-analyze F1, 2026-11-03).**
+  `prod-observability` is deployed by Komodo straight from `main` (`stacks.toml`, `deploy = true`), not
+  by `cd-deploy`, which builds and deploys the app images only. `ci-status` finds no `cd-deploy` run
+  for `b8da85d5` (main had moved on before the dispatch). SC-006's "a `cd-deploy` run with
+  `deploy=true`" carries the same mistake. What SC-006 needs, the stack healthy on the host after the
+  deploy, is shown by T040, as research R16 and FR-027 already anticipated.*
 
-- [ ] T040 **[OPERATOR]** M5: `verify` → `parity.json` `pass` (SC-001); in Langfuse a pre-migration
+- [x] T040 **[OPERATOR]** M5: `verify` → `parity.json` `pass` (SC-001); in Langfuse a pre-migration
   trace with media loads and a new assistant turn's trace loads (SC-002); `docker ps` shows every
   `prod-observability` container healthy, init running+healthy, Komodo stack health green (SC-006 —
   `cd-deploy`'s probe does not cover this stack, research R16); Grafana loads with current telemetry
   (SC-008). Paste the evidence on the PR.
+  *Done 2026-10-16/17 (item #560; the evidence went on the item rather than the PR). `verify`: pass,
+  1066 → 1066 objects, missing 0, unexpected 0, size 0, etag 0, checksum 0 of 50, written after
+  manifest 0 (SC-001). `/api/public/health` `OK`, `4.56.0`. All `prod-observability` containers were
+  healthy after the Komodo deploy (SC-006, by that deploy — see T039). On 2026-10-17 the operator
+  confirmed in the UI that pre-cutover traces render, that new post-cutover traces appear (SC-002), and
+  that Grafana shows current data (SC-008).*
 
-- [ ] T041 **[OPERATOR]** M6 **only if T040 fails**: revert; confirm MinIO serves the original object
+- [x] T041 **[OPERATOR]** M6 **only if T040 fails**: revert; confirm MinIO serves the original object
   count; record the failure in research.md before any second attempt.
+  *Not needed: T040 passed, so no rollback was run. The rollback path ended on 2026-10-24, when T047
+  deleted the MinIO volumes ahead of the window at the operator's choice. FR-008 is history from then.*
 
 ---
 
 ## Phase 9: Post-merge proofs — User Story 3
 
-- [ ] T042 [US3] **[OPERATOR]** Read Renovate's Dependency Dashboard (item #29) — **read-only, never
+- [x] T042 [US3] **[OPERATOR]** Read Renovate's Dependency Dashboard (item #29) — **read-only, never
   edit it** — after the next Renovate run: `rustfs/rustfs` is listed under each compose file that pins
   it, and nothing lists `infrastructure-as-code/docker/minio/Dockerfile` (SC-007).
+  *Done 2026-10-17 ~12:42Z, read-only (item #560): the dashboard extracts
+  `rustfs/rustfs 1.0.1@sha256:1803faef…` at all six compose sites (dev and prod observability, and
+  backups) and already offered `1.0.2`. No MinIO dependency or Dockerfile appears anywhere on it.*
 
 - [x] T043 [US3] After the next **scheduled** Friday `infra-image-scan` run (not a dispatch): its
   digest shows `rustfs/rustfs` scanned and `expiry_step=success` (SC-005).
@@ -824,8 +869,20 @@ evidence; it never runs these.
 
 ## Phase 11: Polish and deferred cleanup
 
-- [ ] T046 Run the final validation checklist (`openwiki/invariants/feature-validation-checklist.md`),
+- [x] T046 Run the final validation checklist (`openwiki/invariants/feature-validation-checklist.md`),
   including the web E2E regression; run `speckit-analyze` over spec/plan/tasks and resolve findings.
+  *Done 2026-11-03 (item #826). The operator accepted CI as the checklist evidence: a local run now
+  would test today's `main`, not this feature. Every required context passed on PR #730 (`95ccca4c`)
+  and on its merge (`b8da85d5`). Those runs cover the checklist's tiers: lint, typecheck and unit/integration
+  through `affected` and `mc-service-checks`, and web E2E through `app-e2e`, which since feature 051
+  also runs the agent specs. Mobile E2E does not apply, because no app code changed. The wiki items
+  are covered by T034.
+  `speckit-analyze`: 0 critical findings; all 29 FRs and 11 SCs map to tasks by user story, contract
+  ID or SC. Its two medium findings are resolved as annotations, not spec rewrites: F1 is the
+  deploy-path note in T039 and F2 the log-only evidence note in T035. Low findings: tasks rarely cite
+  FR IDs; the Friday → Tuesday sweep (already in T043); the early end of the rollback window and FR-008
+  (T041, T047); a fourth deleted file (already in T048); and checklist items that do not apply here
+  (above).*
 
 - [x] T047 **[OPERATOR]** After the rollback window (default 14 days, Open Question 2), M7: delete
   `observability-langfuse-minio-data`, the dev and Nx-cache MinIO volumes, the Komodo Variable
