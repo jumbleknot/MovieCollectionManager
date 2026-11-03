@@ -77,10 +77,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T03:30:53.754Z
+    at: 2026-11-03T13:23:04.255Z
 ---
 
 
@@ -92,7 +92,7 @@ feature 082, the per-turn output cap of item #719 — raised to 65536 on the Fir
 and the overlapping-run handling of #748).
 `pnpm nx wiki-plan infrastructure-as-code`
 decomposes the documentation changes since the last recorded run into **slices** — at most
-`MAX_PAGES_PER_SLICE` (8) pages, exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
+`MAX_PAGES_PER_SLICE` (4) pages, exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
 on `pnpm nx wiki-maintain infrastructure-as-code` (paid, needs the selected provider's key). A second
 free check answers a different question the plan cannot: `node scripts/wiki-maintain.mjs
 --claims-audit` (offline, keyless; `--json` for machines) lists the pages openwiki will *force* into
@@ -469,7 +469,7 @@ that did not land are tagged and retried first and alone at a lower reasoning ef
 
 ## The budget — one invocation per run
 
-**One 8-page generator invocation per run.** At execution, consecutive same-kind slices of *different*
+**One 4-page generator invocation per run.** At execution, consecutive same-kind slices of *different*
 areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` pages, because every
 invocation pays a fixed planning pass — ~$0.33 on Sonnet, 83% of a one-page run — and a run touching
 three areas used to plan three times. The **slice** stays the unit of the backlog, but a failure now
@@ -480,7 +480,7 @@ leaves at least 5 minutes of margin), so changing one without the other fails of
 
 | | Value | Why |
 |---|---|---|
-| Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
+| Page budget | 4 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`); 8 until item #613 halved it on 2026-11-03 |
 | Time budget | **4 min** | a deadline for **starting** work — an invocation or retry under way is never interrupted |
 | Job deadline | window − 8 min | each invocation is wrapped in GNU `timeout` with the time left minus an 8-minute reserve (item #613) |
 | Worst-case invocation | 65 min | re-derived 2026-11-01 from the committed run records (item #613): the worst invocation that ended on its own took 2958 s, +30%; the guard test derives it from a committed fixture of measured invocations, so the constant cannot drift from the data |
@@ -488,12 +488,23 @@ leaves at least 5 minutes of margin), so changing one without the other fails of
 | Window (dispatch) | 120 min | the whole job — a dispatch bypasses the quiet period and may need it |
 | Job timeout | 120 min | the hard ceiling; a scheduled fire is still held to 60 by the deadline, not by this |
 
+**Why 4, and not a cap by source size (item #613, operator decision 2026-11-03).** Over the 85
+single-invocation runs since 2026-10-08, an invocation of 5–8 pages was stopped at the job deadline 69%
+of the time (1–2 pages: 37%; 3–4: 46%), and **no** invocation of 5 or more pages ever ended on its own.
+Sizing by the cited sources' line count was measured and rejected: across the 35 invocations that ended
+on their own it predicts duration no better than page count (r 0.39 vs 0.37). The same page varies up to
+4.3× run to run — `runbooks/server-setup.md` took 689, 1912 and 2958 s — so no size rule can guarantee a
+fit and the deadline stop plus carry-forward remain the backstop. The slice cap is held at or below the
+invocation cap, because the planner always admits a run's first slice whatever its size: a slice larger
+than `MAX_PAGES_PER_INVOCATION` would still be an over-large invocation. The cost is that a large
+backlog drains over more, smaller runs.
+
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes,
 and a retry only after a fast failure; everything else carries forward in the backlog. That includes the
 slices the **plan** defers past the page budget, before any generation: until 2026-10-09 those were
 printed as "carried forward" but never written to the backlog, so the marker advanced past their range
 and they were lost. Declared
-effective ceiling: **≤16 pages / ~69 min of generation** — more than a scheduled fire's generator
+effective ceiling: **≤8 pages / ~69 min of generation** — more than a scheduled fire's generator
 window, so the worst case fits only a dispatched run. The page count comes from **files that
 actually appeared in the working tree**, not from what the generator says it wrote. **Neither budget is
 a monetary bound** — the wall-clock budget bounds runner occupancy.
@@ -683,11 +694,13 @@ The figures in the example are illustrative.
 - **A filename is not a specification.** The run message carries a one-line subject per page — without
   one, the generator spends its whole budget working out what a page should say; measured across the
   feature-044 relocation, that single change was the difference between 0 pages in 643s and 3 pages in
-  367s. The planner asks for at most 8 pages when *refreshing* existing concepts but only 3 when
-  *creating* new ones, and never mixes the two kinds in one slice. **The creation cap of 3 is
-  unverified**: it was calibrated while every turn was silently capped at 4096 output tokens (the
-  `claude-sonnet-5` bug); that cap is now fixed, and the limit may be needlessly conservative — treat
-  it as a starting point, not a measured finding, and raise it against measurement if you need to.
+  367s. The planner asks for at most 4 pages when *refreshing* existing concepts (8 until item #613
+  halved the slice cap on 2026-11-03) but only 3 when *creating* new ones, and never mixes the two kinds
+  in one slice. **The creation cap of 3 is unverified**: it was calibrated while every turn was silently
+  capped at 4096 output tokens (the `claude-sonnet-5` bug); that cap is now fixed, and the limit may be
+  needlessly conservative — treat it as a starting point, not a measured finding, and raise it against
+  measurement if you need to. The refresh cap is the one thing here that *is* measured — see
+  [The budget](#the-budget--one-invocation-per-run).
 - **The backlog is committed, so it outlives the policy that produced it — and is re-validated against
   the current policy on every plan.** A slice that can never succeed (e.g. one targeting a page
   `policy.yaml` no longer covers) is dropped and reported as `carried-forward page(s) dropped` rather
