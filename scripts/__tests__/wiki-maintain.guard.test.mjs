@@ -86,6 +86,18 @@ test('a scheduled check pays for nothing: it decides BEFORE any install, and gat
   }
 });
 
+test('the quiet check reads the TIP of main, not the commit the schedule fired at', () => {
+  // A scheduled fire checks out the commit the schedule was registered at, which stays put while main
+  // moves (runs 6576-6583 all ran at 4dae8842). Read there, the run record is stale: the check said
+  // run=true on every fire, and each fire installed, found nothing, and pushed a marker commit to main.
+  // So the move to origin/main must come first, and must not be gated on the decision it feeds.
+  const tipAt = steps().findIndex((s) => /git checkout\b[^\n]*origin\/main/.test(s.run ?? ''));
+  assert.ok(tipAt >= 0, 'no step moves to origin/main');
+  assert.ok(tipAt < decideIndex(), 'the quiet decision ran before the move to the tip of main — it reads a stale run record');
+  assert.equal(steps()[tipAt].if, undefined, 'the move to the tip must run on every fire');
+  assert.match(steps()[tipAt].run, /git fetch[^\n]*origin main/, 'and fetch first, so origin/main is current');
+});
+
 test('the old in-job debounce is gone from the orchestrator too', () => {
   for (const name of ['shouldDeferMaintenance', 'oldestUncoveredAgeSeconds', 'DEBOUNCE_SECONDS', 'MAX_DEFERRAL_SECONDS']) {
     assert.ok(!(name in WIKI_MAINTAIN), `wiki-maintain.mjs still exports ${name}; the decision lives in wiki-quiet.mjs`);

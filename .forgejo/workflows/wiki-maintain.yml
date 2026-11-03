@@ -105,6 +105,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.CD_PUSH_TOKEN }}
 
+      # #748: run from the CURRENT tip, not the event commit. A run the forge queued rather than cancelled
+      # (two merges in the same second, measured 2026-10-13) starts after an earlier run has committed
+      # its record; planning from the event commit's older record repaid four pages (~$1.35) that could
+      # not be published. `start` is the record's base for the three-way merge in the record-commit step.
+      #
+      # BEFORE the quiet check, and on every fire (item #613). A scheduled fire checks out the commit the
+      # schedule was registered at, which stays put while main moves: read there, the run record is
+      # stale, and the check said run=true on every fire (runs 6576-6583), each one installing, finding
+      # nothing, and pushing a marker commit. Git only, so a "not yet" still installs nothing.
+      - name: Move to the current tip of main
+        id: tip
+        run: |
+          bash scripts/ci-log-step.sh maintain-move-to-current-tip bash -e /dev/stdin <<'CI_LOG_STEP'
+          set -euo pipefail
+          git fetch --quiet origin main
+          git checkout -q -B main origin/main
+          echo "start=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "running from origin/main at $(git rev-parse --short HEAD) (event commit ${GITHUB_SHA:0:8})"
+          CI_LOG_STEP
+
       # ── properties 1, 2 and 3: has main gone quiet? ───────────────────────────────
       # BEFORE any install: node built-ins only, so a "not yet" costs this checkout and one node process.
       # It ignores the job's own commits ([skip ci] markers, bundle-only proposals), runs at the 6-hour
@@ -179,23 +199,6 @@ jobs:
           OPENWIKI_ROOT="$GITHUB_WORKSPACE/tools/openwiki-generator/node_modules/openwiki" node --test --test-reporter=tap scripts/__tests__/wiki-maintain.guard.test.mjs > /tmp/generator-guard.tap 2>&1 || { cat /tmp/generator-guard.tap; exit 1; }
           grep -E '^# (tests|pass|fail|skipped)' /tmp/generator-guard.tap
           grep -qE '^# skipped 0$' /tmp/generator-guard.tap || { echo "::error::a generator check SKIPPED — a skip is not a pass here"; grep -B2 '# SKIP' /tmp/generator-guard.tap; exit 1; }
-          CI_LOG_STEP
-
-      # #748: run from the CURRENT tip, not the event commit. A run the forge queued rather than cancelled
-      # (two merges in the same second, measured 2026-10-13) starts after an earlier run has committed
-      # its record; planning from the event commit's older record repaid four pages (~$1.35) that could
-      # not be published. Still needed under the schedule: a fire can sit queued behind another run.
-      # `start` is the record's base for the three-way merge in the record-commit step.
-      - name: Move to the current tip of main
-        id: tip
-        if: steps.quiet.outputs.run == 'true'
-        run: |
-          bash scripts/ci-log-step.sh maintain-move-to-current-tip bash -e /dev/stdin <<'CI_LOG_STEP'
-          set -euo pipefail
-          git fetch --quiet origin main
-          git checkout -q -B main origin/main
-          echo "start=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "running from origin/main at $(git rev-parse --short HEAD) (event commit ${GITHUB_SHA:0:8})"
           CI_LOG_STEP
 
       # Free, offline, and always safe: this is what makes a paid run reviewable before it happens.
