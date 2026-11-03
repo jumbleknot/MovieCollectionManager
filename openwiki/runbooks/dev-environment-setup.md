@@ -1,12 +1,34 @@
 ---
 type: Runbook
 title: Developer environment setup (host toolchain)
-description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node floor, pnpm via Corepack, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer.
+description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node floor, pnpm via Corepack, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
-tags: [setup, toolchain, host, runbook]
+tags: [setup, toolchain, host, runbook, openwiki]
+sources:
+  - id: openwiki-source-7e1c4d46c53be9bf32311e06
+    resource: repo://.devcontainer/toolchain.Dockerfile
+  - id: openwiki-source-36295b95c290f53e6f6e79a7
+    resource: repo://.forgejo/workflows/wiki-maintain.yml
+  - id: openwiki-source-8cb0da307c90adb4287997a5
+    resource: repo://docs/runbooks/dev-environment-setup.md
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
+  - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
+    resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
+  - id: openwiki-source-238cf8b88f30f267614313be
+    resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-c8029c93bdccd81963968b22
+    resource: repo://tools/openwiki-generator/package.json
+  - id: openwiki-source-012d67e0a1df20ece216c0d0
+    resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-03T01:23:06.490Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 ---
 
 # Developer environment setup (host toolchain)
@@ -50,6 +72,10 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
   between the host and container workspaces can produce structurally different wiki bundles for the
   same repository state — check `.devcontainer/toolchain.Dockerfile` for the pinned version before
   installing globally (currently `openwiki@0.7.1`, with `mermaid` and `jsdom` beside it).
+- **Do not copy the host-install snippet from `docs/runbooks/dev-environment-setup.md` §6a.** That
+  snippet still names `openwiki@0.5.2`, two minor versions behind what the container image and CI
+  install (`0.7.1`) — running it reproduces exactly the host/container skew the parity guard below
+  exists to prevent. The authoritative pin is `.devcontainer/toolchain.Dockerfile`.
 - **Never invoke the bare `openwiki` CLI on this repo — always go through the Nx target.** The bare
   CLI omits the telemetry opt-out and the raised Node heap size, and reliably OOMs; see
   [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) and
@@ -104,29 +130,47 @@ Where the generator's two pin sites come from, and the guard that keeps them in 
 
 `tools/openwiki-generator/` is deliberately its **own pnpm workspace root**, outside the root
 workspace globs (`frontend/*`, `packages/*`): inside the root workspace pnpm would apply the root's
-settings — which set no cooldown — and the root lockfile, so nothing below would take effect. Its
-`pnpm-workspace.yaml` sets `minimumReleaseAge: 4320` (three days, matching `renovate.json`'s
-catch-all cooldown) and pnpm applies it **twice**: at *resolve* time, so a lockfile regeneration —
-Renovate's or a human's — cannot pick a transitive younger than the window, and at *install* time,
-so a frozen install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked
-entry inside it. The gap this closes is real and measured: run 4950 died 404-ing on an `openai`
-release two minutes old, because the old step pinned only `openwiki` and resolved its whole
-transitive tree at run time.
+settings — which set no cooldown — and the root lockfile, so nothing below would take effect. That
+absence is itself deliberate: the root `pnpm-workspace.yaml` records that a pnpm-level
+`minimumReleaseAge` there BREAKS cold `pnpm install --frozen-lockfile` in the BFF/agent Docker builds
+and CI, because on an empty store pnpm fetches registry metadata and rejects any pinned dependency
+published younger than the threshold while a frozen install cannot re-resolve to an older version.
+The generator's `pnpm-workspace.yaml` can therefore carry the cooldown only because it is a separate
+root; it sets `minimumReleaseAge: 4320` (three days, matching `renovate.json`'s catch-all) and pnpm
+applies it **twice**: at *resolve* time, so a lockfile regeneration — Renovate's or a human's —
+cannot pick a transitive younger than the window, and at *install* time, so a frozen install fails
+`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a locked entry inside it. The gap this
+closes is real and measured: run 4950 died 404-ing on an `openai` release two minutes old, because
+the old step pinned only `openwiki` and resolved its whole transitive tree at run time.
 
 Exclusions from the cooldown are **security-floor exceptions only**, never impatience — the
 generator runs with a model credential. The guard requires each `minimumReleaseAgeExclude` entry to
 be one exact `name@x.y.z` (never a bare name or a range) that an `overrides:` floor in the same file
 requires at or above that version, so it admits nothing else; the root's `overrides:` map does not
-reach this directory, so a floor the generator's tree needs is repeated here by hand. The same guard
-also fails a root workspace glob that would swallow `tools/openwiki-generator`, and the generator
-manifest may not declare a `packageManager` of its own — it is run as `pnpm --dir` from the root.
+reach this directory, so a floor the generator's tree needs is repeated here by hand. **No exclusion
+is in force today**: the last one, `@azure/identity@4.14.1`, was removed once it cleared the window.
+The two floors the file keeps are `body-parser` `>=2.4.0` (GHSA-27r3-jxmh-p828) and
+`@azure/identity` `>=4.14.1` (GHSA-xcx6-jx8p-x3h5). The same guard also fails a root workspace glob
+that would swallow `tools/openwiki-generator`, and the generator manifest may not declare a
+`packageManager` of its own — it is run as `pnpm --dir` from the root.
+
+The manifest and the lockfile are checked against each other offline, so a manifest edited without
+regenerating `pnpm-lock.yaml` fails a guardrail job rather than surfacing only on the paid runner:
+`tools/openwiki-generator/package.json` must declare exactly `jsdom`, `mermaid` and `openwiki`, each
+as an exact `x.y.z` version (no ranges), and the lockfile importer's specifier and resolution for
+each must equal the manifest. The workspace also allows exactly one install script,
+`better-sqlite3`, because openwiki's LangGraph checkpointer loads its native binding at run time and
+its install script already ran under the old `npm install -g`; every other package's build script
+stays denied.
 
 Because the tree is locked, CI must never resolve the generator at run time: the guard rejects a
 `npm install -g`, an `npx ... openwiki`, a `pnpm add`/`pnpm dlx`, or an `npm install ... openwiki`
 anywhere in the workflow's command lines, requires the locked binary to be placed first on
 `$GITHUB_PATH`, and requires the installed-generator checks to read
 `tools/openwiki-generator/node_modules/openwiki` via `OPENWIKI_ROOT` — with a `command -v openwiki`
-check so a global that happens to be on the runner's PATH cannot stand in for it.
+check so a global that happens to be on the runner's PATH cannot stand in for it. The same verify
+step treats a skipped check as a failure, because the pinned-version assertions skip wherever the
+pinned generator is absent (every other guardrail job) and a skip reads as a pass.
 
 Full pinned-version table, per-tool install commands, and the Claude Code plugin list:
 `docs/runbooks/dev-environment-setup.md`.

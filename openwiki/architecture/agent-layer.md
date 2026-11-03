@@ -1,59 +1,109 @@
 ---
 type: Architecture
-title: AI Agents layer architecture (features 012/014/018/040/047/059)
-description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
+title: AI Agents layer architecture (features 012/014/018/040/047/059/085)
+description: The end-to-end call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the member's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
 resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-27T16:58:28.669Z
+  - by: openwiki/0.7.1
+    at: 2026-11-03T00:30:54.344Z
 sources:
+  - id: openwiki-source-bdd810ca95fc763a63b0c693
+    resource: repo://agents/movie-assistant/src/agui_identity.py
+  - id: openwiki-source-1253fe00a93b377564b445b1
+    resource: repo://agents/movie-assistant/src/circuit_breaker.py
+  - id: openwiki-source-3f4dad889fae278d8fd6fa45
+    resource: repo://agents/movie-assistant/src/eval/token_leak_scan.py
+  - id: openwiki-source-62887021c9e67115f17eede6
+    resource: repo://agents/movie-assistant/src/graph.py
+  - id: openwiki-source-21ee7e795dfa2a07194c131c
+    resource: repo://agents/movie-assistant/src/nodes/curator.py
+  - id: openwiki-source-3cdb8ccfce0872644932072c
+    resource: repo://agents/movie-assistant/src/nodes/search.py
   - id: openwiki-source-35511191cab03f67f1e380bd
     resource: repo://agents/movie-assistant/src/ollama_guard.py
+  - id: openwiki-source-3fc5549b13bc483353fd287b
+    resource: repo://agents/movie-assistant/src/proposals.py
+  - id: openwiki-source-7c52b9ffc6d19a53eefbf06a
+    resource: repo://agents/movie-assistant/src/runtime_context.py
+  - id: openwiki-source-f6c222b8d4581ebb02aff7cb
+    resource: repo://agents/movie-assistant/src/runtime_nodes.py
+  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
+    resource: repo://agents/movie-assistant/src/state.py
+  - id: openwiki-source-93f0f494daf0ed75bcb4d48e
+    resource: repo://agents/movie-assistant/src/tools/generative_ui_tools.py
+  - id: openwiki-source-3ddebc53b24db170b9fb8289
+    resource: repo://agents/movie-assistant/src/tools/identity.py
+  - id: openwiki-source-0bc082213ea2b05aafac8afe
+    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
+  - id: openwiki-source-8ed1a4d9fa9d36c2908dd51e
+    resource: repo://agents/movie-assistant/src/tools/opa.py
+  - id: openwiki-source-3886664bef2237616f46c07e
+    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
+  - id: openwiki-source-1a62960aea6eaeac90c89af6
+    resource: repo://agents/movie-assistant/tests/integration/conftest.py
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-b14f80515626024d557f0448
     resource: repo://docs/runbooks/agent-layer.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
+  - id: openwiki-source-7df7f43c44fa89f0d6fae431
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts
+  - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
+  - id: openwiki-source-c4ea756edd0b8ee900bc61df
+    resource: repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts
+  - id: openwiki-source-5af82e72acd9c41bb4da6a00
+    resource: repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
+  - id: openwiki-source-8e04aa30eb8b3df34b4d8b7f
+    resource: repo://frontend/mcm-app/src/bff-server/agent-thread-owner.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
+  - id: openwiki-source-e82c0cb5a60e4fe452915917
+    resource: repo://mcp-servers/spreadsheet-mcp/src/store.py
+  - id: openwiki-source-4029b24de1f1e285cc450a93
+    resource: repo://mcp-servers/web-api-mcp/src/tools.py
+  - id: openwiki-source-65a175671088ef67cc203837
+    resource: repo://specs/085-bff-auth-fail-closed/contracts/bff-auth.md
 ---
 
-# AI Agents layer architecture (features 012/014/018/040/047/059)
+# AI Agents layer architecture (features 012/014/018/040/047/059/085)
 
 This page covers the *architectural shape* of the AI Agents layer — the call chain, its security
 boundary, and how per-user state and config are threaded through it. For the
 [Agent Gateway](../projects/agent-gateway.md) service itself (its MCP servers, tool-invocation
-chokepoint, and env-scoped model provider), see that page. Both cite the same canonical source,
-`docs/runbooks/agent-layer.md`; see also [System overview](./system-overview.md) for
-where the agent layer sits relative to `mc-service`.
+chokepoint, terminal-error seams, and env-scoped model provider), see that page. Both cite the same
+canonical source, `docs/runbooks/agent-layer.md`; see also [System overview](./system-overview.md)
+for where the agent layer sits relative to `mc-service`.
 
 ## Call chain and security boundary
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 13: ... sole OAuth2 client) BFF->>IAM: toke Expecting '()', 'SOLID_OPEN_ARROW', 'DOTTED_OPEN_ARROW', 'SOLID_ARROW', 'SOLID_ARROW_TOP', 'SOLID_ARROW_BOTTOM', 'STICK_ARROW_TOP', 'STICK_ARROW_BOTTOM', 'SOLID_ARROW_TOP_DOTTED', 'SOLID_ARROW_BOTTOM_DOTTED', 'STICK_ARROW_TOP_DOTTED', 'STICK_ARROW_BOTTOM_DOTTED', 'SOLID_ARROW_TOP_REVERSE', 'SOLID_ARROW_BOTTOM_REVERSE', 'STICK_ARROW_TO -->
-```text
+```mermaid
 sequenceDiagram
-    participant App as mcm-app (CopilotKit)
+    participant App as mcm-app CopilotKit client
     participant BFF as mcm-bff
     participant GW as agent-gateway
     participant Sup as supervisor
     participant Spec as specialist agent
     participant MCPClient as shared MCP client
-    participant IAM as Keycloak (RFC 8693)
+    participant IAM as Keycloak RFC 8693
     participant MMCP as movie-mcp
     participant MC as mc-service
     participant DB as mc-db
 
-    App->>BFF: run request (session cookie; sole OAuth2 client)
-    BFF->>IAM: token exchange: session token to run-scoped delegation token
-    IAM-->>BFF: short-TTL, downscoped delegation token (non-checkpointed)
+    App->>BFF: run request with the session cookie
+    BFF->>IAM: token exchange, session access token to run-scoped delegation token
+    IAM-->>BFF: short-TTL downscoped delegation token, non-checkpointed
     BFF->>GW: start run over AG-UI, attach delegation token
     GW->>Sup: classify intent, route
     Sup->>Spec: dispatch to specialist node
     Spec->>MCPClient: tool call
-    MCPClient->>IAM: token exchange: delegation token to further-downscoped token (aud=mc-service, short-TTL)
+    MCPClient->>IAM: token exchange, delegation token to further-downscoped token, aud=mc-service, short-TTL
     IAM-->>MCPClient: downscoped token, single call only
     MCPClient->>MMCP: MCP call, Authorization Bearer
     MMCP->>MC: REST call with downscoped JWT
-    MC->>MC: validate JWT, apply RBAC + DAC (unchanged)
+    MC->>MC: validate JWT, apply RBAC and DAC unchanged
     MC->>DB: read/write
     DB-->>MC: result
     MC-->>MMCP: response
@@ -65,7 +115,7 @@ sequenceDiagram
 ```
 
 *The call chain: identity flows through two successive RFC 8693 token exchanges, and the agent
-process itself never holds the user's session token.*
+process itself never holds the member's session token.*
 
 The defining design choice is **AG-UI-native**: the LangGraph runtime emits AG-UI events natively,
 so `mcm-bff` only needs to host the CopilotKit runtime bridge (`CopilotRuntime` + the AG-UI
@@ -77,13 +127,35 @@ Agent Gateway and its `agent-db` (LangGraph checkpoint store) are private-networ
 ever reaches them. See [Auth chain](../invariants/auth-chain.md) for how this fits the rest of the
 system's identity flow.
 
+Two boundary rules belong to this chain rather than to either service page:
+
+- **The thread id is bound to its first user before any gateway call.** A CopilotKit `thread_id` is
+  generated client-side and the gateway keys its LangGraph checkpoint solely on it, so a user
+  presenting someone else's `thread_id` could otherwise read that checkpoint's pending proposal
+  (collection and movie names). The BFF claims each thread for the first user who uses it (Redis
+  `SET NX`, TTL = the session's absolute window) and refuses any later mismatch with `403` *before*
+  the gateway is reached. Cross-user *writes* were already blocked — the subject token is re-minted
+  from the resuming member's session, so `mc-service` DAC returns `404` — but the preview disclosure
+  was a real isolation gap.
+- **Nothing reaches the graph through the request body.** The run-scoped subject token, the
+  sanitized UI snapshot, the import-file handle and the per-run agent config ride as headers
+  (`Authorization`, `X-UI-Snapshot`, `X-Import-File`, `X-Agent-Config`), are captured into
+  request-local ContextVars by pure-ASGI middlewares, and are bridged into
+  `config["configurable"]` at `prepare_stream`. That bridge is load-bearing, not decorative: a
+  ContextVar set at the ASGI boundary does not reliably propagate into LangGraph's per-node executor
+  tasks, so the token would simply be invisible to the node that needs it. See
+  [Agent Gateway](../projects/agent-gateway.md) for the bridge's implementation.
+
 ## Token custody: why a "run-scoped delegation token", not the session token
 
-The BFF never hands the gateway the user's actual session token. Instead:
+The BFF never hands the gateway the member's actual session token. Instead:
 
 1. At run handoff, the BFF performs its own OAuth2 Token Exchange (RFC 8693) to mint a **short-TTL,
    run-scoped, audience-narrowed** delegation token and passes that to the gateway as an ephemeral,
-   non-checkpointed value.
+   non-checkpointed value. The requester is the BFF's own confidential
+   `agent-subject-token` client; the minted token's reported expiry is capped defensively at
+   180 s, and the exchange call itself is bounded so a hung identity provider is a refusal, never a
+   hung turn.
 2. At tool-call time, the gateway's **single shared, in-process MCP client** exchanges that token
    again for a **downscoped, `aud=mc-service`** token, attached only to that call.
 3. A paused (HITL) run holds **no token at all** — only checkpointed graph state plus
@@ -92,7 +164,59 @@ The BFF never hands the gateway the user's actual session token. Instead:
 
 This is why raw tokens (subject or exchanged) must never be written to checkpointed state, traces,
 or logs — the pause-robustness property depends on tokens never outliving a single active run
-segment.
+segment. The invariant is enforced, not merely documented: `state.forbid_token_fields` raises before
+any state is persisted if a top-level state key's *name* looks like a credential (`token`, `jwt`,
+`bearer`, `secret`, `apikey`, `agent_config`, …), and an AST token-leak scan over the agent and MCP
+source trees fails the unit tier on a logged token-named variable.
+
+### The member's own tokens are server-held too (feature 085)
+
+The exchange in step 1 does not start from a client-held credential. Keycloak's access and refresh
+tokens never reach the client: they are sealed beside the Redis session (AES-256-GCM, bound to the
+session id and its owner) and renewed by the BFF itself, **at most once per session at a time**
+behind a short Redis lock — Keycloak rotates refresh tokens, so a second concurrent renewal would
+end the member's session. The client holds exactly one credential, the opaque `mcm_session_id`
+cookie, and a bearer credential presented to the BFF is refused in every environment, dev and test
+included. The run-scoped subject token is minted from that server-held access token.
+
+A **refused mint fails closed** rather than letting the turn run without identity:
+
+- Keycloak rejects the member's credential → `401 AGENT_IDENTITY_REJECTED`; the client's agent
+  transport renews once and then sends the member to sign in.
+- Keycloak unreachable, timed out, `5xx`, or a non-credential `4xx` → retryable
+  `503 AGENT_IDENTITY_UNAVAILABLE`. The member is not signed out for an outage.
+- Either way the gateway is never called identity-less — the alternative is the unexplained
+  "No caller identity is available" refusal this replaces.
+- **Measured:** Keycloak 26.5 answers a revoked or malformed subject token with
+  `400 invalid_request "Invalid token"`, not the RFC's `invalid_token`. That exact description is
+  required to classify it as a credential rejection, because Keycloak also uses `invalid_request`
+  for configuration faults such as "Requested audience not available" — which are outages, not a
+  reason to send the member back to sign-in.
+
+### Gateway-side re-exchange mechanics
+
+- **OPA authorizes the exchange before it happens.** The gateway asks "may this agent act for this
+  user against this audience?" with non-sensitive inputs only (`user_id`, `audience`,
+  `agent_origin`) — never a token. With `OPA_URL` unset the check is skipped with a warning; with it
+  set, the decision **fails closed**: any deny, non-2xx, malformed response or unreachable policy
+  engine denies the exchange.
+- **No `audience` parameter is sent.** The `agent-gateway` client's audience mappers stamp
+  `aud=[movie-collection-manager, mc-service]`, so the *unchanged* `mc-service` accepts the token
+  (it validates `aud ⊇ movie-collection-manager`) while `mc-service` remains the distinct
+  agent-origin binding signal. Sending no `audience` also sidesteps Keycloak's "Requested audience
+  not available" precondition. The exchanged token's TTL is bounded to ≤60 s by the client's
+  `access.token.lifespan`, capped again defensively in code.
+- **A burst of tool calls reuses one token — but never past its safe life.** The downscoped token is
+  cached in process memory, keyed by `(user, audience)`, with a **15 s expiry skew**: the cache
+  expires the entry ahead of the reported lifetime because the reported `expires_in` is measured at
+  mint time while `mc-service` validates the JWT's real `exp`. Without that margin a long bulk apply
+  (a large import) hit a cluster of `401`s at each TTL boundary and rows reported "could not be
+  imported".
+- **The token rides out-of-band, never as a tool argument.** It is injected as the MCP request's
+  `Authorization: Bearer` by a dynamic auth object reading a request-local ContextVar set
+  synchronously just before the call — never an LLM-visible tool argument, and never a baked-in
+  client default header, which would outlive its call and keep a credential-bearing auth object
+  alive.
 
 ## Per-user agent config (feature 018): opt-in, bring-your-own-credentials
 
@@ -107,7 +231,20 @@ user cannot trigger a billable run.
 Per-run injection happens through `resolveForRun(userId)`: the config is decrypted **in memory
 only**, never returned to the client, logged, persisted to a checkpoint, or written anywhere at
 rest outside `mcm-bff-db` — and it reaches the gateway as the `X-Agent-Config` header on the run
-request, scoped to that one run.
+request, scoped to that one run. The TMDB key leaves that header only for web-api-mcp calls, where
+it rides out-of-band as `X-TMDB-Key`; it is never attached to a user-identity MCP call. The
+per-user `costLimitUsd` is deliberately **not** sent to the gateway at all — it is a BFF-only
+ceiling, and the BFF serialises just the four gateway-relevant fields.
+
+Gatekeeping for a billable run happens at the BFF, before any gateway call: a per-user request rate
+limit and a per-user/session cost ceiling (the personal `costLimitUsd` overrides the global
+default), a cross-user thread-ownership check, and the runnable-config check. Only the LLM run
+operation is billable — the CopilotKit handshake reads (`availableAgents`, `loadAgentState`,
+`hello`) run no model, so cost-gating them would lock an over-ceiling user out of merely *opening*
+the dock; the rate limit and thread guard still apply to every POST. The UI-snapshot and single-use
+import-file bridges key off the same "this request actually runs the graph" signal, because a
+handshake landing between an upload and the import turn would otherwise silently consume the
+single-use handle and the import would reach the gateway with nothing.
 
 Models are **environment-scoped** (Ollama for dev/test/iterative E2E, Anthropic for the
 golden gate and production) — see [Model-provider scoping](../invariants/model-provider-scoping.md)
@@ -131,8 +268,7 @@ flow silently derails. Feature 059 extended the add flow further: the full chain
 `awaiting_ownership` → `awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` →
 proposal. The children's question sits at the front deliberately: the 047 questions are
 conditional on ownership, so any later placement would skip the answer for every not-owned add.
-Three distinct
-generative-UI selection components exist; see `docs/runbooks/agent-layer.md` for the exact
+Three distinct generative-UI selection components exist; see `docs/runbooks/agent-layer.md` for the exact
 node/tool/testID mapping before touching any of them:
 
 | Tool | Component / testID | Used by |
@@ -152,7 +288,8 @@ unconfigured — the agent layer must work in a plain dev environment with none 
 - **A paused run's safety depends on tokens never being checkpointed.** If a future change adds any
   token value to `agent-db`-persisted state, it defeats the entire "pause length is irrelevant"
   design goal described above — treat any PR that touches checkpoint serialization as auth-review
-  sensitive.
+  sensitive. `state.forbid_token_fields` is the guard that will (correctly) reject it, so a change
+  that "fixes" that rejection is the change to scrutinize.
 - **Stage-continuation guards must be paired with a state-reset.** Every `*_stage` guard
   (`search_stage`, `organize_stage`, `import_stage`, `navigate_stage`, `add_stage`) has a matching
   `_STATE_RESET` — a finished flow that skips its reset can leak stage state into a later, unrelated
@@ -167,8 +304,11 @@ unconfigured — the agent layer must work in a plain dev environment with none 
   **BEFORE** consulting the classified intent. Without that ordering a prose-like answer
   (`"Selected: none"`) classifies as `query`/`search` and the in-progress flow is silently
   discarded. **This bug is provider-dependent** — it passes on local Ollama and fails on Anthropic
-  in CI; a green local run proves nothing. The import guard already has the safe shape; **`navigate_stage`
-  does NOT** — check it before extending the navigate flow.
+  in CI; a green local run proves nothing. The import guard already has the safe shape (resolve the
+  pending prompt's options, then route a cancel, and escape only on a clearly-new write/nav
+  command); **`navigate_stage` does NOT** — it escapes to whatever the classifier said on *any*
+  reply that fails to resolve against the offered collections, so check it before extending the
+  navigate flow.
 - **`render_selection` vs. `render_disambiguation` vs. `render_multi_select` — pick the right one.**
   The US4 ownership Yes/No and navigation collection-choice buttons are BOTH `render_selection`;
   `render_disambiguation` is *only* the curator's ambiguous movie-candidate list; `render_multi_select`
@@ -211,6 +351,10 @@ unconfigured — the agent layer must work in a plain dev environment with none 
     as the ownership-guard bug was), but because a classifier *exception* returns `degraded` before
     any routing runs at all: a provider outage would answer "get me out of here" with "Sorry — I
     couldn't complete that just now." An escape hatch that needs a healthy LLM is not an escape hatch.
+    The cancel route also sits above the error-rate breaker, which would otherwise degrade the turn
+    exactly when a stuck member wants out — and a routed cancel makes no provider call, so letting it
+    past costs the cooldown nothing. It stays *below* the kill switch: a disabled assistant must still
+    do nothing.
   - **A stage-free route matches EXACTLY** (whole message, trimmed, case-folded) — never a
     substring, which would hijack a real title like *"How to Exit Search a Building"*, and never
     the bare synonyms (`cancel`, `never mind`), which belong just as much to the import and organize

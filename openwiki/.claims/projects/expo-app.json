@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:63f4d25fd3eeca7721470225147cf01b2e6768f2b502d91e1056ba13c3f6d73d",
+  "pageVersion": "sha256:a8a4ccc237b9e1e7396a1e9d1e5006b1ca2869b1f7ccd4eaba1107c507bb7546",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -117,8 +117,8 @@
           "version": "repo-lines-v1:sha256:c5bb12271d62a7cea5e24ff71499f586cb796a3dc3703e7ebe00fc493caefbfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhMGM3MzJkODkyZjIwNDY3MzE1ZjA0NTI0YzkyM2U2N2NhMWJiNTY4NTJhY2RlOTk1NzdjMmQ1YzAwNzkxZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MWY0NmY3NTgxZGVmNjkzMmIzNmQ2YjFkZDAzN2ZmZjQzMmE0ZjBlNjJiMTFiNWM2N2JjNzk3ZmM5YmJhYTIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L30",
-          "version": "repo-lines-v1:sha256:7b0a0194db6a58e78b134d360cfa34ce9655c0c6979d34e4b1843ad91633791d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2Y0ZDA1MWZkNWYyMDNiODdjMWMyYjZkMmNiNmEwYWUzODA1MjY5OTNlNThiNmQ5NDdiMjJiOWZhY2QxNzAifQ"
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L31",
+          "version": "repo-lines-v1:sha256:a8b1d79d163375682d48176bd5d3842382bd28f35ecec30acf3684695eb1b5dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2Y0ZDA1MWZkNWYyMDNiODdjMWMyYjZkMmNiNmEwYWUzODA1MjY5OTNlNThiNmQ5NDdiMjJiOWZhY2QxNzAifQ"
         }
       ]
     },
@@ -141,8 +141,8 @@
       "statement": "src/utils/api-client.ts was relocated out of src/bff-server/ (feature 077 / backlog item #566) because that path named what it talks to rather than where it runs; scripts/check-no-server-imports.mjs now enforces that src/bff-server/** is imported only by server code, preventing a repeat of a prior bug where a client component imported a server-only backup-run-summary module and shipped an unwanted luxon dependency into the web bundle.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L20",
-          "version": "repo-lines-v1:sha256:458c0b66c6796bd1c3e252d9c7f1848cb22f108d7d275f3bfde585dd545ee77b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWYzYTQ2ZmM2YWRlMWFlMWE4NDMyNTlhOTgxOGIxOTM3MWU0NTQ4NTcxYjc3NzlkMjM4MzUwYzNjYWQ1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NjAwZDY5MzkyNWI1Mzg1MDljODViYTY2OTBlYjIzZjFiN2VlYmY0NGIyYTE0NDMwMWJiMDgwMDM3YjEzYzEifQ"
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L21",
+          "version": "repo-lines-v1:sha256:6e209f51aa58ce643612d6713afb67bd979fb1f4b3a8ee0b00e7defa3aaf6880:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWYzYTQ2ZmM2YWRlMWFlMWE4NDMyNTlhOTgxOGIxOTM3MWU0NTQ4NTcxYjc3NzlkMjM4MzUwYzNjYWQ1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NjAwZDY5MzkyNWI1Mzg1MDljODViYTY2OTBlYjIzZjFiN2VlYmY0NGIyYTE0NDMwMWJiMDgwMDM3YjEzYzEifQ"
         }
       ]
     },
@@ -615,7 +615,7 @@
           "version": "repo-lines-v1:sha256:030b484e06a54f801c32c6885691b06ac2d3cffaa8eedd144f65a18d98396a48:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwYjQ4NGUwNmE1NGY4MDFjMzJjNjg4NTY5MWIwNmFjMmQzY2ZmYWE4ZWVkZDE0NGY2NWExOGQ5ODM5NmE0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFmMzI2YjFiMTFmMzQ1MjI0N2E1NDQ1MTgxNDVmMTYzNTNjNjRiMmI4ZDNjOWExM2ZhNzhjODQxMTFmOGY2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ5NjQ0MjI2ZjU0YWQ2NDlkYjA4NGZhYjNhOTViZmExYzA0OTlkYzE4YTg1ZjM5ODE1ODNmYTAwYzI2ZjAxMCJ9"
         },
         {
-          "resource": "repo://renovate.json#L862-L881",
+          "resource": "repo://renovate.json#L864-L883",
           "version": "repo-lines-v1:sha256:e5be3db63087af8034a6b8291d89571399c208a38658bfb7953cbb4abe7018c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MWM4MTRlOTlhOWRhN2MwODBlZjNiNjBkYzBhODdiMjE3YmNkYzA5NDgyZTA4MTE1ZDE3M2QxOGZjMTQ4NWMifQ"
         }
       ]
@@ -811,10 +811,80 @@
           "version": "repo-lines-v1:sha256:132c26e6bc3c6c9f6be8651714b75453a45f44ff7482f4d2e83cd42107ea7855:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZDU5MDViMDk1ODczZGM4ZDBkY2VkYThmMGY1MTJlYzU5YTBmN2VhM2UxMjhmODk5YzZjYWU0MWE3MDY3ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzRmMWQ2NWE2YmQ4NGVkYzNmYWUwYzJjMmJiODNmMDU1ZTllY2ZkMDAwZjNlZWUzZTEzYWEyZGIzNzY5MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkM2FmNjQzMGZlYjA3NjI3N2RhNmYwZTA2NDExNTA0OWQ4MDY5ZTM4ZjBjMDM4YmRiMjAxOGI3ZTA5MDMzZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1OGY3ZGU4OTUxYmE0ZDhiZjVkNzE1YWJhMTY3NTVlYjdhNTI1OTZhNGUzYTE3MTM0MTA5OGUwNDdiZDU1ZWQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_4f9fa834143b4448bd8179e0186743df",
+      "statement": "src/utils/api-client.ts exports one shared axios instance that attaches no Authorization header: it relies on withCredentials: true to carry the BFF's HttpOnly session cookie (the client's only credential), with baseURL taken from BFF_BASE_URL — empty on web so requests are same-origin relative URLs, and an absolute BFF URL on native from EXPO_PUBLIC_BFF_NATIVE_URL / EXPO_PUBLIC_BFF_BASE_URL falling back to the emulator host alias.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/config/bff-url.ts#L1-L12",
+          "version": "repo-lines-v1:sha256:483bb4082999a3e1c1cc0ced0b97108ac0d9044257bfc04da08ab64d7a838d90:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1M2NlOWIyN2ZmOWQzYTg3ODg0MWM3NzIwNDZmODI2M2RmOWIwNjY4MDMyNTNhMjZhZThmZjMzZmMyYTI2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5OTZmNTAwOWY5MWE5ZDI5MTQ3NTVjMjEzNDI3Nzc3OGZhNzFmY2Y5OTI0NmIyYzc3NDc4YmNiMTJjMmVhMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L1-L31",
+          "version": "repo-lines-v1:sha256:a8b1d79d163375682d48176bd5d3842382bd28f35ecec30acf3684695eb1b5dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2Y0ZDA1MWZkNWYyMDNiODdjMWMyYjZkMmNiNmEwYWUzODA1MjY5OTNlNThiNmQ5NDdiMjJiOWZhY2QxNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbc34966fdef4bd0971daee05a8a18a5",
+      "statement": "The api-client response interceptor's retry policy is defined as much by its exclusions as its action: it retries at most once (MAX_RETRY = 1), never retries /bff-api/auth/login because an authorization code is single-use and a retry would return AUTH_CODE_INVALID, and when a refresh is already in flight it awaits that in-flight refresh (isRefreshInProgress / waitForRefresh) rather than starting a second one; each branch is pinned by src/utils/unit-tests/api-client.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L33-L64",
+          "version": "repo-lines-v1:sha256:6048f4088891ae990e16a6a924b52dcffca0ac9e5d09befbaebcdbe132c04501:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YTg3ZDQ5YjIyMjgzOGQ2YjBmZTI4MWZhMjkyZTU4ODUyNGU1YzY3NzBlNzhmMWRkNzQ2NjFiYzZiN2I1OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmN2ZkZDk0M2YxY2E5MzA1MmY2M2NkNTA0ZTg4NjE2OWI4NjgzZjFiNTYxZmVmZjc5ZTFlNjI3NzUxYjE3MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDBlMWY1ODU1ZTI2M2JmZTJiOTBlMjk3NTY5ZTM3YjUzNzZiZjQ5NDllODc4MDg2NjhhYmZiNDQyNjgzMDQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/api-client.test.ts#L121-L155",
+          "version": "repo-lines-v1:sha256:9e521f712c1a6502d3cb758800cf94031953948c1aa1eb68b34560a5fc42c0c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjN2I4YjdlNzM5Y2I2MGY4MWY3NzliNjBlODcwY2MwYjU4M2M1MWY4Y2Q1NDIxNGU1OTJmOGM3OTcwNzc5MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4N2Y5ZmNlNzQxZWE1ZmVkNDg4MzEyZDU4ZDA2MjBmN2NjMjZkYWEwNTVkNTIyNWY2MmI4YTE1ZDdmZGZhZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af50c458cbb64e01b784b8e51c7b3c53",
+      "statement": "silentRefresh() in src/utils/token-refresh.ts posts /bff-api/auth/refresh using raw axios rather than the apiClient instance, deliberately avoiding a circular dependency with the interceptor, and stores nothing client-side on success — the BFF re-sets only the session cookie, so the refresh is invisible to the caller; concurrent calls are deduplicated through a single shared in-flight promise.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/token-refresh.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:1adffba24d2badf71c04e6162d019bf4b856755a53dd77ecf18373e3522e8b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYmFhODMyYzk4YjY1ZjQ1MWI1MGUwODg0NDY3YmIzNzc1OTYzZmQyZjNhMGExMTI4NjM1YTI0MzI3MjYyZjMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/token-refresh.test.ts#L18-L53",
+          "version": "repo-lines-v1:sha256:82c89bcba04d8898e46579d69a7101690841967cc37b661c643f26578cf8c389:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NTcwZDA1ZDQyYTg2YWFlYTcyOGJhNmY5MmU1NDM3Y2U5ZWE4ZmZlYTc2YmYyZDcxYmZhMmNiNWFjYWUwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NDU0ODQ1ODQ0MDlmODMyOWI3N2NhMDllZjRkMmQ4MjdmYmM2OWFmYTRlMTlkOTZhNDZiMmVkYzk3OWZiZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YzljYjJmNjQ1OGJmODc1ZDlmNTlmYjA1NmJjYjJlY2UyNWY1ZGVlYmYxZDhjYWZmZWU2MjQ2YWFhZWVlNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4dfd34d992794e0196b2a1b649645d8b",
+      "statement": "The CopilotKit agent /bff-api/agent/run request never passes through the axios api-client interceptor because CopilotKit's React Native runtime issues it through its own streaming-fetch polyfill, so that 401 recovery is implemented separately at the fetch level by src/utils/agent-fetch-refresh.ts, which wraps globalThis.fetch before any run is issued.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:2dc8b6de77b0af1ea2ffcda29c1393604368c6a8458700bd0faa14a619170d3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NDczOTJhNjEzODIzZDQwMzU5YjRkNWIwYjliM2VkYTc1NjQ3MDY1MWFmYzNhNzY0ZmI1MTBkZDk2Y2ZiM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2FlZGFiNTAwNmYxZjY0ZjZkZmNjYzYzOTlkODMwOWI5NjU4NjVlMTkyOTVjOTFhMGIzY2RkMDAxZmY2ZmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L96-L106",
+          "version": "repo-lines-v1:sha256:5eb98629fee60140a2503cf02637991a586e4b249905d8b84b8495d6a15ca161:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzY2JkOTkxMjgxZDMxYjJkM2U4NjNhNGMzYjE5ODdiMWE3MGE1MjljMDE2ZTc0Yjg3NTQyYmNhN2FiM2YwOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4NTNiZTFjYjlhNTU4YTEyZGUwZDk3N2NhN2RjZWFjNDdlNGMzMDIzZjQ3NmEwNzQzNzhmMWRmYjM5NGExMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5181bec58934dfd990a647d80a0c39d",
+      "statement": "Under the BFF cookie auth model (feature 085) the client holds no raw token: src/utils/session-storage.ts persists only the opaque session id in SecureStore on native as a startup 'do I appear signed in?' hint for hasStoredSession, and stores nothing client-side at all on web, where the BFF's cookies are the source of truth; the previously stored access/refresh tokens and their Authorization: Bearer path are removed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/session-storage.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:0507a9a26a82c550da02c67982b637b3fb9f0be530e143b49e7f4bffef178171:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhZDk5NWI2MjIyNWNlZWViZDRiZTdhZDJjNjNmYTQzZjVmYTY4MTczYTk0NTk0NzVkYmVjZjFjNjkwOGJlYTQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/session-storage.ts#L25-L64",
+          "version": "repo-lines-v1:sha256:64dce8fed4127c2fc19c9406e04d3a026f373638c520db19cf5973ba281f647d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYWMzNjNiNmY0MWM5MmIyNWFhNjY0MTJlMGUwZGM2MmQyMTM1ZTYwODA2ODhjNzRjYmFkODU3OGRiNGIwYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNzAxMzZlMDY4MGU1YWNmNjE0M2I1ZGMzNzY4ODBmMDRhOTI2M2EwMDU2ODFmMmY1OWJiMWRmZGY1MTdiZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-26T03:45:38.439Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

@@ -4,9 +4,6 @@ title: The governing constitution
 description: The repository's ratified, versioned constitution — currently v2.7.0, ratified 2026-03-08 and last amended 2026-10-20 — the core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
 resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-25T13:33:13.758Z
 sources:
   - id: openwiki-source-fddbbd0ed8c6150575261296
     resource: repo://.claude/skills/speckit-constitution/SKILL.md
@@ -20,16 +17,24 @@ sources:
     resource: repo://backend/mc-service/Cargo.toml
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-a679e2e5a49381a72df446c5
+    resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-baa6cf05f830f1fa193ef74c
     resource: repo://docs/templates/feature-test-tasks-template.md
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-4042a47526d6016cff835628
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-4388ebe240b6b1a6c540d5c5
     resource: repo://specs/005-expo-sdk-56-upgrade/plan.md
   - id: openwiki-source-db3aa5ac2ffb577a529916ad
@@ -40,6 +45,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/spec.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # The governing constitution
@@ -88,6 +97,15 @@ the document names is amended in the change that moves it, with human approval, 
 afterwards. Feature 081 writes that requirement down as **FR-015** — where the constitution names a
 version the feature changes (the platform SDK and native runtime, the document-database image), the
 amendment must land in the same pull request as the change it authorises, with human approval.
+
+The document-database line also shows the difference between a *tag* and a *digest*. The constitution
+names the tag (`9.0-ubi9`); every compose reference pins that same tag by digest, currently
+`9.0-ubi9@sha256:3d40c6fa…` — a UBI 9.8 rebuild of the same mongod 9.0.4. The pinned digest has been
+re-resolved twice since v2.7.0 was ratified with no further constitution change: the 2026-10-24
+production cutover ran `sha256:2cb58a8d…`, and the 2026-11-01 move to `sha256:3d40c6fa…` was a
+same-version rebuild that shipped a fixed `ca-certificates` and so discharged the
+`CVE-2026-114406` allowlist entry. Refreshing a digest inside a named tag is ordinary image
+maintenance; moving the named tag is the amendment.
 
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),
@@ -186,6 +204,14 @@ version history.
   the line to `9.0-ubi9`. Compare a version-named line against the compose files and the lockfile
   before treating it as the deployed truth; the changelog entry is where a correction of that kind
   gets recorded.
+- **A tag-named line and a digest-pinned deployment are not the same claim.** The constitution names
+  `mongodb/mongodb-community-server:9.0-ubi9`; the compose files pin that tag to a digest that is
+  re-resolved whenever upstream rebuilds the image (twice since v2.7.0 — the production cutover ran
+  `sha256:2cb58a8d…`, the current pin is `sha256:3d40c6fa…`, both the same mongod 9.0.4). A digest
+  refresh is image maintenance and needs no amendment; only a change to the named tag does — and a
+  same-version rebuild can still change what the gate sees, since the `3d40c6fa…` UBI 9.8 rebuild
+  shipped a fixed `ca-certificates` and discharged the `CVE-2026-114406` allowlist entry. Read the
+  compose file, not just the constitution line, when you need to know the exact bytes that run.
 - **A named library can be aspirational — the amendment history is not a description of the running
   system.** The Backend Services stack section requires `medi-rs` to route commands, queries and
   events from the API layer to the application-layer handler, but `backend/mc-service` ships no

@@ -7,6 +7,18 @@ tags: [architecture, overview, rbac, dac, agents, docker-compose]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
+    resource: repo://agents/movie-assistant/src/state.py
+  - id: openwiki-source-3ddebc53b24db170b9fb8289
+    resource: repo://agents/movie-assistant/src/tools/identity.py
+  - id: openwiki-source-0bc082213ea2b05aafac8afe
+    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
+  - id: openwiki-source-8ed1a4d9fa9d36c2908dd51e
+    resource: repo://agents/movie-assistant/src/tools/opa.py
+  - id: openwiki-source-3886664bef2237616f46c07e
+    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
+  - id: openwiki-source-4cc090993970bb2253a628ba
+    resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
     resource: repo://backend/mc-service/src/api/router.rs
   - id: openwiki-source-c24ab349f92ee5be03f5048a
@@ -19,16 +31,24 @@ sources:
     resource: repo://compose.yaml
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
+  - id: openwiki-source-a32b06ef0f76afb80af4d88a
+    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
     resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
   - id: openwiki-source-1c2acc0a72ab64fd663510a9
     resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
@@ -67,7 +87,8 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-03T02:11:17.233Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T02:11:17.233Z" }
 ---
 
 # System overview (MCM)
@@ -90,28 +111,38 @@ restate them; the *Core Components* section is the canonical list):
 - **BFF** — server-side code inside the same Expo Router process; the sole OAuth2 client, session
   custodian, and the only component that reaches `mc-service`, the Agent Gateway, and the backup
   destinations. It owns its own Redis cache and its own MongoDB, `mcm-bff-db` — physically separate
-  from `mc-db` (see the gotcha below).
+  from `mc-db` (see the gotcha below). It also hosts the **CopilotKit runtime bridge**
+  (`CopilotRuntime` plus the AG-UI `HttpAgent` from `@ag-ui/client`, on a vendored
+  `ExperimentalEmptyAdapter`), which adapts the CopilotKit-runtime protocol the client speaks to the
+  gateway's native AG-UI stream: no LLM call and no orchestration in the BFF. The binding must be the
+  AG-UI `HttpAgent`, **not** `LangGraphHttpAgent` — the latter speaks the LangGraph Platform REST
+  protocol and 404s against an AG-UI-native gateway.
 - **`mc-service`** — owns all movie-collection domain models and business logic; the sole writer to
   `mc-db`. See [mc-service](../projects/mc-service.md) for its Clean Architecture layering, CQRS,
   and specification pattern — the [data model](./data-model.md) page covers its domain entities.
 - **`mc-db`** — a single shared MongoDB database (`mc_db`) with two shared collections:
   `movie_collections` (collection metadata + ACLs) and `movies` (movie records, denormalized owner).
 - **[Keycloak](../projects/keycloak.md)** — external IAM. Expects a client named
-  `movie-collection-manager` in a realm, and two client roles: `mc-admin`, `mc-user`. New
-  self-registrations default to `mc-user`. See [Auth chain](../invariants/auth-chain.md) for how a
-  token flows end to end.
+  `movie-collection-manager` in the realm `grumpyrobot`, and two client roles: `mc-admin`, `mc-user`.
+  New self-registrations default to `mc-user`. See
+  [Auth chain](../invariants/auth-chain.md) for how a token flows end to end.
 - **AI Agents layer** — additive by design: `movie-assistant` (the Python LangGraph supervisor +
   specialist graph), `movie-mcp` (MCP wrapper over the `mc-service` REST API), `web-api-mcp`
   (outbound TMDB/IMDB lookups), `spreadsheet-mcp` (token-free CSV/`.xlsx` parse and build over a
   transient handle), and `agent-db` (a dedicated PostgreSQL holding LangGraph checkpoints, logically
-  isolated from `mc-db`). The gateway and `agent-db` are private-network only: the client never
-  reaches them, and only the BFF starts a run. See [agent-layer](./agent-layer.md) and
-  [mcp-servers](../projects/mcp-servers.md) for detail.
+  isolated from `mc-db`). The specialist agents run as **in-process nodes inside the gateway** (a
+  FastAPI app hosting the graph over AG-UI), reaching MCP tools through one shared in-process MCP
+  client — there is no network call *back* to the gateway. The gateway and `agent-db` are
+  private-network only: the client never reaches them, and only the BFF starts a run. See
+  [agent-layer](./agent-layer.md) and [mcp-servers](../projects/mcp-servers.md) for detail.
 - **Control Tower (optional)** — LangFuse + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/
   Loki), the OpenSearch append-only audit sink, and OPA + Unleash are profile-gated and **no-op with
   a safe in-code default when unconfigured**, so the app and the agent layer run without them and
   each control is switched on by configuration in the environments that need it (the architecture
-  document's *AI Agents Layer* section).
+  document's *AI Agents Layer* section). Their stateful halves are their own upgrade surface: both
+  majors have since landed under [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md), where
+  only the append-only audit store's history was preserved (snapshot and restore) and the Langfuse
+  trace store was deliberately discarded.
 - **Production secrets (Komodo Variables)** — shared *infrastructure* secrets (among them the
   gateway's Keycloak OAuth client secret and the BFF's master encryption key) live in Komodo's masked
   variable store and are injected at deploy into each stack's gitignored env file; **no** user,
@@ -167,6 +198,11 @@ assignments live **in the included component files**, not re-declared in the agg
 the production Komodo half; [Dev stack env files](../projects/stacks.md) covers how each stack's
 secrets reach Compose.
 
+The architecture document's *Monorepo locations* paragraph still describes adding `agent-db` and the
+agent services to the repo-root `compose.yaml` under a new agents profile with the existing
+`app`/`keycloak`/`bff` profiles unchanged. Feature 020 retired that aggregator, so read the four
+stacks above as the current shape and that paragraph as historical.
+
 The `mcm` stack is the one holding the application. Its no-profile services are the test infra
 (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds
 `mc-service`, `bff-nonsecure` / `bff-secure` add the BFF, and `agents` / `agents-metro` add the agent
@@ -201,6 +237,50 @@ common source of confusion when reasoning about "why can't this user do X":
   application-layer helper authorizes every movie operation against the parent collection's ACL,
   deny-by-default, and reports a missing collection and an unauthorized caller *identically* as
   `404` so collection existence does not leak.
+
+## Agent-layer identity: one cookie in, one downscoped token per call
+
+The agent layer changes nothing about *where* identity is enforced, but it changes what the
+model-driven process is allowed to hold. Distilled from the architecture document's *Call Chain and
+Security Boundary* and *Token Custody & Propagation for Agent Runs* sections:
+
+- **The client's only credential is the opaque session cookie.** Since feature 085 the member's
+  Keycloak access and refresh tokens stay on the server, sealed beside the Redis session, and a
+  bearer credential presented to the BFF is refused in every environment — so there is no broad
+  token an agent request could reuse.
+- **The BFF mints a run-scoped delegation token per run and per HITL resume** (OAuth2 Token
+  Exchange, RFC 8693), audience-narrowed to the gateway, and hands it over as an ephemeral,
+  non-checkpointed run value — never the user's session token. A refused mint fails closed: a `401`
+  when the member's own credential is the problem, a retryable `503` on an identity-provider
+  outage, and the gateway is not called identity-less.
+- **The gateway re-exchanges per identity-bearing tool call.** Its single shared, in-process MCP
+  client consults an in-memory `(user, audience)` cache and, on a miss, authorises the exchange (OPA
+  — fail-closed once `OPA_URL` is set, and skipped with a warning while it is unset, per the Control
+  Tower's no-op default) before minting a downscoped `aud=mc-service` token that is cached only for
+  the token's own short TTL and delivered out-of-band as the MCP `Authorization: Bearer` header —
+  never as an LLM-visible tool argument. `movie-mcp` forwards it unchanged, so `mc-service` validates
+  the caller exactly as it validates a human request. The exchanged token is bound to *both*
+  audiences — the gateway's client audience mappers stamp the login client alongside `mc-service` —
+  which is what lets the `mc-service` audience check stay unchanged rather than growing an agent
+  special case.
+- **A paused run holds no token.** Only checkpointed graph state plus the non-sensitive
+  `userId`/`threadId` survive a HITL approval, and raw tokens are barred from agent state by a
+  guard. Every resume is itself an authenticated BFF request, so an approval can wait arbitrarily
+  long without any token outliving a single active run segment.
+- **Both tokens are TTL-bounded rather than run-bounded**, each with its own hard ceiling applied in
+  code as well as in Keycloak: the run-scoped delegation token is capped at a few minutes and the
+  per-call downscoped token at at most a minute. This is what makes "lifetime decoupled from run
+  length" true rather than aspirational — size the delegation token to the p99 *active segment*, and
+  never lengthen it to span a pause.
+
+That the second step is a **downscoping exchange rather than an impersonation** is a Keycloak
+constraint, not a preference: Keycloak 26.5's standard token exchange narrows a token through the
+`audience` filter, requires confidential requester clients, and offers no impersonation — so
+audience-bound exchange is the only one of the two available.
+
+The full call chain and the per-user config model are on [agent-layer](./agent-layer.md); the
+end-to-end auth chain, including the server-held-token and fail-closed behaviour, is
+[Auth chain](../invariants/auth-chain.md).
 
 ## Gotchas
 

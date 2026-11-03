@@ -34,6 +34,8 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-c4b92dabf869c989f00aa0e8
+    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
   - id: openwiki-source-cf7a80239370178114067d03
     resource: repo://scripts/__tests__/check-override-consistency.test.mjs
   - id: openwiki-source-77ddbc35c89ae8b3053caaaf
@@ -46,6 +48,8 @@ sources:
     resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
+  - id: openwiki-source-6515c9bbb2befe56115dab03
+    resource: repo://scripts/check-dependency-downgrade.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-3597b8f7b798d708bd7e75a1
@@ -74,7 +78,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-01T20:52:31.113Z
 ---
 
 # SAST & SCA static scanning
@@ -287,7 +291,11 @@ that job), not by flipping the whole tier.
   1 by design, so a local invocation against a clean checkout fails rather than reporting "no
   regression". Its guard test checks the **wiring** as well as the rule, because a gate that is never
   invoked is indistinguishable from no gate — that `guardrails.yml` invokes it inside the `sast` job,
-  PR-scoped, and *after* the scan step that writes its input.
+  PR-scoped, and *after* the scan step that writes its input. The rule-side cases pin the comparator
+  forms npm advisories use, a range it cannot parse throwing rather than judging, `packages:` keys read
+  from both lockfile documents while `snapshots:` keys are ignored, a sideways move into a range
+  blocking, and a nested workspace reported under the same `<workspace>:pkg@version` location
+  `sast-scan.mjs` uses.
 - **The SCA half runs full on every push, unconditionally** — a newly published advisory can hit an
   unchanged dependency, so it is never path-gated. This means `main` can legitimately go red on a
   dependency nobody touched; that is the gate working, not a defect, and it recurs.

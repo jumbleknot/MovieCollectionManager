@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
-description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the six slice-verification causes that the OKF and governance gates both feed, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
+description: The derived summary of how the openwiki/ bundle is planned, generated, verified and published — the scheduled quiet check that runs at the current tip of main and decides from git, before any install, whether a run happens at all, the free wiki-plan and the free claims audit before the paid wiki-maintain, the provider table with its per-provider knobs and the env-scoping rule that keeps the Nx target from overwriting the job's choice, the generator's locked install in tools/openwiki-generator/ with its three-day release-age cooldown and the security floor it repeats from the root workspace, the run budget and per-event job deadline with its exit codes, slice packing and the six slice-verification causes that the OKF and governance gates both feed, the per-page landing and restore machinery, the deadline-stop escalation and recorded parking, the single long-lived proposal with its three-way run-record merge, the Claims-sidecar durability contract, the canonical-home and churn-citation rules, the OKF v0.1-to-v0.2 provenance migration and the shared stamp helper, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 sources:
@@ -37,6 +37,8 @@ sources:
     resource: repo://scripts/__tests__/wiki-maintain.test.mjs
   - id: openwiki-source-73ea24dd4413f81583ff9282
     resource: repo://scripts/__tests__/wiki-provider.test.mjs
+  - id: openwiki-source-e39072a75f63237d2634b6a0
+    resource: repo://scripts/__tests__/wiki-quiet.test.mjs
   - id: openwiki-source-98792bbc9621de1ad3e22856
     resource: repo://scripts/check-openwiki-governance.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
@@ -61,6 +63,8 @@ sources:
     resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
+  - id: openwiki-source-a18f403bf5c1f1012cc57319
+    resource: repo://scripts/wiki-quiet.mjs
   - id: openwiki-source-b06e5457680691b00528f189
     resource: repo://scripts/wiki-usage-tap.mjs
   - id: openwiki-source-cc0e84ce24c43bdaff14a3c1
@@ -73,22 +77,22 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-03T03:30:53.754Z
 ---
 
 
 # OpenWiki knowledge-bundle maintenance
 
-**Feature 044** (with the cost/provider work of feature 078, the deadline work of item #613, the
-deadline-stop escalation of 078 US6, the drift re-planning and parking of feature 082, the per-turn
-output cap of item #719 — raised to 65536 on the Fireworks row in PR #732 — and the overlapping-run
-handling of #748).
+**Feature 044** (with the cost/provider work of feature 078, the deadline work and the scheduled
+quiet check of item #613, the deadline-stop escalation of 078 US6, the drift re-planning and parking of
+feature 082, the per-turn output cap of item #719 — raised to 65536 on the Fireworks row in PR #732 —
+and the overlapping-run handling of #748).
 `pnpm nx wiki-plan infrastructure-as-code`
-decomposes the documentation changes since the last recorded run into **slices** — at most 8 pages,
-exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
+decomposes the documentation changes since the last recorded run into **slices** — at most
+`MAX_PAGES_PER_SLICE` (8) pages, exactly one bundle area each — offline and free, so there is never a reason to skip it before spending
 on `pnpm nx wiki-maintain infrastructure-as-code` (paid, needs the selected provider's key). A second
 free check answers a different question the plan cannot: `node scripts/wiki-maintain.mjs
 --claims-audit` (offline, keyless; `--json` for machines) lists the pages openwiki will *force* into
@@ -99,9 +103,14 @@ lockfile, a CD digest pin, a line-addressed allowlist entry, a cited range holdi
 **separate** mechanism: it lists the paths openwiki may not cite at all, and the audit never reads it —
 so a whole-file allowlist citation is ignored but is not churn, and a Dockerfile digest pin is churn but
 is not ignored. It runs openwiki's own evidence resolver from the install the `openwiki`
-binary on `PATH` belongs to, and exits 2 when there is none. The paid run is bounded three ways: a page budget, a start deadline, and a
+binary on `PATH` belongs to, and exits 2 when there is none. None of the three is triggered by a merge,
+and neither free check runs on every one: `.forgejo/workflows/wiki-maintain.yml` is **scheduled every 30 minutes** plus
+`workflow_dispatch`, with no `push` trigger. Each fire first moves to the current tip of `main` and then
+runs `scripts/wiki-quiet.mjs` **before any
+install** to decide from git whether `main` has gone quiet — so a "not yet" costs one checkout and one
+node process, and a scheduled fire no longer sleeps inside its own job. The paid run is bounded three ways: a page budget, a start deadline, and a
 per-event **job deadline** that a
-merge-triggered run and a dispatched run are each given differently. The run
+scheduled fire and a dispatched run are each given differently. The run
 record lives at `openwiki/.maintenance-state.json`, committed because runners are ephemeral; it is
 distinct from the tool's own `openwiki/.last-update.json`. Besides `coveredCommit` it carries the
 `backlog`, the `escalations` tags a deadline stop writes, the `parked` entries that take a page out of
@@ -130,7 +139,7 @@ the range as covered. See
 `wiki-update`/`okf-lint` Nx targets this machinery drives, and
 [Nx as the task runner](../invariants/nx-task-runner.md) for why the bare `openwiki` CLI must never be
 invoked directly. The governing rules live in `openwiki/INSTRUCTIONS.md` (the generation brief) and
-`openwiki/policy.yaml` (the regeneration policy); the how — CLI flags, the debounce arithmetic, the
+`openwiki/policy.yaml` (the regeneration policy); the how — CLI flags, the quiet-check arithmetic, the
 step-by-step procedure — is `../../docs/runbooks/wiki-maintenance.md`.
 
 Useful overrides go through Nx's `--args` (appended to the command line): `--args='--since <ref>'`
@@ -142,7 +151,10 @@ slice and invokes nothing, persisting nothing; `--args=--json` is machine-readab
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Reconcile
+    [*] --> Tip: a scheduled fire or a dispatch
+    Tip --> Quiet: fetch and check out origin/main — every fire, so the check reads the tip's record
+    Quiet --> [*]: main is not quiet — the next fire looks again
+    Quiet --> Reconcile: quiet, 6 h maximum deferral, or dispatched
     Reconcile --> Plan: previous proposal merged, closed or still open — record reconciled first
     Reconcile --> BadUsage: forge unreachable for the reconcile, exit 2
     Plan --> NothingToDo: nothing changed since the marker
@@ -182,7 +194,9 @@ stateDiagram-v2
     BadUsage --> [*]
 ```
 
-The states a maintenance run moves through: the previous proposal is **reconciled with the forge before
+The states a maintenance run moves through: a fire first moves to the current tip of `main` and asks
+whether it has gone quiet, and most
+fires end there; then the previous proposal is **reconciled with the forge before
 planning** (a closed-unmerged one returns its work to the backlog and rolls the marker back, and a run
 whose record is behind the remote's stops free rather than repaying the work), planning is free, the
 preflight is the first act that costs
@@ -252,9 +266,9 @@ already uses. The preflight sends it too, so a value the provider rejects fails 
 run's usage line and its record carry `effort=<value>` when it is set, and the effort changes no price
 row, because Fireworks bills reasoning as output tokens. **It is under trial:** latency is roughly output
 tokens ÷ generation speed, and a lower effort means fewer reasoning tokens per call — but possibly a
-weaker page. In CI it is the `reasoning-effort` **input of a dispatched run**, and a push run has no
-inputs, so it falls through to the repository variable — which stays unset, the model default. That is
-what keeps a trial from changing what a merge-triggered run sends; do not set the repository variable
+weaker page. In CI it is the `reasoning-effort` **input of a dispatched run**, and a scheduled fire has
+no inputs, so it falls through to the repository variable — which stays unset, the model default. That is
+what keeps a trial from changing what a scheduled fire sends; do not set the repository variable
 until a trial's page has been reviewed. The one other writer is the escalation machinery, which overrides
 the effort for a single invocation when the page it is retrying was stopped at the job deadline.
 
@@ -305,19 +319,22 @@ install fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` rather than install a loc
 window. `minimumReleaseAgeExclude` is reserved for **security-floor exceptions**, because this code runs
 with the generator's model credential: each entry is one exact `name@x.y.z` that an `overrides:` floor in
 the same file requires, so it admits that version and nothing else, and it becomes moot once the version
-clears the window. The guard fails a name-only or ranged entry, or one with no matching floor. The first
-and only entry (2026-11-01, an operator override of the cooldown) is `@azure/identity@4.14.1`, published
-2026-10-29 22:16 UTC: the first release requiring `@azure/msal-node` ^7.1.0, the fix for
-GHSA-xcx6-jx8p-x3h5. Never add one because a fresh transitive is blocking a branch — wait the window out.
-`better-sqlite3` is the one package allowed to run an install script (`allowBuilds`), because openwiki's
-LangGraph checkpointer loads its native binding at runtime.
+clears the window. The guard fails a name-only or ranged entry, or one with no matching floor. **No entry
+is present today.** The only one so far, `@azure/identity@4.14.1` (an operator override of the cooldown on
+2026-11-01, published 2026-10-29 22:16 UTC, the first release requiring `@azure/msal-node` ^7.1.0 for
+GHSA-xcx6-jx8p-x3h5), was removed on 2026-11-02 once it cleared the window; its `overrides:` floor stays,
+because the floor is the fix and the exclusion only let it in early. Never add one because a fresh
+transitive is blocking a branch — wait the window out. `better-sqlite3` is the one package allowed to run
+an install script (`allowBuilds`), because openwiki's LangGraph checkpointer loads its native binding at
+runtime.
 
 **Being its own root cuts both ways: the cooldown is local, and so is every floor.** The same fact that
 lets this directory set a cooldown the root deliberately does not have means the root's `overrides:` map
 does not reach it, so a security floor the generator's tree needs is repeated in this file. Item #840 did
 exactly that — `body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'` for GHSA-27r3-jxmh-p828 (a DoS via trailing bytes
 after a compressed body, fixed in 2.4.0), reached through `express` 5 via `@modelcontextprotocol/sdk`; it
-is the same keyed-range-on-range entry the root workspace carries, capped within the major. The floor and
+is the same keyed-range-on-range entry the root workspace carries, capped within the major. A later
+operator override added `'@azure/identity@<4.14.1': '>=4.14.1 <5'` for GHSA-xcx6-jx8p-x3h5. The floor and
 the cooldown interact: the fixed version has to clear this workspace's own three-day window before the
 floor can resolve at all, so a floor added the day a fix ships sits inert until then rather than failing
 the install. Note what is *not* inherited either: `check-override-consistency.mjs` reads the **root**
@@ -366,7 +383,7 @@ egress host costs one token, not a slice.
 
 | Code | Meaning | Is something wrong? |
 |---|---|---|
-| `0` | Plan produced, or every attempted slice verified, or nothing to do | No |
+| `0` | Plan produced, or every attempted slice verified, or nothing to do — or `--execute` stopped before any paid generation because the checkout's run record is behind the remote base branch's (#748; nothing is attempted or recorded) | No |
 | `1` | A slice **failed verification** — a requested page missing, left stale, or left mid-edit by its worker and restored, the bundle became non-conformant or broke openwiki governance, or a write landed where policy forbids it (a stopped generator usually leaves a requested page stale, which fails it the same way) — or the generated work could not be published (the marker is then held and the slices returned to the backlog) | **Yes** |
 | `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, a forge that cannot be reached for the pre-plan reconcile, or a policy file that will not load | **Yes** |
 | `3` | Stopped with work outstanding — the run budget was reached, the job deadline left too little time to start a generator, or slices were carried forward in the backlog | **No** — the remainder is in the backlog |
@@ -388,7 +405,7 @@ flowchart TD
     C -->|"no - anything else"| F["Whole invocation failed, exit 1 - every page returns"]
     C -->|yes| D{"Every written path permitted by policy.yaml?"}
     D -->|no| F
-    D -->|yes| M{"Governance gate still passes, G0 to G12?"}
+    D -->|yes| M{"Governance gate still passes, G0 to G13?"}
     M -->|"no - a page lost its resource (run 6049)"| F
     M -->|yes| E{"A requested page left stale?"}
     E -->|"yes - its source commit is newer than its stamp"| P
@@ -466,25 +483,26 @@ leaves at least 5 minutes of margin), so changing one without the other fails of
 | Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
 | Time budget | **4 min** | a deadline for **starting** work — an invocation or retry under way is never interrupted |
 | Job deadline | window − 8 min | each invocation is wrapped in GNU `timeout` with the time left minus an 8-minute reserve (item #613) |
-| Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
-| Window (push) | 60 min | 15-min debounce (it sleeps **inside** the job) + setup + 4 + 30 + publishing ≈ 55, plus margin |
-| Window (dispatch) | 120 min | the whole job — a dispatched run has no debounce and may need it |
-| Job timeout | 120 min | the hard ceiling; a merge-triggered run is still held to 60 by the deadline, not by this |
+| Worst-case invocation | 65 min | re-derived 2026-11-01 from the committed run records (item #613): the worst invocation that ended on its own took 2958 s, +30%; the guard test derives it from a committed fixture of measured invocations, so the constant cannot drift from the data |
+| Window (schedule) | 60 min | the shared-runner hold: setup and the quiet check + the start deadline + publishing. Nothing waits inside the job, so generation gets about 49 min — still less than a worst-case invocation, so the deadline stops it and carries the rest |
+| Window (dispatch) | 120 min | the whole job — a dispatch bypasses the quiet period and may need it |
+| Job timeout | 120 min | the hard ceiling; a scheduled fire is still held to 60 by the deadline, not by this |
 
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes,
 and a retry only after a fast failure; everything else carries forward in the backlog. That includes the
 slices the **plan** defers past the page budget, before any generation: until 2026-10-09 those were
 printed as "carried forward" but never written to the backlog, so the marker advanced past their range
 and they were lost. Declared
-effective ceiling: **≤16 pages / ~34 min of generation**. The page count comes from **files that
+effective ceiling: **≤16 pages / ~69 min of generation** — more than a scheduled fire's generator
+window, so the worst case fits only a dispatched run. The page count comes from **files that
 actually appeared in the working tree**, not from what the generator says it wrote. **Neither budget is
 a monetary bound** — the wall-clock budget bounds runner occupancy.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window
-chosen **per event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `push` gets
-`PUSH_MINUTES=60` — so the runs every merge starts keep the shared-runner hold, and raising the ceiling
-cannot lengthen them. The guard test pins both (`DISPATCH_MINUTES` equals `timeout-minutes`,
-`PUSH_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an
+chosen **per event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), a scheduled fire
+gets `SCHEDULE_MINUTES=60` — so the fires the schedule starts keep the shared-runner hold, and raising
+the ceiling cannot lengthen them. The guard test pins both (`DISPATCH_MINUTES` equals
+`timeout-minutes`, `SCHEDULE_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an
 8-minute reserve for verification, publishing and the run-record commit; a slice with under 5 minutes
 left is not started and carries forward (exit 3). A deadline stop does **not** by itself fail the slice:
 after the revert below, the slice is judged like any other, by what landed — in practice a stopped
@@ -500,9 +518,9 @@ is never wrapped; a malformed value is an error (exit 2), never ignored.
 no request timeout, so the OpenAI SDK's **10-minute** default applies, and at page concurrency above 1
 openwiki retries **5** times: one model request accepted and never answered was about 60 silent minutes.
 The generator's environment now sets `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator value
-wins), bounding that at about 30 minutes; the deadline above bounds the rest. A merge-triggered run also
-spends its first 15 minutes in the debounce, so it has about 45 minutes, not 60 — size the work for that
-window.
+wins), bounding that at about 30 minutes; the deadline above bounds the rest. A scheduled fire no longer
+waits inside the job, so it has about 49 minutes, not 37 — but still less than 60: size the work for
+that window.
 
 **Why dispatched runs get 120 minutes (operator decision, 2026-10-02).** An *uncovered* page — one with
 no `.page-manifest.json` entry, left by openwiki "for full review" — needs about 1.65× the output per
@@ -755,7 +773,7 @@ The figures in the example are illustrative.
   than failing one page), a written path was not permitted by
   `openwiki/policy.yaml` — which includes a write into `docs/runbooks/`, a path that *is* `regenerate`
   but is governed by an **agent**, not the generator — the bundle broke openwiki **governance**
-  (`check-openwiki-governance.mjs`, rules G0–G12 — see the governance gotcha below) — or a
+  (`check-openwiki-governance.mjs`, rules G0–G13 — see the governance gotcha below) — or a
   **requested page was left stale** (items #587, #616):
   a requested page that cites a `resource` whose last **commit**
   is newer than the page's stamp is named in the failure one page at a time, so a multi-page slice no
@@ -807,16 +825,72 @@ The figures in the example are illustrative.
   skipped and says so out loud rather than silently passing. This is the same family as the canonical-home
   rule below: a concept with no determinable home has nowhere for a learning to go, which is why G11
   refuses it.
+- **A page whose front matter openwiki *rebuilt* has its repository keys restored from `HEAD` before
+  the gates read it (item #777).** openwiki 0.7.1 repairs a page whose model-written YAML does not parse
+  by silently rebuilding a minimal header — `type: "Reference"`, a quoted `title`, `openwiki_generated: true` —
+  dropping `resource`, `description` and `tags`, and it does not tell the agent. That is the real cause of
+  the G11 failures on #775, #791 and #857, and the brief cannot guarantee valid YAML from a model, so the
+  harness fixes it deterministically the way it fixes link form: on any page the slice wrote that carries
+  the `openwiki_generated: true` rebuild marker, `verifySlice` restores `type`, `description`, `resource`,
+  `tags` and `timestamp` from `HEAD` (taking `HEAD`'s `type`, since the rebuild's `"Reference"` is a
+  fallback rather than a classification), removes the marker, and carries the Claims hash with the header
+  exactly as a link rewrite does — logging `restored … from HEAD in <page>`. **Only** on that marker: a page
+  that dropped `resource:` without it is the model's own edit, and the governance gate still refuses it in
+  the run, so the #857 guard keeps its meaning. A brand-new page (not at `HEAD`) carrying the marker is left
+  alone, since there is nothing to restore from.
 - **Remediation is always the brief, never an allowlist.** If a page trips the conformance gate, a leak
   scan, or the governance gate, fix `openwiki/INSTRUCTIONS.md` and re-run — the gates have no skip flag
   by design, because an allowlisted leak stays leaked.
-- **CI waits ~15 minutes (concurrency + `cancel-in-progress` + an initial sleep) so one run covers a
-  burst of merges, but never defers past 6 hours** — that ceiling is derived from git commit dates
-  because the waiting run gets cancelled and any in-memory timer dies with it; git state survives
-  cancellation, run state does not. `workflow_dispatch` bypasses the wait entirely, and the run does not
-  trigger itself (`[skip ci]` marker commit, or a bundle-only change). A failure publishes a feature-042
-  failure digest like every other job and never gates a merge — see
-  [CI self-serve diagnostics](ci-diagnostics.md).
+- **The debounce is the schedule, not a sleep, and freshness is decided from git before anything is
+  installed (item #613).** The workflow is scheduled every 30 minutes plus `workflow_dispatch`, with
+  **no `push` trigger** — a push is by definition not quiet. Each fire checks out full history, moves to
+  the current tip of `main`, and runs `scripts/wiki-quiet.mjs` — all of it before any install; only then
+  does corepack, the workspace install, the generator install
+  and every later step run, so a "not yet" costs one checkout and one node process, about a minute.
+  `wiki-quiet.mjs` reads the run record's `coveredCommit` and lists `main`'s **first-parent** commits
+  past it, ignoring the job's own (`[skip ci]` marker commits and CD's digest promotes, and any commit
+  whose first-parent diff is entirely under `openwiki/`). None uncovered ends the fire; the **newest**
+  at least 15 minutes old (`DEBOUNCE_SECONDS`) means `main` is quiet and the run generates now; the
+  **oldest** at least six hours old (`MAX_DEFERRAL_SECONDS`) runs regardless, so a merge stream that
+  never goes quiet cannot starve maintenance exactly when drift is fastest; otherwise the next fire
+  looks again. Both thresholds are at-or-past, not strictly greater, because an age pinned exactly at
+  one would defer forever. Before this the wait was a `sleep 900` **inside** a push-triggered job, which
+  spent 15 of the 60-minute window and left about 37 minutes for generation; `cancel-in-progress` was
+  that debounce and is now **false**, so a fire arriving during a generation queues behind it and then
+  finds the record covered rather than killing it. The age is derived from git commit dates, not from a
+  timer or from anything held in run state between fires — nothing is held between fires at all.
+  `workflow_dispatch` bypasses the
+  quiet period entirely (`--dispatched`). A quiet check that **cannot decide** — a `coveredCommit` no
+  longer in history after a rewrite, or a missing run record — exits 1 and reds the run rather than
+  reading as "nothing uncovered", which would end maintenance silently and for ever. The workflow's own
+  shape is gated too (`scripts/__tests__/wiki-maintain.guard.test.mjs`): one `*/30 * * * *` schedule and
+  **no `push` key at all**, `cancel-in-progress: false`, no `sleep` anywhere in the steps, the quiet
+  check preceding every install step, the move to `origin/main` preceding the quiet check and ungated on
+  it, the `--dispatched` flag actually reaching it, every later step
+  conditional on its `run` output, no step reading `github.event.*` except a dispatch input, and the old in-job debounce symbols (`shouldDeferMaintenance`,
+  `oldestUncoveredAgeSeconds`, `DEBOUNCE_SECONDS`, `MAX_DEFERRAL_SECONDS`, `--should-wait`) gone from
+  `scripts/wiki-maintain.mjs`, because the decision lives in `scripts/wiki-quiet.mjs` — so a fire that
+  decides "not yet" cannot pay for anything after the checkout. A failure publishes
+  a feature-042 failure digest like every other job and never gates a merge — see
+  [CI self-serve diagnostics](ci-diagnostics.md); the process view of this check is
+  [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md).
+- **The quiet check reads the tip of `main`, never the commit the fire was for — so the job moves to
+  `origin/main` first, on every fire.** A scheduled fire checks out the commit the schedule was
+  registered at, and that commit stays put while `main` moves on. Every fire on 2026-11-03 ran at
+  `4dae8842` (runs 6576–6583), hours after `main` had moved past it; the run record at that commit was
+  stale, so the
+  check said `run=true` on every fire, and each one then installed, found nothing to do at the real
+  tip, and pushed another marker commit. The job therefore fetches and checks out `origin/main`
+  **before** the quiet check — an early step, ahead of the one that decides, and not gated on it, since
+  it feeds the decision. The guard test pins that order, so a reordering that makes the check read a
+  stale record fails offline. The step also publishes the commit it moved to as the base the record
+  commit's three-way merge uses.
+- **Under a schedule, read nothing from the event payload except dispatch inputs.** A scheduled fire
+  carries no repository in its payload: setting `FORGE_REPO` from that field made every fire fail at the
+  forge client (runs 6539–6569, every 30 minutes). Owner and repo now come from `GITHUB_REPOSITORY`,
+  which the runner sets for every event, and a guard test fails on any other `github.event.*` read. The
+  dispatch inputs (`max-slices`, `since`, `reasoning-effort`) are the deliberate exception — and they
+  arrive as environment variables, never interpolated into a run block.
 - **The proposal is one long-lived branch (`openwiki-maintenance`), at most one open pull request, ever,
   and never auto-merged.** The runner is a fresh checkout, so the branch exists there only on the
   **remote**: the run checks it out from there, and only while its proposal is **open** (a closed one's
@@ -840,11 +914,15 @@ The figures in the example are illustrative.
   backlog, so nothing is certified that never reached a proposal; the recorded usage stays, because that
   money was already spent.
 - **Overlapping runs happen, and three mechanisms keep a queued run from repaying work or corrupting the
-  record (#748).** The debounce relies on `cancel-in-progress`, and cancellation is not guaranteed: two
-  merges in the same second (2026-10-13) produced two push runs and the forge *queued* the second behind
-  the first rather than cancelling it. First, the job **moves to the current tip of `main`** after the
-  quiet period and plans from the record the earlier run committed — the self-trigger skip decision still
-  reads the event commit, because it is about what that push changed — and `--execute` stops before any
+  record (#748).** A fire is a queued job on the one shared runner, so a queued run is the normal case
+  rather than the exception — and it was found under the old push trigger, where two merges in the same
+  second (2026-10-13) produced two push runs and the forge queued the second behind the first instead of
+  cancelling it. First, the job **moves to the current tip of `main`** — an early step, **before** the
+  quiet check and on every fire, because the check has to read the tip's run record rather than the
+  commit the schedule was registered at — and plans from the record the earlier run committed, so a run
+  that sat queued behind
+  another plans from what that one actually committed rather than from an older event commit. The
+  `--execute` step then stops before any
   paid generation, exit 0, when the checkout's record is behind the remote's, so a lost race costs
   nothing. Second, the record commit **merges three ways** instead of replaying: this run's record,
   `main`'s current one, and the record the run started from (`--merge-record`). A field only one side
@@ -1104,16 +1182,22 @@ The figures in the example are illustrative.
   version hash of that source). On a later refresh a claim is marked `stale` when its evidence's
   version no longer matches, or `unresolved` when the evidence cannot be resolved, and the generator
   must confirm, revise, or retract it — the rules a page like this one is itself following.
-  `openwiki/policy.yaml` has no dedicated rule for `.claims/`; the sidecars are permitted only by the
-  `openwiki/**` catch-all (`regenerate`, `actor: generator`). `okf-lint` touches Claims in three
+  `openwiki/policy.yaml` declares `openwiki/.claims/**` and `openwiki/.page-manifest.json` as their own
+  entries (`regenerate`, `actor: generator`) rather than leaving them to the `openwiki/**` catch-all, so
+  their scope is stated rather than inherited. `okf-lint` touches Claims in three
   places: V5 validates the ISO-8601 shape of the page's `verified.at` events, which OpenWiki writes as
   a **list** (via `stampValues` in `scripts/openwiki-stamp.mjs`); V12 counts the newest `verified.at`
   as a candidate stamp; and **V16 reads the sidecars themselves** — see the durability contract below.
   The operator decided on 2026-09-27 that
   Claims are required and valuable (item #513), and the decision's details, plus any gates or lifecycle
-  rules that follow from it, are recorded under that item. **Nothing yet checks that a sidecar's claims
-  are *true*:** the only gate on sidecars is V16's durability check, so a sidecar records what the
-  generator asserted about a page, not reviewed content.
+  rules that follow from it, are recorded under that item. Claims and the fingerprints in
+  `openwiki/protected.yaml` are complements with **disjoint scopes**: a Claim certifies a
+  generator-written fact on a derived page, a fingerprint freezes prose on an authoritative page, and
+  the governance gate's **G13** (`claimsScopeFindings`, the same `scripts/openwiki-claims.mjs` module)
+  fails a break of that — an authoritative page carrying a sidecar or manifest entry, a sidecar whose
+  page does not exist, or a page carrying a front-matter `verified:` event with no sidecar. **Nothing
+  yet checks that a sidecar's claims are *true*:** the only gate on sidecars is V16's durability check,
+  so a sidecar records what the generator asserted about a page, not reviewed content.
 - **A churn citation is a recurring bill, and `.openwikiignore` is how a path is retired from citation
   (item #739).** Every `repo://` citation is re-resolved before every run, so a citation of a file that
   routine commits rewrite forces its page into that run as a mandatory reconciliation — a full paid
@@ -1159,9 +1243,10 @@ run — exactly when it matters:
 ```bash
 node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
 pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
-pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12
-node --test scripts/__tests__/wiki-maintain*.test.mjs
-node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G13
+node --test scripts/__tests__/wiki-maintain*.test.mjs  # incl. the workflow's own shape guard
+node --test scripts/__tests__/wiki-quiet.test.mjs      # the quiet decision and its git read
+node --test scripts/__tests__/openwiki-links.test.mjs  # body-link scanner and normalizer
 ```
 
 `--selftest` drives the planner and the verifier against fixtures plus a **deliberately sabotaged
@@ -1171,7 +1256,7 @@ genuinely wrote its page; if a clean verdict ever comes back, the zero-page dete
 is the one failure mode that would let this whole arrangement go quietly back to reporting false
 green.
 
-Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the debounce arithmetic, and
+Full plan/execute CLI flags, the CI workflow's proposal-adoption logic, the quiet-check arithmetic, and
 the self-test/lint/governance verification commands (`node scripts/wiki-maintain.mjs --selftest`,
 `pnpm nx okf-lint infrastructure-as-code`, `pnpm nx okf-governance infrastructure-as-code`):
 `../../docs/runbooks/wiki-maintenance.md`. The pull-request and CI surface around a proposal is covered

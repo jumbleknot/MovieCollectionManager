@@ -1,10 +1,12 @@
 ---
 type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
-description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the five one-time stateful cutovers they have carried — the RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (item 839) whose merge is the migration, both of them completed in production — with their measured traps.
+description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the six one-time stateful cutovers they have carried — the completed and closed-out RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move, and the two schema-carrying Langfuse minors (4.56.0 → 4.68.0, item 839, and 4.68.0 → 4.72.0, item 895) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
+  - id: openwiki-source-921eaf51fe28eda4db17e960
+    resource: repo://agents/movie-assistant/tests/integration/test_observability_sc008.py
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
@@ -35,38 +37,42 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
     resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
+  - id: openwiki-source-12b683eb33d44031555ec7f2
+    resource: repo://scripts/__tests__/langfuse-v4-read-path.guard.test.mjs
   - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-482173336861a06249bf1372
     resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-bf15c8e3067ce028059a1350
     resource: repo://scripts/check-resource-naming.mjs
-  - id: openwiki-source-ccfb73bb2cb3f790e18d9144
-    resource: repo://scripts/object-store-migration.mjs
-  - id: openwiki-source-8d48276c31ac9a4e5887d2ca
-    resource: repo://scripts/object-store-migration.sh
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-2470b658ec43d754a7fc16c1
     resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-db3aa5ac2ffb577a529916ad
     resource: repo://specs/081-major-dependency-upgrades/plan.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T03:40:23.288Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T13:34:04.956Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -81,17 +87,19 @@ of the secrets posture documented in [Secrets management](../invariants/secrets-
 [published-port reservation convention](../invariants/published-port-reservation.md) for its two
 tailnet-reachable operator UIs.
 
-On top of that steady state sit **five one-time stateful cutovers**, each operator-run, each with the
+On top of that steady state sit **six one-time stateful cutovers**, each operator-run, each with the
 merge to `main` *being* the deploy, and each with a measured trap that a green CI cannot see: the RustFS
-object-store swap (feature 080), Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
+object-store swap (feature 080, completed 2026-10-16 and since cleaned up — its tooling no longer exists),
+Langfuse 4 + ClickHouse 25 on recreated volumes (feature 072),
 OpenSearch 2 → 3 with the audit history preserved (feature 071), the observability Postgres 16 → 18 move
-(spec 081 US8b), and the Langfuse 4.56.0 → 4.68.0 schema-carrying minor (spec 081 US8 PR 8d, item 839),
-whose merge *is* its migration. The last two of the five have now run in production — US8b on 2026-10-20
-and the Langfuse minor on 2026-10-25. Three of the five — RustFS, OpenSearch 3 and Postgres 18 — put the
-new state on a **new external volume** and leave the old one untouched as the rollback; the Langfuse 4
-cutover recreated its volumes in place and deliberately discarded the traces, and the Langfuse 4.68 minor
-migrates in place, where a pre-merge backup is what separates a rollback from a loss. The policy they all
-answer to is
+(spec 081 US8b), and the two schema-carrying Langfuse minors — 4.56.0 → 4.68.0 (spec 081 US8 PR 8d,
+item 839) and 4.68.0 → 4.72.0 (item 895) — whose merges *are* their migrations. US8b ran in production
+on 2026-10-20 and the 4.68 minor on 2026-10-25; the 4.72.0 refs landed in the tree on 2026-11-01, on
+measurements taken against copies of the dev observability volumes. Three of the six
+— RustFS, OpenSearch 3 and Postgres 18 — put the new state on a **new external volume** and leave the old
+one untouched as the rollback; the Langfuse 4 cutover recreated its volumes in place and deliberately
+discarded the traces, and the two Langfuse minors migrate in place, where a pre-merge backup is what
+separates a rollback from a loss. The policy they all answer to is
 [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) (and the §4a amendment), not this page.
 
 ## How the three stacks are wired
@@ -108,9 +116,11 @@ plain `${VAR}`, never `${VAR:?}`. An unseeded Komodo Variable therefore aborts a
 (intended) but can never abort the app. Fifteen new masked Variables are needed (13 observability + 2
 audit; the dormant Vault needs none), plus `TAILNET_HOST`, already seeded for `prod-auth` and reused for
 LangFuse's tailnet `NEXTAUTH_URL`. The LangFuse bootstrap keys are the *same* values the gateway consumes.
-The object store's Variable is `LANGFUSE_RUSTFS_SECRET_KEY`; the retired `LANGFUSE_MINIO_ROOT_PASSWORD` is
-kept out of the compose but retained in Komodo until the cutover's rollback window closes, because a revert
-restores the line that needs it and a revert cannot recreate a Komodo Variable.
+The object store's Variable is `LANGFUSE_RUSTFS_SECRET_KEY`; the retired `LANGFUSE_MINIO_ROOT_PASSWORD`
+was deliberately retained in Komodo through the RustFS cutover's rollback window — a revert restores the
+line that needs it, and a revert cannot recreate a Komodo Variable — and was then deleted with the rest
+of the retired store on 2026-10-24, when that window closed early (item #826). Nothing in the tree reads
+it any more.
 
 Wiring is least-privilege rather than symmetric: the BFF consumes the audit sink and OPA only, while the
 gateway is the primary emitter (audit + LangFuse + OTel + OPA + Unleash). The LangFuse and Unleash secrets
@@ -120,6 +130,21 @@ admin one. The audit sink sits on its own external `agent-audit-network`, which 
 cannot reach it. Adding that network to `APPROVED_NETWORKS` and the `vault` volume prefix to `VOLUME_RE`
 was the whole guardrail delta for the feature (`scripts/check-resource-naming.mjs`); feature 071 later
 added the narrow `-snapshots` volume form alongside them.
+
+**The fail-fast coupling is enforced, not remembered.** Adding a `${VAR:?}` to a support compose is a
+change to that stack's *required inputs*, and the only place those inputs are declared is the stack's
+Komodo `environment` block — so `scripts/__tests__/komodo-stack-env.guard.test.mjs` parses every
+`[[stack]]` block (its `environment` plus any committed `additional_env_files`) and fails when a
+required variable is supplied by neither. It exists because that coupling broke once: feature 069
+repointed the object store's image at the repository's own registry, which made `prod-observability` the
+fourth consumer of `REGISTRY_HOST` while `stacks.toml` declared it for only three, and the stack's
+deploy failed on `required variable REGISTRY_HOST is missing a value` — visible on a real Komodo deploy
+and nowhere in CI, since the compose was valid and the dev stack works because the dev env file
+supplies it. Feature 080 removed `REGISTRY_HOST` from that stack and added
+`LANGFUSE_RUSTFS_SECRET_KEY`, the same coupling in the other direction, and the guard went red on it
+until the `[[stack]]` block declared the new variable. Its own instrument check keeps the subject
+honest: it deletes that one line from a copy of `stacks.toml` and asserts the gap appears, so the guard
+cannot pass by parsing nothing.
 
 ## Additive no-op and rollback
 
@@ -249,7 +274,7 @@ Two smaller prod-only details worth knowing:
 Full failure-symptom table and the reproduction recipe:
 [the runbook](../../docs/runbooks/prod-control-tower.md).
 
-## Object-store cutover to RustFS (feature 080, item #560)
+## Object-store cutover to RustFS (feature 080, item #560) — completed and closed out
 
 The Langfuse event/media store was a from-source MinIO image built by this repository until feature 080
 replaced every instance with upstream `rustfs/rustfs`, digest-pinned and pulled rather than built. Every
@@ -259,16 +284,20 @@ through Renovate, and `scripts/__tests__/object-store-service.guard.test.mjs` is
 (the contract it enforces is `specs/080-minio-to-rustfs/contracts/object-store-service.md`, S1–S9). The
 prod instance runs as the image's own uid (`10001`) with **no** compose `user:` key — a fresh named
 volume inherits the image's `/data` with that ownership, and any other uid fails at startup — and the
-bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the
-same digest and Renovate moves them together, so a split that would run the server and its init on
-different images cannot arise from a hand edit. The production data is moved **in place**: the old drive is
-**copied** to a new external volume that RustFS reads, and the original is never written, so rollback is a
-revert onto it. The old store is deleted only after the rollback window closes.
+bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the same
+digest and Renovate moves them together, so a split that would run the server and its init on different
+images cannot arise from a hand edit.
 
-### Merging the PR IS the deploy — so the copy must exist BEFORE the merge
+The migration itself is **history, not a procedure**: production moved on 2026-10-16, the cleanup ran
+early on 2026-10-24 (item #826), and the migration tool and its wrapper — `scripts/object-store-migration.mjs`
+and `scripts/object-store-migration.sh` — were deleted by spec 080 T048. The commands the runbook's
+history blocks still name no longer exist, and no operator should be looking for them. What survives is
+the shape of the cutover and the traps it was built around, which is what the rest of this section records.
+
+### Why the copy had to exist BEFORE the merge
 
 Komodo deploys `prod-observability` from `main` on every push, and the new compose mounts the EXTERNAL
-volume `observability-langfuse-rustfs-data`, which nothing but the migration tool's `copy --apply` creates.
+volume `observability-langfuse-rustfs-data`, which nothing but the migration tool's `copy --apply` created.
 
 ```mermaid
 flowchart TD
@@ -277,104 +306,87 @@ flowchart TD
   Exists -- yes --> Merge["M4 merge the PR: Komodo redeploys prod-observability onto RustFS"]
   Merge --> Check["M5 verify: parity.json pass, old and new traces load"]
   Check -- fail --> Revert["M6 revert the merge: the untouched old volume comes back"]
-  Check -- pass --> Clean["M7 after the 14-day window: delete the old volume, the Variable and the registry package"]
+  Check -- pass --> Clean["M7 after the rollback window: delete the old volume, the Variable and the registry package"]
 ```
 
-*The cutover order, and why the copy is a precondition of the merge rather than a step after it.*
+*The cutover order, and why the copy was a precondition of the merge rather than a step after it.*
 
-**If the merge lands first, the deploy fails instead of starting on an empty store.** Measured 2026-10-11
-in the dev container against the shipped `compose.prod.yaml` (Docker Compose 5.6.0, with every OTHER
-external volume present so the RustFS one was the only gap), with and without pulling: compose aborts with
-`external volume "observability-langfuse-rustfs-data" not found`, creates **zero** containers, and does
-**not** create the volume. A scratch project then showed that a failed `up` of this kind leaves the
-previously deployed containers **running and unchanged** — so an early merge leaves Langfuse on the old
-store, still serving. Recover by doing M1–M3 and redeploying.
+**If the merge had landed first, the deploy would have failed instead of starting on an empty store.**
+Measured 2026-10-11 in the dev container against the shipped `compose.prod.yaml` (Docker Compose 5.6.0,
+with every OTHER external volume present so the RustFS one was the only gap), with and without pulling:
+compose aborts with `external volume "observability-langfuse-rustfs-data" not found`, creates **zero**
+containers, and does **not** create the volume. A scratch project then showed that a failed `up` of this
+kind leaves the previously deployed containers **running and unchanged** — so an early merge would have
+left Langfuse on the old store, still serving. The same missing-external-volume abort is the fail-safe
+for every later cutover here, and it is the reason the volume work precedes the merge in each of them.
 
-### The tool runs ON the host, from a checkout, through a wrapper
+### How the tool ran on the host (the tool is gone; this is the record)
 
-The prod host has no `node`. `scripts/object-store-migration.sh` runs the tool in a digest-pinned node
-container with the host's rootless socket mounted, and the Docker CLI copied out of a digest-pinned image —
-nothing is installed. It copies the evidence directory in before the run and back out after it, so the
-relative `--out`/`--manifest` paths land on the host. Credentials go in by **name** from your shell, never
-on a command line:
+The prod host has no `node`, so the cutover ran from a repository checkout on the host through
+`scripts/object-store-migration.sh`: the wrapper copied the Docker CLI out of a digest-pinned image, ran
+the tool in a digest-pinned node container with the host's rootless socket mounted, copied the evidence
+directory in before the run and back out after it, and passed S3 credentials by **name** from the shell
+environment rather than on a command line. `--image` defaulted to the RustFS pin read out of
+`compose.prod.yaml`, and the tool read the runtime uid from that image rather than writing it as a
+literal, asserting the copied entries were owned by it.
 
-```sh
-cd <a checkout of this repository at the PR's commit>
-export MIGRATION_DIR=$HOME/080-cutover          # evidence (inventory/manifest/copy/parity .json) lands here
+**Every step refused rather than guessed.** `copy` without `--apply` was refused (there is no dry-run
+spelling — `inventory` was how you looked), and the wrapper refused it before any container existed, as
+it did `rehearse` (a dev-container activity). The tool additionally refused an existing target volume, a
+source still mounted by a running container, a volume that did not exist (it was never created by
+looking at it), and an `inventory` whose search instrument failed its self-test — because a BusyBox
+`grep` in its default locale misses every marker inside a binary `xl.meta`, so a zero proved nothing
+until the search had been shown to find a planted marker. A drive was `migratable` only if its format
+was `xl-single` with exactly one set and one drive, and there were zero SSE and zero tiered objects.
 
-# M0.4 — advance go/no-go (read-only; the store may be running — the record says sourceInUse)
-scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory-advance.json
+`copy.json` had to show `targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0` and equal source
+digests before and after — a source that changed during the copy was no longer a valid rollback target
+and the tool said so instead of continuing. `verify` then compared the running new store against the
+pre-migration manifest and exited non-zero on any discrepancy.
 
-# M1 — quiesce writers (by container name: this host's stacks are Komodo-managed, so a hand-run
-#      `docker compose` fails with "no configuration file provided")
-docker stop langfuse-web langfuse-worker
+### Rollback and cleanup, as they actually went
 
-# M2 — manifest from the RUNNING old store, with ITS credentials
-read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=minio      # value of LANGFUSE_MINIO_ROOT_PASSWORD
-scripts/object-store-migration.sh manifest --endpoint http://langfuse-minio:9000 --network backend-network --out manifest.json
+**Rollback (M6)** was a `git revert` of the merge through a PR, which restored the old compose and the
+`stacks.toml` lines; Komodo would have redeployed the old store on the untouched
+`observability-langfuse-minio-data`. It was never needed. **Cleanup (M7)** ran early on 2026-10-24 at the
+operator's choice: the old volume, the Komodo Variable `LANGFUSE_MINIO_ROOT_PASSWORD` and the
+`jumbleknot/minio` registry package were all deleted, then the cleanup PR removed the migration tool and
+its guard exemption.
 
-# M3 — stop the old store, inventory the STOPPED drive, copy
-docker stop langfuse-minio-init langfuse-minio
-scripts/object-store-migration.sh inventory --volume observability-langfuse-minio-data --out inventory.json
-scripts/object-store-migration.sh copy --from observability-langfuse-minio-data \
-     --to observability-langfuse-rustfs-data --out copy.json --apply
+`scripts/__tests__/no-minio-references.guard.test.mjs` is what keeps this from decaying: it scans every
+git-tracked file's **path and content** case-insensitively against `/minio/`, against a closed exemption
+list in which every entry must match at least one real file or line — a stale exemption fails the same way
+an unmatched allowlist entry does — and it proves it read the tree rather than a handful of files (a floor
+of ~1,800 scanned text files). The exemptions come in three kinds. **Path** exemptions cover the places
+where the name is legitimately history: `specs/**` (069/070 describe what was built, 080 its replacement),
+`docs/decisions/**`, `docs/proposals/**`, the generated `openwiki/**`, `pnpm-lock.yaml`, and the guard
+itself. **Line** exemptions cover live files that must name the literal to do their job — the secret
+scanner's detection set (old dev `.env` files can still hold it), the dev-env generator's migration of a
+pre-080 seeded default, the naming gate's `RETIRED_KEYS` line, and the object-store guard's own
+prohibition on the retired `MINIO_*` aliases. **Token** exemptions strip citations of the fixed
+`specs/069|070|080-minio-*` directory names and of the guard and its contract. The exemptions that named
+the migration tool were removed with the tool. Everything else — a runbook case study included — must be
+wrapped in a `<!-- history:begin -->` … `<!-- history:end -->` block, a marker honoured only under
+`docs/runbooks/**` that makes "this is history" a reviewable claim in the diff rather than an excuse in a
+comment.
 
-# M4 — merge the PR; watch app-ci → trigger-cd → cd-deploy deploy=true complete
-
-# M5 — verify against the NEW store, with ITS credentials
-read -rs S3_SECRET_KEY && export S3_SECRET_KEY S3_ACCESS_KEY=langfuse   # value of LANGFUSE_RUSTFS_SECRET_KEY
-scripts/object-store-migration.sh verify --endpoint http://langfuse-rustfs:9000 --network backend-network \
-     --manifest manifest.json --out parity.json
-```
-
-`--image` defaults to the RustFS pin read out of `compose.prod.yaml`; the tool also reads the runtime uid
-from that image rather than writing it as a literal, and asserts the copied entries are owned by it.
-
-**Every step refuses rather than guesses.** `copy` without `--apply` is refused (there is no dry-run
-spelling — `inventory` is how you look), and the wrapper refuses it before any container exists, as it does
-`rehearse` (a dev-container activity). The tool additionally refuses an existing target volume, a source
-still mounted by a running container, a volume that does not exist (it is never created by looking at it),
-and an `inventory` whose search instrument failed its self-test — because a BusyBox `grep` in its default
-locale misses every marker inside a binary `xl.meta`, so a zero proves nothing until the search has been
-shown to find a planted marker. A drive is `migratable` only if its format is `xl-single` with exactly one
-set and one drive, and there are zero SSE and zero tiered objects.
-
-`copy.json` must show `targetPreexisted: false`, `entriesNotOwnedByRuntimeUid: 0` and equal source digests
-before and after — a source that changed during the copy is no longer a valid rollback target and the tool
-says so instead of continuing. `verify` then compares the running new store against the pre-migration
-manifest and exits non-zero on any discrepancy.
-
-### Rollback and cleanup
-
-**Rollback (M6)** — only if M5 or later checking fails: `git revert` the merge via a PR as usual (it
-restores the old compose and the `stacks.toml` lines); Komodo redeploys the old store on the untouched
-`observability-langfuse-minio-data` with `LANGFUSE_MINIO_ROOT_PASSWORD`. Writes accepted by RustFS since
-the merge are lost (one-way format; accepted). Leave the new volume for diagnosis.
-
-**Cleanup (M7)**, after the 14-day rollback window: delete `observability-langfuse-minio-data`, the Komodo
-Variable `LANGFUSE_MINIO_ROOT_PASSWORD` and the old registry package (rollback pulls it until then), then a
-cleanup PR removes the migration tool. A guard test (`scripts/__tests__/no-minio-references.guard.test.mjs`)
-scans every tracked file's path and content for the old store's name with a closed exemption list, so a
-missed runbook line cannot survive the cutover — the exemptions naming the migration tool are themselves
-temporary and are removed with it.
-
-### Traps this procedure is built around, all of them hit for real
+### Traps this procedure was built around, all of them hit for real
 
 1. **`docker run -v <name>:/data` CREATES the volume when it does not exist**, and reports an empty drive
-   that reads as a measurement of production. The tool checks the volume exists before mounting it. There
-   is also an unrelated `minio_minio-data` volume on the host — the Nx-cache store's, not Langfuse's.
+   that reads as a measurement of production. The tool checked the volume exists before mounting it.
+   There is also an unrelated `minio_minio-data` volume on the host — the Nx-cache store's, not Langfuse's.
 2. **A top-level `stat` is not ownership.** A drive can report the right owner at `/data` while entries
-   below it do not. The tool counts every entry not owned by the image's uid, and requires 0.
+   below it do not. The tool counted every entry not owned by the image's uid, and required 0.
 3. **A search that finds nothing proves nothing until it is shown to find something.** BusyBox `grep` in
    its default locale misses every marker inside a binary `xl.meta`; the first production go/no-go reported
-   "0 SSE" through exactly that blind spot. The tool's `inventory` runs with `LC_ALL=C` and self-tests its
+   "0 SSE" through exactly that blind spot. The tool's `inventory` ran with `LC_ALL=C` and self-tested its
    search on a planted marker first.
 4. **`restart: always` is held by an explicit `docker stop`** — *unless the daemon restarts*. Keep the
    window short and re-check the old store is still stopped before `copy`.
 5. **Stop by container name, not via compose.** The prod stacks are Komodo-managed: Komodo clones the repo
    and runs compose from its own stack directory with env injected from Komodo Variables, so a hand-run
    `docker compose` from `$HOME` fails with "no configuration file provided" and unresolved `${LANGFUSE_*}`
-   interpolation errors.
+   interpolation errors. Every later cutover here repeats this rule.
 
 ## Langfuse 4 + ClickHouse 25 cutover (feature 072)
 
@@ -408,7 +420,8 @@ Four things that will catch you out, all hit for real:
 
 **The object-store volume is deliberately NOT recreated by this cutover.** It holds blobs, not schema, so
 it is irrelevant to whether Langfuse 4's migrations run; its own cutover is the separate feature-080
-procedure above. `langfuse-redis` has no volume at all — its queue state clears on restart by itself.
+section above, which ran afterwards. `langfuse-redis` has no volume at all — its queue state clears on
+restart by itself.
 
 **Rollback:** revert the merge and redeploy. The volumes stay as they are — rollback does not restore
 the old traces, which were discarded by design. Langfuse 3 re-initialises the empty volumes and comes up
@@ -648,7 +661,11 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 `allowedVersions: "<17"` hold: a Postgres major now rides the stateful-datastore
 `dependencyDashboardApproval` tick like every other database image here (see
 [the Renovate runbook](./renovate.md) for what ticking it means, and
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it). One line of that
+runbook now trails this change: its "database MAJOR waits in Pending Approval" paragraph still says the
+observability postgres is "held below 17 outright … so it never reaches this list". That was true before
+US8b; the ceiling is discharged, and `renovate.json`'s stateful-datastore rule plus
+`renovate-workflow.guard.test.mjs` are the current reading.
 
 ## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839) — done in production
 
@@ -692,7 +709,8 @@ Here that re-key was mixed: the two `next` advisories the new version discharged
 the three that still block on the 4.68.0 digests (the base-image CA bundle on web and worker, and the
 bundled `@sentry/nextjs` on web) were re-keyed `4\.56\.0` → `4\.68\.0` with their expiry unchanged, and
 `renovate.json` needed no edit at all because the `langfuse` group and the major-approval rule match by
-name with no version in them.
+name with no version in them. (Those three re-keys were themselves discharged a week later by the next
+Langfuse bump — see below.)
 The pre-merge backup is a `pg_dumpall` of `langfuse-postgres` plus a cold `tar` of the stopped
 ClickHouse data volume; the acceptance reading afterwards is `_prisma_migrations` at 460, ClickHouse
 migration 53 applied, zero error lines in either container and a new trace readable. Note which Postgres
@@ -715,6 +733,42 @@ worker logged zero error lines, and a trace landed (the worker's `ClickhouseWrit
 on the host at `~/839-langfuse-468`; the task list records the run, this page records the shape — read
 the runbook for the commands.
 
+## Langfuse 4.68.0 → 4.72.0, the same procedure plus the object store (item 895)
+
+The sixth cutover is the same shape as the fifth, applied to the next minor: **the merge is the
+migration**, a backup before it is what turns a rollback into a restore, and a digest revert alone does
+not roll back (4.68.0 started on a store carrying three Prisma migrations it has never seen is not the
+plan). What the bump was measured to do (2026-11-01, on copies of the dev observability volumes):
+
+- **Postgres:** 4.72.0 adds 3 Prisma migrations, so `_prisma_migrations` goes **460 → 463**.
+- **ClickHouse:** no new migrations; `schema_migrations` stays at version **53**.
+- **The backup restores into the older image.** Restored, 4.68.0 is healthy, a trace seeded before the
+  upgrade is present and a trace written after it is absent — which is what makes "restore, then revert"
+  a real rollback rather than a hope.
+
+Two things differ from the 4.68 minor:
+
+- **The object store is backed up too.** The `langfuse-rustfs` volume holds the raw OTLP ingestion
+  objects. It is small (about 1 MB in dev), and a cold copy is what makes the restore complete.
+- **Traces now live in ClickHouse's v4 events model.** With `LANGFUSE_MIGRATION_V4_WRITE_MODE=events_only`,
+  `GET /api/public/traces/{id}` reads the legacy `traces` table, which is no longer written, so the
+  trace-landed check counts rows in `events_full` rather than using that endpoint; the legacy
+  `trace-create` ingestion event is refused (400) and traces arrive over
+  `POST /api/public/otel/v1/traces`. Do **not** "fix" a v4 read with
+  `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` — it restores ingestion only and hides an unmigrated read path.
+  The guard that polices this (`scripts/__tests__/langfuse-v4-read-path.guard.test.mjs`) carries a second
+  test of its own: it asserts the SC-008 integration test still asserts `cost_usd` and `latency_ms` and
+  still calls `observations.get_many`, so the first test cannot be satisfied by deleting the assertions
+  instead of migrating the read path. It deliberately does not police ingestion, because doing so would
+  invite exactly that `dual` "fix".
+
+The same PR closed the 4.68.0 allowlist chapter: the three entries re-keyed a week earlier (the
+base-image ca-certificates CVE on web and worker, and the bundled `@sentry/nextjs` CVE on web) were
+**discharged, not re-keyed again** — both refs moved to `4.72.0` on a clean rebuild that Trivy reports at
+zero fixable Criticals, so a re-keyed entry would match nothing and fail `--check-expiring` under
+UNMATCHED ENTRIES. `renovate.json` again needed no edit, because the `langfuse` group and the
+stateful-major approval rule match by package name with no version in them.
+
 ## Capacity
 
 The pre-observability capacity check (2026-07-03) measured ~48 GiB RAM available on the prod host, actual
@@ -733,6 +787,8 @@ runbooks are [prod-data-tier-auth](./prod-data-tier-auth.md),
 rehearsal record and completion note are in
 [the spec-081 research](../../specs/081-major-dependency-upgrades/research.md) and
 [its task list](../../specs/081-major-dependency-upgrades/tasks.md) — which is also where the
-Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded — and the
+Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded (the 4.72.0
+bump that discharged those allowlist entries, item #895, is recorded in the runbook and the allowlist's
+own history) — and the
 stack-level view of the same seven Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

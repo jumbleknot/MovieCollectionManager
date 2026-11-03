@@ -1,7 +1,7 @@
 ---
 type: Service
 title: BFF (Backend-for-Frontend)
-description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the session/auth and proxy contract (including the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as), its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the server-held-token session contract (one opaque session cookie, no bearer path in any environment) with the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as, the fail-closed run-scoped agent identity (a refused RFC 8693 mint becomes the route's own 401/503 instead of an identity-less turn), its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
 resource: frontend/mcm-app/README.md
 tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 sources:
@@ -31,6 +31,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/ui-state%2Bapi.ts
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-7f9b1fa4fc54b7046b359b1f
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts
   - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts
   - id: openwiki-source-3962f527ba083cef06c1e6a6
@@ -95,24 +97,48 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
   - id: openwiki-source-3bf0ad96857ee228607b018c
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
   - id: openwiki-source-71f189661b44f999afe30995
     resource: repo://frontend/mcm-app/src/bff-server/ui-action-authorizer.ts
   - id: openwiki-source-c4cad089b604b08d2164b7c8
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-no-driver.test.ts
   - id: openwiki-source-78eeb348d704a1098ef44480
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/account-deletion-order.test.ts
+  - id: openwiki-source-0f0468d2dfbbe35d07fa383c
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts
   - id: openwiki-source-719cd734e5ed87032a5fd55b
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-run-api.test.ts
+  - id: openwiki-source-e742ab8c1f246ff662696421
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/agent-subject-token.test.ts
+  - id: openwiki-source-0e0368438633fb79c62b0856
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts
   - id: openwiki-source-c5a2ed751f38e7e326a9bb90
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/backup-request-signer.test.ts
+  - id: openwiki-source-442db89b066101672cb08c70
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts
   - id: openwiki-source-badb43d18671bffd37053c83
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
+  - id: openwiki-source-a5bf09947adc24a8d59ab587
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
+  - id: openwiki-source-a864e7e3b109550c7018e359
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-2bbbece9f7d33db6a5983a55
+    resource: repo://frontend/mcm-app/src/types/errors.ts
+  - id: openwiki-source-0b95b2665c338088eef0db7e
+    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
+  - id: openwiki-source-19609c73bc9a3a34e47ab18d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
   - id: openwiki-source-bfd1dcd66339cb51fd41729c
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
   - id: openwiki-source-11fb40898d5d9eecbab09373
     resource: repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts
+  - id: openwiki-source-5c85c1fbf0ef1e7187656dba
+    resource: repo://frontend/mcm-app/tests/integration/agent-subject-token.integration.test.ts
+  - id: openwiki-source-b4dbb7a1709b21c7fd21d5ca
+    resource: repo://frontend/mcm-app/tests/integration/auth-session-side-effects.integration.test.ts
   - id: openwiki-source-fe13721a7608b6a93a9e93f2
     resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
   - id: openwiki-source-a772a7e2a660182428f932f2
@@ -133,10 +159,10 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
   - id: openwiki-source-2fd97bbde36fd9eab32aa7ba
     resource: repo://specs/032-security-header-hardening/HANDOFF.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T18:33:06.357Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 
@@ -161,10 +187,12 @@ section below is what those handlers do beyond proxying), `bff-api/backups/*`
 `bff-api/account/*` (the account-deletion challenge and its step-up callback),
 `bff-api/admin/settings`. Every proxy
 route follows the same shape: `requireAuth()` → `requireMcUser()`/`requireMcAdmin()` RBAC check
-→ a per-request `mc-service-client.ts` Axios instance carrying the caller's JWT as
-`Authorization: Bearer` → `handleMcApiError()` translates mc-service's RFC 9457 problem+json on
-failure (see [mc-service errors are RFC 9457](../gotchas/rfc-9457-problem-details.md)). The client
-never calls mc-service directly.
+→ a per-request `mc-service-client.ts` Axios instance carrying the member's **server-held** access
+token as `Authorization: Bearer` → `handleMcApiError()` translates mc-service's RFC 9457
+problem+json on failure (see [mc-service errors are RFC 9457](../gotchas/rfc-9457-problem-details.md)).
+The client never calls mc-service directly, and it never holds a token: the whole client-side auth
+surface is one opaque `mcm_session_id` cookie (feature 085), with the access and refresh tokens
+sealed beside the session server-side.
 
 Two structural gates keep that surface honest rather than conventionally consistent. The
 backups routes do not hand-write the four-step prologue at all: `withBackupRoute()` in
@@ -206,12 +234,16 @@ flowchart TD
     D -->|"runnable"| F["rate limit, cost ceiling, thread ownership, decision audit, accrual"]
     H --> G["mint subject token, open the runtime"]
     F --> K["mint subject token, attach UI snapshot and import handle"]
-    G --> I["CopilotKit runtime to AG-UI gateway, stream proxied back"]
-    K --> I
+    G --> M{"mint refused"}
+    K --> M
+    M -->|"auth refusal"| N["401 AGENT_IDENTITY_REJECTED, gateway factory never called"]
+    M -->|"transient refusal"| P["503 AGENT_IDENTITY_UNAVAILABLE with Retry-After"]
+    M -->|"minted, or exchange unconfigured"| I["CopilotKit runtime to AG-UI gateway, stream proxied back"]
 ```
 
 *The `/run` gate chain: cost-related work is confined to a billable turn, while the rate limit and the
-cross-user thread guard apply to every POST.*
+cross-user thread guard apply to every POST — and a refused subject-token mint becomes the route's own
+response before the gateway is reached.*
 
 The ordering is the contract, and four rules carry it:
 
@@ -248,10 +280,42 @@ route must be added to that list, and the authorized streaming path is exercised
 The subject token is the other half of the boundary: on each run **and** each HITL resume the BFF
 performs its own RFC 8693 exchange to mint a run-scoped, audience-narrowed delegation token (hard TTL
 ceiling 180 s) and hands *that* to the gateway, never the user's session token. It is never logged,
-never checkpointed and never returned to the client. The mint is best-effort — a failure is logged and
-the run proceeds without a token, which is correct only while the supervisor graph is tool-free. A
-resume always mints a **fresh** token, because a paused run holds none; that is what makes pause length
-irrelevant, and if the session has lapsed by approval time the user re-authenticates at the BFF first.
+never checkpointed and never returned to the client. A resume always mints a **fresh** token, because a
+paused run holds none; that is what makes pause length irrelevant, and if the session has lapsed by
+approval time the user re-authenticates at the BFF first.
+
+**A refused mint refuses the turn — it is no longer swallowed** (feature 085, item #844). That is the
+single most important thing to know about this path, because the older behaviour was the opposite: the
+failure was logged and the run proceeded *without* identity, so the member got an unexplained "No caller
+identity is available for this action" from deep inside the assistant, and gate-tier CI failed on
+unrelated pull requests. `resolveSubjectToken` in both routes now lets the refusal propagate, and
+`mintSubjectToken` classifies it rather than returning a bare `AuthError`:
+
+- **`auth`** — the identity provider rejected the *member's credential*: `invalid_token` /
+  `invalid_grant`, or the pair Keycloak 26.5 actually returns for a revoked or malformed subject token,
+  `400 invalid_request` with the description `"Invalid token"` (measured against the live realm, not
+  taken from the RFC). This becomes `401 AGENT_IDENTITY_REJECTED`, which the client's agent transport
+  already answers with one silent renewal and then sign-in. The `invalid_request` status alone is not
+  enough to classify it: Keycloak also uses it for configuration faults such as "Requested audience not
+  available", which are outages.
+- **`transient`** — everything else: unreachable, a 5-second `AbortSignal.timeout`, a 5xx, or a 4xx that
+  is not about the member (a misconfigured exchange client answers `403 access_denied`). This becomes
+  `503 AGENT_IDENTITY_UNAVAILABLE` with `Retry-After: 5`: the member is not signed out for an outage, and
+  the turn does not run identity-less. The client transport mirrors that split: its `/run` wrapper renews
+  and retries once on the 401 and passes the 503 straight through without touching the session, because
+  an outage is not a reason to renew anyone's credential.
+
+The gateway factory is never reached on either refusal (`agent-identity-refusal.test.ts` asserts exactly
+that, per route, with the real error and the real `handleMcApiError`), the refusal is logged as
+`agent_identity_refused` with its class and the provider's status and OAuth `error` code only — never a
+token, the `error_description` or the body — and the client renders the code into a member-facing bubble
+(`assistant-run-failure.ts`, which maps the code to "your session has expired" or "temporarily
+unavailable" rather than showing the error). `agent-subject-token.integration.test.ts` measures the
+classification against a live Keycloak: a member whose sessions were ended through the Admin API still
+holds a signature-valid access token, and the exchange is where Keycloak refuses it, so the test asserts
+the `auth` outcome rather than the unit tests' assumption about it. One case is deliberately unchanged:
+when token exchange is **not** configured for the environment, no mint is attempted and the turn runs as
+before, which is the tool-free-graph case the old best-effort behaviour was there for.
 
 `resume+api.ts` is a distinct approval authorization point, and it is in-session auth — no step-up:
 the decision body is validated deny-by-default (a blank `threadId`/`proposalId` or a decision outside
@@ -278,49 +342,98 @@ size only, never contents or tokens.
 
 The client performs the PKCE exchange against Keycloak itself and hands the BFF the code, so the
 BFF is the only party that ever holds a token — the full login-to-request-validation sequence is on
-[Auth chain](../invariants/auth-chain.md). Four properties of this surface are load-bearing enough
+[Auth chain](../invariants/auth-chain.md). Six properties of this surface are load-bearing enough
 to know before changing a handler:
 
-- **Three cookies cross the wire and nothing else.** The access token and the session id are
-  scoped to `Path=/`; the refresh token is scoped to `Path=/bff-api/auth/refresh` **only**, which is
-  what makes it unreachable from an ordinary API request. All three are `HttpOnly`,
-  `SameSite=Strict`, and `Secure` outside development. The clear-cookie set mirrors those
-  attributes exactly, because a browser may decline a clear whose attributes do not match the
-  cookie it is meant to remove.
+- **One cookie crosses the wire, and it is not a token.** The client holds only the opaque
+  `mcm_session_id` reference, scoped to `Path=/`, `HttpOnly`, `SameSite=Strict`, `Secure` outside
+  development, with `Max-Age` equal to the absolute session lifetime. The access and refresh tokens
+  the BFF exchanges the authorization code for are sealed beside the session in Redis (AES-256-GCM,
+  bound to the session id and its owner) and never leave the server. Two pre-085 cookies
+  (`mcm_access_token`, `mcm_refresh_token`) are still *cleared* — each at its own original `Path`,
+  the refresh one at `/bff-api/auth/refresh` — because a browser declines a clear whose attributes
+  do not match the cookie it is removing, but nothing reads them and a session carrying only them is
+  refused rather than migrated.
 - **`GET /bff-api/auth/init` is the redirect-URI reconciliation, and it is unauthenticated by
   design.** The client root layout calls it once on app mount, best-effort. It passes
   `ensureClientRedirectUris()` the *complete* list this client needs — the web PKCE callback, the
   verified-email redirect, the native login scheme URI, the backup-consent callback, the
   account-deletion step-up callback and its own native scheme URI — and the write is **additive**
-  (`[...existing, ...missing]`) and one-shot per client per process. One condition extends the call
+  (`[...existing, ...missing]`). The list is the contract rather than a convenience: a URI left out
+  of it is never registered by this path, and on a fresh realm nothing fails at deploy time — the app
+  keeps working until someone hits the flow whose URI went missing. One condition extends the call
   rather than replacing it: when `BACKUP_CONSENT_CLIENT_ID` names a client other than the login
   client, the route makes a *second* call registering the consent callback on that client too,
   because a URI registered only on the login client is refused outright once the consent round trip
-  runs as the dedicated client. The list is therefore the contract rather than a convenience: a URI
-  left out of it is never registered by this path, and on a fresh realm nothing fails at deploy time
-  — the app keeps working until someone hits the flow whose URI went missing. Note the origin those
+  runs as the dedicated client. The per-process "already done" mark is keyed on the **client id** and
+  set only on a *confirmed* result — nothing missing, or the `PUT` answered 2xx — so a rejected
+  registration is warned about (`redirect_uri_registration_failed`, naming the failing step) and
+  retried on the next sign-in instead of being latched as done until a restart. Note the origin those
   URIs are built on: `init` uses a *fixed* base (`EXPO_PUBLIC_BFF_BASE_URL`, falling back to
   `http://localhost:8081`), unlike the backup-consent and deletion callbacks, which deliberately
   derive their redirect URI from the origin the request arrived on. The container origins
   (`:8082` dev, `:8443` TLS) are therefore ensured out of band, by
   `infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`. The mechanism,
   and the test that asserts the pre-existing URIs survive a call, are on [Keycloak](./keycloak.md).
+- **A refresh extends only the caller's own session, and ownership now holds by construction.**
+  `POST /bff-api/auth/refresh` takes the session from the `mcm_session_id` cookie and the refresh
+  token *from that session's sealed record*, so nothing in the request can name another member's
+  session or supply a credential. The renewed access token's `sub` is still checked against the
+  session's owner (`session-tokens.ts`), and on a mismatch the freshly minted refresh token is
+  revoked before the session is deleted — otherwise the record would be left paired with a foreign
+  credential — with `session_refresh_owner_mismatch` audited and 401 `SESSION_OWNER_MISMATCH`
+  answered. `session-manager.ts` itself never checks ownership; it is a keyed lookup module (the
+  detail is on [Session lifecycle and eviction](../gotchas/session-lifecycle-and-eviction.md)).
+  Renewal happens at most once per session at a time: a request that finds the access token within
+  30 s of expiry takes `session-renew:{sid}` (Redis NX, 15 s) and renews, while a concurrent request
+  waits for the winner's tokens instead of renewing — Keycloak rotates refresh tokens, so a second
+  renewal would end the member's session. A rejected renewal ends the session (401); an unreachable
+  identity provider keeps it (retryable 503).
+- **There is no bearer path, in any environment.** `requireAuth()` reads the `mcm_session_id` cookie
+  and nothing else: an `Authorization: Bearer` header is not validated, not consulted and not
+  honoured in development or test either, and no flag restores it (FR-008/FR-009, operator decision
+  2026-11-01). It used to be consulted *ahead of* the cookie, which was the "parallel authentication
+  path created for testing" the constitution prohibits; the helper that read it is gone and a unit
+  test asserts no such helper exists. Test harnesses sign in the way members do
+  (`tests/integration/helpers/bff-session.ts`).
 - **Registration is gated by an application-level toggle, not the realm flag.** Users are created
   through the Keycloak Admin API rather than Keycloak's self-service page, so `allowSelfRegistration`
   read server-side *before any user creation* is the effective control; it fails closed on a store
   error, so registration is refused rather than silently allowed. `/register` is rate-limited per
   email **and** per source IP — varying the email must not buy unlimited registrations from one
   source — and `/resend-verification` answers success for an unknown email so the endpoint is not a
-  user-enumeration oracle.
-- **Logout terminates only the caller's own session.** The handler authenticates first and acts on
-  the session id only when it belongs to that authenticated user; an unauthenticated request
-  carrying someone else's session id must not be able to force-logout them. Token revocation and
-  IAM-level SSO termination run only for that authenticated owner.
+  user-enumeration oracle. The whole limit set lives as data in `RATE_LIMITS` in `rate-limiter.ts`:
+  `register` 10/email/day, `registerIp` 20/source-IP/day, `login` 5/IP/min, `logout` 10/IP/min
+  (forced-termination DoS), `refresh` 2 per 30 s **per session** (not per IP), `resendVerification`
+  3/email/hour and `accountDeletion` 5/IP/hour. The session-keyed refresh bucket is the one that
+  bites in test and E2E environments: every worker sharing one session shares one bucket built for
+  two, so both the attempt and the rejection are audited (`refresh_attempted`,
+  `refresh_rate_limited`) rather than failing silently as a login redirect.
+- **Logout terminates only the caller's own session.** The session reference comes from the
+  `mcm_session_id` cookie — which is the credential now that the client holds no token — and the
+  owner is read from that session record, so the only session the handler can end is the one the
+  cookie names. An unauthenticated request naming a victim's session some other way (the
+  `X-Session-Id` header the original session-side-effect finding named) changes nothing, and with no
+  cookie at all the handler clears cookies best-effort and returns 200 without touching state.
+  Revoking the server-held refresh
+  token at Keycloak, ending the member's SSO sessions through the Admin API
+  (`logoutUserSessions`), and deleting the session with its tokens all run only for that resolved
+  owner; a rate limit (10/min per IP) guards the endpoint against forced-termination DoS.
 
 `error-handler.ts` (`handleBffError`) is the older Express-shaped error mapper and is now reachable
 only from its own unit test; the live route handlers answer with `securityHeaders()` plus either
 `handleMcApiError()` or the RFC 9457-shaped `problemResponse()` / `problem()` helpers. It is worth
 knowing so a change there is not mistaken for a change to the live error path.
+
+What *is* live and shared is `authErrorHeaders(err)` in `mc-api-error.ts`, which `handleMcApiError()` routes
+every `AuthError` through: an error can carry `clearCookies` (one `Set-Cookie` line per entry — joined with
+commas the browser would keep only the first, which is how a session that just ended kept its refresh
+cookie) and `retryAfterSeconds` (a `Retry-After` on a retryable 503). A refusal that ends a session and a
+refusal that says "try again" both therefore travel on the thrown error rather than being reconstructed by
+each handler. The other two live helpers — `problem()` in `backup-route-support.ts` and
+`problemResponse()` in `account-route-support.ts` — emit the RFC 9457 shape with `securityHeaders()` but do
+not read those two fields, so a refusal raised on those paths loses its clearing cookies and its
+`Retry-After` unless it goes through `handleMcApiError()`.
 
 ## The BFF's own state: MongoDB and Redis
 
@@ -349,8 +462,10 @@ across a service boundary into a backend service's store):
   `BACKUP_CONSENT_CLIENT_ID` (falling back to the login client when unset, with a one-time
   `backup_consent_shared_client` warning): revoking a grant issued to the *login* client removes
   that client from the member's SSO session, which kills the session — the agent's subject-token
-  exchange starts failing with "no caller identity" and the next refresh returns
-  `Session not active`. Stored grants are always presented as the client they were issued to,
+  exchange is then refused (`TOKEN_EXCHANGE_ERROR`, `subject_token validation failure`), which the
+  BFF now classifies as an auth refusal and answers as 401 `AGENT_IDENTITY_REJECTED` instead of the
+  old identity-less run, and the next refresh returns `Session not active`. Stored grants are always
+  presented as the client they were issued to,
   read from the token's `azp`, so grants made before the switch keep working with no data
   migration. Destination addresses go through a *different*, inverse-default SSRF
   guard (`backup-destination-url-guard.ts`; private/loopback/link-local denied unless the host is
@@ -364,9 +479,9 @@ across a service boundary into a backend service's store):
   [the SSRF guard page](../gotchas/agent-config-ssrf-guard.md), which documents both guards
   side by side.
 
-Redis is the BFF's other store, and it is not a cache of convenience: sessions, the concurrent
-session cap, every rate-limit counter, the agent cost budget, the parked step-up/consent requests
-and the backup leader lock all live there.
+Redis is the BFF's other store, and it is not a cache of convenience: sessions and the sealed
+session-token records, the concurrent session cap, every rate-limit counter, the agent cost budget,
+the parked step-up/consent requests and the backup leader lock all live there.
 
 Both collections' Mongo instance is a **standalone `mongod`, not a replica set** — there is no
 multi-document transaction available anywhere in the BFF's own store. That single fact shapes
@@ -760,12 +875,35 @@ The client-side view of the same layer, and the header contract's tests, are on 
 
 ## Gotchas
 
-- **No Redis, no login.** Sessions, the concurrent-session cap, every rate-limit counter, the agent
-  cost budget and the parked step-up/consent requests all live in Redis, and the login path reads it
-  with no typed wrapper around the session operations. If Redis is down, `/bff-api/auth/login`
-  returns a bare 500 "Authentication failed" (`UNKNOWN_ERROR`): the session write rejects with an
-  untyped connection error, so the handler's outer catch reports a generic failure rather than an
-  infra problem. Check Redis first.
+- **A turn that cannot be attributed is refused, not run identity-less.** If the subject-token mint is
+  refused, `/run` and `/resume` answer with the refusal (401 `AGENT_IDENTITY_REJECTED` or a retryable
+  503 `AGENT_IDENTITY_UNAVAILABLE`) and the gateway factory is never called. This was a *behaviour
+  change*, not a refactor: before feature 085 (item #844) the mint failure was swallowed and the turn
+  ran without identity, surfacing as an unexplained "No caller identity is available for this action"
+  from inside the assistant. Code or documentation older than that still describes the best-effort mint.
+  The one deliberate exception is an environment with token exchange unconfigured, where no mint is
+  attempted at all.
+- **`handleBffError` is not the live error path, and `authErrorHeaders` is the only place a refusal's
+  cookies and `Retry-After` are honoured.** `error-handler.ts` is reachable only from its own unit test.
+  The live routes use `handleMcApiError()` — which routes every `AuthError` through
+  `authErrorHeaders()`, so `clearCookies` becomes one `Set-Cookie` line per entry and
+  `retryAfterSeconds` becomes `Retry-After` — or the RFC 9457-shaped `problemResponse()` /
+  `problem()`, which do *not* read those two fields. Editing `handleBffError` changes nothing a
+  client sees; raising a refusal on a `problem()` path silently drops its clearing cookies.
+- **There is no bearer path — the session cookie is the only credential.** Since feature 085 the BFF
+  does not read `Authorization` at all, in any environment, and no flag restores it. A test or script
+  that presents only a bearer credential gets 401 without the token ever being validated; presenting
+  a bearer *alongside* a valid session cookie authenticates as the cookie's owner and the bearer is
+  ignored. Test harnesses must sign in the way members do (code + PKCE, then
+  `POST /bff-api/auth/login`; see `tests/integration/helpers/bff-session.ts`).
+- **No Redis, no login.** Sessions and their sealed token records, the concurrent-session cap, every
+  rate-limit counter, the agent cost budget and the parked step-up/consent requests all live in Redis,
+  and the login path reads and writes it with no typed wrapper around the session operations. Which
+  generic failure you see depends only on where the outage lands: the rate-limit counter (only when
+  `TRUSTED_PROXY=true`, since otherwise the IP limit is skipped) produces a bare 500 "Authentication
+  failed." (`UNKNOWN_ERROR`), while a failure at session creation produces a 503 `UNKNOWN` with
+  "Session creation failed. Please try again." Either way an infrastructure outage reads as an
+  unexplained server problem rather than as an infra problem. Check Redis first.
 - **`.env` inline comments corrupt secrets.** dotenv-style loaders (and the Expo CLI) treat
   everything after `=` as the literal value. `KEY=val # note` yields `val # note`. This has actually
   broken login (`invalid_client` from Keycloak) when a client secret captured its trailing comment.
@@ -793,10 +931,10 @@ The client-side view of the same layer, and the header contract's tests, are on 
   explicitly. With it set, the rate limiter derives the client IP from the right-most
   `X-Forwarded-For` hop — left entries are client-forgeable — while the express setting trusts exactly
   the immediate hop and never takes the host from `X-Forwarded-Host`.
-- **Cookies, not tokens, cross the wire to the client.** The BFF sets three `HttpOnly`,
-  `SameSite=Strict` cookies (access token, refresh token — scoped to the refresh path only — and
-  session id); client code never sees a raw JWT. The client Axios instance sends no `Authorization`
-  header at all and relies on `withCredentials: true`.
+- **Cookies, not tokens, cross the wire to the client.** The BFF sets exactly one `HttpOnly`,
+  `SameSite=Strict` cookie — the opaque `mcm_session_id` — and client code never sees a raw JWT. The
+  client Axios instance sends no `Authorization` header at all and relies on `withCredentials: true`.
+  Every `401` also clears the two retired pre-085 token cookies, each at its original `Path`.
 - **The shipped image carries a runtime closure of ~81 packages out of the ~1600 production ones — and the build gate enforces it.**
   `pnpm deploy --prod` materializes ~1600 packages because they are genuine `dependencies` of
   `mcm-app`, but they are dependencies of the web bundle, which Metro already compiled into `dist/`

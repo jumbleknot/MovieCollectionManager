@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:00ff80520229fe3514a7c5da0821d8c9df37233fa1cbcef7022a9c2548cf014e",
+  "pageVersion": "sha256:5cae609e0dbf295e121cdbe2d9c873f618ab47718bfe610fb4184beddd87eda1",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -855,7 +855,7 @@
       "statement": "The cap rule was added because six Renovate major-widening proposals for this file were pending on 2026-10-18, and the structural answer chosen was to disable `major` updates for `pnpm-workspace.yaml` in `renovate.json` outright (patch/minor stay enabled and ungated, since a genuine floor raise arrives on that track), with the cap rule as the second line of defence if a widening arrives by another route.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L840-L850",
+          "resource": "repo://docs/runbooks/renovate.md#L842-L852",
           "version": "repo-lines-v1:sha256:4f2d3c19d9b9068f97482ffde511698a37a2fbfa753040b51c398fc75a68ab40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjNmMmIzZDQ2MzdmMWEyNjg0ZmM4MTJlZDY3YjdmYzdkMTJlZDIxMWM2MTcwN2VmOGVhYzZhMWY4NjVmNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkODJlYThmMmU0ZjhiNDM3NWJhNThhOWJmMzc3ZGU1YmEyNTRlNmM2ZGZlZDQzZjI5N2VkNmQxNDE5YWY3YTcifQ"
         },
         {
@@ -960,7 +960,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -974,7 +974,7 @@
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -992,7 +992,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -1006,7 +1006,7 @@
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -1028,7 +1028,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -1056,7 +1056,7 @@
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
-          "version": "repo-file-v1:sha256:4398a129ff6711e8b200ff4014fb7218dd4da35aedf698ca2f845bd3c388bacf"
+          "version": "repo-file-v1:sha256:1441f0aedeecfef452c08a5cd1e99838fc53413b17c8169bd6725688dd7590ba"
         },
         {
           "resource": "repo://scripts/check-dependency-downgrade.mjs",
@@ -1067,6 +1067,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T13:34:04.956Z"
+    "at": "2026-11-01T20:52:31.113Z"
   }
 }

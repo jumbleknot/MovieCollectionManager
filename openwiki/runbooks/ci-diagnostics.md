@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the event-versus-trigger_event split and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, and the two keys that gate a delete.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/branch-reaper.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-96c32d20fcdefc48cf9ec296
     resource: repo://backend/mc-service/src/api/collections/create.rs
   - id: openwiki-source-c3e333457ea705ec015d1cbd
@@ -23,12 +25,24 @@ sources:
     resource: repo://docs/runbooks/ci-diagnostics.md
   - id: openwiki-source-f003db5a1a23dba30ccf3b03
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
+  - id: openwiki-source-7b223ba4df7203eeb5667fa8
+    resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-045a0d186e0b60056b359b2e
+    resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
+    resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-3adf769c2d4e02405ca6896b
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-c138086948681bd36101354f
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-fa3a87df52d837aa49b86894
     resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-afea6a4b73f1abee8610bd58
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
@@ -39,14 +53,28 @@ sources:
     resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
   - id: openwiki-source-b50d19f23836b85abeaed26d
     resource: repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json
+  - id: openwiki-source-f2acfc0bf32b6ad4708d5aed
+    resource: repo://scripts/__tests__/fixtures/ci/branch-protections.json
+  - id: openwiki-source-9f5bde5553deb853de9f4a9f
+    resource: repo://scripts/__tests__/fixtures/ci/runs-cron-shares-push-sha.json
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
   - id: openwiki-source-2c2f0032bb5935673fca7b18
     resource: repo://scripts/__tests__/reap-merged-branches.test.mjs
+  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
+    resource: repo://scripts/__tests__/registry-retention.test.mjs
   - id: openwiki-source-083be07d2570a758cc6c0b74
     resource: repo://scripts/__tests__/renovate-health.test.mjs
+  - id: openwiki-source-6a31387312db2b158048d4d9
+    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-f8f2427f127614b5db674fca
     resource: repo://scripts/cd-dispatch-gate.mjs
+  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
+    resource: repo://scripts/cd/publish-apk.mjs
+  - id: openwiki-source-b86ccae465a7267495c319ec
+    resource: repo://scripts/cd/scan-app-image.sh
+  - id: openwiki-source-fe6babf23c099d13c73c6b6f
+    resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-478a776ff0b75f2af5dc3190
     resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
@@ -59,12 +87,16 @@ sources:
     resource: repo://scripts/e2e-failure-set.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
+  - id: openwiki-source-4708763005c35901b04f5740
+    resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T05:36:38.857Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # CI self-serve diagnostics
@@ -76,6 +108,13 @@ pushes a curated digest into channels the API can already read, and the script r
 Its four entry points are `status`, `watch`, `failure` and `durations`, plus `--selftest`; it resolves the
 forge host from the `origin` remote **at runtime**, so no host literal exists to keep in sync.
 
+**Workflows cannot use `actions/upload-artifact` v4 or later on this forge either.** It refuses any
+server other than github.com *before* it uploads anything (`GHESNotSupportedError`), measured four
+times and most recently on both runner labels on 2026-10-16 (spec 081 research T004), so the action
+stays on **v3** under a Renovate ceiling (item #912). A Forgejo release note claiming support does not
+lift it; re-run the two-label probe and read the step outcome. That is one more reason the digest goes
+to a channel the API can read rather than to an artifact.
+
 Two facts decide almost every reading:
 
 - **Exit `0` means mergeable, `1` a required context genuinely failed, `2` bad arguments/auth, `3` still
@@ -85,7 +124,9 @@ Two facts decide almost every reading:
   the other two; see the item 823 bullet below.
 - **`watch` answers a different question from its exit code.** It waits for advisory contexts too
   (`app-ci / trigger-cd` is the only place a declined or failed deploy is visible), while the exit code is
-  decided by the required set alone.
+  decided by the required set alone. `--required-only` narrows the *wait* back to the merge question for
+  a caller that genuinely only wants the merge answer (item #403) — it does not change the exit code
+  either, and a caller that uses it gives up the one signal that says the deploy never happened.
 
 ```mermaid
 flowchart TD
@@ -192,16 +233,17 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   install script — over the images `app-e2e` already built. A single `aquasecurity/trivy` customManager
   in `renovate.json` covers all three files and the guard asserts its patterns still match each of them,
   so the three-way pin is maintained rather than left to rot. `app-e2e` tags
-  each of them `app-scan/<name>:run-<run id>` immediately after the build, so a later run rebuilding
-  `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to `main` too, and
-  `trigger-cd` now `needs:` it, so a vulnerability-database change shows as a red on `main` **before** a
-  dispatch. The exit codes are split because one code cannot carry two meanings: a scanner that could
-  not run is not a finding, and reporting it as one sends the reader to patch a CVE that was never
-  assessed.
+  each of them `app-scan/<name>:run-<run id>` immediately after the build — and holds each tag with a
+  labelled container so another run's prune cannot delete it (see the hold bullet below) — so a later
+  run rebuilding `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to
+  `main` too, and `trigger-cd` now `needs:` it, so a vulnerability-database change shows as a red on
+  `main` **before** a dispatch. The exit codes are split because one code cannot carry two meanings: a
+  scanner that could not run is not a finding, and reporting it as one sends the reader to patch a CVE
+  that was never assessed.
 
   ```mermaid
   flowchart TD
-    A["app-e2e builds the six images"] --> B["tag app-scan/name:run-id straight after the build"]
+    A["app-e2e builds the six images"] --> B["tag app-scan/name:run-id and hold it with a labelled container"]
     B --> C{"did the changes job succeed"}
     C -->|"no"| FAIL["fail closed — an unknown app diff is not nothing to scan"]
     C -->|"yes"| D{"changes.outputs.app true"}
@@ -224,7 +266,7 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   | What you see | Meaning | What to do |
   |---|---|---|
   | `no app path changed — images identical to main's` | nothing to scan; passes in seconds | nothing |
-  | `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images | fix `app-e2e`; the job never passes on images it could not find |
+  | `missing scan tag(s): …` | `app-e2e` failed or was cancelled before it built and tagged the images, or the scan waited past the 24 h hold sweep (below) | fix `app-e2e`, or re-run; the job never passes on images it could not find |
   | exit **10**, `✗ SCANNER ERROR for <image>` | Trivy could not complete (vulnerability DB or registry, after its bounded retries) — **nothing was assessed** | re-run the job |
   | exit **11**, `✗ BLOCKING FINDING in <image>` | an un-allowlisted Critical with an upstream fix; the verdict's table above it names the CVE and the package | patch it (base image or dependency), or add a reviewed, justified, **expiring** entry to the allowlist |
 
@@ -244,6 +286,23 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   callers go through the shared script and neither runs the scanner itself, the two image lists agree,
   exit 10 takes no verdict, `trigger-cd` requires a passed scan, and `ci-status`'s built-in fallback
   lists the new glob).
+- **The scan images are HELD between the two jobs, because a bare tag loses a race to another run's
+  prune (item #915).** `app-image-scan` is a *separate* job from `app-e2e`, and on this single runner
+  another run's `app-e2e`, `dast` or `build-deploy` can take the daemon in between — each of them starts
+  with `docker image prune -af`, and a bare tag has no container, so the prune deletes it. Measured on
+  PR #909: `missing scan tag(s)` twice on images nobody had scanned, after its own `app-e2e` had passed.
+  The fix is a container-held tag: `app-e2e` holds each tag with a stopped container named
+  `app-scan-hold-<run id>-<image>` and labelled `mcm.app-scan-hold`, and `image prune -a` never removes
+  an image that has a container. Three properties make the hold safe rather than a leak —
+  `app-image-scan` removes its holds *before* its tags under `always()` (an `image rm` of a held tag
+  only untags it), every one of the three image-prune sites first runs
+  `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h`, so a cancelled run's
+  images are released after at most a day while a run still waiting for its scan keeps them, and the
+  hold is `rm -f`'d before it is created because a re-run attempt keeps the same run id.
+  `docker ps -a --filter label=mcm.app-scan-hold` on the ci daemon lists the holds; holds from runs
+  finished more than a day ago mean a prune site has lost its sweep. `app-image-scan.test.mjs` pins all
+  three — the sweep must be limited to the hold label, carry an age cut-off, and run *before* the image
+  prune at each of the three sites — and asserts the site count so a new prune cannot silently skip it.
 - **Two of the five reported check states are misreported by the raw API and must be derived, not
   trusted literally.** A skipped job reads `success` with description "Has been skipped" — but the
   payload does not say *why* it was skipped (see item 396 below); a cancelled-by-newer-push run
@@ -464,15 +523,37 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   runs.filter((r) => r.ScheduleID).map((r) => [r.id, r.created, r.workflow_id, r.trigger_event]);
   ```
 
+  **The divergence does NOT license matching a check to a run on `event` alone, and that is the other
+  half of item 563.** Matching a context to its run needs the workflow file **and** the event, because
+  the same workflow runs several times on one sha and the two events can be different runs: measured
+  2026-11-01 on `7d27f72f`, the Friday cron (6172) and a push run (6164) of `infra-image-scan.yml`
+  shared one sha, and `findRunForContext` — keyed on `event` — handed the push-suffixed check
+  `infra-image-scan / infra-image-scan (push)` the **cron's** run id. The check's `runId` is what
+  `failure --full` derives its bundle from and what `classifyCheckState` reads for the owning run's
+  `cancelled` status, so a wrong run id is a wrong bundle and a wrong superseded/failed call. It now
+  matches on `trigger_event || event`. A **narrow** status carries no `(event)` suffix at all, so its
+  posting events cannot be read off the context; they are declared in `NARROW_STATUS_EVENTS` (read from
+  each posting step's `if:` — `infra-image-scan/weekly` is `schedule` only, `renovate/mode` is
+  `workflow_dispatch` only, and `infra-image-scan/expiry` and `cd-deploy/prod-apk-disk` post on every
+  event except `pull_request`), and a guard test fails when a workflow posts a separator-less status that
+  table does not list, because an unlisted one silently falls back to "the first run of that workflow on
+  the sha", which is right only by list order.
+
 - **Exit code `3` (still waiting when `watch` timed out) is deliberately distinct from exit `1` (a
   required context failed).** There is a single CI runner in this homelab, so a saturated queue is
   expected and must never be conflated with an actual build failure. An advisory context still
   running at the timeout does **not** change the exit code either: `exit 0 ⟺ mergeable` is
   load-bearing for a `ci-status … && merge` wrapper, so the verdict's own code stands and the
-  unfinished advisory row is named instead of silently dropped. Exit `4` is the one addition to this
-  table that is `watch`-only, and it exists for the same reason: a mergeable commit whose dispatched
-  deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3` (which reads as
-  "keep waiting").
+  unfinished advisory row is named instead of silently dropped. An advisory **failure** is also
+  stated rather than left to be inferred — a `⚠️ ADVISORY FAILURE` block sits immediately above the
+  `VERDICT` line naming each failed non-required context, because `VERDICT mergeable` two lines down
+  is what actually gets read. That block is rendered from the **gate**, not from the event-filtered
+  view, so a push-only advisory failure such as `app-ci / trigger-cd` is named even while the view is
+  scoped to `pull_request` — reading it from the view would report nothing in exactly the case it was
+  written for (the same shape as the item 281 verdict/view split below). Exit `4` is the one addition
+  to this table that is `watch`-only, and it exists for the same reason: a mergeable commit whose
+  dispatched deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3`
+  (which reads as "keep waiting").
 - **A pipe throws the exit code away — including exit 3, exit 1 and exit 4.** `ci-status … watch |
   tail -30` reports **`tail`'s** status, so all three arrive as `0`. Measured 2026-09-06: a watch that
   printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
@@ -875,8 +956,9 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
 ## What the registry keeps (spec 084 US5)
 
 `app-image-scan` decides whether a *new* image may merge; registry retention decides which images the
-registry still **holds**, and it is the only thing in this repository that ever deletes from the forge
-registry. It is [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
+registry still **holds**, and it is the only thing in this repository that ever deletes a **container
+image** version from the forge registry — the generic packages prune themselves at publish time, which
+is the last bullet below. It is [`scripts/registry-retention.mjs`](../../scripts/registry-retention.mjs), configured by
 [`infrastructure-as-code/forgejo/registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml)
 and run weekly by [`.forgejo/workflows/registry-retention.yml`](../../.forgejo/workflows/registry-retention.yml)
 (Sundays 06:00 UTC). The forge's own cleanup rules are deliberately **unused**: they match versions by
@@ -946,6 +1028,20 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   alongside a window, or a `mode` other than `report`/`apply` is refused), and it enforces the floor
   that `ci-status durations` needs on the `ci-failures` bundles — which `ci-failure-digest.mjs` itself
   already prunes at 30 days.
+- **The GENERIC packages prune themselves at publish time; this sweep owns only the container images.**
+  There is no scheduled job for either, so each publisher deletes opportunistically as it writes:
+  `ci-failure-digest.mjs` drops `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS`
+  (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting
+  evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — run by
+  `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by
+  `created_at` plus anything whose name ends in `-keep` (which is never pruned and does not consume one
+  of the 5 slots), a COUNT rather than a day window because a quiet month would otherwise delete every
+  installable APK. That retention is count-based for the same reason the container rules are
+  reference-based: the two packages answer different questions about what "still needed" means, and a
+  prune failure in either is logged and swallowed rather than allowed to red a deploy.
+  The `ci-failures` entry in the retention config is therefore a **floor**, not the deleter — it exists
+  so a future config edit cannot shrink the window below what `ci-status durations` samples — and its
+  `evidenceWindowDays: 45` is the value a `ci-failures` `keepDays` below which is refused outright.
 
 The sweep uses its own `write:package`-only credential (`REGISTRY_CLEANUP_TOKEN`), separate from the CI
 push token so rotating either cannot break the other. The full procedure, the review criteria for a

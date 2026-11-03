@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:55d85441cfa3f4bbef944e087577b5b06d6248c28d35003f83ecf3e32d1c03f9",
+  "claims": [
+    {
+      "id": "claim_0ea0a0e4310f44c68aec602822b603af",
+      "statement": "A BFF Redis session record is a five-field, tokenless value (`sessionId`, `userId`, `createdAt`, `lastActivityAt`, `expiresAt`) whose idle window, absolute lifetime and per-user concurrency are tracked entirely independently of the Keycloak JWT's own expiry: `createSession(userId, tokens)` sets `lastActivityAt = createdAt = now` and `expiresAt = now + env.sessionAbsoluteTimeoutMs` and then seals the member's tokens into a separate Redis value beside the record, so the record itself never holds token material and no code path creates a session without tokens.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L32-L64",
+          "version": "repo-lines-v1:sha256:d1c2c189b7dd3a288df675bf1be67bf86b342eb1dbdc90a603397052515a99ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3OTIxZWU2YjNlZmNkZjRkNDA4YTNhNGJhYTE0ZThkZDNlM2YwNzI5NTk3ZGVjYzRjZmIxZTdmMThhODBkMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZTgzYzg1YWE3ZDg5NmU5NWI5Zjk0ZjVmOWY1OTE2MTQyNjJiNTRhNjY0NmM1YzYwMTZiM2ExMzFmYTE5MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNWYzNDNjNDgyOThmNzNmYTUxM2UxOTkxYWQ1Mzg1ZTVlODg1MTc3ZTkzNWU4MjUwZWIzN2Y1ZjAzZTY0ZjAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L59-L62",
+          "version": "repo-lines-v1:sha256:6a4fe55b103fd18aeb5c12234f2f4e1c9e285bff5b965bc9bfc1204ec504390b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUwN2YzZTMyYjg5YzUyMzg4M2I1ZjkxYzgwNTdmMDljYzlkZTNiMDMyNmJmZjlkZTVhMmM2M2ZmNjQ5ZjNiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI4NTFlYjE3OTIxODMyNTNmMDZiY2EzNjcxNzBlYWU5NjRjOGY5ZWRhNTlhMmJmNzk5ZDg1MWFhMTAxZTQ0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg0MmY5ODBmOWE4YzdkYzVkNzRiZGNmYTBiM2E3OWUwZDRlNTVmNjIwMDBlZWM4Yzk0YTQzMjI0OGUyNTlkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdhZDFmYjYxZDIyOWZlYjFkYmYzMjJlODEwYWRiNzUxNDViMTkxNTFhMDNjYzJmOWE5YjNmYTNmYTU4YzVhYSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/types/auth.ts#L81-L87",
+          "version": "repo-lines-v1:sha256:f13369f7e78b44687cdd3f71c971b5cae84b9e08b89f87300d79fd9f4b946dd4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUyNzYzYzlmZTAxMjhkNGQyYzViNTE5YjcyN2RmNzllYjQ3YTVmY2FiNTZlYzFmNzAzZjRhMWI2ZjU2N2I5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDkwZTcwODhkYmJlNmVmNzVhZmUyOTEzZGY5MGJhMjM4MDdiMTYzYjJjMGZiOWY2YzhjYzdjOGEyYTEyMjlmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM0ZjYwOGY5M2RkZjA0NWMyN2RhZjc0ZTQ2ZGY0MzJkYTFmZDkyM2FlMTlmZjliNDU3NTA1YWEzNGVjNTAzOSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/helpers/session-token-fixture.ts",
+          "version": "repo-file-v1:sha256:ceb5c6a18181c6d8ac423879e3e114f4fcf3e61ed6f36e607e55dc286f6a5a22"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5248830df3a4963a3ca3216260beb9c",
+      "statement": "`cache-service.ts` keeps a session under three Redis keys — `session:<sessionId>` (the JSON record), `session-tokens:<sessionId>` (the sealed tokens), and `user-sessions:<userId>` (a set of that user's session IDs maintained with `SADD`/`SREM`) — and every TTL is derived from the session's remaining absolute lifetime by `sessionTtlSeconds()` (floored at 1s), never a fixed value, so the Redis TTL can never be shorter than the configured idle/absolute policy. A corrupt or truncated stored record is treated as no session: `parseSession()` deletes the bad key and returns null rather than throwing.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L137-L140",
+          "version": "repo-lines-v1:sha256:669739252dffbe91c15dca578f270747dfb7d29134b3dfcc94b280be608e3842:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRjNmZlZmVhMmIyY2VmZGMwNzU2ZjkxNWNmZWRiOTUyNDViYzQ2MDZkNDUyYmQ5ZThiMGQxMTQ0MTAzYzRkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ2NDUxNmQ0MzUxODc0Yzc0ODRhOTY3YmUyZjk2MjRjN2FmN2IyMjczY2JhNjdmNTE5N2JkMGUzMjU4NzBjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNhNTdjZmZiMzdlMDVjZGZiMDgwMjM4YjcxMWU3NzA2Y2MxMDkyMWE4NzU5Y2ZhN2UyODRhMDM3NjA3MWRkZiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L30-L41",
+          "version": "repo-lines-v1:sha256:3e68cd250687fccadbe82fd7cf1adb4717669b3f5a508444b235f3e55f659afc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YjI2NTU2MDBjOGM4YWY1ZDNjNTlhMzJjNDJjYWJmZGE1YTE5YmFmZjQxN2I0MjM0YjVmYzE0ZDhkN2RkOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmUyMGU1OTY0NWYyODIzZDQ3NDY3ZTUzNzU2NjQxMGZhZmVkZmNhZDg2MTMzMDU0OWUwMGM2MjE0ODU5ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjODE5YWU1MTZkNGM0OGJlMzZlMWM5ZWI2YTNjYjMwODdjNzQxZGE3MGY5ZDlkMDgyMWZkMWYxNDI3MDdiODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZmY5ODQ1MTA1ZWZhZGE3ZDhmYmFmNTgzZThmYWY1YzMyMzg1ODdhM2RhZDM0NTlmODAwN2MyYWZhY2Y1NDUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L99-L122",
+          "version": "repo-lines-v1:sha256:a08534b303278fb31ff2ec7d03b28e4e3af31658560649913892dfaf3d7f89ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkN2JjMDI2ZWJkMDE2MjJkMzgwZWJlODA0Njk3ZTJiN2I4NTNlN2QwOTQ5NzgxYzI5MTZiZmVhYjY3NDViNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MDcyM2FjZTliMzM3ZDEyZDA4ZDc3YTQzZjE3ZmU2NzBjZDE5NmUwOWRlYTg5MjQ1Mjc3ZGE3ZGU2NDlhZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4OGM3MTgxNTZmMGUxNjQ5OTg3NjQ1OGNlNzJiNjBlZWMyZGFiYzU1MzU0YmYxOGY1ZWE4OTU2Mzc2NzE4YjEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/session-manager.integration.test.ts#L45-L57",
+          "version": "repo-lines-v1:sha256:0108fc5a3f0d629d142a1a9a8b00c9b862d35ff811e8e01a544fa051824111c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOTMyYTcyNThkMGFjYTY0MGFjM2NiNjg3YTZhMDJjNzRmOTg4YWU2YWUxYzI2MTY2YTg2NzE3YzhiZTA4MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MzAwYzllOTBmYzViNTJiZTg4NWZiOGRkNDY0ZTQ1Y2IzYjIxYzk2ZTJiZWU1Y2UzYWI5ODYyNjE0OTYxMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5NGNiOTEwZDMxMjQzMmMyOTg5YWJiZWJlMGVkZWZmZjZmNjdhZTZhMmVhNDQ4M2IzZjE3MmMxOTBiZTM4NWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10ad382d3d9d41bcbcc443ceb1c5c90b",
+      "statement": "`readLiveSession(sessionId)` is the session read authority and returns a discriminated union — `{ session }`, `{ expired: 'absolute' | 'idle'; userId }`, or `{ expired: 'missing' }` — decided by a shared private `expiryOf()` that checks the absolute timeout before the idle timeout, so a session past its maximum lifetime is reported as `absolute` even when it is also idle; it deletes the session on either expiry but not when the record is missing. `readLiveSessionWithTokens()` applies the same decision after one `MGET` over the record and the tokens key (and returns `tokensRaw: null` for a pre-085 session). `getValidSession()` survives only as a thin wrapper that collapses every non-live outcome to `null` and now has no production caller, which is why the comment in `cache-service.ts` still naming it 'the authority' for idle/absolute expiry is stale.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L124-L134",
+          "version": "repo-lines-v1:sha256:a1fab306937aedf5cda96b483d59b6cfd8ec9d41b64a81593593d7199c6c3039:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlMTQ3MjE3ODExZmMzMDI1NzBhMzI0NTZkOTdiMGQ5ZTM3NjIwYzUzMjNjYzczM2FmMDIxOTUyMjExNWMxNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkYjBhZjAwOWExM2VkZjczNGNiMWIwZmNjZTljNTkzNTllZTdjMzdhZWExYjQyY2Q1NmM3NzRkNmQ5YzZkNWYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L66-L116",
+          "version": "repo-lines-v1:sha256:3ac6a9e63d828d3ec94ced9b4bae07461c772fa98a6ac8f6a04527de6eea7ce6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZDQ3NmYwYmM3NjViYmVjYzQ2NTFkNjZlMTM4ZDI2YjRkZjQ2YzI0OGM5NmMxNTMzM2I0ODUwMGE5NTExODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZWQ1YmMyODEyODg1ZjY0YTc5YWVhNjI2ZjliZjY3Zjg1ODI0MGMwOTcxNDI2ZjY0YzRmMmVmMTAwZTMwMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiODU5MGY2ZjA2YjRiOGM1NTRmOTY4OTZjMmQ3OTVhNmYxNWVlODgyZGZkNmMwYWEwYjQ3NjlhMWUyYmUyODQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts#L224-L327",
+          "version": "repo-lines-v1:sha256:b6d3d3cb20c3069c51d492402994ccee601e73b6ec45a0845d4b4670eaa8fbf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4Y2M2YzhhNzVjY2I2MWMzYWI3ZGQwZDdmMDY0OGE2ZWYyZGQzNDkwYmRiZDU0NzBjYjk4NDlhNjg0MGIyMGYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMzZlNjUyZjQ1NmEwOTJmMjA2MTMyODBmZWQ4MmI2MmZiYjZkZTgwOTg1YzdlZWE0M2EzZmRmZGVmNDE5ZjZmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0295b9f06b34ed4a50190daddc6ddfb",
+      "statement": "`createSession()` enforces the per-user concurrent-session cap in two steps: a pre-add count check that evicts when the count is already at or above `MAX_SESSIONS`, then, after the record and its sealed tokens are cached, a trim loop that re-reads the count and keeps evicting while it exceeds the cap. The loop's no-progress guard (`if (next >= count) break`) exists because the `user-sessions:<userId>` set can retain members whose `session:` object is already gone, and `evictOldestSession()` returns early when no valid session is found — without the break the loop could spin without the count ever falling. The post-add trim is what makes the cap hold under simultaneous logins, since the pre-add check alone is TOCTOU-racy (feature 009 FR-018).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L32-L64",
+          "version": "repo-lines-v1:sha256:d1c2c189b7dd3a288df675bf1be67bf86b342eb1dbdc90a603397052515a99ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3OTIxZWU2YjNlZmNkZjRkNDA4YTNhNGJhYTE0ZThkZDNlM2YwNzI5NTk3ZGVjYzRjZmIxZTdmMThhODBkMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZTgzYzg1YWE3ZDg5NmU5NWI5Zjk0ZjVmOWY1OTE2MTQyNjJiNTRhNjY0NmM1YzYwMTZiM2ExMzFmYTE5MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNWYzNDNjNDgyOThmNzNmYTUxM2UxOTkxYWQ1Mzg1ZTVlODg1MTc3ZTkzNWU4MjUwZWIzN2Y1ZjAzZTY0ZjAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts#L354-L381",
+          "version": "repo-lines-v1:sha256:940a15928d09d6679703c2d83efc56e8668e1d8ea30567e12501b7d62f164e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNmE3OThhNWY5YjY4YTI1MTg4MGYyM2Y1ZTI1M2Y0NzMzOTc3NGEwZGIzMzU1OTJhMDMzNWVhZjY3M2MwZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4MGU1OGZlODlmYmRlZDQzMGQ1NmFjODYwMDlhOTU4MGM4MjY0ODJkMmU2YzEyODk0ODcxZWMyYzgzNmE5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts#L31-L39",
+          "version": "repo-lines-v1:sha256:733e99d0b32087f266ec5399cb31d1e3ddbe526eb78043a87e604ac9b601f0c6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg0OGIxMDAyNzMwNjI2NGU2MjRhMDg3NTIwYjExZmM2ZDYyYjI3MTgxNTE1OTNhM2E1YmUzZTMzMWYzZDI1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTczMDBjOWU5MGZjNWI1MmJlODg1ZmI4ZGQ0NjRlNDVjYjNiMjFjOTZlMmJlZTVjZTNhYjk4NjI2MTQ5NjEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTVkYmI5ZTVhMzg5NmE3NjRiNGE2MzY5ZDhiN2QwYTZiMjM0MGE2ZDJhOGM5ZTM4YTFiNzk1OGZlM2NiMDdiYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_97b80e2fc1204db989f11b713728030a",
+      "statement": "Eviction removes the valid session with the smallest `lastActivityAt` (sort ascending, take the first) — the least-recently-active session, which is not necessarily the oldest by `createdAt` — and `MAX_SESSIONS` is bound once at module load from `env.maxConcurrentSessions` (`MAX_CONCURRENT_SESSIONS`, default 10), so changing the environment variable after the module is imported has no effect, unlike the two timeouts which `expiryOf()` reads from `env` on each check.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L144-L159",
+          "version": "repo-lines-v1:sha256:b90123ff985973d4d748e651b4eeed33b2f40251fd3eaca1d45ed6abb52b7a9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3Yzk5MDkyZTMxYTY5ZWViMDVlYTRhMjBlMGUzMTMyMjA0YmQxZGJiMzI0YWVjYzIyOWNhNTY0NThlOGI2MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYmMwOThlMWZiOTNjYmFiNWYyZjNhODg3MDgzNTA2Njk1MTQxM2IzZjYzZTEwM2NmZmY5OGI3OTAyN2UwMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxNzcwYmE4M2ZjMTkxNWI1MTQ5ODY5ZjNmM2RmNGM0ZGIwZDRkMDM1MzNlNWM5M2MxZDMyOTk4MDI3YTY1ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyMmYzMWEyYjI4ZGQyNzU4MzAwOWM3ZDA2ZTlhOTliNjRiMDNjZWRiZWIyNjgyYTdlOTUxZjY2MTg2MDMwMmUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L23-L23",
+          "version": "repo-lines-v1:sha256:36c3ba60765e5c6e16f214f19fc642fff3688dd4e78d2c707d4253044b64ac9a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZjM2JhNjA3NjVlNWM2ZTE2ZjIxNGYxOWZjNjQyZmZmMzY4OGRkNGU3OGQyYzcwN2Q0MjUzMDQ0YjY0YWM5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZjM2JhNjA3NjVlNWM2ZTE2ZjIxNGYxOWZjNjQyZmZmMzY4OGRkNGU3OGQyYzcwN2Q0MjUzMDQ0YjY0YWM5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThiMmNhNjYxNWJiOWVhM2I1YWRjMjUzZWNjZDA0NDFlY2IyOGNkOTdjN2RmMmNmNmE1OGY2NWZmZGI2ODFjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWI5ZWYxN2EwOGE2NjI5MGEwYzU0ODZiNGRjNDg0Y2ExMDQ2NDJlZDAzZGMwMGI3YjQwYWMwMDQ2NDA2MjliOSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/config/env.ts#L59-L62",
+          "version": "repo-lines-v1:sha256:6a4fe55b103fd18aeb5c12234f2f4e1c9e285bff5b965bc9bfc1204ec504390b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUwN2YzZTMyYjg5YzUyMzg4M2I1ZjkxYzgwNTdmMDljYzlkZTNiMDMyNmJmZjlkZTVhMmM2M2ZmNjQ5ZjNiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI4NTFlYjE3OTIxODMyNTNmMDZiY2EzNjcxNzBlYWU5NjRjOGY5ZWRhNTlhMmJmNzk5ZDg1MWFhMTAxZTQ0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg0MmY5ODBmOWE4YzdkYzVkNzRiZGNmYTBiM2E3OWUwZDRlNTVmNjIwMDBlZWM4Yzk0YTQzMjI0OGUyNTlkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdhZDFmYjYxZDIyOWZlYjFkYmYzMjJlODEwYWRiNzUxNDViMTkxNTFhMDNjYzJmOWE5YjNmYTNmYTU4YzVhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_14638147ab594c6f9dee2c6b6e45b8a1",
+      "statement": "Every eviction emits `logger.audit('session_evicted', { userId, activeSessions, maxSessions })`, where `activeSessions` counts only the sessions that still resolved rather than the raw set cardinality, and the evicted session ID is deliberately not logged in any form — under the key name `sessionId` the logger would redact it to a constant while still tripping the `mcm-no-token-logging` SAST rule (which matches the key name), and any other key name would leak it (feature 052 FR-001/FR-004). The event exists because the cap used to fire in silence, which made 'it never fires' and 'it fires constantly' indistinguishable from outside the process.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L161-L176",
+          "version": "repo-lines-v1:sha256:874988026328e902b523bc6197f3baf9b527d2b1089588af6f91eb382cf5795b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlODEzNDBiZThkZGFkMDk3YjYxNjQyYWVlOGVhMDY0YzYwYTkyNDIwZjcyMmM0YzhhZmI2MzU2YjZjMmRjOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NmM0ODY3ZTA1YjhlMzc5ZjViMWNjMGU1MzhkOTIyODgyMmM4ZWM0N2ViODQ4ZTA4ZDY4NjNkNThhNGMzZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts#L41-L83",
+          "version": "repo-lines-v1:sha256:046174bb91893fa4ad9d3b6059ee5e490e550242d45e18939c38dc93807224a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZjUzY2E1ZmZkZjNkNjFlMWY4MzdhOTZmODA4MjYwMzU1YjU5MTk1ZDhhZTExZDRmNDYyYTA2YTU2YmYwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkY2FhNmQwNjRkZGFhYTEzMjVlZWEwOTQyMzMwOWM5Zjc1ZjBjOTZiYTMwMmZkMTQwMjU5NzA2NjZiNzgyZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4fbec41f62ca4f40ad98144545b1cb73",
+      "statement": "Nothing in `session-manager.ts` verifies that a session ID belongs to the caller — it is a keyed lookup module — so ownership is enforced at the boundary in two ways. By construction, because the `mcm_session_id` cookie is the only credential: `/bff-api/auth/refresh` takes the session from the cookie and the refresh token from that session's own sealed record (a `mcm_refresh_token` cookie sent alongside is not read, and `session-tokens.renew()` still re-checks the renewed token's `sub`, revoking it and deleting the session on a mismatch), and `/bff-api/auth/logout` resolves the owner from the session its own cookie names and touches nothing when there is no cookie. Explicitly, on every authenticated request: `requireAuth()` compares the validated access token's `sub` against `session.userId` and on a mismatch terminates the session, audits `session_refresh_owner_mismatch`, clears the auth cookies and answers 401 `SESSION_OWNER_MISMATCH`.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts",
+          "version": "repo-file-v1:sha256:05eca945c2850f92d37c9d40946cd3ebd3ee7202b3d9244e3024d3a60c465573"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts",
+          "version": "repo-file-v1:sha256:56bf27a7cd1622256ac163dd41584c54adddcbd5929aacd4769ae7ef6b657c54"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L91-L151",
+          "version": "repo-lines-v1:sha256:97480fd29b08c674a7f1af379658520e24458141b803336ea9085a44d9b7835a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNzM3N2ZlY2ZlODNkMTk4M2VlZmM0YjE2ZjM2MWVkMjk5M2FhMWU4MzA4OTQ0MjU4OGZiZjBhN2U5ZGI1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMzhmMzhlM2U5NzJhZmNjYmE4YTdjZTAyMWYxZGE2MzJhNGUwYTM1ZTM0OWU4ZGJjNGZhZmE3MWRkMWQ3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMGI1ZGMwYThhY2M4OTRiYzI0YzZjZDVlZmY2YzkzNmI0MDA0M2ZmMTExODBlZTA0NzgzNDZiMjZhZTUyZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L120-L148",
+          "version": "repo-lines-v1:sha256:3dfd7fc177fbfc526fe61da0c1833b28c1264170dcb95f3bdc651cacb72d1542:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NzU4ODRjZjBmNWNmOGJhZjFlYjFkYjcyNDAxM2NmM2ExYjhkMjkzYWYzM2ZmNjczZTU5ODY4ZDc1N2JjODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjNzI5MGYzZDA3ODc2Zjg1N2Y2MTNkNmMyNzc2NWRlYWYxNzJmNzZiMGI3OGQ2NGZiZDcxYTMyYzVhZGM0NDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/auth-refresh.integration.test.ts#L93-L108",
+          "version": "repo-lines-v1:sha256:d4629a462ba446c6b85c0b9ef1f61d5b43367bb23c594322ce116ed5edbbeb00:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDNkYjZkNjNkMGNlYmJkYWVhYzEwODcxY2RlYmI2MWYzZWY2NzhmOWU2NGIyY2I2MjM3NmQ1ZmQ4MGU2MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMjRiZmJmYTUwOTU5ODM1MjZjMjFiYTA3OTQ3ZTM2ZjJmYTVjMGNiYWVhNDVhYzRmNDk2NWUwYmE3ZDI1ODQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/auth-session-side-effects.integration.test.ts#L53-L104",
+          "version": "repo-lines-v1:sha256:ccba6793cba85ce79955f419d48ddcf0cb78e1638eeee4cbb69365cf16418d5c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MWM5ZTdhNTdlOTAzNmU1YTMyOWU3MWJjNjkzYmM4OTUxYzNiOTRhNjA2OTdhYjhjMzM5MDhlNDc5YjJiYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MzAwYzllOTBmYzViNTJiZTg4NWZiOGRkNDY0ZTQ1Y2IzYjIxYzk2ZTJiZWU1Y2UzYWI5ODYyNjE0OTYxMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_44eeddbe45a8494f892b1cd2e18e43bd",
+      "statement": "The client holds only the opaque session ID, never a token: on web nothing is persisted client-side (the BFF's `HttpOnly` cookies are the source of truth), and on native only the opaque ID is stored in SecureStore under `mcm_session_id` as a startup hydration hint for `hasStoredSession()`, which `AuthProvider` always follows with a `/bff-api/auth/user` call before treating the user as authenticated. The ID reaches the client as both the `mcm_session_id` `HttpOnly; SameSite=Strict` cookie built by `buildAuthCookies()` and the `X-Session-Id` response header on login, but only the cookie is ever read back — `extractSessionId()` reads the cookie alone, and no `Authorization: Bearer` credential is honoured in any environment (FR-008/FR-009).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts#L100-L124",
+          "version": "repo-lines-v1:sha256:fe84c0c85ff1da0cf92321c63cd39426d17e76446a184c9ce6be47f4ec16acaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWE4MTMzNjRiNDM1ZjczZmYwM2Y1N2IzNDliZGU3MGU1ZTgwODI3ZGJjNzJiN2VkODdhZTMxNDhlODBiODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYjkxMTk3OWYwZWZiNGI2MmJlNzk0OTNiN2Y2YjAzMzI4ZTYzY2FlZjE3ZjY5YjUxZDY2MDI0MjM0NGEzZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNzU5ZmU3NzM0OWRhOWRmMTExOGE3ODg0MmUxNDgxNjFiMmVhOWFkOWRmYWJkMmZjODY2ZWI4NmU2NDBkY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMDA4MTc1ZGRkZjQxMjIzNDZhOWFiZTRjM2UzZWNjMzZmYjYxMTZmYzkyZDc5MDgyZGZlMTRhZWQ0OTE2ZTkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L153-L192",
+          "version": "repo-lines-v1:sha256:7b8db38ded403282fcf44fdbfc71aac70fda819a8cf63c7b46536aa260beb5b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNTIyZTNjZDdkM2VmYjg5MWUzYjAxM2RkNDYwODM4M2Q1ZDc5MTY4ZTE2ZmU4MGRhODQ1ZjE2YmY2MTYxODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L150-L168",
+          "version": "repo-lines-v1:sha256:d03fa77d20bd91bcb4d95eb5048e056296272a6689ea9dafb0e5c5e02c48a3a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2M2NiODM0MzcyY2FjNTEyNGEwODVhMWIwZDlkYzU5YWE0YzhkMDAyYzhhYTcxN2U3NzRjMzkxYjFhNWI1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjZTFhN2EyNmU3MjdiNWY2MGExYzNhMTBlZjI2OTYwYjFiNzRkNjVkMjBlOWEzM2QzYjk2OTM0OTNhNjZhYWYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-auth.tsx#L48-L63",
+          "version": "repo-lines-v1:sha256:978d1fa962aa3b81c1cf30dd3394fb97bae3337fc60e073d18507c0fe2182ea7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxZjQ3NWM4MTk3ZjhkNjFjMzVlNmY1M2IxY2E2OTA1YmNhOGJiMjc5MTI2NzFmMzIyMjE5NDE1MjY5NzlhYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNDkyNzhjNTUwM2FlZmU3MzY0Njg2NGNjZTk3ZTczNDliZDgwMmFhN2Y5ZTQ5YzBhZTI3NTcyNDA1ZGZmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMDVmMjIyZjY2YWM3ZGRkYzgwMzI5ZjJhY2YzNjY5MjEwMDJjZjc1NjI1OWJiNGVmODZkMjAyYTg2ZjI0MTMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/session-storage.ts#L39-L65",
+          "version": "repo-lines-v1:sha256:35c2e53c051f51c8822d28a1bf8e8be7df59058cbe99cfca36515d93f2deac3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZGRmM2NjMDAxNzc2ZDNhNGI5ZTQ3Zjk0YzMyNDUzOTEzNzE5ZTg1MTJkYjUyZTU0ZDhiNWYxNzU3MmVkYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMmU1ODgyZTBlYTIyZGJhMGE1OTY0ZWQ4MjE5NTU2NTJiMTVjMzEyNWY0YmY5ZDkzZDMzOTlmNzEzMWUzYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c97de5f4b3d437d9b36a3f40ab69b58",
+      "statement": "Session-lifecycle behaviour is verified at three tiers. The mocked unit tier (`unit-tests/session-manager.test.ts`, `unit-tests/auth.test.ts`) pins the read outcomes, the cap arithmetic and the authenticator's ordering but can only show the code agrees with its own model. `tests/integration/session-manager.integration.test.ts` and `tests/integration/concurrent-session-cap.integration.test.ts` run against real Redis (db 1) to prove the cap holds under a race, that the stored TTL exceeds the configured idle window, and that the eviction audit carries no session ID. `tests/integration/session-token-custody.integration.test.ts` is HTTP-level against the running BFF, real Keycloak and the BFF's Redis, covering sign-in, server-side renewal, sign-out and the refusal of a foreign sealed record. The retired `unit-tests/session-timeout.test.ts` is gone with the module it tested.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:c82a5c116ea8ca971741a151d9bdc27b88a94e562ad9710d995c27c3fb4731e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ODAzZmIzMTVkY2IxMWFjNzhmOWQ0OGFiMDFlOWZjNDhmZWQ0ODExYWNkYWI3MTM0MGFlNzBjZWE0OTk0OTYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:874898bc28084e14b69ef8ac7f7dfe01157ca8584e65d7b67392f0cc853a1eec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZjI0N2E2YzFmNjM5M2ZhMmM3NjFiNjJkY2FiMDJkZTQ1MjYyYjUxNzlmN2FhY2M4NmVmZmE1ZjgyMDExNjgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts#L19-L39",
+          "version": "repo-lines-v1:sha256:ce26497c9b2ad3e8879611b68081366003d7010c06a5bbfdb71367c6d1d3c339:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzM2Q3ZWIzYzBhNTcxNWIzYTBkMGMyNjIyNWM1YWFlNDkxNmE4ODY0Njk3MzM2YjhkMmIzMmNhYmU2M2NjY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3MDk3Zjc1Zjc0NzBhNzM4NjRhNTZkMTViMjdmMjIyMWZkMDcxM2FmNDA0ODQ2NWNhZTY2MWU1NDM1MDlkOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1ZGJiOWU1YTM4OTZhNzY0YjRhNjM2OWQ4YjdkMGE2YjIzNDBhNmQyYThjOWUzOGExYjc5NThmZTNjYjA3YmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/session-manager.integration.test.ts#L33-L57",
+          "version": "repo-lines-v1:sha256:b81851311146ea3b9188795c11367d7b4c0ec4157dc779e9c4c641223e4d759f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNzEwZTUwNDJhNzVhOGJhZTYwMzRmYzYxMjdjMzkzZDdhMGZkMGZmNDU3YjU3NThiZmZhOTk0NDM0MzYxZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmMzgwNGZhM2FjNWZiZTIwNzVjOGFlNzM3ZDJkYTA0OTc2ZTExZDU1NzRkMWY5MDY3ZDczZWEzNjIxMjIzMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5NGNiOTEwZDMxMjQzMmMyOTg5YWJiZWJlMGVkZWZmZjZmNjdhZTZhMmVhNDQ4M2IzZjE3MmMxOTBiZTM4NWYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/session-token-custody.integration.test.ts#L56-L124",
+          "version": "repo-lines-v1:sha256:c2aed2f33710b6b39de8ccdbef88e73cc1e69a7a3428ee4706db8e37b1ac8d9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NWNhMWEzOTYyN2Y5ZGYzM2ZhZDE2ZDc1YTE0MWExMjk3ZWFhYWI0ZjI0ZGNiMzBmOGQ4NWNiMDQxYjljNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyY2MxMDU4N2JmOWNkOGZhYjdkYjM5NjVlMjJhYzE5MTg0NjJlYWRmNmExMTYxNTI0NTE5MzIzMGZhNDBlMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4bbe22216c7844dbb85e6bf5d20b835b",
+      "statement": "The timeout is enforced inside `requireAuth()` in `bff-server/auth.ts`, which every authenticated route calls, and the ordering is the contract: read the session and its sealed tokens in one `MGET`, refuse a missing session as 401 `SESSION_NOT_FOUND` with no audit, audit `session_expired` with `reason: 'absolute'` or `'idle'` and answer 401 `SESSION_ABSOLUTE_TIMEOUT` / `SESSION_IDLE_TIMEOUT` (clearing the auth cookies in each case), terminate a session whose sealed record is absent or will not open and answer 401 `SESSION_NOT_FOUND`, renew the tokens if due, validate the access token and compare its `sub` to the session owner, and only then slide the idle window with `touchSession()`. The old `bff-server/session-timeout.ts` and its `validateSessionTimeout()` are gone.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/user%2Bapi.ts#L24-L32",
+          "version": "repo-lines-v1:sha256:f688889e2311f6b504fd35b477239a4f04c13ce6eb24bd227514781e83874af4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ4ZmExOGIwNzkzYTIwZTMzODJkNDcyNWY1NWNmNjgwYWVmY2NkODE0YmYzZjJhNjkyZGE4Y2QxNzZkNzZhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Q5MWNjYTRjN2ZjOWU3ZjViNzM3MjczMTcwMGM2ZmY4N2Y3ZGY3YWYzZjdhNTIzZjcxZTkyM2ZmOTE1YTdiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjI3NGYwZjk5Mjk5YTk5MmQwNGIxZmI1OWNkZjk3NTYxMmNkZDQ3OGU0NDI2Y2E3ZGZhZTdmMThiNzA4ODg5NiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L76-L151",
+          "version": "repo-lines-v1:sha256:7154f2841eb3e675f176b66a1252303d88cb2e03fad57db774d60a5daec6d3a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNmFmNjVhMDUxMTFiNDkzNzA4NWU0ODI5ZGQyMTM5ODcxZGE4NWU0ZDY3MzRhOTc1Njc4OGJlZGM1NTkxNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMGI5Yzg1MmIxZmZhYTAzMzQzM2Y2NzlhNTY3MmMzYTIzZTQ2MjZmYjY0Mjg0OWE1YmM5ZGRkYjQyMmM4NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMGI1ZGMwYThhY2M4OTRiYzI0YzZjZDVlZmY2YzkzNmI0MDA0M2ZmMTExODBlZTA0NzgzNDZiMjZhZTUyZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L185-L224",
+          "version": "repo-lines-v1:sha256:7fdc4464090ab046879d705f9e59578efbc140576e30bedc552a09b1cf2f8081:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNmZlYThmNGMzYWNmMWM3MDlmNDVkNTBhY2Y5YjhkYWI1MmY2OTBlNGVkMTNkNDk0Y2I3NTVhZjNiYmFmMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMGNhZmExYjhjZDY5ZTM3YjVmMDZlNWFlNDNmODgwYTlhNDUyZWJhZmE2YmM5YmM1NTAxNTU0MjdlNjQ0OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNGY2YTdjMTMwNjMyY2VhODA0NzY1YTQ0MGIwNWQ0NTA5ZWE2NGM5YzRkZDhjNDdjNjI4ZWZmNzdhZmUzN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dfe46f631eca45e4b98b2eff9014de9a",
+      "statement": "Because `requireAuth()` ends with `touchSession()` after validating the token and the owner, the idle window slides on every authenticated request, not only on the routes that read the session explicitly; `/bff-api/auth/refresh` is the second caller, sliding the window after `ensureFreshTokens(..., { force: true })`. `touchSession()` writes through `touchSessionRecord()`, which uses `SET ... EX <ttl> XX` — the session record only, and only if it still exists — so a touch racing a renewal cannot write a pre-renewal refresh token back over a rotated one (the tokens live in their own key) and a touch racing a logout cannot re-create the record the logout deleted. The `user-sessions:<userId>` set's TTL is refreshed only by `cacheSession()` on a new login, not by a touch.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts#L46-L61",
+          "version": "repo-lines-v1:sha256:b376e04b7f9ccdecf4462393a1e7c65279aff57f0df76c3e262a5d54dc0a27cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGRlOGI0ZjQxZmUwYjY0Y2FlNWQ2YzJkNzZjYzNjYzc3ZTc3ZmMzNDFhZmE0ZmVmZGI5OWIzZGU4ZDkwM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYWM3ZDVmYTllNTg0NmM4MTAyZWVlNTc2MTQyOWZlYTg2ZGM3MjJhZTRkNWUwMjE4YWU0N2QwYjAwYzhlMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkN2Q3NWY1NmM0NDA2MjBlZmM4ZmJiNTA3N2I3N2RjOWUzMzA3YjhhYWUyZTlkNWVmMmQ4NTMzOTIxZjJhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMzBmNDFlZGUxNTQzMmVkZDU4NjE0NjUyOGFiMjRkMTY0MjhlYTNjMmU1MTUwZDE4YTIzODkxZGRkYWRjN2IifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L147-L154",
+          "version": "repo-lines-v1:sha256:212e478b8c9a01b2c3aa9867f7ac2d84c5797e74590b311f45a4ceea9497a095:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDc2NjRiMTFjNDI3ZDJjYTcyZDhmMmNkMWY4MzY0ZTMwMDE0NjBmYjc1NmI0MWY3NWU1YjdlZWM2OWM0NTg2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI3MjFlODQyYzFmNzNhYzE3NmQ2ZDRhNTZiYTg4MTQyNjE5YmRlNWE1ZGI1MjEzNDk3NDYwMTgzZGIxZDg2OCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-manager.ts#L118-L125",
+          "version": "repo-lines-v1:sha256:5fb6a171642e4d27389de0f95687a80dc40a8beacf7a7f6ceada4db5af546969:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2EyMWMwZDE0NDE5ZmFmNmYwYjgzOGI1YmU0NjJjY2Y2M2FhZjA1NWQyYmU0OGE1ODAyYWYwN2Q2ZjAxMjljMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzRkZDI0ZWZjZWMwNGM1MGUwZGNmMjZjMWQwZjA0N2E2MWRhZTU2ODllZWMxMWM2Mjc1MjgyMjMwZjFiNzA3MiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L137-L140",
+          "version": "repo-lines-v1:sha256:1157896b55d9ccead88c3da1c5f71b28c4bb13e0e647bd571133f9fe4257b0ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjYzMWYyZGU1NDAwNzBiMTA2NTk3NjY0OTA2MTNkNDg2ZWRhMmFlODg0YzljNWNmNDRlM2U4OTA0NWM2NTY3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWIxMmFhZmQ2OWUzMWFlZjI5MTBiZDNlMDY5MjNkMGYwNjAzODVlZjNhYzE4YjhmZGIyYWE3Y2M0ZTkxOGQ1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIxOTJmMGFiMmI3MWU0NjYzZmVlNWY0MDNhZThjZWI0MDdiN2VmYzI5ODdjMDA5NDUzOTI3M2ZjOTU0NDE2ZSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/cache-service.test.ts#L400-L409",
+          "version": "repo-lines-v1:sha256:cb651c19dbf516551a8cf559c1eb545a9d05b952135aa8661c530afd3924e821:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NmZlZDg1NTZjZmUyY2QyMTJjODJmZTRkMTBhY2Y4NmU1Mzg2Njk5M2ZlZjI4MjQwZjlhM2I4YjVkYTg4NGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMmMyNjhlNWE5MjFmOTBiNjJlOGE2YTg1OTcxZTEwZTAzZGYyOGM2M2ViZDFlMDdkODAzNzQ0NGI5MmIwYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzZjAzMjRlZjJhM2I3YjcxN2RmYzk4MzVhYzEzOTc0Y2FkMGZjMWIxODBlNjJiOWZiYWIyYmEzMmRhNjAxODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3a6b80c5888456db244cc340068634b",
+      "statement": "The member's access and refresh tokens live beside the session as a third Redis value (`session-tokens:<sessionId>`) holding `{v, accessExpiresAt, refreshExpiresAt, blob}`, where the blob is AES-256-GCM-sealed under `AGENT_CONFIG_ENC_KEY` with an AAD bound to the session id and owner; the two expiry times sit in clear outside the ciphertext so a test can age a session without the key, while the JWT's own `exp` is still validated on every request. Renewal happens at most once per session at a time: a request that finds the access token within 30s of expiry takes the `session-renew:<sessionId>` NX lock and renews, and a concurrent request waits for the winner's tokens rather than renewing a second time (Keycloak rotates refresh tokens, so a second renewal would end the session). A session with no tokens value, or one whose record will not open for that session and owner, is never migrated — it is terminated and refused (FR-022).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L41-L48",
+          "version": "repo-lines-v1:sha256:974de01179a6ff043b67d87d4bcc3c4cd8f2dd653b577f947f9d5382309bee0b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU2ZTIwZTU5NjQ1ZjI4MjNkNDc0NjdlNTM3NTY2NDEwZmFmZWRmY2FkODYxMzMwNTQ5ZTAwYzYyMTQ4NTlkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ4MjkxOGU2OGNhYWJlMGNiNDEwZDM2ZDBlOGY3ZTQyMWYwMTJlMWNhMGYwMzdmYTI1OTUyMTI4Nzc3ZjJlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGM2MGU0MjAzNjgzOTIyZWNlZTczZTQ1ZWUwZTc2YTNmNTI1MjRlOTExNGFjMjllNzNhYzU3Zjc2YThlMjcyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZjNzczNTMzNjU0MDA0ZTk5NzZiNDU4NWU0MWIxM2Q4OWFkYWViOWRjMjljNjRhYjZmYWNkN2IxNzA3ZmM5ZiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L30-L118",
+          "version": "repo-lines-v1:sha256:da3fafd93d431e1d59526a80d2cccdfd9887e8cad4c4d48c0706e88bec05b00b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMDYxMDY2ZTA3ZjM0OWVhZWJhZDVlYmI2ODU4MGJmODE1MDhhZjc0NzQzMzBmMTIxYmM5NTA0Yjk5YmExMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjI5ZDA3Y2QwOTE1ZWRhNmQxZDQ2ZmU0ZTZjNDRiZTU1ZDNkZWYzOWEwYzgxZGMyNDhhNTM4ZTZlZjRmZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MTg0NDk4NGYyNGVlMzhlZWUxODQ5YmRhZDI3YTY1NWEzZmU3MDRmMzU1MDQ2YzVhYmM1MzI0ZGM1ZmExZTcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L202-L216",
+          "version": "repo-lines-v1:sha256:9e4ac27919ade727ffa913aba3b34c5f2d967c152d4bb41117739ce02b180181:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MTlhMDQzZjIwOWFhOTNlN2Q3ZWY5OWQxMmY3NzE3NTc1NDEwYmUzOGI3MDViNjhiZTY5ODBlNmE2YmQwNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZDhjOGM4NjQyOTJiMTk0MWM1ODVmZjQ0ZmNmM2U1MzFiMzc5NTZkODRiNTFlNjJmMzhmOTdjZGE5MWE0NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NTViN2VjYTZlYjM0N2JmOThmOTg3NTJkMmQ1Y2I5Y2QxYzY3YTRkNzlhNDgyNGIyODAzNzQ1ZThjMThlNjcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts#L291-L302",
+          "version": "repo-lines-v1:sha256:d11e0f53b23d7300d75c84496a9a21c539dd846692a62a385162e0f7d2b7ca3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxY2IyZWU5MTdiODg2ZTA5NTA2MTFmYTE1NzlmZDlhY2IyNzNlM2Y4NjI3MGE5ODkwZGZlMWFkNjgzZTU5ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYWQxMTAxZWYwMWI4MjIyZjFhYTRhZmQ5YmQ4ZTgxMmQ5MGJmYWZjNWE2MzI5NjQ3NzNiZjE5MjZiYzUxMzcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/session-token-custody.integration.test.ts#L64-L124",
+          "version": "repo-lines-v1:sha256:0146b97ca1b1038a660d95d17a7fa1f05ede1ba398efb2a5f498143a0aa515a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NTgyMWYxNjNlN2Y0YjVkMjJjMmQ0Y2QyZmI2NmQ0MDUzYjRkOWVjZWFkYzgxNDQ1ZGQwNGNiOGE0OTU4NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNGQwNDU3OTNjMzg1NmU1YzYwMDU0MzFmNzIzYmMxNmQ1ZTZhOTNjZDRmYmQ4NTk5YjllYTQ5MmE3NjU3MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52476a1e8003420594e418efe973438d",
+      "statement": "The concurrent-session cap is enforced only by eviction, never by refusal: `login+api.ts` calls `getActiveSessionCount()` purely to log a non-fatal warning and records that eviction happens inside `createSession`, and although `AuthErrorCode.SESSION_LIMIT_EXCEEDED` exists it is never thrown by any code path, so a member whose oldest session is evicted is told nothing.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts#L95-L104",
+          "version": "repo-lines-v1:sha256:c8477795e03e62254a4ec7b1c4e3e63bf9e6c205ce3c6bb5d0f64b974d15455b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5YTk2MDQ5YWEwYTkzMzUzOGU5ODlkZDM1ZWQ0NjRhMDBkZTUyZmY3MzRiY2NkN2M5MGMxZjEzOTc4ZTdkN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MzUzOTM4MWE0YmIwMDFmYTdmYzYwMDA0NTJjZWRjYjNiYmQyNzk0MTgwOTkzN2Q1NjNiNzM5MzJiMWEyOWUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/types/errors.ts#L24-L38",
+          "version": "repo-lines-v1:sha256:c9839674a9369e80d6e154147e1834ca47924133d9f724938859bd5a6cd2d72d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0NTU5ZjQ0ZTVkMDQ5OTI3ZGE4OWFlNGYwZGEzZWZiOTQwNWE4N2M5NTliMjU1MzZjYTAyMmU2YzA0ZDA4MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMTIyYzA4YzNmN2NkMzA4MGI2YWQ0NWYxOWQ0YWZkODc1Yzg4MTY5MGZmZDljNmM4NzdmNDg2NTJmZTQwMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMDU2NjM2NmU4YzEwNjhmYTQ5MTY5NmE5NGU4ODQxMWU4YmQwZmU1NzI2ODFkZTVkMDIzYTc2MzllYTRiYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNjEzMjI3OWQyMmE3M2Y1OWE2MTE3MGZlMTRjYzMxMTg1OGQ5ODc0ZjIwZmMyYjZlNzQ1NzNlZmQ0N2UwYjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7d5afef6e324ef7b1bd85585cf148d8",
+      "statement": "The client-side idle/absolute timer in `hooks/use-session-timeout.ts` (defaults 30 min / 24 h, commented as needing to match the BFF) is a prompt rather than the enforcement: it is mounted in the authenticated layout behind `isAuthenticated`, wired to `AuthProvider.logoutWithTimeout`, which records the reason for the login screen's message and then POSTs `/bff-api/auth/logout`. Its absolute timer starts at hook mount rather than at session creation, so a reload restarts the 24-hour countdown and the server's `expiresAt` remains authoritative; the `EXPO_PUBLIC_DEV_*_TIMEOUT_OVERRIDE_MS` variables shorten the client timers for E2E flows without changing what the BFF enforces.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/(app)/_layout.tsx#L19-L34",
+          "version": "repo-lines-v1:sha256:8cd2fa2113be9ebd4a8153e4122914e6e434c4a25960019e0c24535976cb85be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMzY0M2I5MTY3ZDcyZTk4NjE2NzBmNjViYTRjZTEzMzZlMjBmZmM1NjhjZWJhNjAwMWZhOWRhNzhlOTNjZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MTBlZWQ0N2UwZjRlYTM4NDk2YTE4MDVlOTY1ZWVlMTJkZTI4ZTY4ZGIwOTNjMDg1ZjE0ZmQ4ZGMzMzE2MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3NjEzNTQ1MzNjMGYwNjQ3OTEzYjEwZWI3OTdhYjNmNzgyM2MwNzcwOWI1MjJiM2VlM2EwNDg0NTkwMTJiMGIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-auth.tsx#L97-L104",
+          "version": "repo-lines-v1:sha256:f245869ab63486cc46e4b79f7e4ce75823af43d963dec5d30f7ba20cde200f95:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNlYmNkNGEzYmM1MDY0OTFiMGNiYTExZjczYTRhODY3MDNkY2Q0NWJjYmVkODA4N2E5ODRlYmRkYzUwNDNiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRjNTJmMDhiMzliMDhiMDFjOGQzMDhiZjg4MGIwYmVmMDJmZDFkZmNjOWQ5YWE5M2E0ZDFiNWY0ZDU4YjZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzAyNWM0ZGRlMmM3M2E2MjhlZTExMjBjNjE1NjdkMjAyYjhmOTk4YWMzODBhMTM4MWY5OTIwM2JhZTc4MGNkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWNhZTRmYTZmNDc0ZWFmMmM3ZDZhZjFkMjQ5ODg4YTE1ZGRiM2MxNWZmYWM4Zjk3NDJjYWIwY2VlOTBhMjNjOCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-session-timeout.ts#L12-L95",
+          "version": "repo-lines-v1:sha256:46996354a2fd434dbde0a6f8953ec4aef556cc07cf42429a074f7d27e4a37788:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjgxNmRiYjBmN2JlNTQzNzg1NTJjZjk1NDgxMjIzYmQzMWIzN2UzZWQ4ODgwYTM5ZGU4NTg3NWRkMTU4MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjMxYzM1ZGJmY2M0MDVkMDY4ZTY5NTA3NzIzNGZhMjM5NzAzNGRmMDZhMjM4MWRhNWZiYjU3MTVhZGRmYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlOWU3ZjVlYzRjMjQ0ZjEyYTJmOTk2ZTAwMjNiNWEyMDZjMTA2MzMxMmVmNDczNmJhN2Y5MzA2NjQ2NmNiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/mobile/session-timeout.yaml",
+          "version": "repo-file-v1:sha256:d4772944e22702b5162290e4e8b714d6f4a5e5e6863ce251bd8c7c6ae3f81a7f"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-11-03T00:30:54.344Z"
+  }
+}

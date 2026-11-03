@@ -35,12 +35,20 @@ sources:
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-04ddeebeb466c7a075e05fbf
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-28b3de7a863c75f0b1b6b62c
     resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
   - id: openwiki-source-d58b64a5afcc9df80ea92152
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
+  - id: openwiki-source-a5bf09947adc24a8d59ab587
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-4bb9aed3e8acb9d5ea822f53
@@ -49,6 +57,8 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/use-keycloak-auth.ts
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
+  - id: openwiki-source-e1083958c70f9ec3bcb8faec
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-34854463fd23e29b106dcb63
@@ -118,7 +128,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -272,9 +282,32 @@ that costs is local coverage of the refresh path, and the substitute is named ra
 the 2-per-30 s bucket, its 429, and the `refresh_rate_limited` audit event are covered by
 `tests/integration/rate-limiter.integration.test.ts`. Production stays at 300 s: no security control
 was relaxed anywhere. **A running Keycloak keeps the old value until the realm is re-imported**, so
-raising the number in JSON changes nothing for a stack already up. The E2E spec that proves the
-refresh recovery chain does not depend on the number either way: `agent-session-refresh.spec.ts`
-clears the access cookie explicitly instead of waiting for expiry.
+raising the number in JSON changes nothing for a stack already up. The 5400 s values, the
+`e2e-worker-session` guard that pins `ci-realm` above the job timeout, and the `globalTeardown`
+`refresh_rate_limited` counter all remain in place; what changed is the E2E spec's mechanism.
+
+**`agent-session-refresh.spec.ts` no longer drops a cookie.** Before feature 085 it cleared the
+`mcm_access_token` cookie explicitly so it could prove the 401 → refresh → retry chain without
+waiting for expiry. Since 085 the client holds no token at all — the member's access and refresh
+tokens live in the BFF's session, sealed with AES-256-GCM — so there is no cookie to drop, and the
+spec instead ages the session's **server-held** access token. `tests/e2e/web/setup/bff-session-store.ts`
+connects to the dev BFF's Redis (`localhost:6379`, db 0) and rewrites the `session-tokens:<sessionId>`
+record's `accessExpiresAt` to `0`, preserving its TTL. That is possible by design: `session-tokens.ts`
+keeps the two expiry times in clear beside the sealed blob and *outside* the AAD, precisely so a test
+can age a session without the encryption key — and editing them cannot extend a token's life, because
+the JWT's own `exp` is validated on every request.
+
+What the `@gate` spec then asserts is that renewal is *transparent* rather than client-driven: the
+protected route (`/bff-api/auth/user`) still answers `200` on the very request that finds the token
+expired, with no `401` and no `mcm_access_token` / `mcm_refresh_token` cookie in the response; the
+server-held expiry moved forward; and `POST /bff-api/auth/refresh` — still the client's fallback —
+succeeds on the session cookie alone and re-sets nothing but `mcm_session_id`. The cookie jar is
+checked for the two retired token cookies at baseline too. So the spec still proves the refresh path
+independently of the realm's `accessTokenLifespan`, but it now proves the *server* half of the chain;
+the client-side 401 → refresh → retry orchestration over a real refused run is not covered here. The
+keycloak README's own sentence about this spec ("clears the access cookie explicitly") is pre-085 text
+that survived the re-scoping — the surrounding claims (dev and CI at 5400 s, prod at 300 s, local dev
+therefore not seeing realistic expiry) are unaffected.
 
 ## RFC 8693 token exchange
 
@@ -587,8 +620,42 @@ redirect, the native `mcm-app://` login callback, and the later additions: the b
 the account-deletion step-up callback, and its own native scheme URI. It authenticates as the BFF
 service account, reads the live client, and PUTs back the client with `[...existing, ...missing]` —
 additive by construction, so it neither duplicates an entry nor needs the caller to know what is
-already registered. Its errors are swallowed (the operator adds the entry in the console instead), and
-a module-level `Set` makes it one-shot *per client* per process, marked only on a successful run.
+already registered.
+
+```mermaid
+sequenceDiagram
+  participant App as App root layout
+  participant Init as GET /bff-api/auth/init
+  participant KC as Keycloak Admin API
+  App->>Init: called once on app mount
+  Init->>KC: client_credentials as the BFF service account
+  KC-->>Init: admin token
+  Init->>KC: GET client by clientId
+  KC-->>Init: full client representation
+  Init->>KC: PUT client with existing plus missing redirect URIs
+  alt nothing missing, or the PUT answered 2xx
+    Init->>Init: record this client id as done for the process
+  else lookup, fetch or PUT rejected
+    Init->>Init: warn redirect_uri_registration_failed with step and status, stay unrecorded
+  end
+  Init-->>App: ok true
+```
+
+One reconciliation attempt: the write is additive, and the per-process "done" mark is set only on a confirmed result.
+
+**No path out of the function throws**, so the route always answers `{ok: true}` and the operator adds
+a missing entry in the console instead. What a failure does do is warn and stay retryable: every
+failure path goes through a local `unrecorded(step, status)` helper that logs
+`redirect_uri_registration_failed` with `step` one of `client_lookup`, `client_fetch`, `update` or
+`error` — never the admin token, the client representation or the URI list — and the module-level `Set`
+that makes the call one-shot *per client* per process is keyed on **confirmation**, not on attempt: the
+client id is added only when nothing was missing or the `PUT` answered 2xx, so the next
+`GET /bff-api/auth/init` retries. Before feature 085 a rejected `PUT` still latched the mark, and an
+address that was never registered stayed that way until a restart with nothing logged.
+`src/bff-server/unit-tests/redirect-uri-registration.test.ts` pins each case — a rejected update
+(`403`/`400`/`500`) is warned with `step: 'update'` and retried, a successful update and a
+nothing-missing call are not repeated, a failed client lookup is warned with `step: 'client_lookup'`
+and retried — one client id per case, because the mark is per client per process.
 
 The client is a parameter (`keycloakClientId = env.keycloakClientId`), and feature 083 added the second
 call that needs it: when `env.backupConsentClientId` differs from the login client, the route registers

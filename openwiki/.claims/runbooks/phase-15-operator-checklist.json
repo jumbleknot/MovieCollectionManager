@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bd4f0f7894c8f85ff7eb0fe370c2d77902f8a68fea0da805c5e7ed2fd8d50549",
+  "pageVersion": "sha256:44f9bc0911a0ee0e5c9d274d4f00643076ba095513f78d0c5e571a86a1447df8",
   "claims": [
     {
       "id": "claim_c7afeb250e0c4e5797ccafcbc6ed1594",
@@ -53,7 +53,7 @@
       "statement": "CD rollback has no Komodo endpoint to call: on a probe failure the workflow git-reverts the digest-promotion commit (restoring the prior .env.deploy), pushes, and re-fires the same signed Komodo webhook so Komodo redeploys the last-good digest, then exits non-zero for operator attention.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L285-L300",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L288-L303",
           "version": "repo-lines-v1:sha256:eead68d220479fe6cf19a18ecab8af1a67fb2fd4909b17b60b876cf5d4d9f8ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhN2QwZWE3NTljZTNlNjgwYmZhNGNlYzE0MzQxOWExYjhjODMyODAxMTk0MzgxZjdmMWJhOWQwMjVjNjlhNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDE0ZGYyNTVhMjEyZjdlZmVkNzNkZWE4ZmNhMmExMDI2YTUxYzkyOWFkYWU3YjRjYjY5M2JhMjQ0NTk5MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZWJjYzI4YWFiNTc5NmMwN2Y2NTJlYzdlNDE4MDUwMzdhMThjYzAwNTZlY2JkZDgwMmJhZDExOWVlZWE2NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
         },
         {
@@ -203,16 +203,20 @@
       "statement": "stacks.toml's one ResourceSync was later extended with three feature-025 Control-Tower support stacks that hang off the same core chain rather than forming a second deploy path: prod-audit is an independent root (after = []), prod-vault follows prod-auth because it is logically in the auth tier while living in its own block, and prod-observability follows prod-mcm-bff as graph ordering only (no hard dependency); every block carries deploy = true, so one push still reconciles and redeploys all seven stacks.",
       "evidence": [
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L136-L204",
-          "version": "repo-lines-v1:sha256:c009c74c7e47ffeda90db2bfa50d2b3aac248beec2e5592cc89ce82ebf8c40ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNjNzUxZGRmMjI5ZTE4YWJkN2UxYzBmNDNiYTZkY2FhNDhmYzI4NThiOGQ1N2VjOTk4NWJhMDgyNjQyNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YWIyNDI4NGZiNWE2NDZiZmJmYzIwYzljMjJkODYzMmIwMDExNjBkZTkxNjQ2YmIxMjZlMWI3ZDU1OTg0MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L136-L203",
+          "version": "repo-lines-v1:sha256:478cfb70cd346f3b8fcedfb525639411c06b95b3a3de50629fe3aca2131c7b51:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDNjNzUxZGRmMjI5ZTE4YWJkN2UxYzBmNDNiYTZkY2FhNDhmYzI4NThiOGQ1N2VjOTk4NWJhMDgyNjQyNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YWIyNDI4NGZiNWE2NDZiZmJmYzIwYzljMjJkODYzMmIwMDExNjBkZTkxNjQ2YmIxMjZlMWI3ZDU1OTg0MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L146",
           "version": "repo-lines-v1:sha256:922fe89938548154cf35210d8cda23fe5749c83a2ec75598016577fa37e0cb7a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc1M2JhMzZlNzE4NmNhZmUyNjQzOWQ2ZGNhM2JlZjc0ZTA4OWEzNTRkMjVlOWIzOTE1YjRlNDhjMmRlZWU4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWZjMGM1OGM5Y2Q1NmRiN2FlMTkwODlhYTgxNjI3MjVkZjVmMGFjZDIyOTkwZjk1MTk5M2ZkMDIxN2RmZDU3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L192-L204",
-          "version": "repo-lines-v1:sha256:22c96f63a012d4095528be3d6e61112271ac00456bb720bda2b5614a8eec417d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNWRhNjg1ODgyNTMwNjRlM2FjZGJmMTE1Zjk4ZjIxZjk1ZjMxNzNlODQyZGY0NGYyMjIwOTYwOTkyOTU4NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L158-L161",
+          "version": "repo-lines-v1:sha256:42fa5a1d363317f442ee9c112764aed2d6bdb154595e99489a47f1a0ee561021:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjYWRkNjAzYjBkYjg0MDk5NjZkZTE2OGE4NjhhNDZkZTAyMDVkODdiNWEyN2ExY2NjYTgwMTJhYjVlMGQ0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAzNzhjNDViZTgzMjQ2ZjVmOWFjZWU4OWNhYTdiMDA0ZDk0ZTc4ODlkMWUzZWFlMzViZGQ5MWVhM2M3ZmZmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDFjYmFmZWY3OGFjZTY5YTAyYjI0YTJkZDY0MDZjNWQzY2VkNTFkMzNiMDNiYjNhZTI3MjBiNTZmMTdhMzVjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2JiZjgwNDM1MTIyNGYwMTI4ODczOGRlYjZlYTY2NmQ5ZDUzZTE2YjRmZmM0ZjVlZmVhMGQ5YjhiMzM1MWE0NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L191-L203",
+          "version": "repo-lines-v1:sha256:22c96f63a012d4095528be3d6e61112271ac00456bb720bda2b5614a8eec417d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOTFkYWFiNTQxZDhiMjc5ZGYyMDRmNGNhZTliODcxMTIxN2E0OWJmYmExNTZlMDM0OTk2NDdiNTViZDRhNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -261,19 +265,19 @@
       "statement": "main's required status checks are read live from branch protection for the target's base branch rather than hand-maintained, with the committed list in scripts/ci-status.mjs as a reported fallback only — currently seven globs: guardrails*, app-ci / changes*, app-ci / affected*, app-ci / mc-service-checks*, app-ci / app-e2e*, infra-image-scan / infra-image-scan*, and the later app-ci / app-image-scan* (spec 084 US3). The fallback is used when the read fails or when no status-check rule covers the branch, and its use is always named in the verdict header rather than silently substituted, because the hand-maintained mirror once held five globs while main required six — feature 035 had added infra-image-scan and nobody mirrored it — and ci-status printed VERDICT mergeable + exit 0 while the merge API answered 405, the over-reporting direction in which an automated status-and-merge wrapper attempts a merge that cannot succeed.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L839-L858",
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L878-L897",
           "version": "repo-lines-v1:sha256:be4690c608fb1de42a5b2ebb58c71dca7f0db43872e79655b85bc6ac22ab5466:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkN2JiMzc0OTUyNjA4ZmNkNjE3ZmYxZjgwMWRiZGYxMzM3MDU2MzcxZmIyMjhmNTdlODhjMDM5YWFkNTQwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTFiZDQ2MWRlYjE3NTA3ODczYjYyZmMyMmRiYWQwNGIzNTQ0Mjk2ZTcxMjgxZTM4M2YzYjg4NTk4MTQyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjFkZDA1ZDdhYmE0ZThjYmVlY2RmNWIzOWM4ZmQ0ZDhkZmQxYWU2NzQyYzMzY2RkNjQyNmQwY2E4ZTRmOGQifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1258-L1266",
+          "resource": "repo://scripts/ci-status.mjs#L1288-L1296",
           "version": "repo-lines-v1:sha256:5d50ccdb4d4e97561b8ff1c008f66113195dba8c1c6de31ed093b0f4c586dc94:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhNGZmYzM2NTU1ODQ1OTdlODNkZWEyMTAxYWY3OWI3ZjFiZjY5NmVhMWQ5NzRlOGY1MmIyMWY2NDgyMjcwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNDIwOGNkNmZmYjhjNGEzNTQ3YjJmNTRhZGExOTk3OGMzZjM2NWU3OGY5NTAyZWY1MTQ1Y2RkMmFhODU0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRlMTg0NDRhNTdhN2VjOGY1ODZhYzFhNDljMGNlMDM2NmZhY2E2NTYzOWFlNDE2YWRmNjFiMTVlZTdiZmZjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGUxOGFhN2MzZTlkOTBlODU3ODAxMzAwNDUxYWUxYzgxN2UwY2MxMzI0MjhlNjUyNWQ1MzgzNGEzMzdmMDk5MyJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L504-L524",
+          "resource": "repo://scripts/ci-status.mjs#L532-L552",
           "version": "repo-lines-v1:sha256:bd7bc07d6e21458c91fb1bdbe83487e774218d9b7a20ad982e6fbd134dd85053:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNjk0Yjk3MzM1YmVmMzhlYjMwZjRjZDYzMjg0M2Y2ZDc2OTRiNDRiMjIyOGU5NTMxNTk0OTdlZWVjMDc1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWM0OTVjMTA1NDg1Y2MyMjVkMTY0YTY3ZWI1NGQ5ZWUyNjM5YzUwODUzMDdkMzFmZjdjYzUyMjUzYjJiNGQifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L548-L576",
+          "resource": "repo://scripts/ci-status.mjs#L576-L604",
           "version": "repo-lines-v1:sha256:fd5657f244c9c77fda43ee67ee8b1e45984ccfc1ffa068d52266d3774c3d7050:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ZGE3MTY0ZTcwNGJhYjIyZjkzZGZlZDNiY2NiZjRiM2JmZTg0YmYzZmFhNDJkYmY4OGIwOGY1NzI2NzgzZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyM2ZiZTZjYzE3MTRiYmY4ZDUzZWM0YjQxNjM5MDAwYmRkNjQ0YWJhN2UyMjE3MTgyMWVjY2RmYmVkZGYwYzAifQ"
         }
       ]
@@ -283,15 +287,15 @@
       "statement": "The committed fallback required-context list is constrained to be a SUBSET of what branch protection actually requires: a fallback glob that protection does not require would mark a check required that is not and block a mergeable PR, so lagging behind live protection is tolerable (the live fetch catches it) while over-claiming is not — asserted by a test that requires every fallback glob to appear in the live list, plus a belt-and-braces assertion that the fallback carries the very glob whose absence produced the 405. trigger-cd and dast are deliberately absent from it because branch protection does not require them, which is what keeps their failures advisory rather than blocking.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L324-L330",
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L363-L369",
           "version": "repo-lines-v1:sha256:6b11f2ab5d2a2ffa0db89838ab6d885706f55eb86e669f627217f06ef3dd01d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzRiYTExODY4MmQ2OWUwOTgwZWIwYzFhYTVmMzkzMjY0YjlmMjg1YjFkZGFlYTQzMjE5NWI0NTdhNTY3OWFkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFmZTVkNzdkYTJlMjkwNmE3N2Q2MzIyMzQyZDJjZTU2ZDg0ZTM4MWI5OWM4MjE2Nzc2OTVhNGEzYjMwNWNlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjExZTVhNzM3YWIzZTcyOGY0MGU5NzU4MTk0YTg3OWRiMWFiYTI5MDBiY2NiYjJkY2VlNzdkZWNmMWYyZWVhNiJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L880-L896",
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L919-L935",
           "version": "repo-lines-v1:sha256:c1e6fe0394397e5f433e918a021f0ef193755f90b652981eb3786e4c30bf8aca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZWJmYWI4MDYwYTQ4OTI4ZWVmNGE5NTVmMGUzMjMzZjZiNmM1N2M0NzQxZjdlNjFjZTlmNzhlMDMxYTUzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNmI4M2RhY2E4ZGNhNWFjNmJlODQ5ODQ3OTViMTkyMGEyOGI5ODE2YmEwYTkzZDBlYmY1MTdkNGRjMTc1YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyMWMwZWMzYmJiNmZjZWVlMGQ4YjE4NWZiMTJiMjIwYWRjMWRkZWRjZjM1NmNjMjhmYWRkYjg3NTVkZGFjMjkifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L511-L513",
+          "resource": "repo://scripts/ci-status.mjs#L539-L541",
           "version": "repo-lines-v1:sha256:4f3f1c83662afab63f59c0f3aa8bcfa7d82e09648966f5f4a0784676c986b1cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4ZDBmYWFmYWU0NDRkMWM4YmJiMGRjNzBlM2JmYTQ0OGQwMDg3M2YzNmViNmI2Y2RlNDIzYzc4YWQ0NDkwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc3ZWMzZDRmYjViMDNkNGI2ZTBkOWY0ZmM1MjVkNzFjMGUxMjA2OGY5ODczNjQ1N2U4N2Y2YzYwMzQzMjhjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDIxMjJkYWQzYTI1NzgzMDdhYzUzNGZmYWQ4MDk4NzhhMjQzNmEwNDI5MTBjZTRjMjUzNjUxMTkwYWQwOGEyOCJ9"
         }
       ]
@@ -299,6 +303,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-31T16:05:45.295Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

@@ -23,6 +23,8 @@ sources:
     resource: repo://rust-toolchain.toml
   - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
     resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
+  - id: openwiki-source-c4b92dabf869c989f00aa0e8
+    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
   - id: openwiki-source-cf7a80239370178114067d03
     resource: repo://scripts/__tests__/check-override-consistency.test.mjs
   - id: openwiki-source-1813b4b5c82e84caead4e177
@@ -35,6 +37,8 @@ sources:
     resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
     resource: repo://scripts/allowlist-expiry.mjs
+  - id: openwiki-source-6515c9bbb2befe56115dab03
+    resource: repo://scripts/check-dependency-downgrade.mjs
   - id: openwiki-source-be4449db5d1cd6939f816b1e
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-3597b8f7b798d708bd7e75a1
@@ -66,7 +70,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-01T18:13:07.622Z
 ---
 
 # SAST & SCA static security scanning
@@ -397,7 +401,7 @@ alternative — a green that proves nothing — has already happened once:
 | `scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs` | the `--check-expiring` step's `if:` (schedule-guarded *and* `always()`-guarded), that no other workflow invokes `--check-expiring`, the override-consistency gate's presence on PRs **and the absence of an event guard on it**, and the item #418/#484 recorder that publishes the **measured** `github.event_name` and step outcomes as the `infra-image-scan/expiry` commit status — asserted statically because a missing step and a passing step look identical from a job's tick |
 | `scripts/__tests__/upload-artifact-retention.test.mjs` | that the `sast-report` upload — and every other diagnostic upload — stays inside its 14-day ceiling, with the walk asserted non-empty so the guard cannot pass by finding nothing |
 | `scripts/__tests__/check-override-consistency.test.mjs` | both directions of the half-bump, plain-pin scoping, the last-`@` split for scoped names, the exit-2 refusal of a half the gate cannot read, the cap rule against the six real Renovate widenings measured on 2026-10-18 (each failing by name, each entry's current value passing), that a genuine floor raise inside the major still passes, and that the **live** `pnpm-workspace.yaml` is green — every case driven through the `--dir` seam against a throwaway manifest rather than the real one |
-| `scripts/__tests__/check-dependency-downgrade.test.mjs` | both halves of the downgrade gate — the rule and its **wiring**. The rule: the comparator forms npm advisories use, a prerelease sorting below its release, an unreadable range *throwing* rather than judging, `packages:` keys read from both lockfile documents while `snapshots:` keys are ignored, the #774 undici case and its variants (a sideways move into a range blocks, an already-exposed package and an unchanged vulnerable version and a package new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting the regression when unexpired but not when expired. The wiring, because a gate that is never invoked is indistinguishable from no gate: that `guardrails.yml` invokes the gate **inside the `sast` job**, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and **positioned after the scan step that writes its input**. |
+| `scripts/__tests__/check-dependency-downgrade.test.mjs` | both halves of the downgrade gate — the rule and its **wiring**. The rule: the comparator forms npm advisories use (comparators, `\|\|` unions, hyphen ranges, partial and wildcard versions), a prerelease sorting below its release, an unreadable range *throwing* rather than judging, `packages:` keys read from both lockfile documents — scoped and quoted — while `snapshots:` keys are ignored, the #774 undici case and every variant around it (a second dependent pinning an affected version beside a kept clean one still regresses, a sideways move into a range blocks, the upgrade direction leaves nothing to report, and an already-exposed package, an unchanged vulnerable version and a package or lockfile new to the lockfile do not), a nested workspace reported under the same `<workspace>:pkg@version` location `sast-scan.mjs` uses, and an allowlist entry accepting the regression when unexpired but not when expired. The CLI contract: `--help` exits 0, an unknown flag or a missing `--base` exits 2, and a missing or empty native report exits 1 rather than reporting "no regression". The wiring, because a gate that is never invoked is indistinguishable from no gate: that `guardrails.yml` invokes the gate **inside the `sast` job**, PR-scoped via `github.event_name == 'pull_request'` with `BASE_REF`, and **positioned after the `sast-static-scan` step that writes its input** — with a positive assertion that the scan step still exists, so the guard fails loudly rather than passing vacuously if that step is ever renamed. |
 
 The retry guard's shape is worth copying: the usual outcome of a retry is that it silently never
 triggers, so the classifier and retry driver are exported and tested directly rather than inferred from

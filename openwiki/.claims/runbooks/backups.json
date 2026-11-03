@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2198c1dd13e87b2515e3e175f2a863c3b3034c074fdd5d69e029ec499b1f3a77",
+  "pageVersion": "sha256:83e0d1eef642cbd382095ad41106a464b5bdaf9cefbe5334e6e213d447a14a35",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -324,7 +324,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "version": "repo-file-v1:sha256:c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e"
         }
       ]
     },
@@ -362,7 +362,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
-          "version": "repo-file-v1:sha256:ebd8aa401083fca2318ee74e5f3500d8063fe2253b0e4353ea3e5aa1fd6c6816"
+          "version": "repo-file-v1:sha256:c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e"
         }
       ]
     },
@@ -428,7 +428,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts",
-          "version": "repo-file-v1:sha256:0996758804b9fad2db72f800042cd93914404cc0e84acde321fdcfae68247082"
+          "version": "repo-file-v1:sha256:84a16432d6812112922061dad480b5762b628a0d1f327084a48888107417da1d"
         },
         {
           "resource": "repo://frontend/mcm-app/src/config/env.ts",
@@ -442,7 +442,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts",
-          "version": "repo-file-v1:sha256:0996758804b9fad2db72f800042cd93914404cc0e84acde321fdcfae68247082"
+          "version": "repo-file-v1:sha256:84a16432d6812112922061dad480b5762b628a0d1f327084a48888107417da1d"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts",
@@ -501,11 +501,11 @@
       "statement": "The web E2E backups spec skips rather than fails when the backup destinations are absent (it gates on BACKUP_TEST_S3_SECRET_KEY being set) and escalates through its own flag E2E_REQUIRE_BACKUP_TARGETS=1, which the app-e2e Playwright invocation sets, rather than through MCM_REQUIRE_BACKUP_TARGETS; locally the values it needs — BACKUP_TICK_SECRET and the BACKUP_TEST_* credentials — live in .env.local, which Playwright does not load (loadE2eEnv reads only .env.e2e.local), so they must be passed explicitly, since supplying only the e2e env file once produced a green run whose backup specs had silently skipped; in CI they are not read from a file at all — the app-e2e bring-up step mints the S3/WebDAV credentials per run and exports them through $GITHUB_ENV, and it reads BACKUP_TICK_SECRET back out of the generated .env.docker rather than minting a second value, because a second random secret is just as valid-looking and would 404 against the BFF holding the first.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1043-L1076",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1069-L1102",
           "version": "repo-lines-v1:sha256:9c1ba98b10bcb443e862562d8c5ab8edc56a5b4ac27741f434120863c84dae8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NTY1YjljMTk2MzllMDYzMjY4MWFlYjdiODRlMjYyYjM4OWY0ZGRjMWI3NWRkNmUwMmUxNTU2YmRjZTBhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YmU3ZTFhNTYwYWY4YjU3Nzg1NWVmMjU4NTU2NTkyYmYyNDEwNTg3YTEzMTEzNGNiZmU4ZWMxYzc4NzI5YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkYjlmYWJkMzI2NTY4ZGY2OWM1Njg5ZjhiODZmZWY5NTY1NjBiMGRlOWE1NDk0YWFkMTc4ZjkxNmM5MWFlZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNDFkYTc4Yjk5M2RiMDBmMjlhNzhhYjA5Y2E5MzNlYzdjOTJhOWQxM2ZhMDFkNWFlNWI1NjRlM2M2OGE0NjgifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L719-L790",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L723-L794",
           "version": "repo-lines-v1:sha256:e60a56f6523e78ef010ed59851fa0839c0586a6e2a752525eb7d64386e364ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTJiMTBjNTgxNzRlYjRlNjVmNzM2MjZiOWMwNDk3NWFiYjAyMmU5YTFjYmE0NmRhMjc3NWQ5OTFlZTRiMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzU3NWQ2MzY4NWY2ZjkwYTc1MDk0MDUwNGM1MDhiMDg3ZTJkYWIxODNmMWQ1ZjJhZTE0MjFkYzdiYzU1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NzhhZjE2N2FhZmVhNjExZjQwMzNmYzdhODg1NmZhOTM0MWExMjFlY2NhN2QxMTNkNWE4NjNmODk2MGY5MDYifQ"
         },
         {
@@ -521,10 +521,78 @@
           "version": "repo-lines-v1:sha256:c91ab4f24571355d9dc009ef72992398307c5dd163977e5f9dc024107787792a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0YmEzOTVjODY4ZWIwMTBiZjZkNzYyNjc2MWJhMTVlZWMzODM2MWUyZmE1YWU4Zjg2ZjgzYmY3YWI3NjM3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRmY2MxYWI0NzUxMDVkZTA4NmZkYjYzZmFjM2QzNmY5NDRjMGVkOGQ3ZWJhMjM4OTNkYTRiNDU2OTYxM2ZjNCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_9ff7ab1eabe4460abd6c89220de0647f",
+      "statement": "In production the BFF must be told it is behind a TLS-terminating proxy or the backup-consent callback is unusable: Cloudflare terminates TLS and cloudflared reaches the BFF over plain HTTP, and @expo/server's express adapter builds every request URL from req.protocol, so without express's trust proxy the consent route derived redirect_uri=http://mcm.<BASE_DOMAIN>/bff-api/backups/consent and Keycloak refused it ('Invalid parameter: redirect_uri') because the consent client registers the https:// URI, leaving the schedule unable to be turned on. server.js sets app.set('trust proxy', 1) only when TRUSTED_PROXY === 'true' (which infrastructure-as-code/docker/bff/compose.prod.yaml supplies), trusting exactly the immediate hop; only the scheme moves because the adapter reads the raw Host header, which trust proxy does not touch, so X-Forwarded-Host cannot move the origin, and with TRUSTED_PROXY unset a directly exposed BFF keeps ignoring a client-supplied X-Forwarded-Proto. CI and dev never saw the failure because there the BFF serves HTTPS itself on :8443, and the account-deletion step-up callback depends on the same setting.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L46",
+          "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L81-L120",
+          "version": "repo-lines-v1:sha256:dc1603097e794da6fd332773e81b8bb8f5f17a55f9c365b85698e3471fbf351a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZWYwNjVkZjJlZDg4MDdiMGNkOTg3MDZjNzAxNjI2M2M3N2JlZTE3NWVhNWVmYWJjNGU3OGZjZDU5ZjhiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L40-L46",
+          "version": "repo-lines-v1:sha256:a1438eacc6381e091d10254013f4e1c5f09bb58ae3c55a8214e8dd6725a94ff5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI3NDYzMzRmZGJkNjUxMzIzOWYxMzI2ZGI4YjYxMjc1N2I1YjMyYzA4MDhiNTA4MWE5OTM3ZjY1MzNiOGRiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY1ODM1MzI1M2VhZDc5YmEyOTI4YmQ4NzUzZDI1ODQyYWI4MDQ5Y2NjMzE1YzkyNmVjZTRlZDZiMTdjNzIzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM1MDc3ZWQ5YjlmNzg1NjFiN2RhZDNmNmM1NGZlZTA3OGRmMTk0NGU4NjA5YjhjZTNjNTI1M2UwZjgzMGY2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg5NzE2YzA4ZDFhZGM1NmZjZWEyNTMyMGM1ODk0YTE2YjEyNGU5MmFmOGM2ZDZiMzk1NzEwNTg0NzcxNGY5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0569f4ab4f4455bb33ccddecbd16850",
+      "statement": "The standing permission is given up by routes, not by the screen: PATCH /bff-api/backups/jobs/{jobId} calls revokeIfNoScheduleRemains after the store change only when the body carries an explicit schedule: null or enabled: false, and job DELETE calls it after deleting the job, while an omitted schedule means 'leave it alone' — so a client that serialises an undefined schedule away sends an empty patch and never revokes. A refusal at the identity provider answers 502, because the job change has already happened but the BFF will not report the permission gone while a live offline token remains.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/jobs/%5BjobId%5D/index%2Bapi.ts#L23-L87",
+          "version": "repo-lines-v1:sha256:c85bf5b6905e20070634075e1d5befaf63946a4db558586b54a5fd8875f8abdd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlY2NlZmMwYWJlZGM0YWUyNjAwODMwZmY1ZGQxZjA2MTY3NmViNDk2ZDE5YzNhNjA5MjYyNWRlMzBlNTIwYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts#L23-L31",
+          "version": "repo-lines-v1:sha256:748ba6b5ca2037ca7c60965d4f87aeb0fc7a87183d4808862d7b91c5f68fc0dd:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjgxODI3ZmVmMzUyYjg4MGQxMTk4ZDdkYmFkODIxOTIxZDVlYTE5ZWYyZmM1OTJiZDg5NzU4ZWExNTYyZDMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVlM2I5MTQ5OTRlZGVhMTcxZDk4NDBmNGE1YjY2M2MxZjlhODQ0OTRhM2JhOWIyYTE5M2MwZDcyNGVlZmYxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA2N2Y2ODI1NjI2Njk1YmMxZmJhNDVhN2FiNDk1ODIyNGRiZjI3MWM0MzM0MGFkNmFiYWNkMGZkOTgzZjViNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODhkNTRhNzBkZjljY2YyNzIzMDIxZGE5NjJlNmFlOWNjMzRlNmExYmFmMzc0ZDIwNjA2OGQ5MGYxNzlhNTY5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c9d200053a54894a6bd82a4c5556f6b",
+      "statement": "Since feature 085 (item #844) a refused agent subject-token mint is no longer swallowed: the BFF classifies the exchange failure and throws AgentIdentityError, so /bff-api/agent/run and /resume answer 401 AGENT_IDENTITY_REJECTED (renew, else sign in) or a retryable 503 AGENT_IDENTITY_UNAVAILABLE and the gateway is never reached, instead of running the turn identity-less and surfacing an unexplained 'No caller identity is available for this action'. Keycloak 26.5 answers a revoked or malformed subject token with 400 invalid_request and the description 'Invalid token' rather than invalid_token (invalid_request alone is not enough because Keycloak also uses it for configuration faults, which are outages); a revocation of a login-client backup grant is therefore classified as a credential rejection and yields 401.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L14-L69",
+          "version": "repo-lines-v1:sha256:a020d4fdea628e1cc28a0537a8304f112abb363911c8a71c402c176b1597cb29:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMjgzOTJmNDcyMjMxMmI2OGU5YWE3ZGI1YTBkNzAxNTlmYjE4YzlkZDdmMDBiZDVkYjFjYjg2MTNiZTg1YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYjJlYzYwMGUxYzk1ZGU3ODJlMmU3YzNiZTIxMjc4YjMxZWY2MmU5YzNlM2FlMjUwNzY3MGU1NGU2MDNkNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYmU5MDgxOTVkNTk4NTA5ZTI2ZDlkMzQ3NzljZDRkMjhmZmQ4YTMwZjFkYTVlZGQ5OTU5MDg5ZjRhMTRkYzYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L39-L110",
+          "version": "repo-lines-v1:sha256:418987efc808f4f8bb1ca981e90688d9a1705b7f57f01486ff16f5769546b1e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMDNlNmQxMzg4N2ZjOTUyYWY0NGMxZDAzOThiZmRmNzJkODQ2ZmZhYmYxYjJkMTkxNjA1Yjc3YzIwZjI1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MWQ0MDEwZTlmZDA4NzZiMjNlY2VkNmFkYWVkYjAwMDNkZmQ2ZTk3MzU0OGU5YjIyNjBjZTg5NDU1MWNkNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YjhmZWU3MTg5NDcxNjE3NjAzMWI4OTJkNzM1YWNlOTQ5ZjNjMmU0YzIxOWM0MmJiMzJjNzkyN2JiMzFiY2MifQ"
+        },
+        {
+          "resource": "repo://specs/085-bff-auth-fail-closed/baseline.md#L16-L42",
+          "version": "repo-lines-v1:sha256:75930d2475d0407e322322427c1d8ab2aa9e437518362810a49a647f5732bd28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NzVhNWYwMzc1ZmJmNDQ4YzE4NjliNjc3MzJhMDE1MjEwNjk1MDExYTM4NmE4ZGNkYjUxMzllOTYzNjEyYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NjAzYWVjN2E5NWRkNGMzNDI0ODMyZjU2YjljNGRjOTc4ZDJiMjQyMzNjMjRkNjQwMDgzNDJjNmJhZmNkYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZDM2Zjc2ZDAxNzA1N2U2OTIzZmE4N2Y1OWFjZjJmNzYxMDYwZmZiZDI2Nzc5YzE2MmUzMzgyYjZlZDgyMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2MTE3YjljYzE5OWQ4YzE3MTJiZWQzMGZiMWYzZTg5ZWVlMWQxMThiODY5MDllOGZiZGVmZjA1YzVlZDIyNDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7932c3f26ba747bcaebb9c5213bed1b4",
+      "statement": "The client's agent transport answers a refused /bff-api/agent/run 401 with exactly one silent refresh and retry (createRefreshingFetch, installed on globalThis.fetch before CopilotKit issues a run) and passes a 503 straight through without touching the session, since an outage is no reason to renew; the dock then renders the BFF failure code as member-facing text via useAssistantRunFailureNotice — 'Your session has expired. Please sign in again.' for AGENT_IDENTITY_REJECTED and 'The assistant is temporarily unavailable. Please try again.' for the retryable AGENT_IDENTITY_UNAVAILABLE.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts#L13-L48",
+          "version": "repo-lines-v1:sha256:4712bc59b1f9ce1741e4a2fcfaef527718ee0a2c1d9446d7c03ee5bfd0bbdf80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YjE3Y2Q4N2RlZmQ0YjJmOTk0MzIxZmJhNWJmMThlOGVjYzc5YzY3MGE1OGMwZjJlZmVjOWU5YWI0MDQ2Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MDUyYjFkMTk2ZTA2ZTY3OWFjNTIxYmI0NjlmNTdmYTY2NmQxYzNjZTA0ZTEyZmRlMzYyZmY4NmZiNTUyNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MDQ1ZDY0MDAyZTViNmE4OTMyMjY5NjgyZmJkY2FhYmRhNmVlZTg5YTViYzljMmVmZGU2ZGQ0MjkwODJjMTkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L12-L18",
+          "version": "repo-lines-v1:sha256:c71622fce76b86b66f41587c6cb44c104ec19dd91138d27e945ebb29a9f16e56:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE5YzQ4YjA1NTkyZjkwNzM1OWFjMWM2MzIwNzk1N2RlNjgwMThhMjRjNzViYjBjN2VkMmE3NWMwZGI0OGE1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODZiZDA1MmMyY2Y3ZWZlZDg4Njk0OWEzMTg2MGRhNjY1ZDg4Y2MzZjEzOThhYjViM2Y4NGIzYzk4MGE2ZjEyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlNDkyYTc0NDQ1ZWYxOTQ5YWNjNTZlMmQ2YmY4NzIxMzBiNWI0NzQ4YzI5NTgwZjE0YjdkODRkMjA0MWZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGM1Y2ZmYjk0MzQxZGZmNzY4ZWEwMGM1ZjU2Zjk2MGVjYTIyNTdhN2Q0NWE5MDlhYmY5NTg1MmNkOGEwMjM1MiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L54-L86",
+          "version": "repo-lines-v1:sha256:83047ac67e3308b1bae79eebc08838fa2ac6e2e123110dd1dee3d3addb2882f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOTIwMmVlZjY5ODI2MjViNDcyMzAxYjQyZWEyODYzNmI2MGM2ZDk3NGFiYzM0NDIxMDMyOTBjNmI0OWI2NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ODg4NDEyOGEyYTdiMGFhNzdkZmYwMjc1ZTI2NjE4ZjE1ZTY0OGU3MjcwNGYxMDk4NGE3ODk5MjU3ZDIyZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiMjU1NmJiNjhiMjg4Mzg5Y2M3MmUxZmRhNDc4MDJhMjg5OWJlY2E2NjIzN2NmMDgzNjJkOTk1MDZlMDBlMTYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-27T23:08:42.159Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

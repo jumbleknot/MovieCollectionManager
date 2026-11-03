@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-3c099d9af7cba6b30d6eaf07
     resource: repo://.gitattributes
   - id: openwiki-source-c3e333457ea705ec015d1cbd
@@ -23,6 +25,8 @@ sources:
     resource: repo://docs/runbooks/ci-evidence-pipeline.md
   - id: openwiki-source-900e4fa48a3671f4d583c11d
     resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
+  - id: openwiki-source-0a51228742c9892eef223b4e
+    resource: repo://scripts/__tests__/app-image-scan.test.mjs
   - id: openwiki-source-c87b16f17fb0c4f5c8105cae
     resource: repo://scripts/__tests__/check-ci-digest-coverage.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
@@ -47,10 +51,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-10-27T23:08:42.159Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T16:05:45.295Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -123,10 +127,17 @@ assertion, so it does not fail anything.
   the truth.
 - **Degradation is stated, not silent.** Container jobs have no Docker CLI, so "no container health" is
   normal — it appears under **Not collected** rather than as an empty section. The bundle directory is
-  no longer written by one job: `app-ci / dast` captures into it too (item #645), overwriting it with
-  its own per-container logs plus an owner stamp, because the digest used to present the *previous*
-  `app-e2e` failure's logs as dast's own. The digest's own absence message still claims only
-  `app-ci / app-e2e` writes one today, so read that line as stale rather than as evidence.
+  written by **two** jobs, not one: `app-ci / dast` captures into it too (item #645), overwriting it with
+  its own per-container `docker logs` / `docker inspect` captures plus an owner stamp, because the digest
+  used to present the *previous* `app-e2e` failure's logs as dast's own (2026-10-02: a 09-30 Keycloak log
+  on run 4445, beside a `healthy` row for the container its own bring-up had just failed on). Both
+  writers stamp `_bundle-owner.txt` with `run=` / `job=`, and the digest **accepts the bundle only when
+  both name its own run and job** — a bundle stamped by another run, or by the sibling job, is refused
+  and stated under **Not collected** with the owner it actually belongs to; an **unstamped** bundle is
+  refused as well, because the absence of a stamp is not proof of ownership. The absence message names
+  both writers, and `(#645e)` in `scripts/__tests__/ci-failure-digest.test.mjs` fails the build if any
+  workflow step that copies into `$HOME/mcm-ci-last-failure` omits the stamp — so the next writer cannot
+  ship evidence the reader will silently discard.
 - **When `CI_DIGEST_TOKEN` is empty the digest degrades rather than failing**: it falls back to the
   run-provisioned token, posts a `ci-digest/<job>` commit status carrying the failing step and a short
   excerpt, and marks itself `degraded: true`. With both credentials absent it prints the digest inline

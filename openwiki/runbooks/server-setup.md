@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 sources:
@@ -9,8 +9,12 @@ sources:
     resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-6186a866b56089a82cce5c62
+    resource: repo://.forgejo/workflows/devcontainer-image.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-23175e1d10427daa3344d3ec
     resource: repo://docs/runbooks/prod-control-tower.md
   - id: openwiki-source-abae5c338f9f983f89ea77ad
@@ -29,14 +33,22 @@ sources:
     resource: repo://infrastructure-as-code/backup/README.md
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-62d227af87c6a9ae6df49e2f
     resource: repo://scripts/__tests__/backup-install-manifest.test.mjs
+  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
+    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
   - id: openwiki-source-482173336861a06249bf1372
     resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
+    resource: repo://scripts/__tests__/registry-retention.test.mjs
+  - id: openwiki-source-52c33ce59ba156d00cf24a1d
+    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-1bce6b78afa7160b5f9a9d66
     resource: repo://scripts/backup-install-manifest.mjs
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -47,16 +59,18 @@ sources:
     resource: repo://scripts/check-prod-restart-policy.mjs
   - id: openwiki-source-6f10e821d1ec074deb438a3e
     resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-ccfb73bb2cb3f790e18d9144
-    resource: repo://scripts/object-store-migration.mjs
-  - id: openwiki-source-8d48276c31ac9a4e5887d2ca
-    resource: repo://scripts/object-store-migration.sh
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
+  - id: openwiki-source-2470b658ec43d754a7fc16c1
+    resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
   - id: openwiki-source-8e1cfc141032a9d913893039
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T09:46:49.753Z" }
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T23:07:57.553Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -105,7 +119,10 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   `kvm:host` (Phase 7), which is precisely why `ci` must be in the group. On this host `/dev/kvm` is
   mode **666** (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option,
   and the group membership is what keeps the job working if it is applied. Passing
-  `--device /dev/kvm --group-add kvm` into a job container was the setup until commit `235f2f4c`.
+  `--device /dev/kvm --group-add kvm` into a job container was the setup until commit `235f2f4c`. Only
+  the emulator job needs the device; the other host jobs that share the label — the DAST scan and the
+  image build/scan jobs — need a reachable Docker daemon instead, which is why the same `DOCKER_HOST`
+  assertion guards each of them.
 - **5 — Two segregated rootless Docker daemons.** The core of the design: two unprivileged service
   users, each running its own rootless `dockerd` at its own socket with data under its own home, plus
   per-daemon `daemon.json` (log rotation, `live-restore`), the `kvm`-group membership and `kvm:host`
@@ -125,33 +142,42 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   the UUID + secret the web UI hands out — the older registration-token flow is deprecated. The runner
   advertises **two labels**: `ubuntu-latest`, which is where it becomes a plain Node image, and the
   host-type `kvm:host` (referenced as `runs-on: kvm`, the label *name*), on which jobs execute directly
-  on the host as the unprivileged `ci` user with no job container — the emulator job and the
-  Docker-image-building jobs, which need `/dev/kvm`, a single-host view of `localhost:8082` /
-  `10.0.2.2:8082`, and a reachable `ci` rootless daemon.
+  on the host as the unprivileged `ci` user with no job container — the emulator job, which needs
+  `/dev/kvm` plus a single-host view of `localhost:8082` / `10.0.2.2:8082`, and the
+  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The runbook's Phase 7 block
+  still names only three tenants — `app-e2e`, `dast` and `build-deploy`; the tracked workflows have
+  grown since, and the *complete* set today is `app-e2e` and `dast` and `app-image-scan` (`app-ci`),
+  `build-deploy` (`cd-deploy`) and `build-publish` (`devcontainer-image`).
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
   `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
   custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`
   packages are deprecated over an unpatchable CVE and must not be used. The backing store is an S3
   object store, **RustFS** since feature 080, run from a host-managed compose beside a one-shot
   bucket-creating init container on the same pinned image the git-tracked observability stack uses,
-  with its console disabled and only the S3 port published. Moving an existing cache is an in-place,
-  verified copy driven by `scripts/object-store-migration.sh` (`manifest` → `inventory` → `copy` →
-  `verify`); recreating it empty is an accepted alternative, because the cache is rebuildable — a cold
-  cache costs time, not correctness. The migration runs **on the host**, from a checkout, through that
-  wrapper: the host has no `node`, so the tool runs in a digest-pinned node container with the host's
-  rootless Docker socket mounted and takes the store's credentials **by name** from the shell, never as
-  command-line values — driving it from the dev container instead would put standing control of the prod
-  daemon in the sandbox. The tool refuses rather than guesses (`copy` requires `--apply`, and an existing
-  target or a source volume still mounted by a running container stops it), and a passing copy records
-  `targetPreexisted: false`, zero entries not owned by the image's runtime uid, and an unchanged source
-  digest. Both the tool and the wrapper are **temporary**: they exist for the three feature-080 cutovers
-  and are deleted, with the guard exemption, in the cleanup PR after the rollback window. The tool's
-  default helper image is not hard-coded either — it reads the single digest-pinned `rustfs/rustfs` ref
-  out of the git-tracked observability prod compose and refuses anything unpinned or ambiguous, so the
-  uid it chowns the copy to comes from the real production pin. That cutover
-  was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a
-  recreate, and `verify` reported 1360 → 1360 objects. Client wiring is entirely env-driven, so local
-  runs without the token fall back to the local cache and no remote-cache config leaks into the repo.
+  with its console disabled and only the S3 port published. Moving an existing cache was an in-place,
+  verified copy driven by `scripts/object-store-migration.sh` (since deleted; `manifest` → `inventory` →
+  `copy` → `verify`); recreating it empty is an accepted alternative, because the cache is rebuildable — a
+  cold cache costs time, not correctness. The migration ran **on the host**, from a checkout, through that
+  wrapper: the host has no `node`, so the tool ran in a digest-pinned node container with the host's
+  rootless Docker socket mounted and took the store's credentials **by name** from the shell, never as
+  command-line values — driving it from the dev container instead would have put standing control of the
+  prod daemon in the sandbox. The tool refused rather than guessed (`copy` required `--apply`, and an
+  existing target or a source volume still mounted by a running container stopped it), and a passing copy
+  recorded `targetPreexisted: false`, zero entries not owned by the image's runtime uid, and an unchanged
+  source digest. The tool's default helper image was not hard-coded either — it read the single
+  digest-pinned `rustfs/rustfs` ref out of the git-tracked observability prod compose and refused anything
+  unpinned or ambiguous, so the uid it chowned the copy to came from the real production pin.
+  **That cutover is finished, and its machinery is gone.** It was performed on prod on 2026-10-21 (spec
+  080 T044) as a copy rather than a recreate, and `verify` reported 1360 → 1360 objects. The rollback
+  window was then closed early at the operator's choice (item #826, 2026-10-24/25): the retired store's
+  containers and volume, its config directory and its Komodo Variable were removed, and the cleanup PR
+  (spec 080 T048, 2026-11-01) deleted the migration tool, its two test files and the wrapper — the
+  `pinnedRustfsRef` helper that resolved the production pin moved into the object-store service guard,
+  its only remaining consumer. The runbook's cutover text is now wrapped in `<!-- history:begin -->`
+  blocks as the record of how it was done, and the object-store guard's temporary exemptions for the
+  tool's files and the retired store's resources were removed with them. Client wiring is entirely
+  env-driven, so local runs without the token fall back to the local cache and no remote-cache config
+  leaks into the repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
@@ -246,6 +272,20 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     2026-10-27 with nothing purging it — with `komodo-cron-retention.sql` installing an hourly job that
     deletes runs older than 3 days and a **500 MB maximum** on the dump so the history's return alerts
     (`komodo-oversize`) instead of silently re-inflating it.
+  - **The shrink check and its one-run acknowledgement are how an operator keeps a check honest without
+    weakening it.** A dump that comes in under **50 %** of its size in the last good run raises a
+    `shrink` alert naming both sizes, the snapshot is still uploaded, and that run does **not** comment
+    `recovered` — so the run that raised the alert cannot also close the item it opened. When a shrink is
+    expected (data deliberately deleted, or a new exclusion), it is acknowledged **before** the next run
+    with `~/backup/backup.sh --ack-shrink <dump>`, which covers exactly one run; the threshold is never
+    raised instead. The other operator-facing mode is check-only: `backup.sh --check-staging` prints the
+    staging filesystem without backing anything up, which is the one-line proof that staging is on disk
+    rather than on the RAM-backed `/tmp` the three-month outage came from.
+  - **The `release-apks` dump is the one that reads the forge rather than the host.** Every file of every
+    `mcm-app-android` version is fetched through the forge's generic-package API with a host token scoped
+    **`package: read` only**, so the host can back up the APKs it cannot otherwise reproduce without
+    being able to publish or delete a package — a narrower credential than the `write:package` token CI
+    pushes with.
   - **A backup that fails silently is the failure mode this phase is now built against.** The original
     script failed every night from **2026-07-27 to 2026-10-22** and nothing said so: dumps were staged
     in `/tmp`, which on this host is a **29 G tmpfs** (RAM), and the forge dump — then still including
@@ -325,6 +365,17 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   `kvm:host` label carries the Docker-image-building jobs, which a `node:22-bookworm` job container
   could not run at all (no Docker CLI or daemon). See [Android emulator](./android-emulator.md) for the
   job-side view.
+  - **KVM is the emulator job's requirement, not the label's.** Five jobs share the label today —
+    `app-e2e` and `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
+    `build-publish` in `devcontainer-image` — and only `app-e2e` needs `/dev/kvm`; the rest need the
+    Docker CLI and the `ci` daemon, which is why the runbook's Phase 7 note still enumerates a shorter
+    set (emulator, DAST, image build) and the tracked workflows have grown past it.
+  - **One host job's own error text still describes the pre-`235f2f4c` container setup.**
+    `cd-deploy`'s Docker guard tells the operator to "mount `/run/user/1001/docker.sock` into the kvm
+    job (runner `config.yaml` `container.options`)" — advice for a job container that no longer exists;
+    `app-ci`'s equivalent was corrected on 2026-10-04 to name the host execution. The *host* runs the
+    corrected reality (the jobs execute on the host and reach the socket through `DOCKER_HOST`), so
+    read the message as stale wording, not as a setup step.
 - **A default Periphery root lives on a tmpfs and is wiped by every reboot.** Rootless Docker
   copy-ups `/etc` into a per-daemon tmpfs, so Komodo's stock `/etc/komodo` root — and with it the
   cloned repo checkout that every stack's relative bind-mounts resolve against — does not survive.
@@ -340,43 +391,45 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
   while the tracked observability compose has moved to `1.0.4@sha256:ed9210d6…`; every git-tracked
   RustFS service must share one digest-pinned Alpine tag). The store's volume and network names are host state
-  too, so confirm them by ownership *and* contents before running the migration copy — and the backup
-  script's path list has to name each store's config directory, which is why the new store's directory
-  is on it. Whether the retired store's directory should still be on that list is the one point where
-  the runbook and the tracked script disagree (below).
+  too, so confirm them by ownership *and* contents — and the backup script's path list has to name each
+  store's config directory, which is why the live store's directory is on it.
   The guard that fails on any *live* reference to the retired object store — with a closed list of
   reasoned exemptions, and the history blocks under `docs/runbooks/` that may keep a case study —
   belongs to [Infra-image CVE scanning](./infra-image-scanning.md).
-  - **The cutover landed as a copy, and the tracked backup list disagrees with the runbook about the
-    retired store's directory.** The move was performed on prod on 2026-10-21 (spec 080 T044) as a copy
-    rather than a recreate, with `verify` reporting 1360 → 1360 objects. The tracked `restic backup`
-    path list is now `"$HOME/forgejo" "$HOME/komodo" "$HOME/rustfs" "$HOME/nx-cache"` — it does **not**
-    name the retired store's directory, while the runbook's Phase 8 says that directory stays on the
-    list until the deferred cleanup (spec 080 T047) deletes it. The retired store is still the
-    documented rollback (its volume and directory names remain exempt in the object-store guard as
-    resources that exist until M7), so treat the runbook's Phase 8 sentence as the rule and the tracked
-    script as what the host actually runs.
+  - **The cutover landed as a copy, and the retired store is now gone — including from the backup
+    list.** The move was performed on prod on 2026-10-21 (spec 080 T044) as a copy rather than a
+    recreate, with `verify` reporting 1360 → 1360 objects. The rollback window was closed early at the
+    operator's choice (spec 080 T047, item #826, 2026-10-24/25): the retired store's containers and
+    volume, its config directory `/home/prod/minio/`, its Komodo Variable and its registry package were
+    all removed, so the tracked `restic backup` path list reads
+    `"$HOME/forgejo" "$HOME/komodo" "$HOME/rustfs" "$HOME/nx-cache"` and the runbook's Phase 8 sentence
+    that once kept the old directory on the list is history inside a `<!-- history:begin -->` block. The
+    one point where the runbook and the tracked script disagreed has therefore been resolved in the
+    script's favour.
   - **The store's credentials live in two files and both must change together.** The cache server's
     own env file carries the store's access/secret pair as its `AWS_ACCESS_KEY_ID` /
     `AWS_SECRET_ACCESS_KEY`, while the store's compose reads the same pair from the store's own `.env`.
     On this host that env file's endpoint and bucket name were already correct, so the cutover changed
     only those two credential lines — the failure mode of leaving them behind is a cache server that
     starts healthy and cannot read the store.
-  - **The store's volume is an external volume that nothing but the migration tool creates.** Its
-    compose declares the volume `external: true` under the explicit name `nx-cache-rustfs-data`, so
-    compose never creates it: `copy --apply` brings it into existence (a new host with no prior data
-    creates it empty instead). Referencing it before it exists aborts the compose up with an
-    `external volume … not found` error and creates **no** containers — the deploy fails instead of
-    starting on an empty store, so the copy must precede anything that mounts the volume. The
-    failure is loud rather than destructive: measured 2026-10-11 against the shipped observability
-    compose (in the dev container, via a scratch project), a failed `up` of this kind leaves the
-    previously deployed containers running and unchanged — so an early merge leaves the old store
-    serving while you recover. [Prod control tower](./prod-control-tower.md) owns
+  - **The store's volume is an external volume nothing creates for you.** Its compose declares the
+    volume `external: true` under the explicit name `nx-cache-rustfs-data`, so compose never creates it:
+    the migration tool's `copy --apply` used to, and now that the tool is deleted, a new host creates it
+    empty with an explicit `docker volume create nx-cache-rustfs-data`. Referencing it before it exists
+    aborts the compose up with an `external volume … not found` error and creates **no** containers —
+    the deploy fails instead of starting on an empty store, so the volume must exist before anything
+    mounts it. The failure is loud rather than destructive: measured 2026-10-11 against the shipped
+    observability compose (in the dev container, via a scratch project), a failed `up` of this kind
+    leaves the previously deployed containers running and unchanged — so an early merge leaves the old
+    store serving while you recover. [Prod control tower](./prod-control-tower.md) owns
     the ordering for that stack's identical cutover. For the *git-tracked* RustFS services this property
     is asserted, not merely documented — `scripts/__tests__/object-store-service.guard.test.mjs` fails
     the build unless the prod RustFS data volume is `external: true` under its canonical name (contract
-    S9). The host-managed Nx-cache compose sits outside that scan, so for it the same property rests on
-    this runbook and on the volume actually existing rather than on a CI gate.
+    S9). That guard also inherited the `pinnedRustfsRef` helper from the deleted migration tool (it was
+    the helper's only other consumer) and still asserts the production compose carries exactly one
+    digest-pinned `rustfs/rustfs` reference, so the production pin keeps a CI check even though the tool
+    that used to read it is gone. The host-managed Nx-cache compose sits outside that scan, so for it the
+    same property rests on this runbook and on the volume actually existing rather than on a CI gate.
 
     ```mermaid
     flowchart TD
@@ -389,8 +442,10 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
       Copy -.->|"skipped"| Fail["compose aborts: external volume not found, zero containers created"]
     ```
 
-    *The cutover's ordering: the copy is what brings the external volume into existence, so it must
-    run before anything that mounts it.*
+    *The ordering the 2026-10-21 cutover followed, kept as the record: the copy was what brought the
+    external volume into existence, so it had to run before anything that mounted it. The tool no
+    longer exists, so on a host with no prior data the equivalent step is an explicit
+    `docker volume create`.*
   - **Two env-file reading traps cost a re-run each.** Take each store's secret from its own env file
     with a `sed -n` extraction rather than typing it into a `read -rs` inside a pasted block, which
     consumes the next pasted line as its input; and list env-file keys with a pattern that admits

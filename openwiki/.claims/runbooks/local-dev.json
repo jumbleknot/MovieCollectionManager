@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8faf49a3bbf0ab4356e37600042c9ef24b00d601fd6badf57a9c898e6c3e0390",
+  "pageVersion": "sha256:2f7b4390ddd3a5a3b58061a872382d3f65ca9a90a756a6c4e3ad1688d9e4b2f1",
   "claims": [
     {
       "id": "claim_2c773503f0bb4882ba39eec23031c7f1",
@@ -166,7 +166,7 @@
     },
     {
       "id": "claim_6e599ff3782e4a26a827681b27dd2c1d",
-      "statement": "A password-on-first-init credential (Postgres, OpenSearch) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart, and RustFS is in that second group rather than the first (feature 080): it does not bake its key pair into the drive — measured by starting it on a migrated drive with a different pair, which the new pair could read and the old pair could not — so rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus recreating every consumer of that key, with no volume touched. Recreating the store alone is not enough, because one Langfuse key reaches four services in `observability/compose.yaml`: the two S3 upload key pairs on `langfuse-web` and `langfuse-worker` (through a shared environment anchor), the `langfuse-rustfs` server, and the `langfuse-rustfs-init` bucket one-shot. On the backup side the pair reaches `mcm-bff-backup-rustfs` and its bucket-init one-shot — and also the host-side backup suites, which read the value out of `frontend/mcm-app/.env.local`, the file `gen-dev-env.mjs` re-projects from `stacks/mcm.env` on every run, so the generator must be re-run after a rotation.",
+      "statement": "A password-on-first-init credential (Postgres, OpenSearch) is baked into its data volume on first boot and ignores later env changes, so rotating one for real requires regenerating the `.env` with `--force` AND recreating the service against a fresh volume; otherwise the container keeps the volume's original password and authentication fails with nothing pointing at the cause. Redis values, Unleash tokens and app secrets have no such persistence and rotate on a plain restart, and RustFS is in that second group rather than the first (feature 080): it does not bake its key pair into the drive — measured by starting it on a migrated drive with a different pair, which the new pair could read and the old pair could not, a measurement surviving as research R6 step 5 in `specs/080-minio-to-rustfs/research.md` after the migration rehearsal harness that produced it was deleted at the feature-080 cleanup (T048). So rotating `LANGFUSE_RUSTFS_SECRET_KEY` or `BACKUP_TEST_S3_SECRET_KEY` is an `.env` change plus recreating every consumer of that key, with no volume touched — and because the property is no longer covered by any test in the tree, a change making the key drive-persistent would not turn a suite red. Recreating the store alone is not enough, because one Langfuse key reaches four services in `observability/compose.yaml`: the two S3 upload key pairs on `langfuse-web` and `langfuse-worker` (through a shared environment anchor), the `langfuse-rustfs` server, and the `langfuse-rustfs-init` bucket one-shot. On the backup side the pair reaches `mcm-bff-backup-rustfs` and its bucket-init one-shot — and also the host-side backup suites, which read the value out of `frontend/mcm-app/.env.local`, the file `gen-dev-env.mjs` re-projects from `stacks/mcm.env` on every run, so the generator must be re-run after a rotation.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/local-dev.md#L49-L49",
@@ -189,16 +189,20 @@
           "version": "repo-lines-v1:sha256:f14fa553eb8d208f1883132249a1c79e590f95a79d3d6480a0e860266251e218:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFhMTQxZDA4OWVkY2I0YzQ3M2QxYzViZTE0YjI1Yjc3YjA3ZmQwYjk1MWMzYmRiMjA4YzE4NmYxNzQ0OWMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg0MTNkNmJiNzE3NTlmNzU4Yjg0MjNhOGJmYjBmNWRhODNjODZjMDdmZDQzZjIwZDlmYTA5NDI1YmNiMzFmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGIyZWNmODU0MmRlYzZiZjQ0NjIxMWMwMDdlMGQ2YjU2ODMyYTczMzIzMDdkZWU0MjU5NjI1NTEzMGIyYzkzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWRiNmYxZDJmYmJmYTAwYTY5YTA5NzczMTUzZWIwZDczNTFmZThlZmYxMGMxMTI3OGFlNGZhZGExOWU2OTQ5NSJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-migration.rehearsal.mjs#L279-L283",
-          "version": "repo-lines-v1:sha256:7bbf3367e489086200632b5a07ca799c12b99de400e3f62e27b4cb9f4951f435:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyMWE5M2FmMWMxMmYzNzE3ZjlkYjIyODYxNmQwZWExOGY0NmZiNDVhNTMzZWE3OGU2NDVmMjdlZjNiYWU5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNmM2UxMjZlYjVjODBhYjA3NDk4ZTRmMzZmYjNjZmM1ZTAxMjU3ZDc1YjExNTdkMDMxOWFkYWQzZjdiNGM2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTNjNWEzMWM5ZTljNDI3NmFmM2IyYWJkNDQ5NTBiN2ExNGEzYjkyMWNjOTZhYTA4ZjFjZTQyYzg0Njc2NmI0YyJ9"
-        },
-        {
           "resource": "repo://scripts/gen-dev-env.mjs#L152-L164",
           "version": "repo-lines-v1:sha256:b24ac4609522b61e7d8f1a7415063d212421295694dd20484ab1e730eda6619a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZTk5ZDMxZWIxYmI5NmE5NTkxMDZkMjA3MDZiM2Q2N2FlNjQzZjE2MTYyYTY4YzdlOGNkMTNlMGUwNmU2OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNTFlNTRhN2U5ZjY2MWFlNDBmMGRmNTQ2NDU0YTlmNGU0ODZkOWJkNjkwN2U1MGI2NjM2ZWM2ZDE2MjIyMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwY2U3Y2RhNTZjMzY3NWQyODQzYWU2ODMyN2IzYWQ3MmMxNjEyZDEzYjY4ZmEzY2M4YmY4NGM4MmIyZGQ0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MTM4NzI0NDdiY2Q0NjJiZTViOGJlODg3YTMwMjQ3NWRlNWE0ZWE0MGZhZjZkZWE4Yzk0MTlhZWUzNjM1YTUifQ"
         },
         {
           "resource": "repo://scripts/gen-dev-env.mjs#L483-L490",
           "version": "repo-lines-v1:sha256:6aebfc43e5b2e1eb17c74830d5604421223be21c6f69bebf5c7d6df0aec1ef20:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWUwZWNiZmUzNTI1ZTQ1OGFhNmZkNDNhMDliM2E5NTE4NWEyNzBmYzEzNzA3NDg3NzYzYzMyOWFiM2ExMGY3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM5M2FiODI1MTFiZDc3ODc4OTJkMTg1YWY2YWUzZmIyYzRiZjkwZDE5MmMxMTY5MGY3MWUyOGQzZGQ5MDE3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdjNzc4NDFjY2VkNjlhMDQ5YTYzMTlhMmEzYjMxMzE3MmVhZjRhYzZhYTYzMGY3OTY5YzE5ZGM0YWY4MDI5MCJ9"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/research.md#L158-L161",
+          "version": "repo-lines-v1:sha256:f70548b21998874d5ade08c969f682a5dd141763f38d773eadffb20bda12740c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhiOTUzODk5MTY1MGMxZTU0MDJkZDUxYTZiMDhmM2Y0ZjRmYTMxYjgyZGNmZTg4M2MzZTI4MDkzZjZjYzMwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY1MWFhMTFjMTJkNmQ0NzQzMDU5YzFhN2RiMWQ3MTk2Y2M3NzBhYjFhOTk1NzY2ZTIxOTg4NDU5ZDI5ZDEwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQxM2RiNzBiODM2NTg5OGExZTczNjYzMjJlMGI4NjU3YzUzNGVmNmRmNWEzMjI3NDkyNDBjM2EwZmNmNzUwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGEyY2U3MmM5MjZjMzk0OWNiMmYzZDMwYzA5ODFlOTJhODg3OWU0MTEzZjRhNmVmYmU1OTA3OTkzNzA2MmRkNSJ9"
+        },
+        {
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L843-L844",
+          "version": "repo-lines-v1:sha256:e4c29707288eda9bdb905ff82cd1744715efdbd11bb7446031d8219dc69c6202:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFmN2I5MzhiYWIxYTNhNjU4YzllYmZmZDkxZTFkMDgxNmU2ZDA1ZDY4YjQxYWRhMmEyNTljNmIzYzNjZGY3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0NTNmMWYwOTNhZmI5YzFhZjg2ZTc2NzEyNzlkZDAwNThkYjA2NmY1OTIxNmFkNjNlM2NhMDA3OGI2ZmQ4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMzOTRmY2FkY2I4MDg1ZTljMjI4ZjQ5OTQyOWM0ZDhhOGRkYjk5MjlkZmIyYzc5ZTBmZDJjYjJlOGZiOTFiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E5OWJjOWUwZDdlMDk2ZDFkZmJhYWU2NDYzYTlhY2I2ZTI0ZWE4MDkxMGQ0ZGUzNDI3OTk2MjBkNzU0MTBhOCJ9"
         }
       ]
     },
@@ -859,6 +863,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T13:34:04.956Z"
+    "at": "2026-11-02T10:14:55.121Z"
   }
 }

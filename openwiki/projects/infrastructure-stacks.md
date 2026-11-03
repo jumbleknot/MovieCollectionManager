@@ -4,9 +4,131 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
+sources:
+  - id: openwiki-source-80b643ca97b6e7e300789088
+    resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
+  - id: openwiki-source-f98f56169006fd5a5bdf85b9
+    resource: repo://backend/mc-service/tests/integration/health_test.rs
+  - id: openwiki-source-95a7ed7500d24b0881fc3468
+    resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-318b395038e1943bc8a10f72
+    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
+  - id: openwiki-source-23175e1d10427daa3344d3ec
+    resource: repo://docs/runbooks/prod-control-tower.md
+  - id: openwiki-source-abae5c338f9f983f89ea77ad
+    resource: repo://docs/runbooks/prod-reboot-resilience.md
+  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
+    resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-e69fe30016fa84209ae5e815
+    resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-78ec32b51a25a8fb66d5b292
+    resource: repo://infrastructure-as-code/backup/backup.sh
+  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
+    resource: repo://infrastructure-as-code/backup/README.md
+  - id: openwiki-source-5cff57d66fb9a3d88a18a36e
+    resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
+  - id: openwiki-source-7a0ce0b0b1a10dd515633969
+    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - id: openwiki-source-34479801b303c2005c7d1de1
+    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
+  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
+    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
+  - id: openwiki-source-f873d74e3a5ee524df98c4b4
+    resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
+  - id: openwiki-source-ff035ef3df6eca36fc791d1d
+    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
+  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-d5b1faab58eeb909bb999298
+    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
+  - id: openwiki-source-8e2135ee1e81e6877b010809
+    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
+  - id: openwiki-source-0ff61f596da1302e58282fa2
+    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
+  - id: openwiki-source-5c295e2a3945cc4a649c1abc
+    resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
+  - id: openwiki-source-79878dc2da65b6b5c71034f7
+    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
+  - id: openwiki-source-164936b930a31e48cf0a65fc
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
+  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
+    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
+  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
+    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
+  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
+    resource: repo://infrastructure-as-code/docker/stacks/README.md
+  - id: openwiki-source-3b86829117dd0577834407fc
+    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
+    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
+  - id: openwiki-source-d951526f31e9f2cb4d68995b
+    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
+  - id: openwiki-source-839571d2c51f49a930537d1b
+    resource: repo://infrastructure-as-code/komodo/stacks.toml
+  - id: openwiki-source-075e18482c7b2302ea6593a7
+    resource: repo://infrastructure-as-code/opa/policies/agent_ui_action.rego
+  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
+    resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
+    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
+  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
+    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
+  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
+    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
+  - id: openwiki-source-7efe877535a6dbac41dcc29c
+    resource: repo://scripts/agent-stack.mjs
+  - id: openwiki-source-0af8f352da052e268e893ea2
+    resource: repo://scripts/cd/promote-digest.sh
+  - id: openwiki-source-fe6babf23c099d13c73c6b6f
+    resource: repo://scripts/cd/scan-push.sh
+  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
+    resource: repo://scripts/check-komodo-sync.mjs
+  - id: openwiki-source-85a6abb4f828129c0cce9653
+    resource: repo://scripts/check-no-inline-secrets.mjs
+  - id: openwiki-source-5a48ade99311698ed1a02a08
+    resource: repo://scripts/check-prod-ci-port-collision.mjs
+  - id: openwiki-source-b182ec4cb28667debd4684ff
+    resource: repo://scripts/check-prod-restart-policy.mjs
+  - id: openwiki-source-bf15c8e3067ce028059a1350
+    resource: repo://scripts/check-resource-naming.mjs
+  - id: openwiki-source-6f10e821d1ec074deb438a3e
+    resource: repo://scripts/check-topology-scrub.mjs
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
+  - id: openwiki-source-1dabdb308579a8f9d6d49612
+    resource: repo://scripts/gen-dev-secrets.mjs
+  - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
+    resource: repo://scripts/infra-image-scan.mjs
+  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
+    resource: repo://scripts/preflight.mjs
+  - id: openwiki-source-45caf09b059605daac0b6db2
+    resource: repo://scripts/registry-retention.mjs
+  - id: openwiki-source-ac2000cc53be6b0ffb997de7
+    resource: repo://scripts/up-mcm-agents.mjs
+  - id: openwiki-source-c5e086204a303667bdcd03f5
+    resource: repo://specs/025-observability-audit-vault-prod/tasks.md
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
+  - id: openwiki-source-83771c9aeecb9de0bd4deaf4
+    resource: repo://specs/083-backup-consent-session-isolation/tasks.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-02T10:14:55.121Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -261,9 +383,13 @@ capability whose keys are *optional* has no `${VAR:?}` for a guard to see. See
 Two names left `prod-observability`'s block with feature 080, which swapped the from-source object-store
 image for upstream `rustfs/rustfs`: `REGISTRY_HOST` (the stack no longer pulls a
 `${REGISTRY_HOST}/jumbleknot/…` ref) and `LANGFUSE_MINIO_ROOT_PASSWORD`, replaced by
-`LANGFUSE_RUSTFS_SECRET_KEY`. The Komodo **Variables** for both are deliberately kept until the
-rollback window closes, because reverting the merge restores the lines that need them and a revert
-cannot recreate a Variable. New Variables must be seeded *before* the sync that first references them:
+`LANGFUSE_RUSTFS_SECRET_KEY`. The two departed names met different fates. `REGISTRY_HOST` is still a
+declared input for the three CI-built stacks, which interpolate it into their image refs.
+`LANGFUSE_MINIO_ROOT_PASSWORD` is gone: the rollback window was closed **early** on 2026-10-24 (item
+#826), when the MinIO volumes, the Komodo Variable and the `jumbleknot/minio` registry package were
+deleted together — the input was retired only once the merge it guarded was no longer revertible, so a
+revert can no longer restore the lines that referenced it, and the `stacks.toml` comment records the
+deletion. New Variables must be seeded *before* the sync that first references them:
 an unseeded `[[VAR]]` interpolates empty, and the `${VAR:?}` guard in the compose then aborts the
 deploy — the intended fail-fast, not a silent default.
 
@@ -275,8 +401,9 @@ compose loads with `env_file:`, so it reached the container as a `KC_*` variable
 option (harmless, but a reminder that removing the consumer does not remove the input). `TS_ADMIN_IP`
 followed the same path: feature 028 made the two operator-UI binds `0.0.0.0`, so no compose bind had
 read it since, and `stacks.toml` stopped passing it to `prod-observability` on 2026-10-13. No stack or
-compose file reads either name any more, so both Komodo Variables can be retired — leaving one seeded
-cannot fail a deploy, the only cost is dead config. The admin *URL* was always a separate, live var
+compose file reads either name any more, so both Komodo Variables are retirable — the operator checklist
+records `TS_ADMIN_IP`'s as already removed — and leaving one seeded cannot fail a deploy, the only cost
+being dead config. The admin *URL* was always a separate, live var
 (`KC_HOSTNAME_ADMIN`) and is the one a port move must keep in sync. See
 [prod reboot resilience](../../docs/runbooks/prod-reboot-resilience.md) for the full retired-variable
 record.
@@ -354,7 +481,10 @@ then invokes the `opa` binary itself (`opa eval --fail … http.send({…}).stat
 rather than `wget`, because that busybox ships no `wget`, `curl` or `nc`: the previous `wget` form failed
 every run, so the container read `unhealthy` from ~2026-09-10 (a `FailingStreak` of 130247 by
 2026-10-03) while OPA was serving fine — the thing that was wrong was Komodo's view of the policy
-server, not the policy server.
+server, not the policy server. Two places still describe the removed form and must not be copied back:
+the prod compose's own header comment and the prod control-tower runbook's gotcha bullet both say the
+`-debug` busybox "runs the /health wget healthcheck", which is what the shipped `healthcheck` no longer
+does — reintroducing `wget` there reproduces the every-run failure.
 
 **Dev-only Ollama helper** — `infrastructure-as-code/docker/dev-ollama.compose.yaml` is not part of any
 stack and not part of the production agent stack: it is a dev-container-only helper brought up by
@@ -480,9 +610,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   `prod-observability` after feature 028 made the operator-UI binds `0.0.0.0`, and was dropped on
   2026-10-13. No stack or compose file reads either name now. Retire the `stacks.toml` line and the
   Komodo Variable together, and read the effective value from `.env.prod` rather than from a historical
-  comment. The mirror image is deliberate: `REGISTRY_HOST` and `LANGFUSE_MINIO_ROOT_PASSWORD` are *out*
-  of `prod-observability`'s block yet their Variables are kept until feature 080's rollback window
-  closes, because a revert restores the lines that need them. See
+  comment. The mirror image is deliberate and has both outcomes on record: `REGISTRY_HOST` is *out* of
+  `prod-observability`'s block while its Variable lives on because `prod-mc-service`, `prod-mcm-bff` and
+  `prod-movie-assistant` still interpolate it, whereas `LANGFUSE_MINIO_ROOT_PASSWORD` left the same block
+  and its Variable was deleted on 2026-10-24 once feature 080's rollback window closed early (item #826).
+  The rule is the same in both cases: an input is retired only once the change it guarded can no longer be
+  reverted. See
   [Published-port reservation](../invariants/published-port-reservation.md) for how this interacts with
   the port-move rule.
 - **A stack `environment` key that nothing *requires* fails open, and a sync that only rewrites

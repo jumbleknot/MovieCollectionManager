@@ -97,12 +97,14 @@ sources:
     resource: repo://scripts/__tests__/python-runtime-no-pip.guard.test.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
     resource: repo://scripts/agent-stack.mjs
+  - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
+    resource: repo://scripts/infra-image-scan.mjs
   - id: openwiki-source-d253edfea28a71c8a87b78e7
     resource: repo://specs/068-mcp-2x-migration/contracts/mcp-tool-result.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T02:14:36.804Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # The three scoped MCP servers
@@ -245,15 +247,26 @@ All three are built the same way in `src/server.py`:
   Dockerfiles, the per-server compose files or the agent stack actually mounts the virtualenv or source
   read-only — only the Dockerfile comment says so.
 - Two of those image details are held by their own guard tests, and both exist because cd-deploy's Trivy
-  gate fails fast in a fixed order and names one image while several are affected.
+  gate runs after merge and fails fast in a fixed order, naming one image while several are affected.
   `scripts/__tests__/python-runtime-no-pip.guard.test.mjs` fails any Python image whose final stage keeps
   the base's `pip`, which vendors its own stale `certifi` and was flagged as a fixable Critical
   (GHSA-6q48-6c7w-9gw2); it also fails a `uv sync` that would install a lock-carried `pip` into the venv.
   `scripts/__tests__/python-base-perl-patch.guard.test.mjs` fails any Dockerfile pinning the older
   `python:3.14-slim` digest that carried three fixable `perl-base` CRITICALs — the reason the base is
-  pinned by digest rather than by tag. Both run in the `guardrails` job's
-  `node --test scripts/__tests__/*.test.mjs` step, which is what keeps a gate script's own guard from
-  sitting unexecuted.
+  pinned by digest rather than by tag. That base has since been rebuilt and the
+  `apt-get --only-upgrade perl-base` patch layer deleted from all four Python Dockerfiles, so what the
+  guard now catches is a revert, a stale branch or a copy-pasted Dockerfile putting the vulnerable
+  digest back. Both run in the `guardrails` job's `node --test scripts/__tests__/*.test.mjs` step, which
+  is what keeps a gate script's own guard from sitting unexecuted.
+- The PR-time half of that Trivy gap is closed too (spec 084 US3): `app-e2e` re-tags all three MCP
+  images among the six application images as `app-scan/<name>:run-<run id>`, and the required
+  `app-image-scan` job scans each through `scripts/cd/scan-app-image.sh` — the same script and scanner
+  pin `scan-push.sh` uses — with one `always()` step per image so a single run names every blocking
+  image. It fails closed on missing tags, and sits in `trigger-cd`'s `needs`, so a red scan blocks the
+  deploy dispatch instead of surfacing as a failed deploy. The three MCP images are also listed in
+  `scripts/infra-image-scan.mjs`'s `BUILT_IMAGE_NAMES`, which keeps them out of the keyless
+  third-party infra sweep: every image is scanned by exactly one scanner. See
+  [CI/CD pipeline](./ci-cd-pipeline.md) for the workflow-level view.
 
 ## movie-mcp — the identity-carrying proxy
 

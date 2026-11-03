@@ -42,7 +42,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-15T10:11:13.472Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T16:05:45.295Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)

@@ -39,10 +39,12 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-2c24e272c750d36f7963e28d
     resource: repo://specs/026-prod-data-auth-vault/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
+  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
+    resource: repo://specs/080-minio-to-rustfs/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-26T03:45:38.439Z
+    at: 2026-11-02T10:14:55.121Z
 ---
 
 # ADR-0001: Production secrets-management standard
@@ -207,10 +209,14 @@ source supplies it. In production today those two env vars are unset, so the rea
   *supplied*; it says nothing about a declared input no compose reads any more, or a Komodo Variable no
   longer referenced by any `environment` block. Both happen, and neither is self-cleaning: the
   `environment` block is a hand-maintained declared-input list, so `KC_ADMIN_BIND_IP` and `TS_ADMIN_IP`
-  each outlived the compose bind that read them, and feature 080 deliberately leaves `REGISTRY_HOST`
-  and `LANGFUSE_MINIO_ROOT_PASSWORD` seeded in Komodo until the object-store rollback window closes,
-  because reverting that change restores the lines that reference them. Removing a consumer is not the
-  same edit as removing the input — see
+  each outlived the compose bind that read them. Feature 080 shows the same coupling resolved the other
+  way: the object-store rollback window was closed **early** on 2026-10-24 (item #826), when the MinIO
+  volumes, the `LANGFUSE_MINIO_ROOT_PASSWORD` Variable and the `jumbleknot/minio` package were deleted
+  together — the input was retired only once the change it guarded was no longer revertible, so a
+  revert could no longer restore the lines that referenced it. `REGISTRY_HOST` is the live counter-case:
+  it left `prod-observability`'s block with the same change but is still a declared input for
+  `prod-mc-service`, `prod-mcm-bff` and `prod-movie-assistant`, which still interpolate it into their
+  image refs. Removing a consumer is not the same edit as removing the input — see
   [Infrastructure stacks](../projects/infrastructure-stacks.md) for the retired-variable record.
 - **A capability whose keys are *optional* has no `${VAR:?}` for the guard to see, so it can be
   silently off in production and CI will stay green.** Feature 073's scheduled backups are the worked

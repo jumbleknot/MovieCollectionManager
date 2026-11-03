@@ -67,6 +67,8 @@ sources:
     resource: repo://frontend/mcm-app/src/components/register-form.tsx
   - id: openwiki-source-820baf1f5bc3988fd0753bfe
     resource: repo://frontend/mcm-app/src/components/settings/settings-nav.tsx
+  - id: openwiki-source-db49b0576db93627f34d500f
+    resource: repo://frontend/mcm-app/src/config/bff-url.ts
   - id: openwiki-source-ef24b6b5e3c8860863d47d11
     resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
   - id: openwiki-source-570a958599bcf5038114a6fc
@@ -85,10 +87,20 @@ sources:
     resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
   - id: openwiki-source-9542968841d15eaafd16ac7b
     resource: repo://frontend/mcm-app/src/test-support/render.tsx
+  - id: openwiki-source-0b95b2665c338088eef0db7e
+    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
   - id: openwiki-source-4e2d6488af045e50c1eb17f0
     resource: repo://frontend/mcm-app/src/utils/backup-run-summary.ts
+  - id: openwiki-source-ed2df48ea080e434190abed3
+    resource: repo://frontend/mcm-app/src/utils/session-storage.ts
+  - id: openwiki-source-503103081c79db2ef99e2b27
+    resource: repo://frontend/mcm-app/src/utils/token-refresh.ts
+  - id: openwiki-source-fc2cee35aa6e7b9a5079a6e9
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/api-client.test.ts
+  - id: openwiki-source-5839329bfe7fc2f4898102b5
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/token-refresh.test.ts
   - id: openwiki-source-d67eac1e98649691c637d9c0
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
@@ -127,10 +139,10 @@ sources:
     resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-26T03:45:38.439Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-26T03:45:38.439Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Expo/React Native universal app
@@ -155,7 +167,24 @@ through `src/utils/api-client.ts` (an Axios instance with a 401 silent-refresh-a
 interceptor), which never attaches an `Authorization` header — it relies on the browser/RN cookie
 jar and `withCredentials: true` to carry the BFF's session cookies (see
 [Auth chain](../invariants/auth-chain.md)). Login itself uses OAuth2 + PKCE against Keycloak
-directly from the client before handing the resulting code to the BFF.
+directly from the client before handing the resulting code to the BFF. Its base URL is empty on
+web (same origin, so requests are relative) and an absolute BFF URL on native, from
+`src/config/bff-url.ts`.
+
+The interceptor's *exclusions* are as load-bearing as what it does. It retries at most once
+(`MAX_RETRY = 1`); it never retries `/bff-api/auth/login`, because an authorization code is
+single-use and a retry would send an already-consumed code and come back `AUTH_CODE_INVALID`; and
+when a refresh is already in flight it awaits that one (`isRefreshInProgress` / `waitForRefresh`)
+instead of starting a second. `silentRefresh()` in `src/utils/token-refresh.ts` posts
+`/bff-api/auth/refresh` through raw `axios` rather than the client instance, to avoid a circular
+dependency with the interceptor, and stores nothing client-side — the BFF re-sets only the session
+cookie, so a successful refresh is invisible to the caller.
+`src/utils/unit-tests/api-client.test.ts` pins each of those branches. One client path deliberately
+does *not* go through this interceptor at all: CopilotKit's React Native runtime issues its
+`/bff-api/agent/run` request through its own streaming-fetch polyfill, so that 401 recovery lives at
+the `fetch` level in `src/utils/agent-fetch-refresh.ts` — see
+[Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md)
+for that mechanism rather than repeating it here.
 
 **`api-client.ts` moved out of `src/bff-server/` (feature 077 / backlog item #566) — do not put it
 back.** It used to live under `src/bff-server/`, a name that described what it talks to rather than

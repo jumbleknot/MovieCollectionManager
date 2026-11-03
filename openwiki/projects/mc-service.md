@@ -61,6 +61,8 @@ sources:
     resource: repo://backend/mc-service/src/domain/errors.rs
   - id: openwiki-source-48aee1b6e73650c2995b7861
     resource: repo://backend/mc-service/src/domain/mod.rs
+  - id: openwiki-source-fdeff1d9e1d9eac94dd6a685
+    resource: repo://backend/mc-service/src/domain/movie.rs
   - id: openwiki-source-100cc47666cbe45bc9d2f0cb
     resource: repo://backend/mc-service/src/domain/specifications/spec.rs
   - id: openwiki-source-dd879f09a5a135a8daaa43b6
@@ -97,10 +99,10 @@ sources:
     resource: repo://scripts/mc-service-integration-guard.mjs
   - id: openwiki-source-227e2a7bba71e73939b765c7
     resource: repo://specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-23T11:13:11.115Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-24T20:35:10.714Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -153,15 +155,21 @@ Two sub-routers, and the split is the security boundary:
 `/{id}/movies/{movieId}` deliberately — in the reversed order the literal segments are shadowed by
 the parameterised route. `AppState` holds one pre-constructed handler per operation and is injected
 as `State<Arc<AppState>>`; dispatch is a plain method call on that struct, so there is no mediator
-crate in the request path (`docs/MCM-Architecture.md`'s "via `medi-rs`" phrasing describes the
-intent, not the shipped wiring).
+crate in the request path. `docs/MCM-Architecture.md` now states this the same way — its
+"**CQRS without a mediator**" decision records that the constitution still names `medi-rs` as the
+mediator library and that the divergence is tracked as a backlog item.
 
 Two routes deserve a note because they break the pattern of the rest:
 
 - `/api/v1/movie-metadata` sits *inside* `protected` (so it inherits auth + role enforcement) but is
   **not** collection-scoped and carries no user data, so no DAC check applies. It publishes the
   option values the domain accepts, so agents ask the service instead of keeping their own copy —
-  and because it leaks nothing, a process-wide TTL cache of the response is safe.
+  and because it leaks nothing, a process-wide TTL cache of the response is safe. The list is derived
+  through an **exhaustive `match`** in `MediaFormat::all()` rather than a hand-maintained array, and
+  each value's wire string comes from the same serde impl the request body is parsed with — so adding
+  a variant fails to compile until it is published, and a published value is by construction one the
+  create/update DTOs accept. It is deliberately distinct from `filter-options`, which reports the
+  values *observed* in one collection ("what may I choose" vs "what can I filter by here").
 - The global logging middleware wraps *both* sub-routers: it puts `request_id` / `method` / `path` on
   a `request` span, emits a `request completed` event carrying numeric `status` and `duration_ms`,
   and additionally warns on 401/403 as audit events. See
@@ -221,19 +229,33 @@ collation uniqueness covers the race the specifications cannot; see
 `authorize_collection_access` helper, which loads the parent collection by id, checks the role
 hierarchy `owner ⊇ contributor ⊇ viewer`, and reports both "collection missing" and "caller not
 authorized" as `CollectionNotFound` (404) so the API never leaks whether a collection exists. The
-ACL is seeded only with `{ userId: ownerId, role: "owner" }` at creation — the seam is exercised and
-tested, but the UI/endpoints to grant or revoke a non-owner role do not exist yet. The helper returns
-the loaded collection, and callers reuse it: movie writes stamp `movie.ownerId` with the collection's
-owner rather than the caller's subject.
+port makes the intent explicit: `CollectionRepository::find_by_id(id)` is documented as **not**
+owner-scoped and returns the domain aggregate *including its ACL* — that is the only reason the
+helper can authorize at all, and it is why the collection-scoped `get_by_id(id, owner_id)` is a
+separate method. The ACL is seeded only with `{ userId: ownerId, role: "owner" }` at creation — the
+seam is exercised and tested, but the UI/endpoints to grant or revoke a non-owner role do not exist
+yet. The helper returns the loaded collection, and callers reuse it: movie writes stamp
+`movie.ownerId` with the collection's owner rather than the caller's subject.
 
 **Read paths: movies are keyset-paginated, collections are not.** `GET /collections/{id}/movies`
 takes an opaque base64 cursor and a 50-document batch, and the sibling `count` endpoint deliberately
 drops the cursor and the sort (count is order-independent) while sharing every other filter, so the
 two stay parity-consistent — that parity is the thing to preserve when adding a filter. The decoding,
 sort-field remapping and filter-parity traps are their own page:
-[Keyset pagination](../gotchas/keyset-pagination.md). `GET /collections` is a flat
-`find({ ownerId })` returning every collection for the caller, with no cursor at all; the
-`owner_id_list` index exists but the query does not page through it.
+[Keyset pagination](../gotchas/keyset-pagination.md). Sorting is server-applied over a whitelist of
+nine scalar columns (`sortBy`/`sortDir`), and an unknown field or direction is a **400, not a
+silently ignored parameter**; array-valued columns (genres, directors, actors, ownedMedia,
+ripQuality) are excluded deliberately because they have no single ordering key. Search is a
+case-insensitive `$regex` `$or` over `title`, `originalTitle`, `directors`, `actors`, `movieSet`,
+`tags`, `outline` and `plot` — not `$text` — with the caller's text PCRE-escaped so it matches
+literally; a NUL byte is rewritten to the `\x00` escape because a BSON regex pattern is a NUL-free
+`CString`, which keeps the pattern a total function of the input rather than a 500.
+`GET /collections` is a flat `find({ ownerId })` returning every collection for the caller, with no
+cursor at all; the `owner_id_list` index exists but the query does not page through it. One
+divergence to know when reading the architecture doc: its pagination bullet still describes the
+cursor as "a base64-encoded MongoDB ObjectId", which was true before the compound cursor landed —
+`docs/MCM-Architecture.md` is authoritative for the layer table and index tables, but not for the
+cursor payload.
 
 ## Packaging and operations
 
@@ -358,6 +380,7 @@ sort-field remapping and filter-parity traps are their own page:
   Prometheus recorder and falls back to an isolated recorder if one is already installed — which
   happens when integration tests build the router many times in one process — so the endpoint still
   returns valid Prometheus text rather than panicking.
+- **The `mongodb`/`bson`/`serde_json` feature set in `Cargo.toml` is a wire-format decision, not dependency housekeeping.** `mongodb` is declared `default-features = false` with `bson-3` named explicitly so its re-exported `bson` and this crate's `bson` are the *same* crate rather than two versions side by side, and `serde_json` names `preserve_order` because bson 2 used to switch it on implicitly — without it every `json!` object the service emits is silently re-ordered (the RFC 9457 problem body goes from `type,title,status,detail` to alphabetical). Both are pinned by tests rather than comments; the error-body key order is asserted byte-for-byte in `error_handler.rs` and the full narrative is in [RFC 9457 problem details](../gotchas/rfc-9457-problem-details.md).
 
 See [Auth chain](../invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, [data model](../architecture/data-model.md) for the domain entities, and

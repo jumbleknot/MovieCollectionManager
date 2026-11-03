@@ -79,6 +79,8 @@ sources:
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-238cf8b88f30f267614313be
     resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-70875ab1853f42b7c7d4b78a
+    resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
   - id: openwiki-source-08fc841d5e458f6987e87106
@@ -87,10 +89,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-02T03:57:29.221Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -449,11 +451,27 @@ Full procedure and the four traps: [docs/runbooks/devcontainer.md](../../docs/ru
 
 ### 4 — PR head must be a real branch, not an AGit push
 
-A PR's head MUST be a real branch (`git push origin HEAD:<branch>`, then POST via the
-`git credential fill` credential). An AGit push (`HEAD:refs/for/main`) yields a
-`refs/pull/N/head` head that Forgejo runs **with NO Actions secrets** — every `${{ secrets.* }}`
-is empty, and Nx reports `Misconfigured remote cache endpoint`. This cost two sessions a day on
-#126. See [docs/runbooks/ci-diagnostics.md](../../docs/runbooks/ci-diagnostics.md).
+A PR's head MUST be a real branch — `git push origin HEAD:<branch>`, then `POST …/pulls` using the
+`git credential fill` credential (not `MCM_FORGE_TOKEN`, the read token, which 403s). An AGit push
+(`HEAD:refs/for/main`) creates a PR with **no backing branch** — its `head.ref` is
+`refs/pull/N/head` — and Forgejo treats a non-branch head as untrusted and runs it **without Actions
+secrets**: every `${{ secrets.* }}` in the workflow arrives as the empty string.
+
+The failure it produces never mentions secrets. `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` is empty,
+the cache server rejects the request, and nx reports
+`Misconfigured remote cache endpoint: Requests should respond with text/plain on 401s` — which reads
+as a cache or credential fault. Jobs that never touch the nx cache pass, so the failure looks
+selective and content-specific. The tell is measuring the secret's **length inside the job** (`0`,
+sha256 `e3b0c44298fc`) against `64` on a branch-backed PR. Measured 2026-08-01 on PR #126, this cost
+two sessions most of a day, with the cache server, the token, the bucket and the nx wrapper each
+investigated and found healthy because they *were* healthy; the same commits reopened from a real
+branch passed first try.
+
+The condition is invisible in the web UI, so `scripts/ci-status.mjs` prints a **DETACHED HEAD**
+warning naming the head ref and the missing-secret consequence — suppressed for a PR that is no
+longer open, because a closed or merged PR reports `refs/pull/N/head` once its branch is deleted,
+which is routine tidy-up rather than a detached PR. See
+[docs/runbooks/ci-diagnostics.md](../../docs/runbooks/ci-diagnostics.md).
 
 ### The rest of the gate list is owned elsewhere
 
