@@ -1,31 +1,12 @@
 {
-  "coveredCommit": "02ccac105b237f1d2786a7c32cf9234f769eff76",
-  "coveredAt": "2026-11-03T13:41:29.880Z",
-  "lastOutcome": "completed",
+  "coveredCommit": "639fd0572503d40b70a3e15aa1e4d32bfb7db0f8",
+  "coveredAt": "2026-11-03T23:00:49.518Z",
+  "lastOutcome": "nothing-to-do",
   "backlog": [],
-  "proposal": {
-    "branch": "openwiki-maintenance",
-    "number": 922,
-    "headCommit": "7771cabe98a58fb1d97427596c9bcfb91395ac69",
-    "markerBefore": "aa0f8e2f3bd72188de5dd9e2bfd13410afcf47f2",
-    "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      }
-    ],
-    "updatedAt": "2026-11-03T13:41:30.412Z"
-  },
+  "proposal": null,
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 1112,
+    "pagesWritten": 0,
+    "elapsedSeconds": 0,
     "stoppedAtBudget": false
   },
   "escalations": {},
