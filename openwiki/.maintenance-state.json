@@ -1,57 +1,51 @@
 {
-  "coveredCommit": "aa0f8e2f3bd72188de5dd9e2bfd13410afcf47f2",
-  "coveredAt": "2026-11-03T04:19:17.860Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "wiki-maintenance.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/wiki-maintenance.md"
-    }
-  ],
+  "coveredCommit": "02ccac105b237f1d2786a7c32cf9234f769eff76",
+  "coveredAt": "2026-11-03T13:41:29.880Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 922,
-    "headCommit": "2bb68d196915d098ce2cc492e28f48a37a8221f0",
+    "headCommit": "7771cabe98a58fb1d97427596c9bcfb91395ac69",
     "markerBefore": "aa0f8e2f3bd72188de5dd9e2bfd13410afcf47f2",
-    "slices": [],
-    "updatedAt": "2026-11-03T13:22:29.360Z"
+    "slices": [
+      {
+        "area": "runbooks",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/wiki-maintenance.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-11-03T13:41:30.412Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 3101,
+    "pagesWritten": 2,
+    "elapsedSeconds": 1112,
     "stoppedAtBudget": false
   },
-  "escalations": {
-    "runbooks/wiki-maintenance.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-03T13:22:28.950Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 377,
+    "calls": 124,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2202499,
-    "cached": 39897418,
+    "uncached": 547654,
+    "cached": 12479912,
     "cacheWrite": 0,
-    "output": 849566,
-    "reasoning": 769818,
-    "ms": 5661735,
-    "estCostUsd": 1.9196,
+    "output": 208168,
+    "reasoning": 171862,
+    "ms": 1340159,
+    "estCostUsd": 0.489,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -59,9 +53,9 @@
       "pages": [
         "runbooks/wiki-maintenance.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 1.9196,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 0.489,
       "rateLimited": null
     }
   ],
