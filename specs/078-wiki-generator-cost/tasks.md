@@ -1015,6 +1015,13 @@ In `scripts/__tests__/wiki-maintain.guard.test.mjs`:
   fifteen minutes".
 
 ### T055: After merge, observe (no code)
+**DONE 2026-11-03**, after T056 and T057. Since #920:
+- run 6598 ended "not yet" in 5 s, 11 min after the merge;
+- run 6600 generated for 49 min and completed;
+- run 6601 queued behind 6600, found nothing, and pushed no marker;
+- no run was cancelled.
+
+The evidence is on item #613.
 
 Record the first scheduled fire that ends with "not yet", and the first that runs:
 - its generator time against the ~49-minute window;
@@ -1056,6 +1063,16 @@ T055 evidence so far:
 - run 6576 generated for 3100 s and stopped at the job deadline, which is the window #613 predicted;
 - runs 6577 (48 min) and 6582 (16 min) completed the work carried forward from it;
 - no run was cancelled.
+
+### T058: Halve the invocation, and retire sizing by source (item #613, operator decision 2026-11-03)
+**DONE 2026-11-03** (research R20):
+- `MAX_PAGES_PER_INVOCATION` and `MAX_PAGES_PER_SLICE` go from 8 to 4. The slice cap may not exceed the
+  invocation cap, because the planner always admits a run's first slice.
+- A test asserts that no packed invocation exceeds the cap.
+- Runbook "The budget" records the measurements.
+
+RED: 2 tests failed. GREEN: 207 across the three wiki test files. 3 mutations were all killed: the slice
+cap back to 8, the invocation cap back to 8, and packing that ignores the cap.
 
 ## Dependencies
 
