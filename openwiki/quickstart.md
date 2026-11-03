@@ -33,10 +33,10 @@ sources:
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T03:30:53.754Z
+    at: 2026-11-03T13:23:04.255Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -69,7 +69,10 @@ page is a derived summary). Use these fields rather than guessing filenames:
 - **By `tags`** — cross-cutting themes such as `auth`, `secrets`, `mongodb`, `ci`, or `openwiki`
   span multiple pages regardless of directory; a tag search surfaces all of them together.
 - **By `resource`** — every derived page cites its canonical source as a repository-relative path
-  (verified to resolve by the conformance gate) or an external URL. A page with **no** `resource` is
+  (verified to resolve by the conformance gate) or an external URL. A `resource` names **one canonical
+  file, never a directory**: drift is judged by the cited source's last commit, so a directory citation
+  re-flags the page on every unrelated change beneath it, and the planner reports such a page as
+  *unplannable* rather than paying to regenerate it. A page with **no** `resource` is
   *authoritative* — canonical in its own right, and listed under `authoritative:` in
   [the protection manifest](./protected.yaml). That split is a ratified decision, not a convention:
   [ADR-0003](./decisions/adr-0003-claims-and-fingerprints.md) makes Grounded Claims and the

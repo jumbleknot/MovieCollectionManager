@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f0f7c9b83ca78d57b71e0cbae01eb20174b2c3643d519f0e98db84a0b973783e",
+  "pageVersion": "sha256:a785af100c7889a76a34ef04ab66d86d4a1493aa1113816048829afbce667c73",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
+          "version": "repo-file-v1:sha256:eefbce98c8da9e2e807861e00b6ec894d2e313f6a5af125ff5de8b21a00a652e"
         },
         {
           "resource": "repo://scripts/check-openwiki-governance.mjs",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
+          "version": "repo-file-v1:sha256:eefbce98c8da9e2e807861e00b6ec894d2e313f6a5af125ff5de8b21a00a652e"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
+          "version": "repo-file-v1:sha256:eefbce98c8da9e2e807861e00b6ec894d2e313f6a5af125ff5de8b21a00a652e"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
+          "version": "repo-file-v1:sha256:eefbce98c8da9e2e807861e00b6ec894d2e313f6a5af125ff5de8b21a00a652e"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -114,7 +114,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:d8f32462d83276b1fc709c2f5a8905a2fe337fa9689298b753a63d779f033eaf"
+          "version": "repo-file-v1:sha256:eefbce98c8da9e2e807861e00b6ec894d2e313f6a5af125ff5de8b21a00a652e"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json#L224-L243",
@@ -239,10 +239,20 @@
           "version": "repo-lines-v1:sha256:33edd4b1a62456bf4814b492eefa689619843c460d21009610b7a2aafa661695:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNDQ2MTgxYWRlYmUxNzkyYTA2M2Y3MmM2NTRjZmQ1ODg4MDNiYTYwZGZiMDA4ZjE0MTFhMzQ3ZDNmMTAyMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDIxMjRiMDg2NTRhMGMyYTZlMGJhZDg0MzgwZjEwYTQ3ODk4MzFiM2FiYWM5Zjk0NzQxZDgwNDJiZGU3N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmMjM4MDFkMTlkZTI2ODM3MTA1ZDQyMGZhYjg0NWVjNTkzN2FjZmJkNTVhZjdmYTQ1ZTFlMDA3MWY5MDU2NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOTU5NGNhYThiMWY1YjQ1MmIyOGM0ZjZkYTEyZGZjNzYzYWM1MDU0ODBjODFlYjFlNDk0MmZlNWU5NmQ2Y2UifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5e4f5f5fffa64bc4ba5b046ac2b10dde",
+      "statement": "A page's `resource` must name one canonical file, never a directory: drift is judged by the cited source's last commit, so a directory citation is re-flagged by every unrelated change beneath it, and the planner reports such a page as *unplannable* rather than paying to regenerate it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/wiki-maintenance.md#L540-L544",
+          "version": "repo-lines-v1:sha256:36d81599a7a71782f0c37100e2759a722bc03613534137e061243459d4cfce35:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBlYzk3Yzc2YTVhNmVkYzBlZmZiZjJhNmUwZTg5ZmJlYzAwZmVhNWVkNTFjZGI0MzY3MGYzMWE2ZmE0NjQwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODViM2Q5NzFkNmRkZjk4NmMzMGU4Njg4MzA0NDJlYzc4Yjg2YmJmYWJkNWUwYmNmYzI5MDRmYzgzOTBmNzk2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGEyZTM5MDJmZDdjODE1YTM1OWZlZjY3ZWI4ODk4MTk1ODM2OWNkNTRlYmYzMjVhNDI5OWU0N2MwZTNhOTNkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViMDVlYjY4YjcwYmFmMGE4NjhkZjI3MTY3MGI0ZjYwNzMxNmU2ODhiZTRjYTkyMjg1ODEzOGM1OGI5ZWUwNyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T03:30:53.754Z"
+    "at": "2026-11-03T13:23:04.255Z"
   }
 }

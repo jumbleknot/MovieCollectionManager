@@ -51,10 +51,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T03:30:53.754Z
+    at: 2026-11-03T13:23:04.255Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -69,16 +69,25 @@ into the Nx target's environment; the bare CLI omits both and reliably OOMs on t
 
 Around that pair sit three more targets on the same project. `pnpm nx wiki-plan infrastructure-as-code`
 is offline, keyless and free: it decomposes the documentation changes since the last recorded run into
-bounded slices — at most 8 pages when refreshing concepts that already exist, at most 3 when creating
-new ones, one bundle area each and never a mix of the two kinds — and prints them, so a paid run is
-reviewable before it happens. It shows only what was *requested*, though: openwiki forces every page
+bounded slices — at most `MAX_PAGES_PER_SLICE` (4) pages when refreshing concepts that already exist, at
+most `MAX_NEW_PAGES_PER_SLICE` (3) when creating new ones, one bundle area each and never a mix of the
+two kinds — and prints them, so a paid run is reviewable before it happens. Both caps sit below the
+8-page ceiling feature 043 set: the refresh cap was halved to 4 (item #613) so a slice can never exceed
+the invocation cap, while the lower creation cap was measured — a slice of 8 brand-new pages produced
+nothing on three attempts, because the generator researches every page before writing and exhausted its
+budget mid-research, whereas one new page was written in about six minutes.
+
+The plan shows only what was *requested*, though: openwiki forces every page
 with a stale or unresolved Claims citation into every run as a full paid regeneration whatever the plan
 says, and `node scripts/wiki-maintain.mjs --claims-audit` is the second offline, keyless, model-free
 check, naming that set in advance from openwiki's own resolver. `pnpm nx wiki-maintain
 infrastructure-as-code` is the paid execution path; at execution, consecutive same-kind slices of
-*different* areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` (8)
-pages, because every invocation pays a fixed planning pass — the slice stays the unit of the backlog
-and of carry-forward. `pnpm nx okf-governance infrastructure-as-code` runs the second, newer gate
+*different* areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` (4)
+pages, because every invocation pays a fixed planning pass (~$0.33 on Sonnet, 83% of a one-page run)
+and slices are per area; the slice stays the unit of the backlog and of carry-forward, and two slices
+of one area are never re-merged. The invocation cap was 8 until item #613 halved it after the committed
+run records showed an invocation of 5–8 pages was stopped at the job deadline 69% of the time and none
+of that size ever ended on its own. `pnpm nx okf-governance infrastructure-as-code` runs the second, newer gate
 (`scripts/check-openwiki-governance.mjs`, rules G1–G13, plus a fail-closed `G0` that treats a missing
 or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` as a violation rather than a skip
 and then stops before checking any concept) over the regeneration policy, the protection fingerprints

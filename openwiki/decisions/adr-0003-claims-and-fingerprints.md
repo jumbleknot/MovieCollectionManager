@@ -6,7 +6,7 @@ resource: docs/decisions/ADR-0003-claims-and-fingerprints.md
 tags: [adr, claims, fingerprints, governance, decision-record]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T03:30:53.754Z
+    at: 2026-11-03T12:30:54.717Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -73,7 +73,8 @@ The ADR is explicit that this is **policy, not luck** — the two sets did not m
 separate on the day it was written. Four existing rules do the work:
 
 - **G3 keeps the generator off authoritative pages.** `actor: generator` is permitted only under
-  `openwiki/` in [`openwiki/policy.yaml`](../../openwiki/policy.yaml), and every authoritative page is
+  `openwiki/` in [`openwiki/policy.yaml`](../../openwiki/policy.yaml) (the `GENERATOR_SCOPE_PREFIX` in
+  [`scripts/openwiki-policy.mjs`](../../scripts/openwiki-policy.mjs)), and every authoritative page is
   declared `event-driven, actor: agent`. Claims are written only by the generator, so they cannot attach
   to a page the generator may not write. This is the reason a widening of the generator's write scope is
   a separate decision rather than a convenience edit.
@@ -97,9 +98,14 @@ catch-all, so the coverage mechanism's scope is stated where the other rules are
 
 `claimsScopeFindings` in [`scripts/openwiki-claims.mjs`](../../scripts/openwiki-claims.mjs) implements
 the check; [`scripts/check-openwiki-governance.mjs`](../../scripts/check-openwiki-governance.mjs) runs it
-as rule **G13** in the always-on governance gate. That whole gate is also run against the working tree by
-`verifySlice` in [`scripts/wiki-maintain.mjs`](../../scripts/wiki-maintain.mjs) after **every** slice, so
-a slice that broke the split fails inside the run rather than waiting for CI to notice the proposal.
+as rule **G13** in the always-on governance gate. That gate is offline and keyless by construction, and
+CI runs it in the `okf` job of `guardrails` on every push to `main` and every pull request —
+`--selftest` first, then the scan, alongside the OKF conformance gate. The whole gate is also run
+against the working tree by `verifySlice` in [`scripts/wiki-maintain.mjs`](../../scripts/wiki-maintain.mjs)
+after **every** slice, so a slice that broke the split fails inside the run rather than waiting for CI to
+notice the proposal. `verifySlice` skips that gate — out loud, never silently — only for a fixture bundle
+that carries no `openwiki/protected.yaml`; the real repository always has one, and the CI job fails
+closed without it.
 G13 itself fails three shapes, and each is a different way for the disjointness assumption to break:
 
 1. **An authoritative page carrying Claims coverage** — a sidecar, or an entry in
