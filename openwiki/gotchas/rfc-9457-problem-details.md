@@ -4,9 +4,6 @@ title: mc-service errors are RFC 9457 Problem Details, never a stack trace
 description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it and the problem media type the BFF loses on the hop to a client.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
 sources:
   - id: openwiki-source-bff475d8fa855e3592cfedc2
     resource: repo://.specify/memory/constitution.md
@@ -60,6 +57,9 @@ sources:
     resource: repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace
@@ -190,28 +190,41 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   `problemResponse()` in
   [`account-route-support.ts`](../../frontend/mcm-app/src/bff-server/account-route-support.ts),
   which sets `Content-Type: application/problem+json` explicitly before constructing the `Response`.
-  The BFF's other `about:blank` bodies — `problem()` in
-  [`backup-route-support.ts`](../../frontend/mcm-app/src/bff-server/backup-route-support.ts) and the
-  inline literals in the agent-config, agent-config-test and backups-tick routes — go through
-  `Response.json()` as well, so they are served as `application/json`, the same split
-  `require_app_role` has on the mc-service side. Two consequences for a client or a test: a
-  problem-media-type assertion holds neither through the proxy routes nor on the BFF's own
-  problem-shaped refusals — assert it against mc-service directly or on the account routes — and a
-  client keying on the `type` namespace must expect both
-  `https://mc-service.example/errors/{CODE}` and `about:blank`. The `about:blank` form means "no more
-  specific type than the status code" by RFC 9457, not "unknown service". The same BFF file's
+  Everything else that answers with an `about:blank` problem document goes through `Response.json()`,
+  so it is served as `application/json`: `problem()` and its `notFound()` wrapper in
+  [`backup-route-support.ts`](../../frontend/mcm-app/src/bff-server/backup-route-support.ts) — which
+  are the **single** refusal helper for every `/bff-api/backups/*` route (validation 400s, the 404
+  that means "not yours" as well as "not there", the 409 for a destination with no stored credential,
+  the 422 for a failed artifact verification, the 502 for a refused consent revocation) — plus the
+  inline literals in the agent-config, agent-config-test and backups-tick routes. That makes the gap
+  the normal case rather than a corner: a problem-media-type assertion holds only against mc-service
+  directly or on the account-deletion routes, and fails on any backups route. The two helpers agree on
+  everything else, which is what lets a client parse both: each writes `type`, `title` and `status`,
+  adds `detail` only when one was supplied (rather than emitting `null`), and puts the same number in
+  the body's `status` as on the HTTP status line. Closing the media-type gap needs no new plumbing —
+  `securityHeaders()` takes an optional `HeadersInit` and copies it before stamping the four baseline
+  headers, so a caller can pass `{ 'Content-Type': 'application/problem+json' }` (which is what
+  `problemResponse()` achieves by setting it on the returned `Headers` afterwards). Two consequences
+  for a client or a test: a client keying on the `type` namespace must expect both
+  `https://mc-service.example/errors/{CODE}` and `about:blank`, and the `about:blank` form means "no
+  more specific type than the status code" by RFC 9457, not "unknown service". The same BFF file's
   `errorStatus()` deliberately discards a thrown error's message, because one can carry a hostname, a
   connection string or a Keycloak diagnostic.
 - **The BFF's own API contracts claim the problem media type their implementations do not serve.**
-  The backups contract declares `application/problem+json` for its `400` and `422` responses
-  (`specs/073-scheduled-backups/contracts/bff-backups-api.yaml`) and the movies-count contract
-  documents `4xx application/problem+json (via handleMcApiError)`, while `problem()` in
+  The backups contract declares `application/problem+json` for its destination-creation `400` and its
+  restore `422` (`specs/073-scheduled-backups/contracts/bff-backups-api.yaml`) and the movies-count
+  contract documents `4xx application/problem+json (via handleMcApiError)`, while `problem()` in
   `backup-route-support.ts` and the proxy branch of `handleMcApiError()` both answer with
   `application/json`. The declared *shape* is right — the backups `Problem` schema is `type`,
   `title`, `status`, `detail` and never an upstream body — so a generated client will parse the
   bodies correctly, but any assertion on the `Content-Type` header derived from the contract will
-  fail. Do not "fix" this by trusting the contract alone in either direction: read the media type off
-  the response, and treat the contract's media type as intent.
+  fail. The account-deletion contract
+  ([`bff-api.md`](../../specs/076-account-deletion/contracts/bff-api.md)) has the mirror-image drift:
+  it describes its errors as RFC 9457 Problem Details "via `backup-route-support`'s `problem()`",
+  and that is precisely the helper that does *not* serve the problem media type — the routes import
+  `problemResponse()` from `account-route-support.ts`, which does. Do not "fix" this by trusting the
+  contract alone in either direction: read the media type off the response, and treat the contract's
+  media type as intent.
 
 ```mermaid
 flowchart TD
@@ -226,10 +239,15 @@ flowchart TD
 
 Where each BFF error shape ends up, and which of them actually carry the problem media type.
 
-A related client-side consequence: the generic `getErrorMessage()` in `src/utils/errors.ts`
-understands only an `{ code }` body, so a problem-shaped refusal (`title`/`detail` with no `code`)
-collapses to "An unexpected error occurred. Please try again." Two call sites compensate by reading
-the problem members directly — `extractErrorMessage()` in `src/hooks/use-movies.ts` and
+A related client-side consequence: the BFF has two error dialects, and the shared client helper
+understands only one of them. The auth and admin routes (`auth/login`, `auth/refresh`,
+`auth/logout`, `auth/user`, `auth/register`, `auth/resend-verification`, `admin/settings`) answer in
+the same `{ error, code }` vocabulary as `handleMcApiError()`'s `AuthError` and unexpected-error
+branches — no `type`, no `title`, no `detail`. The generic `getErrorMessage()` in
+`src/utils/errors.ts` is built for exactly that vocabulary: it reads a `code` member and maps it
+through `AUTH_ERROR_MESSAGES`, so a problem-shaped refusal (`title`/`detail` with no `code`) collapses
+to "An unexpected error occurred. Please try again." Two call sites compensate by reading the problem
+members directly — `extractErrorMessage()` in `src/hooks/use-movies.ts` and
 `backupErrorMessage()` in `src/hooks/backup-error-message.ts`, both preferring `detail` then
 `title` — and the latter's comment records that this general gap was left for its own item rather
 than widened inside the auth error mapper.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e866a84c65ba2e574221c123beabd1186cb4209ed285a14df915b892750d0672",
+  "pageVersion": "sha256:057313220cfa5697d1b929d7121800a5c23400a0a58dcb3e4212c5a9c1e20c52",
   "claims": [
     {
       "id": "claim_af5a62adb0954433918f6521d9725610",
@@ -35,7 +35,7 @@
           "version": "repo-lines-v1:sha256:cab8e34974fbd978268f9362c58b40fe704fee3d1fd4c0c962d8e0d8943409c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMDlhZWUyMjQ4ZDBjZjJhZWYzZjM3MzBiNjNkNmI3YzBiMjFiNTVlYWE0MDJlOTQ4OTUyZDM3ZDI5MWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhYWM3OTE2MjViNGE3Mzc4MzNkMDJlNjUxNWZlNzQ5NGIxNGJhZjEzZmEwYWY0ZTQxZjZmZDU4NjY0YmUwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOWVkODhiNWMyMmEzZGE5NWJjNTlmZWFjZDhhOTY5Y2FiMmRkNzdjNmZmMjhlYWFjYjM3OTNiMzNhN2E4NDgifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L256-L272",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L248-L264",
           "version": "repo-lines-v1:sha256:cfeaba2376c740975ebe821eeb8a1aefcd8e9dec5da2031be7f0baac9c7504c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYWE4YmY2OGVhMDI2NjJhYjUxNmE2Yzk5MWM3Zjg0ODJkNjFjODlkNDNiZTgxYjA5MzExNjEzMzMyMDMzYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YWNkNjZiMTlkOGY5YTg0NjY3M2RjYzNmYjlmNzIyNTRjYzhkNzIxZmRmNDkzYWFiZmJhZmU2YzJkNWM5ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MTkwZTI2Zjk2OThjZGVjZTU2MTRhZmU2MjllMTRjMGM3YmEyOTllNjM2ZmRkNmIyMjBlZWU3OTNlZTk5MDYifQ"
         }
       ]
@@ -140,15 +140,19 @@
     },
     {
       "id": "claim_2b1f52abc0894a3d872df9887ccfc509",
-      "statement": "CopilotKit's React Native runtime issues its /bff-api/agent/run request through its own XMLHttpRequest-based streaming-fetch polyfill, which never passes through the axios token-refresh interceptor, so an expired short-lived `mcm_access_token` cookie 401s the run with no refresh attempted; the cookie rides along only because React Native's XMLHttpRequest defaults `withCredentials` to true — the polyfill does not set init.credentials, so a future RN or CopilotKit upgrade that changes that default breaks cookie delivery silently, with the Android E2E harness as the intended regression net.",
+      "statement": "CopilotKit's React Native runtime issues its /bff-api/agent/run request through its own XMLHttpRequest-based streaming-fetch polyfill, which never passes through the axios instance's response interceptor (utils/api-client.ts) or the token-refresh module behind it, so a 401 on the run has no interceptor to recover it and the refresh-and-retry has to live at the fetch level; cookie delivery works only because React Native's XMLHttpRequest defaults `withCredentials` to true — the polyfill itself does not set init.credentials — so a future RN or CopilotKit upgrade that changes that default breaks cookie delivery silently, with the Android E2E harness as the intended regression net.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L1-L24",
-          "version": "repo-lines-v1:sha256:5e1455aeef81e57035b60e915203c7f9fda2df721b60c430eb157600a8f5b34e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxOTkxMDVkZmYwOTY4YzY1YTM3MzM2MWQ2ZDg0YjExNmI0MjhhMjZjODc0NWMwZmY0YmMwYzU3NDdlOWU0OTEifQ"
+          "version": "repo-lines-v1:sha256:2dc8b6de77b0af1ea2ffcda29c1393604368c6a8458700bd0faa14a619170d3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NDczOTJhNjEzODIzZDQwMzU5YjRkNWIwYjliM2VkYTc1NjQ3MDY1MWFmYzNhNzY0ZmI1MTBkZDk2Y2ZiM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2FlZGFiNTAwNmYxZjY0ZjZkZmNjYzYzOTlkODMwOWI5NjU4NjVlMTkyOTVjOTFhMGIzY2RkMDAxZmY2ZmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/api-client.ts#L33-L64",
+          "version": "repo-lines-v1:sha256:6048f4088891ae990e16a6a924b52dcffca0ac9e5d09befbaebcdbe132c04501:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YTg3ZDQ5YjIyMjgzOGQ2YjBmZTI4MWZhMjkyZTU4ODUyNGU1YzY3NzBlNzhmMWRkNzQ2NjFiYzZiN2I1OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmN2ZkZDk0M2YxY2E5MzA1MmY2M2NkNTA0ZTg4NjE2OWI4NjgzZjFiNTYxZmVmZjc5ZTFlNjI3NzUxYjE3MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDBlMWY1ODU1ZTI2M2JmZTJiOTBlMjk3NTY5ZTM3YjUzNzZiZjQ5NDllODc4MDg2NjhhYmZiNDQyNjgzMDQifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/utils/token-refresh.ts#L1-L16",
-          "version": "repo-lines-v1:sha256:783b8d47bfb8b3488f90b59a3e0ab569448d18c54b492c620379891df0e6c47e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYmZiZWJkZThjYThiNmQ0NWRjOTU3YmYxNDI3ZmEzNjA0MDJiOTg1ZWM2OTlkOTY2MmZjM2Q3Mzg3N2JlNjUifQ"
+          "version": "repo-lines-v1:sha256:df66f927c7e7b3a50e50f41926004460c4b96d0ee7e45a0c6cf53c457401f13f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ZThlMjcwNzBmYThhZGQ0NTY1NTk1YzVmZTQxYTdhODFlMDYyM2JmN2E5NzYzYWQ3NjlmZTk3YTkyM2Q4MzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2MmNhMGYyY2U5YTc5NjNlZDA4YmFjMTVmN2UyYjdiOGRhOTBkNWNjMWViNGUxZGJjZGQyNmI2MjFjYjg4MjYifQ"
         }
       ]
     },
@@ -162,10 +166,10 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/assistant-polyfills.ts#L18-L22",
-          "version": "repo-lines-v1:sha256:e2a4396bc75a9839223407818e71389a442fb0d55ba69e234bd3f08081594c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDZmMDA3Y2YzYTkyNjk5MjhjMmFiM2MzYTk3YTUxZWQzZjNjNDMxNmE1NzU4YWRjZGY2ZTNiM2QyMGE0ZTFmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI0ZTEyZTQyNjRiNmNiNThmYTVjZDAyYzg1YjhhMWIwYmQ3NGQ3YWJhNzYzMjYxNWFmMGEwMDZkOWU0Y2RiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5MTViZDBiMzE0YjM4MGVkMjIzNDNkMTQxZjI4NmEyNjgyZmMxNjA2MmZlOWJkNmZlMjZiNjk2MzM2YjhhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "version": "repo-lines-v1:sha256:9b2c3bd1443e10fda83b4cd3764f2494b001c8cf44c2f88bf62a8e1fe5d115dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDZmMDA3Y2YzYTkyNjk5MjhjMmFiM2MzYTk3YTUxZWQzZjNjNDMxNmE1NzU4YWRjZGY2ZTNiM2QyMGE0ZTFmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI0ZTEyZTQyNjRiNmNiNThmYTVjZDAyYzg1YjhhMWIwYmQ3NGQ3YWJhNzYzMjYxNWFmMGEwMDZkOWU0Y2RiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5MTViZDBiMzE0YjM4MGVkMjIzNDNkMTQxZjI4NmEyNjgyZmMxNjA2MmZlOWJkNmZlMjZiNjk2MzM2YjhhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L90-L107",
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L89-L106",
           "version": "repo-lines-v1:sha256:b60c758451c7a0749ec01afd48408cbf666b396013d195ce0e18bc8c3a5c47c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZGJjMWM2NTU2MWU4ZGZjMDM1ZGNlZTYzMGNjMWI2MTdlMWVkNGUwMzE3N2UzMDZhMWE0ZTg0NDNmMDAyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -175,7 +179,7 @@
       "statement": "A second, distinct recovery in the same wrapper handles a THROWN transport error on the agent route only: it waits RUN_RETRY_DELAY_MS (250 ms) for a reset tunnel to re-establish and retries exactly once, which is safe because a dropped connection aborts the upstream gateway turn via @expo/server's AbortController, making the cut turn idempotent-on-failure; non-agent throws propagate unchanged and a genuine 4xx returns a Response so it is never retried.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L38-L88",
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L37-L87",
           "version": "repo-lines-v1:sha256:b45e0d873fad5ba64a377c51eff88bc94ab64098f3715357b681e94b1de1d232:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDA5ZTM5MDBiMGIxNTA2OTk1ZmU5YzVhMjA3OGMzOGFmZGQ5MTcwMzA3ZWVlMDUxNTk1YWJkY2U2YjJiNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YTgyZmU5MWE3NWZmYjRkNGVmN2IyOTkwZjQ3MWEzN2E3NDgzMGU0M2FmYmQ2MTAxZDYxYjRjYzE5YTI2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
         },
         {
@@ -189,7 +193,7 @@
       "statement": "Neither recovery loops: a still-401 response after a successful refresh is returned as-is, a failed refresh returns the original 401 with no retry, and a second consecutive throw is propagated — so the 401 path and the transport-drop path are each capped at one retry, and createRefreshingFetch is a pure factory taking an injected baseFetch + refresh so both paths are unit-tested without any global.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L51-L88",
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L50-L87",
           "version": "repo-lines-v1:sha256:4d3e662a3f57dfcadc9a25f88cf95f6d164482af3664ca2e146a0b0b4f84b816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkOTRhYWMwYzVjNzFlMjcyNGI4NDVkNDAyNTgwOTFiYzg4YTY1YjljMWE5NGY1OTFlNTFjMzdkOTI5NTAyNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
         },
         {
@@ -208,7 +212,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/assistant-polyfills.native.ts#L1-L35",
-          "version": "repo-lines-v1:sha256:2f4db08003d84d5a590cb0e5e50ed4979fdcbefb09028bbca905085ed8878a97:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYzZmOGZjMTMyMDA0Y2M0ZDYxZGM3MjJkNTM1NjRlNjViNmQyOTEwODI5MDZhYWQ4NDc2NjBmYjA0YmRhYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:9027ace9afe24cecf8a7b8edd073cc3e46b606576b845da6f33ef8a94798b9c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYzZmOGZjMTMyMDA0Y2M0ZDYxZGM3MjJkNTM1NjRlNjViNmQyOTEwODI5MDZhYWQ4NDc2NjBmYjA0YmRhYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -222,21 +226,25 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/assistant-polyfills.ts#L1-L22",
-          "version": "repo-lines-v1:sha256:c35b90d085747d27b1d44771802642dc3c9e1fe0ff531bf4e954cee602629d48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYWE3OGFlYzkyYjZkZDA5Yjk4ZTkwZDFhZWRkNmQyN2JjYTgyNWI3Yzg5NmNkNGRhMTkyNWMzMzJkYzFkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:ca1f89a0017342bc76f335335535af728d903f2ea6c61fca61bde7947b6027ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYWE3OGFlYzkyYjZkZDA5Yjk4ZTkwZDFhZWRkNmQyN2JjYTgyNWI3Yzg5NmNkNGRhMTkyNWMzMzJkYzFkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGUxMmU0MjY0YjZjYjU4ZmE1Y2QwMmM4NWI4YTFiMGJkNzRkN2FiYTc2MzI2MTVhZjBhMDA2ZDllNGNkYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_e886d163b4e34de78742c0773b4ababa",
-      "statement": "Verification of the refresh-retry chain is split by tier: the client-side orchestration over a real mid-session expiry rests on the Android harness, while the server half is proven by the web E2E tests/e2e/web/agent-session-refresh.spec.ts, which drops only the access cookie, observes the `no_token` 401 the agent route sees, and shows POST /bff-api/auth/refresh rotating the cookie so the retry succeeds.",
+      "statement": "Verification of the agent transport's recovery is split by tier. The web E2E tests/e2e/web/agent-session-refresh.spec.ts no longer stages a client-side expiry — there is no token cookie to drop — and instead ages the session's server-held access token to expired in the dev BFF's Redis store through tests/e2e/web/setup/bff-session-store.ts, which is possible because the expiry times sit in clear beside the sealed tokens; it then asserts the renewal is transparent: the protected route still answers 200 with no 401 and no token cookie set, the expiry moved forward, and POST /bff-api/auth/refresh succeeds on the session cookie alone and re-sets only mcm_session_id. The client-side orchestration of a 401 → refresh → retry over a real refused run, and the RN-default cookie delivery, still rest on the Android harness.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L12-L20",
-          "version": "repo-lines-v1:sha256:ac0ba996ae29a11c3c9d562718788cf50a4dfd7cb007570a6f0c6614a007a803:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg3N2UyMDY4OGFhYTE2ZGY2NzYxMjc1MTE5ZTM3YTIyYzFlMzJlOWZlNGRiODBjMTk5ZTlhMzRiNDAzNzRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlNDkyYTc0NDQ1ZWYxOTQ5YWNjNTZlMmQ2YmY4NzIxMzBiNWI0NzQ4YzI5NTgwZjE0YjdkODRkMjA0MWZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2QzMTZmNzQ1MWE5MTMyYjllYzBjOTUyNjMxYWE3NTI2NzY1OTA0NzQwNDg3Yzk5YTQ1MTc1ZDk2NmZkOWQzMyJ9"
+          "version": "repo-lines-v1:sha256:c899bd91198205f6b96252010f462ce7c3f10e0fe55228ffc1fbc15ba48cf748:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE5YzQ4YjA1NTkyZjkwNzM1OWFjMWM2MzIwNzk1N2RlNjgwMThhMjRjNzViYjBjN2VkMmE3NWMwZGI0OGE1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDA4Y2NhYzJlOGIxOGMxOGY2ZjljZDFiM2VlYjUwNjA4YWEwMjc2ZjdkNmNjNTM0NDYyYjdjMmE3YWJiYjNkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlNDkyYTc0NDQ1ZWYxOTQ5YWNjNTZlMmQ2YmY4NzIxMzBiNWI0NzQ4YzI5NTgwZjE0YjdkODRkMjA0MWZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYxZjgwNzUyNzFkZTczN2U0ZmZkZDA3NTM0NjMzNzI4OTgyZDhlOTg2MmMwMzNkY2ZhYzc3ZTQwMjJjODI1NSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L1-L77",
-          "version": "repo-lines-v1:sha256:cde931256e1141520e8ce25c152e74989f6f1ef068c390d5295f0d79e4dee2f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L1-L64",
+          "version": "repo-lines-v1:sha256:44481e2b7caec6f71fbd6c2fe7c5bd5b8bb0c426596725d8aaabef08cf972941:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts#L1-L38",
+          "version": "repo-lines-v1:sha256:5e08e6fa31041e9762d3d38c9f6ab7fdf9d5af319bd038a9bc998e2c743b8e11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
@@ -249,7 +257,7 @@
           "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L31-L50",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts#L32-L51",
           "version": "repo-lines-v1:sha256:b5a7eb9c25c6c02a80c23736f875b1eac357642faa18dde23432ac2b36d6239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5OTZmODM4NTlkMWJkMzZhMmFmNGE4OTMwMjkyMmE2ZjA4OWQxNjU5OTU2MmVmNWMxNTU1ZjExN2ExYTkyYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYzQ2NTY0YmQyYmY0ODJlN2I5M2YzOTZlYTg2NDcwZTc3ZTFkYzZlZGE0MmRhM2JhMzc0NDM0YTY3MGVlOTEifQ"
         },
         {
@@ -319,10 +327,76 @@
           "version": "repo-lines-v1:sha256:bbea801880787e5c2d223efc9e8a5e8f571bece24da845c8cf1f6f10dafae627:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNmZiZWJhYjM1Yjk4Yjg0ZGM0ZjEyNmU0NDU2MTcyNWZlZWU5YjY3NGUxYjQ3OGE1NzQ4YWE5NmU2NTY3ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_0aab4a8d81904f58aa69ee0da6effa25",
+      "statement": "Since feature 085 the member's access and refresh tokens are held by the BFF, sealed beside the Redis session, so requireAuth renews a nearly expired access token on the very request that needs it and an access-token expiry mid-session no longer reaches the client at all; the client's only credential is the opaque `mcm_session_id` cookie, and the retired `mcm_access_token` / `mcm_refresh_token` cookies are never read, only ever cleared. A `/bff-api/agent/run` 401 therefore now means the session or its run-scoped identity was refused — in practice `401 AGENT_IDENTITY_REJECTED` from a refused subject-token mint — rather than an expired client-held token, which is what the wrapper's silentRefresh() + one-retry answers.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L51-L76",
+          "version": "repo-lines-v1:sha256:98e4e38a9edbb3058e5d734215e743dc2dfdac72fb4cb11378f8471aa669d0fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODhiOGVjZmQ1NmQ1MDcyNDdiY2ZhNTg0NWViOWY0NDUyMTM3Nzc0MDYzMjI0NmRhODc2MWM0NTMxMmVhYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2YmExNTJlMzBjMjJhNmVhM2Q3YjY0OWViZjY5NGE2MTMwNTUxYzBhNWRiMTg5MDJlZWViYmI1MjQ3YTFkNTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L1-L33",
+          "version": "repo-lines-v1:sha256:11a80bd032f64ec931530ebcb504fa281cdc0fd88bb28ff1a01ca34be1a519b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZWI0MjdiNDdlMGYyZTEzMzJjNTQ4ZTU4ZTNkNWU5NjViZWU0NTQyN2E5ZDc3MDRiYjViNDBkNmRiN2U2MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiMTdmNGMxZWMzMTNlZWYxM2IxOGZiODlhNWRlMDU1MTc2ZDI1NmFhYzcwNThkNzkwZjIyYzQ2ZTYyMTNlNzQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L91-L151",
+          "version": "repo-lines-v1:sha256:97480fd29b08c674a7f1af379658520e24458141b803336ea9085a44d9b7835a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNzM3N2ZlY2ZlODNkMTk4M2VlZmM0YjE2ZjM2MWVkMjk5M2FhMWU4MzA4OTQ0MjU4OGZiZjBhN2U5ZGI1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMzhmMzhlM2U5NzJhZmNjYmE4YTdjZTAyMWYxZGE2MzJhNGUwYTM1ZTM0OWU4ZGJjNGZhZmE3MWRkMWQ3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMGI1ZGMwYThhY2M4OTRiYzI0YzZjZDVlZmY2YzkzNmI0MDA0M2ZmMTExODBlZTA0NzgzNDZiMjZhZTUyZDYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L1-L23",
+          "version": "repo-lines-v1:sha256:23210fd0aff457860fca8cdc7fdb5d9cb8772214cefff7b6bf9c030c197d0fa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxOTkxMDVkZmYwOTY4YzY1YTM3MzM2MWQ2ZDg0YjExNmI0MjhhMjZjODc0NWMwZmY0YmMwYzU3NDdlOWU0OTEifQ"
+        },
+        {
+          "resource": "repo://specs/085-bff-auth-fail-closed/research.md#L145-L167",
+          "version": "repo-lines-v1:sha256:09c9561ca11670d01877b59fa12d9d488c4f942ca3f4055e43c8ee9ea2ebeb3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTE2ZWNkZGI3MTc3MjdkYTA2ZmQwOThhNjFkOTI5ODk1MWZhZWY1N2IyMzEzNTc0ZTI2MGJiN2M5N2M4M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNGM1MTYwNWZiYzE0ZWZiMjgxNDEzZDE1YjJmM2JmZDk1ZGUyZGQzYjNlZDk1MGM1N2Y2NGJlZDRlNjU3MWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkZTZlOGYwMzk0NzcxM2M3M2ZlMzcxZTFkNzdhMzA5YzAxZWU5YjMxODM4OGZlOWI1ZTdhOWU1NGZlZmUzNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4ZmZlOTU2NzIwYTllYjZlYTgyODdkMTcyMTBhMjI4MmRjODZmNjBhZWE2ZGMzY2JkNDIyZThkMDFjYjA3M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_562aadf6e9ef473cb6a9f4ddbb2be38c",
+      "statement": "The wrapper refreshes only on a 401 and passes a 503 straight through, which the BFF's refusal vocabulary makes load-bearing: `401 AGENT_IDENTITY_REJECTED` means Keycloak rejected the member's credential (renew once, then sign in) while a retryable `503 AGENT_IDENTITY_UNAVAILABLE` means Keycloak was unreachable or erroring — including a misconfigured exchange client's `403 access_denied` — and an outage is not a reason to touch the member's session. The unit suite pins this with a mutation test: making the wrapper refresh on 503 turns that case red.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L51-L87",
+          "version": "repo-lines-v1:sha256:c66406e255cd47379be41e704c59ea3281defea99bed4d18132c8350232911fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODhiOGVjZmQ1NmQ1MDcyNDdiY2ZhNTg0NWViOWY0NDUyMTM3Nzc0MDYzMjI0NmRhODc2MWM0NTMxMmVhYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxMWIyNTNmYjg1ZDAwNTg3YjgzYTdkZDkxODg1Y2M3YjM3ZDZlMjA4Mzg4Y2YwZGNhN2RlZGIxZWEwMzI4NmMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L81-L86",
+          "version": "repo-lines-v1:sha256:308faf73154606f93187c70ddfc07ecd1bdd9eaa2c73b1cae7322c787a8d8254:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc1OTQ2YTU4Mjc5ZmI5ODI3YTAzYzk2OGNjMmVmNGMyOTU2MDM2NGIxMGY5MTNmMzI2OGFjZjMxMTY1NjY0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhMmNiMjVhMTIyYjQ0MjIxYTYyMzRlYzY2MGE3YjVmYjdmOWJkZTdiM2I5ZTJiM2M1NTlhMGQ5NmZhYzczOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTAwYTI2NjI1ZDFiMTUzNGY5ZmNiOWY3NTY5ZjI0OWNhNjA4Yzc4MmU5MTEyZTZiODQ1NTc5NTViMzIyMjlkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmIyNTU2YmI2OGIyODgzODljYzcyZTFmZGE0NzgwMmEyODk5YmVjYTY2MjM3Y2YwODM2MmQ5OTUwNmUwMGUxNiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts#L140-L163",
+          "version": "repo-lines-v1:sha256:8c2ac59770559b0e9c629c2c484dda3f547093ea43599eede05fc5297b3c63aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZmVjYmMyODU1YWQxMmRiYTkxZjY3NzQyYzZmZTc4NzRmYjgwMmZjNmE2YTQ4NWExYmY1OWY2OWEyYTFjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://specs/085-bff-auth-fail-closed/research.md#L178-L203",
+          "version": "repo-lines-v1:sha256:05ae06e8145afe3608df3747aaf545db6387ba51fa9bcdb227121b70a71d134a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxZWFmMDg1YThhZTcwZjllM2RhNTlmZWM5N2JiNzllOTQxODQwYWFiMTBjMGNmNWUxZWQ0NzU0NGVhNzc5NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMmU1YjFlNWZmZjhmODcxMTg2MjVkN2E0ZGNlNTkyZjBhMWI1ZTdjMTk1Nzg4NzFlNTk4ZWI2YTRjZDVlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwOWU1MGJjMTAyMzFiYjU1YzdiYTUyN2JiYzIzYTM1ZDRkOTZhYTRjNTRhNWYxYjUwZjQ3NGUwOTViMWU2NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljNWE2MTVhMjM2OGU1OTcwZGZiZDQzNzAwNTA0YTA0MGVhY2RlYjUwZjVmNGFkNjgwMWVjODgxY2EzMzE1MzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e978c0bf66b485fa4f276b8f2acf31a",
+      "statement": "CopilotKit reports a refused `/run` through its `onError` subscription, never as a rejected promise, and for a non-2xx response the error's message IS the response body — so src/components/agent/assistant-run-failure.ts decodes the BFF's `code` and picks the member-facing text: the session-ending codes (AGENT_IDENTITY_REJECTED, REFRESH_FAILED, SESSION_NOT_FOUND, SESSION_EXPIRED, SESSION_IDLE_TIMEOUT, SESSION_ABSOLUTE_TIMEOUT, UNAUTHORIZED) read 'Your session has expired. Please sign in again.' and the retryable set (AGENT_IDENTITY_UNAVAILABLE, KEYCLOAK_UNAVAILABLE, SESSION_RENEWAL_PENDING) reads 'The assistant is temporarily unavailable. Please try again.', with a generic fallback that names no internals — where before 085 a failed turn showed the member nothing at all.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L167-L230",
+          "version": "repo-lines-v1:sha256:1e1aedeff5f70097bd4afc894d6b2acebe92fc5a8d332158efa683ae21527d6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMzAzOWJmMDY5MGZjMTY5MjIxMzhjY2I3N2NmOTRlYmIxYzYwYmNhZmFlMjJlNjRiM2E1OGM0Njc0NTk0ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDhlYWM3NTAyNTk5ODkwZDNkYWVmMjI3ODU4OGEzZTIwYTVlYWJiYTA3YTZkNTU2MjQ0YjNkYjhkOWZlZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZTdjZWZiNTc2NDc3ZDAwZDYwMmYwY2I2MjVmNDdhODRmNjE0MWMxNTMwZTU5N2NhNDBhZmNkYzg2MDA5ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODY1Nzg5Y2I5MWY5NWZjZWVkNDQzZTBmMjU3Njc1MzUxNGExMmUxMDFiYjZhNGIwYTkwMjgyNTM4NGU5YzIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-run-failure.test.ts#L1-L35",
+          "version": "repo-lines-v1:sha256:a3a68bb403575e537460d5ed88612b0a7f27c8987cc272cf7669d64310bd4b68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts#L1-L48",
+          "version": "repo-lines-v1:sha256:3b42c91e28c265147c3796e971d6157b83d38aff5907e01057139a0bb877e4c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MDQ1ZDY0MDAyZTViNmE4OTMyMjY5NjgyZmJkY2FhYmRhNmVlZTg5YTViYzljMmVmZGU2ZGQ0MjkwODJjMTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-25T18:33:06.357Z"
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }

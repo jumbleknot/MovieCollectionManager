@@ -1,7 +1,7 @@
 ---
 type: Gotcha
 title: Expo Router server export and agent-transport traps
-description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving changes in server.js, the TRUSTED_PROXY-gated trust proxy setting the adapter needs to see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the normal token-refresh interceptor.
+description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving changes in server.js, the TRUSTED_PROXY-gated trust proxy setting the adapter needs to see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the axios token-refresh interceptor, so a refused agent run is recovered at the fetch level instead.
 resource: frontend/mcm-app/server.js
 tags: [expo-router, react-native, copilotkit, express, transport, frontend]
 sources:
@@ -50,7 +50,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-25T18:33:06.357Z
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # Expo Router server export and agent-transport traps
@@ -67,7 +67,8 @@ load-bearing fix that looks removable if you don't know why it is there: the exp
 missing `import.meta.url` registry, the express 5 behaviours that changed under the hosting layer,
 the `TRUSTED_PROXY`-gated `trust proxy` setting that lets the adapter see the public scheme behind
 the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the
-app's token-refresh interceptor.
+app's axios token-refresh interceptor, so the agent run's 401 recovery had to be reimplemented at
+the `fetch` level.
 
 ## `import.meta.url` crashes the exported server bundle
 
@@ -208,13 +209,25 @@ removable.
 
 ## CopilotKit's RN streaming-fetch bypasses the axios refresh interceptor
 
-The agent chat's client-side network layer normally goes through an axios instance with a
-token-refresh interceptor (`utils/token-refresh`). But CopilotKit's React Native runtime issues its
-`/bff-api/agent/run` request through its own streaming-fetch polyfill (built on
-`XMLHttpRequest`), which never passes through that interceptor. Cookie auth still works — RN's
-`XMLHttpRequest` defaults `withCredentials` to `true`, so the `mcm_access_token` cookie rides along
-automatically — but when that short-lived cookie expires (Keycloak's ~5 minute access-token
-lifespan) mid-session, the run 401s with no refresh attempted.
+The agent chat's client-side network layer normally goes through an axios instance whose response
+interceptor turns a 401 into a silent refresh plus one retry (`utils/api-client.ts` →
+`utils/token-refresh`). But CopilotKit's React Native runtime issues its `/bff-api/agent/run`
+request through its own streaming-fetch polyfill (built on `XMLHttpRequest`), which never passes
+through that interceptor. Cookie auth still works — RN's `XMLHttpRequest` defaults
+`withCredentials` to `true`, so the credential cookie rides along automatically — but a 401 on the
+run route has no interceptor to catch it, which is why this recovery has to live at the `fetch`
+level.
+
+What that 401 *means* changed with feature 085, and the change is worth stating because the
+surrounding comments did not all follow it. The member's tokens are now held by the BFF inside the
+session, so `requireAuth` renews a nearly expired access token on the very request that needs it: an
+access-token expiry mid-session no longer reaches the client at all, and the only cookie the client
+holds is the opaque `mcm_session_id` (`mcm_access_token` / `mcm_refresh_token` are retired, never
+read, and only ever cleared). A `/run` 401 now means the session or its identity was refused — in
+practice a refused run-scoped subject-token mint, `401 AGENT_IDENTITY_REJECTED`. The wrapper answers
+it the way it always has: `silentRefresh()` (`POST /bff-api/auth/refresh`, which renews the
+server-held tokens and re-sets only the session cookie) and one retry; if that still fails, the
+member is sent to sign in.
 
 `frontend/mcm-app/src/utils/agent-fetch-refresh.ts` wraps `globalThis.fetch` (installed by the
 assistant polyfill loader, the very first import in `app/_layout.tsx` — on native
@@ -230,19 +243,39 @@ flowchart TD
     IsAgent -->|yes| Attempt["baseFetch"]
     Attempt -->|throws| Drop["wait RUN_RETRY_DELAY_MS, retry exactly once"]
     Attempt -->|401| Refresh["silentRefresh()"]
-    Attempt -->|any other status| Pass["return the response unchanged"]
+    Attempt -->|503 or any other status| Pass["return the response unchanged"]
     Refresh -->|refreshed| Retry["retry exactly once"]
     Refresh -->|not refreshed| Original["return the original 401"]
 ```
 
 *The two bounded recoveries in `createRefreshingFetch` — a status-code path and a thrown-transport
-path — both scoped to the agent route and both capped at one retry.*
+path — both scoped to the agent route and both capped at one retry. A 503, the identity provider
+being unreachable, is deliberately neither of them.*
 
 - **The cookie is carried by RN's *default* behavior, not an explicit flag.** CopilotKit's polyfill
   itself does not set `init.credentials`; if a future React Native or CopilotKit upgrade changes
   that default, the cookie stops riding along automatically and this breaks silently — there is no
   compile-time or type-level signal that would catch it. The Android E2E flow is the intended
   regression net for this.
+
+- **A 503 must not refresh, and that is a pinned behavior rather than an oversight.** The BFF's
+  refusal vocabulary distinguishes the two: `401 AGENT_IDENTITY_REJECTED` (Keycloak rejected the
+  member's credential — renew once, then sign in) versus a retryable `503
+  AGENT_IDENTITY_UNAVAILABLE` (Keycloak unreachable or erroring, including a misconfigured exchange
+  client's `403 access_denied`). An outage is not a reason to touch the member's session, so the
+  wrapper passes a 503 straight through. The unit suite carries the mutation test for it: making the
+  wrapper refresh on 503 turns that case red.
+
+- **The member-facing half of the refusal lives in a different module.** CopilotKit reports a
+  refused `/run` through its `onError` subscription — never as a rejected promise — and for a
+  non-2xx response the error's message *is* the response body, so the BFF's `code` decides the text.
+  `src/components/agent/assistant-run-failure.ts` maps the session-ending codes
+  (`AGENT_IDENTITY_REJECTED`, `REFRESH_FAILED`, `SESSION_NOT_FOUND`, `SESSION_EXPIRED`,
+  `SESSION_IDLE_TIMEOUT`, `SESSION_ABSOLUTE_TIMEOUT`, `UNAUTHORIZED`) to "Your session has expired.
+  Please sign in again." and the retryable set (`AGENT_IDENTITY_UNAVAILABLE`, `KEYCLOAK_UNAVAILABLE`,
+  `SESSION_RENEWAL_PENDING`) to "The assistant is temporarily unavailable. Please try again.",
+  falling back to a generic message that names no internals. Before 085 a failed turn showed the
+  member nothing at all.
 
 - **Install order matters.** The refresh wrapper must be installed after the streaming-fetch
   polyfill but before any CopilotKit run — `assistant-polyfills.native.ts` is structured specifically
@@ -270,10 +303,15 @@ path — both scoped to the agent route and both capped at one retry.*
 - **Whether the retry actually recovers a real mid-session expiry (versus flakiness seen under an
   unstable Windows/Metro test harness) was, per the source comments, still an open verification
   item** at the time this was written — treat a related test failure as needing investigation, not
-  an automatic false positive. What *has* since been proven is the server half of the chain: the
-  web E2E `tests/e2e/web/agent-session-refresh.spec.ts` drops only the access cookie, observes the
-  `no_token` 401 the agent route sees, and shows `/bff-api/auth/refresh` rotating the cookie so the
-  retry succeeds. The client-side orchestration over that chain, and the RN-default cookie
+  an automatic false positive. What *has* since been proven is the server half of the chain, and it
+  has been re-scoped by feature 085: `tests/e2e/web/agent-session-refresh.spec.ts` no longer drops
+  an access cookie (there is none). It ages the session's **server-held** access token to expired in
+  the dev BFF's Redis store through `tests/e2e/web/setup/bff-session-store.ts` — the expiry times sit
+  in clear beside the sealed tokens precisely so a test can do this without the encryption key — and
+  then asserts the renewal is *transparent*: the protected route still answers `200` with no 401 and
+  no token cookie set, the expiry moved forward, and `POST /bff-api/auth/refresh` (the client's
+  fallback) succeeds on the session cookie alone and re-sets only `mcm_session_id`. The client-side
+  orchestration of a 401 → refresh → retry over a real refused run, and the RN-default cookie
   delivery, still rest on the Android harness.
 
 - **The web and native loaders are deliberately split, and the split is load-bearing for bundle

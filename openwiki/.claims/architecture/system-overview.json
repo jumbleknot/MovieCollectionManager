@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e43e52dd853fc84d3f13cc296e0dd5b41d0c911a29ef7800521eba0ebd39aad6",
+  "pageVersion": "sha256:29bf6f85b0494754d85987b480cf742b0a85549f98fbaa03dfe74e2c10ad7621",
   "claims": [
     {
       "id": "claim_94f7295dbcce46cb93b2185f9b344f90",
@@ -93,7 +93,7 @@
       "statement": "The BFF owns its own MongoDB instance (`mcm-bff-db`, holding per-user agent config) that is physically separate from mc-service's `mc-db`, because no component reaches across a service boundary into another service's database; `mcm-bff-db` is a plain standalone `mongod` with no replica set and no directConnection because the BFF does single-document upserts only, unlike `mc-db` whose single-member replica set exists for mc-service's cascade-delete transaction.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L142-L152",
+          "resource": "repo://docs/MCM-Architecture.md#L157-L167",
           "version": "repo-lines-v1:sha256:7b6e4c763866ea0dff96416f0faacbe0643abd990a334b032efc28dbce96a172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YzA3YjdmYzY5NjY2ZmViNzhkNDg3MWExNjM1OTg5MmZkN2IzZDg5ODk2OGQ1NTU0Yjg3MTQ2NmM4YjcwM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYjQxMmRmYjIzNjczNDQ2ZGQ5OGUzMmM4NmMxY2VmM2NkMDlmZWEyODAxNmQ1YTMxMTcxZTY2OWQ2NjJkNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZmYxNWJkOGE5Mjg5MjJhYzZiYjI3MjlhZjNmZGEwODFmOTI1NjAzOGM0YWEwMzU2NTc4NjYxOGUzMjU4NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NWIyOTgwYTU5MzgwODc3ZjMzZjhhZWNkNjE0NDU2MjQ2ZWQxZGUwMDE3NzNkN2IyZTEzMDgyYzg1N2ZlZDEifQ"
         },
         {
@@ -119,7 +119,7 @@
           "version": "repo-lines-v1:sha256:164067b6b6c4f513382a4197e37bebfc05e9bb0087fa92ee4a88fdd1827eeb00:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwM2ZmODMyNzg0ODZjZGVlYzJiZmEyOTQ0OWY2ZmI0NGIwMTA3OTI3YmRjNTJjYzc0MzViZDBkMWU5OGQyY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MzM1YTNhYmMwYmI5MjY4ZjRkOTNiOWVjYTU2MjkwN2QwOGIxOTBmY2I2YjFiOTA5MDhhMGU2YmQ0N2MzMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNDVkMjkyMzgyOWNkMGVmMDgzYjY5ODBiMGIxYjViYzc0OWI4ZWNhOWEwNmM2NDE1ODFmNmUzZTFlOWUzYmQifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L582-L582",
+          "resource": "repo://docs/MCM-Architecture.md#L597-L597",
           "version": "repo-lines-v1:sha256:1aef0ad35614db91f0918894df6695d881c005511157f6932aa361ccc0983df0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFlZjBhZDM1NjE0ZGI5MWYwOTE4ODk0ZGY2Njk1ZDg4MWMwMDU1MTExNTdmNjkzMmFhMzYxY2NjMDk4M2RmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFlZjBhZDM1NjE0ZGI5MWYwOTE4ODk0ZGY2Njk1ZDg4MWMwMDU1MTExNTdmNjkzMmFhMzYxY2NjMDk4M2RmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQxNzg4MGYwZjFjNjM4MzkyZDA1Njk5NjI4MTJlYzVjZjgyNDE0NThiOTllNmZiZGMyY2U4NTNiYzAwMmIzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE0ZDIwMmFmMzFjOTRhNTgwOGU2MWIyMjkyZGEzNmZlYmJhZWE2ZjQ3ZDNlOTg4MjliMDNkOGMyMjA1YWQyNCJ9"
         }
       ]
@@ -129,7 +129,7 @@
       "statement": "Feature 073's backup destination containers live in their own compose file (`infrastructure-as-code/docker/backups/compose.yaml`) rather than a profile inside the `mcm` stack, because the `mcm` stack is one Compose project whose `include:` pulls in every component file and Compose interpolates every service of an included file at parse time regardless of which profiles are selected — so a required `${REGISTRY_HOST:?}` inside a profile-gated service aborted `up` for the whole stack, including CI's app-e2e bring-up which wants none of those services. Feature 080 removed the offending from-source object-store image (the S3 oracle is now upstream RustFS pinned by digest), so the variable is gone and CI's bring-up step passes no registry input, but the separate file remains because a profile is not isolation from interpolation.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L720-L728",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L723-L731",
           "version": "repo-lines-v1:sha256:fd7a0c9dee943bac2239db249fd587f8e2de59ca47b2e5a7210db7140c8aa586:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMxMmIxMGM1ODE3NGViNGU2NWY3MzYyNmI5YzA0OTc1YWJiMDIyZTlhMWNiYTQ2ZGEyNzc1ZDk5MWVlNGIwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MTZjMzk5MDI5ZDJiM2FlMWJmYTA0ZGVmODNlOTEyMjg0MWEzYTcyM2E1YzIyY2RmZGFjNzk1MTk4NzA1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE3NTc1ZDYzNjg1ZjZmOTBhNzUwOTQwNTA0YzUwOGIwODdlMmRhYjE4M2YxZDVmMmFlMTQyMWRjN2JjNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFlMjU0YjI1MDIwZDQ2M2Y5NjZhMjI5NTI3MGFmODE5M2U1YzgzMGQ1NzFhNWFmMWJiZDY4ODkzYmE3N2YwNiJ9"
         },
         {
@@ -158,19 +158,19 @@
     },
     {
       "id": "claim_30e860bddf454cb4a8242805bb7bce9c",
-      "statement": "The Agent Gateway and its `agent-db` checkpoint store are private-network only and the client never reaches them: only the BFF starts a run (over an AG-UI stream, attaching a run-scoped delegation token as a non-checkpointed value), and the gateway's single shared in-process MCP client re-exchanges that token per identity-bearing tool call, so each `movie-mcp` call carries a downscoped, short-TTL, audience-bound token that mc-service validates exactly like a human request.",
+      "statement": "The Agent Gateway and its `agent-db` checkpoint store are private-network only and the client never reaches them: only the BFF starts a run (over an AG-UI stream, attaching a run-scoped delegation token as a non-checkpointed value), and the gateway's single shared in-process MCP client gates each identity-bearing tool call through OPA and an in-memory `(user, audience)` cache before re-exchanging that token, so each `movie-mcp` call carries a downscoped, short-TTL, audience-bound token that mc-service validates exactly like a human request.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L113-L140",
-          "version": "repo-lines-v1:sha256:5fdd7e677487d2d7a3236383eb423e619a79365f8199634950de1b1e96a074a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWJhNDRjNTU3YWY5YmVkZWIxMTQ5M2NjN2Q3NDZiMjJjOWZiYzBiODg3MjdlMzZkOWE3YzIwMzE5NDZmODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMTJlYTU1MTQzOTY5MTJkMWRiOWI3NDMwYTIxMTk2N2I0OWRkZmYxZWQ4NDczYWZjOGU4Mjk4NjVkNDUzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py#L69-L93",
+          "version": "repo-lines-v1:sha256:8fdf15d8de91caaaa5c63898672c8077e22319487e987e1becc280ebdbe026de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYTM5ZGZkNjhkYmE3ZWRiYTk2MTQ4YzViMDc4YWY1YTAzYmRiYjZhOTgzZTMxMjU0NGI0MTQ4MDk3NWUzYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOWNhY2I3YWNiOWVlMmZkMDUzZWY4NzFlYjJkODkzN2Y5ZWNkNDdkMDNjYzM0NDg5NTFmMThjMTU0YWZjZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMGI5ZWNjZGFlYTIwOTU3ZjQ2MWFiOGZmNzA0Yzc4NmMzNWMzOTA4NjI5YTExNjllZWEwMjNiMmUxMzVlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZjIxMDhmZWY1ZjhkMGRlYTI2ZWUyMzA1OTRkNTRkYzIwYjk0ZjA3N2ViZTA5YjViNzgwNTNiY2NjMjczMGIifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L503-L511",
-          "version": "repo-lines-v1:sha256:9a3bf8ea9466834fbaf45af8d691d7b82b060d7113e06db8d83d1d5b6db74465:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE5NzhiZDM4MjIxMGQyOTQyNGM2ZWRiMzRlMjYyZGQzM2E2MzJjOWVjNzNmYjkwNGNhNDE1MGQyM2VmMWNjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU2NzA5NDQwOTNhMTU2MDgyY2MxM2Y1OTAxMDU0YWUzNTNjZGY3OTQ2NzA1NTZhOTBmZmE2YzIwZmE5NDYwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2MxZjEyOWZlYzFhZmE4MDU5OGU2YjExY2FjYjY4MGIwZjAxM2JiNWI2ZDk2Y2U0MmNmNzc1OGJjM2Y1Zjg4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJmMTBhNTA5MjlkZjRmOGIzMmQ1NTE0ZTA4N2U0NTgzN2RjZTBiNGU2MWQzM2FhZGQ3NjE4ZWYwYzliZTRmYyJ9"
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py#L1-L19",
+          "version": "repo-lines-v1:sha256:8f7940329ebb3ed55e35a25097aada9b9341083763a37ac81dbbc5e8ee7b3639:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiZGQxYjE4ZThlZmQzMmFhMTY1NzYyNmViYzA4MzM0NTlkODRiNDUzMGEwYjM0YjY4NTBiZWQ2YzAxOWE2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZGQ4YmIwODMwMzg2N2VlMmFjMmZjZTJjZWI5YWUxZTdlMmIxOWUwZDVlNzZkZWI1YjBhMzA0OWEzZjJiODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYWY3NjM3Y2I2ZTdlNWRiODVkNjM0Mjc0NjAxNGRmMDQxY2NkNTU4YTkyMGIyOWViNmFjNzE5ZDdiYWY1YzIifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L518-L555",
-          "version": "repo-lines-v1:sha256:23b5fb806a7e1e2dc49352b4b595ac3a09fc4e2770dad532e3df93ebe8ab3cd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMTM2ZTNiMDJjMWRjMzdiOGMyMTJkNjQxYzAxNDlhNjQ4YjcwNDE4NGE1NGE0NzcyZmVkMTdjYjMxYmVhMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZDkzODY5MjU2NGM3NWUxOTcxMTcwMTAzZTA0YWQzN2ZkMDdiM2Q5N2Q4OGYwODAxZWZlZDQ3NTlkMjZmMWMifQ"
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
         }
       ]
     },
@@ -179,7 +179,7 @@
       "statement": "The backup-destinations compose file is standalone: it attaches to the `mcm` stack's `mcm-bff-network` as an `external` network (so `up` fails when the `mcm` stack is not already running, which is the correct answer since the BFF is what writes there), and because it is a separate file in the same Compose project the stack's own `down` does not reach it — teardown requires a second `docker compose -f infrastructure-as-code/docker/backups/compose.yaml down`, or the persistent CI runner silently reuses the previous run's destinations.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1480-L1488",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1493-L1501",
           "version": "repo-lines-v1:sha256:1a559e893f61f3704e3974dc518c681cd41bcff6b8b9d336e0cf0cda04ed597b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTUwOWU3MzdhZmY0OGI0NjliODExYzg0YjM0YTk5MzRhYWJkM2VkOGZjM2UwMmZiNDI5YjBlYzE0NjJkYmI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIwZDdmMTc5NTAxMGY4OTUzMjQxYmY0OWYxMDE1NTE2YWZkZWVlN2Q3ZjljZmE3Njk1Yjk0NDQwZjI5NjUwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ0ODhjZTJjZGM5OTBkMmU0OGJmMWU1OGY2Nzg2MzI5Yjc4MDZjMmM0ZjYxZmU2NDU1NTMwNjI0OGEyNjg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNWVhMjU0NjBmM2NhNTZhMjQ4OGFhMTVhMTE3ZThhNGZiNTJlNGIyNzUwNDkzYjZiODQzZWZmOGZkZGI5MCJ9"
         },
         {
@@ -245,7 +245,7 @@
           "version": "repo-lines-v1:sha256:2a2639564267b11b03a3f642345f20c59dcf62e070727a9dba9d6967499a4ec8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NmZhMGI1NmEyNzA0YzM5NTBlMDdhYjc1Y2ViMDczNDg0OTdlYjI1Y2IwODg2MWNjMjI2M2FhY2M2YzU3MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjUyOGEzOThiNmVjZDBkNGEzMmIyZTMwMzg0YTIxMzI2MzcyYmZhYTIzYmM4MzVhZjlmODhiZWNhOGMzN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L557-L582",
+          "resource": "repo://docs/MCM-Architecture.md#L572-L597",
           "version": "repo-lines-v1:sha256:d484d3ac1470800e4d59dd856291523487473d4ecb8baba1edcedd6681bc3265:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YWUxNzBhZWI2MTE2NDg5YTk4NDRiZTFkYWQyNTVhY2QzM2E1MDFiYThlNWQyZWZlNTNjY2FhNTRhZDdhYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZWYwYWQzNTYxNGRiOTFmMDkxODg5NGRmNjY5NWQ4ODFjMDA1NTExMTU3ZjY5MzJhYTM2MWNjYzA5ODNkZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhZGVjYmM3Y2I3ZTc3ZTNlM2Y5M2Q5NWEyYTU0MjJhNGNmMTAzYmY3N2E3YzkyMTI4ZDYwMjRhZTVhNmU5M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNGQyMDJhZjMxYzk0YTU4MDhlNjFiMjI5MmRhMzZmZWJiYWVhNmY0N2QzZTk4ODI5YjAzZDhjMjIwNWFkMjQifQ"
         },
         {
@@ -259,11 +259,11 @@
       "statement": "Within the mcm stack, the no-profile default services are the test infrastructure (mc-service-store-mongo plus its rs-init, mcm-bff-cache-redis, mcm-bff-store-mongo); the app profile adds mc-service, bff-nonsecure and bff-secure add the BFF variants, and agents / agents-metro add the agent layer — and an end-to-end agent flow needs every hop up at once, since movie-mcp calls mc-service with the user's JWT.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L561-L566",
+          "resource": "repo://docs/MCM-Architecture.md#L576-L581",
           "version": "repo-lines-v1:sha256:4ba85718bcee70d4638cfaa323c1f119acdb90c0a8f02dd2397e62cd74ca282d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE1NzI3NWUyZjFhMWM0YzBiOGQ3ZDYyMjNlMTY4NDFkNWIwODExNzY2YzYxMTQ2ZmQ4NzM2YTQxN2E4ZDMzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTg5NDBjNDA0MjQ3Yjg1YWQ2MjA4ODI4YzEzZDgyMDdhZDAyYjVhM2Q3ODJlZjlhZTdmZmI2YzEzOWJhYTUxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODk0MzBhMGFjMTY0ODAwZjY3ZTU0MTQ2NjdhMDA4M2E4N2QwNGVjOWJiNjZmNzA3MGNmYjFkMTA3MDRhNzcyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI4MDBiMzFkYjgwODZiMDhjYTNiMzI1Y2RmODNjMWVjMTRiMTUyZTg1NWViN2I3YWVmODNhYWFlNzdjNTNiMyJ9"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L597-L597",
+          "resource": "repo://docs/MCM-Architecture.md#L612-L612",
           "version": "repo-lines-v1:sha256:717d33f2f3bb23941f8f1bc5d29030ff68e5fba2d71221c314a8138e1bb2c136:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3ZDMzZjJmM2JiMjM5NDFmOGYxYmM1ZDI5MDMwZmY2OGU1ZmJhMmQ3MTIyMWMzMTRhODEzOGUxYmIyYzEzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3ZDMzZjJmM2JiMjM5NDFmOGYxYmM1ZDI5MDMwZmY2OGU1ZmJhMmQ3MTIyMWMzMTRhODEzOGUxYmIyYzEzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMwZjdmZmIyOTEyMTc2ZWNlNTZmNDBmZWQ5MTc5MzkyNWM4NmY1MGZiM2NmOGRmYzQ1M2U4NTRhMzNiMDhjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         },
         {
@@ -419,7 +419,7 @@
       "statement": "Bringing the backup destinations up means two long-lived servers plus two one-shot init containers, each one-shot gating its server with a Compose condition rather than a sleep: the S3 init waits for `service_healthy` and PUTs the test bucket (a driver suite failing on `NoSuchBucket` reads like a driver bug), and the WebDAV init must report `service_completed_successfully` before the httpd server starts. The WebDAV init is the only service in the file that runs as root (`user: \"0:0\"`), and only because a freshly created named volume is root-owned: besides writing the Apache config and a bcrypt `htpasswd` into a named config volume (rather than a bind mount, because the dev container's Docker is a sandbox microVM that shares only `/workspaces` and would otherwise mount an empty directory), it chowns the data volume to `www-data` and creates and re-owns `/var/lock/apache2`, the third named volume holding the `DavLockDB` that `mod_dav` consults on every write; the long-lived server mounts `/conf` read-only. Both one-shots take their credentials from the container's own environment (`$$VAR`) instead of Compose interpolation so the value never lands in the container's argv, and each server carries its own healthcheck — RustFS its `/health/ready`, WebDAV the 401 an unauthenticated request earns, probed over bash `/dev/tcp` since that image ships no curl, wget or nc. CI's bring-up step therefore cannot use `--wait` (it exits 1 for a service that exits 0, which both one-shots do) and instead waits for both servers to report `healthy` and both one-shots to have exit code 0, printing the failing container's logs.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L760-L790",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L763-L793",
           "version": "repo-lines-v1:sha256:40f56414e11e6c269bff41b3ba3a19d39151db5f8112f2e8f3c07b94ad2f4a3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MTMzM2RmNjZkNTk1YzYyMjM3NDEyZTdkMTYwN2I1Y2ZiMDExNDdmMGYzYTlkYjdiN2FjNGU3MjljNDNkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZGJjZWY2ZmJhZGJkYTM0YzI5YmMyMjg2ODE4MDg1NGI2MTZiZTllNTc4MDc1NTJkMWQwYjdiZTJhYjgxMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIifQ"
         },
         {
@@ -449,15 +449,15 @@
       "statement": "CI brings the feature-073 backup destinations up in their own dedicated `app-e2e-bring-up-backup-destinations` step rather than folding them into the Keycloak bring-up, because the two image pulls pushed that step past its calibrated 300 s ceiling and a slow pull then read as \"Keycloak would not start\" instead of as itself; the step passes no registry input of any kind, and the web E2E gate forwards `E2E_REQUIRE_BACKUP_TARGETS=1` into the Playwright container so `backups.spec.ts` fails rather than skips when the destinations are absent.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1069-L1070",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1079-L1080",
           "version": "repo-lines-v1:sha256:1a10022fa18f1c5b19ff2fcffd6eeee6d1646f0c91921104df3e964a244daed5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUyMmE5Njg2YmVmZjMyYmE5MGMwZTFkNjc1MGNjOTIwYmQ0ODQ2NmRmNzkyN2M5ODdhMWRjNzIwNDIzMmJkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY2N2M4NTU5MTU3ZjhkYmY3NmU1NzljNWQ0ZDdhNjJhNzBkODkyNDUxOWQ5NTdiMzFjODEzYWVmOWRkYzBkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRjMDU0NGJiNTZmMjk2YzQyOWE1ODk5MDk1MzI4NWQyOGU4YzgwMWVmYjY1YzAzZjVmMTlmMTI2MDg1YTE4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDYyZDZhN2FkZTQzYjgwMjkzY2Y5MzFkNzhiYzE3N2E2MmZlNjgyNjU0NWM3MTc3YThiZjY5NDBmZjJlMWFiMiJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1089-L1092",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1099-L1102",
           "version": "repo-lines-v1:sha256:a9244a91708ec741e0614d890b4e0612daabd907ec9fcc6aca1c198e92e593fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAyMDAyYWE0ZjE4MWZjNWEzODI1NWE4NTA0OGJhNjU1YTUzZTVkNDQ4YjI0YTc0ODM5NjI4ZWU3ZDYwMmYwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdiZTdlMWE1NjBhZjhiNTc3ODU1ZWYyNTg1NTY1OTJiZjI0MTA1ODdhMTMxMTM0Y2JmZThlYzFjNzg3MjlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM5NDNjMTI2YzhlNTUxNGNhZDAzMmRjOTIzYmQxMGFmNzAzYzRjODRiNTVkNjViMmUxYjkzNTg0NTg1ZDI3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY0MWRhNzhiOTkzZGIwMGYyOWE3OGFiMDljYTkzM2VjN2M5MmE5ZDEzZmEwMWQ1YWU1YjU2NGUzYzY4YTQ2OCJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L711-L720",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L714-L723",
           "version": "repo-lines-v1:sha256:166701cc7157aac331cf15bce98e4aadfa97df43e98bf527225c11b2606834f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDJmNDczZmI5MTQ5MTRlZmMyNmU5Nzc1M2ZhZTZlNDM3NDc2MTljMDdkMzFiZGI4MGEwZDc4YjkwNGI0MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTJiMTBjNTgxNzRlYjRlNjVmNzM2MjZiOWMwNDk3NWFiYjAyMmU5YTFjYmE0NmRhMjc3NWQ5OTFlZTRiMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NzQwYTYxYmYxOTE2MjllOWQ3YWNmNzZkZjU5YTY1NmM0NzgyMzI3OGFkYWYwYTljNjA1ZmQxODk3ZGFhYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjY3ODQ0NjNiMjRmM2YzYzg3ZDQyOWVkNDI1MDFlNDc2NzMzNDRiNTQ1ODE4NzhiZDViZGVkY2FmZmZmYjcifQ"
         },
         {
@@ -523,26 +523,132 @@
           "version": "repo-lines-v1:sha256:3a856927fa6b9f281b3320ee54db483eb4faba1eeeea3eeebe719314d6b3b88e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4OGUxOWQzMTBhM2NlZDJkMzgyNGQ0MzFmYjUyN2RiNmU4MDRjZjViOGQ0NmE1ODhhNmEwODUxMTUzMTZhNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NTdkNjRjYjA0YmY3NWViOWE5ZDdhOGY2OGEwMmUxODU3MzA5YTJkZWM4YTZhZTZlYTA0ZjVhY2FhMmRiNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjMjM1NjM2OWRlMjE2NGNlZGM3MmEzNDdjYTJiYmEwOTZlNjc5OTk5NzM3MzIyNmUwYjZlOTViYTA0NTU4YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L107-L149",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L119-L161",
           "version": "repo-lines-v1:sha256:f7b7c29049bdd2c7f623f470098d54d556b73ade80f6a375e5ef7b761cc3778f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ZWEwYmJkMTZjOWNkZTBhN2RkNzQ0NTNhNTc5YzBiNzY2N2I3ODgzNTIwYzQ5ZjkzYzliZTgwYjdjNGZlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZDRiMmI2ZmQwMDZmZmM3ZmFhYjA1MjU4YjJiNWVlZTMwNGUwYjE4NzkwYWQ3M2ZiNzMwYjE2ODhkOTAyYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkZTU1ZTcyZmRiMzU3OTVlZjlhMjkyOWNiNjBmY2YyMTJhYmI3NzIyNzhmODM0MWM2MjY5M2ZjZmVlNWYyM2QifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L165-L169",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L177-L181",
           "version": "repo-lines-v1:sha256:7aeb44fc3301a755943cf437e173d561581888a9f25e9c47e2afc3fe6c65fd64:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjczMGRhOWY5NDhlNDYyOGFhN2Y5MGU3YjhiZTlhZGY4N2VlODNlZWZiZjM5YjJmNzhlNWQ1YWY1OTg2OGZlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ1ZjQyNDFjYmJlNzA3ODYxODgzMzgzNDgxZmU5NzBmYzMzNTU1NmMwN2YyODM1MTIzNTFmZmUzMTUzNTgyYSJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L38-L46",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L50-L58",
           "version": "repo-lines-v1:sha256:34d586ebc06e74e51ebdda1285c7eb5cc268c6f2c3ba92bb9dc8c63da7072877:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1ZjE2ZmE4MWE2ZWYxZTEzZDY0YjIzMTk5OWYzOWY2YWVlNTQ4Zjg3MjYyYzA1MjZiMWJiZDQxMTdhYTE5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE5NTk5ODU5YjhjYTUzZGNkYWUzNWMyZWM5MDU3YTllMmI3N2U5ZGM3NmZmY2RhNGVlMGQwNTJkYmVmMzI4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYzMGI1MWE1NDI2ODczNzNlMjVkZjE0NTJjNjgzMGI1ZGRhYWVhZGM5ZTdkYjkxZjQ5NGQ3MjllNDgzMTIzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk2NzIyMDgzZTNkZDFhMGRkMDI5MDU2ODc4MTBjYjg3ZTJkNzA3OTMwMzk2NzEyNjk5NzA4M2QyNjY3NzliNCJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L59-L93",
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L71-L105",
           "version": "repo-lines-v1:sha256:41b5896b4954369176e67a9870b323d5bdf7f8fa8c25441451ff396bd0dd1509:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZDJiZjY2OGFkNjUyMGFhMGYzOTI4M2NiODUwZWNjZTA2Y2Y1MDc4MTk3ZjgzNDFiNTBjYjkxYTgyZmNiNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1NThhYjExNjZiNjA5N2Y0OTRlYjkxZmVkYTU4OWE4ZGQ1Y2I2MzY0N2VmMzdhNWYzMDE4N2UxODhlYzkxNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3MzRkYmFlZTMyODU2OTVlYjk5MjAzMjA1YmU1ZDdlMWM0N2JhOTVlYTNkZjllMTczMjEwNmYzYzFlNTBhZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_feee341917214f42a21ace3d956e70f7",
+      "statement": "The BFF is the only component that starts an agent run and the only one that mints its identity: on each run invocation and each HITL resume it exchanges the member's server-held access token for a run-scoped, audience-narrowed delegation token (OAuth2 Token Exchange, RFC 8693) and attaches it to the AG-UI run as an ephemeral, non-checkpointed value, never the member's session token. A refused mint fails closed — `401 AGENT_IDENTITY_REJECTED` when the member's own credential is the problem, a retryable `503 AGENT_IDENTITY_UNAVAILABLE` on an identity-provider outage — so the gateway is never called identity-less.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L1-L76",
+          "version": "repo-lines-v1:sha256:801e65c6791fbca22ca33beaa3e97389b08f841aa9669d77c5dea97cc69d48ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2YmExNTJlMzBjMjJhNmVhM2Q3YjY0OWViZjY5NGE2MTMwNTUxYzBhNWRiMTg5MDJlZWViYmI1MjQ3YTFkNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_852e009fafa4479c8bdc5fd3fb53b3bb",
+      "statement": "A request to the BFF authenticates through exactly one credential, the opaque `mcm_session_id` cookie: the member's Keycloak access and refresh tokens are held server-side (sealed beside the Redis session), and a bearer credential presented to the BFF is refused in every environment including development and test, so no broad, reusable token exists for an agent request to carry.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L1-L33",
+          "version": "repo-lines-v1:sha256:11a80bd032f64ec931530ebcb504fa281cdc0fd88bb28ff1a01ca34be1a519b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZWI0MjdiNDdlMGYyZTEzMzJjNTQ4ZTU4ZTNkNWU5NjViZWU0NTQyN2E5ZDc3MDRiYjViNDBkNmRiN2U2MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiMTdmNGMxZWMzMTNlZWYxM2IxOGZiODlhNWRlMDU1MTc2ZDI1NmFhYzcwNThkNzkwZjIyYzQ2ZTYyMTNlNzQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L1-L12",
+          "version": "repo-lines-v1:sha256:bc150fb240208a475ef3701927c308b1a0ad0091c36de4e31e380e70cc242868:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZjVlYjA2NjQ5YmViNjlhN2UzZDA5ZjE1MGZjZmI1YmI5YTVhZWQwZTBiMmJjNGUxMGYyY2ExMWMxZWViOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_edaebafd02054127bce2a7c9e1248159",
+      "statement": "The gateway's exchanged token is bound to both the login client's audience and `mc-service` by the `agent-gateway` client's audience mappers, which is what allows mc-service's existing audience check to accept an agent-originated token unchanged rather than growing an agent-specific branch; no `audience` request parameter is sent, which also sidesteps Keycloak's 'Requested audience not available' precondition.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py#L24-L27",
+          "version": "repo-lines-v1:sha256:39b321981526a2e48c6387c59b396d23a19577d0c0c4d020176888daff8a59fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjNDI2ZjZhY2UwZjUyZWJlYmQ3OTI4M2UyMTZhYzE5OWFmNjY0ZjA4NTJjNjQ3ZDY2ZDlkMzg2MTQxMWQxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U2ZjVkYmE1NDg0MTNkNTA4MjA5ZDE4ZjY2NzU2OWJlMWFjNTcyNTkzNmRmMjllODI3MDY4MDMwNDY0NWNhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDMwMWU3YzYyYzYwYzI0NGMzMGQwZDJkNmVjMWQ3NDJmZGE1ZWNlNDc1YzdkMjZlYWExZWY2YWYzMzU5ZDIyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODE3MjI3NjVjYmU3ZWZiOGYwYjA2NjdkMjg0OWQ5NjUxNGE5YTE2NTExZGIzNGFmNTY0ZDhmNDE3OTBjMWE0YSJ9"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py#L1-L11",
+          "version": "repo-lines-v1:sha256:6a4d8bedf0e5785c78ed65c5009e0970739bb6140751eb15491db63f116c0ec6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYWUzYWRmNTdkYjc5OTYwMDc1YmY3NmNjYzIwOGE4MDVjZDU0MTExZGFmNTMzODMwMzEzYTliYTA5ODI3N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYjI3NThkMTQzOGExNDgxMDlmOTU2OTcxZGI3OTc1MTEwNWM2MjcyN2Q2MzkzNWU2MmE0YTk1ZjAxZWY3NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYzAxYmU1YmJjOGE5NjdiOGFlYzZkNGJmZWI2ZGQyMmFkMDRiYTUyOTdkZTBlOTJjYzc5MjZlZTA5OTJjNDgifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/auth.rs#L50-L75",
+          "version": "repo-lines-v1:sha256:292f9eb1b4c32630e98e305429a6dadae3d27125cb32d561c1e8300442c47cf2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTAyYWJjMTQ1NmY5MzAyZjE2YTE5OGI2MzI2NjcwNDljOTYyMjI3NzRjOWQ0Y2M3MmZlNjk3YjU4ZjFmYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZTNlNDU0MGZjZDBmNThlNDcyMDk3MmRkYzYxNGRmMjQxNTNmZWUwYzA5NjliOTFhODQxNGRhNDFmMWIwMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MWEwYjllNTQzMjI1OTZmMzBhNzQ0MWRlZjk2MzIyOGZlYzRjNjU3NzMwMzk1MzFkNGU4Mjk3M2JmMDdiNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bbaeedd10c949a0b525a6d055684c6e",
+      "statement": "Both agent token TTLs carry a hard ceiling applied in code as well as in Keycloak: the run-scoped delegation token is capped at 180 s and the per-call downscoped token at 60 s, and the downscoped-token cache expires each entry ahead of its reported lifetime to absorb exchange latency and container clock skew.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py#L29-L35",
+          "version": "repo-lines-v1:sha256:0a86908e24f231c110f8171bef6356449207d3bde5f69ce335ce5d178baf7d09:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIwMWEyODRkOTNjYWUzNzk1MWYwYjhmMjczMjNkZTliODc2MmQxNmYyMTJmMmE1YjJmOWE4MWFkOTRhOTYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFjZDZmMWEyZTgyMWFiNDBlYzE3MzRlYWFkOWIyZjY4NjhjMDI3ZGZlY2YzMTU0MWU0MDI5YjAyNDE4YWRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ5MTQ3MTc2MDE5ZDYxNDJlZDI5NzM1M2UxNmFmZDFjOWVmM2JkYjM1YTU3OTZiYmFkN2JjNzZiNzdiNzIxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTFlZDM4NTc5NWYxMzI0NDVlNTdhMjQwMTAxODFjNmE1Zjg5Y2M3MjcwYjExNjQwYjkyMWQ4MDkxZDEzN2YyOCJ9"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py#L30-L31",
+          "version": "repo-lines-v1:sha256:f6d7aa716797dad4f7f0825e829ecb9a7952941801f15b57e521f914b2ebc125:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVkNzk3YmQxYzJlOGJjYzVlMmVkN2U0OWI5OWJjOTBlNjJiYzg0NTcwMTYxN2ZlYmUzN2M2YTY4MDA5Njc2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY5MzJmNTViMjk5ZTk5MGMyMGYxMDdlNDdjNTAwMGVhNzRlNzBiNzUxOTBmYWU0MzllM2I2M2U4N2ZlNTAwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEzNjkxYWQ3MmNkMmQ4NDFjNDg1Y2FjMzE4M2M1NWI3OGI3ZmY5NDA3NjllMGUyZjM2MGQ2YWJjMDMxNTcyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc3OTBiZGE5ODMxOGFiNDY0MTgyYjZlYWVhZDZjNTk3MTNlNDBiZGZhNjYyODU0MjQzZWFiN2U3NjMxZTUzMiJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L31-L32",
+          "version": "repo-lines-v1:sha256:42618bfd30ecf9e4b365be1e85c2b123af1d29cce59c5e637107c25c841c2024:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE4ZWIwZjIzNzMxYzQyYjI2YTQzOWI2OWRlOTYxZmQ0ZWE4NjJjYWNlNzA5OTc2YTllZTA5NGNjMTFkMGY5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3NjlkYjhhMDIzNGQ3ZWU5ZTA0ZWMxOGYzOWM1Yzc4OThjNmE4ZGM5Mjk3ZmI2MTQzODkxMTVhYjE4NmZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYwODQ0NjhlNTcyNzE0MzcyYzBlM2Y0ODYyYmEyYTRhODhlYWQ5MzRlMmEyYzlmYTgzMWQ0ZjE3ZWY4ZTE2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVkMzdkNGZmNjA3MDlkMDAyMTExNzUyYmQwYzgxZjAzNTUyOGU2ODBhMTU5NGY5NDIzZjIxN2Q1YTMxYWMzZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_093d5258b1864ff6928d198466a5be4f",
+      "statement": "No raw token survives a run segment: a paused HITL run holds only checkpointed graph state plus the non-sensitive `userId`/`threadId`, and a state guard rejects any checkpointed key whose name looks like a token, JWT, authorization header, secret, password or agent config.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/state.py#L1-L46",
+          "version": "repo-lines-v1:sha256:5d786c76d9b63fe55083de7f71eb8d61d25a6662fb9542e34da54def1d3c31ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2Q2MDkxMjhjODVkNjIwMjc2MjllNzdkNDQ3Nzc0NDNhZDdiMWZmN2I1OTg5Nzc4N2M4M2Y2ODVjMDYzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff562ae9e28b448f8239c0c3c08dabdc",
+      "statement": "OPA's authorization of the gateway token exchange is config-gated and no-op by default: with `OPA_URL` unset the check is skipped with a warning so local dev and the MVP are not blocked, and once it is set a deny, non-2xx, malformed response or unreachable engine denies the exchange.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/opa.py#L1-L11",
+          "version": "repo-lines-v1:sha256:b9ae6e45b2c6da50f77262b8174562575947e944d5477fb294fc59447c71223d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNjYzODNkNjA2Y2MyMWEzZDE5ODEyNmYxZmQxNzM1NTUyMGZlOGNjZjNiZTVmNjMzNzcyNTIyM2ViOWNlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/opa.py#L33-L76",
+          "version": "repo-lines-v1:sha256:8b0b2917b72156b41150f1640869a29e8ef6fe9b2b9b8d5562fe0616812a4f67:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNTdjNTQ2NjM1ZDg3ZjhjMmZiNjg3MDgyMTU2ZWUxZDEzYjYzZWNjMTU4OTBhZTU4YjUyZjI3M2ViMTY2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZWUwMTAzMTExYTZhZWY5MDI4MWFjYmE3ZTg0MTAyOTBkNWUxMzFmYTYyNDNiOTdiMDMxZTFkNjY4Y2RlYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NDIxZDI3YjI1ZTUzN2JmOWM1YzEwMTRhNTQ1NjM1YjE5NDQ4MTI0OTMwYzExMDRjZmJmZGY2YWIxMTMxMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e673b7dc3404894ad8401a4c75d5378",
+      "statement": "The Control Tower's two stateful majors landed under ADR-0002 with opposite data dispositions: only the append-only OpenSearch audit store's history was preserved (by snapshot and restore, under the §4a amendment that superseded the original discard decision for OpenSearch alone), while the Langfuse trace store was deliberately discarded at cutover under §4 as written.",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L104-L119",
+          "version": "repo-lines-v1:sha256:24f73df44e3c8186fb132560a1c402689286dbfc69d2f8e5e9d36b9f92be0e23:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTMyNDVjOGI1OWMwZTlkMmZlMmI1YmZlMTg4OTg4YzZjYmMxOTdkZTI3OGVmODk5Y2NiNzExZTBkOGRjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMjczMWQ3NWQzMjhlNjE5NDY2YWU1M2Y3MWNhMjAyYmIzMjlhZWM5YzA1NGNiMWVmOGI4NjkxM2ExMjk0OWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyOWIxMjExNzAxY2IyZjM0MTgwNTA4ZGE5NTBiYmYwMWU0ZjQ5ZjYyZDEwZmIxMmQ0NDFiM2ZlMmNhOTQzYmEifQ"
+        },
+        {
+          "resource": "repo://docs/decisions/ADR-0002-stateful-major-upgrades.md#L83-L88",
+          "version": "repo-lines-v1:sha256:06101f2ea48522d5dc187679a2b859c6dc04f1f4eb28eff1329cc680166492c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMyYjcyYzM0ZDAzNmEwY2NjMDZjNjBlZWM0MGM2MzFhYWM3MTRlYTRmYmRmMjY5NmMzMzQwMTVjZGFiNjBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjc0NjcyMjcxY2ZkMjJiMzUxNzgzYTNjNGQxZjVmMzY3NTk3NDAzNDQ2Y2E0MmU3NTViYTUzYTliN2NiYThkOCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T08:25:59.628Z"
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }

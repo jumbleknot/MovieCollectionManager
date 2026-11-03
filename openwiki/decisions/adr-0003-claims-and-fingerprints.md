@@ -6,23 +6,7 @@ resource: docs/decisions/ADR-0003-claims-and-fingerprints.md
 tags: [adr, claims, fingerprints, governance, decision-record]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
-sources:
-  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
-    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
-  - id: openwiki-source-c231cd090281b3129aaf6167
-    resource: repo://docs/runbooks/wiki-maintenance.md
-  - id: openwiki-source-a50c3dca6e011b3f54f51815
-    resource: repo://scripts/__tests__/check-openwiki-governance.test.mjs
-  - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
-    resource: repo://scripts/__tests__/openwiki-claims.test.mjs
-  - id: openwiki-source-98792bbc9621de1ad3e22856
-    resource: repo://scripts/check-openwiki-governance.mjs
-  - id: openwiki-source-efa55c3a8c70016f55bf6266
-    resource: repo://scripts/openwiki-claims.mjs
-  - id: openwiki-source-31eafb88f9d0f880c0c66a49
-    resource: repo://scripts/openwiki-policy.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # ADR-0003: Grounded Claims and protected-passage fingerprints are complements
@@ -78,6 +62,11 @@ separate on the day it was written. Three existing rules do the work:
   against the document it summarizes would fail every legitimate refresh, which is precisely why
   protection is refused there rather than merely discouraged.
 
+The Claims side is declared rather than inferred as well: `openwiki/.claims/**` and
+`openwiki/.page-manifest.json` carry their own `regenerate, actor: generator` entries in
+[`openwiki/policy.yaml`](../../openwiki/policy.yaml) instead of falling under the `openwiki/**`
+catch-all, so the coverage mechanism's scope is stated where the other rules are stated.
+
 ## G13: the scope gate and its three failure modes
 
 `claimsScopeFindings` in [`scripts/openwiki-claims.mjs`](../../scripts/openwiki-claims.mjs) implements
@@ -105,7 +94,14 @@ Both read Claims sidecars, from the same module, but they ask unrelated question
 - **G13 is about *where* coverage may exist.** It compares the manifest's `authoritative:` list against
   sidecars and manifest entries, and never inspects a page's bytes.
 - **V16 is about *durability*.** It checks that a page with a `.page-manifest.json` entry still hashes
-  to the `pageVersion` its sidecar certifies, and a page with no manifest entry is not checked at all.
+  to the `pageVersion` its sidecar certifies, and a page with no manifest entry is not checked at all —
+  openwiki leaves an uncovered page for full review.
+- **V16's failure is severe, and exactly one rewrite is exempt from it.** openwiki re-proves every
+  covered page before a run can advance and refuses the **whole run** — every slice, every page, before
+  any generation — when a page no longer matches its certified hash, which is why a hand edit has to go
+  red at review time instead of bricking the next paid run. The only rewrite allowed to move a covered
+  page's bytes is wiki-maintain's deterministic link-form normalization, which carries the certified
+  hash across in the same step so the harness cannot break the invariant it enforces.
 
 A covered page whose bytes were hand-edited fails V16; an authoritative page that acquired a sidecar
 fails G13. A change can break either without touching the other, which is why both gates exist.

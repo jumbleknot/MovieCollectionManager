@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9fdf275eecfa05ff4dbe79a13b054be2615ef2c223a6e02a2e45892c7c4f77d9",
+  "pageVersion": "sha256:90144b0be511678e7d3449e76b4b6f231412ef57c3fb6b41408c6889da02da34",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -172,11 +172,27 @@
     },
     {
       "id": "claim_b11f36d67d2a49d6baa4b2406e4e3bcc",
-      "statement": "The BFF loses the problem media type on every RFC 9457-shaped path except the account routes. handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status verbatim through Response.json(err.response.data, ...), and securityHeaders() sets only CSP, X-Frame-Options, X-Content-Type-Options and Referrer-Policy and never a Content-Type, so a proxied mc-service failure reaches the client as application/json while still carrying the mc-service.example type URI. The BFF's own about:blank bodies — problemResponse() in account-route-support.ts, problem() in backup-route-support.ts, and the inline literals in the agent-config and backups-tick routes — are shaped like RFC 9457, but only problemResponse() sets Content-Type: application/problem+json explicitly; the rest go through Response.json() and are served as application/json. A client must therefore expect both the mc-service.example namespace and about:blank, and a problem-media-type assertion holds only against mc-service directly or on the account routes; about:blank means no more specific type than the status code by RFC 9457, not an unknown service.",
+      "statement": "The BFF loses the problem media type on every RFC 9457-shaped path except the account-deletion routes. handleMcApiError() in mc-api-error.ts propagates an upstream mc-service body and status verbatim through Response.json(err.response.data, ...), and securityHeaders() sets only CSP, X-Frame-Options, X-Content-Type-Options and Referrer-Policy and never a Content-Type, so a proxied mc-service failure reaches the client as application/json while still carrying the mc-service.example type URI. Only problemResponse() in account-route-support.ts sets Content-Type: application/problem+json explicitly. Every other about:blank problem document is served as application/json: problem() and its notFound() wrapper in backup-route-support.ts — the single refusal helper for all /bff-api/backups/* routes, covering the validation 400s, the 404 that means 'not yours' as well as 'not there', the 409 for a destination with no stored credential, the 422 for a failed artifact verification and the 502 for a refused consent revocation — plus the inline literals in the agent-config, agent-config-test and backups-tick routes. That makes the gap the normal case rather than a corner: a problem-media-type assertion holds only against mc-service directly or on the account-deletion routes, and fails on any backups route. The two helpers otherwise agree on the shape, which is what lets a client parse both: type, title and status are always present, detail is added only when supplied rather than emitted as null, and the body's status equals the HTTP status line. Closing the media-type gap needs no new plumbing — securityHeaders() takes an optional HeadersInit and copies it before stamping the baseline headers. A client must therefore expect both the mc-service.example namespace and about:blank, and about:blank means 'no more specific type than the status code' by RFC 9457, not an unknown service.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts",
           "version": "repo-file-v1:sha256:7b5ac7cc339611519edbfbd5a5335df49e03300518b06d56ae83e5937415c862"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/config/test%2Bapi.ts",
+          "version": "repo-file-v1:sha256:127a832d1b9e09fffac876f1930a9ef18578e587def1c346350ebd16838e07ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts",
+          "version": "repo-file-v1:sha256:69727ded7edaa739285e4e189cd620ff702e8ce1bc93801ffdc3d0b40b242516"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/destinations/index%2Bapi.ts",
+          "version": "repo-file-v1:sha256:4c102a875cef8c97d509cd2e127cd1894b84c92f9b2b6c17c284801e8cd4aefc"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/jobs/%5BjobId%5D/restore%2Bapi.ts",
+          "version": "repo-file-v1:sha256:95c25351d77ad0b852a988d8712ab7cad10d1d0c54c0edb4ed36637522ef5abd"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
@@ -188,7 +204,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts",
-          "version": "repo-file-v1:sha256:621a57cc64852d721561585986cbb69b4530c2301e918aa51383237e9b0798c2"
+          "version": "repo-file-v1:sha256:2b256c1b69a4c44e12675a8f8f4107c412364487979c93dfb4fddb90d92f5fe6"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
@@ -234,11 +250,15 @@
     },
     {
       "id": "claim_bc0de4f35641486983effc38ac8ae031",
-      "statement": "The BFF's own published API contracts declare application/problem+json for error responses their implementations serve as application/json: the backups contract (specs/073-scheduled-backups/contracts/bff-backups-api.yaml) declares it for the destination-creation 400 and the restore 422, and the movies-count contract documents '4xx application/problem+json (via handleMcApiError)', while problem() in backup-route-support.ts and handleMcApiError()'s proxy branch both use Response.json(). The declared body shape is correct — the backups Problem schema is type/title/status/detail and never an upstream body — so a generated client parses the bodies but a Content-Type assertion derived from the contract fails.",
+      "statement": "The BFF's own published API contracts declare application/problem+json for error responses their implementations serve as application/json: the backups contract (specs/073-scheduled-backups/contracts/bff-backups-api.yaml) declares it for the destination-creation 400 and the restore 422, and the movies-count contract documents '4xx application/problem+json (via handleMcApiError)', while problem() in backup-route-support.ts and handleMcApiError()'s proxy branch both use Response.json(). The account-deletion contract (specs/076-account-deletion/contracts/bff-api.md) drifts the other way: it attributes its errors to backup-route-support's problem() — the helper that does not serve the problem media type — while the routes actually import problemResponse() from account-route-support.ts, which does. The declared body shape is correct — the backups Problem schema is type/title/status/detail and never an upstream body — so a generated client parses the bodies but a Content-Type assertion derived from the contract fails.",
       "evidence": [
         {
+          "resource": "repo://frontend/mcm-app/src/bff-server/account-route-support.ts",
+          "version": "repo-file-v1:sha256:a8d9e1c3816b417e62c32c47885b3970e6d6c7d101dfb52900dfa5e40aafcd60"
+        },
+        {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts",
-          "version": "repo-file-v1:sha256:621a57cc64852d721561585986cbb69b4530c2301e918aa51383237e9b0798c2"
+          "version": "repo-file-v1:sha256:2b256c1b69a4c44e12675a8f8f4107c412364487979c93dfb4fddb90d92f5fe6"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
@@ -251,6 +271,10 @@
         {
           "resource": "repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml",
           "version": "repo-file-v1:sha256:5ab7eaa7cdf54058a85b7db5d1aaf5288dce62ed9a50974831fb3114257b04a2"
+        },
+        {
+          "resource": "repo://specs/076-account-deletion/contracts/bff-api.md",
+          "version": "repo-file-v1:sha256:9c253a646a1d138dd070ad1946dd7a662e5d1ddac3203cb3241b6309e67aa84e"
         }
       ]
     },
@@ -271,10 +295,36 @@
           "version": "repo-file-v1:sha256:0c00e4eabe5c257a50244654a6b0bcb29547fc659a0a38c536bd66ef8f91ae8d"
         }
       ]
+    },
+    {
+      "id": "claim_1c823bfd11ec483b9e6b2024563562bc",
+      "statement": "The BFF answers errors in two incompatible client vocabularies. The auth and admin routes (auth/login, auth/refresh, auth/logout, auth/user, auth/register, auth/resend-verification, admin/settings) return { error, code } with no type, title or detail — the same vocabulary as handleMcApiError()'s AuthError and unexpected-error branches — while the proxy and backups routes return RFC 9457-shaped bodies. The shared getErrorMessage() in src/utils/errors.ts is built for the first dialect only: it extracts a code member and maps it through AUTH_ERROR_MESSAGES, so a problem-shaped body with no code collapses to the generic 'An unexpected error occurred. Please try again.'",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/admin/settings%2Bapi.ts",
+          "version": "repo-file-v1:sha256:5be1db28aff932bc310a244ba8ec1a00564a26d40f7e77d62a09cfa13842605c"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts",
+          "version": "repo-file-v1:sha256:56bf27a7cd1622256ac163dd41584c54adddcbd5929aacd4769ae7ef6b657c54"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts",
+          "version": "repo-file-v1:sha256:e916cf8133f798940ac72c884de407da84e9ce6c345e16608ce7818fa6b03a90"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
+          "version": "repo-file-v1:sha256:679b1169d9c094e659590b1ff59e11ad300a05d51faa61b0cc5d7b0f75a66652"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/errors.ts",
+          "version": "repo-file-v1:sha256:0c00e4eabe5c257a50244654a6b0bcb29547fc659a0a38c536bd66ef8f91ae8d"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }

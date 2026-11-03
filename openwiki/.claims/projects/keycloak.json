@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:43475ee16dc6a5e2c6dd35b6f2d5373addad03082b6489dd5058e64e2d702910",
+  "pageVersion": "sha256:dd0c9fb6ffd9a7785c9ee3174a15e2e2dd1181492d3bea1c53cdff8254cf5a69",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -55,7 +55,7 @@
       "statement": "The realm exists in three committed variants that import through three separate paths into the same Postgres volume: `dev-realm.json` via the `compose.dev.yaml` overlay on `pnpm nx up-auth infrastructure-as-code`, `ci-realm.json` via the `compose.ci.yaml` overlay in app-ci's Keycloak bring-up step, and `prod-realm.json` via `compose.prod.yaml` under Komodo. Only the dev and CI overlays add `--import-realm`, leaving the shared `keycloak/compose.yaml` base and therefore the CI path unchanged. (The namespace of committed filenames is separate from the import namespace: every variant is mounted at the target path `grumpyrobot-realm.json`.)",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L694-L700",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L697-L703",
           "version": "repo-lines-v1:sha256:5348b5884664a80eca4827d66333f5ab51d301fca3bc4cf6fb226ccc87423942:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E3ZmVkMzIyOWExYjY3MDVjOTk1ZWFkZWVlNzQ0OWM2MzBjODQ3NGQ3OTQzNzQ4OTU2ZmQwMGQzOTE3ZTgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZmNiZDAwMWZmNDEzNDI3NWU2NjFmZjg1NmEzN2RhNjM4MWU2ZmUxNDgxZjNmZTE0MzQ4Mzc1YWZiYzNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBiNjY0MDc0OWZkMmJkODdiNDg4MGFkMjk3OWQ5OTA4ODgxYzVmOWExMzNhYmI4MGRjMTczYTY5M2U1MDhlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNkY2EzYzc4MDdlY2M5ZWVhN2YzYTk4NTZkMWEzYTQzOWM2NTlhY2E5ZjNjNmU4ZTJmNmNmZDQ2ZGY4NWFiNSJ9"
         },
         {
@@ -99,7 +99,7 @@
       "statement": "Realm import is idempotent and non-destructive because Keycloak's directory import IGNORE_EXISTING semantics skip a realm that already exists: an established `keycloak-store-postgres-data` volume is untouched on every `up-auth`, and a fresh or wiped volume gets the `grumpyrobot` realm, its app clients, and `e2e-test-user` re-seeded on the next `up-auth`. The same property means an edit to a realm JSON file changes nothing for a stack that is already running until the realm is re-imported.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L600-L605",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L603-L608",
           "version": "repo-lines-v1:sha256:92c85ff2cb64b192ad59fc55b13c12783c3895c5a7be3cc151fc4e91572269d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFkN2ZmYjdjMjA5MjUzZTJjMzdjMDgzMTgyNWI3ZmU5YjFlYmQwY2M5ZDMxYWFjNDM3NWFkZjM4YmYzYTMxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3YTE2ZmQ2MjcwNGRhMGY2YWI4ZTBkNjQwODVkNzA3ZWZmZWYwNjljN2E1MTJkZTA0NGY1ZTU3ZjM1ZTZiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZiNjE0YmU3NDVhYzg4YTdlMDNkZmNkMTNkYWNmMDI0MzY5ODZhMzEzMzg2MjZkZDczZjk1NTM1OTI0NDY5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFmNjk0MTMyMzc3N2FjNWRlMWI1ODIzMDA4OTAxZGQyZDg4MTA4OGEzMzdlYmQ2YWNjNTU3ZWZhNWYwZmIyZCJ9"
         },
         {
@@ -187,11 +187,11 @@
       "statement": "Removing a client from a realm export requires removing every reference to it, not just the client object: a dropped client that still appears in `roles.client[<id>]` or `scopeMappings` makes `--import-realm` abort in production mode with `App doesn't exist in role definitions: <id>` and crash-loop `keycloak-service`. The ROPC client `mcm-bff-test` illustrates the asymmetry — it exists in the dev and CI realms but not in `prod-realm.json` — and it is no longer unused in the throwaway sense: the agent integration suite and the DAST job log in through it, so its secret is minted at bring-up, pinned into the realm import, and re-exported to the later steps, which therefore must not read it from `stacks/auth.env`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L688-L693",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L691-L696",
           "version": "repo-lines-v1:sha256:dd4d2ac12b08112b1ec41a27e2d66d8fb33438fd2c1283520a799082ef2d4d4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MTY2YjQxNGVhOTU2YjBiMmQxMzFiZTBjZjc5MThkNGEwZWVlZTRmZTE4OGJkNzk0ODVjOGRhYzNmZTkzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk3NzY2ZGU1NTE2NTY5ZjI3OGVlZmZlZjU3MGFkZjIzNDcxOGRiNDM5NzY1MGJlNzQ1ODQwMDUzMjU0Mjc1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU0OTVhOWI2MzE1Y2I1ZDVhM2YxNTAwODYxNDcwOTkwNzJmNzE3ZDJmODFkNGJjNWNhN2VlNDQzNTYxZjUzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWMwMmI3ZTNhMDM3MTYxMDJmYzU5MDYzYjI5Yzc1N2Y3Mzg4NjBjMDE1OWZhYzJlZDZmNGRlZjNjOTBjOTVkOCJ9"
         },
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1053-L1053",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1056-L1056",
           "version": "repo-lines-v1:sha256:d25e5cb63288dd53369a6f80d88e62cd9fe2dd3f9da5c1577651b0e045dd0066:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI1ZTVjYjYzMjg4ZGQ1MzM2OWE2ZjgwZDg4ZTYyY2Q5ZmUyZGQzZjlkYTVjMTU3NzY1MWIwZTA0NWRkMDA2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ5ZDI4NzYxZjM0ZTdkN2Y0ODc2MjdhYTI0YTcwMjA1NmQyMGM5YWVmM2IyYjVmZjU1ODVkZGIxNjI3ODZjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM4ZGM1YzU5MWNhMjBlNzUwM2VmZTNiMmUxZTRiMGZmZjFlZWRmOGM0ODg5MDVlOTVhNmI1ZTYzNDRhOTE1MiJ9"
         },
         {
@@ -205,7 +205,7 @@
       "statement": "The committed `prod-realm.json` keeps a `${BASE_DOMAIN}` placeholder (in the `movie-collection-manager` client's redirect URIs and web origins) that is rendered at deploy to a gitignored concrete file pointed to by `PROD_REALM_FILE`. The render must use `sed 's|${BASE_DOMAIN}|<domain>|g'`, not `envsubst`, because the realm JSON also contains 32 Keycloak `${role_*}` / `${client_*}` i18n placeholders that `envsubst` would expand and corrupt; the `sed` form touches only the literal `${BASE_DOMAIN}`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1052-L1052",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1055-L1055",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmUzOWNmODhhYzI1MzVlYjNjZjgxYjE2YjlmYWU3YmMyYmNkNGE4ZmVlZWI5ZDJiMTVjMjVjNTAxYzUwZWVlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZjNzA4YzBkODJmYTNhM2I4NTIwYjJhMzk3OWIxODIxYmM1MWRmMDhjMjA4MGRhYjk5M2RhMjdhMjVmMDhhMCJ9"
         },
         {
@@ -333,7 +333,7 @@
       "statement": "The prod container `keycloak-service` lost its `backend-network` attachment on reboot on 2026-07-06, coming back attached only to `edge-network` and `keycloak-network`, which broke mc-service's OIDC/JWKS discovery of `keycloak-service` (`dns error … Try again`). A manual `docker network connect` is only a one-off that the next reboot can lose; the durable remedy is a Komodo `prod-auth` redeploy, which recreates the container with the full network set already declared in `compose.prod.yaml`. Feature 029 additionally makes the intra-stack `keycloak-network` compose-managed rather than external, so Keycloak and its Postgres are created and attached atomically on every `up` even if the shared external networks hit the rootless re-attach race.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1398-L1398",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1401-L1401",
           "version": "repo-lines-v1:sha256:d206252035d25ad88df98054480bd96305085471ceaa692d7423888d08deb9be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwNjI1MjAzNWQyNWFkODhkZjk4MDU0NDgwYmQ5NjMwNTA4NTQ3MWNlYWE2OTJkNzQyMzg4OGQwOGRlYjliZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTU0ZWNlMGMzMTQ3ZjQ3ZWY2MjM4MDU0OTNlOWFiZGI3MDExNDc1ODI4ZDM2NWIyMGQ5OWU1MjY3Y2RlNzUxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQxMjU0MjdlY2EzNTNhNzcyZmQ1ZGM4MjcwYjJlZDZiMTMwMTMxOGRmNmYxZTU0NWIyMGI1YzNkNjc1M2JjMCJ9"
         },
         {
@@ -373,7 +373,7 @@
           "version": "repo-lines-v1:sha256:9c5b98bdc7fcb80c1085a00d6f0eb8b121a8a93bdc0bc319eb5c45ea6d6c86d6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNDMyNjUzMjA1Yzg0ZjEyMDk0OGQ2ODIyYTE2M2VkYmRiYmZkYjAyMDE0MjA2MTc0MjYxODllZGYxM2Q0MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNDVkMjkyMzgyOWNkMGVmMDgzYjY5ODBiMGIxYjViYzc0OWI4ZWNhOWEwNmM2NDE1ODFmNmUzZTFlOWUzYmQifQ"
         },
         {
-          "resource": "repo://docs/MCM-Architecture.md#L569-L569",
+          "resource": "repo://docs/MCM-Architecture.md#L584-L584",
           "version": "repo-lines-v1:sha256:a7ed2b9fccee810b15e2821010e8925993c6b5f35e36c2091813a7cdfda4dbe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdlZDJiOWZjY2VlODEwYjE1ZTI4MjEwMTBlODkyNTk5M2M2YjVmMzVlMzZjMjA5MTgxM2E3Y2RmZGE0ZGJlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdlZDJiOWZjY2VlODEwYjE1ZTI4MjEwMTBlODkyNTk5M2M2YjVmMzVlMzZjMjA5MTgxM2E3Y2RmZGE0ZGJlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDU5ZTNkMzAyN2I5YTdjY2NiMzA0YzFkMmY4ZTVjMjc3NGFhOThjNDc2ODM4NTE2N2VhZGNjNGY2NmJhOWFmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM0ZGFhNGMzYjI3MTA0YmFkOWZiNDM5NmU3NzMzYzkwMDFkMmFhYWM3NDIxODNhZDBmN2JlNzM0ODdiZDllOCJ9"
         },
         {
@@ -387,7 +387,7 @@
       "statement": "Client redirect URIs and web origins are realm state, not application config: `add-container-redirect-uris.mjs` idempotently adds the containerized-BFF callback and `login?verified=true` origins (dev container `:8082`, TLS `:8443`) to the `movie-collection-manager` client, and the mobile app-link/custom-scheme callback is the same kind of realm entry — its absence breaks on-device login only after the browser redirect, not at login time.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1064-L1064",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1067-L1067",
           "version": "repo-lines-v1:sha256:9d42e9bbf56d69464c43d1f9826610c0f4184070ff0b278e5eda6542a8d4e486:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ0MmU5YmJmNTZkNjk0NjRjNDNkMWY5ODI2NjEwYzBmNDE4NDA3MGZmMGIyNzhlNWVkYTY1NDJhOGQ0ZTQ4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY0ZWRiODNiMmM2MzQ2MjU4ZWUzZjM3ODJiNjU0NDRmYjM4NzgyYWZjNDgxODJkNzk2M2Q4MDk3M2ZiOGQ3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk4ZTBiMDRlYWIwM2JhZTdjZjY5Zjk5Mzg4MTM5ZTNhOTY2MmNlNzU3ZjEzNmIwZTExMThjNDE1NzJhMDM1NCJ9"
         },
         {
@@ -405,7 +405,7 @@
       "statement": "The CI runner is a PERSISTENT host, so `app-ci` force-removes the app containers and the stateful data volumes — `keycloak-store-postgres-data` among them — before provisioning each run: Keycloak's `--import-realm` uses IGNORE_EXISTING, so a realm left in place would never pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks E2E idempotency. Image build caches are deliberately preserved so the rebuild stays fast. Without that reset step a committed realm edit would silently not reach CI.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L600-L622",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L603-L625",
           "version": "repo-lines-v1:sha256:435c16dfe808910fb20a9416755666b33f1843d4fe47a4d1154d62a45ce34f85:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZDdmZmI3YzIwOTI1M2UyYzM3YzA4MzE4MjViN2ZlOWIxZWJkMGNjOWQzMWFhYzQzNzVhZGYzOGJmM2EzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YjYxNGJlNzQ1YWM4OGE3ZTAzZGZjZDEzZGFjZjAyNDM2OTg2YTMxMzM4NjI2ZGQ3M2Y5NTUzNTkyNDQ2OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYmYyNmM1ZjFkOWZmZGVmM2U1YmVmYzMyNDFlN2I2OTI3ZGI0YmM2M2JjODFkMmRkMGVlNmFhMmZlMmUwMGEifQ"
         }
       ]
@@ -415,7 +415,7 @@
       "statement": "`KC_BOOTSTRAP_ADMIN_USERNAME` / `KC_BOOTSTRAP_ADMIN_PASSWORD` create the initial `admin` user only when the realm database has no admin, so the hardened posture is to log in once, create a named admin with 2FA and delete the bootstrap user — after which the values are inert. They must nevertheless stay configured: they are fail-fast `${VAR:?}` references, so removing the lines breaks every redeploy, and a fresh database deploy needs them to create the first admin at all.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1056-L1056",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1059-L1059",
           "version": "repo-lines-v1:sha256:70e38cccf133a62548cbd932518899c861c349f93d65d9cc4344f5121d304613:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBlMzhjY2NmMTMzYTYyNTQ4Y2JkOTMyNTE4ODk5Yzg2MWMzNDlmOTNkNjVkOWNjNDM0NGY1MTIxZDMwNDYxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZjNzA4YzBkODJmYTNhM2I4NTIwYjJhMzk3OWIxODIxYmM1MWRmMDhjMjA4MGRhYjk5M2RhMjdhMjVmMDhhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZhMzcyYjgzMzVjZWEyNjY2NDkzOGRkZjUwNWMyMjkzNGU3MjlhNmFlMWQ4YTE2ZTY4MzUyZDNlYzU1MzAxOCJ9"
         },
         {
@@ -429,7 +429,7 @@
       "statement": "The production admin console, served on the tailnet under its own `KC_HOSTNAME_ADMIN`, still sends its OIDC and session-check (\"3rd party check\") iframe to `KC_HOSTNAME` — the public auth origin. Until that public route resolves, opening the tailnet console fails with a third-party-check iframe timeout, so the failure is a missing public route rather than a broken admin login.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1055-L1055",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1058-L1058",
           "version": "repo-lines-v1:sha256:071d399fa33ff21ded4634b463db2852398037e75bf98eb003a053d3a03b2687:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxZDM5OWZhMzNmZjIxZGVkNDYzNGI0NjNkYjI4NTIzOTgwMzdlNzViZjk4ZWIwMDNhMDUzZDNhMDNiMjY4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU5NjIwMjA3YjdhZDc1OTcyOGU3NTU5OTU1ZDZhMWYzMzQwOWI5ZTAzY2E0MGQ1NDQwMjBmM2FhZDE4OTIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYyYzdjMmY4MjI4YzBhN2QyZDgwZmEwYzgzOTkzMzdhZWJiOTAwMjExN2VmMjUzNzMwZjAxMDNlZjkyZjMyOSJ9"
         },
         {
@@ -468,15 +468,19 @@
     },
     {
       "id": "claim_29c0f97ee05c4e8f83142135185b3a8d",
-      "statement": "The refresh path keeps deliberate coverage that does not depend on the token lifespan: `agent-session-refresh.spec.ts` clears the `mcm_access_token` cookie explicitly rather than waiting for expiry, so it proves the 401 → refresh → retry recovery chain on a real browser-PKCE session regardless of the realm's `accessTokenLifespan`.",
+      "statement": "The refresh path keeps deliberate, lifespan-independent coverage, but its mechanism changed with feature 085: `agent-session-refresh.spec.ts` no longer clears the `mcm_access_token` cookie (there is no token cookie any more) and instead ages the session's SERVER-held access token via `tests/e2e/web/setup/bff-session-store.ts`, which writes `accessExpiresAt: 0` into the dev BFF's Redis record `session-tokens:<sessionId>`. The `@gate` spec then proves renewal is TRANSPARENT rather than client-driven: the protected route `/bff-api/auth/user` still answers 200 on the very request that finds the token expired, with no 401 and no `mcm_access_token` / `mcm_refresh_token` cookie in the response, the server-held expiry moved forward, and `POST /bff-api/auth/refresh` — still the client's fallback — succeeds on the session cookie alone and re-sets nothing but `mcm_session_id`. It therefore still does not depend on the realm's `accessTokenLifespan`, but it now covers the server half of the chain; the client-side 401 → refresh → retry orchestration over a real refused run is not proven here.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L26-L31",
-          "version": "repo-lines-v1:sha256:f6b8750bf3cf20c4975507d9dd4a55e9f1b6f8f1205fddc8ae3634d71844e37a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE3ZDA5MzJkNzI4MzIyNWYxMGQ1OWI3YjU3NzhiN2QxNGI1M2M1NTgxOTFiMDg5MDdmMjRkNjJiZTI5NDUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUwZjYxZmQ1NGYyMjNlMjFlYzdiNDkxNDY0ZmE0ZmRiMDI4YzFmNTUxYmJmMjljNzA1NTM2NDQ1N2E5ZGY0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRiZTA5MGVkNWJkMTVkYjljYWJjZTU0MDQwNzk3MDcwMWJhNGMzMTA2YTE5NDVmYmRjNzQ4OGJjZDBjYmJlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ1ZDZiNDA5ZGZmMWQwYWEzNjQ3NTk3ZGFjOWMwYmQwZmY0MDM4NWZhM2FhMDY5YTVmODM5NzNiOTFjMmJiMCJ9"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts#L44-L67",
+          "version": "repo-lines-v1:sha256:b3d6940af605f561f7a8ca3a3d75b08ff688676e80b0c5355f14fd162b9b4cb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTk5MmM1MzE5YTE2ZmNiOTZjOTZhYjk1NDI3MDI2ZDliZTlhMTNjZTk4NmE3ODg5NDA5NTI3YzViZmM0NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYTQ4OTU1ZDczZmZkODk2YTljYzkzY2Q3YjQ5MTNmNDUzNzMyNjNhNTBkNGQ4NzgzOGVkZTJiYTBmMzc3YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0ZWY0MjNhZGY2MzY1Mjg2NmNhNzgxZTU4NzMxNzIyYTBiMTU2ZGQ4YmY2ZWVkNGU1NjMwMzdiZWQ0ODNhNzEifQ"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md#L115-L119",
-          "version": "repo-lines-v1:sha256:70b4460ad027ca95537cb5d5a671a09d221cd348048b18b3bb567dd9af568a92:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRhNGYwZmE2MDJjZjc1YTkzYzQ5N2Y2M2NjYjBhN2M0ZTM5MjA2OGUzZGJjMzkzMmJmODhlZjE3ZGY3Zjg1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwZDYyMmQzOTEwNTYyOWMyZDhiMmFiZTUwMTJjYTA2ODg2ODE3MjcwN2YyZmIzMmM4ODcwZGM2MTJkM2QyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzFjMjQyN2IzM2FiNjA0NWQwNmZjODg3YmQxMzM4Yjk0NmU3NGE0YmY3NjBkOGViYjM4MTg5MzY5MzE3MzUxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjU0MDkzNjdlNzM2M2E0NDExNWYzYjE3YTdhY2JkZmNhYmVhMTZkMzE0MWI0MmZkZTc0M2JiYjUyYjZlNDBlNCJ9"
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L1-L64",
+          "version": "repo-lines-v1:sha256:44481e2b7caec6f71fbd6c2fe7c5bd5b8bb0c426596725d8aaabef08cf972941:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts#L14-L38",
+          "version": "repo-lines-v1:sha256:b70889b95dc5d4916fb71d66524b03bbde346aed7ff58130acf2b22924cc907f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5M2YzZTJkZmQwYmU2N2U2YjFlZWI3NzI2OTlmNmY3YWU4NzlmMTcyMTkzNTRmZTE0OGNiY2NhNDY1OWFiMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMDM2N2UzNzljMzI1NDMzYjc5MmEzZTNjNTY0MmYzNGU1ZDU3YTk3OGNlMTU0ZDc2OWNmOTk5ODIyMjViNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
@@ -485,7 +489,7 @@
       "statement": "The `${BASE_DOMAIN}` render path is documented inconsistently with what is actually run: `compose.prod.yaml` and `.env.prod.example` describe rendering `prod-realm.json` with `envsubst` restricted to `BASE_DOMAIN`, while the runbook and README record the hand-run `sed 's|${BASE_DOMAIN}|<domain>|g'` as the command in use. Both touch only the literal `${BASE_DOMAIN}` and leave Keycloak's `${role_*}` / `${client_*}` i18n placeholders intact; a reader following only the compose comment has no warning about the unrestricted-`envsubst` corruption the restricted form exists to avoid.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1052-L1052",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1055-L1055",
           "version": "repo-lines-v1:sha256:0032de0a05fefaaf4fe43fd7889ebdb6332667e8e0d96159d1ea934962c11f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzMmRlMGEwNWZlZmFhZjRmZTQzZmQ3ODg5ZWJkYjYzMzI2NjdlOGUwZDk2MTU5ZDFlYTkzNDk2MmMxMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmUzOWNmODhhYzI1MzVlYjNjZjgxYjE2YjlmYWU3YmMyYmNkNGE4ZmVlZWI5ZDJiMTVjMjVjNTAxYzUwZWVlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZjNzA4YzBkODJmYTNhM2I4NTIwYjJhMzk3OWIxODIxYmM1MWRmMDhjMjA4MGRhYjk5M2RhMjdhMjVmMDhhMCJ9"
         },
         {
@@ -503,7 +507,7 @@
       "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one. The pin-by-tag-and-digest rule for production compose files is stated in the server-setup runbook.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1434-L1434",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1437-L1437",
           "version": "repo-lines-v1:sha256:f3f9030c76057cc018fe60213615f6a960b171022b158bf6d6af38ab21f42788:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmOTAzMGM3NjA1N2NjMDE4ZmU2MDIxMzYxNWY2YTk2MGIxNzEwMjJiMTU4YmY2ZDZhZjM4YWIyMWY0Mjc4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNmOTAzMGM3NjA1N2NjMDE4ZmU2MDIxMzYxNWY2YTk2MGIxNzEwMjJiMTU4YmY2ZDZhZjM4YWIyMWY0Mjc4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI5ZTJlODliZDQyN2YyM2EwM2Q2Nzg3YWI4MWIyNTJhZGUyYjVmYjUwMmQyNDc2ZTY5NmY3MDkwMzk5NzcyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -639,7 +643,7 @@
           "version": "repo-lines-v1:sha256:811339df5101c91c8a838f5b5d0e8115abc486f200a57af7df5f9cd34d855235:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NWY5MzMwYjg3NzQ0N2MzYWUxNmFiZDViMTE5MTdmOGEyMzljZWIyNDFmOWZlYTAxOTMxNDk4YjY0ZGJjODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODgzY2RjMWFjZTdlNjA1MTMyNTFkNzBmMjU5NThjNzQ4M2MzZjBkZWU4NzE3YzE0YjY3ZTI4ZjczODM5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L467-L531",
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L485-L549",
           "version": "repo-lines-v1:sha256:0ec9b5417b42bd2a79d905a0c5f394cab57d66278381a37d2c2f60fcdc9c54af:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDk4MGEzOWFkMDE4MzM0MGNhZmJjNTY5OTg3ODI4MWM1NTBjOTg3NjQwMzY1YWYzOGJmZTg4NGE5MTE5MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -853,7 +857,7 @@
           "version": "repo-lines-v1:sha256:811339df5101c91c8a838f5b5d0e8115abc486f200a57af7df5f9cd34d855235:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NWY5MzMwYjg3NzQ0N2MzYWUxNmFiZDViMTE5MTdmOGEyMzljZWIyNDFmOWZlYTAxOTMxNDk4YjY0ZGJjODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNTllYzQ2OTM1NTlmM2M0Y2U5MzEwMDI1N2FlZDhlYjIyOTM5YmYyMWQ1N2FkZDIzYjMwYjAzZDIxZWIxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODgzY2RjMWFjZTdlNjA1MTMyNTFkNzBmMjU5NThjNzQ4M2MzZjBkZWU4NzE3YzE0YjY3ZTI4ZjczODM5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L477-L531",
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L495-L549",
           "version": "repo-lines-v1:sha256:1575926ef1584dd63263862285c28da66e9e837f546626b30719169f10286d17:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNDI3ODZlZTIxZDc0N2FlNGI2YTU3ZjMzMmY4ZjQxMGQ3NTk4NjU1OTI5YWU1NmJhMTMyMGIwOGRjOWQ2YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwNDZkNzFkM2Y2MmU0ZWI3NDk4YzE1YjRkMGZmZDNhZjliMTE5M2Y5NmM4ZmIzODdiZWIwNjBiOWZjYWRmMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -867,7 +871,7 @@
       "statement": "The failure warning on that path is `redirect_uri_registration_failed` carrying `action: 'ensure_redirect_uris'` plus a `step` of `client_lookup`, `client_fetch`, `update` or `error` and the HTTP status — never the admin token, the client representation or the URI list — so a service account without `manage-clients` or a Keycloak outage leaves the URI unregistered but no longer silently. `frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts` pins each case with its own client id, because the mark is per client per process: a `403`/`400`/`500` update is warned with `step: 'update'` and retried, a successful update and a nothing-missing call are not repeated, and a failed client lookup is warned with `step: 'client_lookup'` and retried.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L481-L531",
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L499-L549",
           "version": "repo-lines-v1:sha256:6610488364ded2e14c3d1c123dc0751377271bdef525138425cfa1f83bc881d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZmZhODI0NjI5M2I1MTZmNjZkMGI0OGI3N2ZkNmUzMzFmZjJkZGZiYzAyMTk1ZDAyYTFiY2VmZjUwYzZkYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzE1ZTFhZTUzZmJkODM3NTdhZmEyOGRhMGQ4MmE5Y2JiM2NlMTg4ZGNkZWFlODNiZjliNWMyNmVjMDNjNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -875,10 +879,38 @@
           "version": "repo-lines-v1:sha256:38d4e87206049ccf93386f3b7e35db3f4441158052bb7ebb3fed8fc25328663e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOWIxYTgzYjJhNDlkN2U2MzIwMTVlNjI1MTViYjUzZWFjMzUwMjEzOTkxNDBiYzA0Y2E1ZDYxNDQyYjdkZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZjg3YWE3Nzk1ZGE4YmE2ODdjZWIxNjAxZDBmZjQ1YmUyYmMwMmUzZTBkODA3YWJlMGM3NjE4OGM0ZGE2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_4c8c9127fb7a4c8691ab2fb1f69b409e",
+      "statement": "The ability to stage a mid-session expiry from a test is a deliberate property of the session token record, not an accident: `session-tokens.ts` stores `accessExpiresAt` and `refreshExpiresAt` in CLEAR and outside the AAD-sealed blob, because they are not secret, a test can age a session without the encryption key, and editing them cannot extend a token's life — the JWT's own `exp` is validated on every request. Only `accessToken` and `refreshToken` are sealed (AES-256-GCM, bound to the session id and owner).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L113-L136",
+          "version": "repo-lines-v1:sha256:885651a0011e6aab4b9fc7cc38da271dc6d955999dce733315b073785f2b27ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYTNkYzQwMzIyN2UxYmZiZDI5ZWE4NjIyNTc1ZDY0ZWJkYTE5YmZiNjkwNjdmNDQyOWY2NzBiMTExYzdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZmFhMWJjMmUwOTIwOGNmOGM3ZWNlYjkxMGY0Nzg5MzM0MWNkZTMxNmZiMWNjNDg2NTQ4YjNmYmNmY2U0NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNzdjMDc5N2VlODIwMzdlMzNhMDRjNWFiYWRiZjI4ZDJjNDE5NmU4ODEzMWIyYWI2MDU2MDU0YjkyOTRjNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyNjI4YzczYzQ1MTk5YjIyMTY5MjZhNDgxOTFkMDJmZWUzM2QxNWIzZWNiYWVhOGNjNjNhMzU2ZTY4ZWVhYTgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L30-L70",
+          "version": "repo-lines-v1:sha256:48eb467ae34dd2aa8650181ed9b135bd55b4459aff1a93a8227b6218a1e8b1ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMDYxMDY2ZTA3ZjM0OWVhZWJhZDVlYmI2ODU4MGJmODE1MDhhZjc0NzQzMzBmMTIxYmM5NTA0Yjk5YmExMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMjI5ZDA3Y2QwOTE1ZWRhNmQxZDQ2ZmU0ZTZjNDRiZTU1ZDNkZWYzOWEwYzgxZGMyNDhhNTM4ZTZlZjRmZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNGQwYTZhOGFhNDg1OWM0NWYzMjdmNGEzOTgwMzI4ZWFiNmM0OWI4Y2E3MGRkODI3YWMxODlkNjI4NmIyM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1499843ec59c49bfa888e55485ecd158",
+      "statement": "The keycloak README's justification for the 5400 s dev/CI lifespans still ends with pre-feature-085 text — `agent-session-refresh.spec.ts` \"clears the access cookie explicitly rather than waiting for expiry\" — which no longer describes the spec; the spec ages the server-held token in Redis instead. The README's substantive claims (dev and CI at 5400 s, prod at 300 s, local development therefore not seeing realistic expiry) are unaffected, so the sentence is a stale detail inside an otherwise current rationale rather than a wrong conclusion.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts#L1-L19",
+          "version": "repo-lines-v1:sha256:af1bb5777c36ce4b37ad236a976c8e195f36ed8b2c4e5a6c30c85dc9c1203e05:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2Y2Q3OTA1MjU2NjUxMGEwZTRmNmYzNTFjM2I3YjQwOThmODY0MzVmZTgyMGU2MmRkOGM5YmJkZWQxNmFlYjgifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md#L106-L119",
+          "version": "repo-lines-v1:sha256:a9e47e4112527e04541b0e0ce3f0e8d66d142dd3b9231f0a26ba8b243e6f7a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NGUwMDdjM2RlYWY3MWVhNGNmMWJhYjc3NGM5NWI3MWQ0MmIxYWFlNWZiOTA2ZGI1OTU2ZjIzNTc3OTc1ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMGQ2MjJkMzkxMDU2MjljMmQ4YjJhYmU1MDEyY2EwNjg4NjgxNzI3MDdmMmZiMzJjODg3MGRjNjEyZDNkMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlYmI3N2E3ZTVmMzEzYzIxNTE3M2Q4NDc2ZTViYjIyZjQ4NzRiOTNhYWQ0NTE3NGUwNjNkNjgzMDU2ZjY5MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NDA5MzY3ZTczNjNhNDQxMTVmM2IxN2E3YWNiZGZjYWJlYTE2ZDMxNDFiNDJmZGU3NDNiYmI1MmI2ZTQwZTQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }

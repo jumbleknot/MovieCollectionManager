@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the event-driven freshness model, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the freshness model in which a scheduled fire decides from git — before installing anything — whether main has gone quiet, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -50,7 +50,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -92,7 +92,11 @@ the file that constrains it.
 
 ```mermaid
 flowchart TD
-    Plan["wiki-plan, offline and free"] --> Maintain["wiki-maintain, paid"]
+    Fire["schedule every 30 min, or workflow_dispatch"] --> Quiet["wiki-quiet.mjs: has main gone quiet? before any install"]
+    Quiet -->|"not yet"| NoRun["end after one checkout and one node process"]
+    Quiet -->|"quiet, or 6 h maximum deferral, or dispatched"| Tip["move to the current tip of main"]
+    Tip --> Plan["wiki-plan, offline and free"]
+    Plan --> Maintain["wiki-maintain, paid"]
     Audit["claims audit, offline and free"] --> Maintain
     Maintain --> Generate["wiki-update, runs scripts/wiki-generate.mjs"]
     Generate --> Cli["openwiki code --update --print"]
@@ -104,28 +108,66 @@ flowchart TD
     Gov --> Review["human review, never auto-merged"]
 ```
 
+A fire pays nothing until the quiet check says run: the check reads only git, so it comes before
+corepack, `pnpm install` and the generator install, and every later step is gated on its decision.
+From there the job enables pnpm, installs the workspace and then the locked generator, verifies the
+installed generator against what this repository expects, moves to the current tip of `main`, plans for
+free, and only then makes the paid `--execute --propose` call; the record commit and the outcome report
+run even when the execute step fails, and every job in the repository owes a feature-042 failure digest.
+
 The paid path runs from the two free checks through the generator to slice verification and one reviewed
 proposal, and the always-on gates sit after it rather than inside it. The planner shows what the run was
 asked for; the claims audit shows what openwiki will force in on top of it.
 
 ## Gotchas
 
-- **There is no scheduled maintenance job — freshness is event-driven, not periodic.** On a feature
-  branch it comes from folding `pnpm nx wiki-update infrastructure-as-code` into the existing
-  feature-completion checklist — every feature is expected to refresh the wiki (a no-op refresh is
-  valid) and then pass `okf-lint` before being considered complete; see the
+- **Freshness is decided from git by a scheduled check — the waiting happens outside the job.** On a
+  feature branch freshness comes from folding `pnpm nx wiki-update infrastructure-as-code` into the
+  existing feature-completion checklist — every feature is expected to refresh the wiki (a no-op
+  refresh is valid) and then pass `okf-lint` before being considered complete; see the
   [feature validation checklist](../invariants/feature-validation-checklist.md). On `main` it comes
-  from `.forgejo/workflows/wiki-maintain.yml` (feature 044), which is **merge-triggered**: a push to
-  `main` starts a run once `main` has been quiet for about fifteen minutes — and, failing that,
-  immediately once the oldest commit the run record has not covered reaches a six-hour maximum
-  deferral, so a merge stream that never goes quiet cannot starve maintenance exactly when drift is
-  fastest. That ceiling is derived from git rather than held in a timer, because the debounce works by
-  *cancelling*: a newer push kills the waiting run, and any timer it held dies with it, while git
-  state survives. A `workflow_dispatch` run bypasses the wait entirely.
-  Neither path has a `schedule:` trigger — no scheduled job, by design. (Feature 043's original scope also added no CI
-  credential; that no longer holds: the workflow carries its own keys, `ANTHROPIC_API_WIKI_MAINTAIN`
-  and `FIREWORKS_API_WIKI_MAINTAIN`.) The workflow is also **never a required context**, so a paid
-  and occasionally slow documentation job cannot gate an unrelated merge.
+  from `.forgejo/workflows/wiki-maintain.yml` (feature 044), which is **scheduled every 30 minutes**
+  (cron `*/30 * * * *`) plus `workflow_dispatch`, and has **no `push` trigger** — a push is by
+  definition not quiet, so a push-triggered check could only ever answer "not yet". A fire does not
+  generate on arrival. Its first step records the job deadline (it needs no checkout); then the job
+  checks out full history — the marker is a commit and the maximum deferral is the age of the oldest
+  commit past it, so a shallow clone can answer neither — and runs `node scripts/wiki-quiet.mjs`,
+  **before any install**, which decides from git whether `main` has gone quiet. Before item #613 the
+  debounce was a `sleep 900` *inside* a push-triggered job, which spent a quarter of the 60-minute
+  window waiting and left about 37 minutes for generation; the schedule is what comes back later, and
+  nothing waits inside the job now, so generation gets about 49 minutes of the same 60.
+- **The quiet decision is one small pure-ish script, and every later step depends on it.**
+  `scripts/wiki-quiet.mjs` uses node built-ins only, reads the run record's `coveredCommit`, and lists
+  `main`'s **first-parent** commits past it — one per merge or direct push, the granularity a push
+  trigger used to see. A commit is the job's own, and never counts as activity, if its message carries
+  `[skip ci]` (the record marker, and CD's digest promotes) or if its first-parent diff is entirely
+  under `openwiki/` (its own proposal landing) — so the workflow cannot trigger itself and a merged
+  proposal produces no further run. An **empty** file list is *not* bundle-only: a commit whose diff
+  could not be read counts as real work. It prints `run=true|false` on stdout and its reason on stderr;
+  every later step in the workflow carries `if: steps.quiet.outputs.run == 'true'`, so a "not yet"
+  costs one checkout and one node process, about a minute of the shared runner. A quiet check that
+  **cannot decide** — a `coveredCommit` no longer in history after a rewrite, or a missing run record —
+  exits 1 and reds the run rather than reading as "nothing uncovered", which would end maintenance
+  silently and for ever.
+- **The rule: newest commit quiet ⇒ run, oldest commit past the ceiling ⇒ run anyway.** Of the
+  uncovered commits that are not the job's own: none → end (`nothing uncovered`); the **newest** at
+  least 15 minutes old (`DEBOUNCE_SECONDS`) → `main` is quiet, generate now; the **oldest** at least
+  six hours old (`MAX_DEFERRAL_SECONDS`) → generate now regardless, so a merge stream that never goes
+  quiet cannot starve maintenance exactly when drift is fastest; otherwise → not yet, and the next fire
+  looks again. Both thresholds are **at-or-past**, not strictly greater: an age pinned exactly at one of
+  them would otherwise defer forever. The age is derived from git commit dates, not from a timer or
+  from anything held in run state between fires, and the ceiling is checked before the debounce so the
+  maximum deferral always wins. A `workflow_dispatch` run bypasses the quiet period entirely
+  (`--dispatched`).
+- **A fire never cancels a run, and each event gets its own window.** `cancel-in-progress` is `false`:
+  cancelling *was* the old debounce, and under a schedule it would let the next fire kill a generation
+  mid-run. A fire that arrives during a generation queues behind it and then finds the record covered.
+  The window is chosen per event in the job's first step: `SCHEDULE_MINUTES=60` for a scheduled fire —
+  the shared-runner hold — and `DISPATCH_MINUTES=120` for a dispatch, which must equal the job's
+  `timeout-minutes`, so raising that 120-minute ceiling cannot lengthen the runs the schedule starts. The
+  accepted cost is that a fire is a queued job on the one shared runner — about 48 a day, nearly all
+  ending after the checkout and one git query — and that after the last merge a run starts anywhere from
+  15 to 45 minutes later rather than exactly 15.
 - **Always invoke through the Nx target, never the bare `openwiki` CLI.** See
   [Nx as the task runner](../invariants/nx-task-runner.md) — the target sets
   `OPENWIKI_TELEMETRY_DISABLED=1` (the tool reports usage telemetry to a third-party host by default,
@@ -248,10 +290,27 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   to advance even on a run that produced no proposal; it is **not** the tool's own
   `openwiki/.last-update.json`, which advances only when wiki content changed — which is exactly why
   the free "nothing to document" path used to be unreachable. The step that commits it pushes with a
-  `[skip ci]` message, and the job's own skip check recognises both that message and a bundle-only
-  change, so the workflow cannot trigger itself. A push race with `main` is handled by rebuilding the
-  commit on the current tip and merging the record three ways, never by replaying this run's record
-  over a newer one.
+  `[skip ci]` message, which the quiet check recognises as the job's own work (see above), so the
+  workflow cannot trigger itself. A push race with `main` is handled by rebuilding the commit on the
+  current tip and merging the record **three ways** through `node scripts/wiki-maintain.mjs
+  --merge-record --base … --ours … --theirs …` — never by replaying this run's record over a newer one.
+  A field only one side changed takes that side's value; the marker never moves backwards; and two
+  *different* proposal pointers are a conflict, so the step fails with nothing committed rather than
+  guessing.
+- **A queued run starts from the current tip of `main`, not from its own event commit.** Under a
+  schedule a queued run is the normal case, and a run that planned from its event commit would repay
+  work an earlier run had already done and could not publish — measured on two merges in the same
+  second, four pages (~$1.35). So once the quiet check says run, the job moves to the current
+  `origin/main` and plans from the record committed there, and records that commit as the base for the
+  three-way record merge. `--execute` independently re-checks that the checkout's run record is not
+  behind the remote's and stops before any paid generation (exit 0, nothing recorded, nothing attempted)
+  if it is, so the race is caught even when `main` moves again between the move and the plan.
+- **A scheduled fire carries no event payload.** The job used to be push-triggered, so it read
+  `FORGE_OWNER`/`FORGE_REPO` from `github.event.repository.name`; a `schedule` event's payload has no
+  `repository` field, and after the move every fire planned and then died in the forge client (runs
+  6539–6569, every 30 minutes). `forgeRepository()` in `scripts/wiki-maintain.mjs` now reads
+  `GITHUB_REPOSITORY` — which the runner sets for every event — and refuses a malformed value, and a
+  guard test fails any step that reads `github.event.*` other than dispatch inputs.
 - **Neither budget is a monetary bound.** OpenWiki reports no token or cost figure of its own; a run's
   usage is captured by a tap and recorded, but nothing enforces a spend ceiling, and the wall-clock
   budget exists to bound occupancy of the shared CI runner. Do not describe these as cost controls.

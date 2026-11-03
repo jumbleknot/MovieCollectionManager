@@ -67,7 +67,7 @@ sources:
     resource: repo://specs/073-scheduled-backups/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T08:25:59.628Z
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # System overview (MCM)
@@ -111,7 +111,10 @@ restate them; the *Core Components* section is the canonical list):
   Loki), the OpenSearch append-only audit sink, and OPA + Unleash are profile-gated and **no-op with
   a safe in-code default when unconfigured**, so the app and the agent layer run without them and
   each control is switched on by configuration in the environments that need it (the architecture
-  document's *AI Agents Layer* section).
+  document's *AI Agents Layer* section). Their stateful halves are their own upgrade surface: both
+  majors have since landed under [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md), where
+  only the append-only audit store's history was preserved (snapshot and restore) and the Langfuse
+  trace store was deliberately discarded.
 - **Production secrets (Komodo Variables)** — shared *infrastructure* secrets (among them the
   gateway's Keycloak OAuth client secret and the BFF's master encryption key) live in Komodo's masked
   variable store and are injected at deploy into each stack's gitignored env file; **no** user,
@@ -201,6 +204,45 @@ common source of confusion when reasoning about "why can't this user do X":
   application-layer helper authorizes every movie operation against the parent collection's ACL,
   deny-by-default, and reports a missing collection and an unauthorized caller *identically* as
   `404` so collection existence does not leak.
+
+## Agent-layer identity: one cookie in, one downscoped token per call
+
+The agent layer changes nothing about *where* identity is enforced, but it changes what the
+model-driven process is allowed to hold. Distilled from the architecture document's *Call Chain and
+Security Boundary* and *Token Custody & Propagation for Agent Runs* sections:
+
+- **The client's only credential is the opaque session cookie.** Since feature 085 the member's
+  Keycloak access and refresh tokens stay on the server, sealed beside the Redis session, and a
+  bearer credential presented to the BFF is refused in every environment — so there is no broad
+  token an agent request could reuse.
+- **The BFF mints a run-scoped delegation token per run and per HITL resume** (OAuth2 Token
+  Exchange, RFC 8693), audience-narrowed to the gateway, and hands it over as an ephemeral,
+  non-checkpointed run value — never the user's session token. A refused mint fails closed: a `401`
+  when the member's own credential is the problem, a retryable `503` on an identity-provider
+  outage, and the gateway is not called identity-less.
+- **The gateway re-exchanges per identity-bearing tool call.** Its single shared, in-process MCP
+  client consults an in-memory `(user, audience)` cache and, on a miss, authorises the exchange (OPA
+  — fail-closed once `OPA_URL` is set, and skipped with a warning while it is unset, per the Control
+  Tower's no-op default) before minting a downscoped `aud=mc-service` token that is cached only for
+  the token's own short TTL and delivered out-of-band as the MCP `Authorization: Bearer` header —
+  never as an LLM-visible tool argument. `movie-mcp` forwards it unchanged, so `mc-service` validates
+  the caller exactly as it validates a human request. The exchanged token is bound to *both*
+  audiences — the gateway's client audience mappers stamp the login client alongside `mc-service` —
+  which is what lets the `mc-service` audience check stay unchanged rather than growing an agent
+  special case.
+- **A paused run holds no token.** Only checkpointed graph state plus the non-sensitive
+  `userId`/`threadId` survive a HITL approval, and raw tokens are barred from agent state by a
+  guard. Every resume is itself an authenticated BFF request, so an approval can wait arbitrarily
+  long without any token outliving a single active run segment.
+- **Both tokens are TTL-bounded rather than run-bounded**, each with its own hard ceiling applied in
+  code as well as in Keycloak: the run-scoped delegation token is capped at a few minutes and the
+  per-call downscoped token at at most a minute. This is what makes "lifetime decoupled from run
+  length" true rather than aspirational — size the delegation token to the p99 *active segment*, and
+  never lengthen it to span a pause.
+
+The full call chain and the per-user config model are on [agent-layer](./agent-layer.md); the
+end-to-end auth chain, including the server-held-token and fail-closed behaviour, is
+[Auth chain](../invariants/auth-chain.md).
 
 ## Gotchas
 

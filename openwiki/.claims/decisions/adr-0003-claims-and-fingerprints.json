@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2acd0e47cbbc7aece394bdfd251eed05b5ff440aa50f282bd821bcfefcb94c66",
+  "pageVersion": "sha256:7ce1099bf3f238c1c1bd6f41b0bac514a19001f378ea7fc8f2d1cdbd5e2ec562",
   "claims": [
     {
       "id": "claim_aa5c4b9bf494429e9a92e1207fa1f10b",
@@ -118,13 +118,51 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd15659c6f8e4fb7bd7da97ff6af26bf",
+      "statement": "The Claims coverage mechanism's scope is declared rather than inherited: openwiki/.claims/** and openwiki/.page-manifest.json each carry their own `regenerate, actor: generator` entries in openwiki/policy.yaml instead of falling under the openwiki/** catch-all, which is one of the decision's stated consequences (ADR-0003 §4).",
+      "evidence": [
+        {
+          "resource": "repo://docs/decisions/ADR-0003-claims-and-fingerprints.md#L80-L81",
+          "version": "repo-lines-v1:sha256:ba37ed84efe69f354af95a2d025a55cd4ccd2626ca05b9f9f7b9354472cfafae:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY3ZWE5NDU0MGY0Yjg3MGExZmY2MWE3Yzc2ZGI3YzE2NmI5YjY1Y2JiZTQzY2Q1YmM1Zjk1YzIzNmQ3MTI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYxMWJiOWE2MjZkYjdlMzMzMDhmNThiMTU0ZGJiZGJiOTUyMjFmYjYzZTYwYjdkNWZmZTI5NDdhZTBhNWJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWNjYjM1NDZjYzU5YjAwOTYyOTFkYjM2ZDdiODNiODc1N2EzNmQwOTAwZDFmMjY0NTgxNTVlOTRhMzMwNGYxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzljN2ZkMjM3YTlhZDc5YTdlZWQ0MmY5MjNmZmJkNzI5ODI1OWQ2ZjM5YjFmNGM4MjI1MzdjNzk0MWFmZmNkZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2dfb25269f4244198fe6ebb25ee1e160",
+      "statement": "A V16 break is severe and has exactly one sanctioned rewrite exemption: openwiki refuses the whole run — every slice, every page, before any generation — when a covered page no longer hashes to the pageVersion its sidecar certifies, and the only rewrite permitted to move a covered page's bytes is wiki-maintain's deterministic link-form normalization, which carries the certified hash into the sidecar and manifest entry in the same step (carryClaimsHash, which declines to launder an already-broken page).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-okf.mjs#L345-L351",
+          "version": "repo-lines-v1:sha256:f50bf0799329c678db43c820eb07630a506af1e5987407a4d0f9cea146751241:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjM0YmQzMzU2ODI3YzJjZmRjM2RlMDM0NmE3ODE1YTA4MjAxMDdhNThkYTlkMzYyYjlmYjk3N2M3YzU2NDE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmFlOWI4OWQ1MmFhMTM5MDNmMmQ5YTRjNGNhZmVkY2VjZjMyN2JjYzAxYzc3OTU0ODE2ZmIxODhiMGY1NGFhNyJ9"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L101-L123",
+          "version": "repo-lines-v1:sha256:cec3223c9405b700fb9d7e62cf80d2200f3f19cf7d528c82999375a227ee30a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMmQwZTZjZDU0MjViYzhiMDQzZDBjNGJhNjE3OTg5NTAwMjYzYzYwOTBhN2Q1M2Y3ODFhOGUzNTcyMWI0YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YWE3NGMzMjQxNGM0NjA0YzA4MDFjYTA2OTdmYWIzMzMzNDE2MWZhZGNmZTM1Nzg1YWM5ZjE0NTY4NDM5MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTE0N2I5NTJjMDBiZDAzODVkZTU3MTgyMjYyMGJlZDQ3N2IxYTBjNDNlYmZmMmM5ODRmNjVlMzY5NTY1MmEifQ"
+        },
+        {
+          "resource": "repo://scripts/openwiki-claims.mjs#L43-L90",
+          "version": "repo-lines-v1:sha256:75d13521348e277d5a276d9b2279c5d772df7084f4ba6e7817a529c6732dc1d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYzQ3MWU5NWZjNDM0ZDAyMmYwMjY4MGZmMmY2YzdmNTk1YWNlYzI0YzFhNmIwMzVlNmM1NmExMWUzZjY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NmZjMGVmM2U5ODNkM2I1YjczYWFjMDk4NTU0ZTU2ZTNkYzJjNDczNmI3ZGE2NGU2MjcxODgzMDNiMDU3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMmQ5MWIzZDIyMTIwYTZiODA5MjU2OWU1MTJmZTYyZWYzYjRiNDM4Y2RiNTM5NGFhYzVjMjYyODIyMWU3YjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d78ec95c74bc41afbb7d03aad2b22648",
+      "statement": "G13 runs as part of the always-on, offline and keyless `okf` guardrails job on every push to main and every pull request (selftest plus scan, alongside the OKF conformance gate), so an authoritative page that acquires Claims coverage fails a pull request instead of only being detectable locally.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L234-L243",
+          "version": "repo-lines-v1:sha256:74916bfe65f98e07a58b0ad66685a47e929772e71353e28a41bbbcc289c49612:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYzY1YzlkMTkzMzVlODYwZDQ3YjViZjRmNzhlMzU1ZjMxNjExODQwNWUxM2ZjMDAyYzY3MmVkYjBmYjgxNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZjNmYTk4ZjMwNDUxOGRlZjk3NmUxMzMwNmY0NThkMDExZGJiZDExMGRkYzg3OGZiMjE4YTEyMDhkMjRkNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzODM2NGRkYmYwNTUwY2VlMDgwMTQ4NmM2ZmNhYTMxYjdiMzBlYWI5M2ExMTYyZmVlNDk1NjRiMzk0MzIzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNTQ0MWViOGMyNjhkYjM4Mjg4YTk0NGE5NjVmOGQyNGU4Njc4NTZiYTNmYWY0YzRlMWJhNmZmYTI0OGU2YzUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }

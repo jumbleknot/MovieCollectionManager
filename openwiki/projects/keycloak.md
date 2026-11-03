@@ -120,7 +120,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+    at: 2026-11-03T00:30:54.344Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -274,9 +274,32 @@ that costs is local coverage of the refresh path, and the substitute is named ra
 the 2-per-30 s bucket, its 429, and the `refresh_rate_limited` audit event are covered by
 `tests/integration/rate-limiter.integration.test.ts`. Production stays at 300 s: no security control
 was relaxed anywhere. **A running Keycloak keeps the old value until the realm is re-imported**, so
-raising the number in JSON changes nothing for a stack already up. The E2E spec that proves the
-refresh recovery chain does not depend on the number either way: `agent-session-refresh.spec.ts`
-clears the access cookie explicitly instead of waiting for expiry.
+raising the number in JSON changes nothing for a stack already up. The 5400 s values, the
+`e2e-worker-session` guard that pins `ci-realm` above the job timeout, and the `globalTeardown`
+`refresh_rate_limited` counter all remain in place; what changed is the E2E spec's mechanism.
+
+**`agent-session-refresh.spec.ts` no longer drops a cookie.** Before feature 085 it cleared the
+`mcm_access_token` cookie explicitly so it could prove the 401 → refresh → retry chain without
+waiting for expiry. Since 085 the client holds no token at all — the member's access and refresh
+tokens live in the BFF's session, sealed with AES-256-GCM — so there is no cookie to drop, and the
+spec instead ages the session's **server-held** access token. `tests/e2e/web/setup/bff-session-store.ts`
+connects to the dev BFF's Redis (`localhost:6379`, db 0) and rewrites the `session-tokens:<sessionId>`
+record's `accessExpiresAt` to `0`, preserving its TTL. That is possible by design: `session-tokens.ts`
+keeps the two expiry times in clear beside the sealed blob and *outside* the AAD, precisely so a test
+can age a session without the encryption key — and editing them cannot extend a token's life, because
+the JWT's own `exp` is validated on every request.
+
+What the `@gate` spec then asserts is that renewal is *transparent* rather than client-driven: the
+protected route (`/bff-api/auth/user`) still answers `200` on the very request that finds the token
+expired, with no `401` and no `mcm_access_token` / `mcm_refresh_token` cookie in the response; the
+server-held expiry moved forward; and `POST /bff-api/auth/refresh` — still the client's fallback —
+succeeds on the session cookie alone and re-sets nothing but `mcm_session_id`. The cookie jar is
+checked for the two retired token cookies at baseline too. So the spec still proves the refresh path
+independently of the realm's `accessTokenLifespan`, but it now proves the *server* half of the chain;
+the client-side 401 → refresh → retry orchestration over a real refused run is not covered here. The
+keycloak README's own sentence about this spec ("clears the access cookie explicitly") is pre-085 text
+that survived the re-scoping — the surrounding claims (dev and CI at 5400 s, prod at 300 s, local dev
+therefore not seeing realistic expiry) are unaffected.
 
 ## RFC 8693 token exchange
 

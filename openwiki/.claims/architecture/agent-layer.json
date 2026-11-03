@@ -1,18 +1,26 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0029fc31766cfe14b99a062eb48111f69c4c4a43c823646481c264cbc27ef156",
+  "pageVersion": "sha256:0daf26bae84a09f8b54e32aa1f33966cb4c3ed1a09aa5281f93af775a98d22f6",
   "claims": [
     {
       "id": "claim_55a137e8983d44999848085f7192d594",
-      "statement": "The agent layer call chain routes identity through two successive RFC 8693 token exchanges: the BFF exchanges the user's session token for a short-TTL, run-scoped delegation token handed to the Agent Gateway as a non-checkpointed value, and the gateway's shared MCP client exchanges that again for a further-downscoped, aud=mc-service, short-TTL token attached only to the individual tool call.",
+      "statement": "The agent layer call chain routes identity through two successive RFC 8693 token exchanges: the BFF's confidential agent-subject-token client exchanges the member's session access token for a short-TTL, run-scoped, audience-narrowed delegation token handed to the Agent Gateway as a non-checkpointed value, and the gateway's shared MCP client exchanges that again for a further-downscoped, aud=mc-service, <=60s token attached only to the individual tool call.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L131-L140",
-          "version": "repo-lines-v1:sha256:10a8d69decb2fa50d8b2fe39cd9b6dd6fd10ea75ea8e0d84fe7ee02d88c0d615:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYzdkYWIwYTgyMzA1MzJlYjdmMGY1Y2Y5ZDU0ZDFmMzE2MGU2OGQ1MGVkZDJmMGQxN2ZiYmMxYjIwMDg1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MTlhYmZiMjJkNTA0MzMyNzVkMjYyNmYyMTk3ODFmNDA2Y2MzYzRkMWNmZjA3YTVkYTcyZTE1NDk0MWZjNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py",
+          "version": "repo-file-v1:sha256:7a496a6e9530102623bc940881bc4f95ff185b66ce86ff643ee18100fb3b3207"
         },
         {
-          "resource": "repo://docs/runbooks/agent-layer.md#L1-L10",
-          "version": "repo-lines-v1:sha256:2e373a30df8349944d2beec5d43c90cf6d4e564075a4f05efaccb4c600ed1963:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1OTJkMjI0Zjc1MmMzNGVjYTc1ZDk5NzNjYTM5ZTA4ZTJlZGQ0YjgzZGNiMGE1ZDVkNWJiYWRlNDY3ZWQ1ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNGFmMTc1M2I4Yjk4ZWU1Y2QzM2RmNTAxYWExZmI1ZDE3MjQ5MWExZjgyNjAzZmI3ZWI2NzA3MWI3N2RmNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0Y2VhNTYyMjI5YWI3NjBjMWUwZGFkZTVlMDJkY2MxMzQ5NmU5YmE0MzBiMDExNDJhZmU1YjM1ZmQyYmJiOTgifQ"
+          "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py",
+          "version": "repo-file-v1:sha256:4a04b83d831ebd25304c04c9f7fb0b6c450d19bb17a6345536a160ece806a0bd"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts",
+          "version": "repo-file-v1:sha256:6c6ec58c4d880d7590749fab07cf096feb9c6207aaebf6a67df657a77a25c97a"
         }
       ]
     },
@@ -32,11 +40,19 @@
     },
     {
       "id": "claim_c7d8a5f1540c4254a4e84c44b880d9bb",
-      "statement": "A paused HITL run holds no token at all, only checkpointed graph state plus userId/threadId; because every resume is itself an authenticated BFF request, the BFF supplies a fresh subject token on every resume, which is why token lifetime is decoupled from pause duration.",
+      "statement": "A paused HITL run holds no token at all, only checkpointed graph state plus userId/threadId; because every resume is itself an authenticated BFF request, the BFF supplies a fresh run-scoped subject token on every resume, which is why token lifetime is decoupled from pause duration.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L131-L140",
-          "version": "repo-lines-v1:sha256:10a8d69decb2fa50d8b2fe39cd9b6dd6fd10ea75ea8e0d84fe7ee02d88c0d615:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYzdkYWIwYTgyMzA1MzJlYjdmMGY1Y2Y5ZDU0ZDFmMzE2MGU2OGQ1MGVkZDJmMGQxN2ZiYmMxYjIwMDg1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOGE4MWEwNmE0MzBkNDEyYTVlNzUzYmZiOWE4NmIxYmI0MjdmNzRjNDgxMjNkM2Q0OGY1MjAwNTI5YTVkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MTlhYmZiMjJkNTA0MzMyNzVkMjYyNmYyMTk3ODFmNDA2Y2MzYzRkMWNmZjA3YTVkYTcyZTE1NDk0MWZjNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjRkMzQ3YzVjODlkZmFjMjlhYzQ5ZWI5NTllOWQ1MjEyNDZlZTgwNzFiM2IzZjM3M2E3ZDNjZTE5ZjRmMjUifQ"
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts",
+          "version": "repo-file-v1:sha256:c4ad3c9e75f12f97cca1bca0f6307f4573523672222911e11d0a98b1a047ee9e"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts",
+          "version": "repo-file-v1:sha256:640b43a2d4279b108f222868aa7c8fe3a40d25275fd79601ce76687be533bac7"
         }
       ]
     },
@@ -45,7 +61,7 @@
       "statement": "Per-user agent config (feature 018) is off by default, AES-256-GCM-encrypted at rest in the BFF-owned mcm-bff-db (physically separate from mc-db), decrypted only in-memory per run via resolveForRun(userId), and forwarded to the gateway via the X-Agent-Config header; the CopilotKit dock mounts only for a runnable config (enabled + provider credential + TMDB key).",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L142-L152",
+          "resource": "repo://docs/MCM-Architecture.md#L157-L167",
           "version": "repo-lines-v1:sha256:7b6e4c763866ea0dff96416f0faacbe0643abd990a334b032efc28dbce96a172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YzA3YjdmYzY5NjY2ZmViNzhkNDg3MWExNjM1OTg5MmZkN2IzZDg5ODk2OGQ1NTU0Yjg3MTQ2NmM4YjcwM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYjQxMmRmYjIzNjczNDQ2ZGQ5OGUzMmM4NmMxY2VmM2NkMDlmZWEyODAxNmQ1YTMxMTcxZTY2OWQ2NjJkNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZmYxNWJkOGE5Mjg5MjJhYzZiYjI3MjlhZjNmZGEwODFmOTI1NjAzOGM0YWEwMzU2NTc4NjYxOGUzMjU4NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NWIyOTgwYTU5MzgwODc3ZjMzZjhhZWNkNjE0NDU2MjQ2ZWQxZGUwMDE3NzNkN2IyZTEzMDgyYzg1N2ZlZDEifQ"
         },
         {
@@ -81,10 +97,254 @@
           "version": "repo-lines-v1:sha256:dc34c7e3ae97dcbd5aed73095d6dd8dfd68a0eae3884617e9e5e6cb0369f4391:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNjkwZTkzZDBlNzc4MWE2NjQ3YWUyY2YzODgwYzU2MmJkNmQ3Y2ZhNDI0YzU4MGFjMGQ3ZDA4YmNmYzI2NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2OWUzNTExNjg0NjJiYzFjNjk5NzdhZjM3YzQ0ZjVhOGZiYTBhYzliNWFhNTk2NzY4MDg0MjdjYTQzYTljYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzBmOGU2MDMzOGU1OTkyYmJiM2JiMzYxM2RjYTNiMGY4MTZkMjNkMDYxYjdkOTgzYjA5Y2YzNzE3MDA3MDcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6a6672560ba54de88ef2d1e6580034a9",
+      "statement": "A refused run-scoped subject-token mint fails closed: Keycloak rejecting the member's credential yields 401 AGENT_IDENTITY_REJECTED (client renews once, then sign-in) and an outage, timeout or non-credential error yields retryable 503 AGENT_IDENTITY_UNAVAILABLE, with the gateway never called identity-less. Keycloak 26.5 answers a revoked or malformed subject token with 400 invalid_request \"Invalid token\" rather than the RFC's invalid_token, and that exact description is required because invalid_request is also used for configuration faults that are outages, not credential rejections.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts",
+          "version": "repo-file-v1:sha256:6c6ec58c4d880d7590749fab07cf096feb9c6207aaebf6a67df657a77a25c97a"
+        },
+        {
+          "resource": "repo://specs/085-bff-auth-fail-closed/contracts/bff-auth.md",
+          "version": "repo-file-v1:sha256:239581358273dd70444f39eac5eab7fea31dd2833e50be160ea51d890e500049"
+        }
+      ]
+    },
+    {
+      "id": "claim_75e6693cf1ad41bfabe194e534da9248",
+      "statement": "Since feature 085 the member's Keycloak access and refresh tokens never reach the client: they are sealed with AES-256-GCM beside the Redis session, bound to the session id and owner, and renewed by the BFF itself at most once per session at a time behind a short Redis lock (a second concurrent renewal would fail because Keycloak rotates refresh tokens). The client holds exactly one credential, the opaque mcm_session_id cookie, and a bearer credential presented to the BFF is refused in every environment.",
+      "evidence": [
+        {
+          "resource": "repo://docs/MCM-Architecture.md",
+          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts",
+          "version": "repo-file-v1:sha256:a62a4c136bbb801673b421d631ab4eca34c27877a2aa26fb699d060d6c491f5b"
+        }
+      ]
+    },
+    {
+      "id": "claim_00e98c8adcc64c2cbccc131c92fbc767",
+      "statement": "The gateway's per-call downscoped token is obtained by an OPA authorization check followed by the re-exchange and an in-memory (user, audience) cache; the cache expires entries 15 seconds ahead of the reported lifetime because expires_in is measured at mint time while mc-service validates the JWT's real exp, a skew added after a long bulk apply hit clustered 401s at each TTL boundary.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py",
+          "version": "repo-file-v1:sha256:7a496a6e9530102623bc940881bc4f95ff185b66ce86ff643ee18100fb3b3207"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d9b2231a5e0408eae05ae9b997a27dc",
+      "statement": "OPA authorizes each token exchange with non-sensitive inputs only (user_id, audience, agent_origin) and fails closed when OPA_URL is set (any deny, non-2xx, malformed response or unreachable engine denies), while an unset OPA_URL skips the check with a warning; the exchange itself sends no audience parameter, relying instead on the agent-gateway client's audience mappers to stamp aud=[movie-collection-manager, mc-service] so the unchanged mc-service accepts the token while mc-service remains the agent-origin binding signal.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/opa.py",
+          "version": "repo-file-v1:sha256:5f21ffb3ff700262ca7a8b3533a8f5642a906cca6ccf29ab19322e327886e509"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py",
+          "version": "repo-file-v1:sha256:4a04b83d831ebd25304c04c9f7fb0b6c450d19bb17a6345536a160ece806a0bd"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf49c703a266498c814f13ba458169cb",
+      "statement": "The downscoped token is never an LLM-visible tool argument: it is injected as the MCP request's Authorization Bearer header by a dynamic httpx auth object reading a request-local ContextVar set synchronously just before the call, and it is injected per request rather than as a client default header so a credential-bearing auth object cannot outlive its call.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py",
+          "version": "repo-file-v1:sha256:5b21e9dfe55e1e40067e8c4ecde77ba11cc0222607cd79a7ad71b06040ba5065"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1551624c8c24389bccad03cc622bb72",
+      "statement": "The no-token-in-checkpointed-state invariant is enforced in code, not just documented: state.forbid_token_fields raises before any state is persisted when a top-level state key's name looks like a credential (token, jwt, authorization, bearer, secret, password, credential, api_key, apikey, agent_config), and an AST token-leak scan over the agent and MCP source trees fails the unit tier on a logged token-named variable.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/eval/token_leak_scan.py",
+          "version": "repo-file-v1:sha256:f033f6af525703e6795395fd10aaf39c1c648dd8e591dec1af97c37cbf63798c"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/state.py",
+          "version": "repo-file-v1:sha256:5d786c76d9b63fe55083de7f71eb8d61d25a6662fb9542e34da54def1d3c31ac"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5f11efc8b574bcaa4c447f50d95199b",
+      "statement": "The BFF binds each CopilotKit thread_id to the first user who uses it (Redis SET NX, TTL equal to the session's absolute window) and refuses any later cross-user use with 403 before the gateway is reached, closing a preview-disclosure gap where a user presenting another user's thread_id could read the checkpointed proposal even though cross-user writes were already blocked by DAC.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-thread-owner.ts",
+          "version": "repo-file-v1:sha256:317a462a6e611486a07d765b4a9ba7682560580fd2a56764d53873c8ed1a50b4"
+        }
+      ]
+    },
+    {
+      "id": "claim_99a8568bcef54a9caf944b97b288cab3",
+      "statement": "Every per-run value the BFF supplies to the gateway rides as an HTTP header (Authorization, X-UI-Snapshot, X-Import-File, X-Agent-Config), is captured into request-local ContextVars by pure-ASGI middlewares, and is bridged into config[\"configurable\"] at IdentityAwareAGUIAgent.prepare_stream, because a ContextVar set at the ASGI boundary does not reliably propagate into LangGraph's per-node executor tasks.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/agui_identity.py",
+          "version": "repo-file-v1:sha256:e17021e2b51e2f5d35b7b11d5edbf52a8d505a6b7c236b27ee4c9a293d1e7602"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_context.py",
+          "version": "repo-file-v1:sha256:7dc51bc8bbc413e23971898c1ffc1887a35ee4056e408938ebc61525dc2da185"
+        }
+      ]
+    },
+    {
+      "id": "claim_2929f475300f44f5918e1f9aee17c40f",
+      "statement": "The BFF classifies each agent POST as a billable LLM run or a non-billable CopilotKit handshake read by GraphQL operationName, defaulting to billable; only a billable run resolves the per-user config, enforces the cost ceiling and accrues the turn estimate, while the rate limit and cross-user thread guard apply to every POST, and the UI-snapshot and single-use import-file bridges are gated on the same billable signal so a handshake cannot consume a pending upload.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
+          "version": "repo-file-v1:sha256:bf1a9224301c8a2e9854e03bc20cb9c2a6e607e8ec126698e23ad0e7faba28c6"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts",
+          "version": "repo-file-v1:sha256:aa32b99290ee099b6bb70ee380ef25d3a39ef5ca798fb19512aaf90154c0cf7c"
+        }
+      ]
+    },
+    {
+      "id": "claim_7eecc6dcfb8c46a7a64e4908ad7ecd84",
+      "statement": "The per-run agent config header carries only the four gateway-relevant fields (provider, ollamaBaseUrl, anthropicKey, tmdbKey) — the per-user costLimitUsd stays BFF-only — and the TMDB key is additionally attached out-of-band as X-TMDB-Key only around web-api-mcp calls, so it is never sent to a user-identity MCP server.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py",
+          "version": "repo-file-v1:sha256:5b21e9dfe55e1e40067e8c4ecde77ba11cc0222607cd79a7ad71b06040ba5065"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts",
+          "version": "repo-file-v1:sha256:640b43a2d4279b108f222868aa7c8fe3a40d25275fd79601ce76687be533bac7"
+        }
+      ]
+    },
+    {
+      "id": "claim_36125236d87543389556301efcfd6675",
+      "statement": "The canonical search-cancel control is routed in the supervisor before the classifier call, above the classifier's exception handler and the error-rate breaker, but below the kill switch: an escape hatch that can be classified away, or that depends on a healthy provider, is not an escape hatch. It is also refused while an add stage is live, and the stage-free route matches the whole message exactly (trimmed, case-folded) rather than by substring or bare synonyms, which would hijack a real title or steal the cancel reply from the import and organize flows.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py",
+          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/search.py",
+          "version": "repo-file-v1:sha256:1374093c99aed28ffb109b968de7653129277c649440e010c70b7f9180864f4a"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a928787ffcb4648ab5d49d510d8c024",
+      "statement": "Every stage-continuation guard in the supervisor is paired with a matching *_STATE_RESET, an ownership-stage reply is resolved against the pending question BEFORE the classified intent is consulted (otherwise a prose-like answer such as \"Selected: none\" classifies as query/search and silently discards the in-progress flow), and the curator carries its own copy of the ownership-stage passthrough set so an add's bare answer is not run through entity extraction — meaning a new stage requires updating both graph.py's guard and curator.py's passthrough.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py",
+          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/nodes/curator.py",
+          "version": "repo-file-v1:sha256:8e34142e7fbc9cf29c3ac74d042490339d331424fb4d7b2987875f64c0db1038"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c98f90e30cf47f0b824f642d05ccf76",
+      "statement": "The generic degrade reply has exactly two sources — the supervisor's classifier raising and the breaker already being open — while the curator, organizer and query degrade sites fail on the specialist model; ErrorRateBreaker is fed by exactly one signal, circuit.record(...) in the supervisor, so an open breaker always means the supervisor's model call is failing and never that a tool, MCP server or rate limiter failed.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/circuit_breaker.py",
+          "version": "repo-file-v1:sha256:79db2d499c8b901276d1994e8aac90cdc54a6e2dbfa6710e7a45b1c041d42317"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/src/graph.py",
+          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb483a44335d4d12a54ceff9707c34b6",
+      "statement": "The import flow checkpoints only a small opaque import_handle across clarification turns, with the parsed spreadsheet stashed once in spreadsheet-mcp's transient store and its TTL refreshed on every read, because re-serializing the whole parsed workbook per turn was the checkpoint bloat behind a large import timing out; the upload store is single-use while the parsed-handle store is not.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py",
+          "version": "repo-file-v1:sha256:ec799e01786ab6af3a77a396c8e4720a2788f6d97d1af8ea269d80fde013e0e5"
+        },
+        {
+          "resource": "repo://mcp-servers/spreadsheet-mcp/src/store.py",
+          "version": "repo-file-v1:sha256:ec8375f56ac8a3146099119bab114cd191548b86f4adcbb627c057e2feeea79d"
+        }
+      ]
+    },
+    {
+      "id": "claim_add839aeaa0a483498ce11f653d43878",
+      "statement": "An assistant-added movie's rated value is the film's real first non-empty US certification from an appended TMDB release_dates block, validated against {G, PG, PG-13, R, NC-17, NR, Unrated}, and an unknown certification becomes a present \"rated\": null key rather than an omitted key or a substituted \"NR\" — omitting it 422s the add because CreateMovieDto types rated as Option without serde(default), and there is deliberately no PG-13 to PG13 rename because mc-service rejects the unhyphenated form.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/proposals.py",
+          "version": "repo-file-v1:sha256:c70cda43ab36c69fd9914f605b6287d7848a038ff9ebbfa13e416d26c2d68fd6"
+        },
+        {
+          "resource": "repo://mcp-servers/web-api-mcp/src/tools.py",
+          "version": "repo-file-v1:sha256:ed551b5b20870b452f8ed722aa4b7f37afda3501480f5c44c25598af6858b6e2"
+        }
+      ]
+    },
+    {
+      "id": "claim_16dabc1ec2704c22b90bbc3b81226226",
+      "statement": "Three distinct generative-UI selection tools exist with fixed names: render_selection (selection-options) serves the navigator clarify, import picks, search scope, the 040/047 ownership Yes/No and the 059 children's Yes/No; render_disambiguation (disambiguation-options) serves only the curator's ambiguous movie-candidate list; render_multi_select (multi-select-options) serves only the 047 media-format and rip-quality toggles.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/generative_ui_tools.py",
+          "version": "repo-file-v1:sha256:5d5e9fa262483607ad1d440e22a4f9db3c9a844f259d49e02d0afbbe0f161665"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md",
+          "version": "repo-file-v1:sha256:c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b"
+        }
+      ]
+    },
+    {
+      "id": "claim_7adbbd4f6cf64e289ddaa0b305ac73ed",
+      "statement": "LangFuse, OpenTelemetry/Grafana, OPA and Unleash run under the observability profile while the OpenSearch append-only audit sink runs under its own separate audit profile, and every one is env-gated to a no-op when unconfigured so the agent layer works in a plain dev environment with none of them running.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md",
+          "version": "repo-file-v1:sha256:c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b"
+        }
+      ]
+    },
+    {
+      "id": "claim_4926d8c0ee664a7d8afab3e1d9145dfe",
+      "statement": "Agent test tiers encode three rules: a change touching routing, a guard or a *_stage must be driven through build_graph rather than a node function, because a node-level test bypasses every supervisor guard and stage check; a build_runtime_graph(force=True) test must stub all three model seams (extract, plan, query_extract) and set spreadsheet_mcp_url, or it passes while exercising nothing; and the integration tier must be run with MCM_REQUIRE_LIVE_STACK=1 because a skip caused by an unreachable MCP server otherwise reads as a pass.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/runtime_nodes.py",
+          "version": "repo-file-v1:sha256:ec799e01786ab6af3a77a396c8e4720a2788f6d97d1af8ea269d80fde013e0e5"
+        },
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/conftest.py",
+          "version": "repo-file-v1:sha256:3ba1a2bff7a0169e89b20d869019dd8c244394f2e8d520646d17b14fc92f4fbb"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md",
+          "version": "repo-file-v1:sha256:c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-27T16:58:28.669Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-11-03T00:30:54.344Z"
   }
 }
