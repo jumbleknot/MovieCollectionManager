@@ -304,6 +304,33 @@ test('dispatch inputs are validated, not merely quoted', () => {
   assert.match(raw, /must be a git ref/);
 });
 
+// ── the repository coordinates exist on EVERY event (item #613 follow-up) ───────
+// `FORGE_REPO: ${{ github.event.repository.name }}` held while this job was push-triggered. A SCHEDULED
+// fire's payload carries no `repository`, so after #917 every fire planned, then died at the forge
+// client — "needs FORGE_API_BASE, owner, repo and FORGE_TOKEN" — runs 6539-6569, every 30 minutes.
+// GITHUB_REPOSITORY is set by the runner for every event, as reap-merged-branches.mjs already relies on.
+
+test('no step reads the event payload except dispatch inputs — a scheduled fire has no payload to read', () => {
+  for (const s of steps()) {
+    const text = `${s.run ?? ''}\n${s.if ?? ''}\n${JSON.stringify(s.env ?? {})}\n${JSON.stringify(s.with ?? {})}`;
+    const reads = [...text.matchAll(/github\.event\.([A-Za-z_.-]+)/g)].map((m) => m[1]);
+    for (const r of reads) {
+      assert.match(r, /^inputs\./, `step "${s.name}" reads github.event.${r}, which a schedule fire does not carry`);
+    }
+  }
+});
+
+test('the forge owner and repo come from GITHUB_REPOSITORY, and a malformed value is refused', () => {
+  assert.deepEqual(WIKI_MAINTAIN.forgeRepository({ GITHUB_REPOSITORY: 'jumbleknot/mcm' }), { owner: 'jumbleknot', repo: 'mcm' });
+  for (const bad of [undefined, '', 'mcm', '/mcm', 'jumbleknot/', 'a/b/c']) {
+    assert.throws(() => WIKI_MAINTAIN.forgeRepository({ GITHUB_REPOSITORY: bad }), /GITHUB_REPOSITORY/, String(bad));
+  }
+  // And --propose actually uses it: the env names the workflow no longer sets must not be read.
+  const src = readFileSync(join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs'), 'utf8');
+  assert.match(src, /forgejoClient\(forgeRepository\(\)\)/);
+  assert.doesNotMatch(src, /FORGE_OWNER|FORGE_REPO\b/);
+});
+
 // ── credentials (FR-023, FR-024, FR-025) ────────────────────────────────────────
 
 test('only pre-existing secrets are referenced, and they stay distinct', () => {
