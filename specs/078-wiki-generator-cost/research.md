@@ -509,3 +509,42 @@ a separate decision about the shared runner.
 - *Every 15 minutes:* half the lag, but twice the queued jobs on a runner that was hours deep on
   2026-11-01.
 - *A longer scheduled window:* not this option, and a runner-capacity decision.
+
+## R20: invocation size, by pages and not by source (item #613, operator decision 2026-11-03)
+
+**Question.** Item #613 asked for invocation size to account for source size, not just page count. Would
+that keep an invocation inside a scheduled run's ~49-minute generator window?
+
+**Measured.**
+- 35 invocations ended on their own (`measured-invocations.json`). Correlation with their duration:
+
+  | Predictor | r |
+  |---|---|
+  | total lines of the cited `repo://` sources | 0.39 |
+  | pages requested | 0.37 |
+  | pages written | 0.27 |
+  | largest single page's sources | 0.25 |
+
+- The same page varies up to 4.3× from run to run: `runbooks/server-setup.md` took 689, 1912 and
+  2958 s. The last is longer than the window on its own.
+- Over 85 single-invocation runs since 2026-10-08, the share stopped at the job deadline by pages:
+
+  | Pages | Stopped |
+  |---|---|
+  | 1–2 | 37 % |
+  | 3–4 | 46 % |
+  | 5–8 | 69 % |
+
+  No invocation of 5 or more pages ended on its own.
+- Caveat: source sizes are today's, not those at run time, and most runs used the older ~37-minute window.
+  The gradient is the finding, not the absolute rates.
+
+**Decision.** Cap an invocation at 4 pages, and the slice cap with it. Retire the source-size criterion. Keep
+the deadline stop and carry-forward as the backstop, because no size rule can bound run-to-run variance.
+
+**Rejected.**
+- *Pack by total source lines:* predicts no better than page count.
+- *A longer scheduled window:* fits the 2958 s page, but costs up to an hour more of the shared runner per
+  generating run.
+- *Drain the backlog on a quiet `main`:* a backlog that keeps failing would re-run every 30 minutes at
+  about $1–3 a run. The operator kept carried pages waiting for the next merge, or for a dispatch.

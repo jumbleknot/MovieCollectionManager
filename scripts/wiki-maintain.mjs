@@ -28,7 +28,7 @@
 //
 // ── The budget, declared (FR-011a, FR-011c, FR-011d) ────────────────────────────────────────────
 // Feature 044 declared 16 pages and 20 minutes per run; feature 078 (research R9) replaced that with
-// one 8-page invocation and a 4-minute STARTING budget — see the constants below (C6). Neither budget
+// one invocation (8 pages, 4 since item #613) and a 4-minute STARTING budget — see the constants below (C6). Neither budget
 // interrupts work under way; in CI the job deadline (#613) does, by stopping the generator.
 //
 // The wall-clock budget bounds runner occupancy (FR-011c): there is one CI runner, app-e2e is ~35
@@ -307,8 +307,12 @@ export function mergeRunRecords({ base = {}, ours = {}, theirs = {}, isAncestor 
 /**
  * The largest slice feature 043 delivered reliably — and it delivered it twice (FR-002). Advisory as
  * far as the generator is concerned (research R2); binding on what the planner will ask for.
+ *
+ * 8 → 4 on 2026-11-03 (item #613), with MAX_PAGES_PER_INVOCATION: a slice may never exceed the
+ * invocation cap, because the planner always admits a run's first slice whatever its size — an 8-page
+ * slice would still be an 8-page invocation. FR-002's 8 is a ceiling, not a target.
  */
-export const MAX_PAGES_PER_SLICE = 8;
+export const MAX_PAGES_PER_SLICE = 4;
 
 /**
  * The cap for pages that DO NOT EXIST YET, which is much lower — and this was measured, expensively.
@@ -333,8 +337,14 @@ export const MAX_NEW_PAGES_PER_SLICE = 3;
  * per area, so a run touching N areas used to plan N times. Packing same-kind slices into one
  * invocation pays that once. Provisional at 8 (the slice cap); research R9 sets it from a measured
  * multi-area run on openwiki 0.6.0.
+ *
+ * 8 → 4 on 2026-11-03 (item #613, operator decision). Over 85 single-invocation runs since 2026-10-08,
+ * an invocation of 5–8 pages was stopped at the job deadline 69% of the time (1–2 pages: 37%; 3–4:
+ * 46%), and none of 5+ pages ever ended on its own. Sizing by SOURCE lines was measured and rejected:
+ * it predicts an invocation's length no better than page count (r 0.39 vs 0.37, n 35), because the
+ * same page varies up to 4.3× run to run. The cost is a backlog drained in more, smaller runs.
  */
-export const MAX_PAGES_PER_INVOCATION = 8;
+export const MAX_PAGES_PER_INVOCATION = 4;
 
 /**
  * Group consecutive same-kind slices of DIFFERENT areas into invocations of at most
@@ -837,7 +847,7 @@ export function computePlan({
   };
 }
 
-/** 082 FR-003: drifted pages planned per run, at most. With PAGE_BUDGET 8 it leaves 6 for other work. */
+/** 082 FR-003: drifted pages planned per run, at most. With PAGE_BUDGET 4 it leaves 2 for other work. */
 export const DRIFT_PAGES_PER_RUN = 2;
 
 /**
@@ -1398,7 +1408,8 @@ export function runMaintenance({
 //
 // Sized 2026-09-28 from measurement (feature 078, research R9, operator sign-off: "~8 pages per run,
 // timeout 60"). On DeepSeek V4.1 Flash at page concurrency 4, one invocation of up to 8 pages is two
-// waves of page workers and measured 15–23 min. RE-DERIVED 2026-11-01 (item #613) from the committed
+// waves of page workers and measured 15–23 min; HALVED to 4 pages on 2026-11-03 (item #613) when the
+// run records showed 5–8-page invocations stopped at the job deadline 69% of the time. RE-DERIVED 2026-11-01 (item #613) from the committed
 // run records: invocations that ended on their own took up to 2958 s, so WORST_INVOCATION_SECONDS
 // allows 65 (the same +30%), and the guard test derives it from that fixture. The job timeout has
 // to hold the in-job debounce sleep, setup, the start deadline, one worst-case invocation and the
@@ -1406,7 +1417,7 @@ export function runMaintenance({
 // guard test's own arithmetic caught a 5-minute first draft at 4). In practice a run is ONE invocation —
 // a second starts only if the first finished inside 4 minutes — and
 // a retry happens only after a fast failure; anything else is carried to the next run. Declared
-// EFFECTIVE CEILING: ≤16 pages / ~69 minutes of generation (FR-011a) — MORE than a scheduled run's
+// EFFECTIVE CEILING: ≤8 pages / ~69 minutes of generation (FR-011a; 16 until item #613 halved the invocation) — MORE than a scheduled run's
 // ~49-minute generator window (60 − setup and the quiet check − DEADLINE_RESERVE_MS; it no longer waits
 // inside the job, 078 R19), so a worst-case invocation fits only a dispatched run; a scheduled run
 // stops it at the deadline and carries it (#613). The guard test derives the
@@ -2602,7 +2613,7 @@ function selftest() {
     changedPaths: [],
     backlog: [{ area: 'gotchas', pages: Array.from({ length: 20 }, (_, i) => `p${i}.md`), reason: 'x' }],
   });
-  check('planner caps slices at 8 pages', big.every((s) => s.pages.length <= MAX_PAGES_PER_SLICE),
+  check(`planner caps slices at ${MAX_PAGES_PER_SLICE} pages`, big.every((s) => s.pages.length <= MAX_PAGES_PER_SLICE),
     `sizes ${big.map((s) => s.pages.length).join(',')}`);
 
   // ── run message ───────────────────────────────────────────────────────────────

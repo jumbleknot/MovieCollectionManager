@@ -165,7 +165,7 @@ test('the module never reads or writes the tool-owned .last-update.json', () => 
 
 // ── E1/E2: the planner ──────────────────────────────────────────────────────────
 
-test('slice bounding: no slice exceeds the 8-page cap', () => {
+test('slice bounding: no slice exceeds the slice cap, and no packed invocation the invocation cap', () => {
   // 8 is the largest size feature 043 delivered reliably, and it delivered it twice (FR-002).
   const pages = {};
   for (let i = 1; i <= 19; i++) pages[`runbooks/page-${String(i).padStart(2, '0')}.md`] = `docs/runbooks/src-${i}.md`;
@@ -180,7 +180,14 @@ test('slice bounding: no slice exceeds the 8-page cap', () => {
       assert.ok(s.pages.length >= 1, 'an empty slice is not a slice');
       assert.ok(s.pages.length <= mod.MAX_PAGES_PER_SLICE, `slice of ${s.pages.length} pages exceeds the cap`);
     }
-    assert.equal(mod.MAX_PAGES_PER_SLICE, 8);
+    // 8 → 4 on 2026-11-03 (item #613): the slice cap may not exceed the invocation cap, or one slice
+    // alone becomes an invocation over it (the planner always admits a run's first slice).
+    assert.equal(mod.MAX_PAGES_PER_SLICE, 4);
+    assert.ok(mod.MAX_PAGES_PER_SLICE <= mod.MAX_PAGES_PER_INVOCATION, 'a slice must fit in one invocation');
+    for (const g of mod.packSlices(slices)) {
+      const n = mod.partsOf(g).reduce((k, part) => k + part.pages.length, 0);
+      assert.ok(n <= mod.MAX_PAGES_PER_INVOCATION, `an invocation of ${n} pages exceeds the ${mod.MAX_PAGES_PER_INVOCATION}-page cap`);
+    }
     const all = slices.flatMap((s) => s.pages);
     assert.equal(new Set(all).size, all.length, 'a page must not appear in two slices');
     assert.equal(all.length, 19, 'every page must land in some slice — chunking may not drop work');
@@ -311,11 +318,11 @@ test('run-message rendering names exactly one bundle area', () => {
   assert.deepEqual(named, ['gotchas'], `exactly one area may be named, got ${named.join(',')}`);
 });
 
-test('run-message rendering carries all 8 pages of a full slice', () => {
-  const pages = Array.from({ length: 8 }, (_, i) => `page-${i + 1}.md`);
+test('run-message rendering carries every page of a full slice', () => {
+  const pages = Array.from({ length: mod.MAX_PAGES_PER_SLICE }, (_, i) => `page-${i + 1}.md`);
   const message = mod.renderRunMessage({ area: 'invariants', pages, areaExists: false, reason: 'r' });
   for (const p of pages) assert.ok(message.includes(p), `run message must name ${p}`);
-  assert.equal((message.match(/page-\d\.md/g) ?? []).length >= 8, true);
+  assert.equal((message.match(/page-\d\.md/g) ?? []).length >= mod.MAX_PAGES_PER_SLICE, true);
 });
 
 test('run-message rendering is deterministic for a given slice', () => {
@@ -674,13 +681,16 @@ test('budget: page counts come from the working tree — an over-reporting gener
   }
 });
 
-test('budget: the defaults are the 078 R9 decision — one 8-page invocation per run', () => {
+test('budget: one invocation of at most 4 pages per run (078 R9, item #613)', () => {
   // Updated 2026-09-28 (feature 078, research R9, operator sign-off): the generator moved to a slower,
   // far cheaper model at concurrency 4, and one 8-page invocation measures at 15–23 min (two waves of
   // page workers). The time budget is a START deadline, so it is sized to leave room for one worst-case
   // invocation inside the job timeout — which makes the run ~one invocation, i.e. ~8 pages.
   assert.equal(mod.PAGE_BUDGET, mod.MAX_PAGES_PER_INVOCATION, 'one invocation\'s worth of pages per run');
-  assert.equal(mod.MAX_PAGES_PER_INVOCATION, 8);
+  // 8 → 4 on 2026-11-03 (item #613, operator decision). Measured over 85 single-invocation runs: an
+  // invocation of 5–8 pages hit the job deadline 69% of the time, 1–2 pages 37%, 3–4 pages 46%; none of
+  // 5+ pages ever ended on its own. Source size predicted duration no better than page count (r 0.39).
+  assert.equal(mod.MAX_PAGES_PER_INVOCATION, 4);
   assert.equal(mod.TIME_BUDGET_SECONDS, 4 * 60, 'a start deadline, not a run length');
   // 30 → 65 on 2026-11-01 (item #613): derived from the measured fixture in wiki-maintain.guard.test.mjs.
   assert.equal(mod.WORST_INVOCATION_SECONDS, 65 * 60, 'measured 2958 s worst that ended on its own, +30%');

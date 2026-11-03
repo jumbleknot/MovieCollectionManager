@@ -16,7 +16,7 @@ pnpm nx wiki-plan infrastructure-as-code --args=--json
 ```
 
 The planner decomposes the documentation changes since the last recorded run into **slices**: at most
-**8 pages**, exactly **one bundle area** each. It makes no model call and needs no credential, so
+**4 pages**, exactly **one bundle area** each. It makes no model call and needs no credential, so
 there is never a reason to skip it before spending. Read the plan; then run it.
 
 The plan shows what was **requested**. openwiki adds to it on its own: every page with a stale or
@@ -105,8 +105,9 @@ key or a blocked egress host costs one token, not a slice.
 
 ### Sizing a slice, and why the message must carry the SUBJECT
 
-The planner asks for at most **8 pages** when *refreshing* existing concepts, but at most **3** when
-*creating* new ones, and it never mixes the two kinds in one slice.
+The planner asks for at most **4 pages** when *refreshing* existing concepts (8 until item #613; see
+[The budget](#the-budget)), but at most **3** when *creating* new ones, and it never mixes the two kinds
+in one slice.
 
 > **These two numbers were calibrated against a broken configuration, and nobody has re-measured them
 > since it was fixed.** The evidence for the creation cap — 8-page creation slices "defeating three
@@ -304,16 +305,16 @@ continues where it left off.
 
 ### The budget
 
-**One 8-page generator invocation per run, in a 60-minute window (120 when dispatched)** (feature 078, research R9 — operator decision,
+**One generator invocation of at most 4 pages per run, in a 60-minute window (120 when dispatched)** (feature 078, research R9 — operator decision,
 2026-09-28). The constants live in `scripts/wiki-maintain.mjs` (C6) and the guard test *derives* the workflow's
 `timeout-minutes` from them, so changing one without the other fails offline:
 
 | | Value | Why |
 |---|---|---|
-| Page budget | 8 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`) |
+| Page budget | 4 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`); 8 until item #613, see below |
 | Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries; it never stops an invocation, the job deadline does |
 | Job deadline | window − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of its window (see below) |
-| Worst-case invocation | 30 min | 8 pages at page concurrency 4 is two waves of workers, measured ≤ 23 min |
+| Worst-case invocation | 65 min | the worst invocation that ended on its own (2958 s), +30 % (item #613) |
 | Window (schedule) | 60 min | the shared-runner hold. No wait inside the job since item #613, so generation gets about 49 minutes |
 | Window (dispatch) | 120 min | the whole job, for the work a scheduled window cannot hold (see below) |
 | Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a scheduled run is held to its 60-minute window by the deadline, not by this |
@@ -321,13 +322,31 @@ continues where it left off.
 So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
 after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
 page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
-backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤16 pages / ~69 min
+backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤8 pages / ~69 min
 of generation**, re-derived on 2026-11-01 from the committed run records (item #613): the worst invocation that ended on
 its own took 2958 s. A scheduled run's generator window is about 49 minutes (it was about 37 while the run waited out
 the quiet period inside the job). That holds the median invocation (1636 s) and only just the measured worst, not the
 +30 % ceiling of 65 minutes. So the worst case fits only a dispatched run; a scheduled run stops it at the deadline and
 carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
 generator says it wrote.
+
+**Why 4 pages, and not a cap by source size** (item #613, operator decision 2026-11-03). Over the 85
+single-invocation runs since 2026-10-08:
+
+| Pages in the invocation | Runs | Stopped at the job deadline |
+|---|---|---|
+| 1–2 | 59 | 22 (37 %) |
+| 3–4 | 13 | 6 (46 %) |
+| 5–8 | 13 | 9 (69 %) |
+
+No invocation of 5 or more pages ever ended on its own. Sizing by the cited sources' line count was measured
+and rejected: across the 35 invocations that ended on their own it correlates with duration at 0.39, no
+better than page count (0.37). The same page varies up to 4.3× from run to run: `runbooks/server-setup.md`
+took 689, 1912 and 2958 s. No size rule can guarantee a fit, so the deadline stop and carry-forward remain
+the backstop. The slice cap is held at or below the invocation cap, because the planner always admits a
+run's first slice whatever its size. The cost is that a large backlog drains over more runs. Carried pages
+wait for the next real merge, because the quiet check counts commits, not the backlog. Dispatch a run to
+drain them sooner.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
 event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `schedule` gets `SCHEDULE_MINUTES=60` — so the runs
