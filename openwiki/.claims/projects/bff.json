@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2a65e5fc8f791c8dafc482ce725479581b547ca8a046b02e208a6aa2e825dd26",
+  "pageVersion": "sha256:476ca33ac4194b1e6d1205a88eafa25ed25fe34b0e2dff0516801cc2c461516a",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
-          "version": "repo-file-v1:sha256:724b5b9089b13e383ab8c88b18a3a4397f538d99929db13022c84b6ce4ecae5a"
+          "version": "repo-file-v1:sha256:bf1a9224301c8a2e9854e03bc20cb9c2a6e607e8ec126698e23ad0e7faba28c6"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts#L55-L75",
-          "version": "repo-lines-v1:sha256:da74140921faa16dd44c4b2157471a5c172ac017dd0220365bf0612ac1972eb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNzQ3MDdhZTcwZWFmYmFkNzBlZTQ1ODI2MDk4Nzk2NTJhNzE1ZGY2Yzk1ZjFlNDc1ZTNmMTNlYWNlODQwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhM2E4ZGUwYjE0YmZhNTc1ZjJlOGVlNjkxYTk2ZTc0NTM5M2M4YWIxYzEwYTk2YzZlOGJiMmM5MGM2NmIxNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZjI0NzFhMDNjNzRhM2JjZjRkMjhkZDFlYTUzMTkyZWVmYzYwNzQ1NjlhOTczMTljNDYxZWUwN2UzYTk1Y2YifQ"
+          "version": "repo-lines-v1:sha256:8d46979b84a87fdfb0afbe6f797c37e8aefb234ce3985ea86041f2a008a38859:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNzQ3MDdhZTcwZWFmYmFkNzBlZTQ1ODI2MDk4Nzk2NTJhNzE1ZGY2Yzk1ZjFlNDc1ZTNmMTNlYWNlODQwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhM2E4ZGUwYjE0YmZhNTc1ZjJlOGVlNjkxYTk2ZTc0NTM5M2M4YWIxYzEwYTk2YzZlOGJiMmM5MGM2NmIxNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZjI0NzFhMDNjNzRhM2JjZjRkMjhkZDFlYTUzMTkyZWVmYzYwNzQ1NjlhOTczMTljNDYxZWUwN2UzYTk1Y2YifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
@@ -256,7 +256,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L56-L75",
-          "version": "repo-lines-v1:sha256:c57e6f14d2f6a530e043b7d3b524ba89d446216fcb64cfb9ef4c2833b8e9d1f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzM2U5OGIzMGE1ZDEzMjgzNmMzM2UyYTcyMTk4Y2RhZjFmZmFiOGQ2YjRhYzljYzkxNTkyYzUzZDczZDEyNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMzBjYWM0MWYwMDZjY2IwMDk0MjI1NjRkMWIyOWIzOGE5ZWRkYWUxZDNkNzYzZGZjNzFlMmUzZDkwOWQ3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNmE2MDQ0OGVlMTM0Y2ZkNGEwNTZhYTJiOTM3N2U3NDM3MTk2MGNlYTllM2RjNTE3YTQ3Y2VhODMzN2M2NjAifQ"
+          "version": "repo-lines-v1:sha256:0274dd89c939092c13df3c6cd853fbef8805c12f5103784bfec2ff57ffb11c89:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzM2U5OGIzMGE1ZDEzMjgzNmMzM2UyYTcyMTk4Y2RhZjFmZmFiOGQ2YjRhYzljYzkxNTkyYzUzZDczZDEyNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MWU4M2IzYTc0M2FjNzJiMDRjNzE0ODFlMDA4MTlmZmQ0MzUxZDI3Yzc2NTg1MzYxOTU0NjY4YjMwNjJmMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTZiZWFlMDA5MmY0YTRiMTM0ODYxMTJhZWRmMDUwODU2YzVjYmI2YWFjYjI5ZGFlODE5NmRjNDMzYjZlMjEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/account-step-up.ts#L20-L23",
@@ -321,7 +321,7 @@
           "version": "repo-lines-v1:sha256:7c073857b6d0485da043f72cec7a845a47de9544d73c36234f0a22727b98f720:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMGYzMTkyYWU5NTZlM2NlZTg3MGI2YzRhYmQ4NjRjYzIzZjMwZWM0OTQxYmY1OGNmOTQzODQwYjRiNjdjZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYWQyYmYzZmY2NTY5NDZhNjFkMWJlNTVlMWJmNmFlOWEzODVhMmMxOTI5ZjA0NDBjMjMxMGEyMjkwMGJhOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNTgwNDcxMzg2ZWZiZDkxMmU0NDY2MDA3Mzc0MGMwNzg3ZjBiYTM5YjA5MDUyZDIzMjZkOWE1NjIyYjgxYjgifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L346-L359",
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L386-L399",
           "version": "repo-lines-v1:sha256:2dd9548d967a8f24b6955dc4e62897d7cb77962022df1bf6f8c3e1ce4100dee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2E4ZWMwODBmZTAxNjYxYjk0YzkyN2ZiZTkwYTIxMDg4M2UyYmUwZDRlZTg1MTY1NzQyODE0NDMwNTk1NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MWEzNzc1YmJiZTEyNjc2YmRjYTI3OTFlZjM2ZjYwOWI5ZmQ0ZmMzNTBmYzQyMmQyMjE0N2VlMjdlYTNkYTgifQ"
         }
       ]
@@ -332,7 +332,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/account/delete-challenge%2Bapi.ts#L39-L54",
-          "version": "repo-lines-v1:sha256:a2a7af39ed2c6a70f27dc8c4b931a4da74bfa9c38cbab130797a4d251194f37e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOWFkYmMwYzNkNjQyYWUzMzRjYjllNWU1YmU1YTJmMTE3MTI5ZWQ2ODllNjA5YWMwYTAwNmY2ZDA4OGUzNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMWNlNjE0YmFiMmZiZGNmMmM2MjBhMDVjNDI4YmZjNGUxOGJlMDM1OGMwMjMyNWI4ZTQwMDg4NWZjZWUwNGUifQ"
+          "version": "repo-lines-v1:sha256:8d436d0ecfeea887b66b3da723698218d0521d587779b526b4a65a121d7a6f40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOWFkYmMwYzNkNjQyYWUzMzRjYjllNWU1YmU1YTJmMTE3MTI5ZWQ2ODllNjA5YWMwYTAwNmY2ZDA4OGUzNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMWNlNjE0YmFiMmZiZGNmMmM2MjBhMDVjNDI4YmZjNGUxOGJlMDM1OGMwMjMyNWI4ZTQwMDg4NWZjZWUwNGUifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L73-L82",
@@ -410,7 +410,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/backup-route-support.ts#L1-L100",
-          "version": "repo-lines-v1:sha256:ea6f9589628fb56e216c52de6d9c13d7c1774183648af61678470045d1b51584:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTFmM2NmMjU3MmNhMjIwYWFhMzgxMmMwYmM1ZTE2OTdhZDRkZjRiYjEwMjBiZWIyZTVkZmQwMTQyNDdkYWE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZWY1MDM2NTc5YWQ0NjIxOTI5M2IxZDgwMTM1MTNhMjIwZGI5NTM5ZDFlMzcyMzcxZGQyMGY4ZDZjNGJjZGM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MGJmOWEyNTc0YWIzNWMwZDNkNWNmMjA0NGIzMGNhYjY4Yjg1Y2Q1NWJjZDg4MTM1YWU2ZDg3ZmQ1NWYyZGE4In0"
+          "version": "repo-lines-v1:sha256:6b4bce42e737986fb152852b627e4d62fe7f9502df9ceb5a4bce986ff609c430:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTFmM2NmMjU3MmNhMjIwYWFhMzgxMmMwYmM1ZTE2OTdhZDRkZjRiYjEwMjBiZWIyZTVkZmQwMTQyNDdkYWE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZWY1MDM2NTc5YWQ0NjIxOTI5M2IxZDgwMTM1MTNhMjIwZGI5NTM5ZDFlMzcyMzcxZGQyMGY4ZDZjNGJjZGM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MGJmOWEyNTc0YWIzNWMwZDNkNWNmMjA0NGIzMGNhYjY4Yjg1Y2Q1NWJjZDg4MTM1YWU2ZDg3ZmQ1NWYyZGE4In0"
         }
       ]
     },
@@ -441,7 +441,7 @@
           "version": "repo-lines-v1:sha256:59e24405f0cfc60c256def7db5a01a833e4b839f8b31b0599e58d06ea4983962:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzJlNWFlNjk2YjBjNWI2Y2FjNTdjZGQwZTMxNjcwZjEyNzZlYzY0ZmQxYWMyNzkwODRkZDI2NGYwZDVlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmY2ZlY2JjOGFjZjE5ZGY3MzY4Zjg0MTQ4MDQyMzE5NTNhZGFiODM5ZmY3Zjg3NjBiMDBlNTU3ZGQ4NThkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L464-L530",
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L482-L548",
           "version": "repo-lines-v1:sha256:14f43ab1e6de9a63f244fcc42eba7f0c41f0a2976f401fa5100dabbab44730f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMWM0NDYxMGFiZDc3NTk1YzNiZWRmN2RhOGU4ZjE4NTQwZWFiOTUxZGRiY2QxNDRhZWQxOWMyYTg0NTlhZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMTBkZjA2YTcwYzQ0OWI1YTAyMWYxZWQ2YzQzNDY2OTk5NTkzMTQzYjAyNGYyNGMxNjU3OGZkNzQ3NGNhZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
@@ -452,11 +452,15 @@
     },
     {
       "id": "claim_4a99e21809f14ce5b0e3f4d5a0b3b81b",
-      "statement": "Three auth cookies cross the wire and nothing else: the access token and session id are scoped to Path=/ while the refresh token is scoped to Path=/bff-api/auth/refresh only, which is what makes it unreachable from an ordinary API request; all three are HttpOnly and SameSite=Strict and Secure outside development, and the clear-cookie set mirrors those attributes exactly because a browser may decline a clear whose attributes do not match the cookie being removed.",
+      "statement": "Exactly one cookie crosses the wire to the client, and it is not a token: the opaque `mcm_session_id` session reference, scoped to `Path=/`, `HttpOnly`, `SameSite=Strict`, `Secure` outside development, with `Max-Age` equal to the absolute session lifetime. The member's access and refresh tokens are sealed beside the session server-side (AES-256-GCM, with the AAD bound to the session id and its owner) and never reach the client. The two retired pre-085 token cookies (`mcm_access_token`, `mcm_refresh_token`) are still *cleared* — each at its own original `Path`, the refresh one at `/bff-api/auth/refresh` — because a browser may decline a clear whose attributes do not match the cookie being removed, but nothing reads them.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L130-L163",
-          "version": "repo-lines-v1:sha256:545071908cb83f4475e9a84cbaa9a528b93785017e827d07f95ceb7df578a4e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MjMwN2M5MTY5YmQyNmViYjFmMDMwNGFkODBkMjllNjQ5NTc2OTMzMjMyNmI2Yzk3OGYxMzRhZGRjMWU2NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L168-L192",
+          "version": "repo-lines-v1:sha256:2ae62439ce381c4bdda3713672441d6576303665ce5416035442a2b2332873a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MjMwN2M5MTY5YmQyNmViYjFmMDMwNGFkODBkMjllNjQ5NTc2OTMzMjMyNmI2Yzk3OGYxMzRhZGRjMWU2NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L58-L85",
+          "version": "repo-lines-v1:sha256:df13ad250204e10af8435117028fd1cf261c0df1b017a6ca040eaf9a482bf517:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGU0MTU3MjBjY2FlMzc3ZTE4MDFmODNmNDgyMjMyYjljNGEwZGM2NDkxZTZiNmM5YjVmMGNlMDIyMWQzMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwODA2Y2IzODgyMmY1M2Y1ZmUzYTk5ZmFiZmZjYWUyNjRhYjRjNTFmNDhkNDkyNDc0Mzc1YmQ3NmMyNjMzNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNmRjMjc4ZWE3NzQ0MjFiNzllNDA0OTk5OTc4NjY3MDEwMzEyZWZmNGRmNGQ5M2NlOWFmNGU1OTJjNTgwN2MifQ"
         }
       ]
     },
@@ -476,11 +480,15 @@
     },
     {
       "id": "claim_9d96b80572a14a2aa87092e7d1c6ad5b",
-      "statement": "POST /bff-api/auth/logout terminates only the caller's own session: the handler authenticates first and acts on the session id only when the session record's userId equals the authenticated subject, so an unauthenticated request carrying a victim's X-Session-Id cannot force-logout them; refresh-token revocation and IAM-level SSO termination (logoutUserSessions) then run only for that authenticated owner.",
+      "statement": "POST /bff-api/auth/logout terminates only the session the caller's own cookie names: the session reference comes from the `mcm_session_id` cookie (the only credential now that the client holds no token), the owner is read from that session record, and a request naming a victim's session any other way — the `X-Session-Id` header the original session-side-effect finding named — changes nothing, while a request with no cookie at all clears cookies best-effort and returns 200 without touching state. Revoking the server-held refresh token at Keycloak, ending the member's SSO sessions via the Admin API (`logoutUserSessions`) and deleting the session with its tokens then run only for that resolved owner; the endpoint is rate-limited at 10/min per IP against forced-termination DoS.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts#L28-L64",
-          "version": "repo-lines-v1:sha256:fa9849613753db313a233d9fd3ebbfad18948a36a0abf74f9762d81efafd8a67:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjdhYTc2ZWI3NTg2ZWU0YzY1YjU2OTMxZWQ0NTlmM2IyZmRhN2RiZmMyZWZkMjIxMWY3YzBkZjc3OTIzNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOTNlMTI5MDZhNjFmZDVjMDg5ZmVlOGZjYWZkOTUyZTU3YTU5MDlhMjQ5ZGQxMjUwOTQ5OGQyNzFhNzFjOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYWFmNWFiOTZjMWQ4ZjJiNGY1MWFhNGM1MWRlNjg5ODE4YmY1NzQwOTUyOGU3ZWZlZTEzYzBlZDJjYzFlMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NmNjNmE4ZGI4YjM3YTIxMGM4OTBiNzg2ZmU2NTc3NzRiZmQ3ODg1NmI0MjQxNTM0YjdiNzViN2Q5Y2Y1ZDMifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/logout%2Bapi.ts#L25-L64",
+          "version": "repo-lines-v1:sha256:79b30be39a9c7fbfd602aaf5cf450ff49eb13f8754fef0e84b7d61875e55e70f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNDNjYmIxN2Q0YzcyMzFmNTUyMWE3YjY4OGNjOWM0OTFjYTc0NzEyMTE5ZjU5OWY2ODhlOTJkNGNlNTI4YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNDI5MTYzMDk4OWQ4OGU2ZDVkN2VjOTEwYTg4YjY3YjM1Y2ZmYTU5NzY0YTM4YTdhOWU1M2FkM2NmYTQ3YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkOTM5NGQ1Njc2ODA3OTMxZDA1NGE0MjIzMTBjMTljMTBhMmZmZTliOTg3MWU0NWJiYTU0MzJiOTRjNmI5MjgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/integration/auth-session-side-effects.integration.test.ts#L72-L87",
+          "version": "repo-lines-v1:sha256:d5822b342c1ad2c7cebee5026ccf7286fb802abc0a0b519fd7faa23db2397733:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZTI5ODk2YTE1MjE0MjZjZGY2NWI5OTQzZTBkY2I1YzI1MTRhOTgzODg3YWE2OWY0MThlZjA1M2ZhMWY2Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZTIwNDkzMGZlY2Q2YTI0OWYzN2JhZTEyOGNmMWE0MGM0ZDI1NjI0NWRjYmI3OWRmOWYwZjk2MmFkMmFiMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjYyZTAxZTdiYTkzNTFiNzI3NDIzNDhjNWZhYmY0ZGYzNjE3NTc2ZDEyM2M1ODdmMmFmYTYxOWZmNWVkNjUifQ"
         }
       ]
     },
@@ -653,11 +661,11 @@
           "version": "repo-lines-v1:sha256:b95bb55df3f892a59294c6d6093b0e3fc0d8fffc4f12b27a46a036f869716c57:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmOTk1ODNlNTU4Yjg0YjVjZDMwZGY5OTJjZTY5MWFhN2IxOTA0ZDViMjY1MTYyOWE0MTc4OGQ5NTNiODg1ODcifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L252-L268",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L248-L264",
           "version": "repo-lines-v1:sha256:cfeaba2376c740975ebe821eeb8a1aefcd8e9dec5da2031be7f0baac9c7504c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYWE4YmY2OGVhMDI2NjJhYjUxNmE2Yzk5MWM3Zjg0ODJkNjFjODlkNDNiZTgxYjA5MzExNjEzMzMyMDMzYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YWNkNjZiMTlkOGY5YTg0NjY3M2RjYzNmYjlmNzIyNTRjYzhkNzIxZmRmNDkzYWFiZmJhZmU2YzJkNWM5ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MTkwZTI2Zjk2OThjZGVjZTU2MTRhZmU2MjllMTRjMGM3YmEyOTllNjM2ZmRkNmIyMjBlZWU3OTNlZTk5MDYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L274-L277",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L270-L273",
           "version": "repo-lines-v1:sha256:9f66189d7a9121eb6296de9dddb00819c64f17559ecfda7a0945e71d169e4c71:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI5N2MxMDY0ZTdhMDZlMmU5ZDQzNmMwYzJiYTk5NDIxMjU5NDk5ZTMwYTEwYmFlODM4MDg5M2E3YmYyMTUzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYwOTVjYWFmZTRlNmU2ZGE0NmQxYjEyMzZmODU0N2EzMTViYjVlY2ViNzlkNmNjN2UwZGY5MDBkNGFhMDVjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRhYmQwMjQ3ODRmMDkyYTUwODk4M2JjZThlMTlhYmJkNTMzMGE0OTg5MTIzODU0ZDRkNGYxMjA3ODNhYjgxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
         },
         {
@@ -671,7 +679,7 @@
       "statement": "The agent run route classifies a CopilotKit runtime POST as billable by default-deny on the GraphQL `operationName`: only `availableAgents`, `loadAgentState` and `hello` are non-billable reads, and a missing, spoofed, non-string or unparseable operation name is treated as billable so the cost ceiling cannot be dodged by relabelling a run. The per-user request rate limit and the cross-user thread-ownership guard apply to every POST, while the cost ceiling, the per-turn cost accrual and the runnable-config resolution apply only to a billable turn — gating the handshake instead would lock an over-budget user out of even opening the dock.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L132-L205",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L128-L201",
           "version": "repo-lines-v1:sha256:83dc220941b16debe35af4eb697f9d61d86d11a05cefcae1c1b7e1c8591aa2b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNzBkZTVkYzRhMzAxM2I5YzgxMDQxM2RhZTVlMWUxMjk0ZGVmM2ZmNTk1ZTM4Njc3ZWU0YTBjY2ZlMzIxZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NTRkYThkMTEzNTZjNjZiYmVkYTg2ZTQyNGU3ODlkODliNTNlZDVmNDk5MjBhYjg1NmExZmZlYjE2ZWIwMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYTkwZTNmZmQ0N2YxMGI3ZGRiMGU5ZjZmZGU2ODllY2M3YzJiZTE1ZTU1NjNjMjFlNTdmZGYyMmNjN2YyMDgifQ"
         },
         {
@@ -689,11 +697,11 @@
       "statement": "A billable agent run requires a runnable per-user config (enabled + provider credential + TMDB key) resolved via `resolveForRun` BEFORE any rate-limit accrual or gateway call; when none resolves the route answers `{ type: 'assistant_not_configured' }` with HTTP 200 and performs no model or TMDB call, so an un-opted-in user costs nothing. The decrypted credentials then ride the `X-Agent-Config` header for that single run only — never the request body, never persisted, never logged.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L156-L170",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L152-L166",
           "version": "repo-lines-v1:sha256:1a2a90b55a6abdbdb24ea8cc81b98d748b2c116ce76b4c2a1723348626dcbbed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYWRmZTVkOGIxYzY2Yzk4MTgzMzQ1ZjA2YmM1OGNhOTBhM2Q0MzZlOWIxZTdhNzE4NTA4YzY5ZTBhZDg5OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YjQ5YjkzZTEyYjFjYThhZGZlNTVkZTcyZDgxNWZkNWVkZGYzZjY1NDk0N2QwZjg2YjRiYjc2OGQ1MjA4MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODdiNDZkZjVhOTQ2MzdiZjM1MDhlZmVjNDAwNzA3NGM2ZTczOWQ5ZmViZTJhOGE2YWNmNTU5YmRmZjA4MzEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L221-L249",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L217-L245",
           "version": "repo-lines-v1:sha256:35cdbc73a0a38142ada61e4c1e61b73db94941d3c97e05bb8eb8398d22dd6de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NGI4OGNmYTVjOTQwZmVkMGYwYmNmMThhYTU1YmEyNWY4ODY0YzFiZDVjNDBlZmVmZThiMmY2ZGFhYTVjYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDU1NGVkYWNhYjhmOGZlYTRkNTEyNmFmY2QxMTIxNGE3ZjQ3NjM4NzVhOTg1MTY0NmYzODIyNDdhMThkYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMTc3NDBiYjZmY2M3ZDJiM2I3MTBlMGYzNzIwZTQ0YjZmMmExNmIzMTMyODQwZWI1N2ZjMzJmY2M3OTI4Y2YifQ"
         },
         {
@@ -708,7 +716,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L206-L220",
-          "version": "repo-lines-v1:sha256:49b4697e1de4e4a6260159e17ed6ee65b8cf5a9720d4b10097baea110e615862:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMjI2ZjE2M2ZjNWE3YTVjNzZlZmQzZDcyNDk0YzQ3YTYwM2VhODdkZjhjYjNkMmUyNGYxMWUwNDY5YmFhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMGQ4ZGUzZDM4ZWFkNDliZGM5ZDA1ZTYzZDBkM2NhN2IyNmI4ZjZhOTM4MWEzNjM1NTIyNjA0N2UzZjU1MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlMmI1NmZmNmU1ZjBkMTIyNDhiNzQwOWIwYTc5MDk5OTJlYTNmMWQzNzc2NjY1ZTgxNjUxZGRhNGMyZWE4NjQifQ"
+          "version": "repo-lines-v1:sha256:219dcb38ce1e5a9f20362b4a97170f5b970fbcbf9a656e64381eb5a1e53e62e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMTQzNTI5MzUwMjRhZmQ0Yzk4OTBkNWU2ZDdjMTM2ZjI5YjA2M2Y4YTBiMjAyYmNhNTE5NzNmNTcyZTI5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOWY1OTQ5YmFjYzdmYjQwNjA4YWE4Y2JjMTcwYWRhZmQyYTQ1YjIxN2ViZjVjNTVlODMwMWFkMmIyZjQxMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3N2FiYWVhMjJiNDFjYmIzY2UwMmRhMTU4NTNkYTE0ZmYyNWJkYTRhMzU5ODk3N2QxY2Y5MmYwNGI0NmYwYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMzA3YWFlNDE4M2VhM2EyNjU3YmU4MDVkN2EwZDhhNmVjODJiODMzM2NmZjg1MzcyNzAxYjg1YjBkYjk0ZTUifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/ui-state%2Bapi.ts#L1-L46",
@@ -725,7 +733,7 @@
       "statement": "A client-supplied CopilotKit `thread_id` is bound to its owning user before any gateway call, because the gateway keys its LangGraph checkpoint solely on that id and an unbound id would let one user resume another's thread and see the checkpointed proposal preview. `enforceAgentThreadOwnership` claims the thread atomically for the first user via Redis `SET ... NX` and throws 403 on a later mismatch, with the TTL set to the session's absolute window so threads expire with the session; a Redis outage surfaces as a typed 503 error rather than a silent bypass.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L56-L59",
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L52-L55",
           "version": "repo-lines-v1:sha256:ea6655c43c02517d106899d83c6ac81a5a0a1bb2db5e55c3de59292edd359f2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjN2Y3YTVjZmY1MTdjZmM0MzVlOWQ5MDkyMWJhOTc5OGNiMTFmOTZiY2JkM2M1NmQ0ZjgzZGRhODRmZTM5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlNjgwOGVkZDcwYjFhMzJkODdmNTE2YjA5NWFkNzc1ZTE1YTRjNjMyMTJmM2ZhMWNjNGQwYTZlMWUwZTYzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDFjMWNmOGFlMzgyZGE3MzRiNjJiNjhlYjhlMTcwNDIxMjgzZGU5YTc5NjI5NmRjZTUxODgxZjRmNzE4NzQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTYwOWE3MGI1NTNkZjgxNDMwZTY5ZjIzNWNjZWNlMzkxMjNlNWVmOTU4YzMwMjYwMWY3ZGU2YTJlMjViZGI0YyJ9"
         },
         {
@@ -733,22 +741,22 @@
           "version": "repo-lines-v1:sha256:317a462a6e611486a07d765b4a9ba7682560580fd2a56764d53873c8ed1a50b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L362-L387",
+          "resource": "repo://frontend/mcm-app/src/bff-server/cache-service.ts#L402-L427",
           "version": "repo-lines-v1:sha256:b79f437688154a1a9a9256a27f9afce92776c672fe5d238d54cdb868d393794b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjA0NjQwNTViMTQyYmUzODg4NDQ4MmE1ZjM5NDA5YjQ0NTUxZGNmODM3MjBhYTE0OWUyM2IzMmM5ZmEwZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzNTUyNDM2OGUwNjU5YjI5N2RkYWI5Yjc0OTI2ZjhkZGY1NzA4YWFlYWZhNDk5MjE4OGE4ODRmMmI4ZDQyMmYifQ"
         }
       ]
     },
     {
       "id": "claim_68c8c5247af94db5a521838944f9e247",
-      "statement": "On each run and each HITL resume the BFF performs its own RFC 8693 token exchange to mint a run-scoped, audience-narrowed delegation token (a defensive hard TTL ceiling of 180 seconds on top of the reported expiry, and a 5-second timeout on the exchange call) and hands that to the gateway instead of the user's session access token; the minted token is never logged, never checkpointed and never returned to the client. The mint is no longer best-effort: a refused exchange propagates out of resolveSubjectToken as the route's own response before the gateway factory is reached, classified as an auth refusal (401 AGENT_IDENTITY_REJECTED, which the client renews from once and then signs in) or a transient one (retryable 503 AGENT_IDENTITY_UNAVAILABLE with Retry-After 5), and only an unconfigured exchange or an absent user token skips the mint so the turn runs as before. A resume always mints a fresh token because a paused run holds none, which is what makes pause length irrelevant.",
+      "statement": "On each run and each HITL resume the BFF performs its own RFC 8693 token exchange to mint a run-scoped, audience-narrowed delegation token (a defensive hard TTL ceiling of 180 seconds on top of the reported expiry, and a 5-second timeout on the exchange call) and hands that to the gateway instead of the user's session access token; the minted token is never logged, never checkpointed and never returned to the client. The mint is no longer best-effort: a refused exchange propagates out of resolveSubjectToken as the route's own response before the gateway factory is reached, classified as an auth refusal (401 AGENT_IDENTITY_REJECTED, which the client renews from once and then signs in) or a transient one (retryable 503 AGENT_IDENTITY_UNAVAILABLE with Retry-After 5), and only an unconfigured exchange skips the mint so the turn runs as before. A resume always mints a fresh token because a paused run holds none, which is what makes pause length irrelevant.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L29-L48",
-          "version": "repo-lines-v1:sha256:5ff6777bc2b71a4e7a08b589e9dea555f61681ea044d892ee012704f1a7c3f9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4ZjJjYTViNzVkNDBlYjg3ZGEyODczMWQ1NjAwMTliM2MyY2Q3ZTg2NTJjMjBkNzkyMjQ2Yjc1MmJmMjM1ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNTdhZjQ3YTJmNWEzNWIxYzIyNWQxYjhmNzgzNjI4OTQwOGQ4YjVjYjk4ZGYzM2Q3YWU3MGEzY2E2MDBiMDIifQ"
+          "version": "repo-lines-v1:sha256:971057f2cae8e472842d110659d71288746aa5d459d2d13001f68de4d8dae242:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4ZjJjYTViNzVkNDBlYjg3ZGEyODczMWQ1NjAwMTliM2MyY2Q3ZTg2NTJjMjBkNzkyMjQ2Yjc1MmJmMjM1ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYzFjZjhhZTM4MmRhNzM0YjYyYjY4ZWI4ZTE3MDQyMTI4M2RlOWE3OTYyOTZkY2U1MTg4MWY0ZjcxODc0MzAifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L57-L73",
-          "version": "repo-lines-v1:sha256:cea6114781b1d7b924456cfe7043eff1eebf08116c5492f3601115dc331bf5b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOGQwOWViZmJlYmQ4N2RmMTExYzQ1NzE4ZTdjMmNhMzAzYjYzYzY2NDZmMTk3MWZlMTRlNTEwZWFhMWM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYmU5MDgxOTVkNTk4NTA5ZTI2ZDlkMzQ3NzljZDRkMjhmZmQ4YTMwZjFkYTVlZGQ5OTU5MDg5ZjRhMTRkYzYifQ"
+          "version": "repo-lines-v1:sha256:2024138e4d824e94f34cd44aacca6de5d5ae8ea840930a0e9514831f1bd2ff4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZDUxZjM0YjYxYjQ0OTBiNTYwZjM3NzEyNWVlMzQ4MDM3NGIyZmI1MTQ2ODc2ZGNlMTUxNmY5NzYxYWRlZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOGQwOWViZmJlYmQ4N2RmMTExYzQ1NzE4ZTdjMmNhMzAzYjYzYzY2NDZmMTk3MWZlMTRlNTEwZWFhMWM1OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNTE3ZmNhOWUxOWI4MzhlZDA5MjdlNTFjNDc3NWE3ZWVhZDc2Mzg1NTIzNjNlYjFlNDI0OWZjMzM3NzMwMzAifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L1-L41",
@@ -756,11 +764,11 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts#L147-L201",
-          "version": "repo-lines-v1:sha256:8ee44139d00f8a7831ba59ce456ca88bc3e82769581f26ac87dddc5ec924ffdc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMDdjOGZlMDNmYzUxY2MxN2QxMmJiOTVmZTMyOTk3MjNlNTUyODY0YjE1ZDJmMjcwZTFkMjM0ZGJhMjQ5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:4c5afbf45bdcb78d9f2a4286d9b8dae21e1d52c33802bdde6e19d7f1cfcb609f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMDdjOGZlMDNmYzUxY2MxN2QxMmJiOTVmZTMyOTk3MjNlNTUyODY0YjE1ZDJmMjcwZTFkMjM0ZGJhMjQ5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L115-L145",
-          "version": "repo-lines-v1:sha256:130350bf004f0f3510058b006a19efcd660daf2dfbfd40c32d4bc627e20bca65:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ODIxNDQ3MzNjY2QyZmZkOTgwZWE5OTM5YzIzN2FmY2M3OWU5NmJjZjhiOTc4NDBkNjI1YjA0YmFhNGNmMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYzZjNjk4ZGMxODBlZTA4NmYzMjFiMzgxYjFhNWRmODBkMjAwODBhYTlmZWJkNzM5ZTgyYTAzYjI4YWZkN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L114-L144",
+          "version": "repo-lines-v1:sha256:130350bf004f0f3510058b006a19efcd660daf2dfbfd40c32d4bc627e20bca65:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ODIxNDQ3MzNjY2QyZmZkOTgwZWE5OTM5YzIzN2FmY2M3OWU5NmJjZjhiOTc4NDBkNjI1YjA0YmFhNGNmMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhYjljMjVhM2JmOGFiYTY2Y2U1MjI0ZDRhZWJlYTJmZjM3YmU4MmMzYjk5M2UzNmVkZDExOTI4MWZlZTQ1ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -769,12 +777,12 @@
       "statement": "`agent/resume+api.ts` is a distinct approval authorization point gated on in-session auth only (no step-up): the decision body is validated deny-by-default so a blank `threadId`/`proposalId` or a decision outside `approved`/`rejected` is a typed 400 that never reaches the gateway, the thread is bound to its owner before the token mint, and every decision is audited. CopilotKit's `useInterrupt` actually resumes through `/run` rather than `/resume`, forwarding `forwardedProps.command.resume`, so the run handler also extracts and audits that decision best-effort without blocking the run.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L47-L73",
-          "version": "repo-lines-v1:sha256:24b1502f2d6b9d4419c033b4ebffcfe2591e3050b69c1cc0c350a03995ec502c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOGIxMTIwNGUzMjBiNmFlMDdhYjZlZjcwNGQxMzk5YzE3ZjE2YWVkNTM0MGEwMDVmOTE0NzJhNzZkMTMzMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmY2ZmZDk1ZjI4NzU4MDRmMDc3ZjI1MjVkY2M2NTRkYzVmYTI1OGIzYTk1NzQ2YmU4NjA0ZDM1YzNjNTg1M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts#L47-L66",
+          "version": "repo-lines-v1:sha256:03399458de409dc70fb58b314da3eed453e5774fffb3c374bbd7914b2d939a7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmN2RjNTA0NzNjYWMxNDQxNWNiOWM4YjYzZjQyNjU3OGNkMmIzYzc0Y2ZkNTBjNTk5ZTBiM2ZiZjdlMTlhMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2YmFlM2E0MTMzYmYxYzUxYTAzYzE1NWJkOGI3MmFmMTc1ZGI2MmU0N2UxYTdiMDM4Y2ExNWUzZDU5MGZmODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NDlhYTU3Y2E1YWFlY2QwMDQ1ZjY1Y2U3MjQxZDgyZDA3NjFhMWE5NTM3NGIxZjE2NWUxYWNhZDAxN2UzYzEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L182-L197",
-          "version": "repo-lines-v1:sha256:52e53429c77660ed049a4b9ecf3d866268b92df24faf6010f9a23050f6fa1174:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MDU0ODEzZGJlZWY3MDdjODBlOWQ2ZTMyMDIzMDhhNDNhZGMwOWQ4YjZhOTZjODg2Nzc2N2E2MDUxN2I3Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYzJlMDA3ZTlkMjg2MTVjYThjNDU0OWZhODY0YzM0MmVhNzAwOWQyYzVjYmRiMGZkYjFkNzRiZTdjNDNlODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYzZlMzA2OWVmM2E2YzMzZWFiNTUwMDgxNTJkN2M3OTU5ZTYyNWJmYWU5YzNjMzllNWI5MTk2ZjA5Yzg1YzYifQ"
+          "version": "repo-lines-v1:sha256:bc87c8774f5eaf04112c321d735d0411c4ee3c4ab1795fdd135eb696af4ce49b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZTYwZmJiZTVmMmM2NGVjNTM2MTI1ZDhhNmNiZGEzNDM5ZjVhYTgyYjRlMGU2YTBhYzg3MDA4MDgzMzM5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3YzNjOWVkY2I5NDcwMWQ0MzJmNTFmMDI2MDgwNDUzNDkxMDMwNjZlOGE1ZWUxOTI2MDFkY2IyNTdlZGFhYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1M2E5NzMzZDA4YzBlYmJlNjk1NTMyZTRkMWY2YmEwNzA4YTU3ZTZmOGY5YzdiOGJlZWRhNGQ3MzdjMzc0ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwMGVlODg2NjcxZTcwMDdlNzYzNDViMTUwODVmODcyMDk2MGU3ZDAxM2UzM2ViNGQ4NWVhZTQxODMxZjM3OWIifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-resume.ts#L27-L62",
@@ -828,11 +836,11 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts#L122-L127",
-          "version": "repo-lines-v1:sha256:64c9cde1084c698324ecab355f4505fa9751e5209e06b0d044af877d84e9238b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUzNmU5MmUzMjg5MTIwMTZjNzQxY2E3YTJjNGEwZTZlODE3ZjdhMTFkNDIxYTUwYzUwNzQ2OTIwN2U2ZDc0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzExN2IyY2Y2ZTVhZTk1MDlhYjE4N2EwOTk0Yzk5NWViNTkwZjdjYzc4YTI2YjJjYjg5Y2Q2ZmY3ZTNlMzIwNSJ9"
+          "version": "repo-lines-v1:sha256:ac039f630d306e5682b41e74c3e82737391c85b5511dae377d668ba6e7e20ef9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY3ZGM1MDQ3M2NhYzE0NDE1Y2I5YzhiNjNmNDI2NTc4Y2QyYjNjNzRjZmQ1MGM1OTllMGIzZmJmN2UxOWEyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZiYWUzYTQxMzNiZjFjNTFhMDNjMTU1YmQ4YjcyYWYxNzVkYjYyZTQ3ZTFhN2IwMzhjYTE1ZTNkNTkwZmY4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE4NGNlMzc0NjI4M2Q1ZGNhOWFkYmM0ZDllNzNlZTQyYjJlMzg5YmFkN2VmZTRmN2IzZDZlOWM3NmM3ODAzYSJ9"
         },
         {
           "resource": "repo://frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts#L1-L98",
-          "version": "repo-lines-v1:sha256:4c5079a3113f27c2eb6a2fd14a43f79aaffc10e0652d0b9ec202efe960cf46ce:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+          "version": "repo-lines-v1:sha256:fc8e37a43a7ff8456de6d535cbd2a1f95ea2fe757c214151d404025e071b5cf6:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
     },
@@ -963,15 +971,15 @@
       "statement": "The gateway factory is never reached on either identity refusal — agent-identity-refusal.test.ts drives both /run and /resume per route with the real AgentIdentityError and the real handleMcApiError, asserting the 401/503 status, the code, the Retry-After and that createMovieAssistantAgent / resumeMovieAssistantRun was never called — and the client half of that contract is split the same way: the agent transport wrapper renews and retries a /run exactly once on the 401 and passes the 503 straight through without touching the session, while assistant-run-failure.ts maps the BFF's code to a member-facing bubble (\"your session has expired\" for the sign-in codes, \"temporarily unavailable\" for the retryable ones) instead of showing the error.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L1-L145",
-          "version": "repo-lines-v1:sha256:c151df99eefce3a6e24d8e913aae8243d412ea74d66cf8f61b46801d46067a0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/agent-identity-refusal.test.ts#L1-L144",
+          "version": "repo-lines-v1:sha256:19ca341bc88de1293bfda2279f55682c47515d014c01862f5d41a1e31083ce79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
           "resource": "repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts#L13-L48",
           "version": "repo-lines-v1:sha256:4712bc59b1f9ce1741e4a2fcfaef527718ee0a2c1d9446d7c03ee5bfd0bbdf80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YjE3Y2Q4N2RlZmQ0YjJmOTk0MzIxZmJhNWJmMThlOGVjYzc5YzY3MGE1OGMwZjJlZmVjOWU5YWI0MDQ2Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MDUyYjFkMTk2ZTA2ZTY3OWFjNTIxYmI0NjlmNTdmYTY2NmQxYzNjZTA0ZTEyZmRlMzYyZmY4NmZiNTUyNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MDQ1ZDY0MDAyZTViNmE4OTMyMjY5NjgyZmJkY2FhYmRhNmVlZTg5YTViYzljMmVmZGU2ZGQ0MjkwODJjMTkifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L51-L88",
+          "resource": "repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts#L50-L87",
           "version": "repo-lines-v1:sha256:4d3e662a3f57dfcadc9a25f88cf95f6d164482af3664ca2e146a0b0b4f84b816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkOTRhYWMwYzVjNzFlMjcyNGI4NDVkNDAyNTgwOTFiYzg4YTY1YjljMWE5NGY1OTFlNTFjMzdkOTI5NTAyNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlN2FiMTlmY2IxNmQ1MjQ0ZWNkN2RmMmNjZGI1NDk0MTA2YmYzMzkzNzM3ZmMwYjFiMzVlMzA2ZDA5YmFmMjcifQ"
         },
         {
@@ -1007,7 +1015,7 @@
       "statement": "ensureClientRedirectUris records a client as done for the process only on a confirmed result — nothing missing, or the PUT answered 2xx — so a rejected update (403, 400, 500) is warned about as redirect_uri_registration_failed with the failing step (client_lookup, client_fetch, update or error) and retried on the next call instead of staying latched until a restart; the mark is keyed on the Keycloak client id, and the function never throws, so the route always answers ok true and the operator adds a missing entry in the console. redirect-uri-registration.test.ts pins each case one client id at a time, because the mark is per client per process.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L464-L530",
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L482-L548",
           "version": "repo-lines-v1:sha256:14f43ab1e6de9a63f244fcc42eba7f0c41f0a2976f401fa5100dabbab44730f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMWM0NDYxMGFiZDc3NTk1YzNiZWRmN2RhOGU4ZjE4NTQwZWFiOTUxZGRiY2QxNDRhZWQxOWMyYTg0NTlhZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMTBkZjA2YTcwYzQ0OWI1YTAyMWYxZWQ2YzQzNDY2OTk5NTkzMTQzYjAyNGYyNGMxNjU3OGZkNzQ3NGNhZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
@@ -1033,10 +1041,74 @@
           "version": "repo-lines-v1:sha256:79ea3ff0d5c9ee3a617aa685a2bd245091e297deff9c2ac1618df2fbf76f35ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMDNlNmQxMzg4N2ZjOTUyYWY0NGMxZDAzOThiZmRmNzJkODQ2ZmZhYmYxYjJkMTkxNjA1Yjc3YzIwZjI1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmN2RlNWVmYjJiYzEyYTI4NTQyOGM3Y2YxM2MyMjU3OTZjODIxZmVmYTgzN2E5YWVjNzdkMzRmMjFhYjg2ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MWQ0MDEwZTlmZDA4NzZiMjNlY2VkNmFkYWVkYjAwMDNkZmQ2ZTk3MzU0OGU5YjIyNjBjZTg5NDU1MWNkNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMWYxOWQ5MjMyYzU1NTYzODc1NjU0Nzc5MTQ2YTcxODE4ZmY0NzFmZDEzY2FlZmZkZDU4MGFlZTljMzcxNmQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_52478c475c914d15946a389bbe0a0c99",
+      "statement": "Since feature 085 the BFF holds the member's tokens server-side: `POST /bff-api/auth/login` exchanges the authorization code and seals the access and refresh tokens in Redis beside the session (`session-tokens:{sid}`, AES-256-GCM, AAD bound to the session id and owner), and the client receives only the opaque `mcm_session_id` cookie. `requireAuth()` reads that cookie and nothing else — an `Authorization: Bearer` header is never validated, in any environment, and no flag restores it; a session with no sealed tokens (created before 085) is terminated rather than migrated; and a bearer presented alongside a valid session cookie authenticates as the cookie's owner. Test harnesses therefore sign in the way members do rather than minting a token.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:11b25d9e40616e47cf03cf0375d199d9134baef9496d2fa6b0eefabb59b29412:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzOWMzMDRkZGY1NTNkYTE2MDJkNTBkOWYyMGQxZTc4ODkwNDVhZDE2NzFlMTNmM2Q3YTdjNGJhZWVhYWE0ZWQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/auth.ts#L91-L100",
+          "version": "repo-lines-v1:sha256:2f05f9d8f0ff9e185d4ae67b6f87fefd21c974f750d47fb211f054c7d34ce2a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNzM3N2ZlY2ZlODNkMTk4M2VlZmM0YjE2ZjM2MWVkMjk5M2FhMWU4MzA4OTQ0MjU4OGZiZjBhN2U5ZGI1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMzhmMzhlM2U5NzJhZmNjYmE4YTdjZTAyMWYxZGE2MzJhNGUwYTM1ZTM0OWU4ZGJjNGZhZmE3MWRkMWQ3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYzMyYmY3OTI5MWEzMjYwNjcyMDU4MDNkYTc0NzI5ODY0MDI0ZTE0M2I5NWM3NmQ5ZWE4MjE5Mjg2YjcxNTAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L1-L12",
+          "version": "repo-lines-v1:sha256:bc150fb240208a475ef3701927c308b1a0ad0091c36de4e31e380e70cc242868:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZjVlYjA2NjQ5YmViNjlhN2UzZDA5ZjE1MGZjZmI1YmI5YTVhZWQwZTBiMmJjNGUxMGYyY2ExMWMxZWViOTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts#L150-L168",
+          "version": "repo-lines-v1:sha256:d03fa77d20bd91bcb4d95eb5048e056296272a6689ea9dafb0e5c5e02c48a3a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2M2NiODM0MzcyY2FjNTEyNGEwODVhMWIwZDlkYzU5YWE0YzhkMDAyYzhhYTcxN2U3NzRjMzkxYjFhNWI1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjZTFhN2EyNmU3MjdiNWY2MGExYzNhMTBlZjI2OTYwYjFiNzRkNjVkMjBlOWEzM2QzYjk2OTM0OTNhNjZhYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6bc56bb9cc104a37839886d9d9ceb4fd",
+      "statement": "Renewal of the server-held tokens happens at most once per session at a time: `ensureFreshTokens` renews when the access token is within `RENEW_SKEW_MS` (30 s) of expiry, taking the `session-renew:{sid}` Redis NX lock with a 15 s TTL, and a concurrent request waits for the winner's tokens (100 ms polls, then 503 `SESSION_RENEWAL_PENDING` with `Retry-After: 1`) instead of renewing a second time — Keycloak rotates refresh tokens, so a second renewal would end the member's session. A rejected renewal (401) deletes the session, while an unreachable identity provider keeps it and surfaces as a retryable 503. The renewed token's `sub` is re-checked against the session owner, and on a mismatch the just-minted refresh token is revoked before the session is deleted.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L49-L54",
+          "version": "repo-lines-v1:sha256:abd4db1eaca78b3eabcea46feaca05ddc7c9253ef935e8d7adf348e8fc2d3f8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA5ZWIyYjYyYTM5YjE3MzNhMGNhYTNlYTVhOTdkMzMxMzA5ZGEzNWUwZDE3MmMxMTg3ODU3MzA0M2Q0OTMwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWMxN2I5ZjBhMWE3ZDMwMDgwNDA0YWNhOTk0MDJjZjg3NDQyZmNiYTUzZTQ3MWZjMjkyMTM0YTc0M2U2NWQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTg3MTIwMjZjMmE2NWM2MThmYTk1MGY1NjJlMmU4ZDA0ZWNjMDIwNDhlZTQzMTExYzc1ZjE1ZjVkODI0ZGE5NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA4MDZjYjM4ODIyZjUzZjVmZTNhOTlmYWJmZmNhZTI2NGFiNGM1MWY0OGQ0OTI0NzQzNzViZDc2YzI2MzM2MSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts#L96-L164",
+          "version": "repo-lines-v1:sha256:ca79a3f19f75a7b8022fa610807cb41719b998990b32285ef915c7958466dab0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7b815ab42f0482bbdfbe8d8c4dd5529",
+      "statement": "Every rate limit is data in `RATE_LIMITS` in `rate-limiter.ts`: `register` 10 per email per day, `registerIp` 20 per source IP per day, `login` 5 per IP per minute, `logout` 10 per IP per minute, `refresh` 2 per 30 s keyed on the SESSION (not the IP), `resendVerification` 3 per email per hour, and `accountDeletion` 5 per IP per hour. Because the refresh bucket is keyed on the session, clients sharing one session share one bucket built for two, so both the attempt and the rejection are audited (`refresh_attempted`, `refresh_rate_limited`) rather than surfacing only as a client-side login redirect.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L146-L173",
+          "version": "repo-lines-v1:sha256:a68b84a79de5b00ff3743aa848a52a1cb2fd3f6a4b6fc206b584254a223e38b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YTU3NWQ4MGVjOTAyODIzNmM1MTExMGMxMWNmZjJkN2MyN2I5Y2Q2YzhhZWNkMWUyMWFiYWNkNzAzZGI5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YTcyMjU4Y2VkZmFiMWFmOWJkZDkwNWU5MzMyNTc4NDI2MWU4MDlmMDU4NTc0NGQyMjQzY2E5NWMxNmU3MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkZGJhNWJmYThhYTVmNjQwYjFiZmFmNWRlOTU4YTc0ZTU3M2I1ZjU5YmQ0OTIxNzBjMGE4NmMyZDNkOGNmY2MifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/rate-limiter.ts#L36-L83",
+          "version": "repo-lines-v1:sha256:447ae447d4d174359314323ffe8f0d30be3b8abddc7c66f5c7ad96e5a37ce0cb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYjQ1YzNiNmMwMjgzMTNmZDQwMzQwOGVkMDYwNTE5NTBmMTA1MGZhMzU3ODhmMjU2Zjk3MjJlYzM3M2M4NGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiYzY4MWFhMjM3ZjllZTVlNTM2YjFjY2QzZWYxNzY1Y2VkOWIyZTZmYTlkZDJkM2YwN2I5NTNiNWZiZmVlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMmFkYzc0ODZkNmMwNjI1ZGEyZGIxMDgzZWVhYzQ5MThlNDNjZmU3ODYyNDQ0MzIzMGFhMmM0NmY5ZDcyMzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a59c4eebf7a0415b873fbc76ad343f6d",
+      "statement": "An infrastructure outage at the login path reads as an unexplained server problem rather than as an infra problem, and which generic failure appears depends on where it lands: a failure of the IP rate-limit counter produces a bare 500 with code `UNKNOWN_ERROR` and the message \"Authentication failed.\", while a failure at session creation is caught separately and answered 503 with code `UNKNOWN` and \"Session creation failed. Please try again.\" — neither is a typed infra error, because the session store has no typed wrapper around its operations.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts#L130-L148",
+          "version": "repo-lines-v1:sha256:e5663ed5b6333acfa2dd0e2891dd9039038e9c7a1c4e6a851b52376c1f8dca92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYzkzNGY1Y2Y1OGMwZmI3NjgwNDhlNTk1MGRmNWI2ZGUyNWY5OTNlNzkzYTNkMWFhOWM3MzZmMzQ1ZmRjNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MDFjYjgyOTg0Y2M5Zjg3NTVlMTljNTBmYzIyMzk2NjNkYWZmNGM5MDQ2MDU5ZjhiYTFjYWY0ZDBlODYxZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts#L96-L104",
+          "version": "repo-lines-v1:sha256:af075a5d2a72fee29795f700cb68c346edbbb4b83e4fb328d7fc88156781a75a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZkYWQ2MDFhMzZkNmYyMjJmNGNjZDVhODRlOWYxMGYwNTc3N2RhYjMzOTcyMzk3MzY2ZDY1ZDVhOTRmZmEwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE0YmI1Yjc0ZGJkODVkZTdkZTkzNDJhZjFiNDJlNDQ5ZDZlMzEzNTU4ZGI5NDFmM2ViNmE1YzliMmQ3M2NhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjczNTM5MzgxYTRiYjAwMWZhN2ZjNjAwMDQ1MmNlZGNiM2JiZDI3OTQxODA5OTM3ZDU2M2I3MzkzMmIxYTI5ZSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T18:13:07.622Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

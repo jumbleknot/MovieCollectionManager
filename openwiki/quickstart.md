@@ -31,10 +31,10 @@ sources:
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -72,7 +72,9 @@ page is a derived summary). Use these fields rather than guessing filenames:
   [the protection manifest](./protected.yaml). That split is a ratified decision, not a convention:
   [ADR-0003](./decisions/adr-0003-claims-and-fingerprints.md) makes Grounded Claims and the
   `protected.yaml` fingerprints complements with **disjoint scopes** — Claims on derived pages only,
-  fingerprints on authoritative pages only, never both — and governance rule **G13** enforces it. The
+  fingerprints on authoritative pages only, never both. Governance rule **G11** rejects any concept
+  that is both or neither (a dangling citation classifies as neither, not as derived), and **G13**
+  keeps Claims sidecars off authoritative pages. The
   four reserved bundle files (`index.md`, `INSTRUCTIONS.md`, `log.md` and this quickstart) are not
   concepts at all, so the classification check skips them; that is why this page may carry a
   `resource` without appearing under `authoritative:`. If a document under `docs/runbooks/`,

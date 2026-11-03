@@ -48,10 +48,14 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
   - id: openwiki-source-3bf0ad96857ee228607b018c
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-a864e7e3b109550c7018e359
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-efdc9f208512d58f170a0e44
     resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
+  - id: openwiki-source-0b95b2665c338088eef0db7e
+    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-20919697827cd36ef7f9b62b
@@ -82,10 +86,10 @@ sources:
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
   - id: openwiki-source-c0e733b8e0e04c7181715668
     resource: repo://specs/085-bff-auth-fail-closed/baseline.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -274,7 +278,12 @@ client from the session, and the session dies with the grant:
   existing re-sign-in path instead of getting an identity-less turn. (Before 085 the mint failure was
   best-effort, the turn ran without identity, and the member saw an unexplained *"No caller identity
   is available for this action"* from inside the assistant. See the
-  [BFF project overview](../projects/bff.md).)
+  [BFF project overview](../projects/bff.md).) The client's agent transport answers that 401 with
+  **one** silent refresh and retry before giving up, and passes a 503 straight through untouched
+  (`src/utils/agent-fetch-refresh.ts`); the dock then renders the BFF's own text for the failure
+  code — *"Your session has expired. Please sign in again."* for `AGENT_IDENTITY_REJECTED`,
+  *"The assistant is temporarily unavailable. Please try again."* for the retryable 503
+  (`src/components/agent/assistant-run-failure.ts`).
 - the next refresh fails with `Session not active`, so the member is signed out.
 
 Measured on Keycloak 26.8.0 for the session model; the subject-token classification was re-measured

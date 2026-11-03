@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:acf4b76de24a4fa45096727d9a80a55ed48187a62f5e4d032c4b3a5648d65663",
+  "pageVersion": "sha256:1b59547a8dff322cebd696360b481d86e25fd6b514d66f8b34ed3203a3879be0",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -230,15 +230,23 @@
     },
     {
       "id": "claim_12d6b9d4b9e849ce9295d0dc15e6a55f",
-      "statement": "ci-status.mjs distinguishes exit 0 (mergeable) / 1 (a required context genuinely failed) / 2 (bad arguments, missing token or scope) / 3 (watch timed out still waiting — runner starvation, not failure) / 4 (watch only: mergeable, but the dispatched cd-deploy run FAILED, item 823). Since item #403 watch waits for ADVISORY contexts by default because 'has this commit settled' is the question it is asked; --required-only narrows the wait back to the merge question, and an advisory context still running at the timeout does not change the exit code — exit 0 meaning mergeable is load-bearing for a `ci-status ... && merge` wrapper, so the unfinished advisory row is named instead of being silently dropped. 4 is no verdict's code, so a caller can tell 'the deploy failed' from 'keep waiting' (3) and 'CI failed' (1).",
+      "statement": "ci-status.mjs distinguishes exit 0 (mergeable) / 1 (a required context genuinely failed) / 2 (bad arguments, missing token or scope) / 3 (watch timed out still waiting — runner starvation, not failure) / 4 (watch only: mergeable, but the dispatched cd-deploy run FAILED, item 823). Since item #403 watch waits for ADVISORY contexts by default because 'has this commit settled' is the question it is asked; --required-only narrows the wait back to the merge question, and an advisory context still running at the timeout does not change the exit code — exit 0 meaning mergeable is load-bearing for a `ci-status ... && merge` wrapper, so the unfinished advisory row is named instead of being silently dropped. An advisory FAILURE is announced in its own `⚠️ ADVISORY FAILURE` block placed immediately above the `VERDICT` line (because `VERDICT mergeable` is what actually gets read), naming each failed non-required context and what it cost; that block is rendered from the GATE rather than from the event-filtered view, so a push-only advisory failure such as `app-ci / trigger-cd` is still named while the view is scoped to `pull_request`. 4 is no verdict's code, so a caller can tell 'the deploy failed' from 'keep waiting' (3) and 'CI failed' (1).",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/ci-diagnostics.md",
           "version": "repo-file-v1:sha256:94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs",
-          "version": "repo-file-v1:sha256:ad71becd6412914c27aef96502320568ecdcee6c9983d3ca95a308f0d91d4010"
+          "resource": "repo://scripts/__tests__/ci-status.test.mjs#L1762-L1787",
+          "version": "repo-lines-v1:sha256:d2161667d8fd4d21bcb7ae367afe7d7f5eec8ddfdebb74b7a835f017a8e7321c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OTFhMmY1YWZkNWY1ZmVkYTQxNzdmMjAzMGU1YWIyNTYyNWJkMzQwZDdhZDg4NjIyOWY0NzM0ZjBiOGNlYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNDZjZjA5MTg4YzM4ZWU5ODE0OTFjOGMzM2M5ZjhhMjIyYmZhMDZiMTkwYjA4MjkwNTZhM2UwMzdmMGEzMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MzM0NjMwODQzODA5YzA1M2MwNjYxNGE0OWQ2NTdjYTA5NmM3ZTliZGJkN2I1YmI1MDQ4NTM4ODM1Y2E1MGUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1218-L1245",
+          "version": "repo-lines-v1:sha256:7a5b6c8a3111544a65a723fb2f981b53c8a9deca5d7ef178955b29dd1b27f822:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MDA1MjRmZDJjOWUwNzVhNzQ2YjM3MTc0M2EwMjFmNDY0ODlkNjYwYTMxNjA1YjkzNTA2MjcyODZjM2M2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzM2JiYjhkMmRmZWQ5NTMxYWYwNDEzZWEyM2M3MGZkZjAxNjllMWI5ZjdjZTRiZDFhNTgyZDZlNGY4NzNjODIifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-status.mjs#L1598-L1609",
+          "version": "repo-lines-v1:sha256:c7b628c76b063aee79223c26ccf9f7b078a22907ee962e4713f1d0d7bddb1ad5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxZGYwMWNhYzIzOGJhMTU4ZjhiYTU4MjIxMTY5ODA2MjZhYTU2ZGE3OTAwMDRlYTk4ZGY5MzA1YzU5ZjUyNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkMjg5MWIxZDFhZWViMDhjMGMzMGE4OWRjZjUyN2NlMmMzOWY3YWZkNmYwMDRmNzQ3NWZjN2RiN2UwNDA3YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3NDZhYzVhYzY3MmIxMzk4OTJlMTM4OTczMDYxNjFmNTU4YjEyYzVlOTM5OTgxOTBjNDQxYTc0NDlhZWI4NGEifQ"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md",
@@ -1148,7 +1156,7 @@
     },
     {
       "id": "claim_d0487d93442a4b83b802c7d4a08240f1",
-      "statement": "Matching a commit-status context to the run that produced it must key on the workflow file AND the run's trigger (`trigger_event || event`), never on `event` alone, because the same workflow runs several times on one sha and a cron run misreports `event: push`: measured 2026-11-01 on `7d27f72f`, the Friday cron (6172) and a push run (6164) of `infra-image-scan.yml` shared the sha, and the `event`-keyed match handed the push-suffixed check `infra-image-scan / infra-image-scan (push)` the CRON's run id — which is the id `failure --full` derives the evidence bundle from and the run whose `cancelled` status `classifyCheckState` reads, so the wrong id means a wrong bundle and a wrong superseded/failed call. A narrow, separator-less status carries no `(event)` suffix, so the events that post it cannot be read off the context and are declared in `NARROW_STATUS_EVENTS` (derived from each posting step's `if:` — `infra-image-scan/weekly` is `schedule` only, `renovate/mode` is `workflow_dispatch` only); an unlisted one falls back to 'the first run of that workflow on the sha', which is right only by list order, so a guard test fails when a workflow posts a separator-less status the table does not declare.",
+      "statement": "Matching a commit-status context to the run that produced it must key on the workflow file AND the run's trigger (`trigger_event || event`), never on `event` alone, because the same workflow runs several times on one sha and a cron run misreports `event: push`: measured 2026-11-01 on `7d27f72f`, the Friday cron (6172) and a push run (6164) of `infra-image-scan.yml` shared the sha, and the `event`-keyed match handed the push-suffixed check `infra-image-scan / infra-image-scan (push)` the CRON's run id — which is the id `failure --full` derives the evidence bundle from and the run whose `cancelled` status `classifyCheckState` reads, so the wrong id means a wrong bundle and a wrong superseded/failed call. A narrow, separator-less status carries no `(event)` suffix, so the events that post it cannot be read off the context and are declared in `NARROW_STATUS_EVENTS`, derived from each posting step's `if:`: `infra-image-scan/weekly` is `schedule` only, `renovate/mode` is `workflow_dispatch` only, and `infra-image-scan/expiry` and `cd-deploy/prod-apk-disk` post on every event except `pull_request`. An unlisted one falls back to 'the first run of that workflow on the sha', which is right only by list order, so a guard test fails when a workflow posts a separator-less status the table does not declare.",
       "evidence": [
         {
           "resource": "repo://scripts/__tests__/ci-status.test.mjs#L243-L279",
@@ -1167,6 +1175,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

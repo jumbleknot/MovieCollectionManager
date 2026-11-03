@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:32abe6da0f92e8650b04c0daac902a5fef851b96c775d2b691b97e0deb5447d5",
+  "pageVersion": "sha256:093ba92e95dadc88aa6cd8c19614220ae14e5bbaf4656f2d40427eab9f8a91f8",
   "claims": [
     {
       "id": "claim_07ef00b788fa4e22a1e9fd4e07dee2b1",
@@ -172,7 +172,7 @@
     },
     {
       "id": "claim_460cccc70941427ba7a9d8a1dc9bca61",
-      "statement": "Handler wiring is direct and has no mediator crate in the request path: `router::build()` constructs the concrete Mongo repositories, coerces them to `Arc<dyn Trait>` trait objects, builds one handler per operation, packs them all into a single `AppState` injected as `State<Arc<AppState>>`, and Axum handlers call the matching `AppState` field's `handle()` method. (`docs/MCM-Architecture.md`'s \"CQRS via `medi-rs`\" phrasing describes the intent, not the shipped dispatch.)",
+      "statement": "Handler wiring is direct and has no mediator crate in the request path: `router::build()` constructs the concrete Mongo repositories, coerces them to `Arc<dyn Trait>` trait objects, builds one handler per operation, packs them all into a single `AppState` injected as `State<Arc<AppState>>`, and Axum handlers call the matching `AppState` field's `handle()` method. `docs/MCM-Architecture.md` now states this the same way in its \"CQRS without a mediator\" decision, which also records that the constitution still names `medi-rs` as the mediator library and that the divergence is tracked as a backlog item.",
       "evidence": [
         {
           "resource": "repo://backend/mc-service/src/api/router.rs#L78-L123",
@@ -183,8 +183,8 @@
           "version": "repo-lines-v1:sha256:6678965fa2aec667e707b13e7de0700c0f05af365562652365514475f5d94a07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Mzk2YmYxMDViMzc3OWRiZmU0Zjc4MjE0ZTJlZTc4MzFmZDY5MjAwMmNlZmZlNzZkMzc4MjljYzYwYjdlNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzMzNGZkZGE5ZWUzYTlmM2I0NzMwNTlmODg2ZTljYjY1ZjYxYWYxMzFiNjNiZDQ4NGNmMmU1MzUyOTE5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://backend/mc-service/src/application/commands/create_collection.rs#L23-L33",
-          "version": "repo-lines-v1:sha256:bcfb6daa4d9230e1753ac68c0f552e00c67fe87e61507723e1cbeffad38a09ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZDMyZmMyYjQ4Y2QxOTEyYjE1MDM3YThlOTFhNWM1YzExMzNlYWVlMmFlZjIwYjM4MjIxY2RhZGEyNTI3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2YjgyYzEyNDEwMTg2YTYzZWVjOGZiZWY0OGVjMTc3M2ZlYWVjNjBkNGU2ZGJkOWFjNzQ0NzI0MWRkOTYxNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+          "resource": "repo://docs/MCM-Architecture.md#L84-L84",
+          "version": "repo-lines-v1:sha256:918b82593d07d4d54a88f0026d1cd0fd84d1013f3bb4d585b00b7bf0af4dc35d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4YjgyNTkzZDA3ZDRkNTRhODhmMDAyNmQxY2QwZmQ4NGQxMDEzZjNiYjRkNTg1YjAwYjdiZjBhZjRkYzM1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA5NDdhOWY0ZDNlYTdiZWEwN2ViMjkxMDllMzU3ZWQ0NmVmMDIxOWQ1Y2YxZjBiMzI3NzJiZWJkNmMyMGY5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI5MjBkNTY5MTAyNjEzN2JjNzMzMTlhMTFhNGQ1YWQyYmJkNTdkYmZkYjgxNzBjMzBhODAzYjE2ZjdkZDI4YSJ9"
         }
       ]
     },
@@ -691,10 +691,84 @@
           "version": "repo-lines-v1:sha256:f8a951690a8f9ac1379da0b3d2dd9d523f7388dcb3dbac555c119519a3d249c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2U0NGEzM2Q5M2JhZjZkMWZlODhjZjI3YTMxYTdmZTRkMDBhOTViOWMzZGU1NDAwOGYyYWVkZDc1MzNjNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDFjNDkzYjMzYTNkNDk3Y2EwMmJiMzY0ODg1N2VjZGRmYjZkYzZhYmU3NzY3MDVhMjRmMzkzMWI4MDM2ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1N2ZhZWFlMzViZTgxNTkyZDNkOGQ2NmNjMmJjNzc1ZTJiZjZmZGMzMGNlNGVjOGY5Y2U2OTY4NWMyNzI3YTAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_18c3f5ce1d4847ec9939ce742a8b1c44",
+      "statement": "Movie-list sorting is server-applied over a whitelist of exactly nine scalar columns (`title`, `year`, `contentType`, `language`, `owned`, `ripped`, `childrens`, `rated`, `runtime`) with `sortDir` limited to `asc`/`desc`; an unrecognized `sortBy` or `sortDir` is answered with a 400 validation error rather than being silently ignored, and array-valued columns (genres, directors, actors, ownedMedia, ripQuality) are excluded from the whitelist deliberately because they have no single ordering key.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L190-L206",
+          "version": "repo-lines-v1:sha256:007b0c820057826bd14e69d4049af99c664b01a060dfce37bfff570d945dbc7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYjM4ZTE4ZTU4Yzk3NDA0YTkyNWQ1MjM5YTY4YTgwNDg1MjAzMTFmYzA2YThmYzlhMzY0NmRlOTQ5MzJkZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwZWYxNTZkMGI4MmJkMTBjNmJiMmFiNjBlMGNjMDhjZTMxOGVhYTk0OWQyOWQxZDg1MTQ2YzcwMzIzMTFiZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkOTNiMmNhOTIxNmYwY2UxNjY4YTdjOGU3ZjYxNzI4OWExNDJiZTAwM2JjOTZlYzVhODk4YjEyZTI2NDJiY2QifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/list.rs#L36-L70",
+          "version": "repo-lines-v1:sha256:4d59e70d827a480ae9f083d4f3dd3f7a02b954cc90c4c2a727fffc552d05bfc0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYjAzNGQxMDU5YzEzYWE4YjNmZTcyZjUwZWY5ZjRhNDc1NjZjMDE4ZGM1YjFhMDhmOGUxYjBmMTUwMGFjNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNmRmYWY2ODdmMTFkNjJmOWNmOGFmNzVkNzJlMDQzNmM4ZTYyZmY5NTI2NGQ1ZjE5MmUxNzY1NDI4NWFkOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5MTQ1ZGI2NWZkZjQ4ZDQ2NmUyN2MzODcyNDBmMmU0YWJhOWU3MTU3NjA1N2NiNWI1M2M0MjIzNmJkODk0MTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cdf9be96a9424a48a0177040bbca79e2",
+      "statement": "Movie search is implemented as a case-insensitive MongoDB `$regex` `$or` over `title`, `originalTitle`, `directors`, `actors`, `movieSet`, `tags`, `outline` and `plot` — not a `$text` index — with the caller's text PCRE-escaped so it matches literally and a NUL byte rewritten to the `\\x00` escape, because a BSON regex pattern is a NUL-free `CString`; the pattern conversion is checked and a failure is a 400 validation error rather than a panic. The same `build_movie_filter()` function builds the filter for both `list` and `count`, which is what keeps the two in parity.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L15-L47",
+          "version": "repo-lines-v1:sha256:582a61bf1824be3cbff319f60cbdf95ad41d890240e13c1c2290a044527374ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMDY0YjliM2IxZWI1NzY3ZTVmZTZjZmY3ODM0M2Q3ZjBjYTU4ZGQ0MmM2MjIzYTBkNTg3NzdiMDU5YzFlYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2ZmFmNTE5ZmM0MWZjNTViMjZjOTJlMTg1NmNlNWNhNTBlMTAzOGU5MzQwODZkOTRmNjY4ZjY0OTg3ZDc1YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NWI1YTEzMDQ4NmY5NjQ1YTk2YmYyNDE5NTUxNWYxMzczY2JhNzAxNzA3ODNmZDcwOTIxNDhmNDJiOTZmMjQifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs#L309-L378",
+          "version": "repo-lines-v1:sha256:3f303041a1ace297ed95f85518702711d409cd2e027659831f30016e7f515334:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMWYxYTVjOWFjNDAwZTRmYzFhZjBjNjI3OTkwZDZkOTI5YzQyZWQyODdjZjI3ZWViYjIyOGZlOGM1ZWI1YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YTNiMzc5Y2U2OTRkZjk5YWVkZDdlYTI3ZTA3Y2FhYWY2YjIzYWI1NmZjZTBhMzIyYjBjZTgzZmRmOWQxOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92e9c059d35f4aa4b0549311631519c0",
+      "statement": "`GET /api/v1/movie-metadata` derives its published option values through an exhaustive `match` in `MediaFormat::all()` rather than a hand-maintained array, so adding an enum variant fails to compile until it is published, and each value's wire string comes from the same serde `Serialize` impl the request body is parsed with — making a published value by construction one the create/update DTOs accept. The endpoint is deliberately distinct from `{id}/movies/filter-options`: it answers \"what may I choose\" from the domain rather than \"what can I filter by here\" from one collection's observed values.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/movie_metadata.rs#L1-L25",
+          "version": "repo-lines-v1:sha256:ee27a3ea652ded16b966fe3e96a684b7a9d4637c4490e707e3f881e62de67f3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmM2Y2NmY3NDMyNjU5NGMyOGY2NmY5MDVhMDliMDdjYjAxYmQ2ZWQ5ODU0YjFhOTdmMGQ3OTE4ZDJjMTc0M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/domain/movie.rs#L26-L77",
+          "version": "repo-lines-v1:sha256:b454df620ad321957dd399552f382bc3782e045a1dcbff44e7a6613cd045b884:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTY0MDlkZTgyMGExNjNlMGIwMjI0OGI1OTc1ODIxNmIwMWIxMTRiNTI2MGRlYjBlYTdkNWRkMzZjZmI3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWYxOTQ2ZTNlZTI2MDcwM2FhMzNlMGE0MWJkM2ExNDg2NTc0MDI0NDJkNTYyMDQ2N2JlMDAyZDZmZWJkZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhM2I2YWRiYjVhNTg1OWNhYzZkZDUyNWMyMWVmZTQ3OWM3NTU0NmIzZjMwY2YxYzY4MDlhMDE3NmQ1NDQxNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e25ab002ab2f4f0ab5209e3790c98262",
+      "statement": "`CollectionRepository` exposes two different lookups for two different jobs: `get_by_id(id, owner_id)` is owner-scoped, while `find_by_id(id)` is documented as NOT owner-scoped and returns the domain aggregate including its ACL. That unscoped, ACL-bearing lookup is what makes per-collection DAC possible — `authorize_collection_access` uses it to load the collection and evaluate the role hierarchy before deciding, rather than trusting the caller-supplied owner id.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs#L123-L132",
+          "version": "repo-lines-v1:sha256:be53362667c698ee323f3b9e63e95b09c43d81333d7d0b5b431cbef900223ef8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YjE3ZTc4YWUzMWZmNjQzYjQwYzBjOWE5Mjc0MGEzZDIyMDQ1YzkxYTMyZWJjZDlmN2QwNGQ4YzQzNDUyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Nzk2OTMxNTk4MjA0MTk1MzEzYjQ0NTUzN2UwODIyZDliZTc5N2U5ZDU0ZTFkYzlmZTU1N2FlZTM2NzU2OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZjQyM2M1MTNjMTI4MDNhZWIwZjNkNTkzZTFkZTU0ZWQwNjJkNmU4YTk1YzU3ODQ0OTAyNWUyZTQ1MDkxZWMifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/access_control.rs#L18-L30",
+          "version": "repo-lines-v1:sha256:17719b845c589d7fd96ccd94f015a04d5290c66e85b7d46e45a2cbba8468cad4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNDFhMWJhYmU5OWMyYzAyMGM2ZjE0MmZjZDVmNWMwNTlmMTg1ODNiM2I2NDVhNDM1OTY0ZGNmODk0OWEyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmODQ0MDg1YWQxZTNlMWVhOGQ0Y2FmMGE2NGU4YzQ4YWQ1NzE0ODAyMTU5MjFmNjM5Mzk5OTM3MzJkNjNmOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/application/ports/collection_repository.rs#L19-L24",
+          "version": "repo-lines-v1:sha256:025c60d1747aeda0c84d80d2c6dd352aade0f6fcc24b8999f45229ea2ed6620c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNkOGNiN2U2YjBhODEwM2Y4ZDRjMjZhMDRhMmI0YmM2YmU3MzE1MjFiNmZhYWU0NjM1N2JmZTY0MGE1NWVmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzYzMzdmM2MzMWVjZWIwYWZiODdiYmMwNjlmNWNmZDQzYjA1MDgwMWRiMTE0MDg1MTVhYmZiNTQ1ZGI4MDczYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWFmMzI1NmYwZWI0M2MyNzJmMTExZjhhNTM4NGExZWZiOTIxYjk3ZWVlNjc4NzliYWM2Yjc0MzQwZTY3OWZhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTJiMDYxNzVjNzM1ZTY2NGE2NmQ0NjdjYWQ2NTYzOGQyNjBjZjljMmJmOGQ0ZTI0ZDQyZDM3ODM1MzM5ZjkxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fbfd4a67b77440c3bc5dda0cbff56ccd",
+      "statement": "The `mongodb`/`bson`/`serde_json` feature declarations in `backend/mc-service/Cargo.toml` encode wire-format requirements rather than dependency housekeeping: `mongodb` is declared `default-features = false` with `bson-3` named explicitly so its re-exported `bson` and this crate's `bson` are the same crate instead of two versions side by side, and `serde_json` names `preserve_order` because bson 2 used to enable it implicitly — without it every `json!` object the service emits is silently re-ordered, starting with the RFC 9457 problem body going from `type,title,status,detail` to alphabetical. The problem-body key order is asserted byte-for-byte in `error_handler.rs` rather than left to a comment.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml#L24-L39",
+          "version": "repo-lines-v1:sha256:6d8802ed21a991b876d8561bb16ebcbfb4adcdd8e21bbf29e981426e19d368e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTg4MGRjMjhjYTU1YmMyOTU1OWM4ODE3Zjg3MDkzNDk0ZmY4YzY0ZWU3NzhiZTg3NGM2OTNhMzRiMzZlNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNWQ5NTlkZmRmOTI1YmVlMzZhNDRlMWJjYTdiNmIyZjFiYzQwZmNjNDgzMmViOWM4YWFiZTI0ZDU5ZTRmMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3ZWVmMDk5OGNhY2ViMDFjNjczNzQyN2M2ZDAyMjdhMTY2ZDViNWNmN2IxNjIwOGNiMzI5MDExNzJhNzQ2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZDhjZDg5NmQ1NjUwZDVmZDEzMGViYjU5Y2E4OWFiNGRhNzVkOWQxMDlmNWQ3MDg5ZDRjYTBkNGIxZDliODYifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/error_handler.rs#L99-L117",
+          "version": "repo-lines-v1:sha256:dd2a527e6f4c563ed94507fd3bd7c6c63fa57fa51630bc0f6f3433ec5d8d82a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T20:35:10.714Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

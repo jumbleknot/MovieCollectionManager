@@ -67,10 +67,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
   - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
     resource: repo://specs/080-minio-to-rustfs/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -272,6 +272,20 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     2026-10-27 with nothing purging it — with `komodo-cron-retention.sql` installing an hourly job that
     deletes runs older than 3 days and a **500 MB maximum** on the dump so the history's return alerts
     (`komodo-oversize`) instead of silently re-inflating it.
+  - **The shrink check and its one-run acknowledgement are how an operator keeps a check honest without
+    weakening it.** A dump that comes in under **50 %** of its size in the last good run raises a
+    `shrink` alert naming both sizes, the snapshot is still uploaded, and that run does **not** comment
+    `recovered` — so the run that raised the alert cannot also close the item it opened. When a shrink is
+    expected (data deliberately deleted, or a new exclusion), it is acknowledged **before** the next run
+    with `~/backup/backup.sh --ack-shrink <dump>`, which covers exactly one run; the threshold is never
+    raised instead. The other operator-facing mode is check-only: `backup.sh --check-staging` prints the
+    staging filesystem without backing anything up, which is the one-line proof that staging is on disk
+    rather than on the RAM-backed `/tmp` the three-month outage came from.
+  - **The `release-apks` dump is the one that reads the forge rather than the host.** Every file of every
+    `mcm-app-android` version is fetched through the forge's generic-package API with a host token scoped
+    **`package: read` only**, so the host can back up the APKs it cannot otherwise reproduce without
+    being able to publish or delete a package — a narrower credential than the `write:package` token CI
+    pushes with.
   - **A backup that fails silently is the failure mode this phase is now built against.** The original
     script failed every night from **2026-07-27 to 2026-10-22** and nothing said so: dumps were staged
     in `/tmp`, which on this host is a **29 G tmpfs** (RAM), and the forge dump — then still including

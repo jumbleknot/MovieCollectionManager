@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4a715197e2274b3ed442e06f17146efa39f39b49ec8e7a81c4d68f044adf7a46",
+  "pageVersion": "sha256:20a05ec5aff191338c238f090d5a2ac72baec5b651933ac4d75fcbda25007f15",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -823,10 +823,46 @@
           "version": "repo-lines-v1:sha256:cffd85db90eb4249dfa4511ebeba353ed70c3ced7073f1c8abd6d96ae1adef40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9d69317b70fe43dc8565e626c783c60b",
+      "statement": "The fail-fast coupling between a support compose's `${VAR:?}` and its Komodo stack declaration is enforced by a guard rather than remembered: `scripts/__tests__/komodo-stack-env.guard.test.mjs` parses every `[[stack]]` block of `infrastructure-as-code/komodo/stacks.toml` (its `environment` block plus any committed `additional_env_files`) and fails when a variable a prod compose requires with `${VAR:?…}` is supplied by neither — so adding a required variable to a support compose is mechanically a change to that stack's required inputs in stacks.toml. It exists because that coupling broke once: feature 069 repointed the object store's image at the repository's own registry, making prod-observability the fourth consumer of REGISTRY_HOST while stacks.toml declared it for only three, and the deploy failed on `required variable REGISTRY_HOST is missing a value` — invisible to CI because the compose was valid and the dev stack is supplied by the dev env file. Feature 080 removed REGISTRY_HOST from that stack and added LANGFUSE_RUSTFS_SECRET_KEY, the same coupling in the other direction, and the guard went red until the block declared it. The guard is scoped to the `${VAR:?…}` form only (an optional `${VAR}` is by definition allowed to be absent, and comments are stripped so a documented example is not counted), and its instrument check deletes that one stacks.toml line and asserts the gap appears, so it cannot pass by parsing nothing.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L143-L190",
+          "version": "repo-lines-v1:sha256:6e6a8dbcae202eb06538df1e0ae96d7d1b57dea17f5bf8c79a3b32c84920b613:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWVkNDZhNzZjMzZhMmMyODA4MWY4NzRkZWYxMjZlMWMxN2EyMDk3MTRjMDY1ZTFiYzE0N2I1YTFkZjdmZTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L1-L105",
+          "version": "repo-lines-v1:sha256:d6241acc087d98a6859c289db4eb831c866e38847543dd43b79fa3cdd87ca960:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YzIzMWRlYjM3ZGUyYjFlNWI2MmEwN2ExOWQwM2Q0ZGE0MmEwY2NhNmYwYzc4NmYxZTk5YjJhNTk2N2VjNTcwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxM2U0NjhjYTliY2E1ZTJmYzM4OTQ2Y2JiNDQ4Njg5ZjBjYTc4ZDI0NzM3MGZkNWYwYWY4ZDdmNzMzZTQ2ZjdhIn0"
+        },
+        {
+          "resource": "repo://scripts/__tests__/komodo-stack-env.guard.test.mjs#L107-L132",
+          "version": "repo-lines-v1:sha256:b11d822dea7b0e50c602a47cec55ac153cd1b8c52005cbcee71f1afb0c2671b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYmQwOTE1ZGU2ZjZmNTM4YjkyNDUwMzI3NTBjNTEwOWQwMzUyYTJiYzgxMmUyMDRiZTljMzczYzEzNTYzZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmMyY2IwYjViYzYyOGI5Y2UzZTFlNTJiMzEyMTgwZjBjNjk4NzZjODQzYzllYTE5YjU2NGE3YjFiY2Q4ZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0455291ca4446f89b69f6201d70c887",
+      "statement": "The guard that polices removed Langfuse v4 read APIs carries a second, independent test so its first one cannot be satisfied by deletion rather than migration: it asserts `agents/movie-assistant/tests/integration/test_observability_sc008.py` still mentions `cost_usd` and `latency_ms` and still calls `observations.get_many`. That matters because the SC-008 test is credential-gated and SKIPS on a machine without a priced provider, so a dead read path would not have failed loudly — the guarantee would simply have stopped being checked while reading as green. The guard deliberately does not police the ingestion side, because doing so would invite the `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` \"fix\", which restores ingestion only and would mask an unmigrated read path.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/tests/integration/test_observability_sc008.py#L84-L139",
+          "version": "repo-lines-v1:sha256:f6ed3303a6fb575345b662bab918893146e7e975e27fbf0399e16f417a245ad5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZWEwMGM2MzcxZTFlNTIxMjJkYTdjZTY3YWZjMzE4NTBlMTQ5ZDI1OWNhOThjYTM1MmViNWZkZmVhYzAxYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMDE3NGQ4NDM1ZmMwNTFjYzFiYmIzZTk5ZGM3MzQwNzE4NmQ2MDg5NTg2YmY2MmNjOTczZDQ2NWRlZjI3YmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMjhmMzA0MGRmYmViNjhjYzk0NjA4NDdiODVkYjU5ZDNlMGFkNzA5Nzk5NzFhNzM0YzQ5NWEyMTBiOWViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MDAzN2EwZjQ1MDFkMTY5NTYzYWVmMDZhYzcyZTA0Y2UwZGQzMGNjMDRhNGFiMWIzMzMyNjVmNTlmOWE4OWEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-v4-read-path.guard.test.mjs#L1-L63",
+          "version": "repo-lines-v1:sha256:ea6b31f050c82e9381f07944deb88576c7b90dcfc035fe34c7d7b66ec101ee36:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMDU2MDc5NTljZTZmZmIwYWMyMWI0MjliMDA0MTFiMGJkY2YwZjA0MTBiZDJlOGRiM2FmY2U3Njg4NTY0YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMDVkMDNhYjA2YWUyZTZkYmUyODdjOWQ4MzU2M2ZlN2ZiOTFjZjVlYzBlNjE1MWMyNWY0ZjE0NzEyOWE2NTkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-v4-read-path.guard.test.mjs#L65-L77",
+          "version": "repo-lines-v1:sha256:217b49a359e6726cbf642ea390531d059f4d34b8c22d679eca53d02c11cbd172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZmFjNTdiMjg1YTRjODdhMWEzODUyNzA4YzY4NDUxYjliYmViOTk4YzNmODE0MWM4M2EzZDAxYWViYWQ4YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

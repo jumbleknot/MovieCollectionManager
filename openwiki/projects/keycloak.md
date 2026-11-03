@@ -35,10 +35,16 @@ sources:
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-dc9c673c8dc973e1e621fa45
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
+  - id: openwiki-source-04ddeebeb466c7a075e05fbf
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-28b3de7a863c75f0b1b6b62c
     resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
   - id: openwiki-source-d58b64a5afcc9df80ea92152
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
   - id: openwiki-source-d637881fca08f33aeaf4b141
     resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
   - id: openwiki-source-a5bf09947adc24a8d59ab587
@@ -51,6 +57,8 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/use-keycloak-auth.ts
   - id: openwiki-source-b95aa0cad6a90f846312a9a6
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
+  - id: openwiki-source-e1083958c70f9ec3bcb8faec
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-34854463fd23e29b106dcb63

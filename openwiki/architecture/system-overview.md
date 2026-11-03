@@ -7,6 +7,18 @@ tags: [architecture, overview, rbac, dac, agents, docker-compose]
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
+  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
+    resource: repo://agents/movie-assistant/src/state.py
+  - id: openwiki-source-3ddebc53b24db170b9fb8289
+    resource: repo://agents/movie-assistant/src/tools/identity.py
+  - id: openwiki-source-0bc082213ea2b05aafac8afe
+    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
+  - id: openwiki-source-8ed1a4d9fa9d36c2908dd51e
+    resource: repo://agents/movie-assistant/src/tools/opa.py
+  - id: openwiki-source-3886664bef2237616f46c07e
+    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
+  - id: openwiki-source-4cc090993970bb2253a628ba
+    resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
     resource: repo://backend/mc-service/src/api/router.rs
   - id: openwiki-source-c24ab349f92ee5be03f5048a
@@ -19,16 +31,24 @@ sources:
     resource: repo://compose.yaml
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
+  - id: openwiki-source-a32b06ef0f76afb80af4d88a
+    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
     resource: repo://frontend/mcm-app/server.js
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-c22d81a0331031d61ad2c7e3
     resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
   - id: openwiki-source-1c2acc0a72ab64fd663510a9
     resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651

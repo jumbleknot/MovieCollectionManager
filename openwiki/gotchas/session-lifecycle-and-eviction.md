@@ -5,6 +5,8 @@ description: The Redis-backed BFF session tracks its own idle window, absolute l
 resource: frontend/mcm-app/src/bff-server/session-manager.ts
 tags: [auth, sessions, redis, bff, keycloak]
 sources:
+  - id: openwiki-source-e879ab1f7f0e578b6187b1b2
+    resource: repo://frontend/mcm-app/src/app/(app)/_layout.tsx
   - id: openwiki-source-7f9b1fa4fc54b7046b359b1f
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/login%2Bapi.ts
   - id: openwiki-source-d6ffe64a1ba14aa4a3860d0f
@@ -19,22 +21,40 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/cache-service.ts
   - id: openwiki-source-d0d28e7151ad566c8e7e4594
     resource: repo://frontend/mcm-app/src/bff-server/session-manager.ts
+  - id: openwiki-source-d79145b1e76e45f44a146d13
+    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
+  - id: openwiki-source-0e0368438633fb79c62b0856
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts
+  - id: openwiki-source-6a7f4522eee4efa9d4533bc7
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/cache-service.test.ts
   - id: openwiki-source-9a64f46b136f24b7215ddf7d
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-4eda77b1de92ba48c68288c8
     resource: repo://frontend/mcm-app/src/hooks/use-auth.tsx
+  - id: openwiki-source-710802b354630d410417364b
+    resource: repo://frontend/mcm-app/src/hooks/use-session-timeout.ts
   - id: openwiki-source-efdce4ddfb93ad71c55d8829
     resource: repo://frontend/mcm-app/src/types/auth.ts
+  - id: openwiki-source-2bbbece9f7d33db6a5983a55
+    resource: repo://frontend/mcm-app/src/types/errors.ts
   - id: openwiki-source-ed2df48ea080e434190abed3
     resource: repo://frontend/mcm-app/src/utils/session-storage.ts
+  - id: openwiki-source-b4d3c92728c3f2e4b6555152
+    resource: repo://frontend/mcm-app/tests/e2e/mobile/session-timeout.yaml
+  - id: openwiki-source-7be7c8b1aee16ea3cf059b58
+    resource: repo://frontend/mcm-app/tests/integration/auth-refresh.integration.test.ts
   - id: openwiki-source-b4dbb7a1709b21c7fd21d5ca
     resource: repo://frontend/mcm-app/tests/integration/auth-session-side-effects.integration.test.ts
   - id: openwiki-source-20312136c8bc905b5cec8a91
     resource: repo://frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts
+  - id: openwiki-source-1ba0b4fa0ff87ad3581e8b49
+    resource: repo://frontend/mcm-app/tests/integration/helpers/session-token-fixture.ts
   - id: openwiki-source-0c7c2ca7a19a57261c431539
     resource: repo://frontend/mcm-app/tests/integration/session-manager.integration.test.ts
+  - id: openwiki-source-7158e27cf67f7940694fa1e2
+    resource: repo://frontend/mcm-app/tests/integration/session-token-custody.integration.test.ts
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-03T00:30:54.344Z

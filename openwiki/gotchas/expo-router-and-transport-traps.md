@@ -23,12 +23,24 @@ sources:
     resource: repo://frontend/mcm-app/src/assistant-polyfills.ts
   - id: openwiki-source-74f39153b978241c50c7addd
     resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
+  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
+    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
+  - id: openwiki-source-653746d934ac6813d4981084
+    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
   - id: openwiki-source-abe552d5bae5c5ce75a9c776
     resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
+  - id: openwiki-source-899b4c37240ac1b7b57cee52
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.test.ts
+  - id: openwiki-source-a864e7e3b109550c7018e359
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
   - id: openwiki-source-0b95b2665c338088eef0db7e
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
+  - id: openwiki-source-7d847d9fc555e071868ecb1d
+    resource: repo://frontend/mcm-app/src/utils/api-client.ts
   - id: openwiki-source-503103081c79db2ef99e2b27
     resource: repo://frontend/mcm-app/src/utils/token-refresh.ts
   - id: openwiki-source-19609c73bc9a3a34e47ab18d
@@ -37,6 +49,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
   - id: openwiki-source-d61b9a5c48e21c0856d75a2d
     resource: repo://frontend/mcm-app/tests/e2e/web/font-fallback.spec.ts
+  - id: openwiki-source-e1083958c70f9ec3bcb8faec
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts
   - id: openwiki-source-5ee35374d6ab0e61934498cd
     resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
   - id: openwiki-source-6815e02bc96aebf5b9adb612
@@ -47,6 +61,8 @@ sources:
     resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
+  - id: openwiki-source-85eb0b9c1a482735eec69a61
+    resource: repo://specs/085-bff-auth-fail-closed/research.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1

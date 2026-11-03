@@ -93,10 +93,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # CI self-serve diagnostics
@@ -124,7 +124,9 @@ Two facts decide almost every reading:
   the other two; see the item 823 bullet below.
 - **`watch` answers a different question from its exit code.** It waits for advisory contexts too
   (`app-ci / trigger-cd` is the only place a declined or failed deploy is visible), while the exit code is
-  decided by the required set alone.
+  decided by the required set alone. `--required-only` narrows the *wait* back to the merge question for
+  a caller that genuinely only wants the merge answer (item #403) — it does not change the exit code
+  either, and a caller that uses it gives up the one signal that says the deploy never happened.
 
 ```mermaid
 flowchart TD
@@ -532,7 +534,8 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   matches on `trigger_event || event`. A **narrow** status carries no `(event)` suffix at all, so its
   posting events cannot be read off the context; they are declared in `NARROW_STATUS_EVENTS` (read from
   each posting step's `if:` — `infra-image-scan/weekly` is `schedule` only, `renovate/mode` is
-  `workflow_dispatch` only), and a guard test fails when a workflow posts a separator-less status that
+  `workflow_dispatch` only, and `infra-image-scan/expiry` and `cd-deploy/prod-apk-disk` post on every
+  event except `pull_request`), and a guard test fails when a workflow posts a separator-less status that
   table does not list, because an unlisted one silently falls back to "the first run of that workflow on
   the sha", which is right only by list order.
 
@@ -541,10 +544,16 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   expected and must never be conflated with an actual build failure. An advisory context still
   running at the timeout does **not** change the exit code either: `exit 0 ⟺ mergeable` is
   load-bearing for a `ci-status … && merge` wrapper, so the verdict's own code stands and the
-  unfinished advisory row is named instead of silently dropped. Exit `4` is the one addition to this
-  table that is `watch`-only, and it exists for the same reason: a mergeable commit whose dispatched
-  deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3` (which reads as
-  "keep waiting").
+  unfinished advisory row is named instead of silently dropped. An advisory **failure** is also
+  stated rather than left to be inferred — a `⚠️ ADVISORY FAILURE` block sits immediately above the
+  `VERDICT` line naming each failed non-required context, because `VERDICT mergeable` two lines down
+  is what actually gets read. That block is rendered from the **gate**, not from the event-filtered
+  view, so a push-only advisory failure such as `app-ci / trigger-cd` is named even while the view is
+  scoped to `pull_request` — reading it from the view would report nothing in exactly the case it was
+  written for (the same shape as the item 281 verdict/view split below). Exit `4` is the one addition
+  to this table that is `watch`-only, and it exists for the same reason: a mergeable commit whose
+  dispatched deploy failed must not be reported as `0` (which reads as "prod got it") nor as `3`
+  (which reads as "keep waiting").
 - **A pipe throws the exit code away — including exit 3, exit 1 and exit 4.** `ci-status … watch |
   tail -30` reports **`tail`'s** status, so all three arrive as `0`. Measured 2026-09-06: a watch that
   printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as

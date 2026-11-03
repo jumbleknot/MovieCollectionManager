@@ -23,6 +23,8 @@ sources:
     resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
+  - id: openwiki-source-e39072a75f63237d2634b6a0
+    resource: repo://scripts/__tests__/wiki-quiet.test.mjs
   - id: openwiki-source-98792bbc9621de1ad3e22856
     resource: repo://scripts/check-openwiki-governance.mjs
   - id: openwiki-source-ccaf212e2940e782eb0de272
@@ -41,6 +43,8 @@ sources:
     resource: repo://scripts/wiki-maintain.mjs
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
+  - id: openwiki-source-a18f403bf5c1f1012cc57319
+    resource: repo://scripts/wiki-quiet.mjs
   - id: openwiki-source-8591439162d997daf59a1ac6
     resource: repo://specs/043-openwiki-okf/data-model.md
   - id: openwiki-source-c8029c93bdccd81963968b22

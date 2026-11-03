@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:73a15f1c3a0890f0a002dc6946132eb347a04a0ff8bc2caf97f14288d08026ac",
+  "pageVersion": "sha256:d9803a64654f8e0b45577dba63c39a98851a881ec1fe9f884fee41b0b6bc6f4b",
   "claims": [
     {
       "id": "claim_bb4afd7234e2497fbeb2f2c50daca580",
       "statement": "movie-mcp, web-api-mcp and spreadsheet-mcp are stateless streamable-HTTP MCP servers built on the MCP Python SDK 2.x (`MCPServer`, `mcp>=2,<3`) that the Agent Gateway calls as tools; each is scoped to one capability and one trust boundary across three jointly-moving dimensions — the tools it registers, the identity it carries, and the network it can reach.",
       "evidence": [
         {
-          "resource": "repo://docs/MCM-Architecture.md#L216-L222",
+          "resource": "repo://docs/MCM-Architecture.md#L231-L237",
           "version": "repo-lines-v1:sha256:2ec53ccdf518f1c3472ce31a681074cd21d1090f437f917bcdd5bd54c0fb281e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcxYjU1ZGI3MmVlMzcxMTc2Mzk3YzM0ZWZkY2Y2NWE0Yjk5MWI0ZDUwZWQzOWU0YzNmYTRkYmExYTcxNGM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ0YzdlOTM1ODMzZWRlZjM2YTRmMzg0MWM1NWVmYzlkZTA5N2UwNGEzMTA5MjVmYzU4N2JiMmRiZmIyZDUzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODI1MmE1YzBlZTcwMTRjOTRhMGRiOTI3NTg2ZDQwMjAyNjA2Njg4M2QxZmMxYzBlYzUyMzg5ZmFjMTY1NmU3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY3ZDY3ZDdlYzRmZWM5OTkzMzM2ZGRkMjgyNzJlNjgxY2ZiYTFmNzA5NTY3Nzc4YWE4NWRmMzQyNmUxZWQ5ZiJ9"
         },
         {
@@ -317,7 +317,7 @@
       "statement": "Each server exposes the Nx targets `test` (unit), `test:integration`, `lint` (ruff + mypy), `build` (Docker image tagged `<server>:latest`) and `lock`, and all three integration suites run together in the app-ci job with `MCM_REQUIRE_LIVE_STACK=1` turning an unexpected skip into a failure, because a suite that skips when its dependency is absent reports green and gives false confidence — how two spreadsheet-mcp tests sat broken and unexecuted for weeks.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L841-L905",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L869-L933",
           "version": "repo-lines-v1:sha256:28cadcd14460d45a0a549ff96ec1fbc763e2756ae9459abb1c2767f28874221a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNDhhMjgxYTk1ZjYwNjZjODhlNmVhOGFlNDliZmVmNzJhNzhhYTg4ZjNmODYwNDg4MmRhMDViZWNhZTEwYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNmJkMzI3ZDFhMjg2YTAwNGViZTU4ZTZiNjg5MDY1YzVmZWI5NGUzZTc4Mzg1OTliMTg1ODYyOGU0MTIwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MDI3NjkzMmQ0MzU2NWYyMDQ2MDEzYzBmN2I3NDE1MmI4NGM0ZjQ5OTBjMThiYWE5NDExYzdjNWUyNGViMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZWZkNjY1YzAxYjQ3NTE3NDBjMjg0NTdjYTk3YTc2ZGFiOWFjNzI3NmJmOGVkNGJkOWY0ZGY4NmUxNDYxMTYifQ"
         },
         {
@@ -531,7 +531,7 @@
       "statement": "The two test tiers have non-overlapping jobs and neither replaces the other: the unit tier is the only place the HTTP transport may be stubbed (permitted there and only there) so it can cover branches no real upstream input exhibits, while the integration tier is the only check that the live upstream still returns the documented shape. movie-mcp's integration suite additionally asserts the structured-content contract across the MCP boundary — a mapping tool unwrapped, a sequence tool wrapped under `result`, and a write tool's status sentinel surviving the boundary — and web-api-mcp's suite is the only merge-blocking check of the certification extraction against TMDB's real response shape.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L861-L905",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L889-L933",
           "version": "repo-lines-v1:sha256:4bf0bcedda100e0ddd00b972830c83f4b3841791a2aaf1a20d930b127dab8613:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MGMzMTAyYmJlYzA2ODA3ZmFlNWQ0YmFmNzdlNGVlOGMxMDg4MGU3YThlYjU0M2U5NjA1NmU1MTI0ZTRhZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNmJkMzI3ZDFhMjg2YTAwNGViZTU4ZTZiNjg5MDY1YzVmZWI5NGUzZTc4Mzg1OTliMTg1ODYyOGU0MTIwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MDQ2NjM5MDZiMDI3OWU2MjVkZmY1MzIwM2IxZTEwZDgzN2UxM2I2ZjRmOWViZjFlYTRjMGY0NjMzMTU0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZWZkNjY1YzAxYjQ3NTE3NDBjMjg0NTdjYTk3YTc2ZGFiOWFjNzI3NmJmOGVkNGJkOWY0ZGY4NmUxNDYxMTYifQ"
         },
         {
@@ -623,10 +623,32 @@
           "version": "repo-lines-v1:sha256:94b28e2fdc18e173940c6cd6591a8d7586bc02d9fd0d75a38301573355e33202:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNGY4ZWZiYTY0NWE0MWRiMWQyZjBkYjZjYzUyZjZlNWZkZGVlODNiMjJjNGQyOTM1N2M0ZDA3ZTdmNWIzZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_829b2c88a57d41afa994ec90969f442b",
+      "statement": "The three MCP server images are covered by the PR-time image scan added by spec 084 US3: `app-e2e` re-tags the six application images as `app-scan/<name>:run-<run id>`, the required `app-image-scan` job scans each through the shared `scripts/cd/scan-app-image.sh` (the same pipeline and scanner pin `scan-push.sh` uses, one `always()` step per image so one run names every blocking image, failing closed on missing tags), and the job sits in `trigger-cd`'s `needs` so a red scan on `main` blocks the deploy dispatch rather than surfacing as a failed deploy. The three MCP images are also listed in `scripts/infra-image-scan.mjs`'s `BUILT_IMAGE_NAMES`, which keeps them out of the keyless third-party infrastructure sweep because every image is scanned by exactly one scanner.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1797-L1830",
+          "version": "repo-lines-v1:sha256:460b28a9fde746f4294e16c6c3d1930fba14050bc004490cdd58e36aed452d7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZDBiOTlkZmY5MDlmMDZhYWEwMzQ1MjExZDA2ZGZjODI5ODhmYjcwM2YyNDFkNDcxOTEyN2Y4ODg0M2JkYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1NjFmODk2YmU1ZWM0NDU4ZTJkMzQwZmFjNzY4NjgwNzFhM2VkYmVmMTQ1ZmZkNWYyZGIwNTBiZGJjYjQxNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlM2VjMWY3MzI1ZGNlNWI4NDJhOTA5MjA2YTg0NjlhZjRhNjRlZGU1YjI4MTcwY2M3NjIzNjYxNTFhYWFkNzIifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1859-L1897",
+          "version": "repo-lines-v1:sha256:dd57fe11c3c99f0ed9f50a64b8d8f6193e0c91c91425491b35c63ff48d9689c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYTI0M2M5ODU4YjUwZTdlNGEyZWM0YzkxMmJlYzEzYTZkNmI3ZTQ3ZTA3YzYwMjg5MmIxNWUxNDNjNzg5YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzZTEyZGYwZjM3ZmIxOWM4ZTNlNTdlNzY2MDVjY2FmOGFiZDJkZDE3OTM5MmU1ZWJjMmEwMGI3YzcxZmU1YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjYjY2OTBhZTRmZjc2NDY1Y2VlNTQyNDgwMzgxNWE2MGRjZWExNWZhYTdhNjJlZTU4NjgyNWYzMGY3N2YwYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMjIzNjlmYmZmNjZhOGUyOGNkNmJiNTk2MTMzMDBlYjYyMzg4N2M5MDJjODgwYTI1YzgxYjNmODcwODQyOWYifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1924-L1939",
+          "version": "repo-lines-v1:sha256:d09cea38d4ee53153ba85ee408041ca2e6857bf3b48ab577d00d8b6893431cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTViZTRkZDM2Yzc2NTRjZTZlMzVjNzI1NzQzOTMwNjQ2MGY5ZGU0M2JhODlhM2MyMDY5MWMwZjJkMGJhMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTM5NjM1MjcwNmM1ZDhkMDc3Y2I4ZmU0ZjNiZWU0OWQ2YzkwNWI3MTA0MmM1NjUzMTcwYTgzYWE5Nzg5ZWQifQ"
+        },
+        {
+          "resource": "repo://scripts/infra-image-scan.mjs#L34-L45",
+          "version": "repo-lines-v1:sha256:bfb9e50e693bab016d5265f82ec9c5eb804e4154a0877fa5e2badbf6bab4f8e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YzVjMWQxNzJiN2ZkMDZjM2YzMGQyZDEzNjQzZWE3ZjdkNGNmMTY4N2ZhMDM0MWE3NWRmODFkOGY4Mzg2ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YjdiNzEzZGQxYzNhNzgwNGI2NTkyMGZjNDQ1ZWE5NjNkOGZjZmJjMGYyODU5OThlMjUzYmE3ZDExZTI2OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5MWMxYmZjN2YyZGY4MzcwMDkxNDEwYWIwYTI5YzNlZTVjNjg4MTQ1NmE4YzI2NDJkZDU0ZTgzZDMzOWE3MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOTczMmM1ZWZhZWFkZGNiM2MxNDNhMTFiNGU2YWJlODFhODFjY2E4NDNjZjlkYjU1NGFmZjAwMDk4NDdiNTIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-24T02:14:36.804Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

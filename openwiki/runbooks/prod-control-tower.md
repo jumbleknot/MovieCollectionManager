@@ -5,6 +5,8 @@ description: The three independently up/down-able production support stacks — 
 resource: docs/runbooks/prod-control-tower.md
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 sources:
+  - id: openwiki-source-921eaf51fe28eda4db17e960
+    resource: repo://agents/movie-assistant/tests/integration/test_observability_sc008.py
   - id: openwiki-source-c1146bc275906084150591a5
     resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
   - id: openwiki-source-a32b06ef0f76afb80af4d88a
@@ -35,6 +37,8 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-a6996cae4bd83db81e823602
+    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
   - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
     resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
   - id: openwiki-source-12b683eb33d44031555ec7f2
@@ -65,10 +69,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -126,6 +130,21 @@ admin one. The audit sink sits on its own external `agent-audit-network`, which 
 cannot reach it. Adding that network to `APPROVED_NETWORKS` and the `vault` volume prefix to `VOLUME_RE`
 was the whole guardrail delta for the feature (`scripts/check-resource-naming.mjs`); feature 071 later
 added the narrow `-snapshots` volume form alongside them.
+
+**The fail-fast coupling is enforced, not remembered.** Adding a `${VAR:?}` to a support compose is a
+change to that stack's *required inputs*, and the only place those inputs are declared is the stack's
+Komodo `environment` block — so `scripts/__tests__/komodo-stack-env.guard.test.mjs` parses every
+`[[stack]]` block (its `environment` plus any committed `additional_env_files`) and fails when a
+required variable is supplied by neither. It exists because that coupling broke once: feature 069
+repointed the object store's image at the repository's own registry, which made `prod-observability` the
+fourth consumer of `REGISTRY_HOST` while `stacks.toml` declared it for only three, and the stack's
+deploy failed on `required variable REGISTRY_HOST is missing a value` — visible on a real Komodo deploy
+and nowhere in CI, since the compose was valid and the dev stack works because the dev env file
+supplies it. Feature 080 removed `REGISTRY_HOST` from that stack and added
+`LANGFUSE_RUSTFS_SECRET_KEY`, the same coupling in the other direction, and the guard went red on it
+until the `[[stack]]` block declared the new variable. Its own instrument check keeps the subject
+honest: it deletes that one line from a copy of `stacks.toml` and asserts the gap appears, so the guard
+cannot pass by parsing nothing.
 
 ## Additive no-op and rollback
 
@@ -737,6 +756,11 @@ Two things differ from the 4.68 minor:
   `trace-create` ingestion event is refused (400) and traces arrive over
   `POST /api/public/otel/v1/traces`. Do **not** "fix" a v4 read with
   `LANGFUSE_MIGRATION_V4_WRITE_MODE=dual` — it restores ingestion only and hides an unmigrated read path.
+  The guard that polices this (`scripts/__tests__/langfuse-v4-read-path.guard.test.mjs`) carries a second
+  test of its own: it asserts the SC-008 integration test still asserts `cost_usd` and `latency_ms` and
+  still calls `observations.get_many`, so the first test cannot be satisfied by deleting the assertions
+  instead of migrating the read path. It deliberately does not police ingestion, because doing so would
+  invite exactly that `dual` "fix".
 
 The same PR closed the 4.68.0 allowlist chapter: the three entries re-keyed a week earlier (the
 base-image ca-certificates CVE on web and worker, and the bundled `@sentry/nextjs` CVE on web) were

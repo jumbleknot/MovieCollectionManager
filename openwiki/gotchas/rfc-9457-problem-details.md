@@ -27,8 +27,22 @@ sources:
     resource: repo://backend/mc-service/tests/integration/collections/http_authz_test.rs
   - id: openwiki-source-32ddd1180803ccc420fbab88
     resource: repo://backend/mc-service/tests/integration/movies/movie_metadata_test.rs
+  - id: openwiki-source-ab4d7d9de411f0448db5e3ad
+    resource: repo://frontend/mcm-app/src/app/bff-api/admin/settings%2Bapi.ts
   - id: openwiki-source-805a41325e924fb1df7abf14
     resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts
+  - id: openwiki-source-a5f54bb9024995402d7e1da9
+    resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/test%2Bapi.ts
+  - id: openwiki-source-04ddeebeb466c7a075e05fbf
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
+  - id: openwiki-source-3962f527ba083cef06c1e6a6
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-a344c8ab57b1d157819a0fd2
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
+  - id: openwiki-source-a07d6f15a4a3776b6f310564
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/destinations/index%2Bapi.ts
+  - id: openwiki-source-d9ae920d4c3436496e3ea420
+    resource: repo://frontend/mcm-app/src/app/bff-api/backups/jobs/%5BjobId%5D/restore%2Bapi.ts
   - id: openwiki-source-1f97e5240572ea9ecae44ac5
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
   - id: openwiki-source-74f39153b978241c50c7addd
@@ -55,6 +69,8 @@ sources:
     resource: repo://specs/046-authenticated-authz-tests/contracts/authenticated-http-authorization.md
   - id: openwiki-source-763b090afb3624a565f133dc
     resource: repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml
+  - id: openwiki-source-be32653de3b385037084c940
+    resource: repo://specs/076-account-deletion/contracts/bff-api.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:

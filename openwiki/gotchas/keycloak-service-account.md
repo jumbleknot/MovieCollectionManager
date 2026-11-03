@@ -31,14 +31,20 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
     resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
+  - id: openwiki-source-16f23fb13b0e88082b534458
+    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
   - id: openwiki-source-3574b605c1922bedacc8f2fa
     resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
+  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
   - id: openwiki-source-d332b78944bf7820230a82f2
     resource: repo://scripts/export-ci-realm.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+    at: 2026-11-03T01:23:06.490Z
 ---
 
 # Service account vs admin credentials — Keycloak Admin API calls
@@ -105,8 +111,10 @@ The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` 
 - **The service account client is distinct from the user-facing app client.** `keycloakServiceClientId`
   (`KEYCLOAK_SERVICE_CLIENT_ID`, default `mcm-bff-service`) and its secret are separate credentials
   from `keycloakClientId` (`KEYCLOAK_CLIENT_ID`, the app's OAuth2/PKCE client used for
-  `exchangeCodeForTokens`/`refreshTokens`). Do not reuse one client's credentials for the other's
-  grant type.
+  `exchangeCodeForTokens`/`refreshTokens`). The realm files keep the two apart by capability, not just
+  by name: `mcm-bff-service` is a confidential client with `serviceAccountsEnabled: true` and
+  `standardFlowEnabled: false`, while `movie-collection-manager` has `standardFlowEnabled: true` and
+  `serviceAccountsEnabled: false`. Do not reuse one client's credentials for the other's grant type.
 - **`email-service.ts` duplicates its own `getAdminToken()`** rather than importing `keycloak.ts`'s,
   specifically to avoid a circular dependency. If the admin-token logic changes (grant params, error
   handling, endpoint), both copies need the same fix.
@@ -121,15 +129,16 @@ The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` 
   the same as Keycloak being down. Check the service-account secret first when Admin-API-backed routes
   (registration, forced logout, role assignment) start failing.
 - **A service account whose `realm-management` roles are missing fails differently — not 503.**
-  The realm seeds `service-account-mcm-bff-service` with `view-users`, `manage-clients` and
-  `manage-users` from the `realm-management` client; without them the client still authenticates (the
-  503 path above never triggers) and Keycloak rejects each Admin API call with 403 — which the BFF
-  never passes through. Each function re-maps it: `deleteUser`, `countUsersInClientRole` and
-  `sendVerificationEmail` answer 502 `KEYCLOAK_UNAVAILABLE`, `createUser` answers 400 `INVALID_INPUT`,
-  `ensureClientRedirectUris` logs a warning and retries, and `logoutUserSessions` ignores the failure
-  entirely. Do not look for a 403 in BFF responses. A realm export does not
-  carry service-account role mappings, so the export script has to reconstruct them explicitly — a
-  partial import can therefore produce a service account that mints tokens and authorizes nothing.
+  The committed dev and CI realm files seed `service-account-mcm-bff-service` with `view-users`,
+  `manage-clients` and `manage-users` from the `realm-management` client; without them the client
+  still authenticates (the 503 path above never triggers) and Keycloak rejects each Admin API call
+  with 403 — which the BFF never passes through. Each function re-maps it: `deleteUser`,
+  `countUsersInClientRole` and `sendVerificationEmail` answer 502 `KEYCLOAK_UNAVAILABLE`, `createUser`
+  answers 400 `INVALID_INPUT`, `ensureClientRedirectUris` logs a warning and retries, and
+  `logoutUserSessions` ignores the failure entirely. Do not look for a 403 in BFF responses. A realm
+  export does not carry service-account role mappings, so the export script has to reconstruct them
+  explicitly — a partial import can therefore produce a service account that mints tokens and
+  authorizes nothing.
   The reconstruction lives in [`scripts/export-ci-realm.mjs`](../../scripts/export-ci-realm.mjs),
   which writes `service-account-<clientId>` users carrying each service account's realm and client
   roles; [the Keycloak project page](../projects/keycloak.md) covers how the committed realm variants
@@ -165,6 +174,28 @@ The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` 
   successful update is not repeated, nothing-missing is not repeated, and a failed client lookup stays
   unrecorded and is retried. It also asserts the warning carries no admin token, client secret or URI
   value.
+- **The service-account secret is shared three ways, and the BFF is only one of its readers.** The
+  committed dev/CI realm files declare `mcm-bff-service`'s secret as the placeholder
+  `${KEYCLOAK_SERVICE_CLIENT_SECRET}`, which Keycloak resolves from the keycloak container's env at
+  `--import-realm`; `scripts/gen-dev-env.mjs` projects the *same* value into the BFF env files, so
+  realm-secret equals BFF-secret by construction (in CI both come from one Forgejo secret). That script
+  also verifies the equality rather than assuming it: it runs a real `client_credentials` grant against
+  the running realm and refuses to write the files if the realm rejects the credentials. Outside the
+  BFF the same credentials are used by
+  [`add-container-redirect-uris.mjs`](../../infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs),
+  which reads `KEYCLOAK_SERVICE_CLIENT_SECRET` from the environment and falls back to
+  `frontend/mcm-app/.env.docker`, and by
+  [`backup-consent-redirect-uri.integration.test.ts`](../../frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts),
+  which mints its own client-credentials token and skips itself unless that variable is set (it throws
+  when `MCM_REQUIRE_LIVE_STACK=1`). A realm re-import that resolves the placeholder to a different
+  value, or a rotation applied on only one side, leaves every one of them failing with the same
+  503 `KEYCLOAK_UNAVAILABLE`.
+- **A missing service-account secret is not a startup failure.** `keycloakServiceClientSecret` is read
+  with an empty-string fallback (`requireEnv('KEYCLOAK_SERVICE_CLIENT_SECRET', '')`), so an unset
+  variable produces an empty `client_secret` on the token request rather than a boot error — the
+  failure only appears when an Admin-API-backed route is exercised, as the 503 described above. The
+  login client's secret is loaded the same way, for the same reason: both are optional for a public
+  client and required for a confidential one.
 - **A swallowed 403 can read as a successful no-op.** `getUserIdByEmail` returns `null` for *any*
   non-OK Admin response, and `/bff-api/auth/resend-verification` deliberately answers success for an
   unknown email (it must not be a user-enumeration oracle) — so a service account that lost

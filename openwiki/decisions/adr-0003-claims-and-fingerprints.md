@@ -7,6 +7,25 @@ tags: [adr, claims, fingerprints, governance, decision-record]
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-03T00:30:54.344Z
+sources:
+  - id: openwiki-source-fd77a504cc309a02ead6fecf
+    resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
+    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
+  - id: openwiki-source-c231cd090281b3129aaf6167
+    resource: repo://docs/runbooks/wiki-maintenance.md
+  - id: openwiki-source-a50c3dca6e011b3f54f51815
+    resource: repo://scripts/__tests__/check-openwiki-governance.test.mjs
+  - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
+    resource: repo://scripts/__tests__/openwiki-claims.test.mjs
+  - id: openwiki-source-98792bbc9621de1ad3e22856
+    resource: repo://scripts/check-openwiki-governance.mjs
+  - id: openwiki-source-ccaf212e2940e782eb0de272
+    resource: repo://scripts/check-openwiki-okf.mjs
+  - id: openwiki-source-efa55c3a8c70016f55bf6266
+    resource: repo://scripts/openwiki-claims.mjs
+  - id: openwiki-source-31eafb88f9d0f880c0c66a49
+    resource: repo://scripts/openwiki-policy.mjs
 ---
 
 # ADR-0003: Grounded Claims and protected-passage fingerprints are complements

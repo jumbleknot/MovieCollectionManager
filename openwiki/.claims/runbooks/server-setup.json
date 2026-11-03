@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:df4622e6bee5cc73febf518caa240c9aeca9affa889857ff77d40a95e6d8ff27",
+  "pageVersion": "sha256:416e756103881d31f04c51c2d9577f53de61b3c212a09919db667661bfff9567",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -1137,10 +1137,54 @@
           "version": "repo-lines-v1:sha256:484b9c06f0674bb35ac3bb53687102cad3f148d90a6f54bce576f1965d7f9ed5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNmU5NzhhMzc4NzIwOGYzNmQ4MDViOWQxZTRmNmVhMGYwNjMwYTE1ODQzMzAxNzBjNGNhMjhmNzg2YzFiMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNjYwOGRkYzNhYjdjNTY1YWE0MjEyYmUzNjJmYzkxMGQ1YzBiNjhiYzc3NTY5NWE5Yjg2OTRkNTgxMTA3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNzFlMTk1ZTk5OWM0Y2FjZTliMDA1YmMxZmVjODE3NTAwMzcyMDMzZDczZjFhNzZiMGJhYzRhMTljYTNiZWQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9b8f23f86bf641feb08169857f4e8f07",
+      "statement": "The host backup's shrink check is a 50 % threshold with a one-run acknowledgement rather than a tunable: a dump under half its size in the last good run raises a `shrink` alert naming both sizes, the snapshot is still uploaded, and that run deliberately does not comment `recovered` (so the run that opened the item cannot also close it); an expected shrink — deliberately deleted data or a new exclusion — is pre-approved with `backup.sh --ack-shrink <dump>`, which is consumed by exactly one run, and the threshold is never raised instead. The script's other operator-facing mode is check-only: `backup.sh --check-staging` prints the staging filesystem and backs nothing up, which is the one-line proof that staging is on disk rather than on the RAM-backed `/tmp` the outage came from.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1140-L1140",
+          "version": "repo-lines-v1:sha256:78a76d80e2f729a5e1958f51c7c5e4dfb7d036b81a48df36826a13ffedf6ca12:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhhNzZkODBlMmY3MjlhNWUxOTU4ZjUxYzdjNWU0ZGZiN2QwMzZiODFhNDhkZjM2ODI2YTEzZmZlZGY2Y2ExMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhhNzZkODBlMmY3MjlhNWUxOTU4ZjUxYzdjNWU0ZGZiN2QwMzZiODFhNDhkZjM2ODI2YTEzZmZlZGY2Y2ExMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjkzYzdiMWVhYzYyZjk3MjhiNWM0NjNlNTljYWZjOGE4MDJkYWVjNjc0OGQ0MDczNWZkNDczMjJjZmY3MzhkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGFjZDEwYmE5YzNmMWZiYzBhMjQ3MjAyNGVkNTIxMzIwZGU3YmFhZmQxM2MyY2UwNDAyMmU5ODM2NGE1MTEyYyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L156-L163",
+          "version": "repo-lines-v1:sha256:70a1978eb012a463fad3d473a70f6b1907d73a3553e6d56ad39093038171e74d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDUyNTQxZDc1YzdmMGM2YjAyNTE4MDAwYjI2ZWVkMzJjMjI1YzJlNjUwYTc3Njg4ZjkzZDYwZjEyNjE2MjgwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDcwYTM4ZmQyYTlmYmQ4Zjc4YTgzNGQ2NDg0NGI4NWIyZWM4ZmUzNDFlYmViMzEzNTM2MDQwYjFjMmI2MGNkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L127-L135",
+          "version": "repo-lines-v1:sha256:39906e5b7ef15537642f2abe682c213b5079c8f93a90c06c66a9d17996d3208d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlhMmY1NzAyZmU3Nzk2ZDI4YzVlOWRjYWQzZjkyOGIzZWViODUyMTE0OTkwYTQ4ZDJlMDIwZmUyNTEwZTU2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVmYzkwZmY4YTQ0MTRjNTQ0MWQwZjY3N2M1Y2JmZGEzOGI0NzRlNTFiZmQ1NTlhNTU1OWRlMGY4NzcwNTUyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI5M2MyZDAzNjkwNjdjYTBmYmY0Zjg5ODkyNWMzZDYzMzEyOWE2OWVlMjQwOTlkOWY1MDZmYTAzNTE3ZTFmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWIzZWZjN2IyNTI4MDI0NWZiZGE3YWY2OWI2N2I3MTRjYzAyOTg4MGE5NGQ1Njg4NmI0OWM5MDQ1MGIyNTk5YiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L274-L292",
+          "version": "repo-lines-v1:sha256:6d2d5e35fb25c4892d8e82857656a7948caba794bc732bfd06f9ec2bb4e34109:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYjNkNTBkYmY5MzBmN2Q1MzE1ODY0MGU0MGU3YmNkZTIwMmI1NWJmMmM2ZGNkNDg3NWE1MzQxNDdhMThkMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0M2NlOTg0ZDQyZTY2NDdjNzQ4OTAwZWJlNGExNDAyODRlMWMyMDBiZGQyMmYxZWMwNzVkMmMzOWFjNGVjNDcifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L29-L29",
+          "version": "repo-lines-v1:sha256:bd320ed4e33fa18f026d546f8ee05396558acbfd74ec58c93106bdd77ae6a4ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzMjBlZDRlMzNmYTE4ZjAyNmQ1NDZmOGVlMDUzOTY1NThhY2JmZDc0ZWM1OGM5MzEwNmJkZDc3YWU2YTRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQzMjBlZDRlMzNmYTE4ZjAyNmQ1NDZmOGVlMDUzOTY1NThhY2JmZDc0ZWM1OGM5MzEwNmJkZDc3YWU2YTRiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M2Y2VlYTE0YmY4MWZmNzMwZGM3YzZjYjRiMTdlYWYyYjQwOGFmMDJmMGIzY2Q5ZjkyMDUyNDZmYjc1MDMzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZhMzM5YzcyYjFiYzZjNmE1MGYwYjY0NjU5ZjNkMmNjZjI2YTc1NThkOGFkNGExY2YwYjdkMTYyODc3ZGI5ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8fd43611d2f4c8f87cf64cd8fa14004",
+      "statement": "The `release-apks` dump is the only one of the eight that reads the forge rather than the host: it walks the generic-package API for every file of every `mcm-app-android` version using a host token scoped `package: read` only, so the host can back up the release APKs it cannot rebuild without holding a credential that could publish or delete a package — deliberately narrower than the `write:package` token CI pushes with.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1137-L1137",
+          "version": "repo-lines-v1:sha256:dc579fec77e272c8b815cbb7147388c1a64765eb09bec15b7f40e399b56be483:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM1NzlmZWM3N2UyNzJjOGI4MTVjYmI3MTQ3Mzg4YzFhNjQ3NjVlYjA5YmVjMTViN2Y0MGUzOTliNTZiZTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM1NzlmZWM3N2UyNzJjOGI4MTVjYmI3MTQ3Mzg4YzFhNjQ3NjVlYjA5YmVjMTViN2Y0MGUzOTliNTZiZTQ4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY5MDczMTBkYmQyNGU4YTkwNTNiMGY5MWNhYmU5MjIxMTQwZGViMjBmMjY3MzQ2YTUxMzQ3NjkzNzkwOGQ4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkMmEzZDNkOGRjMDVmNWY1YmQxMTM1OTNkZTk5ZDIwMThhNmE2MDdiMDI3YTFhODJjYWRmZDcyZjczZjdkZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/README.md#L25-L33",
+          "version": "repo-lines-v1:sha256:11f57f02f2a0aa59680293399a67daf1f4730199de04f5a21405cea1589bc6cd:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFhMjQwM2E1NmU0NWE5OWY0MmMzMDI5M2RmNGMxODNjYjljYmI2MThmNWJlNjY0MzZiMDk2Njk1MGI3MDM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzk2MDQ4MmRlMzY5ZGRmNDY5Y2Y3MWMxM2EyY2QyN2RmNGRjNjBjYmUxNDM5NThiNGNkNjg2OTNiMzAyMWU2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTNlZGM2NWI0NTdlMjJhMTY2N2YwNTkwMWE1NDdjZmE1MGNjMTdlNWY0MDQwMTM1YWJmYTU5NjlmMDA1NjIzOSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/backup/backup.sh#L205-L217",
+          "version": "repo-lines-v1:sha256:59bbf6e30cc794957edc77b31e4d1f1d0886612dba19f7053968327888228a9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YmQ3MDE2ZDhiMGVjMzBmNWMxZmE5NWY4ZmE5YTdhMjdmOTliZDhiODcwZDNlMGM3MTg2YWYwNjc2NDhlMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3YjI1OWJkYTIwNDZkNGVkNzZlMGMwYjRiMTUyNjY4MGQ2YmYzYzJhMjAwMmMzYzJmMWU2ZTMzNTM4MGZhNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NWJiNTgxMjBlNmU3MWIzNTljNjg4NDBiN2RlMWZkZWI1MGMxMWI3NDJjNjhkYzhhOGEyNTM1NDc0NGM4MGEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }

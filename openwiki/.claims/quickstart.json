@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:63c7db4954f265dc4e2a7b01df3cde8fed1ead3f9176e787584ab06ac1650a67",
+  "pageVersion": "sha256:59a4dc81233e9446209a34cf4f3b85665eea7848dc90d0ebb71032b292c8e1e5",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
         },
         {
           "resource": "repo://scripts/check-openwiki-governance.mjs",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
         },
         {
           "resource": "repo://scripts/check-openwiki-okf.mjs",
@@ -72,7 +72,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
         },
         {
           "resource": "repo://specs/044-openwiki-automation-migration/spec.md",
@@ -114,7 +114,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/wiki-maintenance.md",
-          "version": "repo-file-v1:sha256:c5f6771af137757b667a82cf4cead38c6bbdcb2f8513b2a2d136d477b0e91a85"
+          "version": "repo-file-v1:sha256:828e92a249ba643b9b49d77ae61d28a82609a212f2141ec318b94cbe61da259a"
         },
         {
           "resource": "repo://infrastructure-as-code/project.json#L224-L243",
@@ -161,10 +161,20 @@
           "version": "repo-file-v1:sha256:8be046977da31a88153cdd3d2435770af05716f6f88f279e395f9f3e2b703161"
         }
       ]
+    },
+    {
+      "id": "claim_8e3d1813ac914456bb0e3cf542ebff60",
+      "statement": "Governance rule G11 classifies a concept as derived only when its `resource` citation actually RESOLVES: a concept citing a path that no longer exists is reported as NEITHER derived nor authoritative unless it is also listed under `authoritative:`, so a dangling citation is a build failure rather than a quietly downgraded summary.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-openwiki-governance.mjs#L304-L330",
+          "version": "repo-lines-v1:sha256:5ae4e17b73ea564e8a6f5465152c8e38ff3a3cf6025715e098499723a7e2d474:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmMwODAzYzA4NzQwNGE5Y2Q2NzRjNDAzMjIxY2U1NTc5NmQ3ZDNkZjc2YWFlNmI0OGRjZDE0M2IwYmZkMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMDg1YjFlZTQ5ZWE1NjE3NjFjM2IwZmNlNjJlY2Q3ZmE5YWU3ODhiNGM2ZmUyMDdiZTJjOWFjOTQ1OGI5NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkYjQ1YjRiNTFmNDNmYjZhYjBmNGZmY2JiOTc3ZWNmZDM1ZDMzOTVjZWQ0MGY1MjA4M2RhZjVlNzZhYzI0NmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-03T01:23:06.490Z"
   }
 }
