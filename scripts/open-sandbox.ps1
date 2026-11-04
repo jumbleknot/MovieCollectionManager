@@ -108,14 +108,23 @@ if (-not (Test-Cmd 'sbx')) {
 }
 
 # ── 1. make sure the sandbox is actually running ────────────────────────────────────────────────
-# `sbx ls` is the only status source; parse the row for this sandbox rather than trusting exit code.
-$ls = Invoke-Native -Exe 'sbx' -Arguments @('ls') -Capture
-$row = $ls.Output | Select-String -Pattern "^\s*$([regex]::Escape($Sandbox))\s"
-if (-not $row) {
+# `sbx ls` is the only status source; read this sandbox's entry rather than trusting exit code.
+#
+# Structured output, not the table: v0.48.0 redesigned every human-readable listing (state marks,
+# a CREATED column) and says outright that scripts parsing it must move to `--format json`. The
+# JSON is a bare array of { name, status, … } since v0.48.0. Invoke-Native merges stderr into the
+# capture, and v0.48.0+ sends daemon-start progress there, so ErrorRecords are dropped before parsing.
+$ls = Invoke-Native -Exe 'sbx' -Arguments @('ls', '--format', 'json') -Capture
+$json = ($ls.Output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join "`n"
+try { $sandboxes = @($json | ConvertFrom-Json) } catch {
+  throw "could not parse 'sbx ls --format json' (exit $($ls.ExitCode)): $json"
+}
+$entry = $sandboxes | Where-Object { $_.name -eq $Sandbox } | Select-Object -First 1
+if (-not $entry) {
   throw "sandbox '$Sandbox' does not exist. Create it first (see docs/runbooks/devcontainer-sandbox.md)."
 }
 
-if ($row -match '\brunning\b') {
+if ($entry.status -eq 'running') {
   Write-Host "  sandbox '$Sandbox' is already running"
 } else {
   Write-Host "  sandbox '$Sandbox' is stopped (the microVM idle-stops ~30s after the last session) - starting..."
