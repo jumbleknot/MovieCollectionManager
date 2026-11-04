@@ -19,7 +19,10 @@ docker volume create mcm-bff-store-mongo-data
 docker volume create movie-assistant-store-postgres-data   # agents
 docker volume create agent-audit-opensearch-v3-data     # audit (OpenSearch 3)
 docker volume create agent-audit-opensearch-snapshots   # audit snapshot repo — chown to the node uid before first use
+pnpm nx build mc-service                                # builds mc-service:latest — up-mcm and up-all need it
 ```
+
+> **`pull access denied for mc-service` is a missing build, not a registry login problem.** `mc-service:latest` is built locally and published to no registry, and `up-mcm` / `up-all` do not build it, so on a fresh engine they fail with `pull access denied for mc-service, repository does not exist or may require 'docker login'`. Compose stops during the pull stage, so no `mcm` container is created. Do not `docker login`: run `pnpm nx build mc-service` (3m 43s on a fresh dev container, 2026-11-04) and re-run the target. Compose also does not rebuild an image that already exists, so re-run the build to pick up `mc-service` code changes.
 
 The Keycloak DB password (`KC_DB_PASSWORD`) is no longer a separate `.env.local` / file-secret
 (feature 022) — it is one of the per-stack credentials minted into `stacks/auth.env` below and
