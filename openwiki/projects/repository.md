@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack re-derived from the manifests rather than from the README's moving tech-stack table, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas, including why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, polyglot tech stack re-derived from the manifests rather than from the README's moving tech-stack table, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies]
 sources:
@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T13:09:42.610Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -302,8 +302,9 @@ means the same section in either file:
   foot-guns.
 - **[docs/runbooks/devcontainer-sandbox-lifecycle.md](../../docs/runbooks/devcontainer-sandbox-lifecycle.md)**
   — recreating, resizing, verifying and upgrading: §7b templates and recreate-from-nothing, §7e a
-  full disk wearing other symptoms, §7f the `sbx run` false failure, §8 disk (three volumes), §8b
-  what a cold recreate needs, §10 the verification harness, and §10b the `sbx` version and upgrade
+  full disk wearing other symptoms, §7f the `sbx run` false failure, §7g memory (the OOM killer takes
+  a bystander), §8 disk (three volumes, all resizable), §8b the six things a cold recreate needs that
+  the template does not carry, §10 the verification harness, and §10b the `sbx` version and upgrade
   ritual. It was split out of the main runbook on 2026-10-10 (item #682) so each source stays small
   enough for the wiki generator; the section numbers are unchanged.
 
@@ -311,28 +312,79 @@ Verification is a script, not a judgement: `.devcontainer/verify/run-harness.sh`
 scripts by name** across three vantage points (in-container, VM-side, host-side), counts anything
 that produces no explicit pass as a failure, and refuses to report the host-side engine-seam check
 without `MCM_HOST_CHECK` — a claim asserted only from inside the thing being claimed about is not
-proof. It is **not read-only**: the last check, `verify-reproducible-recreate.sh`, removes the dev
-container *and its derived image* by design, so a FAIL there means the container is gone right now,
-not that some future recreate would fail. Details: lifecycle §10.
+proof. `verify-engine-seam.sh` is one script run in three modes, so the aggregate list has fourteen
+rows but twelve distinct scripts, and its slot is green only if all three modes pass. **Run it from
+the VM shell, with `~/.mcm-sandbox-env` sourced**: from inside the dev container the VM-side checks
+`portable-runner` and `reproducible-recreate` have no `devcontainer` CLI and the run reports 9/12,
+which reads as three regressions. It is **not read-only**: the last check,
+`verify-reproducible-recreate.sh`, removes the dev container *and its derived image* by design, so a
+FAIL there means the container is gone right now, not that some future recreate would fail — the
+order is load-bearing, and the harness re-resolves the container name before it because
+`verify-portable-runner.sh` can replace the container too. Two instrument faults worth knowing: the
+host-side engine-seam check **passes vacuously when Docker Desktop is stopped** (every assertion is
+"the Windows engine does not list X", and an unreachable engine satisfies all of them), and
+`firewall-allowlist` has a known first-run failure that passes on re-run. Details: lifecycle §10.
 
-`sbx` itself is pinned at **v0.47.0** (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from
-v0.43.0 on 2026-10-08 (`winget upgrade Docker.sbx`, after `sbx daemon stop`). It is load-bearing for
-isolation and egress enforcement, so upgrading it is a **security-relevant change**, not a routine
-one. The ritual: read the intervening release notes for network-policy, `--network=host`,
-port-publishing, idle-stop, secret-injection, and template changes; capture the before-state with
-`verify-reboot-survival.sh --capture`; re-run the harness (`run-harness.sh`) plus the host-side
-`verify-sandbox-egress.sh --audit-check`; re-run the G5 sibling-egress refusal explicitly; and record
-the new version in the runbook. Several behaviours here are version-specific and undocumented.
+`sbx` itself is pinned at **v0.51.0** (`7d55286de0c775148b985ed349f760f1eba06203`), upgraded from
+v0.47.0 on 2026-11-03 (`sbx daemon stop`, then `winget upgrade --id Docker.sbx --version 0.51.0`).
+It is load-bearing for isolation and egress enforcement, so upgrading it is a **security-relevant
+change**, not a routine one. The ritual: read the intervening release notes for network-policy,
+`--network=host`, port-publishing, idle-stop, secret-injection, and template changes; capture the
+before-state with `verify-reboot-survival.sh --capture`; re-run the harness (`run-harness.sh`) plus
+the host-side `verify-sandbox-egress.sh --audit-check`; re-run the G5 sibling-egress refusal
+explicitly; and record the new version in the runbook. Several behaviours here are version-specific
+and undocumented.
 
-The v0.44–v0.47 release-note items that touch this environment are narrow and none widens egress:
-`sbx rm` prompts in v0.45.0 and declining returns non-zero, so scripts and agent shells need
-`--force`; egress got **stricter** across v0.45.0–v0.47.0 (DNS is refused when no rule permits it,
-PTR lookups only for already-authorized IPs, policy-evaluation failures fail **closed**, and raw TCP
-to a denied hostname is no longer let through by an allow rule for its resolved IP); and `sbx create`
-still has **no `--disk` flag** on v0.47.0, so disk sizes remain creation-time environment variables
-(lifecycle §8 — currently Docker 150 GB, root 40 GB). The verified 2026-10-08 upgrade ran the
-harness to **12/12 PASS** (including `reproducible-recreate`), G5 PASS, `--audit-check` PASS with all
-50 canonical destinations live, and the volumes confirmed at 150 GB / 40 GB from the host.
+The v0.44–v0.47 items are still in force and all narrow: `sbx rm` prompts from v0.45.0 and declining
+returns non-zero, so scripts and agent shells need `--force`; egress got **stricter** across
+v0.45.0–v0.47.0 (DNS is refused when no rule permits it, PTR lookups only for already-authorized IPs,
+policy-evaluation failures fail **closed**, and raw TCP to a denied hostname is no longer let through
+by an allow rule for its resolved IP); and v0.46.0's `secret set --command` helpers run from a fresh
+temp dir, which is unused here (`sbx secret ls` is empty) but noted in case that changes.
+
+The v0.48–v0.51 release-note items that touch this environment are equally narrow and none widens
+egress. The **`shell` agent became a published kit in v0.51.0** (`docker.io/sbx/shell`, a Docker
+Hardened Images Debian 13 image with an engine sbx starts), replacing the unrefreshed
+`docker/sandbox-templates:shell`; a sandbox created on an older version keeps its old image until it
+is recreated, so the 2026-11-03 recreate is what moved this environment across, and the `sbx create`
+command line is unchanged. v0.48.0 redesigned every human-readable listing (state marks, a CREATED
+column) and changed the `--json` shapes (`sbx ls` is now a bare array), which is why
+`scripts/open-sandbox.ps1` reads `sbx ls --format json`; `--detached` is rejected and a piped `y` no
+longer confirms a prompt. v0.49.2 shipped a CA-trust response to the eMudhra CA compromise —
+upgrading the CLI does **not** fix an existing sandbox's trust store, recreating it does.
+v0.49.1–v0.51.0 made network policy stricter in three narrow ways (an explicit CIDR deny beats a
+domain allow, a burst of outbound connections no longer crashes the daemon when the host network
+stalls, and policy commands reject an empty `--sandbox` instead of applying globally), and v0.51.0
+allows `-m` up to the host's total and adds `sandboxOptions.rootSize` / `dockerSize` to environment
+files as an alternative to §8's variables (not adopted — the variables still work). `sbx create`
+still has **no `--disk` flag** on v0.51.0, so disk sizes remain creation-time environment variables.
+
+The 2026-11-03 recreate hit four things the runbook had not predicted, all now recorded there: the
+VM's block-device names moved (the Docker volume is `vdf`, not `vdd` — identify it by mount point
+`/var/lib/docker`, never by name); `/etc/docker` does not exist on the new image, so §8b's `tee` needs
+a `mkdir` first; the toolchain pin had been **deleted from the registry** by
+`infrastructure-as-code/forgejo/registry-retention.yaml` (newest 4 `mcm-devcontainer` versions or 21
+days), so a cold `devcontainer up` failed on `not found` while the old VM kept working on its local
+copy — re-pin before every recreate; and the generator's `--forge-host` must be the bare host, because
+read from `~/.mcm-sandbox-env` it carries single quotes and `sbx policy allow` rejects `'host'` as an
+invalid pattern, so count the applied rules rather than trusting the loop.
+
+Verification for v0.51.0 plus the shell-kit recreate (2026-11-03): the harness run from **inside**
+the dev container reported 9/12 — an instrument fault, not a regression, since the VM-side checks
+`portable-runner` and `reproducible-recreate` have no `devcontainer` CLI there — and from the **VM
+shell** with `~/.mcm-sandbox-env` sourced it reported **12/12 PASS** including `reproducible-recreate`
+(`firewall-allowlist` failed once first: the known first-run case). G5 PASS, and
+`verify-sandbox-egress.sh --audit-check` PASS with all 103 canonical destinations live (the 104th
+applied rule is the forge host). `verify-engine-seam.sh --host-check` was **not run**, because Docker
+Desktop was stopped and that makes it pass vacuously. Volumes from inside the VM: `/var/lib/docker`
+147 G, `/` 40 G, 15 GiB RAM.
+
+The verified 2026-10-08 upgrade to v0.47.0 plus the 150 GB recreate, for contrast: harness **12/12**
+(including `reproducible-recreate`), G5 PASS, `--audit-check` PASS with all 50 canonical destinations
+live, and the volumes confirmed from the host at `mcm-docker.img` 150.0 GB and `rwlayer.img` 40.0 GB.
+That first harness run was 9/12, and none of the three failures was a regression: the refusal-body
+marker change (an instrument fault), the personal layer absent on a CLI `devcontainer up`, and the
+known first-run `firewall-allowlist` case that passed on re-run.
 
 ### Alternative: native host toolchain
 
@@ -548,14 +600,20 @@ images, volumes, containers with a restart policy). Verify with
 `sbx run` can report `500 Internal Server Error: docker daemon failed to start inside the sandbox`
 while **dockerd is perfectly healthy**. Restoring this VM's 20 `restart: unless-stopped` containers
 took 54–101 s across five measured starts, and sbx's dockerd-readiness budget is a compiled-in
-constant below that — there is no flag, variable, settings file, or daemon option to raise it
-(checked on v0.39.0 and v0.43.0, and not raised by v0.43.0). sbx aborts, the CLI exits, and the
-~30 s idle-stop then kills a VM whose dockerd had been serving the socket the whole time.
+constant below that — there is no flag, `DOCKER_SANDBOXES_*`/`SBX_*` variable, settings file, or
+daemon option to raise it (checked on v0.39.0 and v0.43.0; v0.43.0 did not raise it). sbx aborts, the
+CLI exits, and the ~30 s idle-stop then kills a VM whose dockerd had been serving the socket the
+whole time. Dockerd's own log is the proof: on one occurrence sbx declared the failure 1.7 seconds
+*after* `API listen on /var/run/docker.sock`.
 
 `scripts/open-sandbox.ps1` is immune because it treats the **exit code as a claim and SSH
 answering as evidence**, waiting up to a 120 s deadline. A bare `sbx run` still shows the false
 failure; when starting by hand, use the runbook's ~30 s grace window (`sbx exec mcm sh -c 'docker ps'`)
-or just run the launcher. Full mechanism:
+or just run the launcher. Two further traps on this path: a `sbx run` that *succeeds* never returns —
+it attaches the interactive `shell` agent and blocks forever with no TTY, which is a held session
+rather than a hang — and Git Bash mangles a `/workspaces/...` argument passed to `sbx.exe` into
+`C:/Program Files/Git/workspaces/...`, exiting 127, so wrap it in `sbx exec mcm sh -c 'bash …'` or set
+`MSYS_NO_PATHCONV=1`. Full mechanism:
 [docs/runbooks/devcontainer-sandbox-lifecycle.md §7f](../../docs/runbooks/devcontainer-sandbox-lifecycle.md).
 
 ### A template carries neither Docker images NOR the egress policy
@@ -575,9 +633,32 @@ container another ~13.5 GB, so pulling a new toolchain image while the old pair 
 exceeds the disk on its own — remove the previous pair as part of re-pinning. The three volumes are
 sized at **creation** time by environment variables (`DOCKER_SANDBOXES_DOCKER_SIZE`,
 `DOCKER_SANDBOXES_ROOT_SIZE`, and the unused `DOCKER_SANDBOXES_CLONED_WORKSPACE_SIZE`), not by a
-flag: `sbx create` still has no `--disk` on v0.47.0, and a resize therefore means recreate. When a
-disk fills it does not announce itself — it wears apt signature errors or `exporting layers`
-failures, and `df` is the authority while `docker system df` is not. Lifecycle §8 and §7e.
+flag: `sbx create` still has no `--disk` on v0.51.0 (v0.51.0's `sandboxOptions.rootSize` /
+`dockerSize` in environment files is the offered alternative and is not adopted), and a resize
+therefore means recreate. Current values are **Docker 150 GB, root 40 GB**, set at User scope rather
+than `$env:` so a future `sbx` upgrade does not silently revert the default. Identify the Docker
+volume by its mount point (`/var/lib/docker`), never by device name — it moved from `vdd` to `vdf`
+with the v0.51.0 shell kit. When a disk fills it does not
+announce itself — it wears apt signature errors or `exporting layers` failures, and `df` is the
+authority while `docker system df` is not. Lifecycle §8 and §7e.
+
+### Memory is bounded on both sides, so an OOM takes a worker rather than a bystander
+
+The VM has 16 GiB and no swap, shared by the dev container, dockerd and every stack. Measured
+2026-11-01: one `pnpm nx test mcm-app` fanned out to ~19 Jest workers (Jest's default is cores − 1,
+and the sandbox reports 20 vCPUs), the container reached 12.3 GiB, and the kernel's global OOM killer
+took **Keycloak's JVM** — the largest single process in the VM — which restart-looped with exit 137
+while the test run that caused it finished normally. It reads as a Keycloak or disk fault.
+
+Feature 086 put two bounds in place, both pinned by
+`scripts/__tests__/dev-memory-bounds.guard.test.mjs`: every discovered Jest config caps its workers at
+a literal integer ≤ 4 with `workerIdleMemoryLimit` set, and the sandbox dev container carries
+`--memory=10g --memory-swap=10g` in its `runArgs`, so an exhaustion inside the container is resolved
+inside it. The limit applies at **creation**; to apply it to a running container use
+`docker update --memory 10g --memory-swap 10g <dev-container>`, and after a recreate check
+`docker inspect -f '{{.HostConfig.Memory}}' <dev-container>` prints `10737418240` rather than `0`.
+`dev-ollama` is a sibling **outside** the limit and a loaded 7B model eats most of the remaining
+headroom. Lifecycle §7g.
 
 ### The workspace foot-gun: `sbx run` mounts the current directory read-write
 

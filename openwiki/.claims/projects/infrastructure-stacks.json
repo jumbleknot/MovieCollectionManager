@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:dac207aa1d3b83de2b4c837df7775a1279d09381cdbfa0720d289ebb79e321bf",
+  "pageVersion": "sha256:beb7b1060f3abd43452acee849866f2dacdcf89bbf1a5d9ac39810284f7a3e6d",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:893444688993724abbd0ee437be07034d9e39bd7a048df90fdb18a076f0b2e1f"
+          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -1019,11 +1019,11 @@
       "statement": "up-agents-prod rebuilds its four agent/MCP images (agent-gateway, movie-mcp, web-api-mcp, spreadsheet-mcp) from the checkout by default and refuses --no-build when CI=true, because on a persistent runner a leftover image made the whole agent E2E gate a false green — and this is a gate path, not only a local loop: CI's agent E2E and DAST jobs both bring the stack up through `pnpm nx up-agents-prod infrastructure-as-code`. scripts/__tests__/agent-stack.guard.test.mjs pins the build default, the local --no-build opt-out, the CI refusal, and that no CI workflow deploys the stack with --no-build.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1668-L1671",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1669-L1672",
           "version": "repo-lines-v1:sha256:2293028ca887933ed7678d48b1a47a387bd3f26cebbf0703582811123b784f79:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWEzNGE3ZTVjYjY0NDI4OGEzNTQ5M2JjYWM0NDA5N2Q5M2U1NDZkODRkZTE3N2NkMjYwNmQ5ZDZkMmUzODBkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM2YzdmYTZlZmVhNjEyZWM0YzAzMjMwZGI4MGUwODcwOWZiNDQ0Mjk3ZWFlNDNmODhkZjBjNDI0NTgxMzllMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVlNTBiMGY4Y2QwMWU3M2Y2NThiNWQyNjRlYjI0NTllODUyNWMyMmJjNTRlOWM5YzYxNTc3NmE0ODRjYjliZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkzODExMDhjZTVmNjU2OTJhYWYwMjZiYTZkOGExMmE1NmFhMmUwMDBhYzg2MDNkYWFhZDkxMjBhMzNhYjdiOSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L797-L809",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L798-L810",
           "version": "repo-lines-v1:sha256:739745ed0bf91bedae23055b64af60a1b0af37edc80a304cde118e88b08725fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWM3YTUzMjRkYzBkODJiNTlhMmE2MDgwMmI5YzY0MDMyYmZiNzcxYjhlMThjY2RhMmYyMzQ0Yjg5Nzk2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NWEzMmE3OWE0MmFkYjQ1ZmFiMjI5MDkyNDE5NmU0YzZmNjY4ZTZhMDM3NjU4YzJhYWFjNzBiNzU3ZjRhYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4Y2JmOGEyYWYyMDdiODk2OWVlYWYwNTQ0MmI2ZTQ0MzZiNGZlYTJiMjYzYzQzYjk5ODk1MDc2MjhlZWUxOTYifQ"
         },
         {
@@ -1035,10 +1035,28 @@
           "version": "repo-lines-v1:sha256:f2cb4d30b939654a27f2ec5833aa839d5acce1a2c490add45c0c2107563563ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MzI1MWRmMGRlNDM5ZGJiZWUwMTc1NGQwMDdkZTg0ODNjYWUzZDAwY2FjN2NlNWQ3ZjQyMTdmODI2NTQxM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMDQyNzY3NWM0MjE2NTJlZDRlZjI4MzdlOWJhZDViMGI5M2RiZjYyM2RlZmY1NDhlOTE5YmRkYzVlZDNjODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZmUyMmQ2YmIyODUyODNjZmQ1YjYwYzliM2FjOTlmMTk3YmEwZTYxYjBlNjVlNjFmMDNjODc5MWQwNWZkZGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e506fd53d0d7455a88a7abd3952c9573",
+      "statement": "The workflow comment on cd-deploy's digest-promotion step is stale in two ways, while the compose and the promotion script are consistent: the step's own comment describes the promoted variable as `<REPO>_IMAGE` (mcm-bff → MCM_BFF_IMAGE) and says only MCM_BFF_IMAGE is consumed by a prod stack, but scripts/cd/scan-push.sh emits `<REPO_UPPER>_DIGEST` (mcm-bff → MCM_BFF_DIGEST) and all six values are consumed by the three CI-built stacks. The workflow's own ENV_DEPLOY_PATHS comment (naming MCM_BFF_DIGEST, MC_SERVICE_DIGEST and the four agent/MCP digests) is the accurate description, so a compose line or variable name copied from the step comment references something nothing writes.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L235-L238",
+          "version": "repo-lines-v1:sha256:d21500e82ce38e07e844594ea525b9391a1301220ef8b92e7c44b73e31bea246:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjMjM1OTUxNGQ5YWIyNzc1MTJkMTVkNDgzYzNmZWZmM2YyODgyNzJkYjBjMGY1YWQ0NjU1ZDE5MTg3MTA4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0ZWRlYWMyMzRiYTljNmE5Y2U0MzhlMDYyMWI3MTcwMjMzOTIzMDU1MTQzZjZmYTFhYTZiYTg5MTM4Y2QzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzVjZGE3OWQ4YWJkMzFmZWUxYzI1ZGY2YTk2NTAzMjgzNjAyOGFlZDAzNjEwY2JiODJlOTM3NDBkYTBmYzkwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjA5Mzg5ZjQ5ZmQ0MzdhYWZiMzIxMTEzZGE1MWNmNDRhMThmYzNmOTljMWEwMmEyNGFiMmFkMmE1YzdiMzhmOSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L63-L67",
+          "version": "repo-lines-v1:sha256:0616cf877fa824e03e23cb310b484a0cac28eb1eade313eda5bae57d0e6ac836:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmYWNhYTkyMjA1MmFjZWE0ZTc5NzljMGI2MzNlNzE0ZDk5ZGQ0YTE2ODg0ZTVlOWM1ZmIxZjYxZDkwNTY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFiY2NjYjBmZWYzOWI1N2NhMWEzYmQ0ZWJjM2M3YzFlMTMyYjgyN2QwYjA4ODEyM2RiYTUxYzM4YTllOTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FkNDZhZDBjMGYwZGQyZDg5ZDUyYWM3MzFhNTUwZTU0YmNkNWYxY2NmZWE2NGIyMTFiN2ViYmQ3YjQ4MTM3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE0MGM3YWFiNWFkNzc1OTE2NjAxZWU0OTUyMGFiMDA3YmY0NzMzY2I3NTNlZTlmNTE3Nzg4MWFiNzc4NGZmMiJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/scan-push.sh#L62-L67",
+          "version": "repo-lines-v1:sha256:ce84fbd064d8504218c295ca5838862624df4118924f3b06478226ff7c651389:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZkNzgxMzg4ZDQ3MTNiY2M5ZDY3ODNjZWZmOTE3ZDBjYzlkNDU1NzZkMTM3MGE0NTIxY2E4NDY1NDQ4NWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJkZTkxMGFjOTM5ZDk2ZGE5NDZkOWNmOGMxNWFlZDg0ZTYzNGNlZjM2Yzg2YzlhYzI5ODU1MjZjZmM4ZmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdjZTQ0NjFhNGZlYTQ0ZjczMWM4ZmZiOTk0NTNmMTRhZTQwNjNmMjVkMmUwYTgzZTdkOGQyZmMwZTM3ZTc4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M4ZDg3NWViY2Q5ZGZjZTM2ZGFhZjU2NGUyM2UyOTQ3MDdlNTA5ZWJlZjA1NjAwZWY5NmNhZjhjMWQ4NzE3OCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T13:09:42.610Z"
+    "at": "2026-11-04T16:55:00.915Z"
   }
 }

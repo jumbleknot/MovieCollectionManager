@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a8a4ccc237b9e1e7396a1e9d1e5006b1ca2869b1f7ccd4eaba1107c507bb7546",
+  "pageVersion": "sha256:cb74f104d2de7ebda57ca17e4de4c859ed026d1a069982ffc4b795bd961c31aa",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -408,11 +408,15 @@
     },
     {
       "id": "claim_5f5b5bb0d7184c388f46931d24ee1ff6",
-      "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine; the resolver resolves as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it.",
+      "statement": "packages/design-system/jest/tamagui-cjs-resolver.js exists because Tamagui 3 maps two subpaths' react-native export condition to ESM-only .mjs files that Jest cannot load (56 suites failed to run on the 3.0.13 bump) while Metro handles .mjs fine, so the app is unaffected; the resolver resolves exactly as the jest-expo preset does and redirects only a Tamagui dist/esm/*.mjs that has a dist/cjs/*.cjs sibling, and both the design system and mcm-app Jest configs use it (packages/design-system/jest.config.js and frontend/mcm-app/package.json's jest.resolver).",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L87-L89",
-          "version": "repo-lines-v1:sha256:922d9a9961f7ced904ff158ad4526748ac18b0ca46db081929ebf3f9e7dfd2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
+          "resource": "repo://frontend/mcm-app/package.json#L87-L91",
+          "version": "repo-lines-v1:sha256:3ff0ada851383cc8134c3a5f18f93cbaa10e79619ca9ed81ba58cff29a4b107d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE5MjFhNTAxYTQxYWY4NDI4MjU1NjI4ZmQ5ZWM5ZmYxZWQxMTUxZjZlOTYzYzkxOGNkY2QxMTMyYzAxMGYyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZhOWUwYmRkM2JhZTgxZGEwYWYxMzQ5NDgwMTZkNzk4ODU1NzVhM2VkNDA3MzIyMDNjNTg0OWQ1YjU0MDk4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE5OGIyZjFiMGNlMjM0MzQ0OTAzNTM1ZWNkMWFmYzRkMGVlY2QwMTQ0ZmFmZmZjOTk1Njc1ZTliMDE0ZjZhNSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest.config.js#L17-L18",
+          "version": "repo-lines-v1:sha256:7b411c2d0be9008fe8f15141628fb928bd07dd49baa1de90a6deeadfe2ef6117:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY2OTI2NmVlMjZlODJmNzEwNDIyY2YwNDNjMTAzN2ZiODY0NWViNDZlY2EwZWUwNzE3YmVlOTY5MzUwZjQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2YjBiMjc1YTk3ZjlkZTliYTVjZmY2Mjg5YjU1MDg1NGJhZDVmNWUwOGE1OTJjNDY5YTE0YmZmYzZhZThlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBmNzA4NDYyMGJmZTYxMTM1NWEwYjk3OWI1YmNiNWJhMWVmNDZhMzY4ZTRkNWM0MWUxY2E3MDFlNzZlMzJhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTA4ZjdlOTUyN2Y4MTY2YmRjODBkMzcwZjdlOTJjNTRkMzY1NjMzMTEwM2IzYTRlOTUzN2ZjYTg4MDFlZWNhYyJ9"
         },
         {
           "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
@@ -561,7 +565,7 @@
       "statement": "Jest must be told not to transform React Native 0.86's renderer: `RendererImplementation` now imports `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render touching `Animated` pulls in the ~725 KB already-compiled `ReactFabric-dev.js`, and `frontend/mcm-app/package.json`'s `transformIgnorePatterns` therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, which is back at the SDK-56 figure and why the per-test 15 s timeout that briefly stood in for this was removed.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L94-L98",
+          "resource": "repo://frontend/mcm-app/package.json#L96-L100",
           "version": "repo-lines-v1:sha256:319cd6c7264eb5bb7ddfc2d01de14b240397c0f9f62065d854e49dadcc0af23d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlYjdmMjc5YzM3ZWM2ZTVmMjk0NzQ0NWI5MTNmOGZhYjMyMGRiOTUwMjkwM2Y1NWEyNWYwZjlmMGE1YjJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzZDUzNWNlMzgwNjNkNmI0YzUxZDhjMzg2YTdmOWIzZTU4MGExNGExMGMwN2IxOThkZmFmMTljOTNhM2JmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMyNTBjNTY3MTQzY2IxOTMyYWYyMjhhZTg0ZmFiM2FjMTc2NzZiOGY0MWRkNDA5NTU5Njk2NWYwMjJlOThkYSJ9"
         },
         {
@@ -881,10 +885,36 @@
           "version": "repo-lines-v1:sha256:64dce8fed4127c2fc19c9406e04d3a026f373638c520db19cf5973ba281f647d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYWMzNjNiNmY0MWM5MmIyNWFhNjY0MTJlMGUwZGM2MmQyMTM1ZTYwODA2ODhjNzRjYmFkODU3OGRiNGIwYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNzAxMzZlMDY4MGU1YWNmNjE0M2I1ZGMzNzY4ODBmMDRhOTI2M2EwMDU2ODFmMmY1OWJiMWRmZGY1MTdiZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6dd0c24008e94d4fa7a1ace291931cb7",
+      "statement": "Every Jest config in this workspace caps its workers at a literal integer of at most 4 and sets workerIdleMemoryLimit (mcm-app's jest block and packages/design-system/jest.config.js both use maxWorkers: 4 / workerIdleMemoryLimit: 1.5GB) because on 2026-11-01 one `pnpm nx test mcm-app` fanned out to ~19 workers (Jest's cores − 1 default on a 20-vCPU sandbox), reached ~6.9 GB together, and the kernel's global OOM killer killed Keycloak's JVM instead of the test run; scripts/__tests__/dev-memory-bounds.guard.test.mjs discovers every Jest config from git and fails by name if one lacks the cap, and the sandbox dev container carries --memory=10g --memory-swap=10g so an exhaustion inside it is resolved inside it.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L111-L123",
+          "version": "repo-lines-v1:sha256:e7a5c4c31d99823e17523e4338bc0d25b50e0424647be1a7139664909afdc7ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYmEwY2I2YWJkNWE4NDZmMzk5Y2MzOWU4OWU0N2FjYzU2YmYxOTkwZTM1OTIwNmIyYWI2Y2FmM2MyM2E2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZmFiZTA2YjA0Y2ZiMWEyNTQ4MjAxN2E1NjRmNGQ4ZTJlYThjMGIzYmU3N2Q4NzhhYTBhM2Y4YWI5ZmY1ZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MGE5NTgyM2M5ZDBiNDMzZGU0OTlkZjY1OTdjMmJiY2FlODg4OGVlNDU1ZTQzZDE1ZTdhNzJlZTIyNWIwMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxY2E4ZGRkZTc4ZjA3NTc2ZTEzZjlmNTc0ZjVmZDM0ZDk4MmQ3NTg3N2I2YTlkMWU2MGUyMGVkMmQzMzBiMDcifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L87-L90",
+          "version": "repo-lines-v1:sha256:26df61d8bb2bdf470912f4e35e39d63003cb19ebbcddd072849df36d47a53f25:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM3MjZhYjZhZjA5YTRkNTY2NWY5YjU5Y2NhMzg2NzU0NWQ5YzUzMjY0NmQ3Nzg4MzQ0ZTUyZGIyZWQ3ODdlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZhOWUwYmRkM2JhZTgxZGEwYWYxMzQ5NDgwMTZkNzk4ODU1NzVhM2VkNDA3MzIyMDNjNTg0OWQ1YjU0MDk4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWVjMzdmNmQxNjg3MzcxMGViNzhhNmEyMzg2ZTcwMTllOGIzNjY5YjYxMGNkYTlmNjY1MDE1YjI4ZDA4ZmNlNiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/jest.config.js#L9-L16",
+          "version": "repo-lines-v1:sha256:f5a569a8080f624d9dcb9410c63a72d7aa6a607f9e66ce984636b9269b314582:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc1ZTU2OTgyZmIwYzU4M2NmOTFmZjY1MDU2M2ZiNjFiMDkxZTgwMjI1NjcwMTIyYTdlNTJlYTFlNzc5NDdkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWEyMjliOTM2NTI4NmIzOTEzN2RhMjNiOTYwZGVmOGQwZjA5MGFkZThjZTI3ZWE1Yzk4ZTE5NTgzZDg5NjBiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThhZjdhNzJlYjlkZTU5NmFkMDZlMzEzODlhNGQ1Y2E1M2IwNWZlMDVlMTRiMzEyNTg4ZDNkYTIyOTBhZmZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTljMGU1ZjI4MjNkZmYzMTg3ZWJlMjBmMTMzMjMwOGYwMWEyNTczOGRhYzI2ZmRjNjg1NGQ5NTVkOWZhNjY2YiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs#L1-L16",
+          "version": "repo-lines-v1:sha256:babc3a60283397fc516587424e125f7596859ed59d3e915cc6a5589b86493953:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YmIyOTA0M2ZhMWYwZmNhMGQ3NGExY2UzOTlmNzVhMWUxMmE2MjIxMWIxMzg3YjdhZDg2N2RhNmQxZDA1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NTUxMTdmNDFkYzY3YWQ3MWI5ZmVkMTZlYzZhNTc0N2MzZWY0Y2Y5ZWFkY2ZhMmJkNzNhNjdjOTA0ZWM4ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YmZhNzI4ZmFmOWNkMmQ1ZDVjNDk1NGFlZTVkYjU2NGFhOThiYjIzNjZlYWIyM2FlMTI0NGRhMzFhYTk2YTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs#L61-L107",
+          "version": "repo-lines-v1:sha256:f3cfe9b91c958c3d7cb1cbb8c90b6b6d832a92a907162830804187d23905ca40:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NTg3MzMzZTYyMmVmYzIwNmIyZTMyNzA3NDJiZTQ0NzE3ZWZiYTUxZTU0OWJjODk1NTcxNDMxMTA5NWRlNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkNTg0OGIwMjczODQ3ZjVkYWNhYzQ1YjA4ZjcyMTM4ODZjZDg5NWYwMTZiN2ZkN2Y5YWNjMWVlYjlhMTY1YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T01:23:06.490Z"
+    "at": "2026-11-04T16:55:00.915Z"
   }
 }

@@ -132,7 +132,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T13:09:42.610Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -433,16 +433,28 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 `${<SVC>_DIGEST:?set in <dir>/.env.deploy (cd-deploy promotion)}`, so a run directory whose promotion
 never happened aborts the deploy rather than falling back to a floating tag.
 
-Only the three CI-built stacks receive it: `cd-deploy`'s promotion step copies the *same* generated
-`VAR=<bare sha256>` block into all three run directories it names
-(`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), so every Komodo Stack reads a local
-`.env.deploy` rather than a fragile `../` path. All three files therefore carry all six
-`<REPO>_DIGEST` lines, and each stack consumes only the names its own images need —
-`MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
+Only the three CI-built stacks receive it, and the fan-out is script-driven rather than an inline
+workflow step. `scripts/cd/scan-push.sh` mints one generated file — `env-deploy.generated`, one
+`<REPO_UPPER>_DIGEST=<bare sha256>` line per image it scanned and pushed, under a generated header —
+and `scripts/cd/promote-digest.sh` copies that single file into every directory named in the
+workflow's `ENV_DEPLOY_PATHS` (`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), commits
+it and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
+and a new CI-built production stack is wired in by adding its run directory to `ENV_DEPLOY_PATHS`
+and its `additional_env_files` — nothing else in the promotion path is per-stack. All three files
+therefore carry all six `<REPO>_DIGEST` lines, and each stack consumes only the names its own images
+need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
 `AGENT_GATEWAY_DIGEST` / `MOVIE_MCP_DIGEST` / `WEB_API_MCP_DIGEST` / `SPREADSHEET_MCP_DIGEST` for
 `agents`, which alone runs four CI-built images. `.gitignore` keeps those files tracked with an
 `!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
 ignore rule, because the file holds only digests — no host, no secret.
+
+The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
+`Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
+variable as `<REPO>_IMAGE` (`mcm-bff → MCM_BFF_IMAGE`) and says only `MCM_BFF_IMAGE` "is consumed by
+a prod stack today". Neither half holds any more: `scan-push.sh` emits `<REPO_UPPER>_DIGEST`, and all
+six values are consumed by the three CI-built stacks. The workflow's own `ENV_DEPLOY_PATHS` comment —
+naming `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — is the accurate one, and a
+compose line copied from the stale comment references a variable nothing writes.
 
 ## Side artifacts and the static gates over every compose file
 

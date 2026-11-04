@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3b1f6d29420d6485a29379b1e2cdcf8e586f0d8225138880adc107920ec28672",
+  "pageVersion": "sha256:3cdbc381bb859b22b387708b1a53045120e96f1c3a7c9d8779b6643f587a1284",
   "claims": [
     {
       "id": "claim_165a779429c54154b88d58468022d8bc",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://packages/design-system/jest.config.js",
-          "version": "repo-file-v1:sha256:780d34574b9182f4c3b5dd101f5501ed23aa8ef905cf8b30aa7365da1b1c8fcb"
+          "version": "repo-file-v1:sha256:39103346ebd0b13605903eaa3e8119b3a74b30ba95ebc348bfa0f890f64febb0"
         },
         {
           "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js",
@@ -289,7 +289,7 @@
       "statement": "The Tamagui lockstep guard also bounds any Tamagui peer range to the installed major (`>=3.0.0 <4`), requires every `@tamagui/*` entry in the lock to sit at the manifests' one version, and asserts that every Tamagui update resolves to the single `tamagui` Renovate group on patch, minor and major alike. That group rule carries `rangeStrategy: pin` and is deliberately ordered after the broad `js patch/minor` and `js majors` rules, because the last matching `groupName` wins — placed earlier, those pull part of the set back onto its own branch.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L802-L822",
+          "resource": "repo://renovate.json#L804-L824",
           "version": "repo-lines-v1:sha256:1ea744bdbdc8ce1b1bd7314534e29d9db9461d1e82d1245c040a86d56e241b00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMGVkZTQ2ZWE3MTkyYWEzNDE4ZTk2MzAyYWEyNDRkYjY0NDIyNjQ2Y2M1ZDBkYzAyNjFlNmQ1YWNiNmIyNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNTZjNDQ3YWRlNDhmNzkwNTBhODhlYTA0YzIyMjg5MzRiYjVkZjgwZWFkYzgxNmFmYWI1ZTFiOWViZjliODUifQ"
         },
         {
@@ -356,19 +356,19 @@
     },
     {
       "id": "claim_da6edffcc41b47a39954eff7a1adf2ce",
-      "statement": "The design system's Jest resolver `jest/tamagui-cjs-resolver.js` is wired into the app's own Jest config as well (`frontend/mcm-app/package.json` → `jest.resolver`), so both suites load Tamagui 3 through the same CJS redirect. The package's `testMatch` was widened from `components/**` to the whole package because a `tokens/` test had been written, committed and never executed.",
+      "statement": "The design system's Jest resolver `jest/tamagui-cjs-resolver.js` is wired into the app's own Jest config as well (`frontend/mcm-app/package.json` → `jest.resolver` → `<rootDir>/../../packages/design-system/jest/tamagui-cjs-resolver.js`), so both suites load Tamagui 3 through the same CJS redirect; the resolver's own header names both configs as its callers. The package's `testMatch` was widened from `components/**` to `<rootDir>/**/*.test.{ts,tsx}` because a `tokens/` test had been written, committed and never executed, reporting green while testing nothing.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L87-L90",
-          "version": "repo-lines-v1:sha256:20e3b8acf4171180108a03e9d91977548d78e2c83bf64ac7a0789d0c7682f8a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiMTYwNTM4MzBjZDgxNGRkNmM1NWNjZDBhNTE0ZDM4ZDNkYzI3NWZiN2Q0N2RiY2VjYmYyMjQxZDA4MTNjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRlMzUwODNjYzc2YTY2YmVhMjAzMDFjNGYwN2MxMjQzZGU0ZGQ3MzY2ZDBjOTNiY2MwYjUwMzA1YjkxZjQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiJ9"
+          "resource": "repo://frontend/mcm-app/package.json#L87-L92",
+          "version": "repo-lines-v1:sha256:84fd2a88826f19c2476e1f735f2db499a4e849418e5942f47be6cf496e4ae51c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiMTYwNTM4MzBjZDgxNGRkNmM1NWNjZDBhNTE0ZDM4ZDNkYzI3NWZiN2Q0N2RiY2VjYmYyMjQxZDA4MTNjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZhOWUwYmRkM2JhZTgxZGEwYWYxMzQ5NDgwMTZkNzk4ODU1NzVhM2VkNDA3MzIyMDNjNTg0OWQ1YjU0MDk4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiJ9"
         },
         {
-          "resource": "repo://packages/design-system/jest.config.js#L10-L16",
-          "version": "repo-lines-v1:sha256:24ea10353d2696703b87c707ddc8880e3d8f53a79bb3b41600e0b004404c1795:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY2OTI2NmVlMjZlODJmNzEwNDIyY2YwNDNjMTAzN2ZiODY0NWViNDZlY2EwZWUwNzE3YmVlOTY5MzUwZjQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YmMyMmM1NzJjNTBjNjljMjA2YTFjNTY0MjE1YmRmZWQwNWFmMjU0YjJhOWM4Mzc3MjYzYThmNDM3MDc5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg0OWM0Y2Q4NWI5OWZjNTg4OGYzYTYzMDI2OGY5ODA3NThlMTIyZWY0MmZkYTI1ZDY3ZGFmNGMxMmYwODFmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZiYjZmNWE5ZTMwZTI1ZjNhMzEzOTg4ZTk2MWNiYTYzMjQ3MTYwMDQwYWY1MTU2MWUzYTg1NjZlYzMyOWYxNSJ9"
+          "resource": "repo://packages/design-system/jest.config.js#L17-L23",
+          "version": "repo-lines-v1:sha256:24ea10353d2696703b87c707ddc8880e3d8f53a79bb3b41600e0b004404c1795:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY2OTI2NmVlMjZlODJmNzEwNDIyY2YwNDNjMTAzN2ZiODY0NWViNDZlY2EwZWUwNzE3YmVlOTY5MzUwZjQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YmMyMmM1NzJjNTBjNjljMjA2YTFjNTY0MjE1YmRmZWQwNWFmMjU0YjJhOWM4Mzc3MjYzYThmNDM3MDc5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBmNzA4NDYyMGJmZTYxMTM1NWEwYjk3OWI1YmNiNWJhMWVmNDZhMzY4ZTRkNWM0MWUxY2E3MDFlNzZlMzJhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZiYjZmNWE5ZTMwZTI1ZjNhMzEzOTg4ZTk2MWNiYTYzMjQ3MTYwMDQwYWY1MTU2MWUzYTg1NjZlYzMyOWYxNSJ9"
         },
         {
-          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
-          "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L14-L15",
+          "version": "repo-lines-v1:sha256:3c0f5635ef8bb2275587598b0f31bf78500192623883421c11af1bcb6b5da85d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRhZjVhMDUwMDEwYzBmM2IwN2FlM2M2ZTRhMDI3Mjk5MGRiNmRiZTEzOTdhOWVkZDhiY2Y3NjZmNWYxNWI0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA0NjBjNTFjOWMxNTU2NTkzNWI0ZDNiY2E0MjBhYjlmOTNhYTFmODc0NmRhZjVkZWI0Y2EwNDJjM2EzMjZjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGExYzQwZTAyOGM3NTE2ODQxYzNlZmE3MjExYzdhMTI5MjgxMGI0YzRhOWVjYzI4OWNlMjc1ZmU4MWE0MDhiNiJ9"
         }
       ]
     },
@@ -381,7 +381,7 @@
           "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
         },
         {
-          "resource": "repo://renovate.json#L498-L521",
+          "resource": "repo://renovate.json#L500-L523",
           "version": "repo-lines-v1:sha256:3f818a71d375a37ac96b660a348d783fa08e6876edf84e32e669215e53c1f663:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkMzI0NTIwMDIzZTUyYjFiMGZmMWQ1ZDQ1ODFhYzU5OTA4NmZjZmU2MjhkYWQ3YzUwODRlMTZiMDkwNWJlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1YTZhYzhhYjQ4NTBjMzVkYzA4ODBjMjc3NWNhZjA3ZDcxNmI0YTAwYzlhOTc3MmE4YzJjOTMxMDg2NGE0YTcifQ"
         },
         {
@@ -395,7 +395,7 @@
       "statement": "The Expo SDK companion packages are also version-locked repo-wide, by a rule disabling `expo`, `/^expo-/`, `/^@expo//` and `/-expo$/` with no `matchFileNames` scope. This is the third instance of the same scope defect, and the widest: `babel-preset-expo`, `jest-expo` and `eslint-config-expo` carry no `expo` prefix so every pattern in the app-scoped rule missed all three, while `@expo/dom-webview` is declared in `pnpm-workspace.yaml`, which a `matchFileNames` rule cannot reach. Measured 2026-08-27 from the Dependency Dashboard (item #29): all four were queued in `js majors` for 56 → 57 while `expo` itself sat at `^56.0.8` and `react-native` was correctly disabled — an SDK-56 runtime against SDK-57 transform and test tooling, which fails as unexplained transform errors rather than as typecheck errors naming a dependency. `@expo-google-fonts/*` is deliberately not matched (`/^@expo//` requires a slash after `@expo`; the font packages separate with a hyphen) and a guard control asserts both font packages still resolve enabled.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L522-L563",
+          "resource": "repo://renovate.json#L524-L565",
           "version": "repo-lines-v1:sha256:bf7ddef4a8943d6be7efe6edc1560585b749300e1a5d2399ac47b15d9ffdf67c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0MGU3ZTVmYTVmNWU4NDhjMmRhOWY2YTBlNGU3Y2FmZmZjNzNkZWNjNmE5NWI2MzliODg0Y2UwZWU5ZGE0ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYjdkYThkMmZmMTE4ODQ5Y2E5NGI0NWE5NGZhNzZmMGU5ZjUyOTA0NDgxMmJkZDM2Njk4MzAzZjhlYmFlZGQifQ"
         },
         {
@@ -431,22 +431,104 @@
       "statement": "The toolchain majors this package shares with the app are held by `dependencyDashboardApproval` rather than by a version ceiling, each in its own group so one dashboard tick releases one blocker: `jest` with `@types/jest` (pinned by jest-expo's jest-29 family at SDK 57, possible at SDK 58) and `typescript` (pinned by typescript-eslint's compiler peer range), both of which name `packages/design-system/package.json` as a declaring manifest. Patch and minor updates are deliberately not matched, so they stay ungated in `js patch/minor`; the `@babel/core`/`@babel/runtime` and `@react-native-async-storage/async-storage` holds cover only the app manifest.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L903-L927",
+          "resource": "repo://renovate.json#L905-L929",
           "version": "repo-lines-v1:sha256:f172070f11ccd667d7ad6e331d457440d0eb385fb983980f13e54843ee7fea70:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MjIzNTRlNzBjMWZjOTMyMDZhZGY5OTUyYTEyNDI4NmZkMTdjOTQ2ZGEyYWU3ZDFmYjUyM2FiNThkODY3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZTYzMGUzNjk2ZDRkOWI3NDYxMDcwMjZmYWFhYjk2NWU0N2QxODg4NzNhNjllODcxYWY1ODU4N2U3MzA2YTMifQ"
         },
         {
-          "resource": "repo://renovate.json#L947-L964",
+          "resource": "repo://renovate.json#L949-L966",
           "version": "repo-lines-v1:sha256:5f5e577020fab524e19cf0b3a67f60784c5630685271fd0dc23fb197ef58b7c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOGUxZjc0NGIyZDg0NWQ4Yjg0ZTViZjdjN2NkOTBlZmE0ZWEyNTU4ZDgyNjI2YjI5ZGYyMTEwOWRjMGU4OTkifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3505-L3580",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3525-L3600",
           "version": "repo-lines-v1:sha256:e04b436bf199df7f60ebec41d849ef54de587e71c20c28d2dc57c1828808f1c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZDJjNjg0ZjQ4ZmNkZmNiMjJmNDhlYzQ5ZWUyMjI0YmU5NjUxMjFhMDkyNTNlYzY4MzRkYTIwZmVmYWYxZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWI2MGQwYmZjOWQ4NDBhNWQ2ODFjZDBlMTJiZDFmOWNlY2IxY2NiMmYxYjc0OGI0MzU0MjU5NDBmZjg0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3MTNmNjZiYzAxYjk5MTg2ZTQwZGEzNDQ0Y2M3NDYzMzUwYTA2NDE1Y2MwZjEyNDdhZWUxOGM1ZjMyYzMyMTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48f23e7e2eab4365aed7920d8767f1d5",
+      "statement": "`jest/tamagui-cjs-resolver.js` exists because Tamagui 3.0.x maps two subpaths' `react-native` export condition to ESM-only `.mjs` files with no `.native.js` variant — `@tamagui/style-grammar/token-categories`, which `@tamagui/helpers` pulls in and therefore every Tamagui component does, and `@tamagui/core/inject-styles`. Metro loads `.mjs` fine, so the app is unaffected, but Jest treats `.mjs` as native ESM and every suite rendering a Tamagui component failed to run with `Unexpected token 'export'` (56 suites, measured on the 3.0.13 bump). The package's exports map blocks a `moduleNameMapper` to the deep `dist/cjs` path, so the redirect happens in a resolver that delegates to the jest-expo preset's own resolver and rewrites a resolution only when it landed on a Tamagui `dist/esm/*.mjs` whose package also ships the same module at `dist/cjs/*.cjs`, returning the original resolution when that CJS sibling is absent.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/jest/tamagui-cjs-resolver.js#L1-L33",
+          "version": "repo-lines-v1:sha256:3bf1dd87d13c5df5b3483572dd185ba472702e3a8e65ee8810a692df243a2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2da48f50d9094bd69531a91b72bd0005",
+      "statement": "The package's Jest config caps its workers at a literal `maxWorkers: 4` with `workerIdleMemoryLimit: '1.5GB'`, and the app's `jest` block carries the same two values. The default is Jest's (cores − 1), which on the 20-vCPU dev sandbox spawned ~19 workers (~0.9 GB each at peak) and let the VM-wide OOM killer take a bystander process — Keycloak's JVM — so the cap is an integer because the constraint is memory rather than core count. `scripts/__tests__/dev-memory-bounds.guard.test.mjs` discovers every git-tracked Jest config (by name, including `packages/design-system/jest.config.js` and `frontend/mcm-app/package.json`) and fails any that sets no literal integer `maxWorkers` of 1–4, or that allows more than one worker without a `workerIdleMemoryLimit`.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/jest.config.js#L10-L16",
+          "version": "repo-lines-v1:sha256:12eb5338d96f75edff9d9eeca258341f9d5a2116f997ba3f351e6c38a80e48e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZkNDBlNWYxNWVjNmQxOGRkNzU1MTIzODdhNjBkMmZhYTczNTlkMzVhYjZlM2Q2ZGM3ODVmNTUzMjY4NGY4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWEyMjliOTM2NTI4NmIzOTEzN2RhMjNiOTYwZGVmOGQwZjA5MGFkZThjZTI3ZWE1Yzk4ZTE5NTgzZDg5NjBiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTg0OWM0Y2Q4NWI5OWZjNTg4OGYzYTYzMDI2OGY5ODA3NThlMTIyZWY0MmZkYTI1ZDY3ZGFmNGMxMmYwODFmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTljMGU1ZjI4MjNkZmYzMTg3ZWJlMjBmMTMzMjMwOGYwMWEyNTczOGRhYzI2ZmRjNjg1NGQ5NTVkOWZhNjY2YiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs#L1-L16",
+          "version": "repo-lines-v1:sha256:babc3a60283397fc516587424e125f7596859ed59d3e915cc6a5589b86493953:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YmIyOTA0M2ZhMWYwZmNhMGQ3NGExY2UzOTlmNzVhMWUxMmE2MjIxMWIxMzg3YjdhZDg2N2RhNmQxZDA1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NTUxMTdmNDFkYzY3YWQ3MWI5ZmVkMTZlYzZhNTc0N2MzZWY0Y2Y5ZWFkY2ZhMmJkNzNhNjdjOTA0ZWM4ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YmZhNzI4ZmFmOWNkMmQ1ZDVjNDk1NGFlZTVkYjU2NGFhOThiYjIzNjZlYWIyM2FlMTI0NGRhMzFhYTk2YTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs#L59-L94",
+          "version": "repo-lines-v1:sha256:a0e9dc3a50a413ef862decec349aadffe4d96dbbb463526cdb2a07ea663dec82:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOGJhYjM1MGFkNDk1NTkzNTQ3N2VhYzBjNDQ5Nzg1ZmUyNmI2MzQwNDk0ZjZjY2IwZDUwYTc3OTJkMDk2OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMTczMjAzNzY5YTQ3Mzg2NjYxZDZhMjgwMDE0ZWRkMmFjNzdjODNhMmM5NDk3MmEyYmM2ZjM2NTdjZTIwMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZGQ5Zjc0ZjhlNTEzYWQ3YWFlM2M1ZWZjYmExM2JhZjcyZjU5ZjViNzY0M2Q3MjQxNjcxNjI1NjY5MTA4NzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_630dacbc906f4f1f92373d170de71ab5",
+      "statement": "MD3 interaction feedback is a state layer rather than an `opacity` change on the element: `tokens/with-alpha.ts` holds the opacities in one place (`stateLayer` = `hover: 0.12`, `focus: 0.14`, `press: 0.18`, deliberately tuned because 8% is invisible on the `#0F1117` dark surface) and `withAlpha(token, alpha)` produces the tint. `withAlpha` exists because the naive `theme.onSurface?.val + '14'` form fails silently two ways: it assumes a 6-digit hex, so a `rgb()`/`hsl()`/named token yields an invalid colour that React Native and the browser both drop without erroring, and the resulting layer was invisible even when valid. It therefore returns a non-hex input unchanged, returns `undefined` for an undefined token, and clamps alpha to 0–1; `tokens/with-alpha.test.ts` pins the non-hex and undefined cases rather than the happy path. Both `withAlpha` and `stateLayer` are exported from the package barrel.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/index.ts#L20-L20",
+          "version": "repo-lines-v1:sha256:d9cb5e61f7737acac26f8cb7d14ab6a8cc4112313fd50604e4c15be458e6b63a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDljYjVlNjFmNzczN2FjYWMyNmY4Y2I3ZDE0YWI2YThjYzQxMTIzMTNmZDUwNjA0ZTRjMTViZTQ1OGU2YjYzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDljYjVlNjFmNzczN2FjYWMyNmY4Y2I3ZDE0YWI2YThjYzQxMTIzMTNmZDUwNjA0ZTRjMTViZTQ1OGU2YjYzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY1N2YxZTk2NWYzNjc3MDA0YWQ5NGNmZTdlOGViZTg2ZDAzZTAxMzVlNjljNDNlYzdiM2I4NGU5MmRmOWRjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmZmYzgwMTc0YmM1MzliZjQwMmU4ZWVjY2I2MzFmOGE4NTM4NTEzZDY1NDU2MDI3MzBhNjZjYWQ0NTgzNGU4NSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/with-alpha.test.ts#L1-L46",
+          "version": "repo-lines-v1:sha256:f2bf67f858ba5f03f037b917c78c4866c634cd102f12b54ae6a24159aa0a003b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/tokens/with-alpha.ts#L28-L52",
+          "version": "repo-lines-v1:sha256:945a4b6d887b01273dd0e7e4676b924afb9cecadd3320c7fb54480175b00a668:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGVlOGE4ZDFhYTg0NTM5MWJjNjc5ZWI3MGNlN2Y0NmEzY2Q2ZmIyZDE2ZmNjYTY3ZmExNzhmNGY4YzFlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MDA1MjRmZDJjOWUwNzVhNzQ2YjM3MTc0M2EwMjFmNDY0ODlkNjYwYTMxNjA1YjkzNTA2MjcyODZjM2M2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ad4f50589e54c71bdaaf8e981b3a120",
+      "statement": "Under Tamagui 3 any state clause — `hover` included — makes a `View` attach its own event handlers on native (`createComponent`'s `shouldAttach` counts a hover program), so a state clause on a Tamagui `View` nested inside an RN `Pressable` makes it the touch responder and swallows the tap: `NavList` and `Tabs` therefore pass their hover layer only when `Platform.OS === 'web'` and put the pressed visual on the outer `Pressable`. The measured symptom is a tap that reports `COMPLETED` to Maestro and then navigates nowhere, which reads as a routing bug; neither the unit tier (`fireEvent.press` targets the `Pressable` directly) nor the web tier (mouse events bubble) can observe it, only Android.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/navigation/NavList.tsx#L58-L109",
+          "version": "repo-lines-v1:sha256:eae365182f81e8851acb974e745497868005f02e8e185baf2d44261c0a2ae12e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MmZlYzUwNjJlMDJkNzRmYmViMWU1MTYwYTlkMGI5Yjk4NWE1MTkzOTk5OGEwODU3ZWQyOGZkODNmOGFhMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOWY2OTE1N2E4OWNjOTI2MjY5YzdlNDEwMWNlMGRhMzY2MjA3ZjI2ZDc3MjljYTE2ZTcwOGNiOWU2MTkzNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMzgzZjY4OTdlZjhhMDYxZTNmYTJlYjU1NmQ5NzA3MWQ0ODljY2UzYzlhMmVmNjJhYjJhMmQ1YWQ5OTQ5N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZjQwODk4ODMxZjkyYTE1NmU5NTE4OGNlYTYxMTVkMWYzOTExNGM1M2EzYzI0MzYzMTNhNWQ1YTNmYzExYmUifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/navigation/Tabs.tsx#L168-L181",
+          "version": "repo-lines-v1:sha256:42c464cfec0d1e7a097b9d6e61dd4cac8fb06c69f4c7313a746e64bc5b3f8a4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZDdhOTMyMTg5YzQ1Yjc3YjcwOTE0ZDBjNDQyODY2ZWQwYTU5MDc3ODNjNWVlMWRhMmM5NGE4ZjdmZWQ2MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZmU4NDlmODE0OGY0ZGIyN2JlYzA3NmI2OTc4M2MwNTYzZjJhZTc5NjkxYzAyZTY0ZDkyZjQ3YjhkMzRiNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxYjE0MzVhOWNjYzdhZDdjNjg5NWU3ODc0ODI5N2UzZjk3YjRkOTVmNTQ5MWIyZTk0NTBiODNkNjYzODUwM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZmFiNzZiZGY3NjVkMTcxOGIzN2E1Nzk4MGNjMTk4ZmMyMGVjZGVmYmRjZWI0MjNkNzRjODE4YjQ1ZTJiNTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b1ac8cbff40427d94d30af257fd25f6",
+      "statement": "The package suite's contract with the app is behavioural: beyond the success-token, text-defaults and with-alpha tests it covers the focus-ring and interaction-state guards, the controls (`SearchBar`, `Chip`/`ChipGroup`, `Switch`, `Dialog`, `Snackbar`, `Banner`, `Badge`, `Divider`), navigation (`AppBar`, `IconButton`, `NavigationBar`, `Tabs`, `NavList`), the inputs and the domain cards, asserting resolved theme values, rendered style and AA contrast rather than the implementation.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/components/controls.test.tsx#L1-L27",
+          "version": "repo-lines-v1:sha256:1431d1b6d0847bda214b5d25ae30d6ef61ecb8b210ac0963c138518ae73ab04b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZGY0NjE2MDc2ODU4YjA5OWIxNjU0MDZmOWI5NTJhMmUxZTM0NDk2YTk3ZGE0ZGNhNzRkMGExNmM2ZGZlNTMifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/navigation/navigation.test.tsx#L1-L31",
+          "version": "repo-lines-v1:sha256:5ad87eb64c043f370715977ba2b64c3584f29462fc1834a8b95b501fb559d49b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNzg5YzdkNTMwNTRjZDEyNzlkZTVhYmFlODdmNGYyMjkxY2VjMTE3ODkyNzBmOGFmNjQ0YzgzYzU2MTNjNjcifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/success-token.test.tsx#L45-L73",
+          "version": "repo-lines-v1:sha256:c8db2d0387d253abb94dbfcb7a365f7223a22daf7e77f1df79eb979dbb732525:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNWE0YWQyN2YyNzM2MzBiZWRhMDcyZmQxNDY3YjU2YWZmNWE5MzlmN2ExNWI4MmMzZGExNjM3MzYyMmY4NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/text-defaults.test.tsx#L1-L13",
+          "version": "repo-lines-v1:sha256:e8356ff4ca95d9704863037087f855be7636757e3094a6948cde2c320041de20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZTBlNGQzNDk5YWRkZjRhMTdlZWRiYWFhZThjZmEyOTEyOTg1Y2EwYzAzYWI5M2UxZDIwYzY1ZmNlNDA5ZTkifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-10-20T11:09:40.455Z"
+    "at": "2026-11-04T16:55:00.915Z"
   }
 }

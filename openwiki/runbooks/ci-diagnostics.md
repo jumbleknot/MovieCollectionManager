@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: CI self-serve diagnostics
-description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
+description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 sources:
@@ -96,7 +96,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # CI self-serve diagnostics
@@ -226,13 +226,21 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   passed every PR check and surfaced as a failed **deploy** on `main`, where nothing blocks (cd-deploy
   run 5745 on 2026-10-21 is that shape). `app-image-scan` closes it: a required app-ci job that runs
   `scripts/cd/scan-app-image.sh` — the deploy gate's per-image scan-and-verdict block, extracted so the
-  PR and the deploy share one flag set and one allowlist
-  (`security/infra-images/allowlist.yaml`), with the Trivy version pinned **in each workflow that
-  installs it** (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) and
-  `renovate-workflow.guard.test.mjs` failing if those pins disagree or drift from the version-tagged
-  install script — over the images `app-e2e` already built. A single `aquasecurity/trivy` customManager
-  in `renovate.json` covers all three files and the guard asserts its patterns still match each of them,
-  so the three-way pin is maintained rather than left to rot. `app-e2e` tags
+  PR and the deploy share one flag set and one allowlist (`security/infra-images/allowlist.yaml`) — over
+  the images `app-e2e` already built. The Trivy version is pinned **in each workflow that installs it**
+  (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) and `renovate-workflow.guard.test.mjs` fails if
+  those pins disagree; a single `aquasecurity/trivy` customManager in `renovate.json` covers all three
+  files and the guard asserts its patterns still match each of them, so the three-way pin is maintained
+  rather than left to rot. **All three install through one repo script**,
+  `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`: it downloads that release's tarball and
+  checksum list from GitHub with `--retry-all-errors`, verifies the sha256, and then asserts the
+  installed binary reports the pinned version — so a passing install step means *this* version is on
+  PATH, not that a version line was printed. It replaced Trivy's `contrib/install.sh`, which on a
+  failed download logged the HTTP status at DEBUG level and exited with no message (measured on PR
+  #929, runs 6696 and 6702, 2026-11-04) — and which was fetched code piped into `sh`. The guard fails
+  if any of the three workflows pipes the vendor script or `get.trivy.dev` again, and it resolves the
+  one `${TRIVY_VERSION}` indirection per workflow before comparing the three tags, so a hard-coded tag
+  beside a different assignment is caught rather than silently agreeing. `app-e2e` tags
   each of them `app-scan/<name>:run-<run id>` immediately after the build — and holds each tag with a
   labelled container so another run's prune cannot delete it (see the hold bullet below) — so a later
   run rebuilding `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to
@@ -368,9 +376,10 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   its credentials, and `app-e2e`, the only job that would have proven the gateway still starts, was
   skipped because nothing in the filter matched `scripts/**`. The same filter now also decides whether
   `app-image-scan` has anything to scan: `scripts/cd/scan-app-image.sh` is in the `app` filter (spec 084
-  US3) precisely so that changing the shared scanner re-runs the job that calls it, and a
-  filter-gated-out PR makes the scan pass in seconds with `no app path changed` — a legitimate pass, not
-  a scan that found nothing.
+  US3) precisely so that changing the shared scanner re-runs the job that calls it, and
+  `scripts/ci-install-trivy.sh` — the installer the scan step runs — is listed beside it for the same
+  reason. A filter-gated-out PR makes the scan pass in seconds with `no app path changed`, which is a
+  legitimate pass rather than a scan that found nothing.
 - **A ⏳ is not a future pass, and the filter — not the spinner — says whether a job will run.**
   `waiting` can still resolve to `skipped` (path-gated) or `superseded` (cancelled by a newer push);
   both are non-runs that a green board then presents as satisfied. Item 568 hit this twice in one
