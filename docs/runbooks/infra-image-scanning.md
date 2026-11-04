@@ -295,10 +295,13 @@ node --test scripts/__tests__/infra-image-scan.test.mjs
 Measured 2026-08-30 while diagnosing PR #289. The devcontainer *can* run this scan — it just cannot
 run it the way CI does, and **both** obstacles fail silently rather than erroring:
 
-1. **The Trivy install script produces no binary.** `contrib/install.sh` resolves the version from
-   GitHub (`found version: 0.74.0`) and then downloads nothing — the release tarball comes back empty
-   through the egress seam, exit 0. `$HOME/.local/bin/trivy` simply does not exist afterwards. Do not
-   read the version line as success; check for the binary.
+1. **Trivy's own install script produced no binary.** `contrib/install.sh` resolved the version from
+   GitHub (`found version: 0.74.0`) and then downloaded nothing: the tarball comes from
+   `get.trivy.dev`, and a non-200 is logged only at debug level. CI hit the same silence on PR #929
+   (2026-11-04, twice, transient). CI now installs through `scripts/ci-install-trivy.sh`, which
+   downloads the GitHub release assets directly, verifies the checksum, and names the URL and curl's
+   error when a download fails — so in the dev container a blocked download is an error, not a
+   missing binary.
 2. **Trivy's default DB mirror does not resolve.** `mirror.gcr.io` is not in the egress policy, so a
    scan dies with `dial tcp: lookup mirror.gcr.io ... no such host`. `ghcr.io` *is* reachable (a `401`
    from `/v2/` is the normal auth challenge, not a block).

@@ -2005,62 +2005,42 @@ const TRIVY_WORKFLOWS = [
 ];
 
 /**
- * The Trivy install as configured in one workflow: { scriptRef, installedTag }.
+ * The Trivy install as configured in one workflow: { present, installedTag, pipesVendorScript }.
  *
- * The pinned form writes the version ONCE and interpolates it into both the script URL and the
- * install argument, so both sites read `${TRIVY_VERSION}` literally. This resolves that ONE
- * indirection against the assignment — and only that one. A hard-coded tag anywhere is left as
- * written, so a URL pinned to v0.70.0 beside `TRIVY_VERSION=v0.74.0` still fails the equality check
- * below rather than being quietly normalised into agreement.
+ * The recipe (since PR #929) writes the version ONCE as TRIVY_VERSION and hands it to
+ * scripts/ci-install-trivy.sh, which downloads that release's assets and verifies the checksum.
+ * This resolves that ONE `${TRIVY_VERSION}` indirection against the assignment — and only that one,
+ * so a hard-coded tag beside a different assignment is left as written and fails the agreement check.
  */
 function trivyInstall(file) {
   const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
   const assigned = /TRIVY_VERSION=(v[\d.]+)/.exec(text)?.[1] ?? null;
   const deref = (raw) => (raw === '${TRIVY_VERSION}' ? assigned : raw);
 
-  // The ref in the install-script URL — `main` is the floating form this guard exists to reject.
-  const url = /raw\.githubusercontent\.com\/aquasecurity\/trivy\/([^/"']+)\/contrib\/install\.sh/.exec(text);
-  // The positional [tag] handed to the script. Absent means "install the latest", which is the
-  // second floating reference — so an assignment that is never USED must not read as pinned.
-  const arg = /install\.sh["']?\s*\\?\s*\|\s*sh\s+-s\s+--\s+-b\s+\S+\s+["']?([^"'\s]+)/.exec(text);
+  // The tag handed to the installer. Absent means nothing pins the version.
+  const call = /scripts\/ci-install-trivy\.sh\s+["']?([^"'\s]+)["']?\s+\S+/.exec(text);
+  // The vendor's contrib/install.sh piped into sh: what this replaced. It fetched from get.trivy.dev
+  // and exited SILENTLY on a non-200 (PR #929, runs 6696 and 6702), on top of running fetched code.
+  const executable = text.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
+  const pipesVendorScript = /aquasecurity\/trivy\/[^\s"']*\/contrib\/install\.sh|get\.trivy\.dev/.test(executable);
 
-  return {
-    present: Boolean(url),
-    scriptRef: url ? deref(url[1]) : null,
-    installedTag: arg ? deref(arg[1]) : null,
-    text,
-  };
+  return { present: Boolean(call), installedTag: call ? deref(call[1]) : null, pipesVendorScript, text };
 }
 
 for (const file of TRIVY_WORKFLOWS) {
-  test(`Trivy is version-pinned in ${file}, not installed from a moving branch`, () => {
+  test(`Trivy is version-pinned in ${file}, installed by ci-install-trivy.sh`, () => {
     const t = trivyInstall(file);
-    assert.ok(t.present, `${file} no longer installs Trivy by this recipe — update the guard rather than deleting it.`);
-
-    assert.notEqual(
-      t.scriptRef,
-      'main',
-      `${file} fetches the Trivy install script from the MOVING branch 'main' and pipes it into sh.\n` +
-        '  Whatever is on that branch at run time executes on the runner, and the script is the\n' +
-        '  thing that installs the scanner deciding whether a Critical blocks a deploy.',
+    assert.ok(t.present, `${file} no longer installs Trivy through scripts/ci-install-trivy.sh — update the guard rather than deleting it.`);
+    assert.ok(
+      !t.pipesVendorScript,
+      `${file} runs Trivy's contrib/install.sh again. On a failed download it logs the HTTP status at\n` +
+        '  DEBUG level and exits with no message (PR #929), and it is fetched code piped into sh.',
     );
     assert.match(
-      t.scriptRef ?? '',
+      t.installedTag ?? '',
       /^v\d+\.\d+\.\d+$/,
-      `${file}'s install-script ref is '${t.scriptRef}', which is not a version tag.`,
-    );
-
-    assert.ok(
-      t.installedTag,
-      `${file} passes no tag to the Trivy install script, so it installs whatever is newest that day.\n` +
-        "  The script's own usage is `install.sh [-b] bindir [-c] client [-d] [tag]` — \"If tag is\n" +
-        '  missing, then the latest will be used." Unpinned, with no digest underneath it.',
-    );
-    assert.equal(
-      t.scriptRef,
-      t.installedTag,
-      `${file} pins the install SCRIPT to ${t.scriptRef} but installs ${t.installedTag} — a script\n` +
-        '  from one release installing a different one is a pin that does not say what it means.',
+      `${file} installs Trivy '${t.installedTag}', which is not a version tag — the scanner deciding\n` +
+        '  whether a Critical blocks a deploy must be a version someone chose.',
     );
   });
 }
