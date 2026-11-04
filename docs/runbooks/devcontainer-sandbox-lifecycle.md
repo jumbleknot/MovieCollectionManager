@@ -415,11 +415,11 @@ if the exported bundle grows a lazy `require("…")` the script does not account
 
 ---
 
-## 8b. 🔴 A cold recreate needs four things the template does not carry
+## 8b. 🔴 A cold recreate needs five things the template does not carry
 
 Beyond the egress policy (§7b), a sandbox created from scratch is missing setup that nothing in the
 provisioning path supplies. The first three were hit on 2026-08-27 and again on 2026-11-03, the
-fourth on 2026-11-03; each stops the recreate dead.
+fourth and fifth on 2026-11-03; each stops the recreate dead.
 
 **1. The `devcontainer` CLI is not installed.** §7b's recreate sequence calls `devcontainer up`, and
 the binary does not exist in a fresh sandbox:
@@ -453,6 +453,21 @@ deletes `mcm-devcontainer` versions beyond the newest 4 / 21 days. The old VM ne
 holds the image locally — so the first sign is a recreate failing on `not found`. Check before
 `devcontainer up`: `docker pull "$MCM_DEVCONTAINER_IMAGE"` (after `set -a; . ~/.mcm-sandbox-env;
 set +a`), and re-pin to the newest tag if it fails (§10b).
+
+**5. The VM has no dynamic-linker cache, so VS Code refuses to connect** (added 2026-11-03). The
+v0.51.0 shell kit is a minimal hardened image shipped without `/etc/ld.so.cache`. VS Code's
+Remote-SSH server check locates `libstdc++` through `ldconfig -p`, which reads only that cache, so
+it fails with *"the remote host does not meet the prerequisites for running VS Code Server"* — and
+its log line, *"find libstdc++.so or ldconfig for GNU environments"*, reads as a missing library.
+Both are present (`/sbin/ldconfig`, `libstdc++.so.6` from GCC 14). Generate the cache once; it lives
+on the VM root volume and survives `sbx stop` (verified):
+
+```bash
+sudo /sbin/ldconfig && /sbin/ldconfig -p | grep libstdc   # must print a libstdc++.so.6 line
+```
+
+`devcontainer up` and the harness are unaffected — only the VS Code attach path needs it, which is
+why a 12/12 harness did not catch it. `open-sandbox.ps1` is the first thing to exercise it.
 
 > ⚠️ **An instant failure is not always a policy refusal.** §7b says a ~1 s failure means the egress
 > policy refused the connection, since "a network fault times out; a policy refusal is instant". True,
