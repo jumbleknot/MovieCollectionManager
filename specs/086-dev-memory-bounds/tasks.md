@@ -111,3 +111,24 @@ Add §7g (plan §4), and point the section index in `devcontainer-sandbox.md` at
 ### T007 — Closeout
 
 Record the T003 and T005 measurements in the PR, and tick these tasks.
+
+---
+
+## Results (2026-11-03)
+
+All tasks done: **T001 ✅ T002 ✅ T003 ✅ T004 ✅ T005 ✅ T006 ✅ T007 ✅**
+
+| Task | Measured |
+| --- | --- |
+| T001 RED | guard on unchanged configs: **5 failures** — mcm-app and design-system (cap + idle limit each), the dev-container limit; the integration config and discovery passed |
+| T002 / T004 GREEN | guard **7/7**; full `scripts/__tests__` in the dev container: 1949 passed, 0 failed, 1 skipped (`proxied grep …`, an existing RTK test: `rtk not runnable here`) |
+| T003, no override | `pnpm nx test mcm-app --skip-nx-cache`: **peak 4 workers**, 1730 passed / 162 suites, 34 s, with auth + mcm stacks up; VM used 4.7 → 8.7 GB |
+| T003, override | `-- --maxWorkers=2`: peak 2 workers, 1730 passed |
+| T003, design-system | peak 4 workers, 131 passed |
+| T005, limit | throwaway dev container built from this branch's config (`--skip-post-create`): `Memory=10737418240 MemorySwap=10737418240` |
+| T005, containment | allocator inside it: exit **137**, `constraint=CONSTRAINT_MEMCG` (2026-11-01 was `global_oom`), cgroup `oom_kill` 0 → 1; every stack container's `StartedAt`, `RestartCount` (0) and health unchanged; the dev container itself kept running |
+
+The throwaway container was used because a live session occupied the real one, and a recreate
+would have ended it. The real dev container received the same limit with
+`docker update --memory 10g --memory-swap 10g` (no restart); it takes it from config on its next
+recreate.
