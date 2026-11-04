@@ -1,42 +1,74 @@
 {
-  "coveredCommit": "0dd86d92fba455c2d4c21271de801501faf1131b",
-  "coveredAt": "2026-11-04T03:30:47.247Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "b08a194d3600a78911b94198c26444cd3830148f",
+  "coveredAt": "2026-11-04T13:56:02.923Z",
+  "lastOutcome": "completed",
   "backlog": [],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 931,
+    "headCommit": "f4454111c738dc9b61f9f7fc0cb5b674c0590d04",
+    "markerBefore": "0dd86d92fba455c2d4c21271de801501faf1131b",
+    "slices": [
+      {
+        "area": "runbooks",
+        "pages": [
+          "local-dev.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/local-dev.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "process",
+        "pages": [
+          "wiki-maintenance.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: infrastructure-as-code/project.json changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/wiki-maintenance.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      }
+    ],
+    "updatedAt": "2026-11-04T13:56:03.460Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 5,
+    "elapsedSeconds": 2787,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 124,
+    "calls": 529,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 547654,
-    "cached": 12479912,
+    "uncached": 2207253,
+    "cached": 54350678,
     "cacheWrite": 0,
-    "output": 208168,
-    "reasoning": 171862,
-    "ms": 1340159,
-    "estCostUsd": 0.489,
+    "output": 887252,
+    "reasoning": 785102,
+    "ms": 5917498,
+    "estCostUsd": 2.053,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/wiki-maintenance.md"
+        "runbooks/local-dev.md",
+        "process/wiki-maintenance.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.489,
+      "estCostUsd": 2.053,
       "rateLimited": null
     }
   ],
