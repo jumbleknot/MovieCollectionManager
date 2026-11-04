@@ -433,6 +433,12 @@
       "cdnRotating": false
     },
     {
+      "domain": "expo.dev",
+      "group": "agent",
+      "reason": "Tier 2 (docs for a component this repo runs): Expo SDK changelogs and upgrade guides (mcm-app), which live on the apex and not on docs.expo.dev, whose upgrade page only links back here. Assistant RESEARCH host (agent group), added 2026-11-04 after the SDK 58 review could read those pages only as search excerpts. Read-only and anonymous: a fetch sends the URL, not prompt text, so the $mustNeverAppearHere telemetry inversion does not apply. Not on the build or test path; nothing in CI touches it. cdnRotating false: nothing MEASURED to rotate.",
+      "cdnRotating": false
+    },
+    {
       "domain": "reactnative.dev",
       "group": "agent",
       "reason": "Tier 2 (docs for a component this repo runs): React Native docs and upgrade notes (mcm-app). Assistant RESEARCH host (agent group), added 2026-10-24 after item #819: a sweep of ~70 primary sources for this repository's own components found every vendor docs, advisory and issue-tracker host refused at DNS, so WebFetch could only read third-party summaries — one of which contradicted a direct measurement. Read-only and anonymous: a fetch sends the URL, not prompt text, so the $mustNeverAppearHere telemetry inversion does not apply. Not on the build or test path; nothing in CI touches it. cdnRotating false: nothing MEASURED to rotate.",
