@@ -1,7 +1,7 @@
 ---
 type: Process
 title: OpenWiki bundle generation and maintenance
-description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit, wiki-maintain and okf-governance around them), the two offline and keyless checks that must precede a paid run, the planner's slice caps and invocation packing, the freshness model in which a scheduled fire moves to the current tip of main and then decides from git — before installing anything — whether main has gone quiet, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
+description: How this openwiki/ knowledge bundle is generated, refreshed and gated — the wiki-update and okf-lint Nx targets (with wiki-plan, the free claims audit an operator runs by hand, wiki-maintain and okf-governance around them), the offline and keyless checks available before a paid run, the planner's slice caps and invocation packing, the freshness model in which a scheduled fire moves to the current tip of main and then decides from git — before installing anything — whether main has gone quiet, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, what the conformance and governance gates enforce versus deliberately refuse to enforce, and why those two gates are required merge contexts while the paid maintenance job deliberately is not.
 resource: infrastructure-as-code/project.json
 tags: [openwiki, okf, documentation, ci, maintenance]
 sources:
@@ -23,6 +23,8 @@ sources:
     resource: repo://scripts/__tests__/openwiki-claims.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
+  - id: openwiki-source-3cfcbfbe6daeeadc1b4b8cf8
+    resource: repo://scripts/__tests__/wiki-maintain.test.mjs
   - id: openwiki-source-e39072a75f63237d2634b6a0
     resource: repo://scripts/__tests__/wiki-quiet.test.mjs
   - id: openwiki-source-98792bbc9621de1ad3e22856
@@ -51,10 +53,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T13:23:04.255Z
+    at: 2026-11-04T13:09:42.610Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -80,7 +82,9 @@ budget mid-research, whereas one new page was written in about six minutes.
 The plan shows only what was *requested*, though: openwiki forces every page
 with a stale or unresolved Claims citation into every run as a full paid regeneration whatever the plan
 says, and `node scripts/wiki-maintain.mjs --claims-audit` is the second offline, keyless, model-free
-check, naming that set in advance from openwiki's own resolver. `pnpm nx wiki-maintain
+check, naming that set in advance from openwiki's own resolver. It is an operator tool, not a workflow
+step: the CI job runs the free `--plan` before paying and never this one, so the audit is run by hand.
+`pnpm nx wiki-maintain
 infrastructure-as-code` is the paid execution path; at execution, consecutive same-kind slices of
 *different* areas are packed into one generator invocation of up to `MAX_PAGES_PER_INVOCATION` (4)
 pages, because every invocation pays a fixed planning pass (~$0.33 on Sonnet, 83% of a one-page run)
@@ -88,12 +92,12 @@ and slices are per area; the slice stays the unit of the backlog and of carry-fo
 of one area are never re-merged. The invocation cap was 8 until item #613 halved it after the committed
 run records showed an invocation of 5–8 pages was stopped at the job deadline 69% of the time and none
 of that size ever ended on its own. `pnpm nx okf-governance infrastructure-as-code` runs the second, newer gate
-(`scripts/check-openwiki-governance.mjs`, rules G1–G13, plus a fail-closed `G0` that treats a missing
-or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` as a violation rather than a skip
-and then stops before checking any concept) over the regeneration policy, the protection fingerprints
+(`scripts/check-openwiki-governance.mjs`, rules G0–G13, where `G0` is fail-closed: a missing
+or unparseable `openwiki/policy.yaml` or `openwiki/protected.yaml` is a violation rather than a skip
+and stops the gate before it checks any concept) over the regeneration policy, the protection fingerprints
 and the index. The operator runbook for all of it is `docs/runbooks/wiki-maintenance.md`;
 this page is the summary of what the machinery guarantees and where it is easy to be misled. The
-exhaustive machinery detail — the provider and credential table, the budgets, the exit codes, the four
+exhaustive machinery detail — the provider and credential table, the budgets, the exit codes, the
 slice-verification causes and the Claims sidecars — belongs to the runbook, not here; for the
 distilled version of that half see [OpenWiki knowledge-bundle maintenance](../runbooks/wiki-maintenance.md).
 
@@ -112,14 +116,14 @@ flowchart TD
     Install --> Guard["verify the installed generator, a skip fails"]
     Guard --> Plan["wiki-plan, offline and free"]
     Plan --> Maintain["wiki-maintain, paid"]
-    Audit["claims audit, offline and free"] --> Maintain
+    Audit["claims audit, offline and free (by hand, before paying)"] --> Maintain
     Maintain --> Generate["wiki-update, runs scripts/wiki-generate.mjs"]
     Generate --> Cli["openwiki code --update --print"]
-    Cli --> Verify["verifySlice: pages landed, conformance, policy"]
+    Cli --> Verify["verifySlice: pages landed, conformance, policy, governance"]
     Verify --> Proposal["one long-lived proposal, human reviewed"]
     Verify --> Backlog["failed slice back to the committed backlog"]
     Proposal --> Lint["okf-lint, V1 to V16, fail closed"]
-    Lint --> Gov["okf-governance, G1 to G13, fail closed"]
+    Lint --> Gov["okf-governance, G0 to G13, fail closed"]
     Gov --> Review["human review, never auto-merged"]
 ```
 
@@ -134,9 +138,12 @@ repository expects, plans for free, and only then makes the paid `--execute --pr
 commit and the outcome report run even when the execute step fails, and every job in the repository owes a
 feature-042 failure digest.
 
-The paid path runs from the two free checks through the generator to slice verification and one reviewed
-proposal, and the always-on gates sit after it rather than inside it. The planner shows what the run was
-asked for; the claims audit shows what openwiki will force in on top of it.
+The paid path runs from the free plan check through the generator to slice verification and one reviewed
+proposal, and the always-on gate *jobs* sit after it rather than inside it — but slice verification itself
+re-runs both gate scripts, the conformance gate over the bundle and the governance gate over the whole
+repository root, so a page that breaks either one is refused before the run can propose it. The planner
+shows what the run was asked for; the claims audit, run by hand, shows what openwiki will force in on top
+of it.
 
 ## Gotchas
 
@@ -298,9 +305,14 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   paraphrased, which is exactly what the protected passages exist to prevent. Nothing here changes
   `CLAUDE.md`, which is an index into the bundle and is gated against re-growth.
 - **The generator's own account of a run is never trusted.** `wiki-maintain` verifies each slice by the
-  pages that actually landed in the working tree, by bundle conformance and by whether policy permitted
-  every written path — never by the generator's exit status, which was measured at exit 0 after twelve
-  minutes of paid work that wrote a single `index.md`. Its own exit codes follow from that: `0` means
+  pages that actually landed in the working tree, by bundle conformance, by whether policy permitted
+  every written path, and — since PR #857 — by running the *governance* gate over the repository root
+  too, because a page can be OKF-conformant and still break a governance rule (run 6049 proposed a page
+  that had lost its `resource`, which the gate refuses as G11). That last check is skipped, out loud,
+  only for a bundle with no `protected.yaml` — a fixture predating governance, never a production run,
+  since the real repository always carries the file and the `okf` job fails closed without it. What
+  decides is never the generator's exit status, which was measured at exit 0 after twelve minutes of
+  paid work that wrote a single `index.md`. Its own exit codes follow from that: `0` means
   planned, every attempted slice verified, nothing to do — or `--execute` stopped before any paid
   generation because the checkout's run record is behind `main`'s; `1` is a slice that failed
   verification, and `2` is bad usage, an unreadable run record, a missing credential or a failed
@@ -310,6 +322,15 @@ asked for; the claims audit shows what openwiki will force in on top of it.
   code is never confused with the generator's. The numbers behind those budgets live as constants in
   `scripts/wiki-maintain.mjs`, not in prose: change one and a guard test fails offline because it
   derives the CI job's timeout from the same constants.
+- **The generator can silently replace a page's front matter, and the harness puts it back.** openwiki
+  0.7.1 "repairs" a page whose model-written YAML does not parse by rebuilding a minimal header —
+  `type: "Reference"`, a quoted title and `openwiki_generated: true` — and tells the agent nothing, so
+  every repository key it should have carried (`description`, `resource`, `tags`) is gone and the
+  governance gate would refuse the page as neither derived nor authoritative (G11). `verifySlice`
+  therefore restores those keys from `HEAD` on any page carrying that marker and carries the Claims hash
+  across, as it does for a pure link rewrite. A page that loses its `resource` **without** the marker is
+  the model's own edit, and governance still refuses it — which is the case that made slice verification
+  run the governance gate at all.
 - **The run record is committed state, and the marker commit must not re-trigger the job.**
   `openwiki/.maintenance-state.json` is committed because CI runners are ephemeral and the marker has
   to advance even on a run that produced no proposal; it is **not** the tool's own

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:10647fb6505e0d06e246e065b7fecd7d25d8aafd2748bd1fce881ba2b1c90b63",
+  "pageVersion": "sha256:a96bce1607ce9180cb1da0e7fe5139f46486bee422a5ef13c871294b864b7491",
   "claims": [
     {
       "id": "claim_39c45fe0e3394e05a8299438457db8dd",
@@ -115,11 +115,11 @@
           "version": "repo-lines-v1:sha256:67f97dd647965610c9495cf40f2271575e1b4f95287528ecf4d4a59142764001:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWExOGVkY2IyNjNkYTI5ZWZhMDkwOWY4MTdlNDY3MGRlZTU0YmM1NWNiMGExODVmOWM5OWU2YjE4MzA5Y2U0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxMTNkZGVmZDRkMmIyYmYzNDg4OWM1ZDBlZWVlZGU1Mzc2MzAzZWM2ZDZjMzg5MGU1MjViZTg5NzFmNTM0OSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1010-L1033",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1025-L1048",
           "version": "repo-lines-v1:sha256:61b72f8ae438fac72766483a3659a71242604e31696f82fe05b9f49fdba47e80:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YmNmZTFlZDRjMWRiNTY0OTljZWE1NGQxYzBhNzVmNTcwNjc2MTMzNTdlNDEwOTRiYjMwN2FlYTUxYjQyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMDM1Nzk1ZGU5MTM5OTAxMjc4NWUyYjllYmRiMzhmOTQ5ZmYyZDZmYTNjNjZmZmVkZmZkYjYwNWVlZjA4NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFiNTc2MzhhNmUyY2M2YmU4NGRlNTQ1NzQxZGExMTU5ODU0YWNjMDBmM2U5YjAyOGZjNzZhNDM4OWM5NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzOTI3OTAxNWRmZDExNzFhYzUxOTVkZjdkMjYxYTQxODQyNGFjNzYxMDI2Y2NhN2JmMWYyZTNiOGI4N2QwMzYifQ"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1082-L1094",
+          "resource": "repo://scripts/ci-status.mjs#L1112-L1124",
           "version": "repo-lines-v1:sha256:c92c2821627bf2e32ee8002023acf6e249d7ea8f6e91951a0b91f1a801ab5f01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZDFiOTIyNmNkMGYyNTcyMjQxNDlhYWE5NDg1ODkzZGUxMjJmN2RjOWRlZDRjYzk3YjdhZDA5ZmUwYWJkOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0OWZkYTgwZjhhYmVlZjk5ZTlkN2Y0ZDM0Mzg1ZDg2ZTJhMGViOWEzMzJiZGNhOTEzMDBjNGE5MGRjYWE3NjQifQ"
         }
       ]
@@ -442,7 +442,7 @@
     },
     {
       "id": "claim_c4aba1e35f254ca083a6032c0c5f41fd",
-      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: instrument-before-belief checks (a tool's \"no\" is about the tool, and a skipped test reads as a pass) belong to the E2E testing runbook, and \"it can't run in this environment\" needs the same proof as \"it passes\" — a credential-driven skip is almost always a missing file rather than a missing capability, so the missing input must be named before a tier is retired to CI; the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run) and a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch; and Renovate's silence is not idleness — routine branch work only happens inside the Friday window (`* 2-4 * * 5`), the nightly cron runs outside it and carries only schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a single dashboard line while producing nothing, every run.",
+      "statement": "The remaining pre-work gate classes beyond the four detailed on the repository page are owned by the pages that document them: instrument-before-belief checks (a tool's \"no\" is about the tool, and a skipped test reads as a pass) belong to the E2E testing runbook; \"it can't run in this environment\" needs the same proof as \"it passes\" — a credential-driven skip is almost always a missing file rather than a missing capability, so the missing input must be named before a tier is retired to CI; the test tiers to run must be derived from what the diff touches (a tier nobody thought of is a tier that did not run) and a guard that fails because the thing it protects was changed must be updated at the cause rather than deleted, since a guard removed for being inconvenient is the regression it was written to catch; and Renovate's silence is not idleness — routine branch work only happens inside the Friday window (`* 2-4 * * 5`), the nightly cron runs outside it and carries only schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a single dashboard line while producing nothing, every run.",
       "evidence": [
         {
           "resource": "repo://CLAUDE.md#L9-L15",
@@ -454,7 +454,7 @@
         },
         {
           "resource": "repo://docs/runbooks/local-dev.md",
-          "version": "repo-file-v1:sha256:ce0ef3af4604961a17ac1e05235df620c7cc692f1f75a24444e90c919b3bf6fb"
+          "version": "repo-file-v1:sha256:243ef4f3927608fb594d463dfd7b27cf9eb68b256200b3025953c003e59965be"
         },
         {
           "resource": "repo://docs/runbooks/renovate.md#L13-L49",
@@ -769,7 +769,7 @@
           "version": "repo-lines-v1:sha256:67f97dd647965610c9495cf40f2271575e1b4f95287528ecf4d4a59142764001:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdmOTdkZDY0Nzk2NTYxMGM5NDk1Y2Y0MGYyMjcxNTc1ZTFiNGY5NTI4NzUyOGVjZjRkNGE1OTE0Mjc2NDAwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWExOGVkY2IyNjNkYTI5ZWZhMDkwOWY4MTdlNDY3MGRlZTU0YmM1NWNiMGExODVmOWM5OWU2YjE4MzA5Y2U0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxMTNkZGVmZDRkMmIyYmYzNDg4OWM1ZDBlZWVlZGU1Mzc2MzAzZWM2ZDZjMzg5MGU1MjViZTg5NzFmNTM0OSJ9"
         },
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1035-L1066",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1050-L1081",
           "version": "repo-lines-v1:sha256:729ea70d02eca019851d239843c03072e5693bb786ca2a795a7a0e7438d99d12:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NzQxN2U3NDgyNTAwZTc2YzAxODVlNTM4NjkzYjkzNGFiN2ZmNTVkODk5YmY4NmEzOGMzMzczM2FlNjJkMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZWRkYTk3MzhkMzZmMzVmNTEyNGQyZWIyZjU0ODk2MWY5NDBlZjljNjFkYWNkODc5NjA5ZjIxMWUwZDNiMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5MDZjNjc4MzdiNzc5MDZiNTgzZWU0N2FiMzhkYmFlZGUyZTU4OGFkYmZkM2EwM2I5Yzk0YTZjMzM1OTQ5YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDU0OTQ4MDJlZjQyMGMwNTc0YjY5MjVkMDBiYmRjZTg4MmM2OTMxNGRmZTg3ZjhiNzU2OTgwZDEyOGVjOWMifQ"
         }
       ]
@@ -779,18 +779,32 @@
       "statement": "Because a detached head is invisible in the web UI, which shows a normal-looking PR, `scripts/ci-status.mjs` prints a DETACHED HEAD warning that names the `refs/pull/N/head` head and states that runs from a non-branch head get no Actions secrets. The warning is suppressed for a PR whose state is not `open`, because a closed or merged PR reports `refs/pull/N/head` once its branch is deleted — routine tidy-up, not a detached PR.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1032-L1033",
+          "resource": "repo://docs/runbooks/ci-diagnostics.md#L1047-L1048",
           "version": "repo-lines-v1:sha256:54990c6da1f6675134e9a3dd5cf3a1d9b9c15a8d964e2d435d91dffda08db288:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY1ZmYxMGFkMDYwZTlmMTRkMWIzMTY5M2Q0Y2M2M2M5MGRkZWQwZDgxMjEzYzI1NWEyYTBhMjJkZWZkN2ZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQwMzU3OTVkZTkxMzk5MDEyNzg1ZTJiOWViZGIzOGY5NDlmZjJkNmZhM2M2NmZmZWRmZmRiNjA1ZWVmMDg0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlkNzc3MDIxOWFkNzBmODJjMTRkZjE5ZWY3N2JkYTBkYWNjNjdlMmZlZGE1ZTU1NGI1MTdlYWQzZWUwMGJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM5Mjc5MDE1ZGZkMTE3MWFjNTE5NWRmN2QyNjFhNDE4NDI0YWM3NjEwMjZjY2E3YmYxZjJlM2I4Yjg3ZDAzNiJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1096-L1114",
+          "resource": "repo://scripts/ci-status.mjs#L1126-L1144",
           "version": "repo-lines-v1:sha256:684d39a3d9551b6f434cc7d6051d823aecafae1b24995f49e6989364397614b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYTcxMWRiNDNiYzdlZWIxZTAyNmQ0NjViYTUwYTczNjE3NDFlNWJjNmE4YmE5MTRiNGNiNDE1MTljZjg5NGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkYjQyNzA4NGExZmI0M2Q3NTY0ZjU2ZDNhMmFhYWI5YzhjYjk1MjA4OTQ5YjljMTQ1ZWZiMGI2N2RhZmZjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkODhhZjhkNmM1MDllNGIxMmMzZjA4OGYwNTAzYTRhZTg3NGNhNDgwMmJlZGNjZjM3ODU3N2QyNjM2MzM5M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65b8f79c3342416aab48eaa457863c34",
+      "statement": "The \"a credential-driven skip is a missing file\" heuristic has a documented counter-case in the local-dev runbook (item #395): the credential can be present and STALE — projected from `stacks/auth.env` while the realm had drifted — producing the same 401 with every file in place, so the runbook's detection order is does-the-file-exist → does-it-carry-the-key → regenerate, and `scripts/gen-dev-env.mjs` verifies each projected credential against the realm BEFORE writing anything, exiting 2 with `REFUSING TO WRITE` and leaving the env files untouched rather than overwriting a working credential with one the realm rejects.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/local-dev.md#L206-L241",
+          "version": "repo-lines-v1:sha256:3107abc12aac46e4fb442498fff10bd87b68af030afe9299c31a258f921a702e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MDU1N2FkNWU3MjJlNzkzNmYzMmIyOWM1M2RjZTMxNTVhNGYyMjJjNzgyN2YxYTI0ZWUxOTBiZjE4ODJjM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjdiZWMyMTU2ZWZlN2IxYTFjODZiN2RiZWE1ZGY0ZTY0MmVlNWExMzYyMjlkMzBlNWEzM2ZiMzBiZjhjYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkZWRmYmYxZTNkMmJmNDkyNjc3M2ExYTc4ZDE5ZjViM2JjMTg3MmIxOGU4NDM2ZDZmNTI2NjU1YmI3NDgyMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5M2U0ZjQ0ZTNjYzJhY2NkOGYwNjRjYzVjM2E2ZWJhNjliYjIyMTExOTEzMDc2ZWIyNmY5YzdjNWJiMjY3NjgifQ"
+        },
+        {
+          "resource": "repo://scripts/gen-dev-env.mjs#L293-L337",
+          "version": "repo-lines-v1:sha256:39cfa60e3f85987889c8f285dfc18af24e28cc9777f359ad1bbfce646256ae23:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGU2NDAzNGU0NDE0MTAzZDNmY2M3YjhlYzgxMDE3NThjNTljZjkyMWFkMTExMjFiNDBjZTUxN2YzMGY3OTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MzM5YTAyYjM0ZjM4MzQ5OGI3ZjBlMWY1ZDAwMWU3OTgwZDViNzA2ZGRkZTk2YmY3ZGQxNjU5M2JkMTFmZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyOTIwYTI0MTI3ZTdhYjk2ZjYwYTEzMDNlOTk2YzEwYTEwZTUwNDFhMGZhYWU4YTE1MDY1OGI5MTVmY2I4ODIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T03:57:29.221Z"
+    "at": "2026-11-04T13:09:42.610Z"
   }
 }

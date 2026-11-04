@@ -83,16 +83,18 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-38de5a41429287f01c1b5bfd
     resource: repo://scripts/devcontainer-android.sh
+  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
+    resource: repo://scripts/gen-dev-env.mjs
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
   - id: openwiki-source-4256f85b16adb450a2d592c1
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-04T13:09:42.610Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -484,7 +486,12 @@ documents it — this is a pointer, not a restatement:
 - **"It can't run in this environment" needs the same proof as "it passes"** — a credential-driven
   skip is almost always a missing *file* rather than a missing capability, so name the specific
   missing input and check whether a generator or a documented command supplies it before retiring a
-  tier to CI: [Local dev infrastructure & environment variables](../runbooks/local-dev.md).
+  tier to CI. That heuristic has one documented counter-case, in the same runbook: the credential can
+  be present and **stale** — projected out of `stacks/auth.env` while the realm had drifted — which
+  produces the same 401 with every file in place, so the runbook's detection order is *does the file
+  exist → does it carry the key → regenerate*, and its generator now refuses to write rather than
+  overwrite a working credential with one the realm rejects:
+  [Local dev infrastructure & environment variables](../runbooks/local-dev.md).
 - **The E2E gate / model-decision tier split** — `@gate` blocks a merge, `@model-decision` does not,
   and an unclassified agent test fails rather than defaulting into a tier:
   [Testing tiers and what gates a merge](../invariants/testing-tiers.md).

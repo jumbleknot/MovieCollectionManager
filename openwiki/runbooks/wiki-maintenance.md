@@ -31,6 +31,8 @@ sources:
     resource: repo://scripts/__tests__/wiki-drift-plan.test.mjs
   - id: openwiki-source-1ec987a43e345e6cfd96dd77
     resource: repo://scripts/__tests__/wiki-escalation.test.mjs
+  - id: openwiki-source-62c7c1085503d57e74dea7d8
+    resource: repo://scripts/__tests__/wiki-generate.test.mjs
   - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
     resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
   - id: openwiki-source-3cfcbfbe6daeeadc1b4b8cf8
@@ -77,10 +79,10 @@ sources:
     resource: repo://tools/openwiki-generator/package.json
   - id: openwiki-source-012d67e0a1df20ece216c0d0
     resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T13:23:04.255Z
+    at: 2026-11-04T13:09:42.610Z
 ---
 
 
@@ -254,7 +256,11 @@ all, but a property of the row, and one that may only ever *raise* the target's 
   refuses a **non-streaming** request whose `max_tokens` implies more than ten minutes (~21k), so a
   higher global cap could break that provider outright. Output tokens are billed only when generated,
   so the raise costs nothing on turns that do not need it, and a provider may only ever *raise* the
-  target's value, never lower an explicit higher operator one.
+  target's value, never lower an explicit higher operator one. The launcher holds the same line at
+  start-up: `scripts/wiki-generate.mjs` refuses to start the generator at all when
+  `OPENWIKI_MAX_OUTPUT_TOKENS` is absent, non-numeric or below 16384 (`MIN_OUTPUT_TOKENS`), so
+  invoking the launcher directly — outside the Nx target whose `env` is the only place that sets the
+  cap — fails loudly instead of quietly reinstating the 4096 defect.
 
 **The reasoning-effort knob (item #525).** `scripts/wiki-provider.mjs` rejects any value Fireworks does
 not document for this model, so a bad value fails before any paid work. It cannot travel as openwiki's own
@@ -286,7 +292,10 @@ a settings change, not a commit; the keys are the secrets `ANTHROPIC_API_WIKI_MA
 `{ ...process.env, ...targetEnv }`, so a provider in the target's `env` would silently overwrite the
 job's choice — the job could set a provider and the generator would never see it. The target therefore
 runs `scripts/wiki-generate.mjs`, which resolves the table, hands the generator only the selected
-provider's key, and passes `WIKI_RUN_MESSAGE` as one argv element with no shell. See
+provider's key, and passes `WIKI_RUN_MESSAGE` as one argv element with no shell. The resolution is also
+one-way: the launcher writes the resolved `OPENWIKI_PROVIDER`/`OPENWIKI_MODEL_ID`/`OPENWIKI_PAGE_CONCURRENCY`
+into the child env, so a stray `OPENWIKI_PROVIDER` inherited from the caller cannot override the
+provider the selector resolved to. See
 [Model-provider environment scoping](../invariants/model-provider-scoping.md) for the analogous
 env-scoping rule on the agent side.
 
@@ -377,7 +386,11 @@ is rebuilt rarely and never holds a CI credential; local runs use it by default,
 **Preflight.** Before the first paid slice, `wiki-maintain --execute` makes one minimal call to the
 selected model (`node scripts/wiki-generate.mjs --preflight` by hand). A failure exits **2** with the
 record untouched and names the provider's error type — a withdrawn model id, a revoked key or a blocked
-egress host costs one token, not a slice.
+egress host costs one token, not a slice. The launcher's argument surface is deliberately one flag
+wide: `--preflight` is the only argument it accepts and anything else is rejected outright, because a
+flag it did not recognise must never be read as "start a paid run" (the `--help`/`--dry-run` lesson
+recorded in `CLAUDE.md`). The preflight sends only what a real run sends — no `temperature`, which
+Sonnet 5 rejects with a 400 — so it cannot fail for a reason a real run would not.
 
 ## What the exit codes mean
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:680de20317b94a5c9337de252d7f22ac3429b5dc249720f2365482231e115c8b",
+  "pageVersion": "sha256:11fcf364c4818e9edce7944054e3d26e5f2983f6ca0fbcc897b355af5838d8f0",
   "claims": [
     {
       "id": "claim_20c43d7793fd4c2f9b478778ec76ae93",
@@ -26,7 +26,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "version": "repo-file-v1:sha256:74213982e7d8c296efaff70b7ca000ffb4f7906a4cc83e5f3da19da46d682f44"
         },
         {
           "resource": "repo://scripts/wiki-provider.mjs",
@@ -40,7 +40,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "version": "repo-file-v1:sha256:74213982e7d8c296efaff70b7ca000ffb4f7906a4cc83e5f3da19da46d682f44"
         },
         {
           "resource": "repo://scripts/wiki-generate.mjs",
@@ -1393,10 +1393,42 @@
           "version": "repo-lines-v1:sha256:4c607fa787a53c856673f1f338c91f4b32089e87f42c103d5073da7d5ea7ec89:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MGIzZjE1YTlmNTQ2MTBkZDZlOGFlZWY0M2QxNmFhNzRjOTBjNGI1NjdmNWIzZGIzYzFkNGRjMmIyYjdiOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMmFjOWExOWJjZWEzZGNkMDY1MWFmZDg0NDRjYWYyMjZiZjg4NTBkMzZhYTY5N2FjNjBlOWE2NmJmMTdlNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkYmYwZTkwOWU3NGU2NmU1NjM3ZDU3ZjM5YTBjMzhiNDI4ZGY2N2FjMjdmMDE4YWEyMDQ4MWQ1OGNmNTlmODMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cd5b0ba29a484546ad4506a0a27fe21c",
+      "statement": "`scripts/wiki-generate.mjs` is the only entry point to the generator and it fails closed on two things: it refuses to start the generator unless `OPENWIKI_MAX_OUTPUT_TOKENS` is present, a plain integer and at least `MIN_OUTPUT_TOKENS` (16384), so invoking the launcher directly — outside the Nx target whose `env` is the only place that sets the cap — fails loudly rather than quietly reinstating the 4096 fallback; and it rejects every argument other than `--preflight`, because a flag it did not recognise must never be read as 'start a paid run' (the `--help`/`--dry-run` lesson). The preflight makes one minimal call with only the parameters a real run sends (no `temperature`, which Sonnet 5 rejects with a 400), reports the provider's error TYPE and never the response body, and exits non-zero on failure.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-generate.test.mjs#L99-L119",
+          "version": "repo-lines-v1:sha256:960b4f6244c39a8c59d62b973b2302a234d6100dfdb1f32f48a785681308a721:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MWE4Njc2MGI4ZDBjMjU4ZjQ0YTFkNWQzNWExZjVlNzVjOTllM2EyNTIyNDFlZWM5Nzk4YTFhNWExZTM2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MmQ1ODkzM2E2NTNkZWRjMzkzMTllZDY5YzI3NjgyNGJhNGEyZWYxM2Y2Yjk2ZTJkMGMwNTIyNzdhODg4ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-generate.mjs#L34-L58",
+          "version": "repo-lines-v1:sha256:8f83ea70b40a345144a68a32c5deb05f7477833163f22c44b009ad8721f50afe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OGI5Y2UyMjg1ZGNiNDliYmU4ZmFkMzVmZTE4MjAxOGQxMzgwZGM2MzgyYWRiMTE5NjI5NmQ5YjA4NjY1OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNDJhYzU3N2UwNWM4YjUyMzA2MGU2YjkxMmY5MWU3NDkzZTdiZDRiYWI3OGE5YzYzNmExOWJkOTdiOTk2OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MTA2YzliNzljZTcwNTgwMmVlY2ViNGU1ODY4OGQ5NGQwNTZhZGJjYTc0MzVmZTI2NDdhZjYzMDAyZjAzYWQifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-generate.mjs#L60-L113",
+          "version": "repo-lines-v1:sha256:237010bebbd2e510edc36bdd6277b19416b34f53456030bbbf514ce5ba0bbf60:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkODdlMjY4MzEwMmQ3YmQwZjFlYTAxN2EyNDliN2E0YWZhNWEyYzczYzYxYWNkNGI4M2RmMzRiOGM5MjBiYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwYWU1MWU4NjFmOTBkZjg3ZjRlYmZiMzE1ZTgwNTBlZjE0NzljMDFiNTBmNWQ5MzliNTk1YmUwYzg0MjJkNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYmIyZjcyZDNkYjBkOTFmMjJjYzI3NjBkMjhlYzE2ZmIyZmZlNmNhODBiODdhNGIyNjI2YWJhOGU1MmI0MjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71ea7c5e670143ef8ef2351996f8d1f7",
+      "statement": "The launcher's resolution of the provider is one-way: `buildGeneratorEnv` writes the resolved `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID` and `OPENWIKI_PAGE_CONCURRENCY` into the generator's child environment (with page concurrency always explicit, never inherited from a vendor default), so a stray `OPENWIKI_PROVIDER` or `OPENWIKI_MODEL_ID` inherited from the caller cannot override the provider the `MCM_WIKI_PROVIDER` selector resolved to.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/wiki-provider.test.mjs#L148-L177",
+          "version": "repo-lines-v1:sha256:b3f461c798a99b5a3a325a4a5e2e44d545d0c7520394afa895f9026e30c212a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MWJkODE1YTFhNzEyMTdiNWE1ZDg0NDRiYmI1N2UyNTY2ZGYxMDllMDBjMWFiNWQ2ODc5NTEyNDg2MzA2YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMjc3NDdiYWY3ZDk3ODgzNjE2OGQ4NmJhM2VmOWVhOWI1YTg3OTIyYWY2YzU5MzhiZDBjM2E3MDM2NTk0ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNWE0MjUwN2E5NWE5ZjUxM2IzMDk2YjJlNjk3M2E3YWE3ZWQ1MDlkMTViOGY4Mjg2NmVhZjI5NmIxOWEwMzMifQ"
+        },
+        {
+          "resource": "repo://scripts/wiki-provider.mjs#L142-L173",
+          "version": "repo-lines-v1:sha256:1c627e841623645f862e03e77d7550d6e3de99a252e263a31aac778026285f4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzNzUyMzk1ZmEyNWZlNzA3ZmVmMzAyOTIzZWExYWRmZGU1YmJiZTkzMTM3YzFlN2I4YzRlZDcyYmI4YmZhNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzUzYjEyN2YzMjAwMTczMGQyZDE4ZTRmMTg1Y2ZmMTVkZjVmM2ExNTI2NDFhMjhkYjQxNzMwZDJiMmJkMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxNTI5ZDI2NDBkMjgyMjc1ODU3YzI3YjFlNmI0YWU2NWFjMjc3ZTY4N2NiNjBlZWRhNTAzMDk5YzRhOGVkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T13:23:04.255Z"
+    "at": "2026-11-04T13:09:42.610Z"
   }
 }
