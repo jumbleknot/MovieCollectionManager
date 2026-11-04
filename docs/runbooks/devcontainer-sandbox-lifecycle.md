@@ -225,6 +225,39 @@ correctness one. **v0.43.0 did not raise the deadline** — it is not fixed by u
 
 ---
 
+## 7g. 🔴 Memory — the OOM killer takes a bystander, not the cause
+
+The VM has **16 GiB and no swap**, shared by the dev container, dockerd and every stack. Measured
+2026-11-01: one `pnpm nx test mcm-app` spawned **~19 Jest workers** (Jest's default is cores − 1),
+the dev container reached **12.3 GiB**, and the kernel's global OOM killer took **Keycloak's JVM** —
+the largest single process in the VM. Keycloak restart-looped with exit 137 while the test run
+that caused it finished normally. **It reads as a Keycloak or disk fault**; disk was at 81 %.
+
+```bash
+sbx exec mcm sh -c 'free -h; dmesg | grep -iE "killed process|oom-kill" | tail -5'
+sbx exec mcm sh -c 'docker stats --no-stream --format "{{.Name}} {{.MemUsage}}"'
+```
+
+**Two bounds, both pinned by `scripts/__tests__/dev-memory-bounds.guard.test.mjs`** (feature 086):
+
+| Bound | Value | Why |
+| --- | --- | --- |
+| Jest `maxWorkers`, every config | ≤ 4 (literal integer) | ~0.9 GB per worker at peak; 4 ran mcm-app's 162 suites in 24 s |
+| Jest `workerIdleMemoryLimit` | 1.5 GB | replaces a worker that keeps growing, between files |
+| Dev container `--memory` / `--memory-swap` | 10 GiB / equal | an exhaustion inside the container is resolved **inside** it |
+
+Budget of the 15.7 GiB VM: dev container 10, dockerd ~1, auth + mcm stacks ~2, ~2.7 headroom.
+`dev-ollama` is a sibling **outside** the limit, and a loaded 7B model eats most of that headroom.
+
+The limit applies when the container is **created**. To apply it to a running one without a
+rebuild: `docker update --memory 10g --memory-swap 10g <dev-container>`. After a recreate, check it:
+`docker inspect -f '{{.HostConfig.Memory}}' <dev-container>` must print `10737418240`, not `0`.
+
+Several sessions testing at once can still exceed 10 GiB. That is the intended failure: a Jest
+worker inside the dev container is killed, and the stacks are not.
+
+---
+
 ## 8. Disk — three volumes, all of them resizable
 
 > **Corrected 2026-08-27 (item #246).** This section used to state that the VM's Docker disk was
