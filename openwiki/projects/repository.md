@@ -63,6 +63,8 @@ sources:
     resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
     resource: repo://frontend/mcm-app/project.json
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
   - id: openwiki-source-6ba748254f38112b13d529da
     resource: repo://nx.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
@@ -75,6 +77,8 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-238cf8b88f30f267614313be

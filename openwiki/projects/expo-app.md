@@ -5,6 +5,8 @@ description: The universal (web + Android) client for MovieCollectionManager, bu
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
+  - id: openwiki-source-a157c487923d65153283de40
+    resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-30d3dc827bae5c1cb657fa31
@@ -119,6 +121,8 @@ sources:
     resource: repo://packages/design-system/components/navigation/Tabs.tsx
   - id: openwiki-source-c2fc016d5fa9c9435755b27e
     resource: repo://packages/design-system/eslint.config.js
+  - id: openwiki-source-9315324d9a0185179ef416f8
+    resource: repo://packages/design-system/jest.config.js
   - id: openwiki-source-95aa559e7d1634eddb9fc64d
     resource: repo://packages/design-system/jest/tamagui-cjs-resolver.js
   - id: openwiki-source-f7e16ba323424b9790bca8b9
@@ -129,6 +133,8 @@ sources:
     resource: repo://packages/design-system/tamagui.config.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4

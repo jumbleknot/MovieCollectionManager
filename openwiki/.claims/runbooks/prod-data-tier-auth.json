@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:28266c50b8aff509488447ab0a067a3ddbad85eebfa9384d3bf2cb683ef48cae",
+  "pageVersion": "sha256:2445ff4e493576ead82603d39b90ded885c0a92a943a89f03780a062e7a5103b",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:893444688993724abbd0ee437be07034d9e39bd7a048df90fdb18a076f0b2e1f"
+          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
         },
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
@@ -97,7 +97,7 @@
       "statement": "The post-deploy health probe polls only the Keycloak OIDC issuer and the public app host for HTTP 200, so it cannot detect a broken MongoDB; verifying the upgraded stores is the operator's responsibility immediately after the deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L277-L286",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L274-L283",
           "version": "repo-lines-v1:sha256:d8bd6e55e182636a81007b863f42cb822c17ab7943fb83309408e7c035af195a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjQ2ODUzMWFkNTkzZjM1YzM0ZjQ3ZmFiNTg5NjlkMTcyNjgyYTFkZDMxNmRhMTc3MjNmZjBjNDZkMDE4NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Y2I0ZjYxNDVjN2M1Mzc4YTI0OTg2MDE3MWNjNmVkYjY1MmE4YjJkYjk4NjQ2OTA2NDhmNTlkMTNhMjc5MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNWEyYTYzNzUxNGU4NjQxOGVhYTJiYmU1MDUzYWYzNDkzYzRkMGUyMzM3YmE3MjJkODI2ZDRjYzgzNmM2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxYmYyNTRmNjYyZmJmYTFiY2U5MmY3OTM0MWQ0MDExMzJlMzk2ZDA3NjBkZWI5M2ExZGM1ZmE4M2NmNjQzNjIifQ"
         },
         {
@@ -363,7 +363,7 @@
       "statement": "The deploy path a merge triggers is conditional at two levels, not automatic. First, `app-ci`'s `trigger-cd` job exists only for a `push` to `main` whose `needs:` are satisfied: `affected` and `mc-service-checks` must succeed, `app-e2e` and `dast` may be `success` or `skipped` (so a path-gated skip does not swallow a config-only merge), and `app-image-scan` must be exactly `success`. Second, the remaining decision is delegated to `scripts/cd-dispatch-gate.mjs`, which declines a commit that is no longer the effective tip of `main` (a newer non-`[skip ci]` commit supersedes it), a range where nothing in `DEPLOYABLE_PATHS` changed since the last `chore(cd): promote …` commit, and a commit whose `guardrails*` contexts are not all green — publishing the answer as a `cd-dispatch / trigger-cd` commit status because `trigger-cd` is advisory; the dispatch itself requests `main`'s tip, not the merged sha. `cd-deploy` is correspondingly `workflow_dispatch`-only with no `push:` trigger (`deploy=false` default, so a manual mint builds/scans/pushes/promotes digests without firing the webhook or probe) and serializes on the `cd-deploy-main` concurrency group with `cancel-in-progress: false` so a later merge never cancels an in-flight production deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1924-L2011",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1925-L2012",
           "version": "repo-lines-v1:sha256:ae09f0060240ced08920a0da7f1d651a9100f6e156335ea3b0b17aa4f0137ded:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjYzYzU2OTM4MTM3NTE4YmE3Y2Q0NGI1MmU0NDY3Y2NkZmUzOWNiMGFjMjAxYWIzMTc3NDJmM2MyYTljYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -437,6 +437,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-04T17:50:21.605Z"
   }
 }

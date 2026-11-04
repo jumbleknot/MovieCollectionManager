@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:466f9f09955004bf560a7ca9a7377b22cb9c996a1f16ab7d3e73b9720fefd545",
+  "pageVersion": "sha256:c8a72a126f65fb8418f2ad9e25ce7aa91de6f2a8ada2ba8507b744d9d9875d9d",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -62,7 +62,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
+          "version": "repo-file-v1:sha256:2a99ac8020b7dba41c750cc8136dc6a014c1f4a7300a99dff67a89ccacdeaa35"
         },
         {
           "resource": "repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs",
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         }
       ]
     },
@@ -112,7 +112,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://scripts/publish-sweep-verdict.mjs",
@@ -126,7 +126,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         }
       ]
     },
@@ -150,7 +150,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -192,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         }
       ]
     },
@@ -216,7 +216,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://scripts/check-infra-image-findings.mjs",
@@ -230,11 +230,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         },
         {
           "resource": "repo://scripts/infra-image-scan.mjs",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         }
       ]
     },
@@ -258,11 +258,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
+          "version": "repo-file-v1:sha256:ce3018ce4a94c7f8d41a7238a9f449839ba5f9b31e633adc08c53cb30edb660a"
         }
       ]
     },
@@ -272,11 +272,11 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         }
       ]
     },
@@ -286,7 +286,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -310,7 +310,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         },
         {
           "resource": "repo://scripts/__tests__/infra-image-scan.test.mjs",
@@ -352,7 +352,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         },
         {
           "resource": "repo://scripts/cd/scan-push.sh",
@@ -366,7 +366,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         }
       ]
     },
@@ -376,7 +376,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/infra-image-scanning.md",
-          "version": "repo-file-v1:sha256:ba2a6392ccc728adb361edf1f522a4064fea7f21e03acafbe2e3044cdf0289ba"
+          "version": "repo-file-v1:sha256:f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc"
         }
       ]
     },
@@ -407,30 +407,34 @@
           "version": "repo-lines-v1:sha256:d079d27720c510a500ed8da13a8c269118f57891ae4f280170641ac65a793e17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZGIwNDc0NWU2YjZiZmNlZjM5MGMzYWNlN2QwMTgzYTA5Yzk2NjFhYjYzZTM1YWZlNzFlMGMzNzkyNGQ1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNWFmNzBhZGJjZjBjNmI1ZjYxYzM5YzA3ZWYxOTFkMzNmNmUwZGVkMWVmZTZjYmU4ZWQ2ZTllYTE0NTA4OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3Y2FiYjFiODkwODE2ZDlkMTdlOTE5NTYxMjU0YWQwMDQ3NWE5ZDUyOWJkNWI0ZTk3YjkyNTlkMGIwOTllNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YTczNzVmZDkyNjhjMzdiNzg5MmIxNzIxMTc2ZTc4ZDk4MDViODE1ZDg3MDU4YzUwNGUwZGQwYmIyNTUzMDcifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3074-L3093",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3054-L3073",
           "version": "repo-lines-v1:sha256:889f7601e243e2a296a541df7fcefd9dd2c2a5568625bca203a34d31adb1f3fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGEyMDkzM2Q3N2Y5NWQ0Y2I4MDZiMTAwOTk4OWFkNjQxYTkzNWZjMzg3MmVmZDE0NjkwN2Y4YzhmYjAxMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMDgyMWQyYmExNGM5NTc0ZTMwMjkxOWMxODI2NDU5OTZlZDY1YzlmOGQwZGNkOTE5NDg3MzZlYTg1ZTkzNTAifQ"
         }
       ]
     },
     {
       "id": "claim_b736c248f7f74c34b5a419213ee255ac",
-      "statement": "The Trivy install in `.forgejo/workflows/infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` is version-pinned rather than floating: the install script is fetched from a version tag rather than the moving branch `main`, the same tag is passed as the script's positional argument, and one `TRIVY_VERSION` assignment per file is interpolated into both sites so a bump cannot move one and strand the other. There are three such sites since spec 084 US3 (app-ci's `app-image-scan` must scan the PR's images with the scanner the deploy will use, or a green PR says nothing about the deploy). `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the RESOLVED state across all three files — each pinned, each script ref equal to its installed tag, and all three agreeing on one version, because a disagreement means one gate can block what another passes — and that the `aquasecurity/trivy` customManager (datasource `github-releases`) covers all three files and actually captures a `currentValue` in each, since a manager whose regex misses is indistinguishable from no manager at all.",
+      "statement": "The Trivy install in `.forgejo/workflows/infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` is version-pinned rather than floating: each file writes the version ONCE as a `TRIVY_VERSION=vX.Y.Z` assignment and hands it to `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`, so a bump cannot move one site and strand the other. There are three such sites since spec 084 US3 (app-ci's `app-image-scan` must scan the PR's images with the scanner the deploy will use, or a green PR says nothing about the deploy). `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts the RESOLVED state across all three files — each resolving to a `vX.Y.Z` tag, all three agreeing on one version (a disagreement means one gate can block what another passes), none of them piping the vendor's `contrib/install.sh` or reaching `get.trivy.dev` again — and that the `aquasecurity/trivy` customManager (datasource `github-releases`) covers all three files and actually captures a `currentValue` in each, since a manager whose regex misses is indistinguishable from no manager at all.",
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/app-ci.yml",
-          "version": "repo-file-v1:sha256:706ef1561d28fbcd4ba0844bb24d02f44efb422c3784a27cdb971dcce4a69b1c"
+          "version": "repo-file-v1:sha256:2a99ac8020b7dba41c750cc8136dc6a014c1f4a7300a99dff67a89ccacdeaa35"
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:893444688993724abbd0ee437be07034d9e39bd7a048df90fdb18a076f0b2e1f"
+          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
         },
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
-          "version": "repo-file-v1:sha256:8e1dec840c527ebf37b003563f5384cfed48269575fffcbe203361d5d9dd4ff5"
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
-          "version": "repo-file-v1:sha256:f5d077f20a6d3a523bbe5cf88f695d8e3399c1d66d94fb7ed1112e58765792f5"
+          "version": "repo-file-v1:sha256:ce3018ce4a94c7f8d41a7238a9f449839ba5f9b31e633adc08c53cb30edb660a"
+        },
+        {
+          "resource": "repo://scripts/ci-install-trivy.sh",
+          "version": "repo-file-v1:sha256:79e756e16b3721bb2d85f6faca8fdfc9f81c04636535d72d3c217c2e029cdeb2"
         }
       ]
     },
@@ -465,7 +469,7 @@
           "version": "repo-lines-v1:sha256:d07f1a54ea996a8c83976ca1b820740f9cc7efdf663ee59c0f3bd334af38960f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWRjOTlkNzkwNGMzMWMwMmU0N2NiYzg5OTA5Y2VhMTViODkwMTE3NDVkOGJjMThhMTY1ZThhNTM3ODc1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYmIwZjlkZmYyMDZjMDhhMTQ1YWY3NjEzNDJlN2EzZWEyN2ZiNDJjYTJlY2Q5NDgxZGIzNjVhMGQ5YjJmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MThmZTE2NzE0YjY2MTQzZTBhYzA1YTM3NjcyMTk3NzRiYWU3ZTkxMDFhYWI0NTJmYjk2MzkxOTdkMTc5NjMifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3037-L3072",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3017-L3052",
           "version": "repo-lines-v1:sha256:872d8a7bc8479c65ea8d274dc40f56ed2a9f39e53000559b04d5968a6a402c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMjM3Y2JlOWIyODQ4YmIzZTNjNGZhZDA5MGFjYWJlOGYyMTY5NTdjZTg5MGQ5OTdlZjNjZjI5MTA4MjllMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZTQwMjUzNmNjN2VkYWU3ZDVjYzBjMWQ1MTdiOTA5YThiZWIxNjMxZDQ5M2FiZGVjMDkxYmI1M2Y2OTQwMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMWUxYWQ1ZWY1ODE0ZWI4ZjIyNzRiN2M1NGY2YzNiODkwYTdmYzhlOWM5ZDBmNjdjNDI3ZWM4YzE3MGMwYTkifQ"
         }
       ]
@@ -579,7 +583,7 @@
           "version": "repo-lines-v1:sha256:4241b3a801399280daefa69d313b52fd06a0150f2388534cc1aa2cdc04df1d6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODJhZjYwYjFjMjcyZjFkN2MyNzFiYTY5NzhhYjIyMjVlODdmNTkxODUyN2RkMTBjNjMxMjE2NmYyZmVjZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3198-L3219",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3178-L3199",
           "version": "repo-lines-v1:sha256:79e5a9eda1998f049784e7901cad1af8e5c410aae5cac1a74a35c5ba3b90aefa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZTdkNGEwZjc2YjRhNjMyYzAyNDdiMDk4ZjEzNjRmNjVhNjM2N2Y4MmYyYWViZjJiNjJkZmYwY2E1ZjUwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YjBhZjMyMTZjZDBiZGEzODE1OTU2NWFlYWJkMmIyYTAzZDlmYWNmNTA1NmM5OWZhMjIyMTJjYjY5ZjY2MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYmM3MDZkY2U0MmY2NzBlYWMyZDkxMmNjMTZiYTBmNTUwZmE1NWNhZjM4MjAyMzU5MDUzMDY4ZGY4NTJjZjYifQ"
         }
       ]
@@ -653,7 +657,7 @@
       "statement": "The scan report is a gitignored artifact rather than a committed record: `security/infra-images/reports/*` is ignored except for a `.gitkeep`, and the CI job uploads that directory as the `infra-image-scan-report` artifact with a 14-day retention under an `always()`-guarded step on the scan path, so a red sweep still leaves its findings readable. `scripts/__tests__/upload-artifact-retention.test.mjs` pins that every `upload-artifact` step in every workflow sets a whole-number retention and that a diagnostics upload named `*scan*` stays at or under 14 days.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L439-L445",
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L438-L444",
           "version": "repo-lines-v1:sha256:85a0c5b3322d6de558509557c0eb896ee2a8eaa036142004e533f6606e644028:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJiZDdiZjk3Y2JmNmRlNGFkZjA1ZjE2YjEwOTJmYWM0MjVkZDUyZWRlY2Q3Y2EzY2Q5NWIyODcwZWY0NDM2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1NjVlY2IwNThmNDg2N2QxMTZhMzU1ZWFkYzJlOTlhODA4Yzg3NDBjZGU2ZWQxM2YxYzRiNTY4Y2NlMmQzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMTRiYTA2MDlhMzY5ZWU0YmMxMWM0MjkzOWE5MWIwZDc3OWU1ZGUwN2Q4NDRkZTc1OGY4ZTY2ZmU4M2FmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc1ZmM5MmE5MmU2OTY2OGMyOGYxNDRhNGZjN2I5MzFiNjA2NmNkNzJlNDQxMmM2ODlmMzQ3M2RiNzZmNjIxNyJ9"
         },
         {
@@ -693,11 +697,11 @@
       "statement": "The shared per-image pipeline is what moved the deploy gate onto the pull request (spec 084 US3, item #822): app-ci's required `app-image-scan` job runs `scripts/cd/scan-app-image.sh` on the six images `app-e2e` already built, which `app-e2e` tags `app-scan/<name>:run-<run id>` so a later rebuild of `:latest` on the persistent daemon cannot change what is scanned, and holds with a labelled stopped container so another run's `docker image prune -af` cannot delete the tag. The job needs `[changes, app-e2e]` but is `always()`-guarded so a skipped `app-e2e` cannot skip it, runs on the `kvm` runner holding the images, passes early and explicitly when no app path changed, fails naming a missing scan tag rather than passing on images it could not find, scans every image even after one fails so one run names every blocking image, removes its holds and then the run-scoped tags under `always()`, and is required by `trigger-cd` so a red scan on `main` blocks the dispatch before any deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1780-L1909",
-          "version": "repo-lines-v1:sha256:9f72651f5be68a30167043a973b4c43792e7ba980b15f3dc06915bf9bfa991ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZTM1NWVkZjExZGE4ZWM5ZDZjYmFlMTNmZmMzNTkxNzg0YjRiMjVhMmE5NjY3YjZlZTU1NzEwZmY4MmE2NGZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYmUwNDg1N2E0ODk2ZTVlZmIwYjliODQyYTU0NjY0MWE1YzBkNTNkMjFiYmI2MTgwYWRlM2RkYWI0ZTlkNmNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhM2Q2NjNiZWU3NmFlMWM3MjJjMDM5Mjk3OTUzNjliMzVjMDYyZDNlMDQ1OTA3M2JlODM4MTVjYjc4MzI3OWYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYzA0OWVmMzk2ZTYwODYwZjEyODgxYzBmZjYyODcwOWM2ZTI3YjZiNGI4NTY2M2U4YjBjZTkzZWM2NGQ3M2NiIn0"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1781-L1910",
+          "version": "repo-lines-v1:sha256:78e7b867d5194decb746aa2928cd4d6909189cbd134a95c4e0fd88905bf92ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZTM1NWVkZjExZGE4ZWM5ZDZjYmFlMTNmZmMzNTkxNzg0YjRiMjVhMmE5NjY3YjZlZTU1NzEwZmY4MmE2NGZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYmUwNDg1N2E0ODk2ZTVlZmIwYjliODQyYTU0NjY0MWE1YzBkNTNkMjFiYmI2MTgwYWRlM2RkYWI0ZTlkNmNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhM2Q2NjNiZWU3NmFlMWM3MjJjMDM5Mjk3OTUzNjliMzVjMDYyZDNlMDQ1OTA3M2JlODM4MTVjYjc4MzI3OWYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYzA0OWVmMzk2ZTYwODYwZjEyODgxYzBmZjYyODcwOWM2ZTI3YjZiNGI4NTY2M2U4YjBjZTkzZWM2NGQ3M2NiIn0"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L811-L831",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L812-L832",
           "version": "repo-lines-v1:sha256:314c3f4ff8c63b2664c7176e9ee0383e5970fb16f49e7ce4a83e58d68c3709eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
         },
         {
@@ -765,7 +769,7 @@
       "statement": "app-ci's `app-image-scan` job fails closed when the `changes` job did not succeed, because whether the app images changed is then unknown and an unknown diff must not read as \"nothing to scan\"; the early pass is reserved for the measured case where `needs.changes.outputs.app` is not `true`. Past that decision the job verifies all six run-scoped scan tags with `docker image inspect` before scanning anything and fails naming every missing one, and each image then runs in its own step under `always() && RUN_SCAN == 'true' && SCAN_READY == 'true'` so one failing scan does not stop the rest and a single run names every blocking image.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1811-L1829",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1812-L1830",
           "version": "repo-lines-v1:sha256:0d99caf61b2744b3ba92f2b2be7e18d7750edb03dec09091528a6bd5fee483b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZjE0MTY1MzBkZmI3NTZkYWVhYTBiODA0ZmU2YzJjYWE3NDVkNTExNTliODc5Y2Q0NDFiOGQyNWFlOGNlMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNjMxYWQxMWM4YjgyNmY0OWRmY2MzNDdiN2RmM2M4OTlmY2IwY2NhMzQzMWYxOWRkMjFlODc2NGMyMmMwYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4ZTZjOTMwNDcyYzA1MTc3YzJlZjRhNTk4OWU4NTk2ODYzZTc2YzZlZmEwNmJkZGY2NzJiM2IwMzUzNDE2MTkifQ"
         },
         {
@@ -779,11 +783,11 @@
       "statement": "The PR-time scan's run-scoped tags are protected from the shared runner's prunes by a labelled stopped container rather than by a lock (item #915, research R15): the single `kvm` runner can take another run's `app-e2e`, `dast` or `build-deploy` between this run's `app-e2e` and its `app-image-scan`, and each of those starts with `docker image prune -af`, which deletes a bare tag (PR #909 failed `missing scan tag(s)` twice that way). Because `image prune -a` never removes an image that has a container, the tag step creates `app-scan-hold-<run id>-<name>` labelled `mcm.app-scan-hold=run-<run id>` on the run-scoped tag after a `docker rm -f` (a re-run attempt keeps the run id), and each of the three image-prune sites first sweeps only stale holds with `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h`, so a cancelled run's images are released within a day while a run still awaiting its scan keeps them. `scripts/__tests__/app-image-scan.test.mjs` pins the sweep-before-prune ordering, the label and age filters, the hold-before-tag removal, the count of prune sites, and the absence of any unfiltered `docker system prune` / `docker container prune`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1564-L1570",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1565-L1571",
           "version": "repo-lines-v1:sha256:3f07c64a3ed1f93be93e9f3d5165fe551df491316782144c2f2ec4bdaba4bea3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUzYTEzNmZhMTliNWJhOTg5OWU3Y2E4ZWI4MjBjM2FmY2Y3ZjdiNTEwZmY3NTFjY2Y4NzA5ZDY0MDMyZjliYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUyNDFkNzhlNDk4ZTRhY2Y2NjIwNTM5MjUxMzFiNTMxMTI4MTA3MjEzZjlhMmI2MDA2ZWZhMTRhODg5NjVkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWY1MDJmYTFiYjdjNzljZTI4ODI0ZmQ4ZmQ2YmZjYjVlMmJhNjJmYTI1Yjk4OTNkMGQwOWUxNTNiNWQ3NWFmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDUyNzhmN2ExZGMyMjk3NGM5MmRiNjc0OGYxZWZlOTgzYTQ0MTUyNjQ2YTgwOTUyN2VhMzdiOWZmNzM4MTE3ZiJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L511-L525",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L512-L526",
           "version": "repo-lines-v1:sha256:6a31a2cce09f30219fd1863ff8c6f22a180aa800e780fb6b587570d9c50f0879:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlM2ExMzZmYTE5YjViYTk4OTllN2NhOGViODIwYzNhZmNmN2Y3YjUxMGZmNzUxY2NmODcwOWQ2NDAzMmY5YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYmFjZjk5MmZjZDczNWI0MmI5ZWU5YzVlMGViYjUyMzY4ODc5ZDBlMTk2NDFhYjkyZDM3ZDhjMjAxMzQyYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNzJjZTA2NDNjNjI0YjIzZmQ5MGZhODU2OGE5NGRkMWU1MzE1MGI1MjIxMTk2ZGVmYTY1ZGI0ZDg5NjIwN2QifQ"
         },
         {
@@ -795,10 +799,42 @@
           "version": "repo-lines-v1:sha256:dc612d705b24529007b7fab14d5824b9d1ede512f292b5a459b30730d67392fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NzkyNzlhMjg4Y2QyMjNjZDRmYjk3NDEwMmU2ZTFkNTA1MjMzY2ZhNWViMDJmMGQ0NzM0Mjk4OTdhMjkxZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_06c7d50af16343d4ad0751d49329c9a2",
+      "statement": "`scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>` is the ONE Trivy installer all three scanning workflows call, so the PR gates and the deploy scan cannot drift on the scanner. It downloads the release tarball and its checksums file directly from GitHub release assets, verifies the sha256 (requiring exactly one checksums entry for the asset), and refuses to finish unless the installed binary reports the pinned version — so a passing install step means *this* version is on PATH, not that a version line was printed. It replaced Trivy's own `contrib/install.sh`, which was fetched from a moving branch and piped into `sh` and, on PR #929 (runs 6696 and 6702, 2026-11-04), failed twice with no error at all because it fetches the tarball from `get.trivy.dev`, logs a non-200 at DEBUG level, and `set -e` turns that into a silent exit.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
+          "version": "repo-file-v1:sha256:f0266aebce9a3f43d0676d20503c7868388803ffce6e0393c474ca6180eb1613"
+        },
+        {
+          "resource": "repo://scripts/__tests__/ci-install-trivy.test.mjs",
+          "version": "repo-file-v1:sha256:2bc2324810f40b8659a161b98c672a5d4676d7015744d04d6e173ecebacd7883"
+        },
+        {
+          "resource": "repo://scripts/ci-install-trivy.sh",
+          "version": "repo-file-v1:sha256:79e756e16b3721bb2d85f6faca8fdfc9f81c04636535d72d3c217c2e029cdeb2"
+        }
+      ]
+    },
+    {
+      "id": "claim_59e678ef1a7d4c4fb3ad9c3f358a652b",
+      "statement": "`scripts/__tests__/ci-install-trivy.test.mjs` pins the installer's own behaviour offline against `file://` fixtures: a good release installs the pinned version into `<bindir>` with the checksum verified, a checksum mismatch fails loudly and installs nothing usable, a failed download names the URL and curl's exit rather than exiting silently (the PR #929 failure), a binary reporting a different version fails so a green step means the PINNED version, and a tag that is not `vX.Y.Z` is refused before anything is fetched.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/ci-install-trivy.test.mjs",
+          "version": "repo-file-v1:sha256:2bc2324810f40b8659a161b98c672a5d4676d7015744d04d6e173ecebacd7883"
+        },
+        {
+          "resource": "repo://scripts/ci-install-trivy.sh",
+          "version": "repo-file-v1:sha256:79e756e16b3721bb2d85f6faca8fdfc9f81c04636535d72d3c217c2e029cdeb2"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-04T17:50:21.605Z"
   }
 }

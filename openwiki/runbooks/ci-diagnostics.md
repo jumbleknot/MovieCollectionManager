@@ -11,6 +11,8 @@ sources:
     resource: repo://.forgejo/workflows/branch-reaper.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
+  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
+    resource: repo://.forgejo/workflows/infra-image-scan.yml
   - id: openwiki-source-ceecf221f842ba07ba6a91b2
     resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-96c32d20fcdefc48cf9ec296
@@ -47,6 +49,8 @@ sources:
     resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
   - id: openwiki-source-583e0d299d9b65d403bcd328
     resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
+  - id: openwiki-source-27bdf2533d99346470f527d9
+    resource: repo://scripts/__tests__/ci-install-trivy.test.mjs
   - id: openwiki-source-85fc21a7b778685b168d8d3b
     resource: repo://scripts/__tests__/ci-status.test.mjs
   - id: openwiki-source-02881b4039babfbc8f305d7c
@@ -77,6 +81,8 @@ sources:
     resource: repo://scripts/cd/scan-push.sh
   - id: openwiki-source-478a776ff0b75f2af5dc3190
     resource: repo://scripts/ci-failure-digest.mjs
+  - id: openwiki-source-daf4f583f7313d88c7671f4b
+    resource: repo://scripts/ci-install-trivy.sh
   - id: openwiki-source-1edeb18757a8f02d496d8f2b
     resource: repo://scripts/ci-log-step.sh
   - id: openwiki-source-70875ab1853f42b7c7d4b78a

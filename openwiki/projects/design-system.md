@@ -21,10 +21,18 @@ sources:
     resource: repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts
   - id: openwiki-source-c847620424d66ef5f2e66d05
     resource: repo://packages/DESIGN-SYSTEM.md
+  - id: openwiki-source-6230a2d05eadba772d30d66a
+    resource: repo://packages/design-system/components/controls.test.tsx
   - id: openwiki-source-87ec032633e7c7bbf61a29f6
     resource: repo://packages/design-system/components/focus-ring.test.ts
   - id: openwiki-source-08eebdda17baf659b7ce331b
     resource: repo://packages/design-system/components/interaction-states.test.ts
+  - id: openwiki-source-7a5ec41266fa0675a3db6688
+    resource: repo://packages/design-system/components/navigation/navigation.test.tsx
+  - id: openwiki-source-a9f8640b2ea19387ecec6be5
+    resource: repo://packages/design-system/components/navigation/NavList.tsx
+  - id: openwiki-source-e3cf144619c81072e7ba6980
+    resource: repo://packages/design-system/components/navigation/Tabs.tsx
   - id: openwiki-source-73371fb6e562a6846976bee5
     resource: repo://packages/design-system/components/primitives/FAB.tsx
   - id: openwiki-source-09ee847b43e33b41798d0b11
@@ -55,8 +63,14 @@ sources:
     resource: repo://packages/design-system/tokens/colors.ts
   - id: openwiki-source-33cc1b67f34fd8d337e8639e
     resource: repo://packages/design-system/tokens/typography.ts
+  - id: openwiki-source-101c7428a6a9572c869f03b8
+    resource: repo://packages/design-system/tokens/with-alpha.test.ts
+  - id: openwiki-source-114fd804a77c8ff9298e21bc
+    resource: repo://packages/design-system/tokens/with-alpha.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03

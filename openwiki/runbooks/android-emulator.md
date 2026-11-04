@@ -63,10 +63,10 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+    at: 2026-11-04T17:50:21.605Z
 ---
 
 # Android emulator & APK builds (mobile E2E)

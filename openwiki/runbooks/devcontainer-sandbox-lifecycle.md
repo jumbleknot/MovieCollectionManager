@@ -23,10 +23,18 @@ sources:
     resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
   - id: openwiki-source-7b223ba4df7203eeb5667fa8
     resource: repo://docs/runbooks/devcontainer-sandbox.md
+  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
+    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-0b13188628bc70e422253f37
     resource: repo://scripts/gen-egress-policy.mjs
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
+  - id: openwiki-source-c477b92ec3cc5b8ead412bac
+    resource: repo://specs/086-dev-memory-bounds/plan.md
+  - id: openwiki-source-104e1b5d4af5f78ca3e3f767
+    resource: repo://specs/086-dev-memory-bounds/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:34:17.413Z" }
 verified:
   - by: openwiki/0.7.1
