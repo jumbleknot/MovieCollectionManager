@@ -20,7 +20,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the mcm stack test infra + mc-service (--profile app). Run `node scripts/gen-dev-secrets.mjs` first (mints mcm.env). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
+        "description": "Bring up the mcm stack test infra + mc-service (--profile app). Run `node scripts/gen-dev-secrets.mjs` first (mints mcm.env) and `pnpm nx build mc-service` (mc-service:latest is local-only; without it this fails with `pull access denied`, which is not a registry login problem). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
       }
     },
     "up-mcm-agents": {
@@ -64,7 +64,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Convenience: bring up auth (Keycloak) then the mcm app stack in order (auth before mc-service, FR-006)."
+        "description": "Convenience: bring up auth (Keycloak) then the mcm app stack in order (auth before mc-service, FR-006). Run `pnpm nx build mc-service` first (see up-mcm)."
       }
     },
     "down-auth": {
