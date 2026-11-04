@@ -306,7 +306,7 @@ sbx daemon stop; sbx ls        # sbx ls restarts the daemon, from THIS environme
 
 The full recreate, in order: back up (§8b), `sbx rm mcm --force`, then
 `sbx create --name mcm -m 16g --skills=off shell C:\Users\<you>\sbx-workspaces\mcm-vm`, then apply
-the egress policy (§7b) **before** anything pulls, then the three §8b steps, a fresh clone into
+the egress policy (§7b) **before** anything pulls, then the six §8b steps, a fresh clone into
 `/workspaces/mcm`, the restored `.env` files, a `sbx stop`, and `devcontainer up`.
 
 ⚠️ **A CLI `devcontainer up` installs no personal layer**, and `sbx rm` took the `~/.claude` volume
@@ -448,11 +448,12 @@ if the exported bundle grows a lazy `require("…")` the script does not account
 
 ---
 
-## 8b. 🔴 A cold recreate needs five things the template does not carry
+## 8b. 🔴 A cold recreate needs six things the template does not carry
 
 Beyond the egress policy (§7b), a sandbox created from scratch is missing setup that nothing in the
 provisioning path supplies. The first three were hit on 2026-08-27 and again on 2026-11-03, the
-fourth and fifth on 2026-11-03; each stops the recreate dead.
+fourth and fifth on 2026-11-03, the sixth on 2026-11-04; each of the first five stops the recreate
+dead, and the sixth stops the first commit.
 
 **1. The `devcontainer` CLI is not installed.** §7b's recreate sequence calls `devcontainer up`, and
 the binary does not exist in a fresh sandbox:
@@ -501,6 +502,20 @@ sudo /sbin/ldconfig && /sbin/ldconfig -p | grep libstdc   # must print a libstdc
 
 `devcontainer up` and the harness are unaffected — only the VS Code attach path needs it, which is
 why a 12/12 harness did not catch it. `open-sandbox.ps1` is the first thing to exercise it.
+
+**6. No git identity, so the first commit in the container fails** (added 2026-11-04) with
+`Author identity unknown`. `open-sandbox.ps1` attaches through Remote-SSH to the **VM**, so VS Code
+copies the VM's `~/.gitconfig` into the container — and the VM's has never carried `user.name` or
+`user.email` (the 2026-11-03 backup has none either). Whatever identity the old container had was
+set in its own home, which a recreate discards. Set it on the VM, where every future container
+inherits it, and in the running container, whose copy was already made:
+
+```bash
+git config --global user.name "<name>" && git config --global user.email "<email>"   # on the VM
+docker exec -u coder <dev container> git config --global user.name "<name>"          # and email
+```
+
+No harness check commits, so a 12/12 harness and a read-only git check both miss this.
 
 > ⚠️ **An instant failure is not always a policy refusal.** §7b says a ~1 s failure means the egress
 > policy refused the connection, since "a network fault times out; a policy refusal is instant". True,
