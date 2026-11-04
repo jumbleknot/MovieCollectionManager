@@ -1,23 +1,24 @@
 {
-  "coveredCommit": "b08a194d3600a78911b94198c26444cd3830148f",
-  "coveredAt": "2026-11-04T13:56:02.923Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
+  "coveredAt": "2026-11-04T18:36:01.026Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
-        "infra-image-scanning.md"
+        "devcontainer-sandbox-lifecycle.md",
+        "devcontainer-sandbox.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md"
+      "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 931,
-    "headCommit": "cc3dad19c81370ca2f7b1658619b20aa0ba53425",
+    "headCommit": "effef8edda971290cef0af54909fec5116342b14",
     "markerBefore": "0dd86d92fba455c2d4c21271de801501faf1131b",
     "slices": [
       {
@@ -53,52 +54,53 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "infra-image-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
       }
     ],
-    "updatedAt": "2026-11-04T17:46:37.817Z"
+    "updatedAt": "2026-11-04T18:36:01.711Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 3103,
-    "stoppedAtBudget": false
+    "pagesWritten": 9,
+    "elapsedSeconds": 2746,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/infra-image-scanning.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-04T17:46:37.189Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 709,
+    "calls": 265,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3920538,
-    "cached": 67611410,
+    "uncached": 1367979,
+    "cached": 22440890,
     "cacheWrite": 0,
-    "output": 1286793,
-    "reasoning": 1113408,
-    "ms": 8775288,
-    "estCostUsd": 3.126,
+    "output": 434841,
+    "reasoning": 380333,
+    "ms": 2823406,
+    "estCostUsd": 1.0668,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/devcontainer-sandbox-lifecycle.md",
-        "runbooks/devcontainer-sandbox.md",
         "runbooks/infra-image-scanning.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 3.126,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 1.0668,
       "rateLimited": null
     }
   ],
