@@ -225,6 +225,39 @@ correctness one. **v0.43.0 did not raise the deadline** — it is not fixed by u
 
 ---
 
+## 7g. 🔴 Memory — the OOM killer takes a bystander, not the cause
+
+The VM has **16 GiB and no swap**, shared by the dev container, dockerd and every stack. Measured
+2026-11-01: one `pnpm nx test mcm-app` spawned **~19 Jest workers** (Jest's default is cores − 1),
+the dev container reached **12.3 GiB**, and the kernel's global OOM killer took **Keycloak's JVM** —
+the largest single process in the VM. Keycloak restart-looped with exit 137 while the test run
+that caused it finished normally. **It reads as a Keycloak or disk fault**; disk was at 81 %.
+
+```bash
+sbx exec mcm sh -c 'free -h; dmesg | grep -iE "killed process|oom-kill" | tail -5'
+sbx exec mcm sh -c 'docker stats --no-stream --format "{{.Name}} {{.MemUsage}}"'
+```
+
+**Two bounds, both pinned by `scripts/__tests__/dev-memory-bounds.guard.test.mjs`** (feature 086):
+
+| Bound | Value | Why |
+| --- | --- | --- |
+| Jest `maxWorkers`, every config | ≤ 4 (literal integer) | ~0.9 GB per worker at peak; 4 ran mcm-app's 162 suites in 24 s |
+| Jest `workerIdleMemoryLimit` | 1.5 GB | replaces a worker that keeps growing, between files |
+| Dev container `--memory` / `--memory-swap` | 10 GiB / equal | an exhaustion inside the container is resolved **inside** it |
+
+Budget of the 15.7 GiB VM: dev container 10, dockerd ~1, auth + mcm stacks ~2, ~2.7 headroom.
+`dev-ollama` is a sibling **outside** the limit, and a loaded 7B model eats most of that headroom.
+
+The limit applies when the container is **created**. To apply it to a running one without a
+rebuild: `docker update --memory 10g --memory-swap 10g <dev-container>`. After a recreate, check it:
+`docker inspect -f '{{.HostConfig.Memory}}' <dev-container>` must print `10737418240`, not `0`.
+
+Several sessions testing at once can still exceed 10 GiB. That is the intended failure: a Jest
+worker inside the dev container is killed, and the stacks are not.
+
+---
+
 ## 8. Disk — three volumes, all of them resizable
 
 > **Corrected 2026-08-27 (item #246).** This section used to state that the VM's Docker disk was
@@ -238,7 +271,7 @@ knob — raising the wrong one changes nothing:
 
 | Device | Default | Mounted at | Holds | Knob |
 | --- | ---: | --- | --- | --- |
-| `vdd` | 50 GiB | `/var/lib/docker` | every Docker image/layer **and the dev container's own writable layer** — this is the `/` the dev container reports | `DOCKER_SANDBOXES_DOCKER_SIZE` |
+| `vdd` (`vdf` since the v0.51.0 shell kit, §10b) | 50 GiB | `/var/lib/docker` | every Docker image/layer **and the dev container's own writable layer** — this is the `/` the dev container reports | `DOCKER_SANDBOXES_DOCKER_SIZE` |
 | `vdb` | 20 GiB | `/` (VM root) | `/workspaces/<name>` — the working tree | `DOCKER_SANDBOXES_ROOT_SIZE` |
 | — | 50 GiB | cloned workspace | only in `--clone` mode; unused here | `DOCKER_SANDBOXES_CLONED_WORKSPACE_SIZE` |
 
@@ -273,7 +306,7 @@ sbx daemon stop; sbx ls        # sbx ls restarts the daemon, from THIS environme
 
 The full recreate, in order: back up (§8b), `sbx rm mcm --force`, then
 `sbx create --name mcm -m 16g --skills=off shell C:\Users\<you>\sbx-workspaces\mcm-vm`, then apply
-the egress policy (§7b) **before** anything pulls, then the three §8b steps, a fresh clone into
+the egress policy (§7b) **before** anything pulls, then the six §8b steps, a fresh clone into
 `/workspaces/mcm`, the restored `.env` files, a `sbx stop`, and `devcontainer up`.
 
 ⚠️ **A CLI `devcontainer up` installs no personal layer**, and `sbx rm` took the `~/.claude` volume
@@ -415,10 +448,12 @@ if the exported bundle grows a lazy `require("…")` the script does not account
 
 ---
 
-## 8b. 🔴 A cold recreate needs three things the template does not carry
+## 8b. 🔴 A cold recreate needs six things the template does not carry
 
 Beyond the egress policy (§7b), a sandbox created from scratch is missing setup that nothing in the
-provisioning path supplies. All three were hit on 2026-08-27; each stops the recreate dead.
+provisioning path supplies. The first three were hit on 2026-08-27 and again on 2026-11-03, the
+fourth and fifth on 2026-11-03, the sixth on 2026-11-04; each of the first five stops the recreate
+dead, and the sixth stops the first commit.
 
 **1. The `devcontainer` CLI is not installed.** §7b's recreate sequence calls `devcontainer up`, and
 the binary does not exist in a fresh sandbox:
@@ -433,6 +468,7 @@ identified as owed by [specs/060 research](../../specs/060-devcontainer-docker-s
 (T053) and never landed:
 
 ```bash
+sudo mkdir -p /etc/docker      # absent on the v0.51.0 shell kit, and tee will not create it
 printf '{\n  "insecure-registries": ["%s:3000"]\n}\n' "$FORGE_REGISTRY_HOST" | sudo tee /etc/docker/daemon.json
 ```
 
@@ -444,6 +480,42 @@ keeps answering, so it reads as success. There is no systemd (PID 1 is `tini`). 
 ```bash
 sbx stop <name>            # the next `sbx exec` restarts it
 ```
+
+**4. The toolchain pin may no longer exist** (added 2026-11-03). `MCM_DEVCONTAINER_IMAGE` in the
+restored `~/.mcm-sandbox-env` is whatever was pinned at the last re-pin, and registry retention
+deletes `mcm-devcontainer` versions beyond the newest 4 / 21 days. The old VM never notices — it
+holds the image locally — so the first sign is a recreate failing on `not found`. Check before
+`devcontainer up`: `docker pull "$MCM_DEVCONTAINER_IMAGE"` (after `set -a; . ~/.mcm-sandbox-env;
+set +a`), and re-pin to the newest tag if it fails (§10b).
+
+**5. The VM has no dynamic-linker cache, so VS Code refuses to connect** (added 2026-11-03). The
+v0.51.0 shell kit is a minimal hardened image shipped without `/etc/ld.so.cache`. VS Code's
+Remote-SSH server check locates `libstdc++` through `ldconfig -p`, which reads only that cache, so
+it fails with *"the remote host does not meet the prerequisites for running VS Code Server"* — and
+its log line, *"find libstdc++.so or ldconfig for GNU environments"*, reads as a missing library.
+Both are present (`/sbin/ldconfig`, `libstdc++.so.6` from GCC 14). Generate the cache once; it lives
+on the VM root volume and survives `sbx stop` (verified):
+
+```bash
+sudo /sbin/ldconfig && /sbin/ldconfig -p | grep libstdc   # must print a libstdc++.so.6 line
+```
+
+`devcontainer up` and the harness are unaffected — only the VS Code attach path needs it, which is
+why a 12/12 harness did not catch it. `open-sandbox.ps1` is the first thing to exercise it.
+
+**6. No git identity, so the first commit in the container fails** (added 2026-11-04) with
+`Author identity unknown`. `open-sandbox.ps1` attaches through Remote-SSH to the **VM**, so VS Code
+copies the VM's `~/.gitconfig` into the container — and the VM's has never carried `user.name` or
+`user.email` (the 2026-11-03 backup has none either). Whatever identity the old container had was
+set in its own home, which a recreate discards. Set it on the VM, where every future container
+inherits it, and in the running container, whose copy was already made:
+
+```bash
+git config --global user.name "<name>" && git config --global user.email "<email>"   # on the VM
+docker exec -u coder <dev container> git config --global user.name "<name>"          # and email
+```
+
+No harness check commits, so a 12/12 harness and a read-only git check both miss this.
 
 > ⚠️ **An instant failure is not always a policy refusal.** §7b says a ~1 s failure means the egress
 > policy refused the connection, since "a network fault times out; a policy refusal is instant". True,
@@ -460,8 +532,24 @@ empty, so `sbx rm` destroys the working tree. Pushed commits are safe; these are
 
 ```bash
 ssh <name>.sbx 'cd ~ && tar czf /tmp/home.tgz .git-credentials .gitconfig .gitignore_global .bashrc .bash_profile .env.e2e.local .mcm-sandbox-env* .mcm-reboot-manifest.txt'
-ssh <name>.sbx 'cd /workspaces/<name> && git status --porcelain --ignored=matching -uall | grep "^!!" | cut -c4- | grep -E "[.]env" | tar czf /tmp/env.tgz -T -'
+ssh <name>.sbx 'cd /workspaces/<name> && git status --porcelain --ignored=matching -uall | grep "^!!" | cut -c4- | grep -E "[.]env|[.]claude/settings[.]local[.]json" | grep -v node_modules | tar czf /tmp/env.tgz -T -'
 ```
+
+The `settings.local.json` term was added after the 2026-11-03 recreate, whose backup matched only
+`.env` files: the per-project Claude Code permission allowlist in that gitignored file was not
+saved, and went with the old sandbox. The **container's** `~/.claude` (memory, `.claude.json`) is a
+separate Docker volume and needs its own backup — `sbx rm` takes it too:
+
+```bash
+DC=$(docker ps --filter label=devcontainer.config_file --format '{{.Names}}' | head -1)
+docker exec -u coder "$DC" bash -lc 'cd ~ && tar czf /tmp/claude-bk.tgz --exclude=.claude/.credentials.json \
+  --exclude=".claude/projects/*/*.jsonl" --exclude=.claude/shell-snapshots .claude'
+docker cp "$DC":/tmp/claude-bk.tgz /tmp/claude.tgz      # then sbx cp it to the host
+```
+
+Restore it **without clobbering** the fresh personal layer (its `settings.json` carries the RTK hook
+that `ensure-rtk-hook.sh` wrote), then put back the two things that matter explicitly:
+`cp -an <extracted>/.claude/. ~/.claude/`, then `cp -a` its `projects/` and `.claude.json`.
 
 🔴 **Validate the archive, do not trust the exit code.** `tar -T -` fed an empty list writes a valid
 **45-byte archive with zero entries**, and `sbx cp` copies it with no error — a backup that exists,
@@ -539,10 +627,60 @@ one that passes unsafe here:
 
 ## 10b. The `sbx` version, and the ritual before upgrading it (R5)
 
-**Pinned at: `v0.47.0` (`0411f50ee4700fe7bd37e6e7e3aced563e850ca9`), upgraded from v0.43.0 on
-2026-10-08** (`winget upgrade Docker.sbx`, after `sbx daemon stop`). Most of this page was
-originally measured against v0.38.0; where a behaviour was re-checked on a later version it says
-so.
+**Pinned at: `v0.51.0` (`7d55286de0c775148b985ed349f760f1eba06203`), upgraded from v0.47.0 on
+2026-11-03** (`sbx daemon stop`, then `winget upgrade --id Docker.sbx --version 0.51.0`). Most of
+this page was originally measured against v0.38.0; where a behaviour was re-checked on a later
+version it says so.
+
+**v0.48–v0.51, the release-note items that touch this environment** (there is no v0.49.0):
+
+- 🔴 **The `shell` agent is now a published kit (v0.51.0)**: `docker.io/sbx/shell`, a Docker
+  Hardened Images **Debian 13** image with a Docker engine sbx starts. It replaces the
+  `docker/sandbox-templates:shell` image, which is **no longer refreshed**. A sandbox created on an
+  older version keeps its old image until it is recreated, so the 2026-11-03 recreate was what
+  moved this environment off it. The `sbx create` command line is unchanged (`… shell <dir>`).
+- **CLI output redesigned (v0.48.0)**: state marks and a CREATED column in `sbx ls`, and changed
+  `--json` shapes (`sbx ls` is now a bare array). `open-sandbox.ps1` reads `sbx ls --format json`
+  for that reason. `--detached` is rejected (we use `-d`); a piped `y` no longer confirms a prompt.
+- **CA certificates (v0.49.2)**: the response to the eMudhra CA compromise. Upgrading the CLI does
+  not fix an existing sandbox's trust store; recreating it does.
+- **Network (v0.49.1–v0.51.0)**: an explicit CIDR deny beats a domain allow; a burst of outbound
+  connections no longer crashes the daemon when the host network stalls; policy commands reject an
+  empty `--sandbox` instead of applying globally.
+- **Memory (v0.51.0)**: `-m` may now go up to the host's total, with a warning above 75 %. Not a
+  reason to raise it here: the 2026-11-01 OOM happened with the host at 1.8 GB free.
+- **Sizes (v0.51.0)**: environment files accept `sandboxOptions.rootSize` / `dockerSize`, an
+  alternative to §8's variables. Not adopted; the variables still work.
+- **Git Bash SSH (v0.51.0)**: the release notes say Windows SSH configuration now works with Git
+  Bash's OpenSSH too, which would retire §8's "Could not resolve hostname" trap. Not re-tested.
+- Still **no `--disk` flag** (checked on v0.51.0); sizes remain §8's variables.
+
+**The 2026-11-03 recreate, and what it hit that this page did not predict:**
+
+- The VM's **block-device names moved**: the Docker volume is now `vdf`, not `vdd` (the new image
+  has more read-only devices). Identify it by mount point (`/var/lib/docker`), never by name.
+- **`/etc/docker` does not exist** on the new image, so §8b step 2's `tee` fails; `mkdir` it first.
+- 🔴 **The toolchain pin had been deleted from the registry.** `registry-retention.yaml` keeps the
+  newest 4 `mcm-devcontainer` versions or 21 days; the 2026-10-08 pin was neither, so a cold
+  `devcontainer up` failed with `… mcm-devcontainer@sha256:…: not found` while the old VM kept
+  working on its local copy. A `docker login` does not help — it is not auth. **Re-pin before
+  every recreate** (devcontainer-sandbox.md, the re-pin procedure): list the tags with
+  `GET /v2/<owner>/mcm-devcontainer/tags/list`, take the newest by the packages API's
+  `created_at`, resolve its digest from `manifests/<tag>`.
+- The generator's `--forge-host` must be the bare host. Read from `~/.mcm-sandbox-env` it carries
+  single quotes, and `sbx policy allow` rejects `'host'` as an invalid pattern — one rule fails, so
+  count the applied rules (104 on 2026-11-03) rather than trusting the loop.
+
+**Verification for v0.51.0 + the shell-kit recreate, 2026-11-03:**
+
+| Check | Result |
+| --- | --- |
+| `run-harness.sh`, from **inside** the dev container | 9/12 — an instrument fault, not a regression: run there, the VM-side checks `portable-runner` and `reproducible-recreate` have no `devcontainer` CLI. Run the harness from the **VM shell**, with `~/.mcm-sandbox-env` sourced |
+| `run-harness.sh`, from the VM shell | **12/12 PASS**, `reproducible-recreate` included (`firewall-allowlist` had failed once first: the known first-run case below) |
+| G5 sibling-egress refusal | **PASS** — sibling blackholed; default-deny intact |
+| `verify-sandbox-egress.sh --audit-check` | **PASS** — refusal in the audit log, all 103 canonical destinations live (the 104th rule is the forge host) — so v0.48.0's `sbx policy` output changes did not break it |
+| `verify-engine-seam.sh --host-check` | **NOT RUN** — Docker Desktop was stopped, which makes it pass vacuously (§10) |
+| Volumes, from inside the VM | `/var/lib/docker` 147 G, `/` 40 G, 15 GiB RAM |
 
 **v0.44–v0.47, the release-note items that touch this environment** (there is no v0.44.0; v0.45.0
 follows v0.43.0):

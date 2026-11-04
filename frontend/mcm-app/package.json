@@ -86,6 +86,8 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "maxWorkers": 4,
+    "workerIdleMemoryLimit": "1.5GB",
     "resolver": "<rootDir>/../../packages/design-system/jest/tamagui-cjs-resolver.js",
     "verbose": false,
     "setupFilesAfterEnv": [

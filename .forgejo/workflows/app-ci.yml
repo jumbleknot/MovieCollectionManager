@@ -161,6 +161,7 @@ jobs:
               - 'scripts/gen-dev-secrets.mjs'          # mints the secrets those stacks authenticate with
               - 'scripts/mc-service-integration-guard.mjs'  # a gate that runs INSIDE app-e2e
               - 'scripts/cd/scan-app-image.sh'         # spec 084 US3: app-image-scan runs it on app-e2e's images
+              - 'scripts/ci-install-trivy.sh'          # installs the scanner app-image-scan runs
               # Feature 058 / item #186. A lockfile bump changes transitive deps, and 057's FR-013 says
               # the E2E tier is the only one that sees a bad floor (`nx test` passes over it). The `push:`
               # filter above already said so; this one did not, and app-e2e reported `skipped` on PR #185
@@ -1844,14 +1845,14 @@ jobs:
         if: ${{ env.RUN_SCAN == 'true' }}
         run: |
           bash scripts/ci-log-step.sh app-image-scan-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
-          mkdir -p "$HOME/.local/bin"
           # PINNED — item #303, and the SAME version as cd-deploy and infra-image-scan: the PR must be
           # scanned by the scanner the deploy will use, or a green PR proves nothing about the deploy.
           # Renovate keeps all three current (customManagers in renovate.json, datasource
           # github-releases); renovate-workflow.guard.test.mjs asserts all three stay pinned and agree.
+          # ci-install-trivy.sh fetches the release assets directly and verifies the checksum; it
+          # replaced trivy's contrib/install.sh, which failed silently on PR #929 (see its header).
           TRIVY_VERSION=v0.76.1
-          curl -fsSL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
-            | sh -s -- -b "$HOME/.local/bin" "${TRIVY_VERSION}"
+          bash scripts/ci-install-trivy.sh "${TRIVY_VERSION}" "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/trivy" --version
           CI_LOG_STEP

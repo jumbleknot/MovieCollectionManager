@@ -831,7 +831,7 @@ to `--env-file` fixes new builds; it does not sanitise old ones. Remove any such
 Recreating, resizing and upgrading the sandbox live in
 [devcontainer-sandbox-lifecycle.md](devcontainer-sandbox-lifecycle.md), under their original section
 numbers: **§7b** templates and recreate-from-nothing, **§7e** a full disk wearing other symptoms,
-**§7f** "docker daemon failed to start", **§8** disk (three volumes, all resizable), **§8b** what a
+**§7f** "docker daemon failed to start", **§7g** memory (an OOM kill of a bystander), **§8** disk (three volumes, all resizable), **§8b** what a
 cold recreate needs that the template does not carry, **§10** the verification harness, and **§10b**
 the `sbx` version and the upgrade ritual. They were split out of this file on 2026-10-10 so each
 source stays small enough for the wiki generator (item #682); the numbers are unchanged, so a `§8b`
