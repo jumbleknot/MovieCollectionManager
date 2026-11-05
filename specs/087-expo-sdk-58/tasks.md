@@ -117,31 +117,31 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 ### Browser walk
 
-- [ ] T025 [US2] Create `frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts`, per research R8: records `securitypolicyviolation` through an init script and `pageerror`, asserts the right server, and proves it can see a violation with an injected inline script. Exceptions are passed at the call site, and the default allows none
-- [ ] T026 [US2] Create `frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts`, tagged `@gate`, covering each row in [contracts/web-gates.md](./contracts/web-gates.md), with a throwaway identity as `admin-registration.spec.ts` mints, `test.use` opting out of the shared session, and BFF teardown in `afterEach` (US2 scenario 5; US3 scenario 5; FR-009). Add it to `testMatch` and `testIgnore` in `frontend/mcm-app/playwright.config.ts`, and to the list in `scripts/__tests__/e2e-worker-session.test.mjs` if that guard requires it
+- [x] T025 [US2] Create `frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts`, per research R8: records `securitypolicyviolation` through an init script and `pageerror`, asserts the right server, and proves it can see a violation with an injected inline script. Exceptions are passed at the call site, and the default allows none
+- [x] T026 [US2] Create `frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts`, tagged `@gate`, covering each row in [contracts/web-gates.md](./contracts/web-gates.md), with a throwaway identity as `admin-registration.spec.ts` mints, `test.use` opting out of the shared session, and BFF teardown in `afterEach` (US2 scenario 5; US3 scenario 5; FR-009). Add it to `testMatch` and `testIgnore` in `frontend/mcm-app/playwright.config.ts`, and to the list in `scripts/__tests__/e2e-worker-session.test.mjs` if that guard requires it
   - **Verify RED**: the negative control in [contracts/web-gates.md](./contracts/web-gates.md), running through the official Playwright image with `tests/e2e/web/page-security-policy-walk.spec.ts --project=lifecycle --no-deps` and `E2E_BFF_TARGET=dev-container`. Without `--no-deps` this runs all 210 tests
   - **Expected RED**: fails listing a `script-src` violation for the hydrate script, the same negative control the spike measured
   - **Verify GREEN**: same command with the file restored and the container recreated; 2 or more passed with 0 skipped. **Quote** both
-- [ ] T027 [US2] Add the watch to the `navigate → the assistant opens the named collection screen` test in `frontend/mcm-app/tests/e2e/web/assistant-navigate.spec.ts`, declaring the one `eval` exception there (US3 scenario 3, SC-004)
+- [x] T027 [US2] Add the watch to the `navigate → the assistant opens the named collection screen` test in `frontend/mcm-app/tests/e2e/web/assistant-navigate.spec.ts`, declaring the one `eval` exception there (US3 scenario 3, SC-004)
   - **Verify RED**: add a temporary second inline script after the watch's own check, and run the test in the official Playwright image with `E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1`
   - **Expected RED**: fails listing that violation, which proves the exception is narrow
   - **Verify GREEN**: remove the temporary script; passes. **Record** whether the `eval` line fired. If it never fires, remove the exception and say so in `research.md`
 
 ### Android launch check
 
-- [ ] T028 [P] [US2] Create `scripts/android-launch-smoke.sh` per [contracts/android.md](./contracts/android.md), with the log classifier as a separate function (US4 scenarios 1, 2; US2 scenario 6)
+- [x] T028 [P] [US2] Create `scripts/android-launch-smoke.sh` per [contracts/android.md](./contracts/android.md), with the log classifier as a separate function (US4 scenarios 1, 2; US2 scenario 6)
   - **Verify RED**: write `--selftest` first, with a classifier that returns clean for everything
   - **Expected RED**: selftest fails on each of `FATAL EXCEPTION`, `ClassNotFoundException`, `NoSuchMethodException`
   - **Verify GREEN**: `bash scripts/android-launch-smoke.sh --selftest` passes; the same run rejects an unrecognised argument with exit 2
-- [ ] T029 [P] [US2] Create `scripts/publish-android-launch.mjs` and `scripts/__tests__/publish-android-launch.test.mjs`, modelled on `scripts/publish-sweep-verdict.mjs`, with its mapping mutation-tested, each row of the status table in [data-model.md](./data-model.md) covered, and the shared rejecting argument parser (US4 scenario 7)
+- [x] T029 [P] [US2] Create `scripts/publish-android-launch.mjs` and `scripts/__tests__/publish-android-launch.test.mjs`, modelled on `scripts/publish-sweep-verdict.mjs`, with its mapping mutation-tested, each row of the status table in [data-model.md](./data-model.md) covered, and the shared rejecting argument parser (US4 scenario 7)
   - **Verify RED**: `node --test scripts/__tests__/publish-android-launch.test.mjs` fails before the mapping exists
   - **Verify GREEN**: same command; 0 failures
-- [ ] T030 [US2] Wire both into `.forgejo/workflows/app-ci.yml`: the launch check line after `adb install`, wrapped in `scripts/ci-log-step.sh`, with the status step as `continue-on-error` and `if: ${{ always() && <the emulator step's own gate> }}`, so a PR that skips the emulator posts nothing. Add `scripts/android-launch-smoke.sh` to **both** path filters beside `scripts/maestro-run.sh`. Calibrate or record the wrapped step as #338n requires
+- [x] T030 [US2] Wire both into `.forgejo/workflows/app-ci.yml`: the launch check line after `adb install`, wrapped in `scripts/ci-log-step.sh`, with the status step as `continue-on-error` and `if: ${{ always() && <the emulator step's own gate> }}`, so a PR that skips the emulator posts nothing. Add `scripts/android-launch-smoke.sh` to **both** path filters beside `scripts/maestro-run.sh`. Calibrate or record the wrapped step as #338n requires
   - **Verify GREEN**: `node --test scripts/__tests__/ci-log-step.test.mjs scripts/__tests__/app-ci-mobile-full.guard.test.mjs`; 0 failures
 
 ### Land it
 
-- [ ] T031 [US2] Add each new script's selftest to `.forgejo/workflows/guardrails.yml` where it isn't already covered by `scripts/__tests__/`, and update `frontend/mcm-app/README.md` and `docs/runbooks/e2e-testing.md` to describe the gates (FR-026)
+- [x] T031 [US2] Add each new script's selftest to `.forgejo/workflows/guardrails.yml` where it isn't already covered by `scripts/__tests__/`, and update `frontend/mcm-app/README.md` and `docs/runbooks/e2e-testing.md` to describe the gates (FR-026)
 - [ ] T032 [US2] Open PR B from a new branch off `main` with the label `mobile-e2e` and its rollback steps. Confirm the walk ran, and read `app-ci / android-launch` on the head commit. Expect `launch=ok login-screen=visible fatal=0`. **Quote** this as the SDK 57 control. A failure here is an instrument failure or a real SDK 57 defect; settle which before moving on
 
 **Checkpoint**: PR B merged. SC-005 has 4 of 4 defects quoted, and the launch check works on SDK 57.
@@ -309,8 +309,8 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 | Defect 1: second instance (T019) | Copy of the real lock plus one `@tamagui/web` peer context: `@tamagui/web: 2 instances, which is two copies of the library at runtime and a blank page:` / `@tamagui/web@3.0.18(deadbeef)` / `@tamagui/web@3.0.18(551eaae33acf229177b8d0decb06c826)` / ``Run `pnpm dedupe` ``; fail 1. Restored: 11 pass, 0 fail | Local |
 | Defect 2: unlisted inline script (T024) | Export copy, inline script added to `(auth)/login.html`: `(auth)/login.html: inline script 'sha256-PQ1KY2VlLYpQNXb4DvaeVeUHYTqYrHn0OI26Wsj7eXs=' is not on the allowlist`, `FAIL`, exit 1. Restored: `OK` | Local |
 | Defect 3: over-budget split bundle (T024) | Export copy, entry 1,892,065 B and a second script 200,000 B, each within budget alone: `cold load of (auth)/login.html: 2,092,065 B / 2,000,000 B budget — OVER BY 92,065 B (104.6%). Scripts: route-split-pad.js, entry-9dcf2519fe90e126017c11418c928af2.js`, `FAIL`, exit 1 | Local |
-| Walk negative control and pass (T026) | | |
-| `eval` residual fired on the assistant path? (T027) | | |
+| Walk negative control and pass (T026) | Local runs through the official image, `--project=lifecycle --no-deps`. Empty allowlist: `first load of the login page: the browser refused or crashed on something`, `CSP violation: script-src-elem blocked inline from http://localhost:8082/(auth)/login`; 1 failed, 1 passed. File restored and container recreated: 2 passed, 0 skipped. An earlier form of the fixture cleared the list while proving itself, so it first caught this only at the sign-in callback; fixed, and re-run | Local; CI on PR B |
+| `eval` residual fired on the assistant path? (T027) | **Yes, twice per document, against a planned limit of one.** `script-src blocked eval from .../assistant-panel-*.js` on `/home`. Cause: two zod copies in that chunk (`zod@3.25.76` `v4/` and `zod@4.6.7`), each with a `new Function("")` probe. The exception moved to 2, limited to the assistant chunk; contract, research and the code note corrected; operator to review on PR B. RED with a temporary inline script: `script-src-elem blocked inline from (inline) on http://localhost:8082/home`, 1 failed, eval lines tolerated. GREEN: 1 passed, `E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1`, Anthropic provider | Local |
 | SDK 57 launch control (T032) | | |
 
 ### PR C

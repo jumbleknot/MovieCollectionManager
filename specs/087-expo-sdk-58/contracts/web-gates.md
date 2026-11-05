@@ -68,7 +68,11 @@ The existing `@gate` test `navigate → the assistant opens the named collection
 (`assistant-navigate.spec.ts`) uses the same watch with this one exception:
 
 ```text
-effectiveDirective is script-src (or script-src-elem), blockedURI === 'eval', at most 1 per document
+effectiveDirective is script-src (or script-src-elem), blockedURI === 'eval', source is the assistant chunk, at most 2 per document
 ```
 
 Anything else fails. The exception is declared at that call site and is not a default in the fixture.
+
+**Corrected in T027.** This said at most 1, following feature 032's note. The first run measured 2: the assistant chunk holds two
+copies of zod (`zod@3.25.76`, through its `v4/` subpath, and `zod@4.6.7`), and each runs its own `new Function("")` probe. The
+limit moved to what was measured, and the source condition was added so the exception stays narrow. Pending the operator's review on PR B.

@@ -105,6 +105,18 @@ different parts of the export: during the SDK 58 spike every page answered 404 w
 answering, and an API-only probe reported healthy throughout.
 `scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` fails if a service loses either probe.
 
+## Failures that look healthy, and what catches each (feature 087)
+
+Each of these looked fine to every existing check during the SDK 58 spike, so each now has its own gate:
+
+| Failure | Gate | Its message names |
+|---|---|---|
+| Two copies of the styling library, which is a blank page | `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, counting `pnpm-lock.yaml` snapshot keys | Both keys, and `pnpm dedupe` |
+| A split bundle that fits chunk by chunk but not as a whole | `pnpm nx bundle-budget mcm-app`, measuring every script the worst page loads | The page, bytes, overage and each script |
+| An inline script the CSP will block | The same gate, reading `INLINE_SCRIPT_HASHES` from `web-security-headers.js`, which the CSP is also built from | The page and the `'sha256-...'` value. That value is not permission to add it |
+| A page the browser refuses or crashes on | `tests/e2e/web/page-security-policy-walk.spec.ts`, in the `lifecycle` project | Each violation's directive, blocked URI and source |
+| A release APK that does not launch | `scripts/android-launch-smoke.sh` in `app-e2e`, reported as the commit status `app-ci / android-launch` | Which of launch, login screen and device log failed |
+
 ## What ships in the BFF image (and what fails the build)
 
 The image carries the exported bundle plus **only the dependency closure `node server.js` can

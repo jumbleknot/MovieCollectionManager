@@ -107,7 +107,7 @@ export default defineConfig({
       // with registration OFF any parallel spec that exercises the real /register would see a 403 that
       // has nothing to do with its own subject. Isolate it the same way rather than relying on the
       // fact that auth.spec.ts happens to mock that route today.
-      testIgnore: /(bff-prod-lifecycle|admin-registration)\.spec\.ts/,
+      testIgnore: /(bff-prod-lifecycle|admin-registration|page-security-policy-walk)\.spec\.ts/,
     },
     {
       // …and run them as a DEPENDENT project so they execute strictly AFTER the main suite finishes,
@@ -115,10 +115,12 @@ export default defineConfig({
       // owns an isolated session and does not consume the shared one: bff-prod-lifecycle via
       // `test.use({ storageState: empty })`; admin-registration mints its own throwaway mc-admin and
       // an anonymous visitor via `browser.newContext(...)` — it needs TWO identities at once (admin +
-      // non-admin), which file-level `test.use` cannot express.
+      // non-admin), which file-level `test.use` cannot express. Feature 087's page-security-policy-walk
+      // is a real sign-in, which could evict a worker's session in the main project; it mints its own
+      // user and opts out with `test.use({ storageState: empty })`.
       name: 'lifecycle',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /(bff-prod-lifecycle|admin-registration)\.spec\.ts/,
+      testMatch: /(bff-prod-lifecycle|admin-registration|page-security-policy-walk)\.spec\.ts/,
       dependencies: ['chromium'],
     },
   ],

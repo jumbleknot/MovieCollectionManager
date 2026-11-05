@@ -24,12 +24,13 @@ const DEFAULT_KEYCLOAK_ORIGIN = 'http://localhost:8099';
  * the build and prints the new hash. Adding it here is a reviewed change: the message gives the value,
  * not permission to add it.
  *
- * NOTE (accepted residual, T006 2026-07-09): a third-party library runs a `new Function("")`
- * eval-availability PROBE wrapped in try/catch that returns false when blocked. Under this strict
- * `script-src` the probe is blocked, the library degrades gracefully (the app is fully functional),
- * and the browser logs ONE benign `eval` CSP violation. We deliberately do NOT add `'unsafe-eval'`
- * to silence it — permitting real eval app-wide would defeat the hardening. This one probe line is
- * the documented, accepted residual.
+ * NOTE (accepted residual, T006 2026-07-09): zod runs a `new Function("")` eval-availability PROBE
+ * wrapped in try/catch that returns false when blocked. Under this strict `script-src` the probe is
+ * blocked, zod degrades gracefully (the app is fully functional), and the browser logs a benign `eval`
+ * CSP violation per copy of zod. The assistant chunk holds two copies (measured, feature 087), so that
+ * is TWO lines, on pages that load it. We deliberately do NOT add `'unsafe-eval'` to silence them —
+ * permitting real eval app-wide would defeat the hardening. These probe lines are the documented,
+ * accepted residual, pinned by tests/e2e/web/assistant-navigate.spec.ts.
  */
 const EXPO_HYDRATE_SCRIPT_HASH = "'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='";
 

@@ -238,6 +238,23 @@ In the **dev container** Playwright cannot install chromium and must run in the 
 with `--user "$(id -u):$(id -g)"`, or its artifacts land root-owned in your working tree and block
 the next run. Full recipe: [devcontainer runbook](./devcontainer.md).
 
+## The security policy walk (feature 087)
+
+`tests/e2e/web/page-security-policy-walk.spec.ts` signs in, hard-reloads, deep-links to a collection and navigates in-app, failing on any
+CSP violation or uncaught page error. A blocked script produces no failed request, so nothing else in the suite sees one.
+`fixtures/security-policy-watch.ts` provides the watch and proves on each run that it can see a violation.
+
+- **Running it alone.** `lifecycle` depends on `chromium`, so a file filter still runs the whole suite. Use
+  `tests/e2e/web/page-security-policy-walk.spec.ts --project=lifecycle --no-deps` in the official Playwright image.
+- **It needs a container.** Metro sends no CSP, so under Metro the walk skips visibly, and fails under `CI`.
+- **Negative control.** Empty `INLINE_SCRIPT_HASHES` in the container's `web-security-headers.js`, restart it, and the walk fails on
+  `first load of the login page` with `script-src-elem blocked inline`. Then recreate the container.
+- **The assistant path** is checked by one test in `assistant-navigate.spec.ts`, because the walk's user has no assistant. It allows zod's
+  `eval` probe: two per document, from the assistant chunk only, because that chunk holds two copies of zod. `'unsafe-eval'` stays absent,
+  so the browser still blocks them.
+
+An export can also be checked offline, with no browser: see the table in [the app README](../../frontend/mcm-app/README.md).
+
 ## Diagnosing E2E flakiness — rule out a real regression BEFORE blaming the environment (feature 009 lesson)
 
 > "Metro degrades over long sessions" / "emulator GPU contention" / "machine overload" are *real* but they are the **last** explanation to reach for, not the first. They are seductive because they require no code investigation — and that is exactly the trap: in feature 009 a genuine code regression (a strict `validateObjectId` 400'ing the Expo-Router-shadowed `…/movies/filter-options` sub-path, invisible because `handleMcApiError` doesn't log 4xx) was repeatedly misattributed to machine/Metro degradation, wasting hours. **The goal is clean runs faster — so diagnose deterministically:**
