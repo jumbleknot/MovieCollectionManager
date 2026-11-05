@@ -95,25 +95,25 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 ### One instance of the styling library
 
-- [ ] T018 [P] [US2] Add `tamaguiInstances(lockText)` and its tests to `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, per [contracts/web-gates.md](./contracts/web-gates.md): a synthetic lock with two peer contexts must give two keys, the repo's lock exactly one per package, and zero must fail (US2 scenarios 1, 6; FR-006, FR-010)
+- [x] T018 [P] [US2] Add `tamaguiInstances(lockText)` and its tests to `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, per [contracts/web-gates.md](./contracts/web-gates.md): a synthetic lock with two peer contexts must give two keys, the repo's lock exactly one per package, and zero must fail (US2 scenarios 1, 6; FR-006, FR-010)
   - **Verify RED**: `node --test scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`
   - **Expected RED**: the synthetic case fails while `tamaguiInstances` is a stub returning one key
-- [ ] T019 [US2] Implement the snapshot-key count in the same file, naming both keys and `pnpm dedupe` in its failure message
+- [x] T019 [US2] Implement the snapshot-key count in the same file, naming both keys and `pnpm dedupe` in its failure message
   - **Verify GREEN**: same command as T018; 0 failures. Also confirm a real lock copy with a second `@tamagui/web` peer context fails. **Quote** it (SC-005 defect 1)
 
 ### Cold-load budget and inline-script allowlist
 
-- [ ] T020 [P] [US2] Add failing cases to `scripts/__tests__/check-web-bundle-budget.test.mjs` for each row of [contracts/web-gates.md](./contracts/web-gates.md): no HTML; a page with no scripts; a referenced script missing; two chunks that fit apart but not together; an unlisted inline script reported with its page and hash (US2 scenarios 2, 3; FR-007, FR-008)
+- [x] T020 [P] [US2] Add failing cases to `scripts/__tests__/check-web-bundle-budget.test.mjs` for each row of [contracts/web-gates.md](./contracts/web-gates.md): no HTML; a page with no scripts; a referenced script missing; two chunks that fit apart but not together; an unlisted inline script reported with its page and hash (US2 scenarios 2, 3; FR-007, FR-008)
   - **Verify RED**: `node --test scripts/__tests__/check-web-bundle-budget.test.mjs`
   - **Expected RED**: the new cases fail, because the gate measures only `entry-*` and never reads HTML
-- [ ] T021 [US2] Export `INLINE_SCRIPT_HASHES` from `frontend/mcm-app/web-security-headers.js` and build `script-src` from it, with `frontend/mcm-app/web-security-headers.test.js` asserting the export contains today's hash and the header is unchanged byte for byte (FR-007, FR-014)
+- [x] T021 [US2] Export `INLINE_SCRIPT_HASHES` from `frontend/mcm-app/web-security-headers.js` and build `script-src` from it, with `frontend/mcm-app/web-security-headers.test.js` asserting the export contains today's hash and the header is unchanged byte for byte (FR-007, FR-014)
   - **Verify RED**: `pnpm nx test mcm-app -- --watchman=false web-security-headers.test.js`, with the test added first
   - **Expected RED**: fails with `INLINE_SCRIPT_HASHES` undefined
   - **Verify GREEN**: same command; 0 failures
-- [ ] T022 [US2] Implement the cold-load total and the allowlist in `scripts/check-web-bundle-budget.mjs`, reading the allowlist through `createRequire`, adding the report fields from [data-model.md](./data-model.md), and extending `--selftest` to prove each new failure (FR-010). Point its failure text at `specs/087-expo-sdk-58/contracts/web-gates.md`
+- [x] T022 [US2] Implement the cold-load total and the allowlist in `scripts/check-web-bundle-budget.mjs`, reading the allowlist through `createRequire`, adding the report fields from [data-model.md](./data-model.md), and extending `--selftest` to prove each new failure (FR-010). Point its failure text at `specs/087-expo-sdk-58/contracts/web-gates.md`
   - **Verify GREEN**: same command as T020, then `node scripts/check-web-bundle-budget.mjs --selftest`; 0 failures, selftest ok
-- [ ] T023 [US2] Add `"inputs": ["default", "{workspaceRoot}/scripts/check-web-bundle-budget.mjs"]` to `bundle-budget` in `frontend/mcm-app/project.json`. Prove it: touch only the script and confirm `pnpm nx bundle-budget mcm-app` does not report a local cache hit for that target
-- [ ] T024 [US2] Run `pnpm nx bundle-budget mcm-app` on the real export and confirm it passes with one inline script. Then, on the exported output, add an unlisted inline script and separately pad a referenced script past the budget, and run `node scripts/check-web-bundle-budget.mjs --dist frontend/mcm-app/dist --require-maps` each time. **Quote** the two failures (SC-005 defects 2 and 3) and the cold-load figure (M3)
+- [x] T023 [US2] Add `"inputs": ["default", "{workspaceRoot}/scripts/check-web-bundle-budget.mjs"]` to `bundle-budget` in `frontend/mcm-app/project.json`. Prove it: touch only the script and confirm `pnpm nx bundle-budget mcm-app` does not report a local cache hit for that target
+- [x] T024 [US2] Run `pnpm nx bundle-budget mcm-app` on the real export and confirm it passes with one inline script. Then, on the exported output, add an unlisted inline script and separately pad a referenced script past the budget, and run `node scripts/check-web-bundle-budget.mjs --dist frontend/mcm-app/dist --require-maps` each time. **Quote** the two failures (SC-005 defects 2 and 3) and the cold-load figure (M3)
 
 ### Browser walk
 
@@ -289,7 +289,7 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 |---|---|---|
 | SDK 57 entry chunk (T002) | 1,891,678 B of 2,000,000 B (94.6%, 108,322 B spare), `pnpm nx bundle-budget mcm-app` OK. Lockstep guard: 6 pass, 0 fail | Local, base `29f15101`, 2026-11-05 |
 | SDK 57 `htmlRoutes`, `notFoundRoutes`, `apiRoutes` counts (T002) | `html: 16`, `notFound: 1`, `api: 38` | Local, same export |
-| SDK 57 cold load, M3 (T024) | | |
+| SDK 57 cold load, M3 (T024) | 1,892,065 B of 2,000,000 B (94.6%, 107,935 B spare), worst page `(app)/collections/[collectionId].html` of 17. One script. Taken on the PR A adapter; research M3 re-takes it on `main` before PR C | Local |
 | Page response time and memory, M1 (T034) | | |
 
 ### PR A
@@ -306,9 +306,9 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 
 | Item | Result | Run |
 |---|---|---|
-| Defect 1: second instance (T019) | | |
-| Defect 2: unlisted inline script (T024) | | |
-| Defect 3: over-budget split bundle (T024) | | |
+| Defect 1: second instance (T019) | Copy of the real lock plus one `@tamagui/web` peer context: `@tamagui/web: 2 instances, which is two copies of the library at runtime and a blank page:` / `@tamagui/web@3.0.18(deadbeef)` / `@tamagui/web@3.0.18(551eaae33acf229177b8d0decb06c826)` / ``Run `pnpm dedupe` ``; fail 1. Restored: 11 pass, 0 fail | Local |
+| Defect 2: unlisted inline script (T024) | Export copy, inline script added to `(auth)/login.html`: `(auth)/login.html: inline script 'sha256-PQ1KY2VlLYpQNXb4DvaeVeUHYTqYrHn0OI26Wsj7eXs=' is not on the allowlist`, `FAIL`, exit 1. Restored: `OK` | Local |
+| Defect 3: over-budget split bundle (T024) | Export copy, entry 1,892,065 B and a second script 200,000 B, each within budget alone: `cold load of (auth)/login.html: 2,092,065 B / 2,000,000 B budget — OVER BY 92,065 B (104.6%). Scripts: route-split-pad.js, entry-9dcf2519fe90e126017c11418c928af2.js`, `FAIL`, exit 1 | Local |
 | Walk negative control and pass (T026) | | |
 | `eval` residual fired on the assistant path? (T027) | | |
 | SDK 57 launch control (T032) | | |

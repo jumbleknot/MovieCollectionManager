@@ -10,11 +10,33 @@
  */
 
 const {
+  INLINE_SCRIPT_HASHES,
   buildWebSecurityHeaders,
   isApiPath,
 } = require('./web-security-headers');
 
 const DEFAULT_ORIGIN = 'http://localhost:8099';
+
+describe('INLINE_SCRIPT_HASHES (feature 087): the one list the CSP and the build gate both read', () => {
+  it('holds the hash of the hydrate script', () => {
+    expect(INLINE_SCRIPT_HASHES).toEqual(["'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='"]);
+  });
+
+  it('leaves the header unchanged, byte for byte', () => {
+    expect(buildWebSecurityHeaders({ keycloakOrigin: DEFAULT_ORIGIN })['Content-Security-Policy']).toBe(
+      "default-src 'self'; " +
+        "script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https:; " +
+        "font-src 'self' data:; " +
+        `connect-src 'self' ${DEFAULT_ORIGIN}; ` +
+        "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        "object-src 'none'; " +
+        "form-action 'self'",
+    );
+  });
+});
 
 describe('buildWebSecurityHeaders', () => {
   it('returns the four static baseline headers (contract Surface 1)', () => {

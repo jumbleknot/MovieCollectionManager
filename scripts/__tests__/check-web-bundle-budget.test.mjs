@@ -11,9 +11,15 @@
 //   - a deferred package back in the entry chunk while the byte budget still passes;
 //   - server code in the DEFERRED chunk, which a gate reading only the entry chunk cannot see;
 //   - a missing source map silently disabling the module assertions.
+//
+// Feature 087 adds the cold-load total and the inline-script allowlist, read from the exported HTML:
+//   - no HTML, a page with no scripts, or a referenced script missing, each of which could read as clean;
+//   - two chunks that fit the budget apart but not together, which an entry-only gate cannot see;
+//   - an inline script the CSP does not allow, which is a blank page in a browser and invisible offline.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
@@ -22,11 +28,17 @@ import { fileURLToPath } from 'node:url';
 const GATE = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'check-web-bundle-budget.mjs');
 const WEB = 'client/_expo/static/js/web';
 
+const HYDRATE = '<script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script>';
+const scriptTag = (name) => `<script src="/_expo/static/js/web/${name}" defer></script>`;
+const sha256 = (body) => `'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`;
+
 /**
  * Build a throwaway `dist` and run the gate over it.
  * `chunks` maps a filename to `{ size, sources }`; a map is emitted when `sources` is given.
+ * `pages` maps a path under `dist/server` to its HTML. By default one page loads every entry chunk, as
+ * an export does, so a case about chunks stays about chunks.
  */
-function runGate(chunks, args = []) {
+function runGate(chunks, args = [], pages = undefined) {
   const root = mkdtempSync(join(tmpdir(), 'bundle-budget-'));
   const dir = join(root, WEB);
   mkdirSync(dir, { recursive: true });
@@ -35,6 +47,13 @@ function runGate(chunks, args = []) {
     if (sources) {
       writeFileSync(join(dir, `${name}.map`), JSON.stringify({ version: 3, sources, mappings: '' }));
     }
+  }
+  const entries = Object.keys(chunks).filter((name) => name.startsWith('entry-'));
+  const html = pages ?? { 'index.html': `<html>${HYDRATE}${entries.map(scriptTag).join('')}</html>` };
+  mkdirSync(join(root, 'server'), { recursive: true });
+  for (const [page, text] of Object.entries(html)) {
+    mkdirSync(dirname(join(root, 'server', page)), { recursive: true });
+    writeFileSync(join(root, 'server', page), text);
   }
   const r = spawnSync('node', [GATE, '--dist', root, ...args], { encoding: 'utf8' });
   return { code: r.status, out: `${r.stdout}${r.stderr}` };
@@ -210,4 +229,98 @@ test('--require-maps passes when the maps are there', () => {
     ['--budget', '1000', '--require-maps'],
   );
   assert.equal(code, 0, out);
+});
+
+const ENTRY = { 'entry-abc.js': { size: 100, sources: CLEAN_SOURCES } };
+
+test('NO HTML fails, naming the directory — an export without pages must not read as clean', () => {
+  const { code, out } = runGate(ENTRY, ['--budget', '1000'], {});
+  assert.equal(code, 1, out);
+  assert.match(out, /no .*\.html/i, out);
+  assert.match(out, /server/, out);
+});
+
+test('a page that loads no script fails, naming the page', () => {
+  const { code, out } = runGate(ENTRY, ['--budget', '1000'], {
+    'index.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}</html>`,
+    '(auth)/login.html': `<html>${HYDRATE}</html>`,
+  });
+  assert.equal(code, 1, out);
+  assert.match(out, /\(auth\)\/login\.html/, out);
+  assert.match(out, /no .*script/i, out);
+});
+
+test('a referenced script missing on disk fails, naming the page and the file', () => {
+  const { code, out } = runGate(ENTRY, ['--budget', '1000'], {
+    'index.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}${scriptTag('gone-123.js')}</html>`,
+  });
+  assert.equal(code, 1, out);
+  assert.match(out, /index\.html/, out);
+  assert.match(out, /gone-123\.js/, out);
+});
+
+test('two chunks that fit the budget apart but not together fail, naming page, bytes, budget, overage and each script', () => {
+  const chunks = {
+    'entry-abc.js': { size: 600, sources: CLEAN_SOURCES },
+    'route-def.js': { size: 700, sources: CLEAN_SOURCES },
+  };
+  const pages = { 'collections.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}${scriptTag('route-def.js')}</html>` };
+  const { code, out } = runGate(chunks, ['--budget', '1000'], pages);
+  assert.equal(code, 1, out);
+  assert.match(out, /collections\.html/, 'page');
+  assert.match(out, /1,?300/, 'bytes');
+  assert.match(out, /1,?000/, 'budget');
+  assert.match(out, /OVER BY 300/, 'overage');
+  assert.match(out, /entry-abc\.js/, 'first script');
+  assert.match(out, /route-def\.js/, 'second script');
+  assert.equal(runGate(chunks, ['--budget', '1300'], pages).code, 0, 'exactly at budget passes');
+});
+
+test('the budget is measured on the WORST page, and a deferred chunk no page loads is not counted', () => {
+  const chunks = {
+    'entry-abc.js': { size: 500, sources: CLEAN_SOURCES },
+    'route-def.js': { size: 200, sources: CLEAN_SOURCES },
+    'assistant-panel-ghi.js': { size: 5000, sources: CLEAN_SOURCES },
+  };
+  const { code, out } = runGate(chunks, ['--budget', '1000', '--json'], {
+    'a.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}</html>`,
+    'b.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}${scriptTag('route-def.js')}</html>`,
+  });
+  assert.equal(code, 0, out);
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.coldLoad.worstPage, 'b.html');
+  assert.equal(parsed.coldLoad.worstBytes, 700);
+  assert.deepEqual(parsed.coldLoad.scripts, ['entry-abc.js', 'route-def.js']);
+  assert.equal(parsed.coldLoad.pages, 2);
+  assert.equal(parsed.overBy, -300);
+  assert.equal(parsed.spare, 300);
+});
+
+test('an unlisted inline script fails, reporting its page and the exact hash a browser computes', () => {
+  const body = 'window.__injected=1;';
+  const { code, out } = runGate(ENTRY, ['--budget', '1000'], {
+    'index.html': `<html>${HYDRATE}${scriptTag('entry-abc.js')}</html>`,
+    'settings.html': `<html>${HYDRATE}<script>${body}</script>${scriptTag('entry-abc.js')}</html>`,
+  });
+  assert.equal(code, 1, out);
+  assert.match(out, /settings\.html/, out);
+  assert.ok(out.includes(sha256(body)), out);
+});
+
+test('an inline data block is not exempt: one appearing deserves a decision', () => {
+  const { code, out } = runGate(ENTRY, ['--budget', '1000'], {
+    'index.html': `<html>${HYDRATE}<script type="application/json">{"a":1}</script>${scriptTag('entry-abc.js')}</html>`,
+  });
+  assert.equal(code, 1, out);
+  assert.ok(out.includes(sha256('{"a":1}')), out);
+});
+
+test('the allow-listed inline script passes, and is reported with how many pages carry it', () => {
+  const { code, out } = runGate(ENTRY, ['--budget', '1000', '--json']);
+  assert.equal(code, 0, out);
+  const parsed = JSON.parse(out);
+  assert.deepEqual(parsed.inlineScripts.seen, [
+    { hash: sha256('globalThis.__EXPO_ROUTER_HYDRATE__=true;'), pages: 1 },
+  ]);
+  assert.deepEqual(parsed.inlineScripts.unlisted, []);
 });

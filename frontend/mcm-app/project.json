@@ -140,6 +140,10 @@
         "command": "node scripts/check-web-bundle-budget.mjs --dist frontend/mcm-app/dist --require-maps",
         "cwd": "{workspaceRoot}"
       },
+      "inputs": [
+        "default",
+        "{workspaceRoot}/scripts/check-web-bundle-budget.mjs"
+      ],
       "dependsOn": [
         "export-server"
       ],
