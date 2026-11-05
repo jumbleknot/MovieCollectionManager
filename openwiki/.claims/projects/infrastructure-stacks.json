@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:beb7b1060f3abd43452acee849866f2dacdcf89bbf1a5d9ac39810284f7a3e6d",
+  "pageVersion": "sha256:26e8624c7cc5af490174d39c67f863a659c6d8e0268b4085e8772f3470a076bb",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
+          "version": "repo-file-v1:sha256:fc127100bb4663bbb60d3a444f2419615a6998f1f9ac0e71a14ebf175a0aac92"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -1053,10 +1053,28 @@
           "version": "repo-lines-v1:sha256:ce84fbd064d8504218c295ca5838862624df4118924f3b06478226ff7c651389:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZkNzgxMzg4ZDQ3MTNiY2M5ZDY3ODNjZWZmOTE3ZDBjYzlkNDU1NzZkMTM3MGE0NTIxY2E4NDY1NDQ4NWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJkZTkxMGFjOTM5ZDk2ZGE5NDZkOWNmOGMxNWFlZDg0ZTYzNGNlZjM2Yzg2YzlhYzI5ODU1MjZjZmM4ZmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdjZTQ0NjFhNGZlYTQ0ZjczMWM4ZmZiOTk0NTNmMTRhZTQwNjNmMjVkMmUwYTgzZTdkOGQyZmMwZTM3ZTc4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M4ZDg3NWViY2Q5ZGZjZTM2ZGFhZjU2NGUyM2UyOTQ3MDdlNTA5ZWJlZjA1NjAwZWY5NmNhZjhjMWQ4NzE3OCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_e97213db327648c6a798120d85d72a7a",
+      "statement": "The registry's protected set is computed from the tracked .env.deploy files in git history: scripts/registry-retention.mjs reads every infrastructure-as-code/docker/*/.env.deploy at the newest promotion commit and the five before it (the deployed set plus the rollback targets) and keeps a version whose digest appears there as keep:protected ahead of every age/count rule, so a .env.deploy edited by hand pins an image no rollback can reach and a digest in no .env.deploy becomes deletable once past keepNewest/keepDays; the job therefore checks out with fetch-depth: 0 and the script refuses a shallow clone rather than reporting a smaller protected set.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L36-L39",
+          "version": "repo-lines-v1:sha256:9217937c7b4beb0ee3f666ae38904918ac7562b3964bbdc58f06826b03c593d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzZjVkZmJjNTFlZWI5ZjcyYTE5YmRmOTk2NDhmYzQyZmIxNmY0M2MxYTc2OWRmYzQ5NjI1OGE4Mzk1NjMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwOTc1YzdlMjBlYmE4ODU3ZWZkMzFlNjJiNjY1Zjc4N2U1MTY0MTk1MWE2NjA3ODlmYmE5MzNhNjM0NzIxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjkzOTI1NmY4MDU2MTVhN2MxY2Q4YTg0NzAyMDVmYThiYWM5NGI3Y2ViNDFiMTgyMmE0N2ViY2QwZDI4NTQ1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3YzViOWIyZTU1MDU0YWFiY2E3OTMyYjcyMTVjOTQ2ZjVkYzg0NGMzODBhMzUxNjJlZjhjMWYwYjkxOWNmNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L119-L150",
+          "version": "repo-lines-v1:sha256:a2690de661c2eb5377e5c6a215b80404eac9e2acdbdad9f7d6a8499ec2e3b0d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NThlMDY5MjM2MzRmNGU3MWRiMWI1YjJiMGYzMTE5ZDhlMDIxYzM3ZmY5Mjg5MjIwMDQ3YWJiYzIwZmZmMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNDA4YzQ0MDcwNDdhYjkxMWZkY2M1MjhkNGYxNzJlZmU1NjkzMDcwNjFiNTE2NjBjNzBhYWI2NTQxOTRkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMzVkZGI3YmJhOGU4ZjFmZWE4ZTY0ZWI1MTc5NGQ4MmU5ZTI0MmExNmE4MDU0YTVlNWI2M2U0NTQwMjZmMjUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-05T01:33:57.840Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2445ff4e493576ead82603d39b90ded885c0a92a943a89f03780a062e7a5103b",
+  "pageVersion": "sha256:e146d52bde9670928dc56349160a19661fca88104617f80207f15647b8ebd1c9",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
+          "version": "repo-file-v1:sha256:fc127100bb4663bbb60d3a444f2419615a6998f1f9ac0e71a14ebf175a0aac92"
         },
         {
           "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L231-L237",
@@ -433,10 +433,36 @@
           "version": "repo-lines-v1:sha256:ab0a5e531b5556d908f48679a649d584444aa0ad9b2ab6218f5400bce8eee5f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NGFmOTA0YjY0MGU1YjYxZjA3YzU1NjNmZDdjZDJiYzU3YTU2MDlhNDZlMDZhMzM2ZTJhN2Q4OGRjZTczZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YWEwZjEzMTRmOTU5YWUxZTdlZTJmZDI4NWZiOWFhYTZiNDcwOWRkYjc0NGQ1ZGQ0YzZlZmUyNzgyZTRiYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2YjJmZTk0OTk3OWYwM2M4NjMxNmQ5YTI3MDZhZTk1ZGE1NDQ5OGMzZTNmOGEzZjA4MDM2ZmYzOWE3ZGYzYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyNTUwNjQ3YmMzNTJiYjMyM2Y1Y2VkMTU3MDNkZGU0ZjMzZWUxN2VlOTg2MmVjNTk1OGY4ZjNlODQxNjhkYjcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d0f56e69ad474cd5b13b27afaac4a237",
+      "statement": "`cd-deploy`'s automatic rollback cannot revert the MongoDB image move: the Mongo image is a literal digest in the prod compose files, not one of the app-image digests promoted into `.env.deploy`, so the git-revert-the-promotion-and-re-fire-the-webhook rollback only redeploys prior app digests and never touches the stores — and the post-deploy probe that triggers it does not notice a broken Mongo anyway, so recovering the 8.0.8 store takes a revert PR plus the §6.5 restore onto a fresh volume.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L285-L300",
+          "version": "repo-lines-v1:sha256:eead68d220479fe6cf19a18ecab8af1a67fb2fd4909b17b60b876cf5d4d9f8ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhN2QwZWE3NTljZTNlNjgwYmZhNGNlYzE0MzQxOWExYjhjODMyODAxMTk0MzgxZjdmMWJhOWQwMjVjNjlhNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDE0ZGYyNTVhMjEyZjdlZmVkNzNkZWE4ZmNhMmExMDI2YTUxYzkyOWFkYWU3YjRjYjY5M2JhMjQ0NTk5MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZWJjYzI4YWFiNTc5NmMwN2Y2NTJlYzdlNDE4MDUwMzdhMThjYzAwNTZlY2JkZDgwMmJhZDExOWVlZWE2NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlODU2ZDYwY2E1ODE1N2E0ZTFkMTU0MmFjMjY1OGU5OWQ3MTcwZDNiMzEzMTY2MWI1MzMzZTljZjc3YmRlMGUifQ"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L63-L67",
+          "version": "repo-lines-v1:sha256:0616cf877fa824e03e23cb310b484a0cac28eb1eade313eda5bae57d0e6ac836:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmYWNhYTkyMjA1MmFjZWE0ZTc5NzljMGI2MzNlNzE0ZDk5ZGQ0YTE2ODg0ZTVlOWM1ZmIxZjYxZDkwNTY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFiY2NjYjBmZWYzOWI1N2NhMWEzYmQ0ZWJjM2M3YzFlMTMyYjgyN2QwYjA4ODEyM2RiYTUxYzM4YTllOTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FkNDZhZDBjMGYwZGQyZDg5ZDUyYWM3MzFhNTUwZTU0YmNkNWYxY2NmZWE2NGIyMTFiN2ViYmQ3YjQ4MTM3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE0MGM3YWFiNWFkNzc1OTE2NjAxZWU0OTUyMGFiMDA3YmY0NzMzY2I3NTNlZTlmNTE3Nzg4MWFiNzc4NGZmMiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L133-L133",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkZDExOGQ5ODJjYTE3ZTBmMTk4ZjE4ZWM2NzI1OGRiYWNiYzg2YjIxNTAzM2Q5NzI5ZGM5OWM0ZDFjMjgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQzMjc2ZDgyMmFjYTdlZTA2NDY0YjJjYmIzOTA3ZWIzMGVjOWI2MWNlMzI4M2NmZGQyZDA2MTQxNzc0NDgzYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L25-L25",
+          "version": "repo-lines-v1:sha256:c8403090010151279f5bdd48fc7be40203f343e93d24881b110b7e3f1a5092fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg0MDMwOTAwMTAxNTEyNzlmNWJkZDQ4ZmM3YmU0MDIwM2YzNDNlOTNkMjQ4ODFiMTEwYjdlM2YxYTUwOTJmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NhMzk2MTg4ZDk0OTJmNmM1Mjk5YzAxN2QyNzQ4YzA4ZDNkM2E0NmQ5NmYzMWI3MGRjZTBiYzUyMjA3YjdhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhY2I5YmQ4MmQ2MDdlNTBhZTIzZDMxZTE4YmUzOGI1NTI4NzViNzZmY2ExNmFiYTYxZTg2YzU2YTRhOTYzYSJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/rollback.sh#L7-L23",
+          "version": "repo-lines-v1:sha256:1feca51fe13b43b000faeb765d8caa6044bddf859fc8c98d9b7bcb13fc5edc93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZjVlOTYyMGE0MmQ5OTNiZjY4MDMwMTIyYTI0NWRjMTRiOTI0NTVmYWVhZWViMjcxZDY4MGEwMzJhOTJjNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZDc0ZmU4OThkMzA1ZWI1MmM0NzBjM2ExZTU3MzNlZWExYTc5MTJkZWQ5N2M2MzAxZWIxYjMzYTFjZWZlNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NjdkOTY4NWFjZGZlNzJlOTIwNDE3NzVjZjZhNjE5MmFkYzY0MDVlZGU5YzlhOTA3ZTc0M2YxNTE3Zjc4YmEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T17:50:21.605Z"
+    "at": "2026-11-05T01:33:57.840Z"
   }
 }

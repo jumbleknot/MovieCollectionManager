@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:53c80d12e797b4407e4139c9840cca8fdd1e8fe208205261f8bc2e92d7ef8c7b",
+  "pageVersion": "sha256:2bda4dec00b85d4b0e443c282ffc6d23db9165dbcbf9236a452ed76ce5837d49",
   "claims": [
     {
       "id": "claim_d09a6a6493dd4c28a412786ec71bb102",
@@ -509,10 +509,62 @@
           "version": "repo-lines-v1:sha256:6a2f68f69b416358888b637e3c7417bc5d57900e5ea0af03fa7ad28a06dfb340:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEyZjY4ZjY5YjQxNjM1ODg4OGI2MzdlM2M3NDE3YmM1ZDU3OTAwZTVlYTBhZjAzZmE3YWQyOGEwNmRmYjM0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEyZjY4ZjY5YjQxNjM1ODg4OGI2MzdlM2M3NDE3YmM1ZDU3OTAwZTVlYTBhZjAzZmE3YWQyOGEwNmRmYjM0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE1ZDQ4OTZkNDI5NmFhOTg4M2I3MDA3ZTQ0NTQ0OGE3NmM3NzcxNjgyN2FmYTYyODQ1MjE3ZWNmNGQzNjA5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc2N2M5YzMwOWIzN2VhNzMwMjg5ZGUxODNkNTdmNDM4OTk5MjY4NTlhMzE5ZDMxMTk1OWJjZTZiNGUzYjNlZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_3aaaced8b8fb41388dfa21d92d96a9ba",
+      "statement": "`verify-firewall-allowlist.sh` has a known first-run failure that passes on a re-run with no code change (both dated verification tables in source §10b record it), and its reachability/drift expectation is derived from the canonical destination list rather than carried inline, so a destination added to the list but missing from the live ruleset shows up as drift instead of passing quietly. The general hazard behind it is that the dev container returns after a VM restart through `restart: always`, which does not re-run `postStartCommand`, so a sandbox that has only ever been restarted can be running without the setup that hook supplies.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/verify/verify-firewall-allowlist.sh",
+          "version": "repo-file-v1:sha256:e57ccd277f1e1a452f9b1d64787151bb7fdc813d5160bfc60c8c61c2d0aa7da9"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L762-L766",
+          "version": "repo-lines-v1:sha256:d4dd6930e777d2f13b18a853139f79e422fde1fe650a1e022f7ae0570fa39db1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U4ODRhMGIyMzZmYTE0ZDk2NGQwYzY5YzY3YjBhNjRhNDM4ZGVhOTYxOGMzNjllYzVlZTRmMDhkM2U3MGRhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkOTdlM2JmZDQ5ODQ4OWMyNzhlM2UwNGFjMDI4MTZiMjE5MWY3NjIwZGIyYjY5NDM1ODIwMzU2NWJiZDFjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThjOTlhYzQwYWRiNzRjZTk4MzdlNGU5ZDE3NjFiNjBmMmU3NWFmYjBhOGVjNTI0ZGFiZGFlYmZiYjBlNGNhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU1NTY0ZGNlNzMwYWM5N2JlM2FhMmMyNDYyN2NjZWRiMzIzNWRiMDFmMzZjMmY1OTAzYzkxYjUwZjZlZjViNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d231ab43f584f7ab9728915fa4b447c",
+      "statement": "The RTK `personal-layer` assertion is a hard FAIL rather than a notice because RTK is constitution-mandated for every AI-assisted session and is installed out-of-repo by the dotfiles, so an environment that lost it looks completely healthy while violating a MUST; `MCM_ALLOW_NO_RTK=1` is the explicit, typed opt-out that downgrades it to a notice.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json",
+          "version": "repo-file-v1:sha256:a76a55ddffa7eb69d5d3daf005da6b448dba4fdd21be63ef58cfb44105b98c83"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/verify-personal-layer.sh",
+          "version": "repo-file-v1:sha256:468389532cda1c2b2bd4f84a86eb17b97cf97de197f7d92678fa91a8ce874817"
+        }
+      ]
+    },
+    {
+      "id": "claim_a77d0369c3e145f6a8704dbb52bf2d78",
+      "statement": "The sandbox's three size knobs are `DOCKER_SANDBOXES_DOCKER_SIZE` and `DOCKER_SANDBOXES_ROOT_SIZE`, plus a cloned-workspace size used only in `--clone` mode; v0.51.0 additionally accepts `sandboxOptions.rootSize`/`dockerSize` in an environment file as an alternative (not adopted). Resize verification must read the stamped spec with a case-sensitive JSON parser, because the file carries both `HTTP_PROXY` and `http_proxy` and PowerShell's `ConvertFrom-Json` rejects it.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L261-L343",
+          "version": "repo-lines-v1:sha256:9695adf491fb17fe6676efb3bbd34f6438c13e538460e55a65a866b59bf33562:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNjgwZjBmZDYzYmY3NmMzNTUzMWZiOTUyMDg2MDJkZmU4ZDk4ZTA5ODVlYzg2MzBjYzBiNWZkZTEzMTI0MjIifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L652-L653",
+          "version": "repo-lines-v1:sha256:49454bd979f206df9cb67ab689856c80a82fe85e8770e48653253271882c72da:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUzNWE4YzgzYjIxYTM3OTE2ZTFiMTg1Y2U3NWM1NzEzM2MzNzgzZjM4MjZiOGExZTIxZmYyZTdlY2ViYWQ3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmZDdhYzNkNTI5ZGYwZWIyNjE0NmI3ZjVkYzA5ZDFmMDg5YjkwNWRkOWNmMzAyNmNjYzE0YmE5MmQ1YjkyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM4MTI0NmI1ZjMyZmNiY2I4MzRlNTA2MmIxOGU5ZTRjMjVkYmMzOGY5MGFlYjFiYmFhMTIxNDRiNDQ1ZWUwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjMzNWU3MTlhNTk5NzdmOWI4MzgwN2M2NGE0YzA0ODI2ZWVmYmYzN2M1MDZiZmYzMTQ5NjA3NzcwNzNjMTEwNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9793fdcd41bf484aaad09c5557927d2d",
+      "statement": "`docker builder prune` is the safe reclaim lever because it never touches images, and `docker image prune` is dangling-only; `docker image prune -a` must not be used because it evicts the 3.5 GB Playwright image the web-E2E recipe needs, which must then be re-pulled.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L415-L423",
+          "version": "repo-lines-v1:sha256:11093557d9e36ea8f8a258ccbf2026d7d7ea8bbb94084e052b41a241893c4edc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQxNGIwNDQ3ZjZhYjE3MmYyMDgwNGNhMjhkZjQ5MWZmMmQxMDMwMGFhMDYyMDljMmNlOTc1ZDZjNzFkYjdkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE5OTE0ZDBhZDg1MGExYzg2NTgxMjkwNGQ1NzFhYmNhYzg3NmM5ZDM1NzdjNjlmZDhiMTA5MzYzZmYwMGYxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIxMWRmZTQ4MWUyYTQ0ZjQyYzBjODZkNDhmM2ZlNTQxNGQ4Mjc5NzI3MDQxYWM3OTgyNjMxNTM1NjY0MzE2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODljNzgyYzA1ZTEwYmU3NTE1OTJjMzQ1N2VmNjViNWZmNGMyYWM4ZTU3Mzk2NjM1NTQ0MDg1ZGI4OTYyZDFiYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-05T01:33:57.840Z"
   }
 }
