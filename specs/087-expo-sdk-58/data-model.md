@@ -34,17 +34,17 @@ existing report ([CLI contract](./contracts/web-gates.md)).
 
 ## Launch evidence
 
-The record of one launch test, quoted in `tasks.md`. Required before US4 is marked done (FR-021).
+The record of one launch check, quoted in `tasks.md`. Required before US4 is marked done (FR-021).
 
 | Field | Example | Source |
 |---|---|---|
 | Run | `app-ci` run number | CI |
 | Commit | full sha of the APK's build | CI |
 | SDK | `expo@58.0.x`, RN `0.88.1` | `package.json` at that commit |
-| Launch | `Status: ok` | Launch smoke |
-| Login screen | `login-screen` visible | Launch smoke |
-| Fatal lines | `0` | Launch smoke, device log |
-| Login flow | Passed | Maestro, full suite |
+| Launch | `Status: ok` | Launch check |
+| Login screen | `login-screen` visible | Launch check |
+| Fatal lines | `0` | Launch check, device log |
+| Login flow | Passed. N/A for the SDK 57 control, whose label runs only the agent flows | Maestro, full suite |
 | Assistant flows | Passed, with count | Maestro, agent flows |
 
 **States**: `not run` → `control recorded` (SDK 57, PR B) → `passed` (SDK 58, PR C). A failed run stays quoted, and the
@@ -56,6 +56,13 @@ story stays open.
 |---|---|
 | `context` | Exactly `app-ci / android-launch` |
 | `state` | `success` when all three checks passed, else `failure` |
-| `description` | `launch=<ok\|failed> login-screen=<visible\|absent> fatal=<count>`; never a log excerpt |
+| `description` | `launch=<ok\|failed\|not-run> login-screen=<visible\|absent> fatal=<count>`; never a log excerpt |
+
+| Emulator gate | Result file | Status posted |
+|---|---|---|
+| False (the PR skips the emulator) | Not read | **None** |
+| True | Absent | `failure`, `launch=not-run` |
+| True | All checks passed | `success` |
+| True | Any check failed | `failure` |
 
 It is informational and not a required context. The step's exit code is what blocks.

@@ -55,6 +55,13 @@ Added to `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`:
 
 A failure lists each violation's directive, blocked URI and source, or the page error's message.
 
+**Running it alone**: `lifecycle` depends on `chromium`, so a file filter still runs all 210 tests (measured). Use the
+official Playwright image recipe in `docs/runbooks/e2e-testing.md` with
+`tests/e2e/web/page-security-policy-walk.spec.ts --project=lifecycle --no-deps`.
+
+**Negative control**: empty `INLINE_SCRIPT_HASHES` in `web-security-headers.js`, recreate the dev BFF container from that
+file, run the walk, then restore the file and recreate the container. Nothing else may change.
+
 ## Assistant path
 
 The existing `@gate` test `navigate → the assistant opens the named collection screen`

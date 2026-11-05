@@ -180,7 +180,7 @@ spec change, but the operator should know it is there.
 walk in the main project risks session eviction. Giving the walk's user an assistant would mix a model-dependent path
 into a test whose verdict should depend only on our code.
 
-## R9: Android launch smoke
+## R9: Android launch check
 
 **Decision**: `scripts/android-launch-smoke.sh` runs inside the existing emulator step, between `adb install` and the
 agent flows (one added `script:` line, since that step runs line by line). It:
@@ -203,9 +203,15 @@ production URLs is a different build, covered by the operator check in the quick
 
 **Decision**: `scripts/publish-android-launch.mjs` posts one commit status, `app-ci / android-launch`, with a one-line
 description such as `launch=ok login-screen=visible fatal=0`. It is modelled on `publish-sweep-verdict.mjs`, including
-`github.token` and a mutation-tested mapping. It is not a required context, since the step's own exit code is what blocks.
+`github.token` and a mutation-tested mapping. It is not a required context: branch protection's globs do not match it
+**[M]**, and the step's own exit code is what blocks.
 
-**Rationale**: `tasks.md` must quote results with run numbers, and without a channel the only source on a pass is a human
+The emulator step can't export outputs, so the launch check writes its result to `$HOME/android-launch-$GITHUB_RUN_ID.json`.
+The run ID in the name means a persistent runner can't serve a stale result. The status step carries the same `if:` gate as
+the emulator step, so **a PR that skips the emulator posts nothing**. If the gate is true and the file is absent, the emulator
+never reached the check, and the status reads `launch=not-run` as `failure`.
+
+**Rationale**: the task list must quote results with run numbers, and without a channel the only source on a pass is a human
 reading a log page. A narrow status with the job's own token is measured to work, while the digest's status branch
 needs a wider scope and 403s **[M, recorded in that script]**.
 
@@ -217,9 +223,10 @@ needs a wider scope and 403s **[M, recorded in that script]**.
 2. Move together: `react`, `react-dom` in both manifests and the `react-dom` override; `@expo/dom-webview` override to
    `^58`; `react-native`, `jest`, `jest-expo`, `@types/jest`, `@types/react`, `eslint-config-expo`, `test-renderer` in the
    design system.
-3. Add `expo-build-properties`; change `app.json` (R7).
-4. `pnpm dedupe`, then a frozen install, then the one-instance guard. A stale `react-native-safe-area-context` lock entry
+3. `pnpm dedupe`, then a frozen install, then the one-instance guard. A stale `react-native-safe-area-context` lock entry
    was the cause in the spike **[M]**.
+4. Change `app.json` (R7). `expo-build-properties` arrives with US4's RED and GREEN, so that task repeats the frozen install
+   and the one-instance guard, because any later lock change could bring the second copy back.
 5. Fix type errors. The spike found six **[M]**: `no-autofill-input.tsx:86`, `AssistantPanel.tsx:313,316`,
    `SearchBar.tsx:115`, `TextField.tsx:216`, `AppBar.tsx:119`.
 
@@ -246,21 +253,30 @@ are not deleted.
 - **Heap**: copy #933's user-level `gradle.properties` block into `app-ci.yml`'s `build-apk` step, and make
   `prod-apk-gradle-heap.guard.test.mjs` check both jobs. Only the `prod-apk` path has been measured with it **[M: run
   6802]**. The `app-e2e` path also sets `GRADLE_OPTS=-Dorg.gradle.daemon=false`, so PR C's run is its first proof.
-- **R8 guard**: a new guard reads `app.json` and fails unless the opt-out is present and false. Its error says what to do
-  in the later R8 change.
+- **R8 guard**: a new guard reads `app.json` and fails unless the opt-out is present and false, with synthetic inputs proving
+  both failures. Its error points at item #937.
 - **Gradle**: `toolchain.Dockerfile`'s `GRADLE_VERSION` moves to 9.4.1, along with the paths in `android-emulator.md`.
-  Prebuild's wrapper asks for it **[M]**, so CI needs no change. Rebuilding the image is an operator step.
+  Prebuild's wrapper asks for it **[M]**, so CI needs no change. Rebuilding the image is an operator step, and it does not
+  block PR C, because the sandbox can't build the app either way.
 - **Cleartext**: `with-dev-cleartext` works on SDK 58 prebuild unchanged **[M]**; PR C re-confirms the generated
   `network_security_config` lists only local hosts (FR-023).
 
 ## R14: Measuring SC-002
 
-**Decision**: commit the spike's dependency-free `load.mjs` as `specs/087-expo-sdk-58/tools/measure-page-latency.mjs`,
-using the shared rejecting argument parser. Run it on `main` before PR C and on PR C's export, on the same machine and
-through real `server.js`. `nx test:load` is not used, because it measures auth and collection flows rather than a page.
+**Decision**: use `specs/087-expo-sdk-58/tools/measure-page-latency.mjs`, the spike's dependency-free tool with the shared
+rejecting argument parser. Its defaults are the spike's: `/login`, 300 requests, concurrency 10. Run it on `main` before PR C
+and on PR C's export, on the same machine and through real `server.js`. `nx test:load` is not used, because it measures auth and collection flows rather than a page.
 
 **Rationale**: the figures are ratios from one process **[M]**, so only a same-machine comparison means anything. The
 11.8 ms and 138 MB baselines in the spec are starting points, replaced by M1.
+
+## R15: `expo-doctor`
+
+**Decision**: PR C adds a non-blocking step to `app-ci.yml`'s `affected` job, running only when the app is affected.
+
+**Rationale**: the constitution requires regular audits, yet no workflow or script runs it **[M]**, and it errored in the
+spike's sandbox without a usable report. It depends on Expo's API, so a required step would let an outside service block
+merges. If CI can't reach that API either, record it and ask the operator rather than treating it as a pass.
 
 ## Open item: the two Jest 30 failures
 
@@ -285,7 +301,7 @@ cleanest fix, they stay in a required tier with their assertions unchanged.
 
 These stay unknown until something runs them, as the proposal recorded:
 
-- Whether an SDK 58 APK launches (PR C, launch smoke).
+- Whether an SDK 58 APK launches (PR C, launch check).
 - A streamed turn on the new adapter (PR A's gate tier).
 - Real proxy behaviour (PR A, production check).
 - `expo-doctor` (PR C, CI).

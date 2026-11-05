@@ -24,8 +24,8 @@ pnpm nx docker-build mcm-app
 
 **After deploy, operator:**
 
-1. Sign in on production. Start backup consent, and confirm the identity provider's page appears with no
-   `Invalid parameter: redirect_uri`.
+1. Sign in on production. Complete backup consent, confirming no `Invalid parameter: redirect_uri` appears and that it returns
+   to the app.
 2. Start account deletion up to the identity provider's sign-in. Do not confirm it.
 3. Record both results.
 
@@ -51,7 +51,7 @@ Then, in CI with the label `mobile-e2e`:
 
 | Scenario | Expected |
 |---|---|
-| `page-security-policy-walk.spec.ts` under `E2E_TIER=gate` | Passes, and is counted as run, not skipped |
+| `page-security-policy-walk.spec.ts` under `E2E_TIER=gate` | Passes, and is counted as run, not skipped. To run it alone, see [contracts/web-gates.md](./contracts/web-gates.md) |
 | `app-ci / android-launch` on the PR's head (SDK 57 control) | `launch=ok login-screen=visible fatal=0` |
 
 ## PR C: SDK 58
@@ -65,19 +65,19 @@ pnpm nx typecheck mcm-app
 pnpm nx test mcm-app
 pnpm nx lint mcm-app
 pnpm nx bundle-budget mcm-app
-jq '{pages: (.htmlRoutes|length), api: (.apiRoutes|length)}' frontend/mcm-app/dist/server/_expo/routes.json
+jq '{html: (.htmlRoutes|length), notFound: (.notFoundRoutes|length), api: (.apiRoutes|length)}' frontend/mcm-app/dist/server/_expo/routes.json
 ```
 
 | Scenario | Expected |
 |---|---|
-| Routes manifest | All page routes, and 38 API routes |
+| Routes manifest | The same counts as the SDK 57 baseline, covering all 16 page files in `src/app` and 38 API routes |
 | A page that throws at render, then `pnpm nx export-server mcm-app --skip-nx-cache` | Export fails; revert |
 | Open a generated Android project: `android/gradle.properties` | `android.enableMinifyInReleaseBuilds=false` |
 | Same project: network security config | Cleartext only for `localhost`, `127.0.0.1`, `10.0.2.2` |
 | `grep decode-uri-component pnpm-lock.yaml` | No matches; the SAST gate passes with the entry deleted |
 | `grep -E "unsafe-(inline\|eval)" frontend/mcm-app/web-security-headers.js` | Only in comments |
 | `specs/087-expo-sdk-58/tools/measure-page-latency.mjs`, same machine as M1 | Within 25% of M1 (SC-002) |
-| `npx expo-doctor` in CI | No unresolved error; any accepted warning quoted |
+| The new `expo-doctor` step in CI | No unresolved error; any accepted warning quoted |
 
 In CI with the label `mobile-e2e-full`:
 
