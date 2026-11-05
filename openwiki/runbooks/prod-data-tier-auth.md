@@ -33,6 +33,8 @@ sources:
     resource: repo://scripts/cd-dispatch-gate.mjs
   - id: openwiki-source-91fe8d515f906bfe802750e0
     resource: repo://scripts/cd/health-probe.sh
+  - id: openwiki-source-3e6437aecf987ee671b546b4
+    resource: repo://scripts/cd/rollback.sh
   - id: openwiki-source-4708763005c35901b04f5740
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-f7c18c5bafd858a90cb17c5d
@@ -43,10 +45,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T17:50:21.605Z
+    at: 2026-11-05T01:33:57.840Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -242,7 +244,12 @@ The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises
   pre-flight archive, and a dump taken from 9.0 *at FCV 9.0*, which restores into 8.0.8 with identical
   counts and indexes. The procedure stops the two stacks, keeps the 9.0 volume under a `-9.0-keep` name,
   recreates an empty volume under the original name, restores with a throwaway 8.0.8 container, and only
-  then merges a revert PR.
+  then merges a revert PR. Note what that also rules out on the CD side: the Mongo image is a literal in
+  [`compose.prod.yaml`](../../infrastructure-as-code/docker/mc-service/compose.prod.yaml), **not** one of
+  the app-image digests `cd-deploy` promotes into `.env.deploy`, so `cd-deploy`'s automatic rollback
+  (git-revert the promotion commit and re-fire the signed webhook, which redeploys the prior digests)
+  cannot move the stores back at all — and its probe would not have fired for a broken Mongo anyway. Only
+  a revert PR plus the §6.5 restore changes what the stores run.
 - **Do NOT pre-chown the prod volumes before the merge.** 8.0.8 (uid 998) would then fail the same way
   9.0 does on a foreign-owned volume — and because the deploy lands roughly an hour after the merge
   there is no safe moment for an out-of-band chown. The re-own belongs in the container start path.

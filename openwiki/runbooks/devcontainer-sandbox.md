@@ -21,6 +21,8 @@ sources:
     resource: repo://docs/runbooks/devcontainer-sandbox.md
   - id: openwiki-source-a9fc7285078c8062777b3180
     resource: repo://docs/runbooks/devcontainer.md
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-08fc841d5e458f6987e87106
     resource: repo://scripts/open-sandbox.ps1
 generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }

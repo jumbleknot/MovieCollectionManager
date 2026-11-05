@@ -4,6 +4,9 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-05T01:33:57.840Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -129,10 +132,7 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -448,6 +448,18 @@ need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
 `!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
 ignore rule, because the file holds only digests — no host, no secret.
 
+Those digests are also the registry's protection list, which is the second thing a hand-edit breaks.
+`scripts/registry-retention.mjs` reads every `infrastructure-as-code/docker/*/.env.deploy` at the newest
+promotion commit and the five before it out of git history — the deployed set plus the rollback targets
+— and a version whose digest appears there is kept `keep:protected` ahead of every age or count rule,
+while a container child is kept for as long as any kept index references it. So the promotion commit is
+what keeps a deployed image pullable: a digest that appears in no `.env.deploy` is eligible for
+deletion once it is past `keepNewest` / `keepDays`, and a `.env.deploy` edited by hand pins an image no
+rollback can reach. It is also why that job's checkout is `fetch-depth: 0` — a shallow clone would read
+as "nothing but HEAD to protect", and the script refuses one rather than reporting a smaller protected
+set. The retention posture itself, and the two keys that gate an actual delete, belong to
+[CI diagnostics](../runbooks/ci-diagnostics.md).
+
 The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
 `Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
 variable as `<REPO>_IMAGE` (`mcm-bff → MCM_BFF_IMAGE`) and says only `MCM_BFF_IMAGE` "is consumed by
@@ -673,7 +685,8 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 - **Image digests are not in `stacks.toml`, and editing one by hand defeats the promotion mechanism.**
   The tracked `.env.deploy` files are written by [the CI/CD pipeline](./ci-cd-pipeline.md)'s
   digest-by-git promotion step; the compose assembles the pull reference from a Komodo-injected
-  registry-host variable plus that digest.
+  registry-host variable plus that digest. Hand-editing also shrinks the registry's protected set,
+  which is computed from those same files in git history.
 - **All four core live production stacks were adopted in place, not created fresh.** They already
   existed as hand-created Komodo Stacks when the first ResourceSync applied, and they already carried
   the canonical names `stacks.toml` declares, so the sync reconciles against already-running containers
