@@ -229,9 +229,6 @@ importers:
       '@expo/metro-runtime':
         specifier: ~57.0.17
         version: 57.0.17(@expo/log-box@57.0.4)(expo@57.0.31)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
-      '@expo/server':
-        specifier: ~0.5.0
-        version: 0.5.3(supports-color@8.1.1)
       '@gorhom/bottom-sheet':
         specifier: ^5.2.14
         version: 5.2.14(a921e544e56302278203011440cfc450)
@@ -283,6 +280,9 @@ importers:
       expo-secure-store:
         specifier: ~57.0.4
         version: 57.0.4(expo@57.0.31)
+      expo-server:
+        specifier: ^57.0.3
+        version: 57.0.3
       expo-splash-screen:
         specifier: ~57.0.10
         version: 57.0.10(expo@57.0.31)(supports-color@8.1.1)(typescript@6.0.3)
@@ -1743,9 +1743,6 @@ packages:
 
   '@expo/sdk-runtime-versions@1.0.1':
     resolution: {integrity: sha512-kvisefkhxu8Fm/4M8G6DEqUaigrXfrSOm2lFw7hsk/nq0zchcp6B4wSk8rlheHY8FRi5iHxKtoVMGY/3M6h04A==}
-
-  '@expo/server@0.5.3':
-    resolution: {integrity: sha512-WXsWzeBs5v/h0PUfHyNLLz07rwwO5myQ1A5DGYewyyGLmsyl61yVCe8AgAlp1wkiMsqhj2hZqI2u3K10QnCMrQ==}
 
   '@expo/spawn-async@1.8.0':
     resolution: {integrity: sha512-eb9xxd/LbuEGSdua4NumCu/McVB9EM+F/JxB9pWgnERw4HQ9XyTNH1KapG6oqLWR8TuRK2LQfzJlmNi94CVobw==}
@@ -12144,15 +12141,6 @@ snapshots:
   '@expo/schema-utils@57.0.2': {}
 
   '@expo/sdk-runtime-versions@1.0.1': {}
-
-  '@expo/server@0.5.3(supports-color@8.1.1)':
-    dependencies:
-      abort-controller: 3.0.0
-      debug: 4.4.3(supports-color@8.1.1)
-      source-map-support: 0.5.21
-      undici: 6.29.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@expo/spawn-async@1.8.0':
     dependencies:

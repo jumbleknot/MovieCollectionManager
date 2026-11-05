@@ -103,7 +103,7 @@ services:
         max-size: "10m"
         max-file: "10"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init && wget -q --spider http://127.0.0.1:3000/login || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

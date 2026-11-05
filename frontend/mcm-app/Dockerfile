@@ -109,7 +109,7 @@ COPY packages/design-system/ ./packages/design-system/
 # which Metro already compiled into dist/ in the builder stage. The runtime process is
 # `node server.js`, and a traced run of the full web E2E suite plus a sweep of every route the app
 # serves touched 76 of them, every one inside the closure the script walks from `express`,
-# `@expo/server` and `openai`. It runs HERE, in the stage whose only output is /app/runtime, so the
+# `expo-server` and `openai`. It runs HERE, in the stage whose only output is /app/runtime, so the
 # removal is a smaller COPY into the runner rather than a delete layered on top of a fat one.
 # The script imports scripts/lib/argv-contract.mjs (item #500 — it DELETES, so an unrecognised
 # argument must be refused rather than left running the default). The import resolves relative

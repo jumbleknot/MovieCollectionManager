@@ -235,7 +235,7 @@ elif [ "$verdict" = "collapsed" ]; then
   echo "$MARKER A healthy run drives ~88-95 posts per 100 tests; this run drove ${posts_per_100}."
   echo "$MARKER Already ruled out by #173, so do not re-derive them: worker/session contention"
   echo "$MARKER (refresh_429=0 in every collapsed run), stack bring-up, assistant_not_configured"
-  echo "$MARKER short-circuits, and the known @expo/server closed-stream drop."
+  echo "$MARKER short-circuits, and the closed-stream drop known from the old @expo/server adapter."
   echo "$MARKER Read the client-side capture in the bundle — that is the channel #173 never had."
 elif [ "$verdict" = "healthy" ]; then
   echo "$MARKER turns were dispatched at the usual rate — a FAILURE in this run is about the tests,"
