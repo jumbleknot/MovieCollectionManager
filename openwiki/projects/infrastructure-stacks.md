@@ -5,6 +5,8 @@ description: How the four named local Docker Compose stacks (auth, mcm, audit, o
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 sources:
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-80b643ca97b6e7e300789088
     resource: repo://.forgejo/workflows/cd-deploy.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
@@ -81,6 +83,8 @@ sources:
     resource: repo://infrastructure-as-code/opa/policies/agent_ui_action.rego
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
+  - id: openwiki-source-3878af0f305d1908abec5cb9
+    resource: repo://scripts/__tests__/agent-stack.guard.test.mjs
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
@@ -125,10 +129,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -155,17 +159,30 @@ compose files:
 The single root `compose.yaml` aggregator is retired to a pointer (feature 020); there is no longer one
 project bundling everything behind profiles. Lifecycle goes through the Nx targets in
 `infrastructure-as-code/project.json` — `up-auth`, `up-mcm`, `up-mcm-agents`, `up-audit`,
-`up-observability`, `up-all`, and their `down-*` counterparts — which wrap the `docker compose -p
-<stack>` invocation and that stack's `.env` file, rather than raw `docker compose` by convention.
-`up-all` runs auth then mcm, serially, in that order. `up-auth` applies the shared keycloak compose
-plus the `keycloak/compose.dev.yaml` overlay as a second `-f`, which is what imports the `grumpyrobot`
-realm on a fresh volume. Each `down-*` target names **every** profile it might have brought up (all
-five for `mcm`, `vault` for `auth`), so a teardown actually removes the profile-gated containers — a
-`down` target that omits a profile silently leaves those containers running.
+`up-observability`, `up-all`, plus `down-auth`, `down-mcm`, `down-audit`, `down-observability` and
+`down-all` — which wrap the `docker compose -p <stack>` invocation and that stack's `.env` file,
+rather than raw `docker compose` by convention. The two name lists are not symmetric, and reading
+them as if they were is the easy mistake: there is no `down-mcm-agents`, because `down-mcm` already
+names the `agents` and `agents-metro` profiles, whereas the separate `up-agents-prod` path owns its
+own `down-agents-prod` and `status-agents-prod`.
+`up-all` runs auth then mcm, serially, in that order — and it is *not* the mirror of `down-all`:
+`up-all` brings up only those two stacks, while `down-all` tears down all four, also serially, in the
+order mcm → auth → audit → observability. A session that brought `audit` or `observability` up by hand
+is therefore cleaned by `down-all` even though `up-all` would never have started it. `up-auth` applies
+the shared keycloak compose plus the `keycloak/compose.dev.yaml` overlay as a second `-f`, which is what
+imports the `grumpyrobot` realm on a fresh volume. Each `down-*` target names **every** profile it might
+have brought up (all five for `mcm`, `vault` for `auth`), so a teardown actually removes the
+profile-gated containers — a `down` target that omits a profile silently leaves those containers running.
 
 The agent layer has two distinct bring-up paths: `up-mcm-agents` (the heavy in-stack `--profile agents`
-variant) and `up-agents-prod` (`scripts/agent-stack.mjs`, the light containerized production-node stack
-used for local agent E2E).
+variant, which fetches the agent-gateway Keycloak client secret from Keycloak and injects it — without
+it the gateway still runs, but token-exchange tool calls fail closed) and `up-agents-prod`
+(`scripts/agent-stack.mjs`, the light containerized production-node stack used for local agent E2E).
+`up-agents-prod` rebuilds its four agent/MCP images from the checkout by default and refuses
+`--no-build` when `CI=true`, because on a persistent runner a leftover image made the agent E2E gate a
+false green; `scripts/__tests__/agent-stack.guard.test.mjs` pins both halves of that rule. That matters
+because the target is not a local convenience only: CI's agent E2E and DAST jobs bring the stack up
+through this same target, so a stale image there is a false-green gate rather than a slow local loop.
 
 Almost every dev-stack secret is a fail-fast `${VAR:?…}` interpolation reference, and the
 [stacks README](../../infrastructure-as-code/docker/stacks/README.md) enumerates the exceptions
@@ -416,16 +433,28 @@ secrets interpolate from `.env.prod`. The compose assembles the pull reference a
 `${<SVC>_DIGEST:?set in <dir>/.env.deploy (cd-deploy promotion)}`, so a run directory whose promotion
 never happened aborts the deploy rather than falling back to a floating tag.
 
-Only the three CI-built stacks receive it: `cd-deploy`'s promotion step copies the *same* generated
-`VAR=<bare sha256>` block into all three run directories it names
-(`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), so every Komodo Stack reads a local
-`.env.deploy` rather than a fragile `../` path. All three files therefore carry all six
-`<REPO>_DIGEST` lines, and each stack consumes only the names its own images need —
-`MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
+Only the three CI-built stacks receive it, and the fan-out is script-driven rather than an inline
+workflow step. `scripts/cd/scan-push.sh` mints one generated file — `env-deploy.generated`, one
+`<REPO_UPPER>_DIGEST=<bare sha256>` line per image it scanned and pushed, under a generated header —
+and `scripts/cd/promote-digest.sh` copies that single file into every directory named in the
+workflow's `ENV_DEPLOY_PATHS` (`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), commits
+it and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
+and a new CI-built production stack is wired in by adding its run directory to `ENV_DEPLOY_PATHS`
+and its `additional_env_files` — nothing else in the promotion path is per-stack. All three files
+therefore carry all six `<REPO>_DIGEST` lines, and each stack consumes only the names its own images
+need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
 `AGENT_GATEWAY_DIGEST` / `MOVIE_MCP_DIGEST` / `WEB_API_MCP_DIGEST` / `SPREADSHEET_MCP_DIGEST` for
 `agents`, which alone runs four CI-built images. `.gitignore` keeps those files tracked with an
 `!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
 ignore rule, because the file holds only digests — no host, no secret.
+
+The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
+`Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
+variable as `<REPO>_IMAGE` (`mcm-bff → MCM_BFF_IMAGE`) and says only `MCM_BFF_IMAGE` "is consumed by
+a prod stack today". Neither half holds any more: `scan-push.sh` emits `<REPO_UPPER>_DIGEST`, and all
+six values are consumed by the three CI-built stacks. The workflow's own `ENV_DEPLOY_PATHS` comment —
+naming `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — is the accurate one, and a
+compose line copied from the stale comment references a variable nothing writes.
 
 ## Side artifacts and the static gates over every compose file
 
@@ -563,7 +592,7 @@ The gate scripts' own unit tests are enrolled the same way: `guardrails.yml`'s `
 `scripts/__tests__/` executes on every push and PR without being named anywhere — which is the fix for
 the period when those tests ran in no workflow at all and rotted unnoticed (feature 041). That is what
 makes the guard tests cited on this page (`gen-dev-secrets`, `komodo-stack-env`,
-`langfuse-postgres-shared-pin`, `infra-image-scan`) actually run.
+`langfuse-postgres-shared-pin`, `infra-image-scan`, `agent-stack`) actually run.
 Together these gates are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 

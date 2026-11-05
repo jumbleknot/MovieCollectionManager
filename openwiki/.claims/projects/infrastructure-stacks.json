@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b3d77f578f32ef2c3f487ba425ae05ba4de00967f4135545555c4f3b46693b14",
+  "pageVersion": "sha256:beb7b1060f3abd43452acee849866f2dacdcf89bbf1a5d9ac39810284f7a3e6d",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "version": "repo-file-v1:sha256:74213982e7d8c296efaff70b7ca000ffb4f7906a4cc83e5f3da19da46d682f44"
         }
       ]
     },
@@ -26,7 +26,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "version": "repo-file-v1:sha256:74213982e7d8c296efaff70b7ca000ffb4f7906a4cc83e5f3da19da46d682f44"
         }
       ]
     },
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:893444688993724abbd0ee437be07034d9e39bd7a048df90fdb18a076f0b2e1f"
+          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -282,7 +282,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/project.json",
-          "version": "repo-file-v1:sha256:f7d33e872273dc8c205d2635ab8ea6ad506b9e60306164c459630a6d35ed2481"
+          "version": "repo-file-v1:sha256:74213982e7d8c296efaff70b7ca000ffb4f7906a4cc83e5f3da19da46d682f44"
         },
         {
           "resource": "repo://scripts/agent-stack.mjs",
@@ -513,7 +513,7 @@
           "version": "repo-lines-v1:sha256:86f9da27556c2e8fd94e99ff20350369caaa05de974ba364da15c4c511ef0c9d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM0NmVkOWFmNDQzODE4YWZlNDBjNDMzNTdmMDE4MGFhMDQ4YmUwOTY3OGE4ZTkxZjg0NzA0MGU3MzcwMDM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJhOGJmMzFkZGU4NWRiZWM2N2JmYzMzOTg1MjgzNWQ1NGYzMDRiYTQ2NWNiNjIyMjZjZDdkMjg5ZGI1Y2Y1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVmZmRjMmQ0MTRjN2FiZWQzZmM2ZjQzMGQzMTA4OWNjMGU3NTFhODcwYWI2MzM3NDE5NWI1N2I3Yzc4MThmZSJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L898",
           "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
@@ -991,10 +991,72 @@
           "version": "repo-lines-v1:sha256:26747923a0b97b350725c040478b9c61906ea618ddc6251bbf04bb3c17cc5a70:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxZGI0ZTg3NWViOWE2YWYxNDU1NjMwNTg2MTk2Zjc0MjIyMzEyOGIzNjI1ODAwOTg0OWE2OGY4MDJjY2Y5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZkMWQyNjE4ZTBjMzk3MzJiYmE4YTU0NjQzYTBjYjIxYTIwNGRhMTliOTcyZmMwYTJhZDg2OTU2ZThkZjEzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM2YTI2ZWQ0MGJmOGUwYjRiODVmNjI1ZTYzYjA4MzE5NGU1ZjUzZTI0MWQ5MDY0NGMxZDhmMTAxNjQ3YzcwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFjMDViOWE4MDQyMGIyNmZjODRhMWU2OTJkMDRmODgwZjkzMDU2ODNmZWUwOTI2ZGU3MDkyNzcxNmU3ODU1ZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_13d5bcb23c534e72aeea0ba9f50ef101",
+      "statement": "The local lifecycle target set is deliberately asymmetric, and the two asymmetries are the easy misreadings: up-all starts only auth then mcm (parallel: false), while down-all tears down all four stacks serially in the order mcm → auth → audit → observability, so a session that brought audit or observability up by hand is cleaned by down-all even though up-all would never have started it; and there is no down-mcm-agents, because down-mcm already names the agents and agents-metro profiles, whereas the separate up-agents-prod path owns its own down-agents-prod and status-agents-prod.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L121-L147",
+          "version": "repo-lines-v1:sha256:d38d88bbf71643fd227838bdf2f0c9d28c9abbcee5341590f137d03476809854:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZjM5M2Q3YmJlZmQ0ZWQ4MzZhM2RjZmRhNDhjNGJmMGJhNWUwODU5ZDMxYjc1Nzg2YjA4ZjhlNzZjYWViZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2OTlkMWY0MWIzNjI0ODljYTZlZDIwMzNjYThmMzExZjg2YjY2OWU2OTk0ZDEzMzcwNjNiNjYwMjJkMGRiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmODg1YTcxNjUyZTNmMTYxYzg2N2U0ZTkzN2QyNGI3YTIzMjBmMTYxZWZmYjc4NGI4ZTI3NWZmMjZmYmMwMjYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L56-L69",
+          "version": "repo-lines-v1:sha256:2ea175d61587cdb348820074682b0a7573bc1e1f4ba6905a729c20b118fa8f85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2RmZTJkMzY4YTE1ZjE5MWRiYjk5NzExNGQ2NTBmOGU2ZDBmOTljZTYzYjYzZjZjYTEzOGFhNWU5OTU5M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjY2ZhYmFlODkyOTQxZWVlNmQ0ZGYwM2Q0NjJiM2ZkNDVmYzQyOGE1Y2Y0Y2QzNTJhZGRiMGUwZGM2YmZkMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2ZTc4MmVjZTcwMmFlMzcxZDk4M2UxNWM0NGVjMThiMzA0YzNjNzUwYWUzMmIwZWNlMGJmNTZlYjcwODc1YTYifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L77-L83",
+          "version": "repo-lines-v1:sha256:411c50a054d57213070c25e3e67522bb017624df1fbd0101253ad243a929478c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFhYjM4NmJkYmI0NDJkYzA5MjBmOGFlMzUyYjE2Y2RhZTVjZDg5MjUzNjY1MjU1NDYzYTgzNGFkMGJmZDVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDY5OWQxZjQxYjM2MjQ4OWNhNmVkMjAzM2NhOGYzMTFmODZiNjY5ZTY5OTRkMTMzNzA2M2I2NjAyMmQwZGIwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDBjYzI1Y2Q2NzVhMWVhMDVhYzBmZWZkNDkwZWY0MGQ2NDA2ZjE5MjU3NzAzMTExNTYyMDNkMmMyYzI3ZjdlOCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/project.json#L98-L113",
+          "version": "repo-lines-v1:sha256:6d2caec3b60254990b45455117b9a8559d5f4a7e1076cc1d7085ad7844b7e9c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZmQ5ZWJkNThhMTJjOTc4M2VmODNmNTI4NTA5ZjA4OGY4MGE2N2MxYTdmZDM3ODNlNmQxYWRkNTk1MTY2NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2OTlkMWY0MWIzNjI0ODljYTZlZDIwMzNjYThmMzExZjg2YjY2OWU2OTk0ZDEzMzcwNjNiNjYwMjJkMGRiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMDg4OWNmYTM0NDQ3MjI0ZjdhMmQ5NjRhMTNiYzk5YzEwNDJlNzMyZjRlNDQ4ZTVkZmUwMzRlZGQ2ZmZjYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5017b15d4944a78b0022120031a72c8",
+      "statement": "up-agents-prod rebuilds its four agent/MCP images (agent-gateway, movie-mcp, web-api-mcp, spreadsheet-mcp) from the checkout by default and refuses --no-build when CI=true, because on a persistent runner a leftover image made the whole agent E2E gate a false green — and this is a gate path, not only a local loop: CI's agent E2E and DAST jobs both bring the stack up through `pnpm nx up-agents-prod infrastructure-as-code`. scripts/__tests__/agent-stack.guard.test.mjs pins the build default, the local --no-build opt-out, the CI refusal, and that no CI workflow deploys the stack with --no-build.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1669-L1672",
+          "version": "repo-lines-v1:sha256:2293028ca887933ed7678d48b1a47a387bd3f26cebbf0703582811123b784f79:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWEzNGE3ZTVjYjY0NDI4OGEzNTQ5M2JjYWM0NDA5N2Q5M2U1NDZkODRkZTE3N2NkMjYwNmQ5ZDZkMmUzODBkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM2YzdmYTZlZmVhNjEyZWM0YzAzMjMwZGI4MGUwODcwOWZiNDQ0Mjk3ZWFlNDNmODhkZjBjNDI0NTgxMzllMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVlNTBiMGY4Y2QwMWU3M2Y2NThiNWQyNjRlYjI0NTllODUyNWMyMmJjNTRlOWM5YzYxNTc3NmE0ODRjYjliZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkzODExMDhjZTVmNjU2OTJhYWYwMjZiYTZkOGExMmE1NmFhMmUwMDBhYzg2MDNkYWFhZDkxMjBhMzNhYjdiOSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L798-L810",
+          "version": "repo-lines-v1:sha256:739745ed0bf91bedae23055b64af60a1b0af37edc80a304cde118e88b08725fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWM3YTUzMjRkYzBkODJiNTlhMmE2MDgwMmI5YzY0MDMyYmZiNzcxYjhlMThjY2RhMmYyMzQ0Yjg5Nzk2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NWEzMmE3OWE0MmFkYjQ1ZmFiMjI5MDkyNDE5NmU0YzZmNjY4ZTZhMDM3NjU4YzJhYWFjNzBiNzU3ZjRhYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4Y2JmOGEyYWYyMDdiODk2OWVlYWYwNTQ0MmI2ZTQ0MzZiNGZlYTJiMjYzYzQzYjk5ODk1MDc2MjhlZWUxOTYifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/agent-stack.guard.test.mjs#L18-L47",
+          "version": "repo-lines-v1:sha256:5919c90938cafe06646825ce2d3266af598f3a6b4e322cbf741cfdc4f28637d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzE2OTk0YzE4NDhhNzNmOWMyZGUwNjY5ZmZmMzRjNTUyMzY0Y2I5NDlhYzVhMWM1MjJlMWIzMzRjYWI3ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMzBiNTFhNTQyNjg3MzczZTI1ZGYxNDUyYzY4MzBiNWRkYWFlYWRjOWU3ZGI5MWY0OTRkNzI5ZTQ4MzEyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExOGY1NzBhMWQyN2QwN2Q2NzRkOWQ4NzYyMTZmMTg0MmZiZjEyODQ3OGVlNWViYmRjMzljM2Q1OTllM2JkNGQifQ"
+        },
+        {
+          "resource": "repo://scripts/agent-stack.mjs#L199-L219",
+          "version": "repo-lines-v1:sha256:f2cb4d30b939654a27f2ec5833aa839d5acce1a2c490add45c0c2107563563ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MzI1MWRmMGRlNDM5ZGJiZWUwMTc1NGQwMDdkZTg0ODNjYWUzZDAwY2FjN2NlNWQ3ZjQyMTdmODI2NTQxM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMDQyNzY3NWM0MjE2NTJlZDRlZjI4MzdlOWJhZDViMGI5M2RiZjYyM2RlZmY1NDhlOTE5YmRkYzVlZDNjODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZmUyMmQ2YmIyODUyODNjZmQ1YjYwYzliM2FjOTlmMTk3YmEwZTYxYjBlNjVlNjFmMDNjODc5MWQwNWZkZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e506fd53d0d7455a88a7abd3952c9573",
+      "statement": "The workflow comment on cd-deploy's digest-promotion step is stale in two ways, while the compose and the promotion script are consistent: the step's own comment describes the promoted variable as `<REPO>_IMAGE` (mcm-bff → MCM_BFF_IMAGE) and says only MCM_BFF_IMAGE is consumed by a prod stack, but scripts/cd/scan-push.sh emits `<REPO_UPPER>_DIGEST` (mcm-bff → MCM_BFF_DIGEST) and all six values are consumed by the three CI-built stacks. The workflow's own ENV_DEPLOY_PATHS comment (naming MCM_BFF_DIGEST, MC_SERVICE_DIGEST and the four agent/MCP digests) is the accurate description, so a compose line or variable name copied from the step comment references something nothing writes.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L235-L238",
+          "version": "repo-lines-v1:sha256:d21500e82ce38e07e844594ea525b9391a1301220ef8b92e7c44b73e31bea246:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjMjM1OTUxNGQ5YWIyNzc1MTJkMTVkNDgzYzNmZWZmM2YyODgyNzJkYjBjMGY1YWQ0NjU1ZDE5MTg3MTA4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0ZWRlYWMyMzRiYTljNmE5Y2U0MzhlMDYyMWI3MTcwMjMzOTIzMDU1MTQzZjZmYTFhYTZiYTg5MTM4Y2QzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzVjZGE3OWQ4YWJkMzFmZWUxYzI1ZGY2YTk2NTAzMjgzNjAyOGFlZDAzNjEwY2JiODJlOTM3NDBkYTBmYzkwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjA5Mzg5ZjQ5ZmQ0MzdhYWZiMzIxMTEzZGE1MWNmNDRhMThmYzNmOTljMWEwMmEyNGFiMmFkMmE1YzdiMzhmOSJ9"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L63-L67",
+          "version": "repo-lines-v1:sha256:0616cf877fa824e03e23cb310b484a0cac28eb1eade313eda5bae57d0e6ac836:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVmYWNhYTkyMjA1MmFjZWE0ZTc5NzljMGI2MzNlNzE0ZDk5ZGQ0YTE2ODg0ZTVlOWM1ZmIxZjYxZDkwNTY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFiY2NjYjBmZWYzOWI1N2NhMWEzYmQ0ZWJjM2M3YzFlMTMyYjgyN2QwYjA4ODEyM2RiYTUxYzM4YTllOTU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2FkNDZhZDBjMGYwZGQyZDg5ZDUyYWM3MzFhNTUwZTU0YmNkNWYxY2NmZWE2NGIyMTFiN2ViYmQ3YjQ4MTM3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE0MGM3YWFiNWFkNzc1OTE2NjAxZWU0OTUyMGFiMDA3YmY0NzMzY2I3NTNlZTlmNTE3Nzg4MWFiNzc4NGZmMiJ9"
+        },
+        {
+          "resource": "repo://scripts/cd/scan-push.sh#L62-L67",
+          "version": "repo-lines-v1:sha256:ce84fbd064d8504218c295ca5838862624df4118924f3b06478226ff7c651389:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZkNzgxMzg4ZDQ3MTNiY2M5ZDY3ODNjZWZmOTE3ZDBjYzlkNDU1NzZkMTM3MGE0NTIxY2E4NDY1NDQ4NWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJkZTkxMGFjOTM5ZDk2ZGE5NDZkOWNmOGMxNWFlZDg0ZTYzNGNlZjM2Yzg2YzlhYzI5ODU1MjZjZmM4ZmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdjZTQ0NjFhNGZlYTQ0ZjczMWM4ZmZiOTk0NTNmMTRhZTQwNjNmMjVkMmUwYTgzZTdkOGQyZmMwZTM3ZTc4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M4ZDg3NWViY2Q5ZGZjZTM2ZGFhZjU2NGUyM2UyOTQ3MDdlNTA5ZWJlZjA1NjAwZWY5NmNhZjhjMWQ4NzE3OCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-04T16:55:00.915Z"
   }
 }

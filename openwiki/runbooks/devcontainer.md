@@ -46,7 +46,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-31T00:28:11.002Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -245,12 +245,27 @@ and reads committed files.
   it is an ENV instruction in the generated Dockerfile-with-features.** Measured 2026-09-19 on the
   derived image: the credential values were present in `Config.Env` and in **3 history layers**, a
   permanent leak that survives every recreate and is handed out by `docker image inspect` /
-  `docker history`. The sandbox config therefore passes them with `docker run --env-file` from
-  `.devcontainer/gen-container-secrets-env.sh` (`remoteEnv` is not an option — `ssh` + `docker exec`
-  sessions never see it). **The retained Docker Desktop config still carries them in `containerEnv`**,
-  so treat the derived image here as credential-bearing and never push it to a shared registry.
-  Generator mechanics and the quoting trap (`--env-file` does no quote processing): that script's
-  header.
+  `docker history`. It also made `devcontainer up` echo all four in clear text on the `docker run`
+  line at every rebuild — which is how it was found. The sandbox config therefore passes them with
+  `docker run --env-file` from `.devcontainer/gen-container-secrets-env.sh` (`remoteEnv` is not an
+  option — `ssh` + `docker exec` sessions never see it). **The retained Docker Desktop config still
+  carries them in `containerEnv`**, so treat the derived image here as credential-bearing and never
+  push it to a shared registry. Three things to know before acting on that:
+  - **The exposure is confined to the locally built DERIVED image — the base toolchain image is
+    clean.** The pushed `mcm-devcontainer` image was verified with zero credentials in `Config.Env`
+    and zero history layers, so what leaked is the thin layer this config's `containerEnv` compiles
+    into, not the ~13 GB image it sits on.
+  - **Removing the entries fixes NEW builds only — an image built while they were listed keeps them
+    forever.** `docker image rm` any such image and treat the credentials it carried as exposed;
+    the entries' absence from a config never sanitises an image that already has them. Generator
+    mechanics and the quoting trap (`--env-file` does no quote processing, so the shell form in
+    `~/.mcm-sandbox-env` would arrive wrapped in literal apostrophes): that script's header.
+  - **A config-only change rebuilds nothing — `devcontainer up` reattaches when only `runArgs` /
+    `containerEnv` changed.** Measured 2026-09-19 while moving the sandbox credentials: it went
+    straight to `postStartCommand` in ~13 log lines, with no build and no `docker run`, reporting
+    success while the old image (values still baked in) kept running. Verify against the container —
+    `docker inspect <container> --format '{{.Created}} {{.Image}}'` — never against the command's
+    exit code, and force the recreate with `--remove-existing-container`.
 - **`api.themoviedb.org` is allowlisted for the shell (OUTPUT chain) but NOT needed for the app — the
   two chains behave differently, and conflating them is the trap.** The entry exists so that
   `nx test:integration web-api-mcp` (pytest, in the shell) can reach TMDB. **Nested containers never

@@ -1,7 +1,7 @@
 ---
 type: Service
 title: MCM Cinema design system
-description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring, the R1-R7 compliance scan that keeps the app from drifting off it, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
+description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring and MD3 state layers, the R1-R7 compliance scan that keeps the app from drifting off it, the Jest preset/resolver and worker-memory bound its suite shares with the app, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
 sources:
@@ -21,10 +21,18 @@ sources:
     resource: repo://frontend/mcm-app/tests/unit/ds-compliance-scan.ts
   - id: openwiki-source-c847620424d66ef5f2e66d05
     resource: repo://packages/DESIGN-SYSTEM.md
+  - id: openwiki-source-6230a2d05eadba772d30d66a
+    resource: repo://packages/design-system/components/controls.test.tsx
   - id: openwiki-source-87ec032633e7c7bbf61a29f6
     resource: repo://packages/design-system/components/focus-ring.test.ts
   - id: openwiki-source-08eebdda17baf659b7ce331b
     resource: repo://packages/design-system/components/interaction-states.test.ts
+  - id: openwiki-source-7a5ec41266fa0675a3db6688
+    resource: repo://packages/design-system/components/navigation/navigation.test.tsx
+  - id: openwiki-source-a9f8640b2ea19387ecec6be5
+    resource: repo://packages/design-system/components/navigation/NavList.tsx
+  - id: openwiki-source-e3cf144619c81072e7ba6980
+    resource: repo://packages/design-system/components/navigation/Tabs.tsx
   - id: openwiki-source-73371fb6e562a6846976bee5
     resource: repo://packages/design-system/components/primitives/FAB.tsx
   - id: openwiki-source-09ee847b43e33b41798d0b11
@@ -55,8 +63,14 @@ sources:
     resource: repo://packages/design-system/tokens/colors.ts
   - id: openwiki-source-33cc1b67f34fd8d337e8639e
     resource: repo://packages/design-system/tokens/typography.ts
+  - id: openwiki-source-101c7428a6a9572c869f03b8
+    resource: repo://packages/design-system/tokens/with-alpha.test.ts
+  - id: openwiki-source-114fd804a77c8ff9298e21bc
+    resource: repo://packages/design-system/tokens/with-alpha.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
@@ -72,7 +86,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-20T11:09:40.455Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # MCM Cinema design system
@@ -136,6 +150,23 @@ Two properties of that mapping are load-bearing and easy to get wrong:
   (`success` on `surface`, `onSuccess` on `success`, `onSuccessContainer` on `successContainer`) are
   asserted in `components/success-token.test.tsx` — see
   [the success-token contract](../../specs/017-design-system-consistency/contracts/success-token.md).
+
+## State layers are computed, not concatenated
+
+MD3 interaction feedback is a **state layer**: an `onSurface` tint at a fixed opacity painted over
+the surface, never an `opacity` change on the element (which bleeds parent transparency). The
+opacities live in one place, `tokens/with-alpha.ts` → `stateLayer` (`hover: 0.12`, `focus: 0.14`,
+`press: 0.18`), and the tint is produced by `withAlpha(theme.onSurface?.val, stateLayer.hover)`.
+
+`withAlpha` exists because the obvious form is wrong in two ways that both fail **silently**:
+`theme.onSurface?.val + '14'` assumes a 6-digit hex (an `rgb()`/`hsl()`/named token yields an invalid
+colour string that React Native and the browser both drop, rendering nothing rather than erroring),
+and an 8% layer over the `#0F1117` dark surface is invisible even when the concatenation is valid —
+measured on feature 062, where the secondary tab row's hover could not be seen in dark mode at all.
+So a non-hex input is returned **unchanged** (an `rgba()` token already carries its own alpha), an
+undefined token returns `undefined` rather than `"undefined14"`, and `alpha` is clamped to 0–1.
+`tokens/with-alpha.test.ts` pins the non-hex and undefined cases rather than the happy path, because
+those are the ones that used to fail with nothing going red.
 
 ## Typography and the weight ceiling
 
@@ -203,6 +234,14 @@ is a measured decision, not a leftover:
   `components/focus-ring.test.ts` and `components/interaction-states.test.ts` statically assert both —
   no v2 object survives, every ringed control keeps its `focus-visible` clause, and `Card`/`Button`/`Chip`
   each declare all three states.
+- **A state clause on a nested `View` is web-only, on purpose.** In Tamagui 3 *any* state clause —
+  `hover` included — makes a `View` attach its own event handlers on native (`createComponent`'s
+  `shouldAttach` counts a hover program), so inside an RN `Pressable` it becomes the touch responder
+  and swallows the tap: `NavList` and `Tabs` therefore pass their hover layer as
+  `Platform.OS === 'web' ? { default: …, hover: … } : …`. The measured symptom is a tap that reports
+  `COMPLETED` to Maestro and then navigates nowhere — it reads as a routing bug. Neither the unit tier
+  (`fireEvent.press` targets the `Pressable` directly) nor the web tier (mouse events bubble) can see
+  it; only Android can.
 
 Because the pin is a dependency-level constraint shared by two projects, a bump is a cross-repo change:
 the guard, not prose, is the source of truth for what version is allowed.
@@ -323,18 +362,45 @@ marker at the site.
 
 ## Tests that pin this package
 
-The package's own suite (`jest.config.js`, `pnpm nx test design-system`) uses the `jest-expo` preset with
-`jest/tamagui-cjs-resolver.js` — Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only
-`.mjs` files Jest cannot load, while Metro handles them fine, so the resolver redirects exactly those to
-the CJS build. `testMatch` covers the **whole** package rather than just `components/**`, so a new test
-directory cannot be silently invisible to the runner again (a `tokens/` test was once written, committed
-and never executed). The same resolver is wired into the app's own Jest config
-(`frontend/mcm-app/package.json` → `jest.resolver`), so both suites load Tamagui 3 identically.
+The package's own suite (`packages/design-system/jest.config.js`, run as `pnpm nx test design-system`
+— the Nx `test` target is `jest --watchAll=false` with `cwd: {projectRoot}`) uses the `jest-expo`
+preset with `jest/tamagui-cjs-resolver.js`. The resolver exists because Tamagui 3 maps two subpaths'
+`react-native` export condition to ESM-only `.mjs` files with no `.native.js` variant
+(`@tamagui/style-grammar/token-categories`, required by `@tamagui/helpers` and therefore by every
+Tamagui component, and `@tamagui/core/inject-styles`): Metro loads `.mjs` fine, so the app is
+unaffected, but Jest treats `.mjs` as native ESM and every suite rendering a Tamagui component failed
+to run with `Unexpected token 'export'` (56 suites, measured on the 3.0.13 bump). The exports map
+blocks a `moduleNameMapper` to the deep `dist/cjs` path, so the redirect happens in a resolver
+instead: it delegates to the preset's own resolver and rewrites only a resolution that landed on a
+Tamagui `dist/esm/*.mjs` whose package also ships the same module at `dist/cjs/*.cjs`.
 
-Beyond the success-token and text-defaults tests, the suite covers the focus-ring and interaction-state
-guards described above, the controls, navigation, the inputs and the domain cards. These tests are the
-package's contract with the app: they assert the observable result (resolved theme values, rendered
-style, AA contrast) rather than the implementation.
+Two properties of the config are load-bearing:
+
+- **`testMatch` covers the whole package**, not `components/**`: `<rootDir>/**/*.test.{ts,tsx}` with
+  `/node_modules/` ignored. A `tokens/` test (`tokens/with-alpha.test.ts`) had been written, committed
+  and never executed — reporting green while testing nothing — so a new test directory can no longer
+  be silently invisible to the runner.
+- **Workers are capped** at `maxWorkers: 4` with `workerIdleMemoryLimit: '1.5GB'`. The default is
+  Jest's (cores − 1), which on the 20-vCPU dev sandbox spawned ~19 workers (~0.9 GB each at peak) and
+  let the VM-wide OOM killer take a bystander — Keycloak's JVM — so the cap is a literal integer
+  because the constraint is memory, not core count. `scripts/__tests__/dev-memory-bounds.guard.test.mjs`
+  discovers every git-tracked Jest config (including this one, by name) and fails any that sets no
+  literal `maxWorkers ≤ 4`, or that allows multiple workers without a `workerIdleMemoryLimit`.
+
+The same resolver is wired into the app's own Jest config
+(`frontend/mcm-app/package.json` → `jest.resolver`, pointing at `<rootDir>/../../packages/design-system/jest/tamagui-cjs-resolver.js`),
+so both suites load Tamagui 3 identically — the resolver header names both configs as its callers.
+
+Beyond the success-token, text-defaults and with-alpha tests, the suite covers the focus-ring and
+interaction-state guards described above, the controls (`SearchBar`, `Chip`/`ChipGroup`, `Switch`,
+`Dialog`, `Snackbar`, `Banner`, `Badge`, `Divider`), navigation (`AppBar`, `IconButton`,
+`NavigationBar`, `Tabs`, `NavList`), the inputs and the domain cards. These tests are the package's
+contract with the app: they assert the observable result (resolved theme values, rendered style, AA
+contrast) rather than the implementation.
+
+Note what the package suite does **not** cover: the Renovate lock guards and the compliance scan live
+elsewhere (see the sections above and the [Renovate runbook](../runbooks/renovate.md)), so a green
+`pnpm nx test design-system` says nothing about either.
 
 ## Gotchas
 
@@ -353,6 +419,15 @@ style, AA contrast) rather than the implementation.
 - **Never import `Text` from `@tamagui/core`** — use the design system's `Text`, which carries the body
   font, `onBackground` colour and web default line height that Tamagui 3 no longer supplies from config.
   `components/text-defaults.test.tsx` fails on a core `Text` import anywhere in the package or the app.
+- **Never build a state layer by string-concatenating an alpha suffix.** Use
+  `withAlpha(token, stateLayer.<state>)` (both re-exported from the barrel), which returns non-hex
+  tokens unchanged instead of corrupting them and whose `stateLayer` opacities are tuned for the
+  `#0F1117` dark surface. The concatenation form renders nothing at all for non-hex tokens, with no
+  error anywhere.
+- **Don't add a hover/press clause to a Tamagui `View` nested inside an RN `Pressable` on native.**
+  Under Tamagui 3 a state clause makes the `View` a touch responder, which swallows the tap and
+  navigates nowhere while reporting success to automation. Scope the clause to `Platform.OS === 'web'`
+  (as `NavList`/`Tabs` do) and put the pressed visual on the `Pressable` itself.
 - **Don't bump `react`, `react-native` or an Expo SDK companion in this package's manifest by hand.**
   The Renovate locks are repo-wide precisely because this manifest is where PR #217's RN bump escaped;
   moving one of them here splits React or the RN family between two manifests. The guards assert the

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Local dev infrastructure & environment variables
-description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development — the mcm stack's unprofiled stores, their replica-set and MongoDB 9.0 ownership rules, and the movie store's dev-only cache/nofile pins — plus the leased test-database pool and the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
+description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down through their Nx lifecycle targets for local development — the mcm stack's unprofiled stores, their replica-set and MongoDB 9.0 data-ownership rules, and the movie store's dev-only cache/nofile pins — plus the leased test-database pool and the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
 tags: [docker-compose, local-dev, secrets, keycloak, mongodb, runbook]
 sources:
@@ -75,10 +75,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-04T13:09:42.610Z
 ---
 
 # Local dev infrastructure & environment variables
@@ -103,8 +103,8 @@ can come up without token exchange — a name `scripts/check-no-inline-secrets.m
 name. Two one-time generator scripts mint the
 per-machine stack credentials and project the dev realm's client secrets into the local env files
 before any stack is first brought up. The full stack/profile tables, the env-var reference and the
-realm-reseed recovery procedure live in `docs/runbooks/local-dev.md`; this page is the distilled
-summary. Provision the host toolchain first ([dev environment setup](./dev-environment-setup.md)),
+realm-reseed recovery procedure live in [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md);
+this page is the distilled summary. Provision the host toolchain first ([dev environment setup](./dev-environment-setup.md)),
 or use the pre-provisioned [containerized dev environment](./devcontainer.md).
 
 ## Profiles gate services, not stacks
@@ -209,7 +209,12 @@ cross-process reclaim via holder liveness or the staleness window.
 
 1. Pre-create the external networks and persistent volumes (`docker network create …`, `docker
    volume create …` for the mc-service Mongo store, the Keycloak Postgres store, the two BFF stores,
-   the agent Postgres store and the audit OpenSearch volumes).
+   the agent Postgres store and the audit OpenSearch volumes). On a fresh engine, also build the
+   local-only `mc-service:latest` with `pnpm nx build mc-service` before the `mcm` bring-up:
+   `up-mcm` and `up-all` do not build it, so Compose stops at the pull stage with
+   `pull access denied for mc-service` and no `mcm` container is created — a missing build, not a
+   registry-login problem, so do not `docker login`. Compose does not rebuild an image that already
+   exists either, so re-run the build to pick up mc-service code changes.
 2. `node scripts/gen-dev-secrets.mjs` — mints one gitignored `infrastructure-as-code/docker/stacks/<stack>.env`
    per stack from the committed `<stack>.env.example` templates. Idempotent; `--force` rotates and
    `--stack=<name>` scopes. An existing `<stack>.env` is **completed, never skipped**: keys the template
@@ -439,8 +444,8 @@ six client secrets matched `auth.env` and only `mcm-bff-test` had been regenerat
 seeded from a different `auth.env`" was the wrong reading, and a full re-seed would have destroyed the
 whole Keycloak database to correct one field.
 
-`docs/runbooks/local-dev.md` holds the copy-paste client-audit snippet (one ✓/✗ per client, printing
-no secret values) and the per-case procedure:
+[docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md) holds the copy-paste client-audit
+snippet (one ✓/✗ per client, printing no secret values) and the per-case procedure:
 
 - **A few clients drifted** → PUT those clients' `secret` to `auth.env`'s value through the admin API,
   re-run the audit (expect all ✓), then immediately re-run `node scripts/gen-dev-env.mjs` — the moment
@@ -519,4 +524,4 @@ See [testing tiers](../invariants/testing-tiers.md) for how these local suites r
 tiers, [Keycloak](../projects/keycloak.md) for the realm and its clients, and
 [mc-service](../projects/mc-service.md) for what the Rust integration tier needs. Full stack/profile
 tables, the env-var reference, the generator scripts' exact behaviour and the realm-reseed recovery
-procedure: `docs/runbooks/local-dev.md`.
+procedure: [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md).

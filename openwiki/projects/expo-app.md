@@ -1,10 +1,12 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
+  - id: openwiki-source-a157c487923d65153283de40
+    resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-30d3dc827bae5c1cb657fa31
@@ -119,6 +121,8 @@ sources:
     resource: repo://packages/design-system/components/navigation/Tabs.tsx
   - id: openwiki-source-c2fc016d5fa9c9435755b27e
     resource: repo://packages/design-system/eslint.config.js
+  - id: openwiki-source-9315324d9a0185179ef416f8
+    resource: repo://packages/design-system/jest.config.js
   - id: openwiki-source-95aa559e7d1634eddb9fc64d
     resource: repo://packages/design-system/jest/tamagui-cjs-resolver.js
   - id: openwiki-source-f7e16ba323424b9790bca8b9
@@ -129,6 +133,8 @@ sources:
     resource: repo://packages/design-system/tamagui.config.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-96730ea8c345aed64b62a187
+    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
@@ -142,7 +148,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-04T16:55:00.915Z
 ---
 
 # Expo/React Native universal app
@@ -382,7 +388,11 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   partial lock refresh cannot split the set; `packages/design-system/jest/tamagui-cjs-resolver.js`
   exists because Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only `.mjs` files
   Jest cannot load (56 suites failed to run on the 3.0.13 bump) — Metro handles `.mjs` fine, so the app
-  is unaffected; and in Tamagui 3 any state clause, `hover` included, makes a View attach its own event
+  is unaffected (the resolver resolves exactly as the `jest-expo` preset does and redirects only a
+  Tamagui `dist/esm/*.mjs` that has a `dist/cjs/*.cjs` sibling, and it is wired into both Jest
+  configs — `packages/design-system/jest.config.js` and the app's own `jest` block — so the two
+  suites load Tamagui 3 identically); and in Tamagui 3 any state clause, `hover` included, makes a
+  View attach its own event
   handlers on native, which is why `NavList`/`Tabs` pass their hover clause on web only (a hover clause
   inside an RN `Pressable` swallowed the tap and broke the `settings-nav-assistant` mobile flow). The
   spelling changed with the major too: token and theme names carry no `$` (`fontFamily="body"`), a
@@ -545,6 +555,17 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `mcr.microsoft.com/playwright` image with `--network host` instead — and keep its version tag
   matched to the `@playwright/test` lockfile version (see [E2E testing](../runbooks/e2e-testing.md)
   for the toolchain-consistency gate that now enforces this).
+- **Every Jest config here caps its workers, and raising the cap is a sandbox-wide decision.** On
+  2026-11-01 one `pnpm nx test mcm-app` fanned out to ~19 workers (Jest defaults to cores − 1, and
+  the dev sandbox reports 20 vCPUs), reached ~6.9 GB together, and the kernel's global OOM killer
+  took Keycloak's JVM — the largest bystander process in the VM — instead of the run that caused
+  the pressure. Feature 086 therefore sets a literal `maxWorkers: 4` plus
+  `workerIdleMemoryLimit: "1.5GB"` in `frontend/mcm-app/package.json`'s `jest` block and in
+  `packages/design-system/jest.config.js` (the cap is an integer because the constraint is memory,
+  which does not scale with core count; the idle limit recycles a worker that keeps growing), with
+  `--memory=10g --memory-swap=10g` on the sandbox container so an exhaustion inside it is resolved
+  inside it. `scripts/__tests__/dev-memory-bounds.guard.test.mjs` discovers every Jest config from
+  git and fails by name if one lacks the cap — including one added later.
 - **RN 0.86's renderer is Babel-transformed unless Jest is told not to, and the transform, not the
   load, is what cost time.** React Native 0.86's `RendererImplementation` imports `ReactFabric` at
   module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render that

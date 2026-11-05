@@ -43,10 +43,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-04T17:50:21.605Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -196,7 +196,9 @@ The upgrade lifecycle: the kernel gate blocks the merge, the deploy never raises
   `trigger-cd` job → `cd-deploy` (deploy=true) → the signed Komodo webhook → the changed stacks
   redeploy in `after` order: **`prod-mc-service`, then `prod-mcm-bff`**. Main's CI runs first, which is
   the delay. The deploy order lives in
-  [`stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml). Two qualifications matter to an
+  [`stacks.toml`](../../infrastructure-as-code/komodo/stacks.toml); the deploy path itself is owned by
+  [CI/CD pipeline](../projects/ci-cd-pipeline.md) and the stacks it reconciles by
+  [infrastructure-as-code stacks](../projects/infrastructure-stacks.md). Two qualifications matter to an
   operator reading this bullet as a promise:
   - `trigger-cd` does **not** dispatch unconditionally, on two levels. The job itself only exists on a
     `push` to `main` that clears its `needs:` — `affected` and `mc-service-checks` must succeed,

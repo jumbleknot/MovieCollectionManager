@@ -53,10 +53,10 @@ sources:
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T03:57:29.221Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T03:57:29.221Z
+    at: 2026-11-04T17:50:21.605Z
 ---
 
 # Renovate dependency bot
@@ -525,9 +525,9 @@ None of these produce a red build or a searchable error. They produce absence, a
   merely mentions the package passes a weaker check. The newest instance is the OpenWiki generator's own
   tree (item #704): a customManager extracts the `openwiki` pin from `.devcontainer/toolchain.Dockerfile`
   while the npm manager reads `tools/openwiki-generator/package.json`, so one `openwiki generator` rule
-  has to join them on every version track — with a control asserting that `mermaid`/`jsdom` named
-  elsewhere are not swallowed, that the manifest is not hidden by an `ignorePaths` glob, and that the
-  Dockerfile matchString hits exactly once.
+  has to join them on every version track — with a control asserting that `mermaid` in the app
+  manifest and `yaml` in the root manifest are not swallowed, that the generator manifest is not
+  hidden by an `ignorePaths` glob, and that the Dockerfile matchString hits exactly once.
 - **A pinDigest colliding with a version update on the same branch is DROPPED, silently (item #308,
   widened by #350).** `branchify.js` de-duplicates upgrades per branch on
   `${packageFile}:${depName}:${currentValue}`; a second update for that key with a different `newValue`

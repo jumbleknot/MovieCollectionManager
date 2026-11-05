@@ -33,10 +33,10 @@ sources:
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T13:23:04.255Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T13:23:04.255Z
+    at: 2026-11-04T17:50:21.605Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -158,7 +158,9 @@ bundle before anyone checked (item 491).
   [dev environment setup](./runbooks/dev-environment-setup.md) (host toolchain),
   [local dev infrastructure](./runbooks/local-dev.md),
   [the devcontainer (Docker Sandbox microVM, primary)](./runbooks/devcontainer-sandbox.md) and its
-  [lifecycle half](./runbooks/devcontainer-sandbox-lifecycle.md),
+  [lifecycle half](./runbooks/devcontainer-sandbox-lifecycle.md) (recreate-from-nothing, the three
+  creation-time-resizable volumes and the disk and memory symptoms a full or exhausted VM produces,
+  the verification harness, and the ritual before upgrading the `sbx` binary),
   the [retained Docker Desktop / DinD path](./runbooks/devcontainer.md),
   [Android emulator & APK builds](./runbooks/android-emulator.md),
   [E2E testing](./runbooks/e2e-testing.md),
