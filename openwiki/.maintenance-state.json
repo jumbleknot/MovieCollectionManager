@@ -1,13 +1,12 @@
 {
   "coveredCommit": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
   "coveredAt": "2026-11-04T18:36:01.026Z",
-  "lastOutcome": "completed",
+  "lastOutcome": "failed",
   "backlog": [
     {
       "area": "runbooks",
       "pages": [
-        "devcontainer-sandbox-lifecycle.md",
-        "devcontainer-sandbox.md"
+        "devcontainer-sandbox-lifecycle.md"
       ],
       "kind": "refresh",
       "subjects": {},
@@ -17,48 +16,14 @@
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 931,
-    "headCommit": "effef8edda971290cef0af54909fec5116342b14",
-    "markerBefore": "0dd86d92fba455c2d4c21271de801501faf1131b",
+    "number": 936,
+    "headCommit": "4fbeb50145af26b99f796e9602944e52771f81ed",
+    "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
         "area": "runbooks",
         "pages": [
-          "local-dev.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/local-dev.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/local-dev.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "process",
-        "pages": [
-          "wiki-maintenance.md"
-        ],
-        "kind": "refresh",
-        "drift": true,
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: infrastructure-as-code/project.json changed after the page's stamp",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/wiki-maintenance.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "devcontainer-sandbox-lifecycle.md",
           "devcontainer-sandbox.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "infra-image-scanning.md"
         ],
         "kind": "refresh",
         "subjects": {},
@@ -66,41 +31,49 @@
         "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
       }
     ],
-    "updatedAt": "2026-11-04T18:36:01.711Z"
+    "updatedAt": "2026-11-05T01:33:30.125Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 9,
-    "elapsedSeconds": 2746,
-    "stoppedAtBudget": true
+    "pagesWritten": 2,
+    "elapsedSeconds": 3105,
+    "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/devcontainer-sandbox-lifecycle.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-05T01:33:29.780Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 265,
+    "calls": 682,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1367979,
-    "cached": 22440890,
+    "uncached": 3800167,
+    "cached": 75511336,
     "cacheWrite": 0,
-    "output": 434841,
-    "reasoning": 380333,
-    "ms": 2823406,
-    "estCostUsd": 1.0668,
+    "output": 1232971,
+    "reasoning": 1065709,
+    "ms": 9657779,
+    "estCostUsd": 3.0727,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/infra-image-scanning.md"
+        "runbooks/devcontainer-sandbox-lifecycle.md",
+        "runbooks/devcontainer-sandbox.md"
       ],
-      "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 1.0668,
+      "effort": null,
+      "deadlineStop": true,
+      "estCostUsd": 3.0727,
       "rateLimited": null
     }
   ],
