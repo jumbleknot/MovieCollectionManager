@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6c5a8c64d9ca26300c3c341a3c8ecc29c0a6032f6adf07a264d31db4d63d825e",
+  "pageVersion": "sha256:fa7cd687591ff4c70b3c71e6cea28038c2571370119eb871c232a5e824f39f08",
   "claims": [
     {
       "id": "claim_b54f7e594cb243cc9e8248e3b08b320f",
@@ -509,10 +509,42 @@
           "version": "repo-lines-v1:sha256:5a23865ed64807079b54f6ec41c9734870a0d42d8f1c67de8462c4668c24b2c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZmNhZmNkOTg0Y2M5OTUwNDcwMWQ2NDc0MzNkYjZkZTNhNzgwNGZjYzUyNjg2ZWRkZGU4MDU4NWZlNTY4NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZmIwYmMxN2I2Y2Y4ZjZmYWM5NjU5N2Y3M2EzOTVkMWMzMmZiYjQyZWQ0YjEyZmIxYjgyYTJjOTQ5NTE3ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MDFiNTk3ZmYwNzMwNDYwNmQ2ZTI1Y2ZmZjVhMTBiZTAwZTA4YmVlZWYxMDRmNzRhOTQxM2YxZTU5ODQ2NGEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3cc13ef851e44ecc8454df3e6af28f18",
+      "statement": "The microVM's 16 GiB with no swap is shared by the dev container, dockerd and every stack, so a memory exhaustion kills a bystander rather than the cause: measured 2026-11-01, one `pnpm nx test mcm-app` spawned ~19 Jest workers (Jest's default is cores − 1), the dev container reached 12.3 GiB, and the kernel's global OOM killer took Keycloak's JVM — which then restart-looped with exit 137 while the run that caused it finished normally — which reads as a Keycloak fault or as a full disk. The mitigation is a 10 GiB `--memory`/`--memory-swap` limit on the dev container plus Jest `maxWorkers` ≤ 4, pinned by scripts/__tests__/dev-memory-bounds.guard.test.mjs so an exhaustion inside the container resolves inside it; the limit applies at container creation, so a recreate must be checked with `docker inspect -f '{{.HostConfig.Memory}}'` printing 10737418240 rather than 0.",
+      "evidence": [
+        {
+          "resource": "repo://.devcontainer/sandbox/devcontainer.json#L111-L124",
+          "version": "repo-lines-v1:sha256:6d2c2c116d12e1a38abb871d006b818b3731b9adce36bac21d7f0a491bb0e97d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYmEwY2I2YWJkNWE4NDZmMzk5Y2MzOWU4OWU0N2FjYzU2YmYxOTkwZTM1OTIwNmIyYWI2Y2FmM2MyM2E2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYjcwZjU4MWI3MDgzMDE3ZDkwZTQwOWFkYWY4ZjU5Y2MxZjc3NmNiMTAwYmI1ODdkYzA5MDg2NjE0NjhhMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MGE5NTgyM2M5ZDBiNDMzZGU0OTlkZjY1OTdjMmJiY2FlODg4OGVlNDU1ZTQzZDE1ZTdhNzJlZTIyNWIwMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMmQxZDc3MmZkNDEzY2U2ZDZhZDRkN2E1Njc3MWEzOTFiOWUzNmNlOTUzMjY4NTVmZWZhZjIzMTYxODZlZGQifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L228-L257",
+          "version": "repo-lines-v1:sha256:c1de0544ed1b87bcdc38efbdf12e8b10497fcaac3bba0e8183f00a998f192288:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTE3M2MwMGEzZjU3YWVkMmEyMWRhMGUzNDNmNjcxYTMzMzYzNTg1MjEzOGQ0MTg4YTVkNmZjYTBjMjY4NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MzY4ZDJmYjg1OTI4NDI0NjcwYTQwZDU1ZTgyMWQ0YTFkNWNkNjdhYWUxMjQxMzBkMmQ3YTAwMjAwMTViNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs#L27-L105",
+          "version": "repo-lines-v1:sha256:86b1dc22997d711027c0d26c6981c1f4d72cf711e9c799388329c7d7613b4fdf:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNTc2YTZlMGU2MTA1YjlhNDEzYzc2N2JkMGYxMTVjZjg1NjkzOTY0MDQyZGQ5M2FmY2I5MmI0NTZjODQwMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NGFhNGU2Y2ZmNDJmNDJmNmEzZjQzZjg3MWFhMzIxNmJmMjk5NTVlZGQ3MGE0MzViYjU3YzExZWZjZTdhZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYjkzZTBiODM0MzExOTdmMTM0ZTFhMjYxYjllODQ1NjBmYjExZWEyMzVjMGViYTEyODVlODYzNTU4YmYxNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c018a2409e8846239d9be6984dd1c225",
+      "statement": "The sandbox runbook's source is split across two files since 2026-10-10 (item #682) whose section numbers are shared, so a bare `§N` reference is ambiguous — every reference must name which file it comes from (`manual §N` for docs/runbooks/devcontainer-sandbox.md, `lifecycle §N` for docs/runbooks/devcontainer-sandbox-lifecycle.md), and a link to a source section must target the source document's anchor rather than the derived concept page's.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L1-L10",
+          "version": "repo-lines-v1:sha256:8d7680cc9958016b724a851a1ecf36e6a8e4e2d928364462799768f16b004af3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZWJjYWU2ZGE3ZjNhNDE1NmRmZjk5YzVhODM4YzRlZjNlZTA3MTdlZGQ2MDYwNjJlYjBjZjcxNGQ1YWQxYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZmIzY2U1NmUwODFkYTc4NDU2N2Y4NmI2MjNlNmQyMjIxNGMwMDQxNTcxMDlhMmIxNWM3MTk0NDI2YWM1ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://docs/runbooks/devcontainer-sandbox.md#L826-L838",
+          "version": "repo-lines-v1:sha256:f2505a3e8618282c2018418ec92718f7a723a151f61987e86ed8258d7a304643:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMDAzMzA5ZGMyYjBjMmJmZThkNDIxN2I1ZjAwNTkwY2QzNDQzYzcwZTkwMGZhNDJmODZiNWVkNWU2MWU4YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYTFkZTU3MmIwNTJkNDgwY2Y0NTI2NGI0MDlkYmE3NGRjNTNlYjU2MzY3Y2NjM2I5Y2FhYjRjODZlY2Y3YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwOTQyZTgzYTI1YTg1N2NhYzUxNGMxZDgzNDQxODMyZmZlMGNlOTU5OTJkNThjNTM3ZjZkOGNjMzJmOTk3NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-05T00:41:49.325Z"
   }
 }

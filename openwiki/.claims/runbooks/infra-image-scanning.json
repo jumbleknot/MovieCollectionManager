@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c8a72a126f65fb8418f2ad9e25ce7aa91de6f2a8ada2ba8507b744d9d9875d9d",
+  "pageVersion": "sha256:a0d7f3ba6908763cb7d47661192146c31e0bd5638d2abebe0093fbda781f67fe",
   "claims": [
     {
       "id": "claim_4fed1bed87fd4e6b93ea0ed7ff98602b",
@@ -422,7 +422,7 @@
         },
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
+          "version": "repo-file-v1:sha256:fc127100bb4663bbb60d3a444f2419615a6998f1f9ac0e71a14ebf175a0aac92"
         },
         {
           "resource": "repo://.forgejo/workflows/infra-image-scan.yml",
@@ -835,6 +835,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T17:50:21.605Z"
+    "at": "2026-11-05T00:41:49.325Z"
   }
 }

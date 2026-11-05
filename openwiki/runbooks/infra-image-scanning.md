@@ -80,7 +80,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T17:50:21.605Z
+    at: 2026-11-05T00:41:49.325Z
 ---
 
 # Infra-image CVE scanning
@@ -250,7 +250,9 @@ findings readable.
   images are `main`'s, which the deploy gate already scanned. Past that decision the job verifies all
   six run-scoped tags with `docker image inspect` *before* scanning anything and fails naming every
   missing one, and each image then gets its own step under `always() && RUN_SCAN == 'true' &&
-  SCAN_READY == 'true'` so one failing scan does not stop the rest. Pinned by
+  SCAN_READY == 'true'` so one failing scan does not stop the rest. It runs on pushes to `main` as well
+  as on pull requests, and `trigger-cd` requires its `success`, so a vulnerability-database change shows
+  as a red on `main` *before* any dispatch rather than as a failed deploy. Pinned by
   `scripts/__tests__/app-image-scan.test.mjs`.
 - **The PR's scan tags are pinned by a labelled container, because the runner is shared and every job
   starts by pruning (item #915, research R15).** The single `kvm` runner can take *another* run's
