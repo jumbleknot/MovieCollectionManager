@@ -97,6 +97,14 @@ suppression), `movie-form` radio selectors (native picker crashes on Android Fab
 press wrappers, the bottom-LEFT assistant-dock toggle, removable list chips, the sparing orange
 (`tertiary`) accents, and the web-table-vs-native-card density split.
 
+## What the container healthcheck proves
+
+Every BFF service in `infrastructure-as-code/docker/bff/compose{,.prod}.yaml` probes an API route
+(`/bff-api/auth/init`) **and** a page (`/login`), joined by `&&`. Both are needed because they come from
+different parts of the export: during the SDK 58 spike every page answered 404 while API routes kept
+answering, and an API-only probe reported healthy throughout.
+`scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` fails if a service loses either probe.
+
 ## What ships in the BFF image (and what fails the build)
 
 The image carries the exported bundle plus **only the dependency closure `node server.js` can

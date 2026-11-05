@@ -92,7 +92,9 @@ wget -q --spider http://127.0.0.1:3000/bff-api/auth/init && wget -q --spider htt
 
 A guard asserts every BFF service in both compose files requests a page and an API route.
 
-**Rationale**: BusyBox `--spider` sends `HEAD`, and `expo-server` matches `htmlRoutes` for `GET` and `HEAD` **[M]**.
+**Rationale**: BusyBox `--spider` sends `GET` **[M, T015: a listener in the image logged `METHOD GET`]**, which is why
+`/bff-api/auth/init` passes although it answers a real `HEAD` with 405. This plan first said `HEAD`, which was wrong. `/login`
+answers both, because `expo-server` matches `htmlRoutes` for `GET` and `HEAD` **[M]**.
 `/login` is public and prerendered, so the probe is cheap on both output modes **[M: 9.4 to 11.8 ms]**. It can be
 exercised deliberately: a copy of `dist` with `htmlRoutes` emptied gives API 200 and page 404 (SC-005).
 

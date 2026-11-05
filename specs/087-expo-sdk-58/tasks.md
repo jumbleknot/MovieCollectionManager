@@ -32,8 +32,8 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 **Purpose**: A worktree that can run every tier
 
-- [ ] T001 Install dependencies in `/home/coder/worktrees/087` with `CI=true pnpm install --frozen-lockfile`, then confirm `pnpm nx test mcm-app -- --watchman=false tests/unit/bff-server-trust-proxy.test.ts` reports 4 passed on the current stub, as the starting control
-- [ ] T002 Run `pnpm nx bundle-budget mcm-app` and `node --test scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. In the [Evidence](#evidence) section, record the SDK 57 entry-chunk bytes and the `htmlRoutes`, `notFoundRoutes` and `apiRoutes` counts from `frontend/mcm-app/dist/server/_expo/routes.json` as the pre-change figures
+- [x] T001 Install dependencies in `/home/coder/worktrees/087` with `CI=true pnpm install --frozen-lockfile`, then confirm `pnpm nx test mcm-app -- --watchman=false tests/unit/bff-server-trust-proxy.test.ts` reports 4 passed on the current stub, as the starting control
+- [x] T002 Run `pnpm nx bundle-budget mcm-app` and `node --test scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`. In the [Evidence](#evidence) section, record the SDK 57 entry-chunk bytes and the `htmlRoutes`, `notFoundRoutes` and `apiRoutes` counts from `frontend/mcm-app/dist/server/_expo/routes.json` as the pre-change figures
 
 **Checkpoint**: The instruments work before anything changes.
 
@@ -45,24 +45,24 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 **Independent Test**: Real `server.js` with the real adapter returns the URLs in [contracts/hosting.md](./contracts/hosting.md), and production backup consent is not refused.
 
-- [ ] T003 [US1] Update `scripts/__tests__/prune-bff-runtime-modules.test.mjs` so its fixtures and the root assertion name `expo-server` rather than `@expo/server`, keeping the test that `undici` stays reachable from `openai` alone (FR-001, FR-004)
+- [x] T003 [US1] Update `scripts/__tests__/prune-bff-runtime-modules.test.mjs` so its fixtures and the root assertion name `expo-server` rather than `@expo/server`, keeping the test that `undici` stays reachable from `openai` alone (FR-001, FR-004)
   - **Verify RED**: `node --test scripts/__tests__/prune-bff-runtime-modules.test.mjs`
   - **Expected RED**: fails on the `expo-server` root, because `STATIC_ROOTS` still names `@expo/server`
-- [ ] T004 [US1] Set `STATIC_ROOTS` to `['express', 'expo-server']` in `scripts/prune-bff-runtime-modules.mjs` and update its header comment
+- [x] T004 [US1] Set `STATIC_ROOTS` to `['express', 'expo-server']` in `scripts/prune-bff-runtime-modules.mjs` and update its header comment
   - **Verify GREEN**: same command as T003; 0 failures
-- [ ] T005 [US1] In `frontend/mcm-app/package.json`, replace `@expo/server` with a direct `expo-server` dependency at the version `expo-router` resolves (^57.0.3), and refresh `pnpm-lock.yaml` with a minimal install. Confirm the lock diff touches only those packages
-- [ ] T006 [US1] Create the fixture in `frontend/mcm-app/tests/unit/fixtures/real-adapter-build/`: `_expo/routes.json` with `htmlRoutes: []`, `notFoundRoutes: []` and one API route, plus a function returning `Response.json({ url: request.url })`. Follow the manifest shape in `expo-server`'s `build/cjs/manifest.d.ts`
-- [ ] T007 [US1] In `frontend/mcm-app/server.js`, change the require to `expo-server/adapter/express` and pass `{ build: DIST_SERVER }`, dropping `mode`, **without** the scheme fix yet. Rewrite `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts` to boot real `server.js` against the T006 fixture with no stub, asserting all four rows of [contracts/hosting.md](./contracts/hosting.md) on the URL the route received (US1 scenarios 1, 2, 3, 4; FR-002, FR-003)
+- [x] T005 [US1] In `frontend/mcm-app/package.json`, replace `@expo/server` with a direct `expo-server` dependency at the version `expo-router` resolves (^57.0.3), and refresh `pnpm-lock.yaml` with a minimal install. Confirm the lock diff touches only those packages
+- [x] T006 [US1] Create the fixture in `frontend/mcm-app/tests/unit/fixtures/real-adapter-build/`: `_expo/routes.json` with `htmlRoutes: []`, `notFoundRoutes: []` and one API route, plus a function returning `Response.json({ url: request.url })`. Follow the manifest shape in `expo-server`'s `build/cjs/manifest.d.ts`
+- [x] T007 [US1] In `frontend/mcm-app/server.js`, change the require to `expo-server/adapter/express` and pass `{ build: DIST_SERVER }`, dropping `mode`, **without** the scheme fix yet. Rewrite `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts` to boot real `server.js` against the T006 fixture with no stub, asserting all four rows of [contracts/hosting.md](./contracts/hosting.md) on the URL the route received (US1 scenarios 1, 2, 3, 4; FR-002, FR-003)
   - **Verify RED**: `pnpm nx test mcm-app -- --watchman=false tests/unit/bff-server-trust-proxy.test.ts`
   - **Expected RED**: the `https` rows fail with `Expected: "https://mcm.example.test/..."`, `Received: "http://mcm.example.test/..."`. **This is the item #843 failure, shown through the real adapter**
-- [ ] T008 [US1] Add the wrapper from research R1 to the catch-all in `frontend/mcm-app/server.js`, and rewrite the comment block at `server.js:35-43` to explain why the absolute URL is needed
+- [x] T008 [US1] Add the wrapper from research R1 to the catch-all in `frontend/mcm-app/server.js`, and rewrite the comment block at `server.js:35-43` to explain why the absolute URL is needed
   - **Verify GREEN**: same command as T007; 4 passed. **Quote** the RED and GREEN lines
-- [ ] T009 [US1] Update `frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs` to the new adapter id and remove its `X-Test-Origin` echo. Update `frontend/mcm-app/tests/unit/bff-server-adapter.test.ts` for the absolute URL its handler now receives, keeping every existing behaviour pinned (FR-001; US1 scenario 4)
+- [x] T009 [US1] Update `frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs` to the new adapter id and remove its `X-Test-Origin` echo. Update `frontend/mcm-app/tests/unit/bff-server-adapter.test.ts` for the absolute URL its handler now receives, keeping every existing behaviour pinned (FR-001; US1 scenario 4)
   - **Verify RED**: `pnpm nx test mcm-app -- --watchman=false tests/unit/bff-server-adapter.test.ts`, before editing either file
   - **Expected RED**: fails, because `server.js` now requires the new adapter and the stub still replaces the old id
   - **Verify GREEN**: same command; 0 failures, with the same test count as before
-- [ ] T010 [P] [US1] Update the text that names the old adapter (FR-026): `frontend/mcm-app/README.md:103,158`, `frontend/mcm-app/Dockerfile:112`, `docs/runbooks/e2e-testing.md:109,113,248`, `docs/runbooks/devcontainer-sandbox-lifecycle.md:440`, `scripts/e2e-turn-tally.sh:238`, `frontend/mcm-app/tests/e2e/web/fixtures/client-evidence.ts:8`. Keep the historical lesson at `e2e-testing.md:248`, stating which adapter it was measured on
-- [ ] T011 [US1] Confirm the image contains the adapter (FR-001, FR-004): `pnpm nx docker-build mcm-app` passes with `--check-bundle` clean, and `grep -rn '@expo/server/adapter\|"@expo/server"' frontend/mcm-app/server.js frontend/mcm-app/package.json scripts/prune-bff-runtime-modules.mjs frontend/mcm-app/tests/unit` has no matches
+- [x] T010 [P] [US1] Update the text that names the old adapter (FR-026): `frontend/mcm-app/README.md:103,158`, `frontend/mcm-app/Dockerfile:112`, `docs/runbooks/e2e-testing.md:109,113,248`, `docs/runbooks/devcontainer-sandbox-lifecycle.md:440`, `scripts/e2e-turn-tally.sh:238`, `frontend/mcm-app/tests/e2e/web/fixtures/client-evidence.ts:8`. Keep the historical lesson at `e2e-testing.md:248`, stating which adapter it was measured on
+- [x] T011 [US1] Confirm the image contains the adapter (FR-001, FR-004): `pnpm nx docker-build mcm-app` passes with `--check-bundle` clean, and `grep -rn '@expo/server/adapter\|"@expo/server"' frontend/mcm-app/server.js frontend/mcm-app/package.json scripts/prune-bff-runtime-modules.mjs frontend/mcm-app/tests/unit` has no matches
 **Checkpoint**: The hosting code is ready. The healthcheck tasks below ship in the same PR, and the production check follows.
 
 ---
@@ -73,13 +73,13 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 **Independent Test**: A `dist` copy with `htmlRoutes` emptied turns the real container unhealthy.
 
-- [ ] T012 [US2] Create `scripts/__tests__/bff-healthcheck-pages.guard.test.mjs`, parsing `infrastructure-as-code/docker/bff/compose.yaml` and `compose.prod.yaml`, requiring a page path and a `/bff-api/` path in every BFF service's healthcheck, failing if it finds no such services, and proving a synthetic API-only compose document fails (US2 scenarios 4, 6; FR-010)
+- [x] T012 [US2] Create `scripts/__tests__/bff-healthcheck-pages.guard.test.mjs`, parsing `infrastructure-as-code/docker/bff/compose.yaml` and `compose.prod.yaml`, requiring a page path and a `/bff-api/` path in every BFF service's healthcheck, failing if it finds no such services, and proving a synthetic API-only compose document fails (US2 scenarios 4, 6; FR-010)
   - **Verify RED**: `node --test scripts/__tests__/bff-healthcheck-pages.guard.test.mjs`
   - **Expected RED**: 3 services named, each lacking a page path
-- [ ] T013 [US2] Set the healthcheck from research R4 on all three sites in `infrastructure-as-code/docker/bff/compose.yaml` (lines 37, 76) and `compose.prod.yaml` (line 106)
+- [x] T013 [US2] Set the healthcheck from research R4 on all three sites in `infrastructure-as-code/docker/bff/compose.yaml` (lines 37, 76) and `compose.prod.yaml` (line 106)
   - **Verify GREEN**: same command as T012; 0 failures
-- [ ] T014 [US2] Update any healthcheck text in `frontend/mcm-app/README.md` and `docs/runbooks/` to say the probe covers pages and API routes (FR-026)
-- [ ] T015 [US2] Prove the healthcheck can fail (FR-005, SC-005 defect 4): run the real image on a `dist` copy with `htmlRoutes` emptied, using `docker create`, `docker cp` and `docker start` because bind mounts can arrive empty in this sandbox. Expect `/login` 404, API 200, and `docker inspect` reporting `unhealthy`. **Quote** it
+- [x] T014 [US2] Update any healthcheck text in `frontend/mcm-app/README.md` and `docs/runbooks/` to say the probe covers pages and API routes (FR-026)
+- [x] T015 [US2] Prove the healthcheck can fail (FR-005, SC-005 defect 4): run the real image on a `dist` copy with `htmlRoutes` emptied, using `docker create`, `docker cp` and `docker start` because bind mounts can arrive empty in this sandbox. Expect `/login` 404, API 200, and `docker inspect` reporting `unhealthy`. **Quote** it
 - [ ] T016 [US1] Open PR A from `087-expo-sdk-58` with this feature's docs and rollback steps (FR-025). Before pushing, run `pnpm nx preflight infrastructure-as-code`. In CI, confirm web E2E on the dev container and `app-image-scan` pass with zero unexpected skips, and compare the `Cannot pipe to a closed or destroyed stream` count against a recent `main` run (research R2). **Quote** run numbers
 - [ ] T017 [US1] After PR A deploys, **operator**: on production, complete backup consent, then start account deletion and stop at the identity provider's sign-in (US1 scenario 5, SC-001). **Quote** both results, including that no `Invalid parameter: redirect_uri` appeared and that consent returned to the app. PR C must not start until this passes
 
@@ -287,8 +287,8 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 
 | Item | Value | Source |
 |---|---|---|
-| SDK 57 entry chunk (T002) | | |
-| SDK 57 `htmlRoutes`, `notFoundRoutes`, `apiRoutes` counts (T002) | | |
+| SDK 57 entry chunk (T002) | 1,891,678 B of 2,000,000 B (94.6%, 108,322 B spare), `pnpm nx bundle-budget mcm-app` OK. Lockstep guard: 6 pass, 0 fail | Local, base `29f15101`, 2026-11-05 |
+| SDK 57 `htmlRoutes`, `notFoundRoutes`, `apiRoutes` counts (T002) | `html: 16`, `notFound: 1`, `api: 38` | Local, same export |
 | SDK 57 cold load, M3 (T024) | | |
 | Page response time and memory, M1 (T034) | | |
 
@@ -296,8 +296,8 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 
 | Item | Result | Run |
 |---|---|---|
-| Scheme fix RED and GREEN (T008) | | |
-| Unhealthy on page failure (T015) | | |
+| Scheme fix RED and GREEN (T008) | RED, real adapter with no wrapper: `Expected: "https://mcm.example.test/bff-api/echo-url?start=1&tag=a"`, `Received: "http://mcm.example.test/bff-api/echo-url?start=1&tag=a"`; `Tests: 2 failed, 2 passed, 4 total`. GREEN with the wrapper: `Tests: 4 passed, 4 total` | Local |
+| Unhealthy on page failure (T015) | Real image, probe read from `compose.prod.yaml`. Control, unmodified `dist`: `GET /login 200`, `GET /bff-api/auth/init 200`, `health=healthy`, probe exits `0 0 0 0`. `htmlRoutes` emptied (16 to 0, API still 38): `GET /login 404`, `GET /bff-api/auth/init 200`, `health=unhealthy failingStreak=4`, probe exits `1 1 1 1` | Local, `mcm-bff:latest` `af73c305c86e` |
 | Closed-stream count against `main` (T016) | | |
 | Backup consent completed (T017) | | |
 | Account deletion reached sign-in (T017) | | |
