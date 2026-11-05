@@ -2,17 +2,22 @@
  * @jest-environment node
  */
 /**
- * Spec 083 T010 (item #843) — the origin a BFF route sees behind the TLS-terminating proxy.
+ * Spec 083 T010 (item #843), feature 087 — the URL a BFF route receives behind the TLS-terminating
+ * proxy, through the REAL `expo-server` adapter. Nothing is stubbed on this path.
  *
- * In production Cloudflare terminates TLS and `cloudflared` reaches the BFF over plain HTTP.
- * `@expo/server`'s express adapter builds each request URL from `req.protocol` and the raw `Host`
- * header, so without express's `trust proxy` every route saw `http://` — and the backup consent
- * route sent Keycloak `redirect_uri=http://mcm.…/bff-api/backups/consent`, which the client does
- * not register ("Invalid parameter: redirect_uri", measured 2026-10-25).
+ * In production Cloudflare terminates TLS and `cloudflared` reaches the BFF over plain HTTP. A route
+ * that derives a callback from `new URL(request.url).origin` needs the PUBLIC scheme: without it the
+ * backup consent route sent Keycloak `redirect_uri=http://mcm.…/bff-api/backups/consent`, which the
+ * client does not register ("Invalid parameter: redirect_uri", measured 2026-10-25).
  *
- * Boots the REAL `server.js` twice, as `bff-server-adapter.test.ts` does (copied next to an empty
- * `dist/client`, with the Expo handler stubbed to echo the origin it was given): once as production
- * runs it (`TRUSTED_PROXY=true`), once without, which must keep ignoring a client-supplied scheme.
+ * This test used to run against a stub that echoed the origin it computed itself, so it could not see
+ * what the adapter really does. `expo-server` takes the scheme from the socket and ignores `req.protocol`,
+ * which is why `server.js` hands it an absolute URL (research R1). Removing that wrapper must turn the
+ * `https` rows red.
+ *
+ * Boots real `server.js` beside `fixtures/real-adapter-build`, a minimal `dist/server` holding one
+ * API route that returns `request.url`. If an SDK changes the manifest shape this fails, and that is the
+ * intended prompt. `express` and `expo-server` resolve from this package's `node_modules` via NODE_PATH.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -21,7 +26,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const APP_ROOT = resolve(__dirname, '..', '..');
-const STUB = join(__dirname, 'fixtures', 'expo-adapter-stub.cjs');
+const FIXTURE_BUILD = join(__dirname, 'fixtures', 'real-adapter-build');
+const ROUTE = '/bff-api/echo-url?start=1&tag=a';
 
 interface Server {
   port: number;
@@ -34,8 +40,9 @@ async function boot(extraEnv: Record<string, string>): Promise<Server> {
   cpSync(join(APP_ROOT, 'server.js'), join(dir, 'server.js'));
   cpSync(join(APP_ROOT, 'web-security-headers.js'), join(dir, 'web-security-headers.js'));
   mkdirSync(join(dir, 'dist', 'client'), { recursive: true });
+  cpSync(FIXTURE_BUILD, join(dir, 'dist', 'server'), { recursive: true });
   const port = 33000 + Math.floor(Math.random() * 2000);
-  const child = spawn(process.execPath, ['-r', STUB, join(dir, 'server.js')], {
+  const child = spawn(process.execPath, [join(dir, 'server.js')], {
     cwd: dir,
     env: {
       PATH: process.env.PATH ?? '',
@@ -63,14 +70,22 @@ function stop(server: Server | undefined): void {
   if (server) rmSync(server.dir, { recursive: true, force: true });
 }
 
-/** The origin the Expo handler was given, for a request carrying these headers. */
-function originSeen(server: Server, headers: Record<string, string>): Promise<string> {
+/** The URL the route received, for a request carrying these headers. Anything but a 200 rejects. */
+function urlSeen(server: Server, headers: Record<string, string>): Promise<string> {
   return new Promise((res, rej) => {
     const req = httpRequest(
-      { host: '127.0.0.1', port: server.port, method: 'GET', path: '/bff-api/backups/consent?start', headers },
+      { host: '127.0.0.1', port: server.port, method: 'GET', path: ROUTE, headers },
       (r) => {
-        r.resume();
-        r.on('end', () => res(String(r.headers['x-test-origin'])));
+        let body = '';
+        r.setEncoding('utf8');
+        r.on('data', (c: string) => (body += c));
+        r.on('end', () => {
+          if (r.statusCode !== 200) {
+            rej(new Error(`expected 200 from the fixture route, got ${r.statusCode}: ${body}`));
+            return;
+          }
+          res((JSON.parse(body) as { url: string }).url);
+        });
       },
     );
     req.on('error', rej);
@@ -86,23 +101,23 @@ describe('behind the proxy (TRUSTED_PROXY=true, as production runs)', () => {
   afterAll(() => stop(server));
 
   it('takes the public scheme from X-Forwarded-Proto', async () => {
-    await expect(
-      originSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' }),
-    ).resolves.toBe('https://mcm.example.test');
+    await expect(urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' })).resolves.toBe(
+      `https://mcm.example.test${ROUTE}`,
+    );
   });
 
   it('keeps http when the proxy says nothing', async () => {
-    await expect(originSeen(server, { host: 'mcm.example.test' })).resolves.toBe('http://mcm.example.test');
+    await expect(urlSeen(server, { host: 'mcm.example.test' })).resolves.toBe(`http://mcm.example.test${ROUTE}`);
   });
 
   it('never takes the host from X-Forwarded-Host', async () => {
     await expect(
-      originSeen(server, {
+      urlSeen(server, {
         host: 'mcm.example.test',
         'x-forwarded-proto': 'https',
         'x-forwarded-host': 'attacker.test',
       }),
-    ).resolves.toBe('https://mcm.example.test');
+    ).resolves.toBe(`https://mcm.example.test${ROUTE}`);
   });
 });
 
@@ -114,8 +129,8 @@ describe('without a trusted proxy (TRUSTED_PROXY unset)', () => {
   afterAll(() => stop(server));
 
   it('ignores a client-supplied X-Forwarded-Proto', async () => {
-    await expect(
-      originSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' }),
-    ).resolves.toBe('http://mcm.example.test');
+    await expect(urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' })).resolves.toBe(
+      `http://mcm.example.test${ROUTE}`,
+    );
   });
 });

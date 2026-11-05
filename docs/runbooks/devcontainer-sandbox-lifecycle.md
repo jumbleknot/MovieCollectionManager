@@ -437,7 +437,8 @@ packages (916 MB) because they are dependencies of `mcm-app` — but they are de
 BUNDLE, already compiled into `dist/`. A traced run (a `--require` preload recording every module
 resolution and `fs` read while the full web E2E suite plus a sweep of every route drove the
 container) touched **76** of them. `scripts/prune-bff-runtime-modules.mjs` now keeps only the
-closure of `express`, `@expo/server` and `openai` — **81 packages, 22.9 MB** — and the build fails
+closure of `express`, `@expo/server` and `openai` at the time (feature 087 replaced `@expo/server`
+with `expo-server`) — **81 packages, 22.9 MB** — and the build fails
 if the exported bundle grows a lazy `require("…")` the script does not account for.
 
 | | after #244 | after #249 |

@@ -100,7 +100,7 @@ press wrappers, the bottom-LEFT assistant-dock toggle, removable list chips, the
 ## What ships in the BFF image (and what fails the build)
 
 The image carries the exported bundle plus **only the dependency closure `node server.js` can
-reach** — `express`, `@expo/server`, `openai` and what those pull in. Everything else
+reach** — `express`, `expo-server`, `openai` and what those pull in. Everything else
 `pnpm deploy --prod` materializes is a dependency of the WEB BUNDLE, which Metro has already
 compiled into `dist/`, so it is deleted in the build by
 [`scripts/prune-bff-runtime-modules.mjs`](../../scripts/prune-bff-runtime-modules.mjs).
@@ -155,7 +155,7 @@ transaction.
 
 ### `server.js` runs OUTSIDE the Metro bundle — it cannot import `src/`
 
-`server.js` is CommonJS. It `require`s `@expo/server/adapter/express` and hands the built
+`server.js` is CommonJS. It `require`s `expo-server/adapter/express` and hands the built
 `dist/server` to `createRequestHandler`. It **cannot** `require('./src/bff-server/…')`: those
 modules exist only inside the bundle, compiled and `@/`-aliased by Metro.
 

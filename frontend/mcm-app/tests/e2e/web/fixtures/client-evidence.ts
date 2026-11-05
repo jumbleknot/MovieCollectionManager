@@ -5,7 +5,7 @@
  * once, `flaky=0`, and the gateway receives about a quarter of its usual traffic while answering
  * everything it does receive with 200 (backlog item #173). Every SERVER-side channel has been
  * exhausted: containers healthy, contention counters zero, `assistant_not_configured` never fired,
- * and the known `@expo/server` closed-stream drop appears in a healthy run too.
+ * and the closed-stream drop known from the old `@expo/server` adapter appeared in a healthy run too.
  *
  * What is left is the client, and nothing observed it. Before this fixture the only `page.on(...)`
  * anywhere under `tests/e2e/web/` was a `'response'` listener in `perf.spec.ts`. So the one question
