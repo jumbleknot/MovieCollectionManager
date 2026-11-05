@@ -1,23 +1,12 @@
 {
-  "coveredCommit": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
-  "coveredAt": "2026-11-04T18:36:01.026Z",
-  "lastOutcome": "failed",
-  "backlog": [
-    {
-      "area": "runbooks",
-      "pages": [
-        "devcontainer-sandbox-lifecycle.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
-    }
-  ],
+  "coveredCommit": "61d0bd8c33daae7b6fc0d9d69a4d3b85c28d1c0a",
+  "coveredAt": "2026-11-05T01:52:33.631Z",
+  "lastOutcome": "completed",
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 936,
-    "headCommit": "4fbeb50145af26b99f796e9602944e52771f81ed",
+    "headCommit": "4d63a7de9ea24a6e81d375dfc9aa422fb42c9b49",
     "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
@@ -29,51 +18,54 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "devcontainer-sandbox-lifecycle.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-05T01:33:30.125Z"
+    "updatedAt": "2026-11-05T01:52:34.079Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 2,
-    "elapsedSeconds": 3105,
+    "pagesWritten": 4,
+    "elapsedSeconds": 1121,
     "stoppedAtBudget": false
   },
-  "escalations": {
-    "runbooks/devcontainer-sandbox-lifecycle.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-05T01:33:29.780Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 682,
+    "calls": 191,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3800167,
-    "cached": 75511336,
+    "uncached": 696195,
+    "cached": 18418934,
     "cacheWrite": 0,
-    "output": 1232971,
-    "reasoning": 1065709,
-    "ms": 9657779,
-    "estCostUsd": 3.0727,
+    "output": 265651,
+    "reasoning": 211352,
+    "ms": 2106118,
+    "estCostUsd": 0.6382,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/devcontainer-sandbox-lifecycle.md",
-        "runbooks/devcontainer-sandbox.md"
+        "runbooks/devcontainer-sandbox-lifecycle.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 3.0727,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 0.6382,
       "rateLimited": null
     }
   ],
