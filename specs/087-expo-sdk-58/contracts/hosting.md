@@ -44,6 +44,7 @@ Each BFF service in `compose.yaml` (two) and `compose.prod.yaml` (one) probes bo
 
 **Guard**: `bff-healthcheck-pages.guard.test.mjs` parses both compose files, finds every service running the BFF image, and
 requires a page path and a `/bff-api/` path in its test. It fails if it finds no such services, so it cannot pass by
-reading the wrong file.
+reading the wrong file. A synthetic compose document with only an API probe must fail, as its lasting proof (FR-010).
 
-**Runtime proof, once**: a copy of `dist` with `htmlRoutes` emptied, run in the real image. Quoted in `tasks.md`.
+**Runtime proof, once**: a copy of `dist` with `htmlRoutes` emptied, run in the real image. Bind mounts can arrive empty in
+this sandbox, so use `docker create`, `docker cp`, then `docker start`. Quoted in `tasks.md`.

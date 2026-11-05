@@ -17,13 +17,15 @@ Runs with the APK already installed and a booted emulator. The output is what `t
 | Device log | No `FATAL EXCEPTION`, `ClassNotFoundException` or `NoSuchMethodException` for the app's process | `fatal=<count>` |
 
 The selftest must see each pattern detected, and a clean log pass. Afterwards the app is force-stopped, so the flows start
-cold. On failure, the matched lines are printed with the existing log redaction. No credential is on the device at this
+cold. Before its first check, the script writes nothing; on finishing, it writes the three results to
+`$HOME/android-launch-$GITHUB_RUN_ID.json`, on failure as well as on success. On failure, the matched lines are printed with the existing log redaction. No credential is on the device at this
 point, because nothing has signed in.
 
 ## `scripts/publish-android-launch.mjs`
 
-Posts `app-ci / android-launch` ([data model](../data-model.md)), run as an `if: always()` step with `continue-on-error`,
-so a failed post cannot mask the result. Its mapping from result to state is mutation-tested. Modelled on
+Posts `app-ci / android-launch` ([data model](../data-model.md)), reading the result file and then deleting it. It runs as
+a step with `continue-on-error` and `if: ${{ always() && <the emulator step's own gate> }}`, so a failed post cannot mask the
+result and a PR that skips the emulator posts nothing. Its mapping from result to state is mutation-tested. Modelled on
 `publish-sweep-verdict.mjs`.
 
 ## Workflow
@@ -38,8 +40,8 @@ so a failed post cannot mask the result. Its mapping from result to state is mut
 `scripts/__tests__/android-release-shrinking.guard.test.mjs`:
 
 - `frontend/mcm-app/app.json` has `expo-build-properties` with `android.enableMinifyInReleaseBuilds === false`.
-- Absent or `true` fails. Absent matters, because the SDK 58 template default is on.
-- The message says shrinking is a separate change, naming its requirements: measured size and a retained mapping file.
+- Absent or `true` fails, each proven on a synthetic input (FR-010). Absent matters, because the SDK 58 template default is on.
+- The message says shrinking is a separate change, item #937.
 
 ## Label
 
