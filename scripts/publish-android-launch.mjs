@@ -109,18 +109,25 @@ async function main(env) {
   console.log(`[android-launch] published ${CONTEXT} = ${status.state}`);
 }
 
+/** What this invocation asks for. An unrecognised argument throws, before anything is read or posted. */
+export function resolveCommand(argv) {
+  if (wantsHelp(argv)) return 'help';
+  partitionArgs(argv, { accepted: [], usage: USAGE });
+  return 'publish';
+}
+
 if ((process.argv[1] ?? '').endsWith('publish-android-launch.mjs')) {
-  const argv = process.argv.slice(2);
-  if (wantsHelp(argv)) {
-    console.log(USAGE);
-    process.exit(0);
-  }
+  let command;
   try {
-    partitionArgs(argv, { accepted: [], usage: USAGE });
+    command = resolveCommand(process.argv.slice(2));
   } catch (err) {
     if (!(err instanceof ArgvError)) throw err;
     dieOnArgvError(err, { hard: false });
     process.exit(2);
+  }
+  if (command === 'help') {
+    console.log(USAGE);
+    process.exit(0);
   }
   main(process.env).catch((err) => console.error(`[android-launch] FAILED: ${err.message}`));
 }
