@@ -129,6 +129,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
   - id: openwiki-source-a5bf09947adc24a8d59ab587
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
   - id: openwiki-source-a864e7e3b109550c7018e359
     resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
@@ -139,6 +141,12 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-19609c73bc9a3a34e47ab18d
     resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
+  - id: openwiki-source-250f22b469fdcf4c2326980d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
+  - id: openwiki-source-31ef72c79f00ba748f6ce16b
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
+  - id: openwiki-source-885237f04e1aa048fda26663
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
   - id: openwiki-source-bfd1dcd66339cb51fd41729c
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
   - id: openwiki-source-11fb40898d5d9eecbab09373
@@ -165,12 +173,16 @@ sources:
     resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-f6b7a61bf48156b2722b6a7f
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-2500897f79f457d05a1f0bd2
+    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T06:42:06.997Z
+    at: 2026-11-06T10:07:39.873Z
 ---
 
 
@@ -869,11 +881,32 @@ per request.
   bootstrap script (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) is hashed into `script-src`; if Expo
   ever changes it, the browser prints the new expected hash in the CSP violation and the constant is
   swapped.
-- **One accepted residual is documented, not silenced.** A third-party library runs a
-  `new Function("")` eval-availability probe wrapped in try/catch; under this `script-src` the probe
-  is blocked, the library degrades gracefully, and the browser logs one benign `eval` violation.
-  `'unsafe-eval'` is deliberately not added — permitting real eval app-wide would defeat the
-  hardening.
+- **No `eval` violation is expected, and a new one is a finding rather than a known line** (feature
+  089, replacing the residual T006 accepted). The old residual was one benign `eval` line from a
+  third-party `new Function("")` capability probe; feature 087's browser walk then measured **two
+  blocked probes per page**, because the assistant chunk held two probing zod copies — `zod@4.6.7`
+  (pulled in by the app's own code and `@copilotkit/react-core`) and `zod@3.25.76`'s `zod/v4` build
+  (pulled in by `@ag-ui/core` alone, which `@ag-ui/client` and `@ag-ui/proto` tied it to by declaring
+  `zod ^3.25.76`). Only 4.6.7 skips its probe when zod's `jitless` setting is on; 3.25.76 has no such
+  check. Rather than raise the allowance, the cause was removed in two halves: the `@ag-ui/client>zod`
+  and `@ag-ui/proto>zod` overrides in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) put
+  `@ag-ui/client` on the app's own zod 4 range — a value deliberately *outside `@ag-ui/client`'s
+  declared range*, so recheck it on an AG-UI upgrade and keep it equal to the app's own zod range so
+  the two stay one copy — and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before
+  any schema is built, which works only because `src/components/agent/assistant-panel.tsx` imports it
+  **first**: that panel is the deferred assistant chunk's only root, so import order runs it ahead of
+  every package in the chunk. The setting is web-only (the native module is empty — there is no CSP
+  there to report a probe, and `jitless` has not been measured under Hermes). Measured 2026-11-06 on
+  the web bundle: the assistant chunk fell from 2,850,492 B to 2,536,265 B and now holds one
+  `v4/core/util` (`zod@4.6.7`); `zod@3.25.76`'s v3 code stays for `@copilotkit/shared`, and
+  `@copilotkit/runtime` runs only in the BFF so it legitimately keeps its own zod 3 copy of
+  `@ag-ui/core` — which is why the lock file cannot prove the chunk and the source map can.
+  `script-src` itself did not change (FR-004): `'unsafe-eval'` and `'unsafe-inline'` stay
+  deliberately absent, because permitting real eval app-wide would defeat the hardening. The
+  arrangement is pinned by
+  [`scripts/__tests__/single-zod-engine.guard.test.mjs`](../../scripts/__tests__/single-zod-engine.guard.test.mjs)
+  and the web/native halves by
+  [`src/utils/unit-tests/zod-jitless.test.ts`](../../frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts).
 - `X-Powered-By` is disabled (server-technology disclosure), and the `X-BFF-Source` marker stamped on
   every response — static asset, SSR HTML, `/bff-api/*` route and express's own 400 alike, with the
   value taken from the `BFF_SOURCE` env var (`unknown` when unset) — is what lets the web E2E

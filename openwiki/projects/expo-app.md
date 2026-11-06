@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the web security headers and the two-surface container healthcheck), the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
@@ -53,6 +53,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts
   - id: openwiki-source-8407640b2cb0f7b864657883
     resource: repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
   - id: openwiki-source-1ee0ca5607fd919ecc13d256
     resource: repo://frontend/mcm-app/src/components/backups/destination-form.tsx
   - id: openwiki-source-d0e32cc95cdea263ea08fe08
@@ -75,6 +77,8 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
   - id: openwiki-source-570a958599bcf5038114a6fc
     resource: repo://frontend/mcm-app/src/hooks/use-account-deletion.ts
+  - id: openwiki-source-52a212df899e84c2a3454295
+    resource: repo://frontend/mcm-app/src/hooks/use-assistant-runtime.ts
   - id: openwiki-source-3470392bd8be4b3899ff3adb
     resource: repo://frontend/mcm-app/src/hooks/use-backup-consent.ts
   - id: openwiki-source-2bc02f78645afcdb5307ca15
@@ -93,6 +97,8 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
+  - id: openwiki-source-dcfc434ab00b77e71a8575f0
+    resource: repo://frontend/mcm-app/src/utils/assistant-runtime-loader.ts
   - id: openwiki-source-4e2d6488af045e50c1eb17f0
     resource: repo://frontend/mcm-app/src/utils/backup-run-summary.ts
   - id: openwiki-source-ed2df48ea080e434190abed3
@@ -103,6 +109,12 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/unit-tests/api-client.test.ts
   - id: openwiki-source-5839329bfe7fc2f4898102b5
     resource: repo://frontend/mcm-app/src/utils/unit-tests/token-refresh.test.ts
+  - id: openwiki-source-250f22b469fdcf4c2326980d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
+  - id: openwiki-source-31ef72c79f00ba748f6ce16b
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
+  - id: openwiki-source-885237f04e1aa048fda26663
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
   - id: openwiki-source-d67eac1e98649691c637d9c0
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
@@ -117,6 +129,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
+  - id: openwiki-source-5ff55bdfe886d66b6f07a01e
+    resource: repo://frontend/mcm-app/web-security-headers.test.js
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
@@ -139,6 +153,8 @@ sources:
     resource: repo://packages/design-system/project.json
   - id: openwiki-source-7c01a8501da7bfee76f8ed12
     resource: repo://packages/design-system/tamagui.config.ts
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
   - id: openwiki-source-f6c12ce9ca055174ab7f392c
@@ -147,6 +163,8 @@ sources:
     resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
   - id: openwiki-source-79afb4088c29acb82fe62e5a
     resource: repo://scripts/__tests__/expo-router-tree-purity.test.mjs
+  - id: openwiki-source-2500897f79f457d05a1f0bd2
+    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
@@ -155,16 +173,18 @@ sources:
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
-  - id: openwiki-source-92e409c28d1307a334df12c0
-    resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389
     resource: repo://specs/087-expo-sdk-58/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+  - id: openwiki-source-5c651a2e85869320925d0597
+    resource: repo://specs/089-single-zod-jitless/spec.md
+  - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
+    resource: repo://specs/089-single-zod-jitless/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T06:42:06.997Z
+    at: 2026-11-06T10:07:39.873Z
 ---
 
 # Expo/React Native universal app
@@ -522,7 +542,16 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   asserts three things: the web entry chunk stays inside a committed byte budget, the deferred
   assistant packages are absent from the *entry* chunk, and server-only code is absent from
   *every* client chunk (not just the entry one — a gate reading only the entry chunk would report
-  clean while `src/bff-server/**` shipped inside a deferred chunk).
+  clean while `src/bff-server/**` shipped inside a deferred chunk). "Deferred" has one precise
+  meaning here: the assistant runtime is a ~2.4 MB chunk reached only through the single dynamic
+  import in `src/utils/assistant-runtime-loader.ts`, whose root is
+  `src/components/agent/assistant-panel.tsx` — the only module from which the packages the gate
+  forbids in the entry chunk (`zod`, `graphql`, `@copilotkit/*`, `@ag-ui/*`, `rxjs`,
+  `@bufbuild/protobuf`, and the `text-encoding` / `web-streams-polyfill` React Native polyfills
+  `@copilotkit/react-native` pulls in as a side effect of its own entry point) are reachable. Size
+  alone cannot hold that line (something else could shrink while a stray import re-adds the whole
+  graph), which is why the gate names the offending package rather than reporting an unexplained
+  regression.
 - **The same process serves the web surface, and its security headers come from a plain-CommonJS
   module `server.js` requires at boot.** `frontend/mcm-app/web-security-headers.js` is deliberately
   not TypeScript: `server.js` lives outside the Metro bundle and cannot import the app's compiled
@@ -535,15 +564,42 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   localhost default on anything malformed — a scheme-less or non-web-scheme value does not throw in
   the WHATWG `URL` parser, it yields the opaque origin `null`, which would emit a broken directive.
   The web CSP is **path-scoped out of `/bff-api`** so the API surface keeps exactly one CSP, its own
-  strict handler policy, rather than depending on adapter same-name header merge order. One residual
-  is deliberate and documented: a third-party library runs a `new Function("")` eval-availability
-  probe inside a try/catch, the strict `script-src` blocks it, the library degrades gracefully with
-  the app fully functional, and the browser logs one benign `eval` CSP violation — `'unsafe-eval'`
-  is *not* added to silence it, because permitting real eval app-wide would defeat the hardening.
-  The header values, the current directive set and the per-surface contract belong to the cited
-  sources (`frontend/mcm-app/web-security-headers.js`, the contract under
-  `../../specs/032-security-header-hardening/contracts/security-headers-contract.md`, and the
-  [DAST runbook](../runbooks/dast-scanning.md) for the ZAP gate), not to this page.
+  strict handler policy, rather than depending on adapter same-name header merge order. What changed
+  with feature 089 is not the policy but whether a violation is expected at all: feature 032 had
+  accepted a blocked `new Function("")` eval-availability probe on this surface as a benign residual,
+  and 089 removed the probe instead. So **a new `eval` violation here is a finding, not a known
+  line.** The assistant chunk used to carry **two** zod 4 engines — each probes once — because
+  `@ag-ui/client` and `@ag-ui/proto` declared `zod ^3.25.76` and so tied `@ag-ui/core`'s peer to a
+  second engine, even though `@ag-ui/client` and `@ag-ui/core` import only `zod/v4` and
+  `@ag-ui/proto` imports no zod at all. The `@ag-ui/client>zod` and `@ag-ui/proto>zod` overrides in
+  `pnpm-workspace.yaml` leave **one** engine — they sit outside `@ag-ui/client`'s declared range, so
+  recheck them when AG-UI is upgraded, keeping the value equal to the app's own zod range so the two
+  stay one copy — and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before any
+  schema is built. Import order *is* the mechanism: zod reads the setting when the first object schema
+  is built, so `src/components/agent/assistant-panel.tsx` imports that module first. That file is the
+  deferred chunk's root and the only place the assistant packages are reachable — it is reached
+  exclusively through the single dynamic-import boundary in `src/utils/assistant-runtime-loader.ts`
+  — which is what makes the fix free on web (the CSP already blocks `eval`, so zod's fast path was
+  already off, and `jitless` skips the attempt rather than a working optimisation);
+  `src/utils/zod-jitless.ts` is deliberately an empty module, so native changes nothing — there is no
+  CSP there to report a probe, and `jitless` has not been measured under Hermes. Measured 2026-11-06
+  on the web bundle: the assistant chunk went from 2,850,492 B to 2,536,265 B (314,227 B, 11%) and now
+  holds one `v4/core/util`; `zod@3.25.76`'s v3 code remains for `@copilotkit/shared`, which uses the
+  v3 API through the root import, and `@copilotkit/runtime` keeps its own zod 3 copy of `@ag-ui/core`
+  in the BFF, which is why the lock file cannot prove the chunk and the source map can. `script-src`
+  itself did not change: `'unsafe-eval'` and `'unsafe-inline'` stay absent, because permitting real
+  eval app-wide would defeat the hardening. The deferred-chunk rule is what keeps both properties
+  standing, and it is why that import must stay where it is: a stray static import of
+  `assistant-panel.tsx` from anywhere in the eager graph silently re-adds ~2.4 MB, and
+  `scripts/check-web-bundle-budget.mjs` is the gate that catches it, naming the package rather than
+  leaving an unexplained size regression. The header values, the current directive set and the
+  per-surface contract belong to the cited sources (`frontend/mcm-app/web-security-headers.js`, whose
+  own comment is now the current statement of the `eval` arrangement; the contract under
+  `../../specs/032-security-header-hardening/contracts/security-headers-contract.md`, whose
+  Surface-1 note still records the 032-era accepted residual and should be read as history; and the
+  [DAST runbook](../runbooks/dast-scanning.md) for the ZAP gate), not to this page. The arrangement
+  is pinned by `scripts/__tests__/single-zod-engine.guard.test.mjs` and the web/native halves by
+  `src/utils/unit-tests/zod-jitless.test.ts`.
   `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
   SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
   three; it opts out of the shared authenticated `storageState` because all three are public.
