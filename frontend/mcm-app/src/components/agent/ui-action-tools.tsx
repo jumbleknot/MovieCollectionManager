@@ -62,7 +62,7 @@ export function uiActionKey(name: string, args: Record<string, unknown>): string
 
 // The authorize round-trip is idempotent (a pure structural-target check; no domain write), so a
 // transient delivery failure is safe to retry. On the CI emulator the BFF authorizes (audit
-// allowed=true) but its 204 response is intermittently lost — the @expo/server "Cannot pipe to a
+// allowed=true) but its 204 response is intermittently lost — the server's "Cannot pipe to a
 // closed or destroyed stream" delivery failure / a reset adb-reverse tunnel mid-response — and the
 // client fetch then sees a thrown error or a non-204. A single-shot authorize discarded the
 // navigate ("I can't open that for you.") even though it WAS authorized, the feature-023

@@ -84,11 +84,11 @@ describe('createRefreshingFetch', () => {
  * Transport-drop retry (feat agent-run-transport-retry).
  *
  * The /bff-api/agent/run stream can be LOST mid-flight — the adb-reverse tunnel resets and the
- * server's @expo/server respond pipeline throws `Cannot pipe to a closed or destroyed stream`
+ * server's response pipeline throws `Cannot pipe to a closed or destroyed stream`
  * (CLAUDE.md). On the client this surfaces as a THROWN fetch error (RN's XHR streaming polyfill
  * rejects), so the run silently produces no `render_selection`/`render_disambiguation` tool call and
  * the dock panel never renders. A dropped connection aborts the upstream gateway turn via
- * @expo/server's AbortController, so the cut turn is effectively idempotent-on-failure → ONE bounded
+ * expo-server's AbortController, so the cut turn is effectively idempotent-on-failure → ONE bounded
  * retry is safe (mirrors the ui-action authorize() retry). A genuine 4xx comes back as a Response
  * (never a throw), so it is never retried; non-agent throws propagate unchanged.
  */

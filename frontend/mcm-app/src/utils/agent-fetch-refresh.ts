@@ -71,7 +71,7 @@ export function createRefreshingFetch(
       // closed or destroyed stream` and rejects RN's XHR streaming polyfill client-side. Without
       // this, the run yields no render_selection/render_disambiguation tool call and the dock panel
       // never appears (feat agent-run-transport-retry). A dropped connection aborts the upstream
-      // gateway turn via @expo/server's AbortController, so the cut turn is effectively
+      // gateway turn via expo-server's AbortController, so the cut turn is effectively
       // idempotent-on-failure → ONE bounded retry is safe (mirrors ui-action authorize()). Non-agent
       // throws propagate unchanged; a genuine 4xx returns a Response (never throws) so is never here.
       if (!isAgent) throw err;

@@ -1,0 +1,14 @@
+{
+  "apiRoutes": [
+    {
+      "file": "_expo/functions/bff-api/echo-url+api.js",
+      "page": "/bff-api/echo-url",
+      "namedRegex": "^/bff-api/echo-url(?:/)?$",
+      "routeKeys": {}
+    }
+  ],
+  "htmlRoutes": [],
+  "notFoundRoutes": [],
+  "redirects": [],
+  "rewrites": []
+}
