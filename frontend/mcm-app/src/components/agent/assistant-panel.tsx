@@ -25,6 +25,8 @@
  * `@copilotkit/react-native`, so leaving it in the layout would keep the entire graph above in the
  * entry chunk and defer nothing at all.
  */
+// Must stay first: it has to run before anything in this chunk builds a zod schema (feature 089).
+import '@/utils/zod-jitless';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';

@@ -98,6 +98,14 @@ overrides:
   js-yaml@>=4.0.0 <4.3.1: '>=4.3.1 <5'
   shell-quote@<1.9.0: '>=1.9.0'
   axios@>=1.15.2 <1.18.0: '>=1.18.0 <2'
+  # ADDED 2026-11-06 (feature 089). NOT a security floor. @ag-ui/client and @ag-ui/proto declare
+  # zod ^3.25.76, which ties @ag-ui/core's peer to a second zod 4 engine (3.25.76's `zod/v4`) in the
+  # assistant chunk. That engine probes `new Function("")`, and the strict CSP reports each probe.
+  # @ag-ui/client and @ag-ui/core import only `zod/v4`, and @ag-ui/proto imports no zod, so they run
+  # on the app's copy. Outside @ag-ui/client's declared range: recheck when AG-UI is upgraded, and
+  # keep the value equal to the app's own zod range so they stay one copy.
+  '@ag-ui/client>zod': ^4.4.3
+  '@ag-ui/proto>zod': ^4.4.3
   # RAISED 2026-08-13 (feature 057) from `fast-uri@<3.1.4: '>=3.1.4 <4'`. GHSA-7p8r-x3mc-p8w7
   # BYPASSES the previous fix, so 3.1.4 is itself vulnerable and the old floor no longer held.
   # BOTH HALVES MOVE TOGETHER — the key names the vulnerable span, the value the patched floor, and

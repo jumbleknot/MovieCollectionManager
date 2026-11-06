@@ -23,12 +23,11 @@ const DEFAULT_KEYCLOAK_ORIGIN = 'http://localhost:8099';
  * strong option). If Expo ever changes that inline script the browser will print the new expected
  * hash in the CSP violation message — swap it here.
  *
- * NOTE (accepted residual, T006 2026-07-09): a third-party library runs a `new Function("")`
- * eval-availability PROBE wrapped in try/catch that returns false when blocked. Under this strict
- * `script-src` the probe is blocked, the library degrades gracefully (the app is fully functional),
- * and the browser logs ONE benign `eval` CSP violation. We deliberately do NOT add `'unsafe-eval'`
- * to silence it — permitting real eval app-wide would defeat the hardening. This one probe line is
- * the documented, accepted residual.
+ * NOTE (feature 089, replacing the residual accepted in T006): zod runs a `new Function("")`
+ * eval-availability probe, which this `script-src` blocks and the browser reports as a violation.
+ * The assistant chunk has one zod 4 engine, and `src/utils/zod-jitless.web.ts` turns its probe off,
+ * so no `eval` violation is expected. We deliberately do NOT add `'unsafe-eval'`: permitting real
+ * eval app-wide would defeat the hardening. A new `eval` violation is a finding, not a known line.
  */
 const EXPO_HYDRATE_SCRIPT_HASH = "'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='";
 
