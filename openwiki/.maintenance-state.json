@@ -1,24 +1,25 @@
 {
-  "coveredCommit": "357269b7c05ccdb8b888243530b759b7a3e496c6",
-  "coveredAt": "2026-11-06T03:45:23.587Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "481a056f4902b5d47ecee123dd46be320d93d6c8",
+  "coveredAt": "2026-11-06T08:04:23.649Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
-      "area": "runbooks",
+      "area": "projects",
       "pages": [
-        "devcontainer-sandbox-lifecycle.md",
-        "e2e-testing.md"
+        "bff.md",
+        "expo-app.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/e2e-testing.md"
+      "reason": "source changed: frontend/mcm-app/README.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 936,
-    "headCommit": "0ae3f99a95b1809b8cc3d6a5a933ef15c8a28830",
+    "headCommit": "eeac0d166df83c2a913a52e28609bbea3261da8c",
     "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
@@ -52,59 +53,56 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: frontend/mcm-app/README.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "devcontainer-sandbox-lifecycle.md",
+          "e2e-testing.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/e2e-testing.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-06T07:33:46.056Z"
+    "updatedAt": "2026-11-06T08:04:24.181Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 6,
-    "elapsedSeconds": 3103,
-    "stoppedAtBudget": false
+    "pagesWritten": 10,
+    "elapsedSeconds": 1811,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/devcontainer-sandbox-lifecycle.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-06T07:33:45.559Z",
-      "failuresAtLow": 0
-    },
-    "runbooks/e2e-testing.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-06T07:33:45.559Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 652,
-    "failedCalls": 1,
+    "calls": 242,
+    "failedCalls": 2,
     "uncounted": 0,
-    "uncached": 2729532,
-    "cached": 66332692,
+    "uncached": 1536596,
+    "cached": 19919100,
     "cacheWrite": 0,
-    "output": 1491695,
-    "reasoning": 1321067,
-    "ms": 9236767,
-    "estCostUsd": 3.0069,
+    "output": 469495,
+    "reasoning": 400462,
+    "ms": 3359156,
+    "estCostUsd": 1.1439,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/bff.md",
-        "projects/expo-app.md",
         "runbooks/devcontainer-sandbox-lifecycle.md",
         "runbooks/e2e-testing.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 3.0069,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 1.1439,
       "rateLimited": null
     }
   ],
