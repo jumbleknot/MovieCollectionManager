@@ -56,7 +56,7 @@ import { UnauthorizedError } from '@/types/errors';
 
 const COLLECTION_ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 
-// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+// Flat params — expo-server passes route params as a plain object, not { params: {...} }
 type RouteParams = { collectionId: string };
 
 function makeGetRequest(): [Parameters<typeof GET>[0], RouteParams] {

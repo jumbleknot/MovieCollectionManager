@@ -249,9 +249,8 @@ CSP violation or uncaught page error. A blocked script produces no failed reques
 - **It needs a container.** Metro sends no CSP, so under Metro the walk skips visibly, and fails under `CI`.
 - **Negative control.** Empty `INLINE_SCRIPT_HASHES` in the container's `web-security-headers.js`, restart it, and the walk fails on
   `first load of the login page` with `script-src-elem blocked inline`. Then recreate the container.
-- **The assistant path** is checked by one test in `assistant-navigate.spec.ts`, because the walk's user has no assistant. It allows zod's
-  `eval` probe: two per document, from the assistant chunk only, because that chunk holds two copies of zod. `'unsafe-eval'` stays absent,
-  so the browser still blocks them.
+- **The assistant path** is checked by one test in `assistant-navigate.spec.ts`, because the walk's user has no assistant. It allows
+  no violations. Feature 089 removed zod's `eval` probe, so an `eval` line is a finding.
 
 An export can also be checked offline, with no browser: see the table in [the app README](../../frontend/mcm-app/README.md).
 

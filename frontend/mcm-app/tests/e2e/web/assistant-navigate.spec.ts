@@ -26,29 +26,10 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
-import { watchSecurityPolicy, type PolicyException } from './fixtures/security-policy-watch';
+import { watchSecurityPolicy } from './fixtures/security-policy-watch';
 
 const ACTION_TIMEOUT = 150_000;
 const NAV_TIMEOUT = 60_000;
-
-/**
- * Feature 087. The only violations this path may raise: zod's `new Function("")` availability probe, which
- * the policy blocks and zod handles in a try/catch. Accepted in feature 032 and documented beside the hash
- * in `web-security-headers.js`. `'unsafe-eval'` stays absent, so the browser still blocks them; this only
- * stops the test failing on those known lines.
- *
- * Two per document, because the assistant chunk holds two copies of zod (measured: `zod@3.25.76`, through
- * its `v4/` subpath, and `zod@4.6.7`), each probing once. Limited to that chunk, so an `eval` from anywhere
- * else fails, as does a third one. Anything else fails.
- */
-const ASSISTANT_EVAL_PROBE: PolicyException = {
-  description: 'zod eval-availability probe in the assistant chunk',
-  matches: (v) =>
-    (v.directive === 'script-src' || v.directive === 'script-src-elem') &&
-    v.blockedURI === 'eval' &&
-    /\/_expo\/static\/js\/web\/assistant-panel-[0-9a-f]+\.js$/.test(v.source),
-  maxPerDocument: 2,
-};
 
 async function seedCollection(request: APIRequestContext, name: string): Promise<string> {
   ownCollection(name);
@@ -94,7 +75,7 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
 
     await gotoHome(page);
     // The walk's user has no assistant, so the assistant chunk is only checked here.
-    watch.assertClean('home, before the assistant loads', { allow: [ASSISTANT_EVAL_PROBE] });
+    watch.assertClean('home, before the assistant loads');
     await watch.proveCanSee(page);
     await openDock(page);
     await send(page, `take me to my ${name} collection`);
@@ -106,7 +87,7 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     await expect(page.locator('[data-testid="collection-screen-add-movie"]')).toBeVisible({
       timeout: NAV_TIMEOUT,
     });
-    watch.assertClean('streamed turn and the navigation it caused', { allow: [ASSISTANT_EVAL_PROBE] });
+    watch.assertClean('streamed turn and the navigation it caused');
   });
 
   test('prefill → the assistant opens the add-movie form on the named collection', { tag: '@gate' }, async ({

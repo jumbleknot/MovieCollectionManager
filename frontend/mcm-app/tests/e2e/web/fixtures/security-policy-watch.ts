@@ -13,8 +13,8 @@
  *     having tested nothing. Locally that is a visible skip; with `CI` set it fails.
  *   - `proveCanSee`: an injected inline script must be seen before the list is trusted. Call
  *     `assertClean` first, because an inline violation from the page's own load would satisfy the probe.
- *   - `assertClean`: allows nothing by default. An exception is passed at the call site, so reading a
- *     test tells you exactly what it tolerates.
+ *   - `assertClean`: allows nothing. Feature 089 removed the one known violation, zod's `eval` probe, so
+ *     any violation on a path this watches is a finding.
  */
 import { expect, test, type BrowserContext, type Page, type Response } from '@playwright/test';
 
@@ -23,22 +23,13 @@ export interface PolicyViolation {
   blockedURI: string;
   source: string;
   documentUrl: string;
-  /** Identifies one loaded document, so an exception can be limited per document. */
-  documentId: string;
-}
-
-/** A violation a test has decided to tolerate, and how many times per document. */
-export interface PolicyException {
-  description: string;
-  matches: (violation: PolicyViolation) => boolean;
-  maxPerDocument: number;
 }
 
 export interface SecurityPolicyWatch {
   violations: PolicyViolation[];
   pageErrors: string[];
   proveCanSee: (page: Page) => Promise<void>;
-  assertClean: (step: string, options?: { allow?: PolicyException[] }) => void;
+  assertClean: (step: string) => void;
 }
 
 const BINDING = '__mcmRecordPolicyViolation';
@@ -60,14 +51,12 @@ export async function watchSecurityPolicy(context: BrowserContext, baseUrl: stri
   await context.addInitScript((binding: string) => {
     const withoutQuery = (url: string): string => url.split(/[?#]/)[0] ?? '';
     const documentUrl = location.origin + location.pathname;
-    const documentId = `${documentUrl}#${performance.timeOrigin}`;
     document.addEventListener('securitypolicyviolation', (e) => {
       void (window as unknown as Record<string, (v: PolicyViolation) => Promise<void>>)[binding]({
         directive: e.effectiveDirective,
         blockedURI: withoutQuery(e.blockedURI),
         source: withoutQuery(e.sourceFile),
         documentUrl,
-        documentId,
       });
     });
   }, BINDING);
@@ -96,22 +85,13 @@ export async function watchSecurityPolicy(context: BrowserContext, baseUrl: stri
           timeout: 5_000,
         })
         .toBe(true);
-      // Only the probe's own line goes. Anything else stays counted, including an allowed exception.
+      // Only the probe's own line goes. Anything else stays counted.
       violations.splice(violations.findLastIndex((v) => v.blockedURI === 'inline'), 1);
     },
 
-    assertClean(step: string, { allow = [] }: { allow?: PolicyException[] } = {}): void {
-      const perDocument = new Map<string, number>();
-      const unexpected = violations.filter((v) => {
-        const exception = allow.find((a) => a.matches(v));
-        if (!exception) return true;
-        const key = `${exception.description}|${v.documentId}`;
-        const count = (perDocument.get(key) ?? 0) + 1;
-        perDocument.set(key, count);
-        return count > exception.maxPerDocument;
-      });
+    assertClean(step: string): void {
       const lines = [
-        ...unexpected.map((v) => `CSP violation: ${describeViolation(v)}`),
+        ...violations.map((v) => `CSP violation: ${describeViolation(v)}`),
         ...pageErrors.map((message) => `page error: ${message}`),
       ];
       expect(lines, `${step}: the browser refused or crashed on something`).toEqual([]);

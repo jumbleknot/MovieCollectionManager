@@ -142,7 +142,7 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 ### Land it
 
 - [x] T031 [US2] Add each new script's selftest to `.forgejo/workflows/guardrails.yml` where it isn't already covered by `scripts/__tests__/`, and update `frontend/mcm-app/README.md` and `docs/runbooks/e2e-testing.md` to describe the gates (FR-026)
-- [ ] T032 [US2] Open PR B from a new branch off `main` with the label `mobile-e2e` and its rollback steps. Confirm the walk ran, and read `app-ci / android-launch` on the head commit. Expect `launch=ok login-screen=visible fatal=0`. **Quote** this as the SDK 57 control. A failure here is an instrument failure or a real SDK 57 defect; settle which before moving on
+- [ ] T032 [US2] Open PR B from a new branch off `main` with its rollback steps and no label (corrected: the brief's `mobile-e2e` does not exist on this repository, and PR B changes `frontend/`, so the `mobile` path filter already runs the Android half). Confirm the walk ran, and read `app-ci / android-launch` on the head commit. Expect `launch=ok login-screen=visible fatal=0`. **Quote** this as the SDK 57 control. A failure here is an instrument failure or a real SDK 57 defect; settle which before moving on
 
 **Checkpoint**: PR B merged. SC-005 has 4 of 4 defects quoted, and the launch check works on SDK 57.
 
@@ -298,7 +298,7 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 |---|---|---|
 | Scheme fix RED and GREEN (T008) | RED, real adapter with no wrapper: `Expected: "https://mcm.example.test/bff-api/echo-url?start=1&tag=a"`, `Received: "http://mcm.example.test/bff-api/echo-url?start=1&tag=a"`; `Tests: 2 failed, 2 passed, 4 total`. GREEN with the wrapper: `Tests: 4 passed, 4 total` | Local |
 | Unhealthy on page failure (T015) | Real image, probe read from `compose.prod.yaml`. Control, unmodified `dist`: `GET /login 200`, `GET /bff-api/auth/init 200`, `health=healthy`, probe exits `0 0 0 0`. `htmlRoutes` emptied (16 to 0, API still 38): `GET /login 404`, `GET /bff-api/auth/init 200`, `health=unhealthy failingStreak=4`, probe exits `1 1 1 1` | Local, `mcm-bff:latest` `af73c305c86e` |
-| Closed-stream count against `main` (T016) | | |
+| Closed-stream count against `main` (T016) | **Not measured.** The count is only in the green job logs of `app-e2e`. This forge has no log API, the web log paths answer 404 to a token, and bundles exist only for failed runs, so neither side of the comparison could be read from the dev container. T016 stays open until the operator reads the logs or waives this | PR A head: app-ci 6861; `main`: app-ci 6876 |
 | Backup consent completed (T017) | | |
 | Account deletion reached sign-in (T017) | | |
 
@@ -311,6 +311,7 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 | Defect 3: over-budget split bundle (T024) | Export copy, entry 1,892,065 B and a second script 200,000 B, each within budget alone: `cold load of (auth)/login.html: 2,092,065 B / 2,000,000 B budget — OVER BY 92,065 B (104.6%). Scripts: route-split-pad.js, entry-9dcf2519fe90e126017c11418c928af2.js`, `FAIL`, exit 1 | Local |
 | Walk negative control and pass (T026) | Local runs through the official image, `--project=lifecycle --no-deps`. Empty allowlist: `first load of the login page: the browser refused or crashed on something`, `CSP violation: script-src-elem blocked inline from http://localhost:8082/(auth)/login`; 1 failed, 1 passed. File restored and container recreated: 2 passed, 0 skipped. An earlier form of the fixture cleared the list while proving itself, so it first caught this only at the sign-in callback; fixed, and re-run | Local; CI on PR B |
 | `eval` residual fired on the assistant path? (T027) | **Yes, twice per document, against a planned limit of one.** `script-src blocked eval from .../assistant-panel-*.js` on `/home`. Cause: two zod copies in that chunk (`zod@3.25.76` `v4/` and `zod@4.6.7`), each with a `new Function("")` probe. The exception moved to 2, limited to the assistant chunk; contract, research and the code note corrected; operator to review on PR B. RED with a temporary inline script: `script-src-elem blocked inline from (inline) on http://localhost:8082/home`, 1 failed, eval lines tolerated. GREEN: 1 passed, `E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1`, Anthropic provider | Local |
+| `eval` exception removed (feature 089, T009) | Feature 089 removed the second engine and the probe, so `assistant-navigate.spec.ts` and the watch now allow nothing. Superseding the T027 line above, which stays as measured. Quoted result on PR B's `app-e2e` | |
 | SDK 57 launch control (T032) | | |
 
 ### PR C
@@ -336,7 +337,7 @@ No SDK 58 APK has been launched yet. Only the last row can tick T056.
 
 | Stage | Run | Commit | SDK | Launch | Login screen | Fatal lines | Login flow | Assistant flows |
 |---|---|---|---|---|---|---|---|---|
-| Control, SDK 57 (T032) | | | | | | | N/A: `mobile-e2e` runs agent flows only | |
+| Control, SDK 57 (T032) | | | | | | | N/A: without `mobile-e2e-full`, only agent flows run | |
 | **SDK 58 (T056)** | | | | | | | | |
 
 ## Completion Checklist

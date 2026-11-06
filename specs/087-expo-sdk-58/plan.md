@@ -181,7 +181,8 @@ the `lifecycle` Playwright project, or the app-e2e emulator step.
 
 - **Design**: [contracts/web-gates.md](./contracts/web-gates.md), [contracts/android.md](./contracts/android.md),
   research R5 to R10.
-- **Label**: `mobile-e2e`, so the launch check runs. This is the control run: it proves the instrument on an APK
+- **Label**: none. PR B changes `frontend/`, so `app-ci`'s `mobile` path filter already runs the Android half, and the
+  `mobile-e2e` label does not exist on this repository. This is the control run: it proves the instrument on an APK
   expected to work, and it also records the launch check feature 081 left as T028.
 - **Proof**: each deliberate defect fails its gate on its first run (SC-005), quoted in `tasks.md`, then is reverted.
 - **Rollback**: revert. Nothing in this PR reaches members.
@@ -207,9 +208,8 @@ the `lifecycle` Playwright project, or the app-e2e emulator step.
 
 Re-evaluated after Phase 1, with no change. Two points were tested specifically:
 
-- **Allowing the eval probe on the assistant path does not weaken the policy.** `'unsafe-eval'` stays absent. The
-  exception is in the test, and it only stops the test failing on a violation the browser still blocks. It is exact
-  and limited to one per document, and the spec's walk stays at zero (R8).
+- **The assistant path allows no violations.** This plan first allowed the `eval` probe in the test. Feature 089 removed
+  the probe instead, so the exception is gone and `'unsafe-eval'` stays absent (R8).
 - **The real-adapter test does not breach test type integrity.** It starts a process but touches no service, as the
   test it replaces already does.
 
