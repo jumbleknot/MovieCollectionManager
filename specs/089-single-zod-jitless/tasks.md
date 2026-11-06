@@ -14,7 +14,7 @@
 - [X] **T005** Build the web bundle and measure the assistant chunk (SC-002).
 - [X] **T006** Run the assistant turn through the BFF with no `eval` allowance (SC-001).
 - [X] **T007** Run the same test on `main` and this branch on a fresh stack, after the first run failed.
-- [ ] **T008** Get a green CI run with the `mobile-e2e` label (SC-003). Quote the run number here.
+- [ ] **T008** Get a green CI run, including the Android agent flows (SC-003). Quote the run number here.
 - [ ] **T009** On feature 087's PR B branch, remove the walk's `eval` allowance and correct its contract.
 
 ## Evidence

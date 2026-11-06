@@ -35,4 +35,4 @@ override, because `@copilotkit/shared` uses the v3 API through the root import.
 - `frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts`: counts real `Function` constructions by zod,
   with a control proving the counter can see a probe.
 - Browser: the assistant navigate turn with no allowance. The permanent version is PR B's watch.
-- CI: agent `@gate` tests, and the Android agent flows with the `mobile-e2e` label.
+- CI: agent `@gate` tests and the Android agent flows. A change under `frontend/` already runs those flows.
