@@ -253,6 +253,12 @@ A surviving branch distorts one more thing: `branch/index.js` gates the branch b
 
 ---
 
+**A green Keycloak bump does not prove production survives it.** CI imports a fresh realm, and production
+upgrades an existing one, so the two can differ. Keycloak 26.8.2 is the measured case: fixing the realm
+file would turn CI green, while an upgraded realm still answers 401 until
+[the script](../../infrastructure-as-code/docker/keycloak/README.md) has run. Before merging a Keycloak
+bump, start the old version, upgrade its data to the new one, and call the Admin API.
+
 ## 3. Forcing a run
 
 ```
