@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the web security headers and the two-surface container healthcheck), the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
@@ -148,16 +148,26 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-06T06:42:06.997Z
 ---
 
 # Expo/React Native universal app
 
-`frontend/mcm-app` is a single Expo Router (Expo SDK 57, React Native 0.86) codebase targeting web
-and Android from one source tree. `app.json` sets Metro's web output to `"server"`, not a static
-export, because the same process also hosts the [BFF](./bff.md) via file-based
-`+api.ts` routes. Client-side code lives in `src/screens/`, `src/components/`, `src/hooks/`,
-`src/config/`, `src/utils/`, `src/types/`; routes (both UI screens and API handlers) live under
+`frontend/mcm-app` is a single Expo Router codebase targeting web
+and Android from one source tree. `package.json` pins the SDK 57 line — `expo ~57.0.30`,
+`expo-router ~57.0.28`, `react-native 0.86.3`, `react 19.2.3`, `babel-preset-expo ~57.0.16` — and
+those versions move only through `expo install`/the Expo upgrade path, never a raw Renovate bump.
+`app.json` sets Metro's web output to `"server"`, not a static
+export, because the same process also hosts the [BFF](./bff.md) via file-based `+api.ts` routes.
+That hosting already runs on `expo-server`'s express adapter through the hand-written CommonJS
+`server.js`: the adapter swap is in place on SDK 57, ahead of any version move, and it made
+`expo-server` a direct dependency and a prune root, so the unmaintained `@expo/server` package is
+named by no manifest, prune root or test stub. The *output mode* is a separate, later step of the
+same piece of work — prerendered pages with the API routes still in the same process, and Android
+code shrinking and web async routes deliberately off for that first release — so `app.json` still
+reads `"output": "server"` and per-request rendering is what ships. Client-side code lives in
+`src/screens/`, `src/components/`, `src/hooks/`, `src/config/`, `src/utils/`, `src/types/`; routes
+(both UI screens and API handlers) live under
 `src/app/`. Routes stay thin by convention — a route file reports its own screen label (see below)
 and renders a screen component, never the other way round. Both this app and the design system are
 linted by **ESLint 10 through flat config** (`eslint.config.js` in each project, replacing the
@@ -365,7 +375,7 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
 
 - **`import.meta.url` crashes the exported server bundle in production only.** Metro rewrites
   `import.meta.url` to `globalThis.__ExpoImportMetaRegistry.url`, which the Metro dev server
-  populates but the exported `@expo/server` runtime used in Docker does not; `frontend/mcm-app/server.js`
+  populates but the exported `expo-server` runtime used in Docker does not; `frontend/mcm-app/server.js`
   pre-seeds the registry as the workaround. Full mechanism, the affected agent-transport path, and
   why removing the seeding reintroduces a silent hang: [Expo Router server export and
   agent-transport traps](../gotchas/expo-router-and-transport-traps.md) (not restated here).
@@ -385,7 +395,10 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, which also fails if
   `@tamagui/babel-plugin` is named by either manifest or by `babel.config.js` again (a leftover v2
   compiler over v3 sources), and which keeps every Tamagui update in one Renovate `tamagui` group so a
-  partial lock refresh cannot split the set; `packages/design-system/jest/tamagui-cjs-resolver.js`
+  partial lock refresh cannot split the set — but it counts *versions*: its lock regex stops the
+  version capture at `(`, so two peer contexts of the **same** version still count as one copy, which
+  is exactly the two-style-registries/blank-page shape and not something this guard can see.
+  `packages/design-system/jest/tamagui-cjs-resolver.js`
   exists because Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only `.mjs` files
   Jest cannot load (56 suites failed to run on the 3.0.13 bump) — Metro handles `.mjs` fine, so the app
   is unaffected (the resolver resolves exactly as the `jest-expo` preset does and redirects only a
@@ -518,15 +531,37 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
   SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
   three; it opts out of the shared authenticated `storageState` because all three are public.
-  The same file also decides the *origin* the two identity-provider round trips above are built on:
-  `@expo/server`'s adapter derives every request URL from `req.protocol` and the raw `Host` header,
-  so `app.set('trust proxy', 1)` runs only when `TRUSTED_PROXY=true`, and without it the
-  Backups-consent and Account-deletion routes hand Keycloak an unregistered `http://` redirect URI.
-  Only the scheme moves — the adapter reads the raw `Host` header, which `trust proxy` does not
-  touch — and unset must stay unset so a directly exposed BFF cannot be talked into `https` by a
-  client-supplied header. Mechanism and measurement:
-  [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md)
-  and `tests/unit/bff-server-trust-proxy.test.ts`.
+  The same file also decides the *origin* the two identity-provider round trips above are built on,
+  and doing so takes **two** changes rather than one. `expo-server`'s express adapter derives every
+  request URL from the socket's scheme and the raw `Host` header and ignores `req.protocol`
+  entirely, so behind the TLS terminator it would compute an `http://` origin — and the
+  Backups-consent and Account-deletion routes, which derive their callback from
+  `new URL(request.url).origin`, then hand Keycloak an unregistered `http://` redirect URI. So
+  `app.set('trust proxy', 1)` runs only when `TRUSTED_PROXY=true`, **and** the catch-all hands the
+  adapter an absolute URL (`req.url = ${req.protocol}://${req.get('host')}${req.url}`), which is the
+  only hook the adapter offers for the scheme; the setting alone moves nothing. Only the scheme
+  moves — the adapter reads the raw `Host` header, which `trust proxy` does not touch — and unset
+  must stay unset so a directly exposed BFF cannot be talked into `https` by a client-supplied
+  header. `tests/unit/bff-server-trust-proxy.test.ts` boots the real `server.js` against a fixture
+  `dist/server` through the **real** adapter, with nothing stubbed on that path, and asserts the URL
+  a route received for each of the four header combinations; the previous stub echoed an origin it
+  computed itself, which is how a green test hid the production refusal. That and
+  `tests/unit/bff-server-adapter.test.ts` are the only two suites that exercise this hosting layer
+  at all (the unit tier imports TS modules and the integration tier calls route handlers, both
+  bypassing `server.js`); the adapter suite keeps its `node -r` preload because its subject is the
+  express layer in front of the handler, and it now expects the absolute URL the catch-all hands
+  over. Mechanism and measurement:
+  [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md).
+- **Every BFF container's healthcheck must probe a page as well as an API route, and a guard keeps
+  it that way.** Pages and API routes are served by the same process but come from different parts
+  of the export, so one can fail while the other answers: during the SDK 58 spike every page
+  answered 404 while an API-only probe reported healthy throughout. The three BFF services across
+  `compose.yaml` and `compose.prod.yaml` therefore run `wget --spider` against `/bff-api/auth/init`
+  **and** `/login`, joined by `&&` — the join is load-bearing, since `wget api; wget page || exit 1`
+  names both paths and still reports healthy when the API fails.
+  `scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` parses both compose files, requires both
+  path kinds and the `&&`, fails if it finds no BFF service at all, and proves itself against
+  synthetic API-only and page-only documents.
 - **A release APK reaches the dev BFF only because a config plugin allowlists cleartext for it.**
   Android `targetSdk` ≥ 28 blocks `http://` traffic by default and Expo only relaxes that in the
   DEBUG manifest, so the standalone RELEASE APK the mobile E2E suite installs could not reach the
@@ -550,6 +585,18 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   feature 081's re-measurement served the dev web bundle without OOM under either arrangement, so
   treat the OOM as the plugin-era cause rather than a standing property — the container rule itself
   still stands (`frontend/mcm-app/README.md` still states the OOM version of the rationale).
+- **Nothing under `src/app/` may be a test file, because the router bundles everything there.** The
+  entry point (`expo-router/entry`, `package.json`'s `main`) builds the module graph by scanning the
+  routes directory, so every matching file under `frontend/mcm-app/src/app/` ships. Feature 076
+  measured the cost of forgetting it: a `*.test.tsx` added there pulled its testing library in, and
+  the Android release build failed at `:app:createBundleReleaseJsAndAssets` with
+  `Unable to resolve module console from …/@testing-library/react-native/build/helpers/logger.js`
+  while the web export, the unit run, typecheck and lint all stayed green — which is why
+  `scripts/__tests__/expo-router-tree-purity.test.mjs` fails the tree rather than leaving it to
+  review. The guard also rejects a test-only *directory* there (`unit-tests`, `__tests__`,
+  `__mocks__`, `test-support`) and asserts the routes directory is non-trivial first, so it cannot
+  pass by walking nothing. Put the test beside the code it tests (`src/screens/…`,
+  `src/hooks/unit-tests/…`) and keep the route a thin delegator.
 - **`pnpm nx e2e mcm-app` does not work inside the devcontainer.** Chromium cannot be installed there
   (the Playwright CDN and apt are outside the egress allowlist). Run Playwright via the
   `mcr.microsoft.com/playwright` image with `--network host` instead — and keep its version tag

@@ -4,9 +4,6 @@ title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-05T01:33:57.840Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -133,6 +130,9 @@ sources:
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-06T06:42:06.997Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -334,17 +334,48 @@ One production stack's exposure is a proxy contract rather than a port. `prod-mc
 nothing: Cloudflare terminates TLS and `cloudflared` reaches `mcm-bff-service:3000` by name over the
 external `edge-network`, so the BFF itself speaks plain HTTP and its compose sets
 `TRUSTED_PROXY: "true"` inline — a non-secret literal in the compose file, not a Komodo Variable.
-That flag originally governed only rate-limit client identity; spec 083 T010 gave it a second job,
-because the Expo server adapter builds every request URL as
-`` `${req.protocol}://${req.get('host')}${req.url}` `` and `server.js` now sets express's
-`trust proxy` to `1` when the flag is true. Without it, every route that derives a callback from
+That flag originally governed only rate-limit client identity; spec 083 T010 gave it a second job at
+the express layer, `app.set('trust proxy', 1)` when `TRUSTED_PROXY === 'true'`, which is what makes
+`req.protocol` report the scheme the edge terminated. The routes that derive a callback from
 `new URL(req.url).origin` — the scheduled-backup consent route and the account-deletion
-re-authentication route — handed Keycloak an `http://…` `redirect_uri` while the client registers the
-`https://` one, and Keycloak answered `Invalid parameter: redirect_uri` (measured 2026-10-25). Only
-the scheme moves: the adapter reads the raw `Host` header, which `trust proxy` does not touch, so
-`X-Forwarded-Host` cannot shift the origin, and with the flag unset a directly exposed BFF cannot be
-talked into `https` by a client-supplied header. CI and dev never see this — there the BFF serves
-HTTPS itself on `:8443`.
+re-authentication route — need `https` there, and without it they handed Keycloak an `http://…`
+`redirect_uri` while the client registers the `https://` one, so Keycloak answered
+`Invalid parameter: redirect_uri` (measured 2026-10-25). With the flag unset a directly exposed BFF
+cannot be talked into `https` by a client-supplied `X-Forwarded-Proto`, and only the scheme can move
+at all: `req.get('host')` reads the raw `Host` header, which `trust proxy` does not touch, so
+`X-Forwarded-Host` cannot shift the origin.
+
+Since feature 087 that fix has two halves and either one alone is useless, which is the part most
+likely to be misread as removable. The `expo-server` adapter builds each request as
+`` new URL(req.url, `${proto}://${host}`) `` with `proto` taken from `socket.encrypted`, so behind the
+terminator it always reads `http` and ignores `req.protocol` entirely; `server.js` therefore also
+rewrites `req.url` to an absolute `` `${req.protocol}://${req.get('host')}${req.url}` `` in the
+catch-all before handing the request to the handler, which makes the adapter's socket-derived base
+irrelevant. `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts` pins both halves by booting
+the real `server.js` against a minimal fixture `dist/server` (`tests/unit/fixtures/real-adapter-build`,
+one API route returning `request.url`) and asserting the four rows of the hosting contract, so
+removing the rewrite turns the `https` rows red. Before feature 087 this trap was "pinned" by a stub
+that echoed the origin it computed itself: green throughout, while production refused the callback.
+CI and dev never see any of it: there the client reaches the BFF over an origin the realm already
+registers — the dev-config container on `:8082` over plain HTTP, whose `http://localhost:8082` callback
+URIs are added to the `grumpyrobot` realm by
+`infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs` — or, for the
+`bff-secure` profile, through the Caddy `mcm-bff-tls-proxy` sidecar on `127.0.0.1:8443`
+reverse-proxying to `mcm-bff-service-secure:3000`.
+
+```mermaid
+flowchart TD
+  EDGE["Cloudflare terminates TLS"] --> TUN["cloudflared reaches mcm-bff-service:3000 over edge-network"]
+  TUN --> GATE{"TRUSTED_PROXY is true?"}
+  GATE -->|yes| TRUST["trust proxy 1 - req.protocol honours X-Forwarded-Proto"]
+  GATE -->|no| SOCKET["req.protocol keeps the socket scheme"]
+  TRUST --> ABS["catch-all rewrites req.url to an absolute URL"]
+  SOCKET --> ABS
+  ABS --> ADAPTER["expo-server parses the absolute req.url"]
+```
+
+*The two halves of the public-scheme fix: the setting alone changes nothing a route can see, because
+the adapter reads the socket, not `req.protocol`.*
 
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
 are declared:
@@ -604,7 +635,19 @@ The gate scripts' own unit tests are enrolled the same way: `guardrails.yml`'s `
 `scripts/__tests__/` executes on every push and PR without being named anywhere — which is the fix for
 the period when those tests ran in no workflow at all and rotted unnoticed (feature 041). That is what
 makes the guard tests cited on this page (`gen-dev-secrets`, `komodo-stack-env`,
-`langfuse-postgres-shared-pin`, `infra-image-scan`, `agent-stack`) actually run.
+`langfuse-postgres-shared-pin`, `infra-image-scan`, `agent-stack`, `bff-healthcheck-pages`) actually
+run.
+One of those guards reads a compose file rather than a script:
+`scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` (feature 087) parses
+`infrastructure-as-code/docker/bff/compose.yaml` and `compose.prod.yaml`, finds every service running
+the BFF image, and requires its `healthcheck.test` to request both a `/bff-api/` path and a non-API
+page path — joined by `&&` when it probes more than one path, since `wget api; wget page || exit 1`
+mentions both paths and still reports healthy when the API fails. The reason is a spike result: during
+the SDK 58 work every page answered 404 while the container reported healthy, because an API route and
+a page come from different parts of the same export and one can fail while the other answers. The
+guard fails when it finds no BFF service at all, so it cannot pass by reading the wrong file, and it
+asserts the three services that exist today (`mcm-bff-service`, `mcm-bff-service-secure`,
+`mcm-bff-service-nonsecure`).
 Together these gates are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
