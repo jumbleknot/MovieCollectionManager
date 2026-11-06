@@ -33,10 +33,10 @@ sources:
     resource: repo://specs/043-openwiki-okf/spec.md
   - id: openwiki-source-636b4e73e33915c86a84ab68
     resource: repo://specs/044-openwiki-automation-migration/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T17:50:21.605Z
+    at: 2026-11-06T07:34:17.095Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -100,7 +100,7 @@ bundle before anyone checked (item 491).
 
 | If you are… | Read |
 | --- | --- |
-| Setting up a dev machine or dev container | [host toolchain setup](./runbooks/dev-environment-setup.md), the [dev container on a Docker Sandbox microVM](./runbooks/devcontainer-sandbox.md) and its [lifecycle half](./runbooks/devcontainer-sandbox-lifecycle.md), the [retained DinD path](./runbooks/devcontainer.md), [local dev infrastructure](./runbooks/local-dev.md), [dev-stack env files](./projects/stacks.md) |
+| Setting up a dev machine or dev container | [host toolchain setup](./runbooks/dev-environment-setup.md), the [dev container on a Docker Sandbox microVM](./runbooks/devcontainer-sandbox.md) and its [lifecycle half](./runbooks/devcontainer-sandbox-lifecycle.md) (recreate-from-nothing, the resizable volumes, the disk and memory symptoms, the destructive verification harness and the `sbx` upgrade ritual), the [retained DinD path](./runbooks/devcontainer.md), [local dev infrastructure](./runbooks/local-dev.md), [dev-stack env files](./projects/stacks.md) |
 | Finding your way around the repository | [the monorepo itself](./projects/repository.md) — layout, toolchain and lint conventions, the mandatory pre-work gates |
 | Changing mc-service domain logic | [mc-service](./projects/mc-service.md), [the domain data model](./architecture/data-model.md), [testing tiers](./invariants/testing-tiers.md), [test authoring conventions](./process/test-authoring-conventions.md) |
 | Changing the client or the BFF | [the Expo/React Native app](./projects/expo-app.md), [its design system](./projects/design-system.md), [the BFF](./projects/bff.md) |

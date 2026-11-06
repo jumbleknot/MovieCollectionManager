@@ -29,6 +29,10 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
+  - id: openwiki-source-d63e7534cd44e87f67938d1a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
   - id: openwiki-source-78ec32b51a25a8fb66d5b292
     resource: repo://infrastructure-as-code/backup/backup.sh
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
@@ -43,6 +47,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-f873d74e3a5ee524df98c4b4
     resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-f195180a736f33478d2817cf
+    resource: repo://infrastructure-as-code/docker/bff/Caddyfile
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
@@ -51,6 +57,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
   - id: openwiki-source-d5b1faab58eeb909bb999298
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -85,6 +93,8 @@ sources:
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-3878af0f305d1908abec5cb9
     resource: repo://scripts/__tests__/agent-stack.guard.test.mjs
+  - id: openwiki-source-f6c12ce9ca055174ab7f392c
+    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
@@ -129,6 +139,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
+  - id: openwiki-source-b1756c204f11fe3da51d14a7
+    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
+  - id: openwiki-source-acc6f4231f060062a015dbd3
+    resource: repo://specs/087-expo-sdk-58/research.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
 verified:
   - by: openwiki/0.7.1

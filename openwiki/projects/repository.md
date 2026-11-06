@@ -57,12 +57,18 @@ sources:
     resource: repo://docs/runbooks/local-dev.md
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-82e76cb56a030095b60d27cd
+    resource: repo://frontend/mcm-app/babel.config.js
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6
     resource: repo://frontend/mcm-app/eslint.config.js
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
     resource: repo://frontend/mcm-app/project.json
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-d67eac1e98649691c637d9c0
+    resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
     resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
   - id: openwiki-source-6ba748254f38112b13d529da
@@ -95,10 +101,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-06T07:34:17.095Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -219,7 +225,14 @@ artifacts.
   lockfile refresh had already dragged a v3 core in beside the v2 packages through an open `>=`
   devDependency, with no Renovate PR and no review. The README's tech-stack table is where the whole
   stack is listed, but it can lag a stage that has landed; for this set the manifests and the guard are
-  authoritative.
+  authoritative. The missing compiler is a measurement, not an omission: Tamagui 3 removed the v2 Babel
+  plugin the app had run since feature 015, and its replacement `@tamagui/metro-plugin` 3.0.x was
+  measured to lower some web modules to static class names *without emitting their CSS* (lost gaps,
+  widths, radii) while saving no bytes — entry chunk 1,881,353 B with it against 1,881,066 B without —
+  so Tamagui runs runtime-only and the dev server and export were measured to handle that without OOM.
+  Re-adding a compiler starts from the US10 research in
+  [specs/081](../../specs/081-major-dependency-upgrades/research.md), not from a configuration tweak;
+  see also [frontend/mcm-app/README.md](../../frontend/mcm-app/README.md).
 - **Object store (feature 080).** The observability stack's object store — the S3 target behind Langfuse
   and the feature-073 backups — is an upstream, digest-pinned `rustfs/rustfs` pull rather than the
   from-source object-store build it replaced. That is why the stack table lists RustFS as upstream and

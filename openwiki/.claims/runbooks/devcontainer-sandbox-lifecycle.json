@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2bda4dec00b85d4b0e443c282ffc6d23db9165dbcbf9236a452ed76ce5837d49",
+  "pageVersion": "sha256:78d610aa789d5626d071a7aee361079dba52feedd9772be0702849e4d595c52d",
   "claims": [
     {
       "id": "claim_d09a6a6493dd4c28a412786ec71bb102",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox.md",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -32,7 +32,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         },
         {
           "resource": "repo://scripts/gen-egress-policy.mjs",
@@ -46,7 +46,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -59,7 +59,7 @@
           "version": "repo-lines-v1:sha256:9695adf491fb17fe6676efb3bbd34f6438c13e538460e55a65a866b59bf33562:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNjgwZjBmZDYzYmY3NmMzNTUzMWZiOTUyMDg2MDJkZmU4ZDk4ZTA5ODVlYzg2MzBjYzBiNWZkZTEzMTI0MjIifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L660-L661",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L661-L662",
           "version": "repo-lines-v1:sha256:0e151f0fe8243abfbf3764a8f1d96d9c7f8cb358d85b3b6e8cd225073c8417c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAyY2JiNmRhMmE5YzkzMjRkZTIwMjAzMmM0MGU3ZDIwZDI0ZmNjYzEyNGQwYTU0ZDVmM2MwYjZmZWRiZjMyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJhMTBmNzQxZjQ2MWFhODg1NjA4YmJmNjI4NmNjNjY4ZjdiNTQ3NDFmZThiYTJjZmJjNjVjMzdjYmE1YzYxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGMzODJiNWFjNDAyZGZhNTYxYWYyMzIyYzM3ZjA2NjhjYzYwYzI2ZjQ0YzE2YzQyNzU5NTgwOWFiZTNlNzM1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjAyYTcwMjFlZDYwOTk4ODAzMDFlNmNmZWVlODBhODdiOWY5NGVlMWY5YjE1MDI2NmZlODdlNjA4ZWJlNDQ5YSJ9"
         }
       ]
@@ -70,7 +70,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -80,7 +80,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -90,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -100,7 +100,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         },
         {
           "resource": "repo://scripts/open-sandbox.ps1",
@@ -113,7 +113,7 @@
       "statement": "A cold recreate from scratch needs six things the provisioning path does not supply: the `devcontainer` CLI installed; an `insecure-registries` entry in /etc/docker/daemon.json because the forge registry is plain HTTP (and /etc/docker must be created first on the v0.51.0 shell kit); a sandbox restart rather than `/etc/init.d/docker restart` (which exits on `ulimit: error setting limit (Invalid argument)` while `docker info` keeps answering, so it reads as success); a toolchain pin that still exists in the registry; an /etc/ld.so.cache for the VS Code Remote-SSH prerequisite check; and a git identity. Each of the first five stops the recreate dead, and the sixth stops the first commit.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L451-L518",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L452-L519",
           "version": "repo-lines-v1:sha256:7031a3a797fc008940ad63541d6e3905aa1bf0caf7f291d17413bc82e8794e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmFlZDVjYmEyMWY0NGFmNjdhMDFjYmUyODBmNThiMDQ4YmU3MDYyN2IyN2ZjZWMzZTA0NDUyM2I3MjMxMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODQ3ZGM3YjIyNmY0NGEzMjNlMDdjNTg0ODM2MzM1MmE1ZmJjMTNiNjVkMWM1Zjk2NTIyZTJlY2U2NGNkZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMzA5ZjhjOTVmNDkyOTQxNTkxNDZiZmQ3M2YzNmE4NjU4YzQ1Y2YyMWVlZTNmMTIwZjBhNWNkM2JlYTQzZjkifQ"
         }
       ]
@@ -124,7 +124,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -134,17 +134,25 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
     {
       "id": "claim_d6cf6c0f46a842bea5d34a4e17bceeb6",
-      "statement": "`run-harness.sh` runs twelve verify scripts across three vantage points (in-container, VM-side, host-side), enumerates the expected scripts by name because a glob silently shrinks and a skipped check reads as a pass, and requires MCM_HOST_CHECK because the host-side proof cannot be produced from inside the thing being claimed about; without it the run reports eleven and fails.",
+      "statement": "`run-harness.sh` runs twelve verify scripts across three vantage points (in-container, VM-side, host-side) and enumerates the expected scripts by name because a glob silently shrinks and a skipped check reads as a pass; the host-side proof cannot be produced from inside the thing being claimed about, so it must be handed in as MCM_HOST_CHECK. However, an unset MCM_HOST_CHECK does NOT fail the run: `verify-engine-seam.sh` takes its single tally slot from the in-container run, so the by-script tally still reports twelve and the run can print `all 12 checks reported and passed` with the host-side proof never executed — the omission is announced only in an `!!` warning line. An explicit `MCM_HOST_CHECK=fail` does record a failure and fails the run.",
       "evidence": [
         {
-          "resource": "repo://.devcontainer/verify/run-harness.sh",
-          "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
+          "resource": "repo://.devcontainer/verify/run-harness.sh#L117-L151",
+          "version": "repo-lines-v1:sha256:11c2c44256df167159650995656d07e1ed3ded5a32f78f61bdf566fcde15dcd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYjFiMjk3NzU1MTc5YTE1NTE0MDM2ZGE5ZjQ0ZWIzNWVlN2UyOGJmMjViN2JlMjgyMWMwMGNlNWQwNjg0NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YTJiZWNmZjhhZmIzNGRiMjYwZGFiYzk2OTE1ZmZlY2ZkZTg0ODkyOTU0MWM2MTkzZGU2ZDE2NGMyMWU4ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYzQ1YzdlMTFiOWQ5OWM4ZTU4ODg1MzVhNWIwZWQ1YmEzNmY0M2FkYjFlZGFjNzQwZTZlOTdmODRmMTIzZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNDg4MzY2NzU1OTA4YTFjNjFjMjkzNTU2NjhhMjZjYWVjMjE5OWVlN2RlYzdmMzg5MzE4MTk0YzMyYzliOTkifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh#L157-L187",
+          "version": "repo-lines-v1:sha256:9911156022bcdc98400853b3a89e73bf9457525c5f85c5716b427ef5a7c1d6b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNjg4YTYwNzQyNDIxODA1NTYyOGFiYjE2YjAwNzY4ODcwYWRkOWNlZTE2NmM5OGMzMWU3NGE2NjE5YTQ1M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNTRmOGZkZWFiM2ZhMzMwMmU5ZWI0MGQ4ZTM1YjUwY2JmMzA2MzY1NzExZmUyMmM3NWM3ODJjODRhYjlkZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxZTAwOGI1OWU1Y2U1OTNhOWQ3OTUzNTYyMWMxYmFkOTUxZmM3YmIyNDJkYWZjMDIzOTkwMDY3ZjY4YTQ4OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.devcontainer/verify/run-harness.sh#L50-L73",
+          "version": "repo-lines-v1:sha256:a5fbc8cdc43029e9a9f0cfaa69672aec6a1b6e7061e141af6c9b5865e42063c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODY0ZmZlZTVhOTdmMjQ3NjQxNDBiMzAxMzQ1MDlkNTM3Y2YwZWU1ODcxOTBiYWM5NDI2NjdmYWM3NDk1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNzRiZmFiMWQzYzQ2MjE3ZDIwMjk2M2M0YzRiN2UwNjFkODg3ZWM5MzY3OWVhMGVlM2VlZTUwOTYzMjgzNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZmQwMjY3YTgxY2Y3NzE1MDY0YzMzNWY5ODA3ZDgyYTZhNGRlYzY1NDhmYjEyZmNmMDljNDJkMTBhN2RkNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZWI0OGZmOGU3YmVlMjBhMTkwNjY0YmJhNTNmNmZhZmRkOTU5ZjIzYzNiNzBhNmQxNTU4NzQzNTRmNzg1ZDAifQ"
         }
       ]
     },
@@ -172,7 +180,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -196,7 +204,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -206,7 +214,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -216,7 +224,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -230,7 +238,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -240,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         }
       ]
     },
@@ -399,7 +407,7 @@
       "statement": "The restored `~/.mcm-sandbox-env` pin may point at a toolchain image that no longer exists: registry retention keeps only the newest 4 `mcm-devcontainer` versions or 21 days, and because its digest is pinned only in each developer's gitignored variable, git cannot protect it. The old VM never notices because it holds the image locally, so the first sign is a recreate failing on `not found`; check with `docker pull \"$MCM_DEVCONTAINER_IMAGE\"` after sourcing the env file before `devcontainer up`, and re-pin to the newest tag if it fails. A `docker login` does not help, because it is not an auth problem.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L484-L489",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L485-L490",
           "version": "repo-lines-v1:sha256:0b6bda5a5472824024ff46560b583909e7a8562a184c73807c39ff2515f98582:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEzODc4ZmIzY2M1NjRhZGVlODQyNWMzOGY0ZTU5OGNmNDRiYmM1OGQzOWQwMWZiZGVmYWFmZTFmZjIxNmQ3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJlMDY0OGJhNmEzM2JmNzJkNTg3OWU5Y2UxNWQ1OGMzZWM4OTkwMDNjN2NjOTY5YWU2ZTFmMTQwM2RlMjZmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmJhYjhjODM3MzYxOWYxMTNjZGQ2MTJlNzcxMDdiMjVhYTE3MmZhMzlmNDdmYWI0NGU2ZTZhY2E1MGFkMGY0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTllMWZjMjRkNGNlYzY2MDVkYTZhNjFhNTQ4NTc0MTIxOWQwN2ZkNzBjYTFkZTcxMjEyZjAyZDIzODQxNTlmZCJ9"
         },
         {
@@ -413,7 +421,7 @@
       "statement": "The v0.51.0 shell kit ships without `/etc/ld.so.cache`, so VS Code's Remote-SSH server check — which locates `libstdc++` through `ldconfig -p` — refuses with \"the remote host does not meet the prerequisites for running VS Code Server\", while both `/sbin/ldconfig` and `libstdc++.so.6` are present. Generating the cache once with `sudo /sbin/ldconfig` fixes it; the cache lives on the VM root volume and survives `sbx stop`. `devcontainer up` and the harness are unaffected, which is why a 12/12 harness run did not catch it and why the one-step launcher is the first thing to exercise it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L491-L504",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L492-L505",
           "version": "repo-lines-v1:sha256:c14c0f32c1032455bfa64343914016202bc9405d0973c34c083547e6e1fb6612:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZTUzMzVmYzJlMTZjYTgxZTQ4NDQ0YzAwZWJmNWJlYTY4M2U4MjYzNjdiNGE0MGRlZDI5YWFjZmY5NTdmNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNjBlNjFhNjhhNjY3Y2IzOGE5YzViMDhmMGZmMTZhOGJlMzI2NGRhOTRhMmY5MTExMjc1NGY1MzVhMTIxOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkOGRlMjU0NjY1Y2YwYzU0YmM5YjY2Mzc3MzNiNzQ5Y2ZhYjZkNGQ1MjM5OGI5M2JlZDNmNDI1MGQxMWFlMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMzExMzk4YTJlMWE0MzA2ZDI1YmFiMmRiYTU3NDc0YjQyNzc4ZjJjZWJlMzY0MWU5NjI4NTUyNTQ4ZjdlMTQifQ"
         }
       ]
@@ -423,7 +431,7 @@
       "statement": "A cold recreate leaves the VM with no git identity, so the first commit in the container fails with `Author identity unknown`: `open-sandbox.ps1` attaches through Remote-SSH to the VM, so VS Code copies the VM's `~/.gitconfig` into the container, and the VM's has never carried `user.name` or `user.email` — whatever identity the old container had was set in its own home, which a recreate discards. Set it on the VM, where future containers inherit it, and in the running container whose copy was already made. No harness check commits, so a 12/12 harness and a read-only git check both miss it.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L506-L518",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L507-L519",
           "version": "repo-lines-v1:sha256:392f467926ab7c4df4c8d56abf5a04d1d78dd02fa9c7f2a3c4a0cad3f4c15e13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1NjhlNjZkZTc2YTNkZDhjOWU3OWNiNmFlNThhMDk2NDZmY2M2NTI3Y2E2NTVlOTExNGFiZjNiYWEyNDBjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODQ3ZGM3YjIyNmY0NGEzMjNlMDdjNTg0ODM2MzM1MmE1ZmJjMTNiNjVkMWM1Zjk2NTIyZTJlY2U2NGNkZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5MmIzM2JlMzkyN2I3YzJiNjQ2MjRlZjcwY2JlMjAxOGZkNzEzNWNhYTkzZGI5ZjI5NzA5ZGQyNzE1MTAwNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMzA5ZjhjOTVmNDkyOTQxNTkxNDZiZmQ3M2YzNmE4NjU4YzQ1Y2YyMWVlZTNmMTIwZjBhNWNkM2JlYTQzZjkifQ"
         },
         {
@@ -437,7 +445,7 @@
       "statement": "A recreate's backup list must cover two things a naive `.env`-only backup misses: the gitignored per-project `settings.local.json` (the Claude Code permission allowlist, lost in the 2026-11-03 recreate), and the container's own `~/.claude` volume, which `sbx rm` also takes and which therefore needs its own `docker exec`-side archive copied out with `sbx cp`. The container copy must be restored without clobbering the fresh personal layer — `cp -an` the extracted `.claude/` over `~/.claude/`, then put back its `projects/` and `.claude.json` explicitly, because the fresh layer's `settings.json` carries the RTK hook.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L526-L552",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L527-L553",
           "version": "repo-lines-v1:sha256:7a1959ca0375148e296f8a766e7e658d2115832e48d88b11c43c9a3e60eba564:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MzkxODg4ZGI3YjhhNWJiNzAxY2YzN2JiOTNkNzM0MzQzZDkwYjEyNTIwZDY4ZDg0ZThkM2UzNzM1ZmRhZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjY2MDc4NzRlOTZkZDM2ZDJiZDdlZWNmZTFmMWNkNzZiNDM0MzY5ZDg3ZDdhMjMxNDcxYzhlOGZjNzA3NmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzU1ODQxYmM5ODI2YjQwZDViNjA4NDA1ZWExM2QwMDZmNzVhN2VhOTcxMzFiZGNkMTZmMmI2ZDU0MWUxZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNmZiOWZmMmE5ZDZmY2UxMWJiNDlmYjRhOWU4ZTNmYmU1OWZiNGQ5MWM0MjAzNGRjNjgxNmUxNmQ3OTdhYTcifQ"
         }
       ]
@@ -447,7 +455,7 @@
       "statement": "The egress-policy generator's `--forge-host` must be the bare host: read from `~/.mcm-sandbox-env` it carries single quotes, and `sbx policy allow` rejects `'host'` as an invalid pattern, so one rule silently fails — count the applied rules rather than trusting the loop.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L670-L672",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L671-L673",
           "version": "repo-lines-v1:sha256:6b1296a1922c17331b8cbfd20bb2e03b1d43d9736ca8c69af9d81905a07c961f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4ZDM2YTQyMjg1MDU4YTRhZGJiZWVhOGEwNjMzZmJlMzY2NzY3ZjYyMmIwNmRlNjk3YmQyNmJkMWQ4OGJmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM1NDRhZjU4YmE5NDhlMDM0Y2FjNGQwY2I2ODlkMjE0ODQzZjBjYTljNGQ4MGExMWNiNWYwMWVlMGNlYWU4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2JlMDEwY2ViYTAwZGQxNjgzOGEyOWU5OWE3MmJiZWU5OGE5YWU0NjUzZDUyOWRlMjc1ZjRkOTZmZDE4Y2UzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI5MjFkM2RmNmMxOGI3YTk5YzUxNzhiODA1NDY1NTRhMGYzYzE2OGQ0NjE2Y2VlODYzNTg3OTkwZjYxNGUwMCJ9"
         }
       ]
@@ -457,7 +465,7 @@
       "statement": "`sbx` is pinned at v0.51.0, upgraded from v0.47.0 on 2026-11-03 (`sbx daemon stop`, then `winget upgrade --id Docker.sbx --version 0.51.0`). In v0.51.0 the `shell` agent became a published kit (`docker.io/sbx/shell`, a Docker Hardened Images Debian 13 image with a Docker engine sbx starts), replacing `docker/sandbox-templates:shell`, which is no longer refreshed; a sandbox created on an older version keeps its old image until it is recreated, and the `sbx create` command line is unchanged.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L628-L641",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L629-L642",
           "version": "repo-lines-v1:sha256:4711e3c709d2ac386c413ca82672de9667b1ad8d2f3caa89abbc505691bc0cb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjY2MzMTg2MGJmOTU0ZGE3MWFiYjM4MDNlNTE2ZDE0YTU4Mzc4YzY0ZDQyOWUzODE3MThmNzM4ZDU4ZGY5ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMzM0OGFkZDU0MTVlOWUyODY4OTNlNjFmMWUwZDVhYjYyZTVmYzI4Njg4ZTRmMTQxYzUzZThjNzljZmIwYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NTdhNjk3OWQ4NTQwZGUxZDczMTQ5ZWYyYTZhZWM0ZDk2YTRmNWNjOWY4Yjc1OGJkZDNmY2JmOWZjMzQ1OGMifQ"
         }
       ]
@@ -467,7 +475,7 @@
       "statement": "The v0.48–v0.51 release items that touch this environment are: a redesigned CLI output with changed `--json` shapes (v0.48.0, `sbx ls` is now a bare array — which is why `open-sandbox.ps1` reads `sbx ls --format json`), `--detached` rejected and a piped `y` no longer confirming a prompt; CA certificates for the eMudhra CA compromise (v0.49.2), which upgrading the CLI does not fix for an existing sandbox but recreating it does; network changes (v0.49.1–v0.51.0) in which an explicit CIDR deny beats a domain allow, a burst of outbound connections no longer crashes the daemon when the host network stalls, and policy commands reject an empty `--sandbox` instead of applying globally; v0.51.0 allowing `-m` up to the host total with a warning above 75 %; and v0.51.0 environment files accepting `sandboxOptions.rootSize`/`dockerSize` as an alternative to §8's variables, not adopted. There is still no `--disk` flag on v0.51.0.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L635-L656",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L636-L657",
           "version": "repo-lines-v1:sha256:9a0cbb79d7c7559fa1589ccb263fa3f2d69134531a06a1c99c513943caa9fc7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YWQ0ZjZlNzcxNDJiMDJhMDYyYWM0ZjdmZmZlZDI1OWQ1ZWU0MmNlNGY2N2Y0NmQzYzg4MDQ3YWY5ZTE5ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2YzM4NDQ4OTcyZDFkZDQ3NWE2MDFhYTkyOTFiZjI3YTA3NjJhYzFiOTRiZDZiZDMwZTUxNDBkNmY1ZjBkNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiZTg4MTg0OTZiZGIyODljMjUxYWJiYWM0MjA5MzY0Yjk0ZDkzZDFkZWMyYWNmMWVkYTI1ZjcxZWE1YTgwYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjMzgyYjVhYzQwMmRmYTU2MWFmMjMyMmMzN2YwNjY4Y2M2MGMyNmY0NGMxNmM0Mjc1OTU4MDlhYmUzZTczNTAifQ"
         },
         {
@@ -481,7 +489,7 @@
       "statement": "The v0.51.0 release notes claim Windows SSH configuration now works with Git Bash's OpenSSH too, which would retire the \"Could not resolve hostname\" trap in §8; that was not re-tested, so the documented workaround (use the Windows ssh client by full path, or `sbx exec`) still stands as the safe default.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L654-L655",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L655-L656",
           "version": "repo-lines-v1:sha256:05552a645e703c6414baede88da348470bcc8a1a15c062fcd7a253e694ab417f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxMGRjZjcxMDM4ZTVmMjMzZTkyZjJkMjI5ZGZiMDhiZDhlOWMwNWE4YWJhZWRiOGRiNzIwZGIxODgyZWUzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU4ZDIxZDhhZTVlMWJmODUyNDIwMzNlMDcxYTBjZDcxZGY4NTZjYmY0MTUzOGQ4N2Q5NzA1MjQ2MzY4ZGJkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTdhZDQ4NGM0M2RkZDEyNmEyYTdjNTM1ZWRhODg1NmQ1MWFlN2YzZmQ5MTliNDBkODQ2MjIzNDViYzA1NTcwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ3ZmQwNDVhNjIxMzUzMzdhMTk0NWFmNDI3NzNhODQzODE3ZjQyN2UxYjczODUzNGFjZTkzZDgwY2EwOWQxZCJ9"
         }
       ]
@@ -491,7 +499,7 @@
       "statement": "Verification for v0.51.0 plus the shell-kit recreate on 2026-11-03: the harness run from the VM shell was 12/12 PASS including `reproducible-recreate`, the G5 sibling-egress refusal PASS, and the host-side `verify-sandbox-egress.sh --audit-check` PASS, showing v0.48.0's `sbx policy` output changes did not break it; `verify-engine-seam.sh --host-check` was NOT RUN because Docker Desktop was stopped, which makes it pass vacuously.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L674-L683",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L675-L684",
           "version": "repo-lines-v1:sha256:f913a96a40029283a33db6f1750ed238f17b5da08da3b973464d8d56d2c35e30:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYmEwYzM2Njk3YmE3ZWQ1ZmM5YzEzYTllNDk0MzRlZjc2MjVhY2NlNGYzODQyMzJjMzJjNWJhYmM4ZTEzNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZGZlOGQ1MGFmMTk0ZDdiMGZjYTFkNGMyZWJhOTA5OTUyYjVkZTk3ODZjZDkyM2I3YTkxYTU1MTZiYmUzYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMjQ1ZjA1ZGI1MDY2ZGUxZmZkZDJkZGJiOWE2Nzg4ZDNmM2E2Mjc2Y2VlMDE1N2MwNzhmNDQ3NmEyZDMzZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzU1ZTExZThiOGU2M2I1YmQ1YzhhZDJhOGZlNGQxMWY4MjY2MWU2ZjZlNjE0MWMyYmYzZjRhYzFlNjY4ZGQifQ"
         }
       ]
@@ -505,7 +513,7 @@
           "version": "repo-file-v1:sha256:8159c62472abdbd723e1d5c2399e7d1ace23d3f11692d5d119e5a25a95a287a3"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L678-L678",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L679-L679",
           "version": "repo-lines-v1:sha256:6a2f68f69b416358888b637e3c7417bc5d57900e5ea0af03fa7ad28a06dfb340:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEyZjY4ZjY5YjQxNjM1ODg4OGI2MzdlM2M3NDE3YmM1ZDU3OTAwZTVlYTBhZjAzZmE3YWQyOGEwNmRmYjM0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmEyZjY4ZjY5YjQxNjM1ODg4OGI2MzdlM2M3NDE3YmM1ZDU3OTAwZTVlYTBhZjAzZmE3YWQyOGEwNmRmYjM0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE1ZDQ4OTZkNDI5NmFhOTg4M2I3MDA3ZTQ0NTQ0OGE3NmM3NzcxNjgyN2FmYTYyODQ1MjE3ZWNmNGQzNjA5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc2N2M5YzMwOWIzN2VhNzMwMjg5ZGUxODNkNTdmNDM4OTk5MjY4NTlhMzE5ZDMxMTk1OWJjZTZiNGUzYjNlZiJ9"
         }
       ]
@@ -519,7 +527,7 @@
           "version": "repo-file-v1:sha256:e57ccd277f1e1a452f9b1d64787151bb7fdc813d5160bfc60c8c61c2d0aa7da9"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L762-L766",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L763-L767",
           "version": "repo-lines-v1:sha256:d4dd6930e777d2f13b18a853139f79e422fde1fe650a1e022f7ae0570fa39db1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U4ODRhMGIyMzZmYTE0ZDk2NGQwYzY5YzY3YjBhNjRhNDM4ZGVhOTYxOGMzNjllYzVlZTRmMDhkM2U3MGRhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkOTdlM2JmZDQ5ODQ4OWMyNzhlM2UwNGFjMDI4MTZiMjE5MWY3NjIwZGIyYjY5NDM1ODIwMzU2NWJiZDFjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThjOTlhYzQwYWRiNzRjZTk4MzdlNGU5ZDE3NjFiNjBmMmU3NWFmYjBhOGVjNTI0ZGFiZGFlYmZiYjBlNGNhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU1NTY0ZGNlNzMwYWM5N2JlM2FhMmMyNDYyN2NjZWRiMzIzNWRiMDFmMzZjMmY1OTAzYzkxYjUwZjZlZjViNSJ9"
         }
       ]
@@ -547,7 +555,7 @@
           "version": "repo-lines-v1:sha256:9695adf491fb17fe6676efb3bbd34f6438c13e538460e55a65a866b59bf33562:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNjgwZjBmZDYzYmY3NmMzNTUzMWZiOTUyMDg2MDJkZmU4ZDk4ZTA5ODVlYzg2MzBjYzBiNWZkZTEzMTI0MjIifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L652-L653",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L653-L654",
           "version": "repo-lines-v1:sha256:49454bd979f206df9cb67ab689856c80a82fe85e8770e48653253271882c72da:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGUzNWE4YzgzYjIxYTM3OTE2ZTFiMTg1Y2U3NWM1NzEzM2MzNzgzZjM4MjZiOGExZTIxZmYyZTdlY2ViYWQ3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmZDdhYzNkNTI5ZGYwZWIyNjE0NmI3ZjVkYzA5ZDFmMDg5YjkwNWRkOWNmMzAyNmNjYzE0YmE5MmQ1YjkyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM4MTI0NmI1ZjMyZmNiY2I4MzRlNTA2MmIxOGU5ZTRjMjVkYmMzOGY5MGFlYjFiYmFhMTIxNDRiNDQ1ZWUwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjMzNWU3MTlhNTk5NzdmOWI4MzgwN2M2NGE0YzA0ODI2ZWVmYmYzN2M1MDZiZmYzMTQ5NjA3NzcwNzNjMTEwNSJ9"
         }
       ]
@@ -565,6 +573,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-05T01:33:57.840Z"
+    "at": "2026-11-06T07:34:17.095Z"
   }
 }

@@ -17,20 +17,30 @@ sources:
     resource: repo://backend/mc-service/Cargo.toml
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-27d785edc3cec2c27da82832
+    resource: repo://docs/proposals/MCM-Expo-SDK-58-Approach.md
   - id: openwiki-source-a679e2e5a49381a72df446c5
     resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-baa6cf05f830f1fa193ef74c
     resource: repo://docs/templates/feature-test-tasks-template.md
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-f7e16ba323424b9790bca8b9
+    resource: repo://packages/design-system/package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-e1b32ed173a0f6b508f94a03
+    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4708763005c35901b04f5740
@@ -45,6 +55,12 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/spec.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+  - id: openwiki-source-ce98b17d342993a61a79a926
+    resource: repo://specs/087-expo-sdk-58/plan.md
+  - id: openwiki-source-cbc86a7a3a87453e949a2389
+    resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-93b6202dca9e48a643d50488
+    resource: repo://specs/087-expo-sdk-58/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1

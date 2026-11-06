@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e146d52bde9670928dc56349160a19661fca88104617f80207f15647b8ebd1c9",
+  "pageVersion": "sha256:541f167ce5c635f62cd32d2387b4ddf9048accda49abda53ebf784a15fbb3589",
   "claims": [
     {
       "id": "claim_90d3031488b246f3931cda210aaddde1",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:655ccf01fb90a78f6f1264a49aeb2bc5ac84e58ced7d397c7a48e0fd777dbaf0"
+          "version": "repo-file-v1:sha256:d0b8c26f71c0df1de944bba85297c54d83480d34935d47209d292f8d06551b2a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
@@ -62,7 +62,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:655ccf01fb90a78f6f1264a49aeb2bc5ac84e58ced7d397c7a48e0fd777dbaf0"
+          "version": "repo-file-v1:sha256:d0b8c26f71c0df1de944bba85297c54d83480d34935d47209d292f8d06551b2a"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml",
@@ -459,10 +459,28 @@
           "version": "repo-lines-v1:sha256:1feca51fe13b43b000faeb765d8caa6044bddf859fc8c98d9b7bcb13fc5edc93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZjVlOTYyMGE0MmQ5OTNiZjY4MDMwMTIyYTI0NWRjMTRiOTI0NTVmYWVhZWViMjcxZDY4MGEwMzJhOTJjNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZDc0ZmU4OThkMzA1ZWI1MmM0NzBjM2ExZTU3MzNlZWExYTc5MTJkZWQ5N2M2MzAxZWIxYjMzYTFjZWZlNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NjdkOTY4NWFjZGZlNzJlOTIwNDE3NzVjZjZhNjE5MmFkYzY0MDVlZGU5YzlhOTA3ZTc0M2YxNTE3Zjc4YmEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6ece181c1b304bd2b16374949ea07913",
+      "statement": "The BFF store is standalone rather than a replica set because it performs single-document upserts only — no multi-document transactions — so it needs neither a replica set nor `directConnection`, whereas the movie store is a single-member replica set solely because its atomic cascade-delete uses a multi-document transaction.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-data-tier-auth.md#L3-L5",
+          "version": "repo-lines-v1:sha256:eb00273c16fce3ce10f5dd1328b4bb8a189209908438fe74af19ae041c228067:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ2YzJmYjBjMWJhY2QxMWVjMzk1MWQ1ZmFmYzVmMTA3ZGU0YmJjZWNmYTE5Y2M5ZTdkMTgzMzRmZGUzOTA4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk5MTNhZGRlMjhhNDNjMDI0ZTQyOTkxNjE5OGI1MGI3MDA4ZDI0ZGM4ZGE0NDU5MGMyMzU4ZDU0OWQxODVlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAyNGJhYTczMGRjNzBlNTQ3MGZjODg3MGUzNmZmNjQ3ZDhlMjBmMmZkZTg2YjFjYWY1OGNiM2E2NTdkMmQ1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGVkNDQ5MDY5MTYzZGI3MjI5Nzg1ODRhZGQ0ZjQxZTEzMzA1YjAxODYxOGQxNDdhYWRkNWMwMzgwNGZhMTgzNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L132-L139",
+          "version": "repo-lines-v1:sha256:e4ed256e5a0f83641e8d4eb42d963ced0c7a7c0737caf6c261829f093b98e6b9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJmZTUxMmEwMGM2YmUyYTZmYTEyNDkzNDAwODZkZmU0OTVlN2UxMDJmNTAyNzM5ZDc1OTQ3NGY5NDI5ZTgwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYwMTExODRjYjc4MzMzMzg1YWMzZjIwNzg1MTZjMTg0NjY2YzQzNDFmMjdiNDhhZTM3NzMyNGY4YTljODRmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUxN2MwNzg5Y2MxMTI0NTYzNzM1MTYxYjg0ODU0ZjRlY2NmNjBiMWUyNzllZWRiNWVjOWQ0ZDA4NTQ1YTA3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNjZTdhYWVkNTY4ZWFlMTJkMGYyMGE0MDI3OTk0MzllOWM3MGQwYTgxZTU2NmNkZmQ1MGI5Mzc1YWRjYzFkNCJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L28-L33",
+          "version": "repo-lines-v1:sha256:72746254f3a94f6861fdcebc0c16a4e2e457d6ce43d5217e01333a7948e2a3df:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VhNzQzNDdlMmMxNWMzNzlkNTA5MmI5M2U3YWRkY2ViNWZjMzhjZjU5MjM4MWU3ZjA1Mzc2M2M0OTgwMGUzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY5MWJkMGQxMjQ3MWY1ODEyYjkxYjA2NTJhMDY3M2JiZWViYzhhYThhYzdhMTFkZGM3M2NmY2NjOWNjOTk5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E2ZWYwNTM2YWM3MjU5NTZkNDk3NDQzYjlhNjFjNmNlNDIwMzljMTFlZjNiMGU3MmM0ODUxNDhhNzFkY2E2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY5NTYxMDI3OTdhYTM5ZGY0MjM4MmZiODRhNzgwZDkxZmU1ZGY3ZTFjZWJlYmQxNDgyNjMyMzUzMzZlMjA0OSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-05T01:33:57.840Z"
+    "at": "2026-11-06T07:34:17.095Z"
   }
 }

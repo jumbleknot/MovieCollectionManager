@@ -4,6 +4,9 @@ title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0
 description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production on 2026-10-24 and completed by the post-soak FCV raise to 9.0 on 2026-11-01.
 resource: docs/runbooks/prod-data-tier-auth.md
 tags: [production, mongodb, auth, security, upgrade, runbook]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-06T07:34:17.095Z
 sources:
   - id: openwiki-source-810a3627633783500597ffc6
     resource: repo://.forgejo/workflows/app-ci.yml
@@ -15,6 +18,8 @@ sources:
     resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-d5b1faab58eeb909bb999298
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-852cc196002c1a675baddf5c
@@ -45,10 +50,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-05T01:33:57.840Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
@@ -106,8 +108,9 @@ unnecessary step or a misconfigured mount:
 
 A keyfile authenticates *replica-set members* to each other; a standalone mongod has no members to
 authenticate, so the BFF store needs credentials and nothing else. The movie store is a replica set
-only because the atomic cascade-delete uses a multi-document transaction. Both stores are pinned by
-image digest in their compose files rather than by a floating tag.
+only because the atomic cascade-delete uses a multi-document transaction; the BFF store does
+single-document upserts only, so it needs neither a replica set nor `directConnection`. Both stores are
+pinned by image digest in their compose files rather than by a floating tag.
 
 ## Gotchas (authentication)
 
