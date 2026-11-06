@@ -55,6 +55,13 @@ def test_resolve_option_long_title_beats_short_prefix() -> None:
     assert "Way of Water" in result["title"]
 
 
+def test_resolve_option_bare_title_with_unique_year_picks_that_year() -> None:
+    """'Avatar (2022)' names the 2022 film, though the bare title 'Avatar' is also an option."""
+    result = resolve_option("Avatar (2022)", PREFIX_COLLISION_OPTIONS)
+    assert result is not None
+    assert result["title"] == "Avatar: The Way of Water"
+
+
 def test_resolve_option_long_title_with_year_beats_prefix() -> None:
     """'Avatar: Fire and Ash (2025)' resolves via year to the 2025 film."""
     result = resolve_option("Avatar: Fire and Ash (2025)", PREFIX_COLLISION_OPTIONS)
