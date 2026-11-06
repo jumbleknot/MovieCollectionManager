@@ -48,6 +48,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
   - id: openwiki-source-3bf0ad96857ee228607b018c
     resource: repo://frontend/mcm-app/src/bff-server/redis-lock.ts
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
   - id: openwiki-source-a864e7e3b109550c7018e359
     resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
@@ -56,6 +58,8 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
   - id: openwiki-source-0b95b2665c338088eef0db7e
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
+  - id: openwiki-source-19609c73bc9a3a34e47ab18d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-20919697827cd36ef7f9b62b
@@ -68,12 +72,20 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
   - id: openwiki-source-6815e02bc96aebf5b9adb612
     resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
+  - id: openwiki-source-0df6a785e730381b7aee77a1
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
+  - id: openwiki-source-138e83bb9f94e2d23a3b0c5a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/functions/bff-api/echo-url%2Bapi.js
+  - id: openwiki-source-d63e7534cd44e87f67938d1a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
   - id: openwiki-source-f873d74e3a5ee524df98c4b4
     resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
     resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
+  - id: openwiki-source-3574b605c1922bedacc8f2fa
+    resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-864993a079e6e4df052ac4ea
@@ -86,6 +98,10 @@ sources:
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
   - id: openwiki-source-c0e733b8e0e04c7181715668
     resource: repo://specs/085-bff-auth-fail-closed/baseline.md
+  - id: openwiki-source-b1756c204f11fe3da51d14a7
+    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
+  - id: openwiki-source-acc6f4231f060062a015dbd3
+    resource: repo://specs/087-expo-sdk-58/research.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1

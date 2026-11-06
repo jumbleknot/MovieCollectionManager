@@ -5,8 +5,12 @@ description: Four related runtime traps in the Expo/React Native app's server-si
 resource: frontend/mcm-app/server.js
 tags: [expo-router, react-native, copilotkit, express, transport, frontend]
 sources:
+  - id: openwiki-source-f8d87cfe0689163c27061841
+    resource: repo://docs/runbooks/e2e-testing.md
   - id: openwiki-source-6af9a79d18f77a9b86839849
     resource: repo://frontend/mcm-app/Dockerfile
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -57,12 +61,24 @@ sources:
     resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
   - id: openwiki-source-0df6a785e730381b7aee77a1
     resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
+  - id: openwiki-source-138e83bb9f94e2d23a3b0c5a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/functions/bff-api/echo-url%2Bapi.js
+  - id: openwiki-source-d63e7534cd44e87f67938d1a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
   - id: openwiki-source-85eb0b9c1a482735eec69a61
     resource: repo://specs/085-bff-auth-fail-closed/research.md
+  - id: openwiki-source-b1756c204f11fe3da51d14a7
+    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
+  - id: openwiki-source-acc6f4231f060062a015dbd3
+    resource: repo://specs/087-expo-sdk-58/research.md
+  - id: openwiki-source-93b6202dca9e48a643d50488
+    resource: repo://specs/087-expo-sdk-58/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1

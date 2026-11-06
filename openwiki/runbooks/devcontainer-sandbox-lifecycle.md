@@ -4,6 +4,9 @@ title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, ha
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.51.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-06T07:34:17.095Z
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
@@ -37,10 +40,7 @@ sources:
     resource: repo://specs/086-dev-memory-bounds/plan.md
   - id: openwiki-source-104e1b5d4af5f78ca3e3f767
     resource: repo://specs/086-dev-memory-bounds/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-05T01:33:57.840Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -353,8 +353,8 @@ bash .devcontainer/verify/run-harness.sh
 Twelve verify scripts across **three vantage points** — nine run in-container through `docker exec`,
 four VM-side (one of them `verify-engine-seam.sh` in its `--vm-check` mode), and one on Windows. The
 host-side check **cannot be faked from inside** (a claim asserted only from within the thing being
-claimed about is not proof), so the harness refuses to invent that result and requires
-`MCM_HOST_CHECK=pass|fail`; without it the run reports eleven and fails. The expected set is
+claimed about is not proof), so the harness refuses to invent that result and requires it handed in as
+`MCM_HOST_CHECK=pass|fail`. The expected set is
 **enumerated by name** in [`run-harness.sh`](../../.devcontainer/verify/run-harness.sh), because a glob
 silently shrinks and a skipped check reads as a pass — a check that did not report is counted as a
 failure, never as "not applicable".
@@ -382,9 +382,18 @@ be stale by the time the destructive check starts.
 
 Two counting rules follow from the same principle — a check that did not report must not be
 indistinguishable from one that passed. The tally is by **script**, not by invocation:
-`verify-engine-seam.sh` is one script run in three modes, and its single slot is green only if **all
-three** pass, because a two-of-three engine seam is not a seam. And once any mode of a script fails,
-that script **stays** failed for the rest of the run.
+`verify-engine-seam.sh` is one script run in three modes and occupies a single slot, because a
+two-of-three engine seam is not a seam. And once any mode of a script fails, that script **stays**
+failed for the rest of the run.
+
+> ⚠️ **A green 12/12 does not prove the host-side half ran.** `run-harness.sh` warns that an unset
+> `MCM_HOST_CHECK` means the run "will report fewer than twelve and fail" — but the tally it actually
+> applies is the by-script one above, and `verify-engine-seam.sh` has already taken its single slot
+> from the in-container and `--vm-check` runs. Nothing is left unreported for the tally to name, so
+> the missing proof is announced in an `!!` line and then not counted: the run can print
+> `✓ all 12 checks reported and passed` with `verify-engine-seam.sh --host-check` never executed.
+> Read the `!!` line, not only the tally. The reverse case does bite — an explicit
+> `MCM_HOST_CHECK=fail` records a failure and fails the run.
 
 **The two runners swap roles on this path.** `verify-portable-runner.sh` exists for SC-006, "the same
 committed config runs unmodified under a second conformant runner", and every one of its assertions is

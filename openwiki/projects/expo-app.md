@@ -109,10 +109,18 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
+  - id: openwiki-source-5ee35374d6ab0e61934498cd
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
   - id: openwiki-source-6815e02bc96aebf5b9adb612
     resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
+  - id: openwiki-source-0df6a785e730381b7aee77a1
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-6230a2d05eadba772d30d66a
     resource: repo://packages/design-system/components/controls.test.tsx
   - id: openwiki-source-a9f8640b2ea19387ecec6be5
@@ -133,18 +141,26 @@ sources:
     resource: repo://packages/design-system/tamagui.config.ts
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-f6c12ce9ca055174ab7f392c
+    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-96730ea8c345aed64b62a187
     resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
+  - id: openwiki-source-79afb4088c29acb82fe62e5a
+    resource: repo://scripts/__tests__/expo-router-tree-purity.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
     resource: repo://scripts/check-no-server-imports.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
+  - id: openwiki-source-4afc03401961c543ccdef7be
+    resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-92e409c28d1307a334df12c0
     resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-cbc86a7a3a87453e949a2389
+    resource: repo://specs/087-expo-sdk-58/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1

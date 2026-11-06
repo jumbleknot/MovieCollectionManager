@@ -7,6 +7,14 @@ tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups,
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-3428fee3ac79873bee5650fc
+    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -157,8 +165,8 @@ sources:
     resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-f6b7a61bf48156b2722b6a7f
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
-  - id: openwiki-source-2fd97bbde36fd9eab32aa7ba
-    resource: repo://specs/032-security-header-hardening/HANDOFF.md
+  - id: openwiki-source-4afc03401961c543ccdef7be
+    resource: repo://scripts/prune-bff-runtime-modules.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1

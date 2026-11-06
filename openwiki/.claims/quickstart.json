@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b1eead8972d1522c85077751381cfa56912c012c487945e4fb64455f5cd3f84b",
+  "pageVersion": "sha256:0f33d41f45a1359056975b324930c2ad7701b46b3b531844bc6cb3c4f665fce0",
   "claims": [
     {
       "id": "claim_d7748f9965734f80b8433848368ddbb3",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md",
-          "version": "repo-file-v1:sha256:99122be2b82dae223e99ad527df134d01e6a5eca04e3a8ce39e38d163d9bfc60"
+          "version": "repo-file-v1:sha256:200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270"
         },
         {
           "resource": "repo://specs/043-openwiki-okf/spec.md",
@@ -263,7 +263,7 @@
           "version": "repo-lines-v1:sha256:5b22137e97739d9e8e3db25884e02c5ae1433ef24ba49f91c2292149616b0d85:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNWNmZTEyMjk3OTExZDBkNTJiNGQyZWFlN2Y2YTE2M2U4ZGE4OTk3MjA1OWVjZTllZDU2MTBiYjlhM2FlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjgwZWVkMTEwZmUzYmY2N2MzNTUwMjNkNzBhYTk2MDE5ZGZjMTk0OTVlMjI2ZjE0ZjQzZDQxYmI1ZDU1YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyOTNhZDQ0N2I3MWIyZDc2ZTdkMDUwNWUwN2Q0NzBlMzQ5YmYzOGUyMGYyZDMzN2RhMmU2ODRjYzUzNTk5OTUifQ"
         },
         {
-          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L565-L628",
+          "resource": "repo://docs/runbooks/devcontainer-sandbox-lifecycle.md#L566-L629",
           "version": "repo-lines-v1:sha256:6944e00e629cf329b0ba750ac74516b46ee26a3a6acf07770d229574bba3d322:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NTRiMjc3ZmYzYmQyNjNjYmFhZDU4YWFjYTJiODRlMDM0ZTdhOWYwYzFlYjI1NTVhOTJlNjQ0MTY3NDFjZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjY2MzMTg2MGJmOTU0ZGE3MWFiYjM4MDNlNTE2ZDE0YTU4Mzc4YzY0ZDQyOWUzODE3MThmNzM4ZDU4ZGY5ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZjVkODAxYWEyOWJjMWI2MzBjODczYjNlMjIxOTAxNWUzY2VhMGI3Y2RhYjBjMGMzZTI5NjM4NzU4NjhmZjQifQ"
         }
       ]
@@ -271,6 +271,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T17:50:21.605Z"
+    "at": "2026-11-06T07:34:17.095Z"
   }
 }
