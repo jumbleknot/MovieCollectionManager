@@ -33,6 +33,8 @@ const PNPM_ASSET_PATH =
   '/assets/node_modules/.pnpm/@expo-google-fonts+outfit@0.4.3/node_modules/@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf';
 const STUB = join(__dirname, 'fixtures', 'expo-adapter-stub.cjs');
 const PORT = 31000 + Math.floor(Math.random() * 2000);
+// `server.js` hands the handler an absolute URL (feature 087), built from the request's own `Host`.
+const absolute = (path: string): string => `http://127.0.0.1:${PORT}${path}`;
 
 let dir: string;
 let child: ChildProcess;
@@ -113,17 +115,17 @@ describe('server.js — the catch-all route', () => {
     ['PUT', '/bff-api/collections/abc'],
     ['DELETE', '/bff-api/collections/abc/movies/def'],
     ['PATCH', '/bff-api/settings'],
-  ])('forwards %s %s to the Expo handler unchanged', async (method, path) => {
+  ])('forwards %s %s to the Expo handler, path intact', async (method, path) => {
     const r = await send(method, path);
     expect(r.status).toBe(200);
     expect(r.headers['x-test-reached-handler']).toBe('1');
-    expect(JSON.parse(r.body)).toEqual({ method, url: path });
+    expect(JSON.parse(r.body)).toEqual({ method, url: absolute(path) });
   });
 
   it('passes the raw query string through, bracket syntax included', async () => {
     const path = '/bff-api/movies?collectionId=abc&sort[field]=title&tag=a&tag=b';
     const r = await send('GET', path);
-    expect(JSON.parse(r.body)).toEqual({ method: 'GET', url: path });
+    expect(JSON.parse(r.body)).toEqual({ method: 'GET', url: absolute(path) });
   });
 
   it('rejects a malformed percent-encoded path with 400 before the Expo handler', async () => {

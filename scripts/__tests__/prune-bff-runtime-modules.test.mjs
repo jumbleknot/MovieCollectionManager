@@ -56,16 +56,17 @@ before(() => {
 
   makePackage('express@4.22.2_supports-color@8.1.1', 'express');
   makePackage('ms@2.1.3', 'ms');
-  makePackage('@expo+server@0.5.3_supports-color@8.1.1', '@expo/server');
+  makePackage('expo-server@57.0.3', 'expo-server');
+  makePackage('@scoped+dep@1.0.0', '@scoped/dep');
   makePackage('undici@6.28.0', 'undici');
   makePackage('mermaid@11.17.2', 'mermaid');
   makePackage('lucide-react@0.542.0_react@19.2.3', 'lucide-react');
   makePackage('openai@7.34.0_undici@6.28.0', 'openai');
 
   linkDep('express@4.22.2_supports-color@8.1.1', 'express', 'ms', 'ms@2.1.3');
-  // @expo/server -> undici is the reach that keeps the AI SDK's lazy `createRequire(...)("undici")`
-  // working after the prune; it is a scoped package's dep, so it exercises the `../../..` depth.
-  linkDep('@expo+server@0.5.3_supports-color@8.1.1', '@expo/server', 'undici', 'undici@6.28.0');
+  // A scoped package's link, so the walk's `../../..` depth stays exercised. `expo-server` used to
+  // provide this through its old scoped name, and it has no dependencies of its own.
+  linkDep('express@4.22.2_supports-color@8.1.1', 'express', '@scoped/dep', '@scoped+dep@1.0.0');
   // A dangling optional-dependency link must not abort the walk.
   symlinkSync(
     '../../lightningcss-linux-x64-musl@1.33.0/node_modules/lightningcss-linux-x64-musl',
@@ -73,7 +74,7 @@ before(() => {
   );
 
   linkTopLevel('express', 'express@4.22.2_supports-color@8.1.1');
-  linkTopLevel('@expo/server', '@expo+server@0.5.3_supports-color@8.1.1');
+  linkTopLevel('expo-server', 'expo-server@57.0.3');
   linkTopLevel('mermaid', 'mermaid@11.17.2');
   // openai is a DYNAMIC root: nothing links to it, only a string inside the agent-run bundle.
   linkTopLevel('openai', 'openai@7.34.0_undici@6.28.0');
@@ -85,7 +86,7 @@ before(() => {
   mkdirSync(join(nmDir, '.bin'), { recursive: true });
   symlinkSync('../.pnpm/mermaid@11.17.2/node_modules/mermaid/bin/mmdc', join(nmDir, '.bin', 'mmdc'));
   symlinkSync(
-    '../.pnpm/@expo+server@0.5.3_supports-color@8.1.1/node_modules/@expo/server/bin/cli',
+    '../.pnpm/expo-server@57.0.3/node_modules/expo-server/bin/cli',
     join(nmDir, '.bin', 'expo-server')
   );
   // A real directory at top level (an injected workspace package) must survive untouched.
@@ -103,14 +104,14 @@ describe('path helpers', () => {
 
   it('finds the node_modules a package resolves its own deps from', () => {
     assert.equal(
-      depsRootOf('/app/runtime/node_modules/.pnpm/@expo+server@0.5.3/node_modules/@expo/server'),
-      '/app/runtime/node_modules/.pnpm/@expo+server@0.5.3/node_modules'
+      depsRootOf('/app/runtime/node_modules/.pnpm/@scoped+dep@1.0.0/node_modules/@scoped/dep'),
+      '/app/runtime/node_modules/.pnpm/@scoped+dep@1.0.0/node_modules'
     );
   });
 
   it('expands @scope one level and skips dotfiles', () => {
     const names = packageNamesIn(nmDir);
-    assert.ok(names.includes('@expo/server'));
+    assert.ok(names.includes('expo-server'));
     assert.ok(names.includes('@mcm/design-system'));
     assert.ok(!names.some((n) => n.startsWith('.')));
   });
@@ -122,7 +123,8 @@ describe('computeClosure', () => {
     assert.deepEqual(
       [...keep].sort(),
       [
-        '@expo+server@0.5.3_supports-color@8.1.1',
+        '@scoped+dep@1.0.0',
+        'expo-server@57.0.3',
         'express@4.22.2_supports-color@8.1.1',
         'ms@2.1.3',
         'openai@7.34.0_undici@6.28.0',
@@ -142,7 +144,7 @@ describe('computeClosure', () => {
   it('follows the dynamic root\'s own peer links — openai 7 reaches undici by itself (081 US7b)', () => {
     // openai 7 declares `undici` as an optional peer (its x509 transport `require("undici")`s it), and
     // pnpm links the workspace's undici beside it. The walk must keep that reach from `openai` ALONE,
-    // not only because `@expo/server` happens to depend on the same undici today.
+    // because `expo-server` has no dependencies, so nothing else reaches it (feature 087).
     const fromOpenaiOnly = computeClosure(nmDir, [], DYNAMIC_ROOTS);
     assert.ok([...fromOpenaiOnly].some((e) => e.startsWith('openai@7.')), [...fromOpenaiOnly].join(','));
     assert.ok(fromOpenaiOnly.has('undici@6.28.0'), [...fromOpenaiOnly].join(','));
@@ -182,7 +184,7 @@ describe('planPrune', () => {
 describe('prune', () => {
   it('deletes the unreachable tree and leaves the reachable one intact', () => {
     const result = prune({ runtime: root, log: () => {} });
-    assert.equal(result.after.packages, 5);
+    assert.equal(result.after.packages, 6);
     assert.ok(result.after.bytes < result.before.bytes);
     assert.ok(existsSync(join(nmDir, '.pnpm', 'undici@6.28.0', 'node_modules', 'undici', 'package.json')));
     assert.ok(existsSync(join(nmDir, 'express')));

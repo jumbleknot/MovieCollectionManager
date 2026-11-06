@@ -56,7 +56,7 @@ import { UnauthorizedError } from '@/types/errors';
 const COLLECTION_ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 const MOVIE_ID = 'bbbbbbbbbbbbbbbbbbbbbbbb';
 
-// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+// Flat params — expo-server passes route params as a plain object, not { params: {...} }
 type MoviesRouteParams = { collectionId: string };
 
 function makeGetRequest(queryString = ''): [Parameters<typeof GET>[0], MoviesRouteParams] {

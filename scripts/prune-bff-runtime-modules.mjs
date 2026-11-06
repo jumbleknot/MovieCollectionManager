@@ -6,7 +6,7 @@
 // production tree `pnpm deploy --prod` materializes (1513 packages). Those ARE genuine
 // `dependencies` of `mcm-app`, so `--prod` keeps them; but they are dependencies of the WEB
 // BUNDLE, which Metro has already compiled into `dist/` at build time. The runtime process is
-// `node server.js`, whose reach is `@expo/server`, `express`, and their closure.
+// `node server.js`, whose reach is `expo-server`, `express`, and their closure.
 //
 // This was NOT reasoned about — it was traced. A `--require` preload inside the running container
 // recorded every `Module._resolveFilename`, ESM load, `process.dlopen` and raw `fs` read under
@@ -47,7 +47,7 @@ import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-
 
 // The two packages `frontend/mcm-app/server.js` requires by name. Everything the runtime touches
 // through them is reached by the closure walk below.
-export const STATIC_ROOTS = ['express', '@expo/server'];
+export const STATIC_ROOTS = ['express', 'expo-server'];
 
 // Packages the EXPORTED BUNDLE reaches at runtime by bare specifier rather than through an import
 // the closure walk can see — `@copilotkit/runtime`'s lazy provider adapters, called through the
