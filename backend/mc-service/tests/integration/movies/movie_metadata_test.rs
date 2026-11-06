@@ -78,12 +78,11 @@ async fn movie_metadata_returns_401_without_jwt() {
 /// A malformed bearer token is rejected too — proving the layer VALIDATES the credential
 /// rather than merely checking that the header is present.
 ///
-/// The expected status is `400`, not `401`. That is `axum-keycloak-auth`'s service-wide
-/// behaviour for a token that cannot be parsed as a JWT at all (a well-formed but invalid
-/// token yields `401`), and it was verified to be identical on the pre-existing
-/// `/api/v1/collections` route before being asserted here. Pinning the real behaviour keeps
-/// this a genuine test of the shared layer; asserting `401` because it reads better would
-/// have made the route look special when it is not.
+/// The status alone cannot prove that, because a request with no credential is also `401`. The
+/// body can: `axum-keycloak-auth` answers `{"error":"invalid_token"}` only after trying to decode
+/// a token. Since 0.8.4 this is its generic answer for every token it cannot decode or validate.
+/// Before 0.8.4 a token that was not a JWT at all got `400` with the parse error in the body,
+/// which the library withdrew as a security fix (specs/091-keycloak-auth-084-test).
 #[tokio::test]
 async fn movie_metadata_rejects_a_malformed_token() {
     let app = build_test_app().await;
@@ -102,13 +101,13 @@ async fn movie_metadata_rejects_a_malformed_token() {
 
     assert_eq!(
         response.status(),
-        StatusCode::BAD_REQUEST,
+        StatusCode::UNAUTHORIZED,
         "an unparseable credential must be rejected by the shared auth layer"
     );
-    assert_ne!(
-        response.status(),
-        StatusCode::OK,
-        "the endpoint must never serve an anonymous caller"
+    assert_eq!(
+        body_json(response).await["error"],
+        "invalid_token",
+        "the layer must have tried to decode the token, not merely seen the header"
     );
 }
 
