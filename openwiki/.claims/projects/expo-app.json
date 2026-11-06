@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ed03f1d6c566c128929e6f1eff37fef4ac43da2f70e9403d9239169afa7b5866",
+  "pageVersion": "sha256:af878f74ad5739b6a4b20e4098bf151b601bde01d2a0352f5b1843024a703874",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -285,12 +285,12 @@
           "version": "repo-lines-v1:sha256:211b28dce08caa8ecada386eb243d5a132ca77211dba0a3116839982b5038d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2Y2OWYyMDQ3YmM3Y2NmZWM3YzM3YzZlNDliODNjOGYwMzVjODE5OWFkZjg5MWFkMWRiNzAyMWE1YzFmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMGUwMDMzNTM0NTgyZWVmYWVkNTBlM2JhNmQwNGJiNTMyZTdkOWFjMzcyMDQzZDAyMzQ4OWQwODc0Yjk2NGYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L1-L40",
-          "version": "repo-lines-v1:sha256:aa5526ee09e21887e433e83e0a2a2d27d7910c840bfbcdc702588479e8a7f391:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MjI0OTllZDkwMDc2ODhhYjMzYWIxZTVlMjUzYmIxNWUxMGQ4YWZlNWU2MjQxN2EwYTIwODM1ZmI3YmE1NTUifQ"
+          "resource": "repo://frontend/mcm-app/web-security-headers.js",
+          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L93-L119",
-          "version": "repo-lines-v1:sha256:11732c3fdda5b96c51e8ab10efc8e284d2ff4e42e8ce10758112429f34588304:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMTczYjA1MDRkNjY5ODUyYmQ2YmNkOThiNzFhOGI0ZDk0NGFjYWI4YWVmZGM5M2ViZjQ4M2JhNjhiYjNiNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYTg1ODM2Y2JlOWVjNTUwMzQ3NDE4MTQ0MDVlYjM3ZjQ2YTExZmM1YmM5ZjdiMTUxZjMzZDYwOTEwZDAzYmMifQ"
+          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L19-L42",
+          "version": "repo-lines-v1:sha256:4e2522e5af2d54a85d412e66babeca25ea9247e7e3fe32c577e58fdf447c8de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjcwZWJlZDRlYmM4YTlmZjM0ZTM3NWE3MDhjOGFhOThmNTRmOTg4ZGQ3NWZkNDQ5OTVjYWQ0M2FmN2Q2ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5Y2VhZDJjZTkzNTIwZmRkZWRjNWMwYWY3NTgwZWFmOTBhNzMyZGYxZjMwN2M5YjNlNWQyNjBiMTI0ZGZiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzODUzM2RlYjBjNDZlZDgxOTAwYWUyYTYzNmU5OWEwOTdjNTBlM2ZkMjJiNDE2NGQ3YzE0NDVjZTczNDUzNzcifQ"
         }
       ]
     },
@@ -303,7 +303,7 @@
           "version": "repo-lines-v1:sha256:bf96f3fc54a97360e888a08cf39768d945805b0adcedb755a3c0f1777b27159c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNDQ1YjgwYjdlMGE0NTI3YTk1YTdiNDk2Zjg2M2Y3MDA0MWJiZmMxMmE3ZTZlNmE4YzFmZDZkMDBlN2RlMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5YTViZGI1Y2Q4OWY0NGZmNDAwMDljYzFhOTUyMTAxY2IxZjJjZTcwZTUyZmY3MzNmNjQ0MDM1MzY3NGZiMDIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L42-L64",
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L41-L63",
           "version": "repo-lines-v1:sha256:4452394fc05c486579863a4af325bbc42569fd2af7209b4ec11ba80321968840:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDUxOGMzMGZkYWVkYzVhMjM1MTA1MzE3Nzk1MmU5MzkzMDg1ODA4YjNhYTM5YjViOTA1YjAxOWM1MjAzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMGQ0YWQ2NDdlMjljN2Y0MDk3ZDZiYjEyMzYxNmM2NGVjNzQzMDNmZjc0MzVlYzA1NmFkMmY4MTNmZGM1MmUifQ"
         }
       ]
@@ -321,22 +321,26 @@
           "version": "repo-lines-v1:sha256:43aeb56ab6de84268012e3cc020aac4bf3bc8ed3c4c25fd1a881b01313f50d26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1M2ZjNmY0Y2YyZDQxMDc2Y2MwODljYmY2ODcwZjlmYTcyZmQwNjdhNGZlZjBlNWQwMWE1MzdlY2VkZGFhMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZDAxMDE3N2FmYTBkZjQ4OGI2ZmRhYWJlYjMwMmNhZTQ0N2M4YjNhYzg5ZjAzODRlYmUyZDAwMGRlYmY3ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L108-L118",
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L107-L117",
           "version": "repo-lines-v1:sha256:0546fe80a19402d0ddcdadeb9a1c16b4e14930730f56ad054d80572d65a935e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NTYwNDNiZmIzZTU3NjgwOWNhYTIyMmM5ZDA5MDI0NWUyZGZhZmUzNDcyYTRhZDBhOWQ5ZjU2NTAyNDMzODQifQ"
         }
       ]
     },
     {
       "id": "claim_5fdea116b761486fbdf2592ed20ddfd6",
-      "statement": "The strict CSP's blocking of a third-party `new Function(\"\")` eval-availability probe is a documented, accepted residual: the probe is wrapped in try/catch, the library degrades gracefully with the app fully functional, and the browser logs one benign `eval` CSP violation — `'unsafe-eval'` is deliberately not added to silence it, because permitting real eval app-wide would defeat the hardening.",
+      "statement": "The strict web CSP expects no `eval` violation at all, so a new one is a finding rather than a known line: feature 032 had accepted a blocked third-party `new Function(\"\")` eval-availability probe as a benign residual, and feature 089 removed the cause instead — `script-src` itself did not change, and `'unsafe-eval'`/`'unsafe-inline'` stay deliberately absent because permitting real eval app-wide would defeat the hardening.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L19-L32",
-          "version": "repo-lines-v1:sha256:1b6e52a2729595159bf8be44ac14d9ce6c25e666f4794cece062028fea426a2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYzc2YTBmYmJkY2Y2MGM2NTEwYTU1ZjcwMjFhMmY0M2E3MmIyY2FlZTg1Y2ZhYWFlOGM2MWRjZjE5NDEzZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZmYyNTQ0ZDNiZjNmMmQzY2ZiYjk4ZjhkMzNhMDVjMGM5ZDg1MjFkNTczZDk5ZWU2ODBkOGIwM2RhNmEyZDYifQ"
+          "resource": "repo://frontend/mcm-app/web-security-headers.js",
+          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
         },
         {
-          "resource": "repo://specs/032-security-header-hardening/contracts/security-headers-contract.md#L16-L26",
-          "version": "repo-lines-v1:sha256:77a549210dfcb2e839e60fbbc3fe1d4c6226ce6f16b3cba679d624e16ec67e22:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxODQyYTFiNDMzZWU4YzFhMjUzNmJjODY1Yzc5Nzg3ZWNjZDk0OWVmMTYyZTIzM2NiNmYxYzFkMzYxNzNlMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZGYwODkzZDM4ODRmZjhmYmQyNmE3NGQyMzY3ODQ1MzZlODNiYzk5N2Q0ZWZkZGMwYTAxNGFlYTUxY2I2MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhZTIyN2IxYjM2NDRhYzZjOGNjYjliZDQ0MTUwNzdmZTQ5MWVmMDJmZjQxMGJlMTIwMWQ0Y2YwMTQ3NGI0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZjFlMjFlYzgwMzZhMDc5ZGJmZGJkMDA1MzY5ZjEyN2ExYzBhOTY3ZGZjNDUyYzZkY2RiMmM4NDI0ZTRmNDAifQ"
+          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L35-L42",
+          "version": "repo-lines-v1:sha256:80406d053133663968e2de43340f3d9470859dcdd3f2f49dc6bf744c3cf42d94:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU3NThiYWQ4MDZmMTA0NGUxODI1N2YzMTAxZmExODQ4Zjc0MTIyMGQwZTJkNzczMDk1MmRjZDEyZmUyMWE0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQxMGE1NDNkZTc4ZDFiNThhYzM4MzNmYWZlODQyNTE0MzdkZmJiMzhlYzlhZTlhNWU3ODlmZGZiYzM5ZmZiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM4NTMzZGViMGM0NmVkODE5MDBhZTJhNjM2ZTk5YTA5N2M1MGUzZmQyMmI0MTY0ZDdjMTQ0NWNlNzM0NTM3NyJ9"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/spec.md#L46-L58",
+          "version": "repo-lines-v1:sha256:a079600cd239701ff1d74c46248de3a8d114dccc15dcc61c343f1933d0de777f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NDE2ZjE4NjNjZTUyOTBmMGY0MWZhNTMzZmI5ZTEwZmVmNWQ0MDVjMTMwMGMwM2UyNzZhMGE4OTQzODJiNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMDNlYTAxODE0NmUxMjRkYmFiYjAyMDZiYmQ5NWY1MzQ5YzE5YzljY2UyNDVkZmI3NzI0NzIyOTczZDZhNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiZDA3Mjg5OTE0YWNmMDIwMWYyYjM3OWQ2OGMyNDg2Y2NiMmYxOWZmYTFkZGRlZTA4MTdhOTcxOTQ0M2QyMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyODdkMzdiYjEwMWRkNGNlNThhNjVjOTJmYTI0YzY5ODViOTQ1OGUxNmMzY2RhZGU3MWVmNjMwZWQ0NDAyM2EifQ"
         }
       ]
     },
@@ -1017,10 +1021,88 @@
           "version": "repo-lines-v1:sha256:0e91cc7f5d14c673765d54cf5f4650734fd106801f0da96b39acdeedc51c2ce7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkMWFiMjI1MGE0MmY3N2UxMjc5OWJhNDBiYjViMTQwYThiM2QxYzM2YTcxYmE4NGFmMTQwNzZlNTJiYTlkM2UifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2d572c78c6804918bd9f8703323635ab",
+      "statement": "The assistant chunk carries one zod 4 engine on web because the `'@ag-ui/client>zod'` and `'@ag-ui/proto>zod'` overrides in `pnpm-workspace.yaml` put `@ag-ui/client` on the app's own zod range — even though `@ag-ui/client` and `@ag-ui/proto` declared `zod ^3.25.76`, and `@ag-ui/client`/`@ag-ui/core` import only `zod/v4` while `@ag-ui/proto` imports no zod at all. The override value is deliberately outside `@ag-ui/client`'s declared range and must stay equal to the app's own zod range so the two remain one copy, which is why an AG-UI upgrade requires rechecking it. The lock file cannot prove the resulting chunk, because `@copilotkit/runtime` legitimately keeps its own zod 3 copy of `@ag-ui/core` in the BFF; the assistant chunk's source map can.",
+      "evidence": [
+        {
+          "resource": "repo://pnpm-workspace.yaml#L101-L108",
+          "version": "repo-lines-v1:sha256:991b6cfa903e8eea25ebd4051cac2239c629178b27c929a9b2c934adb148e603:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUwNjQxOGQ3Nzg2ODBiYWU3MzY5M2YzZWQwODJiZWE4NTQ0ODFlYzllMThlNTNjNmM3MjhkOGNlODY3MzFiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU2MWU0YWVhOWY1NjJjMmUzY2NjMGM4YzRlZTY5ZmQ1ODQ4ODYxNzYyNzkyY2RmMWFkZmExNjE4OWIxMTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzk2YmRhMjY0OGIyNDE3OWM5ZmRjNmMyYTc0YTg1NTI2ODAyMWM5MjEzNjJkYjU2Yjk3Yzg0OGE1N2MxMWI2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzhhZTc3ZTc2MjM0M2Y1NDU5NjE2OTg3NjJhMzljNTM4YzNmOTY3NGJkN2QxODRiZjY5NzgxMmNjNWI4NGJmYyJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/single-zod-engine.guard.test.mjs#L42-L51",
+          "version": "repo-lines-v1:sha256:d55f98b62187fbb3242f3290fa92e39138fe7c3b035c1aa07ed786dc36a52b0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTZiMjEzNjlkYjlhYTU2YjRiMzA3NzdmNWRmZTFkYTUxZWNhOTUwYmU3MzUwZWZhYTNmYzlkYWEyOTQ4MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOWYxNDMyZWFhZDY0ZGYyY2EwOWFjOWYzOTFhZmM0YjU0MmYzYTkwYzk0NGUxYTBkNjE0NmFjNGE4YTg2ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNThhNDg3NWQ0NzY2OTlmNDI4ZjgxZWI0NThiYjJmNzZjYjRjOTY2NTI5YjM3NDZhYjE5YTU4NWQyMmQ2OTcifQ"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/spec.md#L12-L33",
+          "version": "repo-lines-v1:sha256:8b9772e195d07e636a3c70c6b25af39c457b5c8ab66d1623191f8933202448b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5N2YxMmJjYThhNTk4YTcxZDJmYTE0NGU3ODg5MjUwMWI5MTA2MjBlMzI2ODFmYjFiMTk3MGNjNjJjNmYzMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwY2UxNGFkYjRhZjcyMGYzMTEyMmExODdkZTEwZWY5ZjgxMjQxYTc3MDQyMDZkM2EzOGZhZGIyZTI3NjBkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlZDdlYzBlZjVhNjc5ZmMxODExZDRmZjFjYTRlZThhNWRlNzk3MWFkZDEzNTBmY2Y3MTZiYWRmMWYwODRmZDMifQ"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/tasks.md#L25-L34",
+          "version": "repo-lines-v1:sha256:76d8ed0eb467b1f343617897e033b44bda008944bbe29208b2fc66f096981ced:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTNiOTM4NTkxOTViMWIxZTQxODg4ZWIyYjBlNWNjMGE2N2Y2YWE2NjI5ZDhhNmEyN2VjOTU1ODFkZGUwOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MzllYjNlYTA0Yzg4MTY0ZjkwMjlhYWU1YzdlNTlmMjk3YjRjOWQ2Mjg1ZmJjNjRhMGJkOWE3Y2JiMzU1MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNzhkYTA1OTg2NjA1NzIzNjU1NTZiYzIyNzhhYzJiMmM0ZjU2YzI5MWUzNDFkOGViYjgwYWRhMmU1ZDI1ZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_099599e5816d495b9ec5e7ed7b8c7e31",
+      "statement": "Stopping zod's `new Function(\"\")` probe on web is done by `src/utils/zod-jitless.web.ts` calling `config({ jitless: true })`, and it works only because `src/components/agent/assistant-panel.tsx` imports that module before anything else: zod reads the setting when the first object schema is built, and the panel is the deferred assistant chunk's only root, so import order runs it ahead of every package in the chunk. It costs nothing on web because the CSP already blocks `eval`, so zod's fast path was already off. The native counterpart `src/utils/zod-jitless.ts` is deliberately an empty module — there is no CSP on native to report a probe and `jitless` has not been measured under Hermes. Measured 2026-11-06: the assistant chunk fell from 2,850,492 B to 2,536,265 B (314,227 B, 11%) and now holds one `v4/core/util`; `zod@3.25.76`'s v3 code remains for `@copilotkit/shared`, which uses the v3 API through the root import.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L1-L29",
+          "version": "repo-lines-v1:sha256:b66dcec5e317d7e4ecfe84c93f8cf3dbf3821607a79c493458de32f93cc7e37e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NjgyMWRmNjE3MWIzYjAxZjE1NDA3MTI4ZWFmNzdiMzFhN2VmNjcyOGU0YzVlN2UwZWI0Yzg0MWJmMzA5OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwZjQzYjQ1ZWE5ZTUyMTkwMzRlNDNlNDE5YjI3OWZiZDZmYmI4YTUxMWM5ZWZhYjFhMDkzYzY1ZDdkNmQ3YTkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts",
+          "version": "repo-file-v1:sha256:144f58a6c3118d697c73eed1d64551ec6894a59ff3d1c7434f8980de7a37097b"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.ts",
+          "version": "repo-file-v1:sha256:3ab2be23c7c71159d7a1cb51baf3e3de1d976563f802089689e82b33ba7ea474"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.web.ts",
+          "version": "repo-file-v1:sha256:2cbda4de7f324dac7bb533326d49aee6c4a5271ccc40b328b0ae86ae18f69b69"
+        },
+        {
+          "resource": "repo://scripts/__tests__/single-zod-engine.guard.test.mjs#L53-L60",
+          "version": "repo-lines-v1:sha256:8f8856f76dcc8540ecb7cabe6c19570b884e8ec9ffc0b6fb28f8f2550833f807:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODgyODM3NmI3YTRhOTg5ZTlhZTRiZTY5OTU2NGIyZGM3OTY0NDNhNDYzN2UyZGQ3ODZhNzQyNjA1Y2NhNTU4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjgwZDJkZDRmMjg5ZDI2ZGM3NTdjMmI2NWEwNmMzOTIyN2E2NzE3YzRiNDhiNWEzOTc5MmM5ZjExZTQxYWVhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/tasks.md#L25-L34",
+          "version": "repo-lines-v1:sha256:76d8ed0eb467b1f343617897e033b44bda008944bbe29208b2fc66f096981ced:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTNiOTM4NTkxOTViMWIxZTQxODg4ZWIyYjBlNWNjMGE2N2Y2YWE2NjI5ZDhhNmEyN2VjOTU1ODFkZGUwOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MzllYjNlYTA0Yzg4MTY0ZjkwMjlhYWU1YzdlNTlmMjk3YjRjOWQ2Mjg1ZmJjNjRhMGJkOWE3Y2JiMzU1MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNzhkYTA1OTg2NjA1NzIzNjU1NTZiYzIyNzhhYzJiMmM0ZjU2YzI5MWUzNDFkOGViYjgwYWRhMmU1ZDI1ZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b2fe0e01e4948f0850d0718e60d8f3b",
+      "statement": "The assistant runtime is a ~2.4 MB chunk reached only through the single dynamic import in `src/utils/assistant-runtime-loader.ts`, whose root is `src/components/agent/assistant-panel.tsx` — the only module from which the packages the bundle gate forbids in the entry chunk (`zod`, `graphql`, `@copilotkit/*`, `@ag-ui/*`, `rxjs`, `@bufbuild/protobuf`, and the `text-encoding`/`web-streams-polyfill` React Native polyfills that `@copilotkit/react-native` imports as a side effect of its own entry point) are reachable. A stray static import of that panel from anywhere in the eager graph silently re-adds the whole graph, which is why `scripts/check-web-bundle-budget.mjs` asserts the deferred packages contribute zero entry-chunk modules and names the offending package rather than leaving an unexplained size regression.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L1-L27",
+          "version": "repo-lines-v1:sha256:6bd26bb7414683ed79a4065f8441509aaff566c22ba857bfca6ccffa49d9674f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNzU4NGYyMmQ2OTc2YjkyNWNhYjgzZmE4Mjk3NTdiNTI5MzM5MjFkNmVjZDdhZWJhYzM5YWY0ZWUwNzdkMzMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-assistant-runtime.ts#L1-L22",
+          "version": "repo-lines-v1:sha256:a9d2c3a85e2563cf92c310541e8696c24c0c67902e11b21f3229e2894349da31:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MzUwMzhkY2IxYWE3Nzk1NjNlY2I0ZjA0NWMxYWJlYTQ4ZTFlOTliOTU4MmNlMmM2NzQzMzRjNzczZjIyYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YWM4NTQ0OWI1MTdjNTExNDI4MTYwNTdjZTNlODkzN2E3NmFjNWIxMDI4YWNjZGNjMzllZmZhMzNiZjk1MmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/assistant-runtime-loader.ts#L16-L33",
+          "version": "repo-lines-v1:sha256:624c08b3890c0751cfe507f29b4af20949428f003d3af8ff68fef5e7a7dc3143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NTI2NDhmMDU1YWRjNTYzMGI2NDk1NGM2NTdlOGUzNjM0Y2M1MDkxNzY2ODgyN2NiZTNjZDlhMWU5MzkyMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5N2MyYmI3NmEwNTUyNTM1NmIwOTk3MGEyMWZiZGY5MTQwNjBiOTNlOWZiNDBiZmQxZmRkNjgxMGE2ZTVjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMWU3NGExZTJhNjljNDZiN2M4NjM1NDZlNTAxNzNiZjE2OTU4MDJhODA1NzdmNjkwNmY0MDdhMDY2MmM4YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MDJiOWYwMzhmZjQyNDAyOTNjYjAwZmY5ODdmMjFmMTM3YTcxZTljZjI0NGQ5ZjY1YTRjZjU1NGEyNzQ2NDUifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L169-L178",
+          "version": "repo-lines-v1:sha256:6863f98363f0926716403bead0461a2fd3b1f036d8c026af822f51ff2db35361:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDA5NmQ2YzBkMTc4YjBjY2IxOTdiM2QzMGE4NWRmNjQ2NmU1YjFjOGVkZGJmZGI0NmNjYWQyYjQ1MjA3MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZmZkNzZmYjQ0OWFkM2ZhOTBkMzc5MTRhNDEyZjMxODFhY2M2MmUwMTJlNzA5ZmNlMWY4ZDFmZTIyZWUwNGEifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L61-L74",
+          "version": "repo-lines-v1:sha256:b8eee8ceb22795d017f0bf15566c3aec666f8e785d17a7ff38d5697f5ea7702a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGY4MDlhMTc3YzNmYTMwODc3ZWY5YzY0M2E3MWJlNTFjY2RkZjU1MjJhODdjNzBlYTMwMDFkMzY0ZjgyMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMzE5MTQwODZhZTY5NzA3ZjhkNzg5MDUyNDBkYjQ5ZjU3ZTJkNjRhNWE5NzdhYjgzODdjYzQ4MzRiNzQ5MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkOTg2ZDhiYjI1ODI3Y2NkNjM5OGRlMDkyODhiODgwMTg4YjU4YWFjYmQzOWRhODFhYzYxNTgwOTAzZmQwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYThjYTViNjEzNzM4OWMwOWMyYmFiZmI0Nzk4NDkxNzYyMmY0N2Y2OWIyMzhjNTZiYTc1ODMyY2MwOGUyYzYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-06T10:07:39.873Z"
   }
 }

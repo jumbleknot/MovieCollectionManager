@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f81ef81f600de4e336f9c3b911baca27db3201a5320921d24848a5d7f99f48b4",
+  "pageVersion": "sha256:3c00aa5415e1c455ef98ed0c39723bef9aaf36a454fe711ae1a7410381c1167c",
   "claims": [
     {
       "id": "claim_6a4b0c42e3554e9bbe79c3e48849dc45",
@@ -364,11 +364,11 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/server.js#L50-L86",
-          "version": "repo-lines-v1:sha256:211b28dce08caa8ecada386eb243d5a132ca77211dba0a3116839982b5038d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNGY2ODAyYTU0MmJiZDRlN2E0NDI5YmNjMDQwMTUyOTVhZDJiZDRjN2VjNjYyN2QzM2RjMmQwMThkMWU0MzEifQ"
+          "version": "repo-lines-v1:sha256:211b28dce08caa8ecada386eb243d5a132ca77211dba0a3116839982b5038d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2Y2OWYyMDQ3YmM3Y2NmZWM3YzM3YzZlNDliODNjOGYwMzVjODE5OWFkZjg5MWFkMWRiNzAyMWE1YzFmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMGUwMDMzNTM0NTgyZWVmYWVkNTBlM2JhNmQwNGJiNTMyZTdkOWFjMzcyMDQzZDAyMzQ4OWQwODc0Yjk2NGYifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L16-L118",
-          "version": "repo-lines-v1:sha256:b29575db6b46563ae70ae7d70ffc4a0cc71cec450b0f024f5ee370c08fd65bdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhM2IzOWJhNDI3M2E4YjkyMWRiNmUzY2QzN2NlZWZkM2M3Y2VlYmVjMzA0YzAyOTAyZDkwNTljZjI4OTVhZDFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NDlhNjA0MTRmNDA5OTcyZmIxMTM2NmYzZWY2OGM3Njc2OGZmNmNkZGQxYmQwZjI1ZjQwZGQ1MWU4ODEyOTE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3OTU2MDQzYmZiM2U1NzY4MDljYWEyMjJjOWQwOTAyNDVlMmRmYWZlMzQ3MmE0YWQwYTlkOWY1NjUwMjQzMzg0In0"
+          "resource": "repo://frontend/mcm-app/web-security-headers.js",
+          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
         }
       ]
     },
@@ -1139,10 +1139,50 @@
           "version": "repo-lines-v1:sha256:c2180d330c935ee0c4cc3f3642153ca9c8d03f69de22da12705f70548b381d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NGVhMTg2YzUzNjk3MTQ4ZGVkZGM1NmQ4MTdhZmQ2ZWM0ZTAxOTRlNTEwNDU1YTMyMGFiZDQ4OWE1MWNhZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDM4M2YzN2E5MzBiMjBiZTE1ZmMxOTk3ZDNmMjczYTViY2ZiZWQ5ZWIwYzZkM2NlNjJmMGE3MDA0Y2UwZTYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b163ba5bac5a498d98505d0d62c9150c",
+      "statement": "Feature 089 removed the blocked-eval residual that feature 032's T006 had accepted, so a new `eval` violation on the assistant path is a finding rather than a known line and `script-src` is unchanged: `'unsafe-eval'` and `'unsafe-inline'` stay deliberately absent. The cause was that the assistant chunk carried two probing zod engines — the app's `zod@4.6.7` (reached by the app's own code and `@copilotkit/react-core`) and `zod@3.25.76`'s `zod/v4` build reached by `@ag-ui/core`, which `@ag-ui/client` and `@ag-ui/proto` tied it to by declaring `zod ^3.25.76`; only 4.6.7 skips its `new Function(\"\")` probe when zod's `jitless` setting is on. It is removed in two halves: the `@ag-ui/client>zod` and `@ag-ui/proto>zod` overrides in pnpm-workspace.yaml put `@ag-ui/client` on the app's own zod 4 range (a value deliberately outside that package's declared range, to be rechecked on an AG-UI upgrade and kept equal to the app's own range), and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before any schema is built — which works only because `src/components/agent/assistant-panel.tsx`, the deferred assistant chunk's only root, imports it first, so import order runs it ahead of every package in the chunk. The setting is web-only: the native module is deliberately empty because there is no CSP on native to report a probe and `jitless` has not been measured under Hermes.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L28-L29",
+          "version": "repo-lines-v1:sha256:c968be1e2af7dfa9be8927106ae81d532bb5af75af96cccce4b8a11408328bfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhiZDIxYzFjNGY0ZjNmZDc2MmYzYTlhYjA0MjlmMzY4OTdmNjM5OGVjNjI1MjVjNGMxYjk0NWMyMmZkYjY2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQ2ODIxZGY2MTcxYjNiMDFmMTU0MDcxMjhlYWY3N2IzMWE3ZWY2NzI4ZTRjNWU3ZTBlYjRjODQxYmYzMDk5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q0ODVhYTZjYjcxYjY3OTQwNzRlY2NmOTRmYmJhYWI3Y2U5MTNiY2FkZmYyMDc5Yzk1OTFhMjk4MTM0MGQ1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTBmNDNiNDVlYTllNTIxOTAzNGU0M2U0MTliMjc5ZmJkNmZiYjhhNTExYzllZmFiMWEwOTNjNjVkN2Q2ZDdhOSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.ts",
+          "version": "repo-file-v1:sha256:3ab2be23c7c71159d7a1cb51baf3e3de1d976563f802089689e82b33ba7ea474"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.web.ts",
+          "version": "repo-file-v1:sha256:2cbda4de7f324dac7bb533326d49aee6c4a5271ccc40b328b0ae86ae18f69b69"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js",
+          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:3a06672eef899b7a49e646aa8ea515ef3adf19a1aa33bd35aaaeac259a686087"
+        }
+      ]
+    },
+    {
+      "id": "claim_267ea58b87544c90b6e9a9a04c98a410",
+      "statement": "The one-zod-engine arrangement was measured on the web bundle on 2026-11-06: the assistant chunk fell from 2,850,492 B to 2,536,265 B and now holds one `v4/core/util` (`zod@4.6.7`), while `zod@3.25.76`'s v3 code remains for `@copilotkit/shared` and `@copilotkit/runtime` — which runs only in the BFF — legitimately keeps its own zod 3 copy of `@ag-ui/core`. That is why the lock file cannot prove the chunk and the source map can, and the arrangement is pinned instead by two guards: `scripts/__tests__/single-zod-engine.guard.test.mjs` (the `@ag-ui/client` snapshot's `@ag-ui/core` carries no zod 3, and `assistant-panel.tsx`'s first import is the jitless module) and `src/utils/unit-tests/zod-jitless.test.ts`, which counts real `Function` constructions by zod with a control proving the counter can see a probe.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts",
+          "version": "repo-file-v1:sha256:144f58a6c3118d697c73eed1d64551ec6894a59ff3d1c7434f8980de7a37097b"
+        },
+        {
+          "resource": "repo://scripts/__tests__/single-zod-engine.guard.test.mjs",
+          "version": "repo-file-v1:sha256:941046425e99376c50fc8fea4bb3b5613cafe400e8ddf8d5a338d638eb4bcd38"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-06T10:07:39.873Z"
   }
 }
