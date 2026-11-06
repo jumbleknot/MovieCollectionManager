@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: "Per-user collection backups (scheduled & on-demand)"
-description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, the proxy-scheme trap that breaks the consent callback in production, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
+description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, the two-half public-scheme fix (trust proxy plus an absolute request URL) that the consent callback needs in production, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
 resource: docs/runbooks/backups.md
 tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
@@ -89,7 +89,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-06T06:42:06.997Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -188,20 +188,32 @@ this page distills the load-bearing gotchas an operator needs before touching th
   syncing it: re-running must not orphan every stored destination secret and offline token. The
   allow-list is an **exact** host match with no port, so adding a NAS means editing the Variable and
   Redeploying.
-- **In production the BFF must be told it is behind a TLS-terminating proxy, or the consent callback
-  never reaches Keycloak.** Cloudflare terminates TLS and `cloudflared` reaches the BFF over plain
-  HTTP; `@expo/server`'s express adapter builds every request URL from `req.protocol`, so without
-  express's `trust proxy` the consent route derived
-  `redirect_uri=http://mcm.…/bff-api/backups/consent` and Keycloak refused it ("Invalid parameter:
-  redirect_uri") because the client registers the `https://` URI — the schedule silently never turns
-  on. `server.js` sets `app.set('trust proxy', 1)` **only** when `TRUSTED_PROXY=true`, which
-  `infrastructure-as-code/docker/bff/compose.prod.yaml` supplies; `1` trusts exactly the immediate
-  hop, and only the *scheme* moves (the adapter reads the raw `Host` header, which `trust proxy`
-  does not touch, so `X-Forwarded-Host` cannot move the origin). With `TRUSTED_PROXY` unset a
-  directly exposed BFF keeps ignoring a client-supplied `X-Forwarded-Proto`. CI and dev never saw
-  this: there the BFF serves HTTPS itself on `:8443`. The account-deletion step-up callback has the
-  same dependency. Pinned by `tests/unit/bff-server-trust-proxy.test.ts`; the hosting trap is
-  described in [Expo Router and transport traps](../gotchas/expo-router-and-transport-traps.md).
+- **In production the BFF must be told it is behind a TLS-terminating proxy, *and* `server.js` must hand
+  the adapter an absolute URL — either half alone leaves the consent callback broken.** Cloudflare
+  terminates TLS and `cloudflared` reaches the BFF over plain HTTP, so the scheme a route derives from
+  `new URL(request.url).origin` reads `http` unless both halves are in place. Without them the consent
+  route sent Keycloak `redirect_uri=http://mcm.…/bff-api/backups/consent`, and Keycloak refused it
+  ("Invalid parameter: redirect_uri") because the client registers the `https://` URI — the schedule
+  silently never turned on. `server.js` sets `app.set('trust proxy', 1)` **only** when
+  `TRUSTED_PROXY=true`, which `infrastructure-as-code/docker/bff/compose.prod.yaml` supplies, and that
+  makes `req.protocol` honour `X-Forwarded-Proto`; `1` trusts exactly the immediate hop, and only the
+  *scheme* moves, because the catch-all reads the raw `Host` header via `req.get('host')`, which
+  `trust proxy` does not touch, so `X-Forwarded-Host` cannot move the origin. The second half is that
+  same catch-all rewriting ``req.url = `${req.protocol}://${req.get('host')}${req.url}` `` before
+  calling the handler: on the SDK-58-era `expo-server` adapter, `convertRequest` builds the request as
+  ``new URL(req.url, `${proto}://${req.headers.host}`)`` with `proto` taken from `socket.encrypted`, so
+  it ignores `req.protocol` entirely and an absolute `req.url` is the only hook that carries the
+  trusted scheme across. (The earlier `@expo/server` adapter interpolated `req.protocol` itself, which
+  is why the `trust proxy` line alone was sufficient before feature 087 — an operator following older
+  notes will find the setting present and still broken.) With `TRUSTED_PROXY` unset a directly exposed
+  BFF keeps ignoring a client-supplied `X-Forwarded-Proto`. CI and dev never saw this: the
+  prod-container target serves HTTPS itself on `:8443` through Caddy, and the dev container's
+  plain-HTTP `:8082` origin is itself a registered redirect URI, so neither derived an origin
+  Keycloak would refuse. The account-deletion step-up callback has the same dependency. Pinned by
+  `tests/unit/bff-server-trust-proxy.test.ts`, which boots the real `server.js` against a fixture
+  `dist/server` and the real adapter — removing the wrapper turns the `https` rows red, which is the
+  proof the fix is actually exercised; the hosting trap is described in
+  [Expo Router and transport traps](../gotchas/expo-router-and-transport-traps.md).
 - **Retention's load-bearing safety property is that a failed or partial run prunes nothing.**
   Pruning on the failure path would turn "today's backup didn't happen" into "and yesterday's is
   gone too." Separately, a prune failure never fails the run — it is recorded on its own
@@ -260,6 +272,32 @@ this page distills the load-bearing gotchas an operator needs before touching th
   [Local dev infrastructure & environment variables](./local-dev.md) and
   [E2E testing](./e2e-testing.md).
 
+## The public scheme behind the production proxy (feature 087)
+
+The consent callback's redirect URI is derived from the request it arrived on, so the scheme the BFF
+believes it is serving is load-bearing. Behind Cloudflare Tunnel the request reaches the process over
+plain HTTP, and on the SDK-58-era `expo-server` adapter the scheme cannot be recovered by a setting
+alone — hence the two halves described in the gotcha above.
+
+```mermaid
+flowchart TD
+    Req["Request arrives over plain HTTP from cloudflared"] --> Gate{"TRUSTED_PROXY is true?"}
+    Gate -->|yes| Proto["trust proxy 1 - req.protocol honours X-Forwarded-Proto"]
+    Gate -->|no| Socket["req.protocol keeps the socket scheme - http"]
+    Proto --> Abs["catch-all makes req.url absolute from req.protocol and the raw Host"]
+    Socket --> Abs
+    Abs --> Adapter["expo-server parses the now-absolute req.url"]
+    Adapter --> Origin["route derives origin from request.url - https only with BOTH halves"]
+```
+
+*Both halves of the public-scheme fix: the setting makes `req.protocol` trustworthy, and the catch-all carries that scheme into the URL the adapter actually parses.*
+
+The consequence an operator should carry away: if `TRUSTED_PROXY` is missing or the catch-all wrapper
+is removed, nothing fails loudly at boot — the schedule simply never turns on, and the only evidence
+is Keycloak's `Invalid parameter: redirect_uri`. `tests/unit/bff-server-trust-proxy.test.ts` is the
+regression gate that makes either removal visible without a production deploy; see
+[Expo Router and transport traps](../gotchas/expo-router-and-transport-traps.md) for the full trap.
+
 ## The consent runs on its own Keycloak client (feature 083)
 
 Giving the standing permission up is a first-class operation — disabling the last schedule,
@@ -279,11 +317,19 @@ client from the session, and the session dies with the grant:
   best-effort, the turn ran without identity, and the member saw an unexplained *"No caller identity
   is available for this action"* from inside the assistant. See the
   [BFF project overview](../projects/bff.md).) The client's agent transport answers that 401 with
-  **one** silent refresh and retry before giving up, and passes a 503 straight through untouched
-  (`src/utils/agent-fetch-refresh.ts`); the dock then renders the BFF's own text for the failure
-  code — *"Your session has expired. Please sign in again."* for `AGENT_IDENTITY_REJECTED`,
-  *"The assistant is temporarily unavailable. Please try again."* for the retryable 503
-  (`src/components/agent/assistant-run-failure.ts`).
+  **one** silent refresh and retry before giving up, and passes a 503 straight through untouched —
+  an outage is no reason to renew (`src/utils/agent-fetch-refresh.ts`); the dock then renders
+  member-facing text keyed off the BFF's own failure code — *"Your session has expired. Please sign
+  in again."* for `AGENT_IDENTITY_REJECTED`, *"The assistant is temporarily unavailable. Please try
+  again."* for the retryable 503 (`src/components/agent/assistant-run-failure.ts`). CopilotKit
+  reports a refused `/run` through its `onError` subscription rather than a rejected promise, and for
+  a non-2xx the error's message *is* the response body, so the BFF's own `code` decides the text —
+  which is why the notice is member-facing prose rather than a status number. The wrapper's
+  other retry is a *thrown* fetch error on the agent route only — one bounded attempt 250 ms later
+  (`RUN_RETRY_DELAY_MS`), covering the dropped-response-stream case (`Cannot pipe to a closed or
+  destroyed stream`) that otherwise leaves the turn with no `render_selection` /
+  `render_disambiguation` tool call and no dock panel — while a genuine 4xx arrives as a `Response`
+  and never throws, so it is never retried.
 - the next refresh fails with `Session not active`, so the member is signed out.
 
 Measured on Keycloak 26.8.0 for the session model; the subject-token classification was re-measured

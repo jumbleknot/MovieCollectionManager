@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:52fab826a190ee5bae4300a62f2882b2973f8cf79ccf58b5a92583a57c1e70da",
+  "pageVersion": "sha256:aeb8814186d4000085a94a18425de5b4c280732ca507458ecbc32eb38a57b80a",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -222,7 +222,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/README.md",
-          "version": "repo-file-v1:sha256:d6100c8a656aa551e5965dc037a010209b2ae17d73c98c222dcdfbba3a37a051"
+          "version": "repo-file-v1:sha256:337959539971dc097ff49af87fb594c1ee14eea5d082dc3768e8e26ee3e5b41f"
         },
         {
           "resource": "repo://frontend/mcm-app/babel.config.js",
@@ -313,10 +313,68 @@
           "version": "repo-lines-v1:sha256:168829a9666e8b4aa28fed399c493729076fc73a580087f25adf8701d58b48a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM2ZWI4NzE4M2Y5YzBlM2UwNTQ1ODdmOTkxYzdiMzE5NjIxNzZhNTM1YzgzYmJjNDAxYjRjMWY4YzE0M2QwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNmYjg0ZmJhYTg5YjNmNzQzZDI3MTkyZDdhZjhiYzFjZWNlOWEzZGZiNjQ2NTdjZWI5MzQ0NWIxMDA5OWJlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTljOTU0ZWIwNzEzODUxODMxZjQwNDZjNThkNTc3Mjg4YWFiZGYyOTA5OTk4OWNkNTZjYWRlOGYxZmU0MjU4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJmN2NiMzcwOWQ4ZjdlNGQ0YjNjMzdkZDA5YTFkNTY4ZTIwNjU3YTg0YzI0YmRlZTBhOTlmMjgzNWFlNjVlNSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_94a8adb46e4641aa892e39287dc6522c",
+      "statement": "Feature 087 (Expo SDK 58) requires a v2.8.0 constitution amendment under its FR-024, landed in the same pull request as the version move with human approval, that advances the framework baseline (Expo SDK 57 → 58, React Native 0.86 → 0.88, React 19.2 → 19.3) *and* rewrites the Backend-for-Frontend line: the current `app.json` web output set to server (`\"output\": \"server\"`) would, read literally on SDK 58, mean per-request rendering instead of the prerendered pages plus API routes the feature requires. The amendment is still an open task (`T048` of `specs/087-expo-sdk-58/tasks.md`), so the file still reads v2.7.0 and `frontend/mcm-app/app.json` still says `\"output\": \"server\"` — a line can break for a reason that is neither a version number nor a library.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L348-L352",
+          "version": "repo-lines-v1:sha256:96c2cd0b7ed29015ace12aee7361dd247794fbf041c612e8677f9d08895c9689:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiYTJiODIwNTczMjI1YWM4MzI5NzQ2YTlmM2U2NjdlMzhlNWFmYTY3NzJiZjQ2N2U0OWE1ZTBiZTllMmI4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIzOGU3MDEwNzAwYWI5NTg5YmRjM2UzODRjNTRiYzgxODdjMGRiYzRiNDdlNzU3Y2Y1YzJkYjdjNmRmYTk4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk5ZmE5MTQyZmMwZjEzNzAxOGI3ZTYzNDJhMmFiNTA4OGVlYTJjOWMwYWE2NjRhNWIxZmI1MTU0NDhkZDFiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMzOGMwY2VjNjMzMjlmOTgxNTFmZDk5N2RlZjZhNjA2ZTNmOTBiMzRjMmUwNDFmMzlhM2IwMDRiM2Y5Yjc4YSJ9"
+        },
+        {
+          "resource": "repo://docs/proposals/MCM-Expo-SDK-58-Approach.md#L321-L330",
+          "version": "repo-lines-v1:sha256:b15a92ccecc173d280b0a827fafb75bb1adae25f850d6cd828169fbe17fa4c3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWQzMTI1ODY0MzU4NmNhY2JhNzA5ZjIyZTBjYWE0ZTc5ZDIxMjdlN2E0MzRiMjlhZWYxYjNmOWFmMzZkZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2MwZmMxMDQ2YTNhNmFlZGJjZmJjMWJiZGJiNzI0NmJhYWZhZWFmYzkyYjNiM2MyYTZiNGVjNzI1NmI5OWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMWI3Y2E3ZTQ0MmQ3YWE5YTcyNmE2MzVlNjhhODY3ZTRkNjUzOTY1MWQ0Y2YxYWIwMTZjMmRiMjljZmRmNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0ODBmMzg0ZjMwZTczYjJiM2VlYzQwNDY1MzExODZkNjI5NWU1Zjk3MmUzMTU2OTYzODc2NGQ2NmQyZThlYzMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/app.json#L23-L27",
+          "version": "repo-lines-v1:sha256:338c0aa6680474f0c50a64f5d83c8b7d99e7630b3aef71221b7dfd405aa1e6e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDlkMTQ4NzhlMjRiOTE2NmNiMjRiODM1ZGYzMTM2YjBlNDQ4MTJlYmYwZmZhODhmMjYzYTM3YWE2NjM0MTI4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNmNGI4YmVjODQ1MDI1OGI0YzI3MWI1MDUwZDA2OGI2ZDVmOTZkNzA3NGNiNjVhYWVjODAwYTM1OTZmZjYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDE4YWI3Yzk2ZTg3NzhhMTFhMzE3NDg3YjY5OGQ1ZjdjN2E4OGY5Yjk5YzI0NTI5OTFhYWE0MzQzMTMyMTE2ZiJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/plan.md#L16-L16",
+          "version": "repo-lines-v1:sha256:3bfd181c4f9bc71775e33580600bab058db9251845ae7e8bf3ba0f33ebe5d759:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmZDE4MWM0ZjliYzcxNzc1ZTMzNTgwNjAwYmFiMDU4ZGI5MjUxODQ1YWU3ZThiZjNiYTBmMzNlYmU1ZDc1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmZDE4MWM0ZjliYzcxNzc1ZTMzNTgwNjAwYmFiMDU4ZGI5MjUxODQ1YWU3ZThiZjNiYTBmMzNlYmU1ZDc1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM2OTA5ZjVmZWI4NDA5Y2RkZjY1ZTI4MzZkMDNlOGNhNmU1NjNmZTVkMTg1ZDE3NmI4NmMyNmJkMmNkMmViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI2ZGE0Y2UzYmI0YWNmNjdmNzk3YjE4ODEyYjRjM2QxMTEzYTc5YmU3YThkNDU0ODZhNjIzZDRiZGY0Zjc2OCJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/spec.md#L230-L233",
+          "version": "repo-lines-v1:sha256:c9b86b66cf8cf3e2cafa9b8ce68fec8f432f2bd4ff1f9d32994e2d3667f63212:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFmODBhYTkzNTc1NjQ5NjE3OTQzZGUwNjFmNGIwZDQyY2ZkMDE3ZTkxMzQ0N2Q2MTQ1NjMzM2I0NzVhOWJmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0ZDdkYmE0YzA3NDk2YzIwNTViN2YxZTA4MzJmYmM1NTI1OWRjNDRhOTdkNTQyYjk0OWIzMmE3ZDU4NzU1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFkNDg4Y2E5YTA3YjNlMDYzYTYwNTc4ZDA3N2E3MWEyMmRlNGI1ODYxZmFkODJjZjE5NzVlZGMxNTQyNWJlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzVlNDhkZTY0Nzc0YjViZjYzN2NkZWEzZTlmMTdjODM3ZGExZGNjMzhmY2RmMWU4NGYzYzBiODU4NjMxMWE0NyJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md#L192-L192",
+          "version": "repo-lines-v1:sha256:a5e360a901c2db140d91e59cf975864d29a25461b236f8478a4c9d511f300eaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVlMzYwYTkwMWMyZGIxNDBkOTFlNTljZjk3NTg2NGQyOWEyNTQ2MWIyMzZmODQ3OGE0YzlkNTExZjMwMGVhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVlMzYwYTkwMWMyZGIxNDBkOTFlNTljZjk3NTg2NGQyOWEyNTQ2MWIyMzZmODQ3OGE0YzlkNTExZjMwMGVhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNmM2QzMzliZjY4YTE1MGI2ZWJiOTVkMTM4MTExZjNlMDgwNzNiMzFkYWNhMWVhOTFmNDZiMjkxNzFmMjg4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWU2ZDFhM2NmYzdlOWQ3M2ZiN2Y1MTQxNjg3NDJkNjgyZmRiYjJkOGQ1ZmU2Y2JjMzU5MzA3NTBiODVkODQxYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_af5962dc00094852ae541578e2cbdbc6",
+      "statement": "The constitution names Tamagui without a version, so no amendment is required when it moves, but version discipline for it is enforced elsewhere by `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`: every `tamagui` / `@tamagui/*` specifier in `frontend/mcm-app/package.json` and `packages/design-system/package.json` must be one exact version with both manifests agreeing, the lock must hold a single resolved `@tamagui/core` and `@tamagui/web`, the removed v2 `@tamagui/babel-plugin` must be named by neither manifest nor `babel.config.js`, and every Tamagui update must resolve to one Renovate group so the bot cannot propose half of the set.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L28-L29",
+          "version": "repo-lines-v1:sha256:15436fbd86956a7240f5096ea91925a40872f6fc21d1240c4cd39caa5684bb71:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg5YWVkNjQyNDFlM2JhMDBiYmNhYTc3YjJhYjg4NzU4Zjg4MWFmM2RhY2NhNzJiNjY5ZWUzMzZjN2RkMmI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4ZTg5YmQ4OTY2OTg4MzgyZmEwNTA4MjdjNjQ2YjA5MTNjNzBjZTM2MTA5ODY3NzYxMWQ0YjM2MzRkZTYyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRmNzIzNzYyOGZjNzA1OWE4OTk2NTMwMmVlMzNkYjQzZTcxMzdjNTRlODZmN2RiMjc1ODlkMGQ0Yzg4ZDE1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmNGYyYjNhNDYwZWQwNmEwNmYzYmUyOGViY2QxMmRhOWY4ODc5ODAzNzIyYzM5OWJmNzVlN2IzOGM5ODQxMiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/package.json#L21-L23",
+          "version": "repo-lines-v1:sha256:2ad900e00e1256760f922c3441a2e115e9179fdde3b7619bb9a208db46dd6a18:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg5YWVkNjQyNDFlM2JhMDBiYmNhYTc3YjJhYjg4NzU4Zjg4MWFmM2RhY2NhNzJiNjY5ZWUzMzZjN2RkMmI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4ZTg5YmQ4OTY2OTg4MzgyZmEwNTA4MjdjNjQ2YjA5MTNjNzBjZTM2MTA5ODY3NzYxMWQ0YjM2MzRkZTYyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODYwOWM3MmIxZWExOWE3ODdmMjg2OWQyYzRiMzY3ZjM0YzFhYTQzMGU5YjcxOTNkMmMyZGVkODg5M2UxOWMzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NlMWM2N2M0Nzg0YjFjN2Q5ODFkYTNiZDU2ZGFjN2FkMGM4ZTY4ODZjYTNiYmYyYjVjM2ViMjdiMTY4OTQyOSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L1-L21",
+          "version": "repo-lines-v1:sha256:867f988a8feacf67fa54d3c78605f3d1d7ec8c19456ae67fd41f6de9da1c574e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YmJkMjczNzg3ZWIzYWQ2ZTI1MGYwZTRiN2M4NTRjNzI5NjhhODc5Y2RiYmJhNWRhNjdiY2U1ODllNjZhMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c011f2f98e74a6483f9709b42f75ee2",
+      "statement": "The constitution's monorepo directory tree carries approved deviations as well as rules: it lists `openwiki/` as the generated, OKF-formatted agent-facing knowledge wiki, deliberately kept outside the human-owned `docs/` so that the ownership rule stays enforceable — everything under `openwiki/` may be regenerated by a tool, everything under `docs/` is human-owned, and nesting the wiki inside `docs/` would put generator-rewritable files beside the operator runbooks.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L525-L529",
+          "version": "repo-lines-v1:sha256:f5d1cd5bb9f2960cfa040c76106905c55e69d96ba3863f24c2914b93305c09db:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE1NjIxZWQ4ODk2Y2I5YjNlOWJkODQ0OTQwMjZlYjk3ZGFmMjhmNWExYzA5Y2M1Yzc0ZTdjNWM2MWM4MGQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q0ZDExOTkxZjkzMTdlNDM0OGUxZDhmMjdkMzcyZmU1NDI3NTkzZWI3ZTA3ZjdmNjQ3OWM2ZjI5YzdiZmQ4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYzMDgxYTM1NDk4YjljZWZkYmI4ZTQxMTIzZGRhNGQ4NDZkMzE5YzBiMGQ4NTAyYTFkOTAxNWFmNmY1ZjViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIzODc2MTYyNTYxMDE1M2ExNzE4NzFjZTkyYWY4OTcwZWIyMDQwOTFjOTBlODVmYjhhOGQ3MDg1ZDlmYzUyZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-06T06:42:06.997Z"
   }
 }
