@@ -1,6 +1,6 @@
 # Spec 090: The BFF's service account keeps Admin API access on Keycloak 26.8.2
 
-**Status**: Implementing. **Input**: PR #950 is red, and the cause also reaches production.
+**Status**: Complete. **Input**: PR #950 is red, and the cause also reaches production.
 
 ## Problem
 

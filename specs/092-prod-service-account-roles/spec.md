@@ -1,6 +1,6 @@
 # Spec 092: Record what production's Keycloak needs, and make its absence visible
 
-**Status**: Implementing | **Date**: 2026-11-07
+**Status**: Complete | **Date**: 2026-11-07
 
 ## Problem
 
