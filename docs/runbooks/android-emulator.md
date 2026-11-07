@@ -115,7 +115,7 @@ Measured 2026-07-26. The baked SDK makes `adb`, `avdmanager` and a KVM emulator 
 `pnpm nx run mcm-app:build-apk` still fails:
 
 - **The Gradle distribution is baked.** `./gradlew` would otherwise download its own distribution
-  from `services.gradle.org`, which the egress firewall blocks (`Downloading … gradle-9.3.1-bin.zip
+  from `services.gradle.org`, which the egress firewall blocks (`Downloading … gradle-9.4.1-bin.zip
   failed: timeout`), so `toolchain.Dockerfile` bakes it at image-build time (pre-firewall), and
   `verify-toolchain-present.sh` asserts it.
 - **Gradle then resolves the Android/Maven plugin graph, and that is where the build dies** —
@@ -129,15 +129,27 @@ Measured 2026-07-26. The baked SDK makes `adb`, `avdmanager` and a KVM emulator 
 or a build container with its own egress.** Nested-container egress is NOT firewalled (the FORWARD
 chain is dockerd's), which is the same escape hatch the Playwright runs use.
 
+**The launch check runs in `app-e2e`** (feature 087). After `adb install` and before the agent flows,
+[`scripts/android-launch-smoke.sh`](../../scripts/android-launch-smoke.sh) checks that the release
+APK launches, that the login screen appears, and that the device log has no fatal error. It reports
+the commit status `app-ci / android-launch`, for example `launch=ok login-screen=visible fatal=0`. Read
+that before a Maestro failure: if launch failed, every flow fails for the same reason. Both release
+builds (`app-e2e` and `prod-apk`) set a 4 GB Gradle heap with `-XX:+ExitOnOutOfMemoryError` in the
+user-level `gradle.properties`, which `prod-apk-gradle-heap.guard.test.mjs` checks.
+
+The dev-container image bakes **Gradle 9.4.1**, the version SDK 58's wrapper asks for. Until the image
+is rebuilt (`node scripts/build-devcontainer-image.mjs`, or pull the CI-published one), an older image
+still has 9.3.1, so the wrapper tries to download 9.4.1 and fails behind the firewall.
+
 If you only need to unblock a single artifact rather than a whole build, fetch it through a
 throwaway container into the cache — this is how the Gradle distribution was obtained before it was
 baked (note `--user 0:0`; the default uid cannot write the bind mount, and you get a bare
 `curl: (23)` if you forget):
 
 ```bash
-D=~/.gradle/wrapper/dists/gradle-9.3.1-bin/<hash>
+D=~/.gradle/wrapper/dists/gradle-9.4.1-bin/<hash>
 docker run --rm --user 0:0 -v "$D":/out curlimages/curl:latest \
-  -sSL -o /out/gradle-9.3.1-bin.zip https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
+  -sSL -o /out/gradle-9.4.1-bin.zip https://services.gradle.org/distributions/gradle-9.4.1-bin.zip
 sudo chown -R coder:coder "$D"
 ```
 
