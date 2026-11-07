@@ -66,6 +66,10 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/load-e2e-env.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
+  - id: openwiki-source-8235a0f8c189fa99ff3920e9
+    resource: repo://frontend/mcm-app/tests/integration/backup-consent-session.integration.test.ts
+  - id: openwiki-source-d722b9526f1a5274340b6226
+    resource: repo://frontend/mcm-app/tests/integration/backup-offline-token.integration.test.ts
   - id: openwiki-source-53aa23c014c1f05d94e82617
     resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
   - id: openwiki-source-77b77a1d89a52ebe7205f42b
@@ -86,6 +90,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
   - id: openwiki-source-3574b605c1922bedacc8f2fa
     resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
+  - id: openwiki-source-4af9b1718a0206bbe016cb00
+    resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
   - id: openwiki-source-839571d2c51f49a930537d1b
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-864993a079e6e4df052ac4ea

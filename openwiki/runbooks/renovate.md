@@ -21,6 +21,8 @@ sources:
     resource: repo://.forgejo/workflows/renovate.yml
   - id: openwiki-source-e5d6f72def2648b4025ee519
     resource: repo://agents/movie-assistant/.python-version
+  - id: openwiki-source-03a1e42798659780585d5bc4
+    resource: repo://backend/mc-service/Dockerfile
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
   - id: openwiki-source-4042a47526d6016cff835628
@@ -53,10 +55,10 @@ sources:
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T17:50:21.605Z
+    at: 2026-11-07T05:57:36.933Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T05:57:36.933Z" }
 ---
 
 # Renovate dependency bot
@@ -262,7 +264,7 @@ dispatch is one runner slot.
   structural — something resets the clock faster than it can run down — not temporal, where waiting
   works); (2) the posture has been measured first with the gate's own criteria and recorded on the PR
   (images: the `--severity CRITICAL --ignore-unfixed` recipe in
-  [infra-image-scanning](infra-image-scanning.md); packages: the SAST/audit gates on the PR); and (3)
+  [infra-image-scanning](./infra-image-scanning.md); packages: the SAST/audit gates on the PR); and (3)
   the update has security value now — it clears a live finding or unblocks a red gate on `main`.
   Impatience does not qualify. Use a **two-dot** diff (`git diff main branch`, not `git diff
   main...branch`) to see what a PR would still change — the three-dot form is against the merge base and
@@ -327,7 +329,7 @@ postgres, so no postgres is special any more — see
 day (added 2026-10-23, item #819) and then the same treatment: spec 081 US8a removed the
 ceiling, moved every mongo pin to 9.0, and left the major-approval gate in its place, so 8 → 9 is now a
 tick like any other datastore major — see
-[prod data tier auth](prod-data-tier-auth.md) for the migration itself.
+[prod data tier auth](./prod-data-tier-auth.md) for the migration itself.
 
 MongoDB is also the sharpest example of what "how its data survives the move" means for an *image*
 major: 9.0's `mongod` runs as uid 1000 where 8.0.8's ran as 998, so a volume written by the older image
@@ -395,8 +397,8 @@ adding.** A uv lock is *universal* across its `requires-python` range, and that 
 new minor, so the existing lock resolves unchanged. (Renovate would produce no lockfile update for such
 a move in any case: it re-locks only manifests it has itself edited, and this move edits none.) **The
 check that fails if the interpreter and the locks ever disagree already runs**: `uv sync --frozen
---no-dev` inside all four image builds — `--frozen` means *do not update the lockfile; error if it is out
-of date* — via `scripts/agent-stack.mjs` (which names all four Dockerfiles) under `pnpm nx up-agents-prod`
+--no-dev` inside all four image builds — `--frozen` means *do not update the lockfile; error if it is
+out of date* — via `scripts/agent-stack.mjs` (which names all four Dockerfiles) under `pnpm nx up-agents-prod`
 in `app-ci`. Verified on the 3.13 → 3.14 move: all four images built, `Installed 44/44/47/169 packages`.
 Do **not** check this with `docker build -q`: it suppresses the output and leaves exit 0 as the only
 evidence, which cannot distinguish "uv resolved N packages" from "a cached layer replayed". Use
@@ -422,7 +424,7 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `hashicorp/vault` | **none** — a major now takes `dependencyDashboardApproval` | the `<1.19` ceiling ran 2026-08-30 → 2026-10-20 and is discharged: the refs moved to `2.2`, which scans with zero fixable Criticals (1.21 added two pgx ones on top of the libcrypto3/grpc pair), and the three `vault:1\.18` allowlist entries were deleted in the same change, so the scan gate alone now blocks a worse image |
 | `python` | `<3.15`, derived from `agents/movie-assistant/.python-version` | the interpreter minor is a toolchain decision, not a base-image sweep; the guard derives the ceiling from the pin for **both** managers and fails when they disagree, so raise them together |
 | `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
-| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's; MongoDB's four-day `<9` hold (item #819) was discharged into this gate by spec 081 US8a. Patches, minors and digest refreshes stay automatic |
+| `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's; MongoDB's one-day `<9` hold (added 2026-10-23, item #819) was discharged into this gate by spec 081 US8a. Patches, minors and digest refreshes stay automatic |
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
 | `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
 | majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
@@ -641,14 +643,27 @@ as a suspected defect:
   new major's breaking changes and re-running the validator against `renovate.json` first. The pin is
   about config *semantics* only — it says nothing about the runtime, which is why the `setup-node` step
   is the thing that covers an `engines` bump.
+- **`curl https://sh.rustup.rs | sh` stays an unversioned script piped to `sh`**, in three workflows and
+  the toolchain image. What it installs is `rustup`, a bootstrapper; the thing that decides which
+  compiler runs — the toolchain — is pinned by `rust-toolchain.toml`, so a change in rustup cannot
+  change the compiler. Both pinnable alternatives cost more than they buy: the archive **binary**
+  hard-codes the architecture, which would break a non-amd64 devcontainer build, and the archive
+  **script** path cannot be verified from the dev container at all because `static.rust-lang.org` is not
+  on its egress allowlist. Revisit if rustup itself is ever implicated.
+- **`backend/mc-service/Dockerfile` still builds `FROM rust:alpine3.21@sha256:…`** — a version-LESS
+  tag, so Renovate can only churn its digest and can never propose a classified update. Re-tagging it is
+  a change under `backend/`, which is SDD-gated, so it is an accepted divergence recorded in
+  `rust-toolchain.toml` and in the `rust toolchain` packageRule. A guard test asserts the toolchain
+  group does **not** claim it — the failure that would matter is Renovate proposing a Rust *release*
+  number as a *docker tag*.
 
 ## Related
 
-- [CI self-serve diagnostics](ci-diagnostics.md) — reading a CI failure without log access
-- [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` dashboard convention
-- [Infra image scanning](infra-image-scanning.md) — the twice-weekly CVE sweep whose timing this page's
+- [CI self-serve diagnostics](./ci-diagnostics.md) — reading a CI failure without log access
+- [The agent-driven backlog](./backlog.md) — item #29 and the `status/bot-managed` dashboard convention
+- [Infra image scanning](./infra-image-scanning.md) — the twice-weekly CVE sweep whose timing this page's
   scheduling gotchas are built around, and the scan recipe used to satisfy stability-days criterion 2
-- [Devcontainer sandbox](devcontainer-sandbox.md) — the egress allowlist that governs whether a local
+- [Devcontainer sandbox](./devcontainer-sandbox.md) — the egress allowlist that governs whether a local
   Renovate lookup can see Docker Hub timestamps at all
 - [CI/CD pipeline](../projects/ci-cd-pipeline.md) — where a Renovate PR's gates run once it exists
 - [Pull-request batching](../process/pull-request-batching.md) — why the three lockfile channels are
@@ -659,8 +674,8 @@ as a suspected defect:
 - [ADR-0002: stateful major upgrades](../decisions/adr-0002-stateful-major-upgrades.md) — why a
   database major waits in Pending Approval, and why `langfuse` takes its own `groupName` (and its
   explicit `prPriority` reset) rather than riding `docker base images`
-- [Prod data tier auth](prod-data-tier-auth.md) — the MongoDB 8 → 9 and observability postgres 16 → 18
+- [Prod data tier auth](./prod-data-tier-auth.md) — the MongoDB 8 → 9 and observability postgres 16 → 18
   migrations whose ceilings this page's approval gates replaced
-- [SAST and SCA scanning](sast-scanning.md) — the gate that consumes the semgrep and cargo-audit pins
-- [Wiki maintenance](wiki-maintenance.md) — the OpenWiki generator tree whose pins this repository
+- [SAST and SCA scanning](./sast-scanning.md) — the gate that consumes the semgrep and cargo-audit pins
+- [Wiki maintenance](./wiki-maintenance.md) — the OpenWiki generator tree whose pins this repository
   groups as one `openwiki generator` PR

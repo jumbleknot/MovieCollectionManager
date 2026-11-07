@@ -19,6 +19,8 @@ sources:
     resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ab390bc7debabac317c9e258
     resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
+  - id: openwiki-source-4ed96763667f13cac6dcc6ce
+    resource: repo://backend/mc-service/src/api/middleware/logging.rs
   - id: openwiki-source-c24ab349f92ee5be03f5048a
     resource: repo://backend/mc-service/src/application/access_control.rs
   - id: openwiki-source-e7c775a958bbcf3eef93d65c
@@ -37,6 +39,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
   - id: openwiki-source-3962f527ba083cef06c1e6a6
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-9d87a8f088bd859a50175559
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/verify-email%2Bapi.ts
   - id: openwiki-source-a344c8ab57b1d157819a0fd2
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-a07d6f15a4a3776b6f310564
@@ -73,6 +77,8 @@ sources:
     resource: repo://specs/076-account-deletion/contracts/bff-api.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-a806df9808f5972f05b31a55
+    resource: repo://specs/091-keycloak-auth-084-test/spec.md
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-07T05:05:27.957Z

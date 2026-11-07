@@ -21,12 +21,16 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
   - id: openwiki-source-7ee24640f6ecf841a7ce2b17
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts
+  - id: openwiki-source-55f923b9a396dd1fa39d5777
+    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-assign-role.test.ts
   - id: openwiki-source-7f78c834443744c0dcf8d134
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts
   - id: openwiki-source-a5bf09947adc24a8d59ab587
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-52d190f1e55c59a4ccd67d7c
+    resource: repo://frontend/mcm-app/tests/app/bff-api/auth/register%2Bapi.test.ts
   - id: openwiki-source-b84c2ebda1fa9702c5fd6055
     resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
   - id: openwiki-source-60cf9a830f0ca275ffed94d7
@@ -35,12 +39,24 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
   - id: openwiki-source-3574b605c1922bedacc8f2fa
     resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
+  - id: openwiki-source-4af9b1718a0206bbe016cb00
+    resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
+  - id: openwiki-source-4953a197c77e1a3e7a0fd632
+    resource: repo://infrastructure-as-code/docker/keycloak/README.md
   - id: openwiki-source-f6b7a61bf48156b2722b6a7f
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
+  - id: openwiki-source-100352d0b8b84569e79b6c28
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
+  - id: openwiki-source-6f82ff35957c317878203b8f
+    resource: repo://scripts/__tests__/keycloak-admin-api-scope.guard.test.mjs
+  - id: openwiki-source-e1fdca7abfc27f03b9de0dbd
+    resource: repo://scripts/__tests__/keycloak-service-account-roles.guard.test.mjs
   - id: openwiki-source-d332b78944bf7820230a82f2
     resource: repo://scripts/export-ci-realm.mjs
   - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
     resource: repo://scripts/gen-dev-env.mjs
+  - id: openwiki-source-210be746e72ce9b5abe32746
+    resource: repo://specs/092-prod-service-account-roles/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
