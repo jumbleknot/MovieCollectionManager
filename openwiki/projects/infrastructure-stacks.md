@@ -143,10 +143,10 @@ sources:
     resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
   - id: openwiki-source-acc6f4231f060062a015dbd3
     resource: repo://specs/087-expo-sdk-58/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-05T01:33:57.840Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T06:42:06.997Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -780,6 +780,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   one-shot init/seed containers that exist in the prod composes (`langfuse-rustfs-init`,
   `unleash-seed`, `agent-audit-init`) are themselves `restart: always` and idle on `sleep infinity`
   after an idempotent init, so Komodo's stack health never counts an exited container as unhealthy.
+  Staying alive costs a dependency mechanism, and that is the part a copy of the dev file gets wrong:
+  a container that never exits can never satisfy `service_completed_successfully`, so
+  `langfuse-rustfs-init` `touch`es a `/tmp/ready` marker after the bucket PUT and its healthcheck is
+  `test -f /tmp/ready`, which is what lets `langfuse-worker` depend on `service_healthy` instead —
+  whereas `unleash-seed` and `agent-audit-init` carry a trivial always-pass `true` check precisely
+  because nothing depends on them.
   The gate runs selftest-then-scan in the `naming` job of `guardrails.yml` and locally through
   `scripts/preflight.mjs`. Two consequences of its scan glob are worth carrying: a prod compose file
   outside `infrastructure-as-code/docker/**/compose.prod.yaml` is not policed at all, and the

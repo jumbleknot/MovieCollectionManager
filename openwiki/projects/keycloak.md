@@ -135,10 +135,10 @@ sources:
     resource: repo://specs/092-prod-service-account-roles/spec.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -181,9 +181,10 @@ See [Authentication and authorization chain](../invariants/auth-chain.md) and
 The `keycloak-service` block in `infrastructure-as-code/docker/keycloak/compose.yaml` is small and
 carries five facts worth reading directly, because none of them is visible in a realm file:
 
-- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`, the
-  identical pin in `compose.prod.yaml`, so a version bump is a two-file change and dev and prod cannot
-  drift apart. The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
+- **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.2@sha256:3879c623…`, the
+  identical pin in `compose.prod.yaml`, so dev and prod cannot drift apart. A bump is a change to both
+  compose files *and* to the README's import-proof snippet, which still invokes the 26.8.1 image (see
+  the gotchas). The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
   a finding only while its `image` regex still matches the scanned `repo:tag`, its `id` regex matches the
   advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
   discharge it rather than inherit it. The bump is the remediation and the exemption is deleted, so a
@@ -620,14 +621,16 @@ Mount the file as `grumpyrobot-realm.json`, supply any non-empty values for the 
 (they resolve from container env at import time), and want `Realm 'grumpyrobot' imported` — the exact
 command is in the keycloak README's realm-import proof section
 ([`infrastructure-as-code/docker/keycloak/README.md`](../../infrastructure-as-code/docker/keycloak/README.md)).
-That proof now runs the *same* `26.8.1` image the compose files pin, so it is a genuine
-version-parity check as well as a schema/deserialisation one — but it stays a check of the realm
-against the image, not of the image's own behaviour: the same class of change that made Keycloak 26.6+
-enforce the realm password policy against imported user credentials was a *server* behaviour change
-that no realm edit would have revealed. Keep the proof image and the compose pins in step
-deliberately; a proof image a minor version behind the deployed pin silently downgrades the proof to
-schema-only. Read the env-var names in the command against the realm rather than trusting them:
-placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
+That proof is meant to run the *same* image the compose files pin, which makes it a genuine
+version-parity check as well as a schema/deserialisation one — and that is exactly why a version bump
+is not finished when the two compose files agree: the README's snippet still invokes
+`quay.io/keycloak/keycloak:26.8.1` while both compose files now pin `26.8.2`, so today's proof is a
+minor version behind the deployed pin and has silently downgraded to schema-only. It stays a check of
+the realm *against* the image either way, not of the image's own behaviour: the same class of change
+that made Keycloak 26.6+ enforce the realm password policy against imported user credentials was a
+*server* behaviour change that no realm edit would have revealed. Keep the proof image and the compose
+pins in step deliberately. Read the env-var names in the command against the realm rather than trusting
+them: placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
 intact rather than failing the import (that is why the realm's own `${role_*}` / `${client_*}` i18n
 keys survive an import), so a name that no longer matches the realm can still import "successfully"
 while leaving the literal placeholder where a secret belongs. The ROPC client's placeholder is

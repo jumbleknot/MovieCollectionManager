@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:49954eae0457b7386dd2b5dcaf5f9dcb9cb737ee8c852a039a7fd6da6f72c1dc",
+  "pageVersion": "sha256:fb8436bf0f520729124ca7d6bd3aacb437dae5b3c90963038d55b54d4f02a4e0",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -304,11 +304,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         }
       ]
     },
@@ -318,11 +318,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -336,7 +336,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
-          "version": "repo-file-v1:sha256:4996665a9dd7b95a6c908db339ab25f97e036912caffe9a1ed0f2df78ad4fcb0"
+          "version": "repo-file-v1:sha256:14388f767385433d91ba2645ce37ebca587b3cf2284483edbde200b806f04130"
         }
       ]
     },
@@ -614,7 +614,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         }
       ]
     },
@@ -696,7 +696,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -724,11 +724,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         }
       ]
     },
@@ -1141,10 +1141,32 @@
           "version": "repo-lines-v1:sha256:bbcacce618c8f81c7085f2eae832262fa9eea025f7ef6c925ccfa6778ef29d1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5N2YyNWNjMjg0MzZjMzhmYTdjMzk1ZjIyODQ5NDIwYjg5ZmNkZmU1M2U2YzJmMWExZmJjM2YzNjU3ZjQzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZmVlZThmM2YyNzI3MzhlN2E5YTA2MjJiYzczODNhNDgyYjgwNDViZjAzOTNjNWU5ZTY1ZDFhMzE4NDY2Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1NWIyM2NiZTQ1NDYxODdkNTA2NTg1NWQyYzM0YmNiMGQ5NTU4M2IzNjgyYzliNTMyZDM2MjA0YTdjNTZiOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYjYwNzUzN2E2NGRmYThhNTg1ZTQxYWY4YzZiNzAxZTMzYzc4N2NiNWVjYzRiNjgyODZlN2UyODJmN2Y5MmIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_eacde27fbc8a4a12a27960285812c077",
+      "statement": "The prod one-shot init/seed containers stay alive after their idempotent work, and that costs a dependency mechanism the dev observability file does not pay: a container that never exits can never satisfy `service_completed_successfully`, so langfuse-rustfs-init `touch`es a `/tmp/ready` marker after the bucket PUT and its healthcheck is `test -f /tmp/ready`, which is what lets langfuse-worker depend on `service_healthy` instead; unleash-seed and agent-audit-init carry a trivial always-pass `true` healthcheck precisely because nothing depends on them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L723-L730",
+          "version": "repo-lines-v1:sha256:f75a4730da1efc1a78da9a1f4366193e8c20946d397f6d383f4e6aad8bfbf73f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGM1MDg4MmM5NTA1MjAxMTYzMDI4MjgwNzM4MjcwMjFmNGRkODZjMWNmMDA2N2M5MjI1ZTQwOTQzNmRkOGFlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE3ZTY1YzgxZDI2NDdiZmU0OWZkZjFlNTc4NGJkYWQzYTAyMTljNTExOTdjNjdmMjM5YjhkY2ViODUzNjVkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODg4ZTU5YmM1YjUyMmFiNzIwYjQwODNlOWQxMmIxMzFmN2E3N2U0ODg0MWZhMWQ0MmZmNWY1NzFkMjA0OGMwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQzNzRkYWFlOTNjNTE3ODIwZGFlYmM5MWNiODQ4NTcwODI0Zjk0YzY5NWEzMTBlNTE4YWJmZGEzNzZkZGM3NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
+          "version": "repo-lines-v1:sha256:219ca97909e054ab9f713506fa022ad9224e42620154bdd9ffeb4557ceff3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L348-L374",
+          "version": "repo-lines-v1:sha256:ce0e4257634723c93dcd17c1a7aa00308d1f7521ddf28e76c072b22c17e1310d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzRhMmVmMjVmNmRmMmJhMzUxMDAwODIwNDBjMGY5Y2Y1YTM4MWQ3NmY3NDYyMzM3ZDhkMzFiNzViODlmYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L74-L109",
+          "version": "repo-lines-v1:sha256:d3b3bbee353aff612e3993bc705a19fd49321b667a974cfaad4e0a310dcead71:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWY2MmJkZTE4MzYwNmNmOGUzOTM2YmY1MmEyYjhkYWMzZWI5OWEzYTIwZTdhYjBmOTAyN2VjYjgxMmFkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NGMxMzU4ZGFhMDE1YjMwMjg4NjQ2NjliOGZiNzJjZjNlNGI5NzYxYzI4YTA5OWUwYWY2MTlhMDFkMWY4ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZjVjZmZkNzJiOWJkZjNjMTJlYThjY2U1ZDBhZjg0MTE5MWMwMzRjZDUzZDFiMWZlODJkMDhiNzE5OTE1ZjcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }

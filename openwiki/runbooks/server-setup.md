@@ -67,10 +67,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
   - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
     resource: repo://specs/080-minio-to-rustfs/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -174,10 +174,11 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   (spec 080 T048, 2026-11-01) deleted the migration tool, its two test files and the wrapper — the
   `pinnedRustfsRef` helper that resolved the production pin moved into the object-store service guard,
   its only remaining consumer. The runbook's cutover text is now wrapped in `<!-- history:begin -->`
-  blocks as the record of how it was done, and the object-store guard's temporary exemptions for the
-  tool's files and the retired store's resources were removed with them. Client wiring is entirely
-  env-driven, so local runs without the token fall back to the local cache and no remote-cache config
-  leaks into the repo.
+  blocks as the record of how it was done, and the retired-store reference guard
+  (`scripts/__tests__/no-minio-references.guard.test.mjs`) lost its temporary exemptions for the tool's
+  files and the retired store's production resources with them. Client wiring is entirely env-driven, so
+  local runs without the token fall back to the local cache and no remote-cache config leaks into the
+  repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless

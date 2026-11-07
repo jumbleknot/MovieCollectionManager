@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b1908d5d3194c21e8dd3bc5bfb88e91a997829afb9ee8effc174a5505e8d7a1e",
+  "pageVersion": "sha256:6ff23a7febd5fd8676887c5c3875f2e5028936e988afb78bca05663e9dc20261",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:10db2ead3cd56aaf6a0c941791d63a75a3ad37551124c6f33b3d07b388ac5359"
+          "version": "repo-file-v1:sha256:110b5ab14dbda010ecf7c50d8ea4596d6af48b6590f7d892fb1bf05e608933ef"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml#L26-L43",
@@ -504,7 +504,7 @@
     },
     {
       "id": "claim_8b84a6471c2c422fa9c760d88b19d86a",
-      "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.1@sha256:a78d6b79…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one. The pin-by-tag-and-digest rule for production compose files is stated in the server-setup runbook.",
+      "statement": "The `keycloak-service` service head pins its image by tag AND digest (`quay.io/keycloak/keycloak:26.8.2@sha256:3879c623…`), identically in the dev/base `infrastructure-as-code/docker/keycloak/compose.yaml` and in `compose.prod.yaml`, and declares `depends_on: keycloak-store-postgres: condition: service_healthy` — so the container is not started until its own Postgres answers the `pg_isready -U keycloak -d keycloak` healthcheck, and a Keycloak that is up but cannot reach its database is a Postgres problem rather than a Keycloak one. The pin-by-tag-and-digest rule for production compose files is stated in the server-setup runbook.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1437-L1437",
@@ -512,11 +512,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:d6ac40ba27fb4120372c6b5c6831116bdab3375c596161b7c15b633eb905f017"
+          "version": "repo-file-v1:sha256:85364759b3a5ae11f0466aa92a1f2c17b7e1912fca59df30cc92b30a7081bdb0"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:10db2ead3cd56aaf6a0c941791d63a75a3ad37551124c6f33b3d07b388ac5359"
+          "version": "repo-file-v1:sha256:110b5ab14dbda010ecf7c50d8ea4596d6af48b6590f7d892fb1bf05e608933ef"
         }
       ]
     },
@@ -556,15 +556,19 @@
     },
     {
       "id": "claim_6cf76e20a9a34ffdac533f58488f2ef2",
-      "statement": "The keycloak README's one-minute `--import-realm` proof runs the importer against the same `26.8.1` image the compose files pin, so a green run is a version-parity check as well as a schema/deserialisation one — but it still verifies only the realm against that image, not the image's own behaviour: the Keycloak 26.6+ change that made a realm's password policy apply to imported user credentials was a server behaviour change no realm edit could have revealed.",
+      "statement": "The keycloak README's one-minute `--import-realm` proof is meant to run the same image the compose files pin, so a green run is a version-parity check as well as a schema/deserialisation one — but the snippet still invokes the `26.8.1` image while both compose files pin `26.8.2`, so today's proof runs a minor version behind the deployed pin and has silently degraded to schema-only. It stays a check of the realm against that image, not of the image's own behaviour: the Keycloak 26.6+ change that made a realm's password policy apply to imported user credentials was a server behaviour change no realm edit could have revealed.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/keycloak/README.md",
           "version": "repo-file-v1:sha256:5f23d75c6261e78c628fdb990c8348a0dd3fbac4377cddd77d53a0ddeb2f5a6a"
         },
         {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:85364759b3a5ae11f0466aa92a1f2c17b7e1912fca59df30cc92b30a7081bdb0"
+        },
+        {
           "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
-          "version": "repo-file-v1:sha256:10db2ead3cd56aaf6a0c941791d63a75a3ad37551124c6f33b3d07b388ac5359"
+          "version": "repo-file-v1:sha256:110b5ab14dbda010ecf7c50d8ea4596d6af48b6590f7d892fb1bf05e608933ef"
         },
         {
           "resource": "repo://scripts/export-ci-realm.mjs#L132-L139",
@@ -1054,23 +1058,23 @@
     },
     {
       "id": "claim_be0f7ed78b6a4548931fb453972a6a82",
-      "statement": "A Keycloak version bump is not a self-contained image change. `compose.yaml` and `compose.prod.yaml` pin `quay.io/keycloak/keycloak:26.8.1` identically, and the keycloak README's one-minute `--import-realm` proof runs that same image, but from 26.8.2 the Admin API additionally requires the `kc-admin-api` scope on the BFF's service account — a requirement no realm edit alone can supply to a realm that already exists.",
+      "statement": "A Keycloak version bump is not a self-contained image change. Both `compose.yaml` and `compose.prod.yaml` pin the same image by tag and digest, and the keycloak README's one-minute `--import-realm` proof is a third place the version appears, but from 26.8.2 the Admin API additionally requires the `kc-admin-api` scope on the BFF's service account — a requirement no realm edit alone can supply to a realm that already exists, so fixing the realm file turns CI green while an upgraded realm still answers 401.",
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md#L256-L260",
           "version": "repo-lines-v1:sha256:bf774b0b7bcbdac43824d8633cc53da8e260d6ff64708801c47fa89b6bc8b353:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFiM2RhYTdjNmMwZDkwN2E0NzU5MDczODUyNmVkMTJjNjU1NmM3ZWFhMmIxNTA0MTc3Mjc1ZjAxYmNmOTc3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU3MzExNmU1MmY2NGVlZGI1MzUyOWZiMjcxNDQ4ODFjN2Y4OGFjYmYzNDNlZDk4Mzg0OTYwMWMxNGU4ODNiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjE2ZGQzYTI2NDJiYzViY2JjOTM4NTM4Nzg5ZGQ4OWFhY2M2OGMxOWNmOTRiYzhjOWRiNTYwZGRlODZmNjhiNyJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md#L88-L111",
-          "version": "repo-lines-v1:sha256:2fdebf86819c26fe5bc9fd9f1288208557c1f89e5eb4c5439d67ac71538ce05c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZGNjMWYwZDg1NjVhOWEyNzIwYzI0M2JiNmJjMDBlYzMyNmQ1Y2U2ZjVjOGU1YmU3ODVjOTM2ZDdlOWYyZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwNTJlNGY0ZDI0NWMyYjkyMDUyODU2ZWVkNDJhNzMwMTc0Y2FjOWZiMTRlMzlkNTg1MjZkMTAyYmRmYmViMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OWE0N2U2ZTBiZjUxMTBjOTA5YzhkODFkODY1YjM3MTNjNDA1NDI0OTY4YTY1MzAwNGIyMTk5ZDE2MzI2YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YmQ2ZTZkNDhiOTY4YTg4YmYwMWJjYmIzY2NhMDkxMjQzMGVlNDBhMDdmMzZmMGEyMzBjN2M1ODM0MTk4ZWMifQ"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md",
+          "version": "repo-file-v1:sha256:5f23d75c6261e78c628fdb990c8348a0dd3fbac4377cddd77d53a0ddeb2f5a6a"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml#L42-L42",
-          "version": "repo-lines-v1:sha256:66c175713ff1412227c3c87db91d98b4987f6181e1481ec464d72197d53e4aef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZjMTc1NzEzZmYxNDEyMjI3YzNjODdkYjkxZDk4YjQ5ODdmNjE4MWUxNDgxZWM0NjRkNzIxOTdkNTNlNGFlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZjMTc1NzEzZmYxNDEyMjI3YzNjODdkYjkxZDk4YjQ5ODdmNjE4MWUxNDgxZWM0NjRkNzIxOTdkNTNlNGFlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY2NTYyOTdkODg2ODg3OGYwM2ViYmUxMTBhMWU4NjkxODgyOTA5Y2NkZjhlNDI5ODQ2MjM4MjhhNGQzNGMyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWNmNDVjMmVjZDE5Y2IzYjkxOTNlYzYzZDBmMDA5ZjVjYTE2MjExMDE5YmQ0ZjkwNWRjOTVkYjBkYTExNDMzOCJ9"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml",
+          "version": "repo-file-v1:sha256:85364759b3a5ae11f0466aa92a1f2c17b7e1912fca59df30cc92b30a7081bdb0"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml#L36-L36",
-          "version": "repo-lines-v1:sha256:66c175713ff1412227c3c87db91d98b4987f6181e1481ec464d72197d53e4aef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZjMTc1NzEzZmYxNDEyMjI3YzNjODdkYjkxZDk4YjQ5ODdmNjE4MWUxNDgxZWM0NjRkNzIxOTdkNTNlNGFlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZjMTc1NzEzZmYxNDEyMjI3YzNjODdkYjkxZDk4YjQ5ODdmNjE4MWUxNDgxZWM0NjRkNzIxOTdkNTNlNGFlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY2NTYyOTdkODg2ODg3OGYwM2ViYmUxMTBhMWU4NjkxODgyOTA5Y2NkZjhlNDI5ODQ2MjM4MjhhNGQzNGMyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjliZjhlZDM0MjRjZTM2NzQwMzdmMDIwMjcwODFlYzkxNGQyY2EyODg5ZThkZWQ1NzZhYWU0N2Y1OWViZWUzMyJ9"
+          "resource": "repo://infrastructure-as-code/docker/keycloak/compose.yaml",
+          "version": "repo-file-v1:sha256:110b5ab14dbda010ecf7c50d8ea4596d6af48b6590f7d892fb1bf05e608933ef"
         }
       ]
     },
@@ -1099,6 +1103,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T05:05:27.957Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }

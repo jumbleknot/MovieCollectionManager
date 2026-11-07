@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4c10a8acc83a47f49f360b0f069a5eb74b59e30f6a8cf097264d39e21a47c4d9",
+  "pageVersion": "sha256:839c366e8fe57238523aedfad5c50d4c127296e9cdc953efa1969950e266f12d",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -532,7 +532,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
@@ -664,7 +664,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         }
       ]
     },
@@ -877,10 +877,28 @@
           "version": "repo-lines-v1:sha256:a4aaeeb273fc8b616bba224d9354ed8c1a7d60495691a19fafeae597ed2d97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjA2NTY1ZmI3MTY2Yjg1NjVmMzU4MGMwMTgwZWY3YmNlNTJiZTBlYjI1MGM5NTViY2JjNTBkZDNlODk4ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmE5ZjUyZWEwN2JjYzJkYzIxYjhkYjdhMzgzOTBjOTZkNDUzZTZhODZmZTdlMmFmM2Q3MzcxMTdkY2Q3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_22ddb0b1805849b7a2f65509a2b80f97",
+      "statement": "Beyond the shared digest, the prod RustFS instance's security-relevant shape is guard-enforced clause by clause: the console is disabled with RUSTFS_CONSOLE_ENABLE \"false\" (RustFS's console defaults to ON with CORS `*`, and false closes :9001) and no instance may publish a console port, RUSTFS_OBS_LOG_DIRECTORY is set to the empty string so logs go to stdout rather than the image's default log file that `docker logs` never sees, and the bucket-init one-shot feeds its secret to curl as a config on stdin referenced as `$$S3_SECRET_KEY` — never interpolated into argv, where `docker inspect` and `ps` could read it — alongside the fail-fast `${LANGFUSE_RUSTFS_SECRET_KEY:?…}` environment reference and a `service_healthy` dependency on the server, so none of those shortcuts can arrive as a hand edit.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L188-L246",
+          "version": "repo-lines-v1:sha256:1857fef39191342974beb97d2a37dfe9db81717f201b8efe328b2bec3b7edab6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOWFiNzliYTNkZjk0MTQ4OGJhMmM3ZTI0Y2Q5MzBlMWExOTE1YmY1NzFmMGYwOWY2OWUxMjFjZTE3MTkxMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2OGQzZGQ3YWNhZTVhNzEzMDQ1OGM0OWFjYmM1ZWI1ZjMxNGQxMDUwNjBiYTA2OWZkZDE5NzczY2ExZDg0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L119-L128",
+          "version": "repo-lines-v1:sha256:911adede802acfc20e735fc67114c5f2016c210cd0046a2ae231547d62fc0224:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ZWEwYmJkMTZjOWNkZTBhN2RkNzQ0NTNhNTc5YzBiNzY2N2I3ODgzNTIwYzQ5ZjkzYzliZTgwYjdjNGZlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZDRiMmI2ZmQwMDZmZmM3ZmFhYjA1MjU4YjJiNWVlZTMwNGUwYjE4NzkwYWQ3M2ZiNzMwYjE2ODhkOTAyYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyOWI0YTNhZTNhYjc1MjUxYmY2ZjJhNzQzYmMxYWEyMzUzY2ZhMDgxNGFiZjdmZmIyZDgzYjZlNGNjNDY2Y2YifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L148-L161",
+          "version": "repo-lines-v1:sha256:8c58fb8084ef2b966ce175acdcfa02de1b47f9abf26bc092eaa0a35e334d9238:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNjY2ODkzYzM4NDgxYTZjMWZjMDVkY2IxYmM1ODc4MTYxOGIyZjIwNDhiZjA2MDRjN2JkOWM2ZDRiN2ZkZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkZTU1ZTcyZmRiMzU3OTVlZjlhMjkyOWNiNjBmY2YyMTJhYmI3NzIyNzhmODM0MWM2MjY5M2ZjZmVlNWYyM2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T05:05:27.957Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }
