@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Homelab server setup (CI/CD + production host)
-description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase, with the load-bearing gotchas.
+description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 sources:
@@ -67,10 +67,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
   - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
     resource: repo://specs/080-minio-to-rustfs/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -174,10 +174,11 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   (spec 080 T048, 2026-11-01) deleted the migration tool, its two test files and the wrapper — the
   `pinnedRustfsRef` helper that resolved the production pin moved into the object-store service guard,
   its only remaining consumer. The runbook's cutover text is now wrapped in `<!-- history:begin -->`
-  blocks as the record of how it was done, and the object-store guard's temporary exemptions for the
-  tool's files and the retired store's resources were removed with them. Client wiring is entirely
-  env-driven, so local runs without the token fall back to the local cache and no remote-cache config
-  leaks into the repo.
+  blocks as the record of how it was done, and the retired-store reference guard
+  (`scripts/__tests__/no-minio-references.guard.test.mjs`) lost its temporary exemptions for the tool's
+  files and the retired store's production resources with them. Client wiring is entirely env-driven, so
+  local runs without the token fall back to the local cache and no remote-cache config leaks into the
+  repo.
 - **9 — Komodo (CD to the prod daemon).** Core + Periphery agent + database, deployed from Komodo's
   own compose files with three changes: Periphery repointed at the rootless socket, **FerretDB
   instead of MongoDB** (the unpinned Mongo image crash-loops on this new-kernel + rootless
@@ -208,6 +209,16 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
 - **12 — Extended hardening.** Close public SSH entirely, gate admin UIs to the tailnet, 2FA, image
   pinning + scanning + Renovate, NTP, and **performance** isolation between the CI and prod user
   slices via host cgroup caps — rootless daemons isolate security, not CPU/memory contention.
+  Two risks are recorded as consciously **deferred and accepted**, not overlooked: a
+  **docker-socket-proxy** in front of the daemon Komodo mounts (Komodo is tailnet-only with
+  registration disabled, and Periphery needs broad write access anyway — the rule that survives is to
+  never mount the prod socket into an internet-exposed container), and **Vault** as the secrets store
+  (secrets are already out-of-git masked Komodo Variables, behind a 2FA tailnet and inside encrypted,
+  restore-verified backups, so Vault's unseal-on-reboot burden buys little for a single-tenant host —
+  see [Secrets management](../invariants/secrets-management.md)). CrowdSec is met at the edge instead
+  of on the host: with direct edge-TLS there is no reverse-proxy access log to parse, so the
+  protection is Cloudflare's managed ruleset, bot fight mode and one per-IP rate-limit rule, plus
+  Keycloak's own realm brute-force detection for credential stuffing on the IdP itself.
 - **13 — Monitoring and alerting.** A lean infra profile on the prod daemon. As built, one probe
   service is the pager, and disk SMART runs as host-level `smartd` rather than in a container (raw
   NVMe SMART needs root device access a rootless container cannot get). The observability and audit
@@ -313,6 +324,12 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   long-running prod service and forbids `unless-stopped` — which does not bring a cleanly stopped
   container back after a reboot — and runs selftest + scan alongside the port-collision gate in
   `guardrails.yml`'s `naming` job.
+- **Appendix — quick reference.** A single table of what runs where: each service, the daemon it lives on
+  (host, `ci` or `prod`) and the tailnet URL that reaches it, plus the rule the runbook closes on — pin
+  every production image to a specific tag or digest and let Komodo manage promotion, and keep CI's
+  throwaway stack on the `ci` daemon so a failed or poisoned build can never reach prod data. The same
+  table records the local-dev equivalent of the prod stacks (the named stacks under `stacks/`, feature
+  020), which is why it stays a quick reference rather than a second copy of the topology.
 
 ```mermaid
 flowchart TD

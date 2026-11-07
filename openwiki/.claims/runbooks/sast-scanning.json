@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5cae609e0dbf295e121cdbe2d9c873f618ab47718bfe610fb4184beddd87eda1",
+  "pageVersion": "sha256:0e38bdd309a55a23e8029a4087d4d0c98d027113d937654dcaa19f8d0547443b",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -313,8 +313,8 @@
       "statement": "Keyed entries in `pnpm-workspace.yaml`'s `overrides:` map are a range keyed on a range where the key names the vulnerable span excluded and the value the patched floor forced; `scripts/check-override-consistency.mjs` enforces equality between the key's exclusive upper bound and the value's inclusive lower bound on pull requests, scoped to keys carrying an `@<range>` suffix while plain pins are out of scope and a compound key such as `js-yaml@>=3.0.0 <3.15.1` is compared on its `<` bound alone.",
       "evidence": [
         {
-          "resource": "repo://pnpm-workspace.yaml#L81-L114",
-          "version": "repo-lines-v1:sha256:b2bc64b8c68573c86b7afae921569787369d5ce5863cc17f1a2a07b4f637f661:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNDY1YTY0NjAyZGY2YzlhZmNmOTU3MTlmODQ2ZDVlOTgwNGNjNWI3MzlmMzdiYmE1ZTAzYzFmMDQ1ZjA0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWNjOTY1NDE2YTNhMjIzMDA4NmM2NzliNDE0YzQ4YjM4MDRhYTg3ZjgyMmFhMTg0YTcwNTkyMjExYTg0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2I1ZDczYmMwMDljZjZkMWEyMzEzZTQ4NDZjOTU1NTk1MDljMjIxNDI4NWY2MDgzM2I4MGRiNzkxNzIxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNDFiOGI5NzQyMzM1ZTZjYWZmMjFlNWUyZTZlMmRiZmJlMzViNDRlNjdkZmUzMGU1YmI5YmNlN2YxMGVlMTEifQ"
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:3a06672eef899b7a49e646aa8ea515ef3adf19a1aa33bd35aaaeac259a686087"
         },
         {
           "resource": "repo://scripts/__tests__/check-override-consistency.test.mjs#L60-L63",
@@ -427,7 +427,7 @@
       "statement": "The `--check-expiring` mode is report-only over blocking findings, runs twice weekly (Tuesday and Friday 04:00 UTC) in the `infra-image-scan` workflow over both allowlists, is never run on pull requests, and for the SAST allowlist cannot fail on an unmatched entry because that job produces no SAST report.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L230-L332",
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L229-L331",
           "version": "repo-lines-v1:sha256:796fce2cfaa323d3fe57318bdf9710c797d866b6eaa40913e50733ad2bf6b19c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MGRjNzkzOWZiMTA4NGVkZDUxMmFmMThiNmM5NDVhZGYxYzRkMmFmNGRmZjUwNmNmNDU1OTFjNWVmODI3OTZjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYmUwNDg1N2E0ODk2ZTVlZmIwYjliODQyYTU0NjY0MWE1YzBkNTNkMjFiYmI2MTgwYWRlM2RkYWI0ZTlkNmNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNWRlZWNlYjA3NzQwMmVkN2IyMmUwYjBkMzkzNDgxZDBlYTYwZjgwMzQ2ZmM2OTAzOTAwNDYzYWI2YzYxOGRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwODkyOTdkMTYwZDdlNDEwYjA5OTg3NmZiOWQwYzMzNzIxMDczZDY3OTg5MDY5OThmMjk3YTM1NGFiODMxM2FlIn0"
         },
         {
@@ -445,7 +445,7 @@
       "statement": "The weekly expiry step must be `always()`-guarded inside its schedule guard, because a failed step earlier in the job (the CVE gate) otherwise skips it entirely — so on the week the gate is red the expiry warning did not run at all (item #484); and a cancelled run is skipped from inside the step body via `job.status` rather than in the `if:` so a superseded run is not turned into a failure.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L273-L332",
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L272-L331",
           "version": "repo-lines-v1:sha256:3c1c2c03411a4a3b580fb00f0f2c9beb9c1f9ce11e384ffdec207add2bc612af:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MTUwYmQ3ODYzZmI1NWY1ZGE4NzRhYjk3M2Q3ZjRhZWRiZTkxNzUwM2VhOWJhYTgxOTZlOTAzZGNhZWEzZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkYjg4OWJjY2VjZWEyMmY2NGQ2OGQ3YzM0Mzc1N2I4ZWNiMmJkZDlmZWFlOGIwOTFmZmE0NmJjNTM5MTM3ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OTI5N2QxNjBkN2U0MTBiMDk5ODc2ZmI5ZDBjMzM3MjEwNzNkNjc5ODkwNjk5OGYyOTdhMzU0YWI4MzEzYWUifQ"
         },
         {
@@ -595,7 +595,7 @@
       "statement": "The expiry-check and gate-scope wiring is pinned statically: exactly one step in the `infra-image-scan` job invokes `--check-expiring`, it must cover both allowlists, its `if:` must contain the schedule guard, and no other workflow may invoke `--check-expiring` at all — because a wrong guard is green today and blocks every pull request a fortnight later, while an absent override-consistency step looks identical to a passing one.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L315-L332",
+          "resource": "repo://.forgejo/workflows/infra-image-scan.yml#L314-L331",
           "version": "repo-lines-v1:sha256:4822b989dced2cbcea58347896b342b52f403a3ecaee470d7bb982365d44bfe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiMjc2ZjFiNmRkMmFiYzg5NTgwMDNjMzE5OWQ3ODI1ODk0MmE2NzNlYmE4Nzk4NmZjMzgzNGU2NTM3ODZhMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5Mjk0YWY1NjU2OTM0NDRmMTk1M2I3MDUyOGMwZDFkMmZkZTZkMWUzMTkxNjJhNzNkYzlkNGVmNGY2MDk0YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OTI5N2QxNjBkN2U0MTBiMDk5ODc2ZmI5ZDBjMzM3MjEwNzNkNjc5ODkwNjk5OGYyOTdhMzU0YWI4MzEzYWUifQ"
         },
         {
@@ -777,7 +777,7 @@
           "version": "repo-lines-v1:sha256:91b5f8251a2d92d950e3676295e2012c7a91d2b0e0afd033508a716b12c248b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVkYzEwZGRkZmYzNmU4MzUxMzI2YTE5NmMyMDYxMWRhN2IyYTUzMGQ2NmNiMTU3YjNiOTMxZDJiMGY4MGY5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmZGE3ZmFkNjk2MDkwOGFlODcyYzg2Yjk0MWNkMjY0MDc5ODA5MGUxNmU1NmYxNTA0MDVkODdmOTc5YTBjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhiMWI2YTkxNTZlMzU4YmViNmYwMGRhMjlmYzEzNmIyZTVhYzYzMjlmM2FjM2E5NDA2N2E5NWQwNTJjYWYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjY3NjMyMDAwMGNlZjkwNzVjMjg5MzI5M2VhOWM1MjdmMDFmZWNkNzk4MGZjZjBhNzNhZjMyMTQyYzgxM2I5OCJ9"
         },
         {
-          "resource": "repo://scripts/ci-status.mjs#L1668-L1782",
+          "resource": "repo://scripts/ci-status.mjs#L1698-L1812",
           "version": "repo-lines-v1:sha256:b2a160b30161c81a468d399578ec8d8967d0dc717e36b7bcc0126cbf9cb5f2e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNmU4MDM4OTdiOGU3YmZkZjNiZDlmYWYwYTU0ZjRiYjZjNDllZThjNDE3YWY1M2E3NjA3ZWVmMTU1NTE5MjhkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5ODMzY2YwNzEwNGUyOGJmOWM1NDVkYWM5OTFlMTAwYTA1ZjAzOWIwMjQxOTYyZjUzM2NjMjBlMjgzNDMxMGI1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOTRmYzBjMTczZDFlYzNmYzUwMWQ3ZGZhOTI4NTUwMWM1MjdjZmI0NzEyNTgzZGEzY2MzNjE4MDU2NmI0YmUzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzkyOWU5MWUwZjk5YzNlODI1ZGU2OWI0MzVmYjY0ODRkMWIwYTFkZjJmNDY1NjFhYmYxYTI5ZjA0MTg4Yjg4In0"
         }
       ]
@@ -887,7 +887,7 @@
       "statement": "The keyed override map keeps growing along the floor-within-a-major shape: `body-parser@>=2.0.0 <2.4.0: '>=2.4.0 <3'` was added 2026-10-23 for GHSA-27r3-jxmh-p828 (express 5, the BFF's `server.js`, depends on `body-parser ^2`), and the 6.x `undici` key was raised on 2026-10-24 to `undici@<6.29.1: '>=6.29.1 <7'` for GHSA-xjj6-f33q-929c (DoS on excessive content-encodings, fixed in 6.29.1); both move key and value together and keep the value's cap at the next major, which is what the override-consistency gate requires.",
       "evidence": [
         {
-          "resource": "repo://pnpm-workspace.yaml#L112-L114",
+          "resource": "repo://pnpm-workspace.yaml#L120-L122",
           "version": "repo-lines-v1:sha256:007121155075a2a9dfb8048730a5a56659a2738d722fee44bcfe8cc6d35ef14e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRmYWI5NjYzOTA2NTZhNGM5ZWJiZWY1NmQ0NDgxYTc3NDRhNWZlMjAwYWI5MTY2ZWFmOWE2ODAyNTkzNGExYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1Y2M5NjU0MTZhM2EyMjMwMDg2YzY3OWI0MTRjNDhiMzgwNGFhODdmODIyYWExODRhNzA1OTIyMTFhODQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ3ODQyZjc3NGE3YjliNzg4MDhhZWVlMGVkNmE5MDEwNmQ0NjUwMTkxMTE4MTE2MzIzZmUyODkyMTQ0MGNhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0MWI4Yjk3NDIzMzVlNmNhZmYyMWU1ZTJlNmUyZGJmYmUzNWI0NGU2N2RmZTMwZTViYjliY2U3ZjEwZWUxMSJ9"
         },
         {
@@ -1024,7 +1024,7 @@
         },
         {
           "resource": "repo://pnpm-workspace.yaml",
-          "version": "repo-file-v1:sha256:53119cb63e196ededbf70df649f2c9fe94c21725fc9e930f4aaa4c2c5b578be0"
+          "version": "repo-file-v1:sha256:3a06672eef899b7a49e646aa8ea515ef3adf19a1aa33bd35aaaeac259a686087"
         },
         {
           "resource": "repo://scripts/__tests__/check-dependency-downgrade.test.mjs",
@@ -1063,10 +1063,36 @@
           "version": "repo-file-v1:sha256:7ab907d83c5b08b0c0ac32884f37778e7a9f882f4cbaee42052909f4e6ec62e4"
         }
       ]
+    },
+    {
+      "id": "claim_c8d3288f4564465e9d6259b683a67659",
+      "statement": "The two `pkg>dep` entries added to `pnpm-workspace.yaml`'s `overrides:` map on 2026-11-06 by feature 089 — `'@ag-ui/client>zod': ^4.4.3` and `'@ag-ui/proto>zod': ^4.4.3` — are that map's one non-advisory use: they pin `@ag-ui/client` and `@ag-ui/proto`, which declare `zod ^3.25.76` outside the app's own `^4.4.3` range, onto the app's single zod 4 engine so the assistant chunk carries one zod 4 engine instead of a second one whose `new Function(\"\")` availability probe the strict `script-src` blocks and reports. Because `parseOverrideKey` splits on the LAST `@`, a `pkg>dep` key carries no `@<range>` suffix and the override-consistency gate skips it as a plain pin before reading the value — which is why its caret value passes there while the same caret on a keyed floor is refused with exit 2 — and the file records its own recheck rule for the pair: recheck at each AG-UI upgrade and keep the value equal to the app's own zod range so they stay one copy.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.web.ts",
+          "version": "repo-file-v1:sha256:2cbda4de7f324dac7bb533326d49aee6c4a5271ccc40b328b0ae86ae18f69b69"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js",
+          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:3a06672eef899b7a49e646aa8ea515ef3adf19a1aa33bd35aaaeac259a686087"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L151-L156",
+          "version": "repo-lines-v1:sha256:7d824b3321cbe6064ea5e110ccafe309fc323bc413ec420cc4137be05d153396:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5NmVjM2NmY2M3MmJmYTk0M2EwZTc2ODZlMWMwYzI4NjM1OTYxOWI4MzkyYzE4ZGIzODM1NzJkYzNmNDI2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA3NTU2MmVjOWFhOGVlODk0OGI5OTA1NmE0YTk0MmZmMjJlYzBjZmI1ZjMxM2VjNTZkNDQ0MjYyMDliNjQwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjNiOTEyOTU0ZTZmMTQ2MGM4YWZjNzZlMmYxMDI4NmY5NjBlZmNlZWQzOTBiMjEyOGEzNjc3MjRkNTg1Mzg4MSJ9"
+        },
+        {
+          "resource": "repo://scripts/check-override-consistency.mjs#L78-L82",
+          "version": "repo-lines-v1:sha256:0cce0f0b6862199ee256d5f0c0c4e9f521ed7ee04a8d56ddcb2e8f60bbc8555b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5YzFkMGFhNTk5MjYyMzJiOGQ0ODYyNjM4NjY5YjA1NmIzZDZhZmE5ODMzYTg4OWIzNjZlMjdiMTE2YzlhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVhNzFjM2ZkY2IyNDE3YWNjMWQxZTkyZDA4OWMxY2YzN2UwNzBmZTYxMDY2OGZmM2FkN2ViNTY3YmQ4Nzk1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc4ODI1ZjgwNTJlMGYyODg3MDNmNGMyMTRiMmIyMTY5ZDUxMjIzMmE3MjdkYTU3OTY4OTIzMWVjMTNkZWQ5MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-06T10:07:39.873Z"
   }
 }

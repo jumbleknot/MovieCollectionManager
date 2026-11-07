@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the web security-header layer this process serves, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
@@ -53,6 +53,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts
   - id: openwiki-source-8407640b2cb0f7b864657883
     resource: repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
   - id: openwiki-source-1ee0ca5607fd919ecc13d256
     resource: repo://frontend/mcm-app/src/components/backups/destination-form.tsx
   - id: openwiki-source-d0e32cc95cdea263ea08fe08
@@ -75,6 +77,8 @@ sources:
     resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
   - id: openwiki-source-570a958599bcf5038114a6fc
     resource: repo://frontend/mcm-app/src/hooks/use-account-deletion.ts
+  - id: openwiki-source-52a212df899e84c2a3454295
+    resource: repo://frontend/mcm-app/src/hooks/use-assistant-runtime.ts
   - id: openwiki-source-3470392bd8be4b3899ff3adb
     resource: repo://frontend/mcm-app/src/hooks/use-backup-consent.ts
   - id: openwiki-source-2bc02f78645afcdb5307ca15
@@ -93,6 +97,8 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-7d847d9fc555e071868ecb1d
     resource: repo://frontend/mcm-app/src/utils/api-client.ts
+  - id: openwiki-source-dcfc434ab00b77e71a8575f0
+    resource: repo://frontend/mcm-app/src/utils/assistant-runtime-loader.ts
   - id: openwiki-source-4e2d6488af045e50c1eb17f0
     resource: repo://frontend/mcm-app/src/utils/backup-run-summary.ts
   - id: openwiki-source-ed2df48ea080e434190abed3
@@ -103,16 +109,32 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/unit-tests/api-client.test.ts
   - id: openwiki-source-5839329bfe7fc2f4898102b5
     resource: repo://frontend/mcm-app/src/utils/unit-tests/token-refresh.test.ts
+  - id: openwiki-source-250f22b469fdcf4c2326980d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
+  - id: openwiki-source-31ef72c79f00ba748f6ce16b
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
+  - id: openwiki-source-885237f04e1aa048fda26663
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
   - id: openwiki-source-d67eac1e98649691c637d9c0
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
+  - id: openwiki-source-5ee35374d6ab0e61934498cd
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
   - id: openwiki-source-6815e02bc96aebf5b9adb612
     resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
+  - id: openwiki-source-0df6a785e730381b7aee77a1
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
     resource: repo://frontend/mcm-app/web-security-headers.js
+  - id: openwiki-source-5ff55bdfe886d66b6f07a01e
+    resource: repo://frontend/mcm-app/web-security-headers.test.js
+  - id: openwiki-source-03de7146fd7e33f2e3019d9d
+    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
+  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
+    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
   - id: openwiki-source-6230a2d05eadba772d30d66a
     resource: repo://packages/design-system/components/controls.test.tsx
   - id: openwiki-source-a9f8640b2ea19387ecec6be5
@@ -131,33 +153,57 @@ sources:
     resource: repo://packages/design-system/project.json
   - id: openwiki-source-7c01a8501da7bfee76f8ed12
     resource: repo://packages/design-system/tamagui.config.ts
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-f6c12ce9ca055174ab7f392c
+    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-96730ea8c345aed64b62a187
     resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
+  - id: openwiki-source-79afb4088c29acb82fe62e5a
+    resource: repo://scripts/__tests__/expo-router-tree-purity.test.mjs
+  - id: openwiki-source-2500897f79f457d05a1f0bd2
+    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
     resource: repo://scripts/check-no-server-imports.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
-  - id: openwiki-source-92e409c28d1307a334df12c0
-    resource: repo://specs/032-security-header-hardening/contracts/security-headers-contract.md
+  - id: openwiki-source-4afc03401961c543ccdef7be
+    resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+  - id: openwiki-source-cbc86a7a3a87453e949a2389
+    resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-5c651a2e85869320925d0597
+    resource: repo://specs/089-single-zod-jitless/spec.md
+  - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
+    resource: repo://specs/089-single-zod-jitless/tasks.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-06T10:07:39.873Z
 ---
 
 # Expo/React Native universal app
 
-`frontend/mcm-app` is a single Expo Router (Expo SDK 57, React Native 0.86) codebase targeting web
-and Android from one source tree. `app.json` sets Metro's web output to `"server"`, not a static
-export, because the same process also hosts the [BFF](./bff.md) via file-based
-`+api.ts` routes. Client-side code lives in `src/screens/`, `src/components/`, `src/hooks/`,
-`src/config/`, `src/utils/`, `src/types/`; routes (both UI screens and API handlers) live under
+`frontend/mcm-app` is a single Expo Router codebase targeting web
+and Android from one source tree. `package.json` pins the SDK 57 line — `expo ~57.0.30`,
+`expo-router ~57.0.28`, `react-native 0.86.3`, `react 19.2.3`, `babel-preset-expo ~57.0.16` — and
+those versions move only through `expo install`/the Expo upgrade path, never a raw Renovate bump.
+`app.json` sets Metro's web output to `"server"`, not a static
+export, because the same process also hosts the [BFF](./bff.md) via file-based `+api.ts` routes.
+That hosting already runs on `expo-server`'s express adapter through the hand-written CommonJS
+`server.js`: the adapter swap is in place on SDK 57, ahead of any version move, and it made
+`expo-server` a direct dependency and a prune root, so the unmaintained `@expo/server` package is
+named by no manifest, prune root or test stub. The *output mode* is a separate, later step of the
+same piece of work — prerendered pages with the API routes still in the same process, and Android
+code shrinking and web async routes deliberately off for that first release — so `app.json` still
+reads `"output": "server"` and per-request rendering is what ships. Client-side code lives in
+`src/screens/`, `src/components/`, `src/hooks/`, `src/config/`, `src/utils/`, `src/types/`; routes
+(both UI screens and API handlers) live under
 `src/app/`. Routes stay thin by convention — a route file reports its own screen label (see below)
 and renders a screen component, never the other way round. Both this app and the design system are
 linted by **ESLint 10 through flat config** (`eslint.config.js` in each project, replacing the
@@ -365,7 +411,7 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
 
 - **`import.meta.url` crashes the exported server bundle in production only.** Metro rewrites
   `import.meta.url` to `globalThis.__ExpoImportMetaRegistry.url`, which the Metro dev server
-  populates but the exported `@expo/server` runtime used in Docker does not; `frontend/mcm-app/server.js`
+  populates but the exported `expo-server` runtime used in Docker does not; `frontend/mcm-app/server.js`
   pre-seeds the registry as the workaround. Full mechanism, the affected agent-transport path, and
   why removing the seeding reintroduces a silent hang: [Expo Router server export and
   agent-transport traps](../gotchas/expo-router-and-transport-traps.md) (not restated here).
@@ -385,7 +431,10 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, which also fails if
   `@tamagui/babel-plugin` is named by either manifest or by `babel.config.js` again (a leftover v2
   compiler over v3 sources), and which keeps every Tamagui update in one Renovate `tamagui` group so a
-  partial lock refresh cannot split the set; `packages/design-system/jest/tamagui-cjs-resolver.js`
+  partial lock refresh cannot split the set — but it counts *versions*: its lock regex stops the
+  version capture at `(`, so two peer contexts of the **same** version still count as one copy, which
+  is exactly the two-style-registries/blank-page shape and not something this guard can see.
+  `packages/design-system/jest/tamagui-cjs-resolver.js`
   exists because Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only `.mjs` files
   Jest cannot load (56 suites failed to run on the 3.0.13 bump) — Metro handles `.mjs` fine, so the app
   is unaffected (the resolver resolves exactly as the `jest-expo` preset does and redirects only a
@@ -493,7 +542,16 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   asserts three things: the web entry chunk stays inside a committed byte budget, the deferred
   assistant packages are absent from the *entry* chunk, and server-only code is absent from
   *every* client chunk (not just the entry one — a gate reading only the entry chunk would report
-  clean while `src/bff-server/**` shipped inside a deferred chunk).
+  clean while `src/bff-server/**` shipped inside a deferred chunk). "Deferred" has one precise
+  meaning here: the assistant runtime is a ~2.4 MB chunk reached only through the single dynamic
+  import in `src/utils/assistant-runtime-loader.ts`, whose root is
+  `src/components/agent/assistant-panel.tsx` — the only module from which the packages the gate
+  forbids in the entry chunk (`zod`, `graphql`, `@copilotkit/*`, `@ag-ui/*`, `rxjs`,
+  `@bufbuild/protobuf`, and the `text-encoding` / `web-streams-polyfill` React Native polyfills
+  `@copilotkit/react-native` pulls in as a side effect of its own entry point) are reachable. Size
+  alone cannot hold that line (something else could shrink while a stray import re-adds the whole
+  graph), which is why the gate names the offending package rather than reporting an unexplained
+  regression.
 - **The same process serves the web surface, and its security headers come from a plain-CommonJS
   module `server.js` requires at boot.** `frontend/mcm-app/web-security-headers.js` is deliberately
   not TypeScript: `server.js` lives outside the Metro bundle and cannot import the app's compiled
@@ -506,27 +564,76 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   localhost default on anything malformed — a scheme-less or non-web-scheme value does not throw in
   the WHATWG `URL` parser, it yields the opaque origin `null`, which would emit a broken directive.
   The web CSP is **path-scoped out of `/bff-api`** so the API surface keeps exactly one CSP, its own
-  strict handler policy, rather than depending on adapter same-name header merge order. One residual
-  is deliberate and documented: a third-party library runs a `new Function("")` eval-availability
-  probe inside a try/catch, the strict `script-src` blocks it, the library degrades gracefully with
-  the app fully functional, and the browser logs one benign `eval` CSP violation — `'unsafe-eval'`
-  is *not* added to silence it, because permitting real eval app-wide would defeat the hardening.
-  The header values, the current directive set and the per-surface contract belong to the cited
-  sources (`frontend/mcm-app/web-security-headers.js`, the contract under
-  `../../specs/032-security-header-hardening/contracts/security-headers-contract.md`, and the
-  [DAST runbook](../runbooks/dast-scanning.md) for the ZAP gate), not to this page.
+  strict handler policy, rather than depending on adapter same-name header merge order. What changed
+  with feature 089 is not the policy but whether a violation is expected at all: feature 032 had
+  accepted a blocked `new Function("")` eval-availability probe on this surface as a benign residual,
+  and 089 removed the probe instead. So **a new `eval` violation here is a finding, not a known
+  line.** The assistant chunk used to carry **two** zod 4 engines — each probes once — because
+  `@ag-ui/client` and `@ag-ui/proto` declared `zod ^3.25.76` and so tied `@ag-ui/core`'s peer to a
+  second engine, even though `@ag-ui/client` and `@ag-ui/core` import only `zod/v4` and
+  `@ag-ui/proto` imports no zod at all. The `@ag-ui/client>zod` and `@ag-ui/proto>zod` overrides in
+  `pnpm-workspace.yaml` leave **one** engine — they sit outside `@ag-ui/client`'s declared range, so
+  recheck them when AG-UI is upgraded, keeping the value equal to the app's own zod range so the two
+  stay one copy — and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before any
+  schema is built. Import order *is* the mechanism: zod reads the setting when the first object schema
+  is built, so `src/components/agent/assistant-panel.tsx` imports that module first. That file is the
+  deferred chunk's root and the only place the assistant packages are reachable — it is reached
+  exclusively through the single dynamic-import boundary in `src/utils/assistant-runtime-loader.ts`
+  — which is what makes the fix free on web (the CSP already blocks `eval`, so zod's fast path was
+  already off, and `jitless` skips the attempt rather than a working optimisation);
+  `src/utils/zod-jitless.ts` is deliberately an empty module, so native changes nothing — there is no
+  CSP there to report a probe, and `jitless` has not been measured under Hermes. Measured 2026-11-06
+  on the web bundle: the assistant chunk went from 2,850,492 B to 2,536,265 B (314,227 B, 11%) and now
+  holds one `v4/core/util`; `zod@3.25.76`'s v3 code remains for `@copilotkit/shared`, which uses the
+  v3 API through the root import, and `@copilotkit/runtime` keeps its own zod 3 copy of `@ag-ui/core`
+  in the BFF, which is why the lock file cannot prove the chunk and the source map can. `script-src`
+  itself did not change: `'unsafe-eval'` and `'unsafe-inline'` stay absent, because permitting real
+  eval app-wide would defeat the hardening. The deferred-chunk rule is what keeps both properties
+  standing, and it is why that import must stay where it is: a stray static import of
+  `assistant-panel.tsx` from anywhere in the eager graph silently re-adds ~2.4 MB, and
+  `scripts/check-web-bundle-budget.mjs` is the gate that catches it, naming the package rather than
+  leaving an unexplained size regression. The header values, the current directive set and the
+  per-surface contract belong to the cited sources (`frontend/mcm-app/web-security-headers.js`, whose
+  own comment is now the current statement of the `eval` arrangement; the contract under
+  `../../specs/032-security-header-hardening/contracts/security-headers-contract.md`, whose
+  Surface-1 note still records the 032-era accepted residual and should be read as history; and the
+  [DAST runbook](../runbooks/dast-scanning.md) for the ZAP gate), not to this page. The arrangement
+  is pinned by `scripts/__tests__/single-zod-engine.guard.test.mjs` and the web/native halves by
+  `src/utils/unit-tests/zod-jitless.test.ts`.
   `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
   SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
   three; it opts out of the shared authenticated `storageState` because all three are public.
-  The same file also decides the *origin* the two identity-provider round trips above are built on:
-  `@expo/server`'s adapter derives every request URL from `req.protocol` and the raw `Host` header,
-  so `app.set('trust proxy', 1)` runs only when `TRUSTED_PROXY=true`, and without it the
-  Backups-consent and Account-deletion routes hand Keycloak an unregistered `http://` redirect URI.
-  Only the scheme moves — the adapter reads the raw `Host` header, which `trust proxy` does not
-  touch — and unset must stay unset so a directly exposed BFF cannot be talked into `https` by a
-  client-supplied header. Mechanism and measurement:
-  [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md)
-  and `tests/unit/bff-server-trust-proxy.test.ts`.
+  The same file also decides the *origin* the two identity-provider round trips above are built on,
+  and doing so takes **two** changes rather than one. `expo-server`'s express adapter derives every
+  request URL from the socket's scheme and the raw `Host` header and ignores `req.protocol`
+  entirely, so behind the TLS terminator it would compute an `http://` origin — and the
+  Backups-consent and Account-deletion routes, which derive their callback from
+  `new URL(request.url).origin`, then hand Keycloak an unregistered `http://` redirect URI. So
+  `app.set('trust proxy', 1)` runs only when `TRUSTED_PROXY=true`, **and** the catch-all hands the
+  adapter an absolute URL (`req.url = ${req.protocol}://${req.get('host')}${req.url}`), which is the
+  only hook the adapter offers for the scheme; the setting alone moves nothing. Only the scheme
+  moves — the adapter reads the raw `Host` header, which `trust proxy` does not touch — and unset
+  must stay unset so a directly exposed BFF cannot be talked into `https` by a client-supplied
+  header. `tests/unit/bff-server-trust-proxy.test.ts` boots the real `server.js` against a fixture
+  `dist/server` through the **real** adapter, with nothing stubbed on that path, and asserts the URL
+  a route received for each of the four header combinations; the previous stub echoed an origin it
+  computed itself, which is how a green test hid the production refusal. That and
+  `tests/unit/bff-server-adapter.test.ts` are the only two suites that exercise this hosting layer
+  at all (the unit tier imports TS modules and the integration tier calls route handlers, both
+  bypassing `server.js`); the adapter suite keeps its `node -r` preload because its subject is the
+  express layer in front of the handler, and it now expects the absolute URL the catch-all hands
+  over. Mechanism and measurement:
+  [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md).
+- **Every BFF container's healthcheck must probe a page as well as an API route, and a guard keeps
+  it that way.** Pages and API routes are served by the same process but come from different parts
+  of the export, so one can fail while the other answers: during the SDK 58 spike every page
+  answered 404 while an API-only probe reported healthy throughout. The three BFF services across
+  `compose.yaml` and `compose.prod.yaml` therefore run `wget --spider` against `/bff-api/auth/init`
+  **and** `/login`, joined by `&&` — the join is load-bearing, since `wget api; wget page || exit 1`
+  names both paths and still reports healthy when the API fails.
+  `scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` parses both compose files, requires both
+  path kinds and the `&&`, fails if it finds no BFF service at all, and proves itself against
+  synthetic API-only and page-only documents.
 - **A release APK reaches the dev BFF only because a config plugin allowlists cleartext for it.**
   Android `targetSdk` ≥ 28 blocks `http://` traffic by default and Expo only relaxes that in the
   DEBUG manifest, so the standalone RELEASE APK the mobile E2E suite installs could not reach the
@@ -550,6 +657,18 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   feature 081's re-measurement served the dev web bundle without OOM under either arrangement, so
   treat the OOM as the plugin-era cause rather than a standing property — the container rule itself
   still stands (`frontend/mcm-app/README.md` still states the OOM version of the rationale).
+- **Nothing under `src/app/` may be a test file, because the router bundles everything there.** The
+  entry point (`expo-router/entry`, `package.json`'s `main`) builds the module graph by scanning the
+  routes directory, so every matching file under `frontend/mcm-app/src/app/` ships. Feature 076
+  measured the cost of forgetting it: a `*.test.tsx` added there pulled its testing library in, and
+  the Android release build failed at `:app:createBundleReleaseJsAndAssets` with
+  `Unable to resolve module console from …/@testing-library/react-native/build/helpers/logger.js`
+  while the web export, the unit run, typecheck and lint all stayed green — which is why
+  `scripts/__tests__/expo-router-tree-purity.test.mjs` fails the tree rather than leaving it to
+  review. The guard also rejects a test-only *directory* there (`unit-tests`, `__tests__`,
+  `__mocks__`, `test-support`) and asserts the routes directory is non-trivial first, so it cannot
+  pass by walking nothing. Put the test beside the code it tests (`src/screens/…`,
+  `src/hooks/unit-tests/…`) and keep the route a thin delegator.
 - **`pnpm nx e2e mcm-app` does not work inside the devcontainer.** Chromium cannot be installed there
   (the Playwright CDN and apt are outside the egress allowlist). Run Playwright via the
   `mcr.microsoft.com/playwright` image with `--network host` instead — and keep its version tag

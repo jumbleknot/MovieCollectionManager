@@ -29,6 +29,10 @@ sources:
     resource: repo://frontend/mcm-app/server.js
   - id: openwiki-source-e69fe30016fa84209ae5e815
     resource: repo://frontend/mcm-app/src/config/env.ts
+  - id: openwiki-source-6815e02bc96aebf5b9adb612
+    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
+  - id: openwiki-source-d63e7534cd44e87f67938d1a
+    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
   - id: openwiki-source-78ec32b51a25a8fb66d5b292
     resource: repo://infrastructure-as-code/backup/backup.sh
   - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
@@ -43,6 +47,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/backups/compose.yaml
   - id: openwiki-source-f873d74e3a5ee524df98c4b4
     resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
+  - id: openwiki-source-f195180a736f33478d2817cf
+    resource: repo://infrastructure-as-code/docker/bff/Caddyfile
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
@@ -51,6 +57,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
   - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
     resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
+  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
   - id: openwiki-source-d5b1faab58eeb909bb999298
     resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -85,6 +93,8 @@ sources:
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-3878af0f305d1908abec5cb9
     resource: repo://scripts/__tests__/agent-stack.guard.test.mjs
+  - id: openwiki-source-f6c12ce9ca055174ab7f392c
+    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
     resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
   - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
@@ -129,10 +139,14 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/tasks.md
   - id: openwiki-source-83771c9aeecb9de0bd4deaf4
     resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
+  - id: openwiki-source-b1756c204f11fe3da51d14a7
+    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
+  - id: openwiki-source-acc6f4231f060062a015dbd3
+    resource: repo://specs/087-expo-sdk-58/research.md
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -334,17 +348,48 @@ One production stack's exposure is a proxy contract rather than a port. `prod-mc
 nothing: Cloudflare terminates TLS and `cloudflared` reaches `mcm-bff-service:3000` by name over the
 external `edge-network`, so the BFF itself speaks plain HTTP and its compose sets
 `TRUSTED_PROXY: "true"` inline — a non-secret literal in the compose file, not a Komodo Variable.
-That flag originally governed only rate-limit client identity; spec 083 T010 gave it a second job,
-because the Expo server adapter builds every request URL as
-`` `${req.protocol}://${req.get('host')}${req.url}` `` and `server.js` now sets express's
-`trust proxy` to `1` when the flag is true. Without it, every route that derives a callback from
+That flag originally governed only rate-limit client identity; spec 083 T010 gave it a second job at
+the express layer, `app.set('trust proxy', 1)` when `TRUSTED_PROXY === 'true'`, which is what makes
+`req.protocol` report the scheme the edge terminated. The routes that derive a callback from
 `new URL(req.url).origin` — the scheduled-backup consent route and the account-deletion
-re-authentication route — handed Keycloak an `http://…` `redirect_uri` while the client registers the
-`https://` one, and Keycloak answered `Invalid parameter: redirect_uri` (measured 2026-10-25). Only
-the scheme moves: the adapter reads the raw `Host` header, which `trust proxy` does not touch, so
-`X-Forwarded-Host` cannot shift the origin, and with the flag unset a directly exposed BFF cannot be
-talked into `https` by a client-supplied header. CI and dev never see this — there the BFF serves
-HTTPS itself on `:8443`.
+re-authentication route — need `https` there, and without it they handed Keycloak an `http://…`
+`redirect_uri` while the client registers the `https://` one, so Keycloak answered
+`Invalid parameter: redirect_uri` (measured 2026-10-25). With the flag unset a directly exposed BFF
+cannot be talked into `https` by a client-supplied `X-Forwarded-Proto`, and only the scheme can move
+at all: `req.get('host')` reads the raw `Host` header, which `trust proxy` does not touch, so
+`X-Forwarded-Host` cannot shift the origin.
+
+Since feature 087 that fix has two halves and either one alone is useless, which is the part most
+likely to be misread as removable. The `expo-server` adapter builds each request as
+`` new URL(req.url, `${proto}://${host}`) `` with `proto` taken from `socket.encrypted`, so behind the
+terminator it always reads `http` and ignores `req.protocol` entirely; `server.js` therefore also
+rewrites `req.url` to an absolute `` `${req.protocol}://${req.get('host')}${req.url}` `` in the
+catch-all before handing the request to the handler, which makes the adapter's socket-derived base
+irrelevant. `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts` pins both halves by booting
+the real `server.js` against a minimal fixture `dist/server` (`tests/unit/fixtures/real-adapter-build`,
+one API route returning `request.url`) and asserting the four rows of the hosting contract, so
+removing the rewrite turns the `https` rows red. Before feature 087 this trap was "pinned" by a stub
+that echoed the origin it computed itself: green throughout, while production refused the callback.
+CI and dev never see any of it: there the client reaches the BFF over an origin the realm already
+registers — the dev-config container on `:8082` over plain HTTP, whose `http://localhost:8082` callback
+URIs are added to the `grumpyrobot` realm by
+`infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs` — or, for the
+`bff-secure` profile, through the Caddy `mcm-bff-tls-proxy` sidecar on `127.0.0.1:8443`
+reverse-proxying to `mcm-bff-service-secure:3000`.
+
+```mermaid
+flowchart TD
+  EDGE["Cloudflare terminates TLS"] --> TUN["cloudflared reaches mcm-bff-service:3000 over edge-network"]
+  TUN --> GATE{"TRUSTED_PROXY is true?"}
+  GATE -->|yes| TRUST["trust proxy 1 - req.protocol honours X-Forwarded-Proto"]
+  GATE -->|no| SOCKET["req.protocol keeps the socket scheme"]
+  TRUST --> ABS["catch-all rewrites req.url to an absolute URL"]
+  SOCKET --> ABS
+  ABS --> ADAPTER["expo-server parses the absolute req.url"]
+```
+
+*The two halves of the public-scheme fix: the setting alone changes nothing a route can see, because
+the adapter reads the socket, not `req.protocol`.*
 
 The `environment` block is the stack's **declared input list**, and it is the only place those inputs
 are declared:
@@ -447,6 +492,18 @@ need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
 `agents`, which alone runs four CI-built images. `.gitignore` keeps those files tracked with an
 `!infrastructure-as-code/docker/**/.env.deploy` carve-out sitting beside the `*.env` / `*.env.*`
 ignore rule, because the file holds only digests — no host, no secret.
+
+Those digests are also the registry's protection list, which is the second thing a hand-edit breaks.
+`scripts/registry-retention.mjs` reads every `infrastructure-as-code/docker/*/.env.deploy` at the newest
+promotion commit and the five before it out of git history — the deployed set plus the rollback targets
+— and a version whose digest appears there is kept `keep:protected` ahead of every age or count rule,
+while a container child is kept for as long as any kept index references it. So the promotion commit is
+what keeps a deployed image pullable: a digest that appears in no `.env.deploy` is eligible for
+deletion once it is past `keepNewest` / `keepDays`, and a `.env.deploy` edited by hand pins an image no
+rollback can reach. It is also why that job's checkout is `fetch-depth: 0` — a shallow clone would read
+as "nothing but HEAD to protect", and the script refuses one rather than reporting a smaller protected
+set. The retention posture itself, and the two keys that gate an actual delete, belong to
+[CI diagnostics](../runbooks/ci-diagnostics.md).
 
 The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
 `Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
@@ -592,7 +649,19 @@ The gate scripts' own unit tests are enrolled the same way: `guardrails.yml`'s `
 `scripts/__tests__/` executes on every push and PR without being named anywhere — which is the fix for
 the period when those tests ran in no workflow at all and rotted unnoticed (feature 041). That is what
 makes the guard tests cited on this page (`gen-dev-secrets`, `komodo-stack-env`,
-`langfuse-postgres-shared-pin`, `infra-image-scan`, `agent-stack`) actually run.
+`langfuse-postgres-shared-pin`, `infra-image-scan`, `agent-stack`, `bff-healthcheck-pages`) actually
+run.
+One of those guards reads a compose file rather than a script:
+`scripts/__tests__/bff-healthcheck-pages.guard.test.mjs` (feature 087) parses
+`infrastructure-as-code/docker/bff/compose.yaml` and `compose.prod.yaml`, finds every service running
+the BFF image, and requires its `healthcheck.test` to request both a `/bff-api/` path and a non-API
+page path — joined by `&&` when it probes more than one path, since `wget api; wget page || exit 1`
+mentions both paths and still reports healthy when the API fails. The reason is a spike result: during
+the SDK 58 work every page answered 404 while the container reported healthy, because an API route and
+a page come from different parts of the same export and one can fail while the other answers. The
+guard fails when it finds no BFF service at all, so it cannot pass by reading the wrong file, and it
+asserts the three services that exist today (`mcm-bff-service`, `mcm-bff-service-secure`,
+`mcm-bff-service-nonsecure`).
 Together these gates are why a compose file added here is not just "a YAML file that runs" — it is
 parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 
@@ -673,7 +742,8 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
 - **Image digests are not in `stacks.toml`, and editing one by hand defeats the promotion mechanism.**
   The tracked `.env.deploy` files are written by [the CI/CD pipeline](./ci-cd-pipeline.md)'s
   digest-by-git promotion step; the compose assembles the pull reference from a Komodo-injected
-  registry-host variable plus that digest.
+  registry-host variable plus that digest. Hand-editing also shrinks the registry's protected set,
+  which is computed from those same files in git history.
 - **All four core live production stacks were adopted in place, not created fresh.** They already
   existed as hand-created Komodo Stacks when the first ResourceSync applied, and they already carried
   the canonical names `stacks.toml` declares, so the sync reconciles against already-running containers
@@ -710,6 +780,12 @@ parsed by the naming gate, the secret gate and the CVE enumerator on the way in.
   one-shot init/seed containers that exist in the prod composes (`langfuse-rustfs-init`,
   `unleash-seed`, `agent-audit-init`) are themselves `restart: always` and idle on `sleep infinity`
   after an idempotent init, so Komodo's stack health never counts an exited container as unhealthy.
+  Staying alive costs a dependency mechanism, and that is the part a copy of the dev file gets wrong:
+  a container that never exits can never satisfy `service_completed_successfully`, so
+  `langfuse-rustfs-init` `touch`es a `/tmp/ready` marker after the bucket PUT and its healthcheck is
+  `test -f /tmp/ready`, which is what lets `langfuse-worker` depend on `service_healthy` instead —
+  whereas `unleash-seed` and `agent-audit-init` carry a trivial always-pass `true` check precisely
+  because nothing depends on them.
   The gate runs selftest-then-scan in the `naming` job of `guardrails.yml` and locally through
   `scripts/preflight.mjs`. Two consequences of its scan glob are worth carrying: a prod compose file
   outside `infrastructure-as-code/docker/**/compose.prod.yaml` is not policed at all, and the

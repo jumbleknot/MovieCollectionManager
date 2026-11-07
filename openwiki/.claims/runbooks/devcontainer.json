@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4c295184dc2dac65db6f4f5825a8f4e26c21fe19c95797bc095e8e782020e53f",
+  "pageVersion": "sha256:8891c18dd86ccbbf12d291cda595d8cbe4dc37b85f4cc0cf0c5ed4eb2bad1297",
   "claims": [
     {
       "id": "claim_38bde766ef97415d9b05311aeb02e233",
@@ -134,7 +134,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L27",
-          "version": "repo-lines-v1:sha256:b6358ad28409a7cdca64700b80e5ea22919177acf64d76b820b6c8ca1c2d3884:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
+          "version": "repo-lines-v1:sha256:e31fc2246994cfbf13460c806c02e4b80d95ecfd5ab3ff3f8dc0c72fd69813ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDA3MDY3MzhjZjI0Njg5YWFhOWQxMGJlZjVlMDc5ZTAyZWE4MjQ5ODJjODMwMWJiZGY2MTQ0ZGNlOGVmNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZDRjN2I1MzdjNzQ4M2IyNTQzNGQ3NThkMWY0YjhiZjE5OGZmMjk4NzhlNWQxMzkxNzIyNjQzODgwMjlkN2IifQ"
         },
         {
           "resource": "repo://scripts/devcontainer-ollama.sh#L1-L15",
@@ -380,11 +380,11 @@
     },
     {
       "id": "claim_fee2a793adf84f078f7a3d5e26375ae1",
-      "statement": "The dev-ollama compose file pins its image by tag AND digest (currently ollama/ollama:0.40.11@sha256:dea72d1e…, bumped deliberately rather than floating), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
+      "statement": "The dev-ollama compose file pins its image by tag AND digest (currently ollama/ollama:0.40.14@sha256:ebaef4f4…, bumped deliberately rather than floating), declares `restart: unless-stopped` and an `ollama list` healthcheck, and persists models in the `dev-ollama-models` named volume — so models survive container restarts, while a devcontainer rebuild that resets the nested docker storage re-pulls once.",
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml#L14-L36",
-          "version": "repo-lines-v1:sha256:8e300117c1b300e89110f42d81aea30b57512c206385b325afaeaa4912698bb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:18ca1b577b30b3d5a19fbd491c9ad1705fb537d98059b434ba1981b4301e8148:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNjdiNmQ3OTVkNjgyM2NmMDc4OWVlMDZiZWM2ZjRjZjY2NjcwZGFlZjI1MzRhNjc5YmY0OTIxMmQxODQ3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0ZWU5MmNhNjBhNGNkNTQxYzFiZGViM2QxOThhOGYzMzRiZjkyMzVmZDY5ZDZlZGI2ZWJmMjVkODI0NzY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -635,6 +635,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }

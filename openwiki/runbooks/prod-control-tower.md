@@ -69,10 +69,10 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -287,6 +287,18 @@ volume inherits the image's `/data` with that ownership, and any other uid fails
 bucket-init one-shot `langfuse-rustfs-init` reuses that *same* pinned image. All instances pin the same
 digest and Renovate moves them together, so a split that would run the server and its init on different
 images cannot arise from a hand edit.
+
+Two further properties of that instance are security-relevant rather than incidental, and both are
+guard-enforced. **The console is switched off and the logs go to stdout.** RustFS's console defaults to
+ON with CORS `*`; `RUSTFS_CONSOLE_ENABLE: "false"` closes `:9001`, nothing publishes that port, and the
+guard refuses a console port on any instance. `RUSTFS_OBS_LOG_DIRECTORY: ""` overrides the image's
+default log *file* — which `docker logs` never sees — so an operator diagnosing the store reads its
+output where they expect it. **The store secret never reaches argv.** The bucket-init one-shot `printf`s
+a curl config (`user = "…:…"`) on stdin and runs `curl -fsS -K -` with `--aws-sigv4`, referencing the
+value as `$$S3_SECRET_KEY` from the container's environment, because argv is readable through
+`docker inspect` and `ps`; the guard pins that shape along with the fail-fast
+`${LANGFUSE_RUSTFS_SECRET_KEY:?…}` reference and the `service_healthy` dependency on the server, so the
+shortcut of interpolating the secret into the entrypoint cannot arrive as a "simplification".
 
 The migration itself is **history, not a procedure**: production moved on 2026-10-16, the cleanup ran
 early on 2026-10-24 (item #826), and the migration tool and its wrapper — `scripts/object-store-migration.mjs`
@@ -551,6 +563,16 @@ update track carries a version ceiling (a `<17` left behind would block the 18 a
 that a Postgres *major* on the shared pin requires a dashboard tick, and that the patch stream stays
 automatic — and, as the control, that the observability postgres resolves exactly like `keycloak`'s
 postgres, so a file-scoped rule surviving the discharge reddens the gate.
+
+The rule that carries the successor is `renovate.json`'s **stateful-datastore** entry: `postgres` sits in
+its `matchPackageNames` list beside `mongodb/mongodb-community-server`, `redis` and
+`clickhouse/clickhouse-server`, with `dependencyDashboardApproval` on `matchUpdateTypes: ["major"]` only
+— so a major anywhere in the tree waits for an explicit dashboard tick while patches, minors and digest
+refreshes stay automatic. Its own description records the discharge rather than hiding it: the
+observability postgres was HARD-held below 17 until spec 081 US8b moved both databases to 18 together,
+and it now rides the tick like every other postgres (`keycloak`, `agent-db`). That is what makes the
+ceiling's absence a successor rather than a hole — no file-scoped rule remains, and a `postgres` major
+cannot land in a Friday window unremarked.
 
 **Postgres 18 will not start on a 16 data directory.** Measured 2026-10-20 on a copy of a real 16 Unleash
 volume: it exits 1 with the old volume mounted at `/var/lib/postgresql` and again with it mounted at the

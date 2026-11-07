@@ -4,6 +4,9 @@ title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, ha
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.51.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-06T07:34:17.095Z
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
@@ -13,6 +16,8 @@ sources:
     resource: repo://.devcontainer/verify/verify-engine-seam.sh
   - id: openwiki-source-4811c78aebdb18972e0c3805
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
+  - id: openwiki-source-0bf43f66860dc2b44b7bcb6e
+    resource: repo://.devcontainer/verify/verify-personal-layer.sh
   - id: openwiki-source-4c6183820ca489953cbd3d7f
     resource: repo://.devcontainer/verify/verify-portable-runner.sh
   - id: openwiki-source-abefa09d4b781de4f540ae9a
@@ -35,10 +40,7 @@ sources:
     resource: repo://specs/086-dev-memory-bounds/plan.md
   - id: openwiki-source-104e1b5d4af5f78ca3e3f767
     resource: repo://specs/086-dev-memory-bounds/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:34:17.413Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -61,13 +63,16 @@ The credential rule still applies here: never set `ANTHROPIC_API_KEY` in this en
 
 ```mermaid
 flowchart TD
-  A["sbx run from the template, with an explicit scratch workspace dir"] --> B["Apply the egress policy generated from the canonical list"]
-  B --> C["Fill the six cold-recreate gaps"]
-  C --> D["devcontainer up --workspace-folder /workspaces/mcm --config ..."]
-  D --> E["Run the verification harness"]
+  A["Back up: the env file, gitignored .env and settings.local.json, the container's .claude"] --> B["sbx rm --force"]
+  B --> C["sbx create -m 16g --skills=off shell, with an explicit scratch dir — or sbx run from a template"]
+  C --> D["Apply the generated egress policy — before anything pulls"]
+  D --> E["Fill the six cold-recreate gaps"]
+  E --> F["Fresh clone into /workspaces, restore the .env files"]
+  F --> G["sbx stop, then devcontainer up --workspace-folder /workspaces/mcm"]
+  G --> H["Run the verification harness"]
 ```
 
-*Instantiate, apply policy, provision, verify — the order is load-bearing; provisioning before the policy is applied is refused instantly.*
+*The full recreate order: save, destroy, create, policy, gaps, provision, verify. Instantiate → apply policy → provision is the load-bearing part — provisioning before the policy is applied is refused instantly, and the backup comes first because `sbx rm` is total.*
 
 ## Templates and recreate-from-nothing (§7b)
 
@@ -93,9 +98,10 @@ egress policy nor the Docker images.
   **count the applied rules rather than trusting the loop**. A partially applied policy still looks
   like a policy.
 - **A template does not contain the Docker images.** `sbx template save` snapshots the VM root
-  filesystem, **not** the Docker data disk: a sandbox recreated from a template came up in seconds
+  filesystem, **not** the Docker data disk: a sandbox recreated from a template came up in **4 seconds**
   with **zero images** (measured). Instantiation is quick; the real time is the cold rebuild and
-  re-pull that follows, and it is not the warm build figure.
+  re-pull that follows — it is *not* the 293 s warm build figure, so treat the "recreate ≤ 15 min"
+  budget as covering instantiation **plus** provisioning, never instantiation alone.
 - **`sbx template save` stops the sandbox** and holds a lock that blocks other `sbx` commands for its
   full duration (~17 min, ~16.8 GB). Do not run it when you need the environment, and do not conclude
   it failed because `sbx template ls` shows nothing — check whether the sandbox went to `stopped`.
@@ -142,20 +148,26 @@ flowchart TD
 - **Build cache can mask a broken environment.** The apt failures above had been present for a while;
   builds "succeeded" by reusing a cached feature-install layer that never ran apt. Pruning the cache
   *revealed* the failure rather than causing it — the same lesson as a skipped test reading as a pass.
-- **Never `docker image prune -a`.** It evicts the Playwright image the web-E2E recipe needs, which
-  must then be re-pulled. `docker builder prune` is the safe lever; `docker image prune` is
-  dangling-only. The distinction inside `builder prune` matters too: `-f` alone drops only **unused**
-  cache, while `-af` drops all of it.
+- **Never `docker image prune -a`.** It evicts the **3.5 GB** Playwright image the web-E2E recipe
+  needs, which must then be re-pulled. `docker builder prune` is the safe lever — it never touches
+  images — and `docker image prune` is dangling-only. The distinction inside `builder prune` matters
+  too: `-f` alone drops only **unused** cache, while `-af` drops all of it.
 - **`/var/lib/docker` is not visible from inside the dev container** (`No such file or directory`),
   and `df /` there reports the Docker volume because the container's overlay upper dir lives on it.
   Establish the topology from the **VM shell**, and **verify a resize from the host**, never with `df`
-  inside: on older `sbx` versions a recreate that reuses a deleted sandbox's name can inherit its old
-  volumes, so `df` reports the old size as if the resize took. Check the `.img` file sizes instead.
-- **Set the size variables at User scope, not `$env:`.** A User-scope variable reaches neither the
-  current shell nor an already-running daemon, so a recreate needs the value exported in the
-  environment the daemon inherits. This is load-bearing after an upgrade: **v0.42.0 drops the default
-  Docker volume from 50 GB to 10 GB**, so a future recreate that forgets the variable silently gets a
-  far smaller disk than the one before it.
+  inside: on ≤ v0.39.0 a recreate that reuses a deleted sandbox's name can inherit its old volumes, so
+  `df` reports the old size as if the resize took. Check the `.img` file sizes instead — and read the
+  stamped spec with a **case-sensitive** JSON parser, because it carries both `HTTP_PROXY` and
+  `http_proxy`, which PowerShell's `ConvertFrom-Json` rejects.
+- **Set the size variables at User scope, not `$env:`.** They are
+  `DOCKER_SANDBOXES_DOCKER_SIZE` and `DOCKER_SANDBOXES_ROOT_SIZE` (plus a cloned-workspace size used
+  only in `--clone` mode). A User-scope variable reaches neither the current shell nor an
+  already-running daemon, so a recreate needs the value exported in the environment the daemon
+  inherits — the 2026-10-08 resize sidestepped the question by giving both, then verifying from the
+  host. This is load-bearing after an upgrade: **v0.42.0 drops the default Docker volume from 50 GB
+  to 10 GB**, so a future recreate that forgets the variable silently gets a far smaller disk than
+  the one before it. v0.51.0 also accepts `sandboxOptions.rootSize` / `dockerSize` in an environment
+  file; not adopted, the variables still work.
 - **Sparse is real only until written.** A fresh volume occupies a small fraction of its declared size
   on the host, but blocks are **never released back** — a deleted 50 GiB volume was still holding
   53.6 GB of real bytes. Treat a declared size as a future host cost, not a free option.
@@ -182,8 +194,9 @@ the parent folder breaks the `sbx` binary that also lives there.
   sandbox. (v0.51.0's release notes claim this is fixed; not re-tested.)
 - **Re-verify the junction after every `sbx` upgrade** — an MSI could recreate the folder. It survived
   the v0.38.0 → v0.39.0 upgrade, which is evidence, not a guarantee.
-- **`sbx rm` on older versions does not reclaim everything** — it left 7.7 GB of containerd template
-  cache behind. That content is reusable, so do not read the leftover as a failed delete.
+- **`sbx rm` on older versions does not reclaim everything** — on ≤ v0.39.0 it left **7.7 GB** of
+  containerd template cache behind. That content is reusable, so do not read the leftover as a failed
+  delete. v0.42.0 fixes both this and the volume-name-reuse inheritance above.
 
 ## A cold recreate needs six things the template does not carry (§8b)
 
@@ -240,7 +253,10 @@ the Docker Desktop environment: the `mcm-claude` volume is empty on a fresh sand
 populates it automatically, so it must be installed once per container creation
 (`--dotfiles-repository <url>`, and `ensure-rtk-hook.sh` afterwards if the dotfiles script does not
 wire the hook). RTK being present is not the same as RTK being active — the hook entry is what
-routes commands through it.
+routes commands through it. That check is a **hard failure**, not a warning: RTK is
+constitution-mandated for AI-assisted sessions and is installed out-of-repo, so an environment that
+lost it looks completely healthy while violating a MUST. `MCM_ALLOW_NO_RTK=1` downgrades it to a
+notice — an explicit opt-out that has to be typed.
 
 ### What a recreate destroys, and what to save first
 
@@ -270,17 +286,23 @@ The source §8b lists exactly what to back up, and two omissions there cost real
 `sbx run` can report `docker daemon failed to start inside the sandbox` while dockerd is healthy: the
 daemon restores every `restart: unless-stopped` container on startup (20 of them here, 54–101 s
 measured), the readiness budget is shorter, sbx gives up, the CLI exits, and the ~30 s idle-stop then
-kills a VM that had been serving the socket the whole time.
+kills a VM that had been serving the socket the whole time. (The message names the wrong component,
+and it is the single most misleading string this environment produces — it reads as a corrupt VM or a
+full disk and is neither.)
 
 There is **no knob** for the budget — no flag, no environment variable, no settings file, no daemon
 option — and patching the binary breaks the Authenticode signature on the component that enforces this
 environment's isolation and egress. So the fix lives on our side:
 [`scripts/open-sandbox.ps1`](../../scripts/open-sandbox.ps1) treats the **exit code as a claim and SSH
-answering as evidence**, waiting on a deadline rather than a loop count, and still throws with the
-original exit code and output when a genuinely broken sandbox never answers. **An upgrade does not fix
-it** — a later version did not raise the deadline. A bare `sbx run` / `sbx exec` still shows the false
-failure; only the launcher is immune. Full mechanism, the proof command and the §7f grace window:
-source §7f.
+answering as evidence**, waiting up to **120 s** on a deadline rather than a loop count (each probe
+costs a connect timeout plus a sleep, so a loop count is not a number of seconds), and still throws
+with the original exit code and output when a genuinely broken sandbox never answers. Failure
+detection is not weakened — only the false negative is removed. **An upgrade does not fix it** — a
+later version did not raise the deadline. A bare `sbx run` / `sbx exec` still shows the false failure;
+only the launcher is immune, and when starting by hand the window between the CLI's error and the
+idle-stop is a live, healthy sandbox: a command issued into it within ~30 s attaches and, being a
+session, defers the auto-stop for as long as it runs. Full mechanism, the proof command and the §7f
+grace window: source §7f.
 
 ## Memory — the OOM killer takes a bystander, not the cause (§7g)
 
@@ -328,10 +350,11 @@ asserts that discovery found the known configs, so an empty discovery cannot pas
 bash .devcontainer/verify/run-harness.sh
 ```
 
-Twelve verify scripts across **three vantage points** — in-container, VM-side, and host-side. The
-host-side checks **cannot be faked from inside** (a claim asserted only from within the thing being
-claimed about is not proof), so the harness refuses to invent that result and requires
-`MCM_HOST_CHECK=pass|fail`; without it the run reports eleven and fails. The expected set is
+Twelve verify scripts across **three vantage points** — nine run in-container through `docker exec`,
+four VM-side (one of them `verify-engine-seam.sh` in its `--vm-check` mode), and one on Windows. The
+host-side check **cannot be faked from inside** (a claim asserted only from within the thing being
+claimed about is not proof), so the harness refuses to invent that result and requires it handed in as
+`MCM_HOST_CHECK=pass|fail`. The expected set is
 **enumerated by name** in [`run-harness.sh`](../../.devcontainer/verify/run-harness.sh), because a glob
 silently shrinks and a skipped check reads as a pass — a check that did not report is counted as a
 failure, never as "not applicable".
@@ -359,9 +382,18 @@ be stale by the time the destructive check starts.
 
 Two counting rules follow from the same principle — a check that did not report must not be
 indistinguishable from one that passed. The tally is by **script**, not by invocation:
-`verify-engine-seam.sh` is one script run in three modes, and its single slot is green only if **all
-three** pass, because a two-of-three engine seam is not a seam. And once any mode of a script fails,
-that script **stays** failed for the rest of the run.
+`verify-engine-seam.sh` is one script run in three modes and occupies a single slot, because a
+two-of-three engine seam is not a seam. And once any mode of a script fails, that script **stays**
+failed for the rest of the run.
+
+> ⚠️ **A green 12/12 does not prove the host-side half ran.** `run-harness.sh` warns that an unset
+> `MCM_HOST_CHECK` means the run "will report fewer than twelve and fail" — but the tally it actually
+> applies is the by-script one above, and `verify-engine-seam.sh` has already taken its single slot
+> from the in-container and `--vm-check` runs. Nothing is left unreported for the tally to name, so
+> the missing proof is announced in an `!!` line and then not counted: the run can print
+> `✓ all 12 checks reported and passed` with `verify-engine-seam.sh --host-check` never executed.
+> Read the `!!` line, not only the tally. The reverse case does bite — an explicit
+> `MCM_HOST_CHECK=fail` records a failure and fails the run.
 
 **The two runners swap roles on this path.** `verify-portable-runner.sh` exists for SC-006, "the same
 committed config runs unmodified under a second conformant runner", and every one of its assertions is
@@ -394,6 +426,19 @@ the unasserted alternate, so this check now covers the primary build path rather
 > version, not a connect error) before treating the host-side proof as re-verified. Nothing is
 > *disproven* by the vacuous run — but it cannot catch a regression that only appears while Docker
 > Desktop is up.
+
+> ⚠️ **`firewall-allowlist` has a known first-run failure that passes on a re-run.** Both dated
+> verification tables in source §10b record it red on the first harness run after a recreate and green
+> afterwards, with no code change — so a first red there is a reason to re-run before treating it as a
+> regression. It is also the check that will not sit still: its expectation is **derived from the
+> canonical list** rather than carried inline, so adding a destination the live ruleset lacks shows up
+> as drift rather than passing quietly.
+>
+> The general hazard behind it is worth remembering on its own: the dev container returns after a VM
+> restart through `restart: always`, which does **not** re-run `postStartCommand` — so a sandbox that
+> has only ever been restarted, never `devcontainer up`-ed, can be running without the setup that hook
+> supplies. That is why the manual's rule is that the host policy, not an in-container hook, is the
+> continuous guarantee.
 
 `verify-firewall-allowlist.sh` carries the **G5 sibling-egress refusal** — the security claim this
 whole environment rests on, probed from a **real sibling container**, because inferring it from the
@@ -502,6 +547,8 @@ policy through a UUID migration — treat that as evidence, not a guarantee, and
   [Dev container on Docker Sandbox microVM (primary environment)](./devcontainer-sandbox.md).
 - The retained Docker Desktop / DinD path (Android emulator only):
   [Containerized dev environment](./devcontainer.md).
+- The credential rule that still applies here — never set `ANTHROPIC_API_KEY` in this environment:
+  [Secrets management](../invariants/secrets-management.md).
 - Why the shared `127.0.0.1` port space collides:
   [Published-port reservation](../invariants/published-port-reservation.md).
 - Full procedures, measurements and dates: [`docs/runbooks/devcontainer-sandbox-lifecycle.md`](../../docs/runbooks/devcontainer-sandbox-lifecycle.md).

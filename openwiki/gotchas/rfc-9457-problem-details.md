@@ -1,7 +1,7 @@
 ---
 type: Gotcha
 title: mc-service errors are RFC 9457 Problem Details, never a stack trace
-description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it and the problem media type the BFF loses on the hop to a client.
+description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it — require_app_role's 403 and the auth layer's 401, which since axum-keycloak-auth 0.8.4 also covers a credential that is not a JWT — and the problem media type the BFF loses on the hop to a client.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
 sources:
@@ -19,6 +19,8 @@ sources:
     resource: repo://backend/mc-service/src/api/middleware/auth.rs
   - id: openwiki-source-ab390bc7debabac317c9e258
     resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
+  - id: openwiki-source-4ed96763667f13cac6dcc6ce
+    resource: repo://backend/mc-service/src/api/middleware/logging.rs
   - id: openwiki-source-c24ab349f92ee5be03f5048a
     resource: repo://backend/mc-service/src/application/access_control.rs
   - id: openwiki-source-e7c775a958bbcf3eef93d65c
@@ -37,6 +39,8 @@ sources:
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
   - id: openwiki-source-3962f527ba083cef06c1e6a6
     resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
+  - id: openwiki-source-9d87a8f088bd859a50175559
+    resource: repo://frontend/mcm-app/src/app/bff-api/auth/verify-email%2Bapi.ts
   - id: openwiki-source-a344c8ab57b1d157819a0fd2
     resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
   - id: openwiki-source-a07d6f15a4a3776b6f310564
@@ -73,9 +77,11 @@ sources:
     resource: repo://specs/076-account-deletion/contracts/bff-api.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-a806df9808f5972f05b31a55
+    resource: repo://specs/091-keycloak-auth-084-test/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace
@@ -93,8 +99,7 @@ paths, database schemas, framework details or any system internals to the client
 ```mermaid
 flowchart TD
     Req["Request to /api/v1"] --> Auth["KeycloakAuthLayer checks signature and audience"]
-    Auth -->|"credential not parseable as a JWT"| Lib400["400 body produced by axum-keycloak-auth"]
-    Auth -->|"invalid or missing JWT"| Lib401["401 body produced by axum-keycloak-auth"]
+    Auth -->|"no credential, or one it cannot decode or validate"| Lib401["401 body produced by axum-keycloak-auth"]
     Auth -->|"valid JWT"| Role["require_app_role checks mc-user or mc-admin"]
     Role -->|"no app role"| Role403["403 as application/json, httpstatuses.io type URI"]
     Role -->|"role present"| Handler["Handler runs the use case"]
@@ -165,13 +170,25 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   as the reason its `403` case is out of scope, and named aligning the middleware with
   `problem_response` as the prerequisite for ever testing it. The `401` is a third, similar
   exception: it comes from `KeycloakAuthLayer`, not from `problem_response()`, and its body is
-  library-produced — an integration test only asserts it is non-empty JSON rather than a panic trace.
-  **The auth layer's statuses are not the ones you would guess.** A credential that cannot be parsed
-  as a JWT at all is answered with `400 Bad Request`, not `401`; only a well-formed but invalid token
-  yields `401`. `movie_metadata_rejects_a_malformed_token` pins the `400` as the shared layer's real
-  behaviour and records that it was verified identical on the pre-existing `/api/v1/collections`
-  route — so a `400` on a protected route is not necessarily a domain-validation failure, and an
-  assertion that expects `401` there is testing an aspiration rather than the service. Also note
+  library-produced — the credential-less case is asserted only as "non-empty JSON, not a panic trace",
+  and the malformed-credential case asserts the library's `{"error":"invalid_token"}`.
+  **An unparseable credential is a `401` here, and that changed under a dependency bump.**
+  `axum-keycloak-auth` 0.8.3 answered a token that is not a JWT at all with `400 Bad Request` and the
+  parse error in the body; **0.8.4** replaced that with the same generic answer it gives every token
+  it cannot decode or validate — `401` with `{"error":"invalid_token"}` — and upstream lists the
+  change under Security. mc-service stays on that line
+  ([`Cargo.toml`](../../backend/mc-service/Cargo.toml) asks for `0.8`, and spec 091's FR-003
+  explicitly forbids pinning back to 0.8.3), so today the only way to distinguish "the layer tried to
+  decode a bad credential" from "no credential was sent" is the body, not the status: both are `401`.
+  `movie_metadata_rejects_a_malformed_token` asserts exactly that pair, and
+  [`spec.md`](../../specs/091-keycloak-auth-084-test/spec.md) records that the old `400` assertion
+  was the only thing that broke — every other auth assertion already expected `401` or `403`, and no
+  production code changed. The lasting trap is for a reader carrying the older assumption: a `400` on
+  a protected route is still a domain-validation failure, and **a test asserting `400` for a
+  malformed bearer token is now asserting the withdrawn behaviour** — do not restore it. The
+  library's status change also moved malformed tokens into the audit trail:
+  `api/middleware/logging.rs` emits `auth_failure` on any `401`, so they are logged where the old
+  `400` was not. Also note
   `DomainError::AccessDenied` — the one variant that *would* produce a `403 ACCESS_DENIED`
   problem document — has no production producer today; it appears only in mocked unit tests.
 - **`serde_json` must keep `features = ["preserve_order"]`, because the member order is part of the
@@ -257,9 +274,12 @@ Where each BFF error shape ends up, and which of them actually carry the problem
 
 A related client-side consequence: the BFF has two error dialects, and the shared client helper
 understands only one of them. The auth and admin routes (`auth/login`, `auth/refresh`,
-`auth/logout`, `auth/user`, `auth/register`, `auth/resend-verification`, `admin/settings`) answer in
-the same `{ error, code }` vocabulary as `handleMcApiError()`'s `AuthError` and unexpected-error
-branches — no `type`, no `title`, no `detail`. The generic `getErrorMessage()` in
+`auth/logout`, `auth/user`, `auth/register`, `auth/resend-verification`, `auth/verify-email`,
+`admin/settings`) answer in the same `{ error, code }` vocabulary as `handleMcApiError()`'s
+`AuthError` and unexpected-error branches — no `type`, no `title`, no `detail`. (`auth/register` is
+the clearest case: every branch funnels through its local `extractError()` into
+`Response.json({ error, code }, …)`, and it re-maps the code to a user-facing sentence in
+`getUserMessage()` rather than exposing anything upstream.) The generic `getErrorMessage()` in
 `src/utils/errors.ts` is built for exactly that vocabulary: it reads a `code` member and maps it
 through `AUTH_ERROR_MESSAGES`, so a problem-shaped refusal (`title`/`detail` with no `code`) collapses
 to "An unexpected error occurred. Please try again." Two call sites compensate by reading the problem

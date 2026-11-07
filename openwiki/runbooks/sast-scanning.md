@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-10-31T14:00:59.999Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -26,6 +26,10 @@ sources:
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-885237f04e1aa048fda26663
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
+  - id: openwiki-source-bbf78f164062a1cfdec73a0a
+    resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-5731c4a4c76f88db8cc6fb40
     resource: repo://infrastructure-as-code/project.json
   - id: openwiki-source-40275cb92c3610938f16ade3
@@ -78,7 +82,7 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/research.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-06T10:07:39.873Z
 ---
 
 # SAST & SCA static scanning
@@ -419,9 +423,21 @@ that job), not by flipping the whole tier.
   names the vulnerable span excluded and the value the patched floor forced. Raise the value alone
   and you get an override that reads as remediated while no longer excluding the version its own key
   names. `scripts/check-override-consistency.mjs` enforces `key's exclusive upper bound == value's
-  inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix (the
-  plain pins `react-dom`, `postcss`, `@expo/dom-webview` have no key half and are out of scope; a
-  *compound* key such as `js-yaml@>=3.0.0 <3.15.1` is in scope but only its `<` bound is compared).
+  inclusive lower bound` on every pull request, scoped to keys carrying an `@<range>` suffix. A key
+  with no range half is a **plain pin** — out of scope, not a violation: `react-dom`, `postcss`,
+  `@expo/dom-webview`, and, added 2026-11-06 by feature 089, `'@ag-ui/client>zod': ^4.4.3` and
+  `'@ag-ui/proto>zod': ^4.4.3`. The parser splits on the LAST `@`, so that `pkg>dep` pair carries no
+  `@<range>` suffix and is treated exactly like a plain pin — which is right, because those two
+  entries are **not security floors**. They are the map's one non-advisory use: they force
+  `@ag-ui/client` and `@ag-ui/proto`, which declare `zod ^3.25.76` outside the app's own `^4.4.3`
+  range, onto the app's copy, so the assistant chunk carries one zod 4 engine instead of a second one
+  whose `new Function("")` availability probe the strict `script-src` blocks and reports. The file
+  records its own recheck rule for them: recheck at each AG-UI upgrade, and keep the value equal to
+  the app's own zod range so they stay one copy. Two consequences are worth carrying. The gate skips a
+  plain pin *before* it reads the value, so a caret like `^4.4.3` passes there where the same caret on
+  a keyed floor is refused with exit 2 (below). And read the entry before assuming an edit to this map
+  is a security edit. A *compound* key such as `js-yaml@>=3.0.0 <3.15.1` is in scope but only its `<`
+  bound is compared.
   Note **which job owns it**: the guard runs as a step of the `naming` job in
   [guardrails.yml](../../.forgejo/workflows/guardrails.yml) (`--selftest`, then the scan), not as part
   of `sast`, so a half-bumped floor reddens `guardrails / naming` and no `sast` output will mention it.
@@ -457,8 +473,8 @@ that job), not by flipping the whole tier.
   cap rule keeps the Renovate widening out. Note also **where** these
   live: the map is in `pnpm-workspace.yaml`, not `package.json`'s `pnpm` field — pnpm 11 stopped
   reading that field and says so with an "ignored keys" warning, which is a security event rather than
-  cosmetics, because every entry in the map exists to force a vulnerable transitive to a patched
-  version.
+  cosmetics, because a keyed entry silently dropped re-admits the vulnerable transitive it was forcing
+  to a patched version.
 - **Unmatched allowlist entries are reported but do not block.** An entry that matches nothing this
   run is listed under `UNMATCHED ENTRIES`. The trap: pip-audit switched from CVE ids to PYSEC
   aliases; entries keyed on the old CVE ids silently matched nothing rather than expiring — an entry

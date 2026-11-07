@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Prod reboot resilience
-description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, plus the validation reboot on record and the host-operation rules that keep it that way.
+description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, why prod's one-shot inits idle on `sleep infinity` behind a readiness marker, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 sources:
@@ -29,6 +29,8 @@ sources:
     resource: repo://infrastructure-as-code/komodo/stacks.toml
   - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
     resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
+  - id: openwiki-source-482173336861a06249bf1372
+    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
   - id: openwiki-source-5a48ade99311698ed1a02a08
     resource: repo://scripts/check-prod-ci-port-collision.mjs
   - id: openwiki-source-b182ec4cb28667debd4684ff
@@ -37,10 +39,10 @@ sources:
     resource: repo://scripts/check-resource-naming.mjs
   - id: openwiki-source-750b2cbfd1a5b0c826bf579b
     resource: repo://scripts/preflight.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-14T01:54:06.604Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-01T20:52:31.113Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Prod reboot resilience
@@ -180,8 +182,21 @@ one-shot containers — `agent-audit-init` (provisions the write-only audit user
 idempotently and then `exec sleep infinity`, so they too declare `restart: always` and stay eligible for
 the daemon's start-at-boot rather than exiting and being counted unhealthy
 ([`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml),
-[`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). The
-idling has a second, less obvious cost: a container that never exits can never satisfy
+[`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). That
+idling shape is guarded rather than merely conventional:
+[`object-store-service.guard.test.mjs`](../../scripts/__tests__/object-store-service.guard.test.mjs)
+asserts the prod object-store init's shape in each tracked compose — a ready marker, `exec sleep infinity`,
+a healthcheck on that marker, and every dependant waiting with `service_healthy` — and asserts the
+**opposite** shape for the dev file: no `sleep infinity`, no `restart:` at all, and dependants waiting on
+`service_completed_successfully`. The same rule explains a related absence: prod's
+`mc-service-store-mongo` has **no** `rs-init` one-shot sibling (the dev compose still carries
+`mc-service-store-mongo-rs-init` with `restart: "no"`), because an exited one-shot makes Komodo flag the
+whole stack unhealthy; fresh-volume replica-set initiation is an authenticated bootstrap step run by the
+operator, not a healthcheck side effect
+([`mc-service/compose.prod.yaml`](../../infrastructure-as-code/docker/mc-service/compose.prod.yaml),
+[`mc-service/compose.yaml`](../../infrastructure-as-code/docker/mc-service/compose.yaml)).
+
+Idling has a second, less obvious cost: a container that never exits can never satisfy
 `service_completed_successfully`, so the dependency had to be re-expressed as readiness —
 `langfuse-worker` waits on `langfuse-rustfs-init` with `condition: service_healthy`, and that healthcheck
 is a `/tmp/ready` marker the entrypoint touches only after the bucket PUT succeeds. "Init done" therefore
@@ -361,7 +376,10 @@ procedure.
   and `unleash-seed` — provision idempotently, then `exec sleep infinity`, and declare `restart: always`
   like every other service. The restart-policy gate's `no`/`on-failure` exemption for init/seed names is
   therefore currently unused in prod: a one-shot that really exits `0` satisfies the gate but reports the
-  whole stack unhealthy, and giving it `always` would restart-loop it.
+  whole stack unhealthy, and giving it `always` would restart-loop it. The idling shape is not left to
+  review — `object-store-service.guard.test.mjs` asserts it for the prod object-store init (ready
+  marker, `exec sleep infinity`, `service_healthy` dependants) and asserts the **opposite** shape for the
+  dev file, so a prod compose cannot drift back to a plain one-shot without a red test.
 - **An interim `docker update --restart always` is not a fix.** It rewrites the restart policy of the
   containers that exist right now and is lost the moment one is recreated — by a Komodo redeploy, a
   compose `up`, or a host rebuild. Only the value in the compose file (or the host-managed compose file)
@@ -446,9 +464,9 @@ failure:
   declare `always`, the three init/seed containers included, because they idle instead of exiting. It is
   not untested — the gate's `--selftest` exercises it with planted one-shot names
   (`langfuse-rustfs-init`, `mc-service-store-mongo-rs-init`, `object-store-createbucket`) — and the only
-  `restart: "no"` in the tree today is the **dev** `mc-service/compose.yaml`'s
-  `mc-service-store-mongo-rs-init`, which no prod scan sees. Its scan globs only
-  `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
+  `restart: "no"` on a service in a tracked compose file today is the **dev**
+  `mc-service/compose.yaml`'s `mc-service-store-mongo-rs-init`, which no prod scan sees. Its scan globs
+  only `infrastructure-as-code/docker/**/compose.prod.yaml`, which is exactly why it cannot police the
   host-managed composes above.
 
 Both run selftest-then-scan in the `naming` job of

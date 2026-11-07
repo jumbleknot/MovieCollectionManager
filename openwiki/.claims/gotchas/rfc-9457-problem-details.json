@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:82a7c02ed70855b0695c90419e3e4615cf887204a20f0eb4aaa94648eee50f69",
+  "pageVersion": "sha256:a1b98c3f3004b30e15b55361482265f82e7023764fc0beda8c164b7a6fd63d72",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -218,7 +218,7 @@
     },
     {
       "id": "claim_6afca0db6a3242b9ac03008aad7819df",
-      "statement": "mc-service's shared auth layer answers a credential that cannot be parsed as a JWT at all with 400 Bad Request, not 401; only a well-formed but invalid token yields 401. movie_metadata_rejects_a_malformed_token pins this as axum-keycloak-auth's service-wide behaviour and records that it was verified identical on the pre-existing /api/v1/collections route, so a 400 on a protected route is not necessarily a domain-validation failure and a test asserting 401 there is asserting an aspiration rather than the service.",
+      "statement": "mc-service's shared auth layer answers every credential it cannot decode or validate with 401 and the library's generic {\"error\":\"invalid_token\"} body; a request with no credential is also 401, so only the body — not the status — distinguishes a malformed token from a missing one. movie_metadata_rejects_a_malformed_token asserts exactly that pair (401 plus the invalid_token body), which is what proves the layer actually tried to decode the credential rather than merely checking the header was present.",
       "evidence": [
         {
           "resource": "repo://backend/mc-service/src/api/middleware/auth.rs",
@@ -226,7 +226,7 @@
         },
         {
           "resource": "repo://backend/mc-service/tests/integration/movies/movie_metadata_test.rs",
-          "version": "repo-file-v1:sha256:a885fc0722435ff0761252b8b2a789b8873678e52cd5ff3950e51ede7cb4d4d5"
+          "version": "repo-file-v1:sha256:3f2fbe7bc8077d31e1cf22cc312b26c399da1e33b8e5e6d4ce8b0729a600a0e0"
         }
       ]
     },
@@ -298,7 +298,7 @@
     },
     {
       "id": "claim_1c823bfd11ec483b9e6b2024563562bc",
-      "statement": "The BFF answers errors in two incompatible client vocabularies. The auth and admin routes (auth/login, auth/refresh, auth/logout, auth/user, auth/register, auth/resend-verification, admin/settings) return { error, code } with no type, title or detail — the same vocabulary as handleMcApiError()'s AuthError and unexpected-error branches — while the proxy and backups routes return RFC 9457-shaped bodies. The shared getErrorMessage() in src/utils/errors.ts is built for the first dialect only: it extracts a code member and maps it through AUTH_ERROR_MESSAGES, so a problem-shaped body with no code collapses to the generic 'An unexpected error occurred. Please try again.'",
+      "statement": "The BFF answers errors in two incompatible client vocabularies. The auth and admin routes (auth/login, auth/refresh, auth/logout, auth/user, auth/register, auth/resend-verification, auth/verify-email, admin/settings) return { error, code } with no type, title or detail — the same vocabulary as handleMcApiError()'s AuthError and unexpected-error branches; auth/register funnels every branch through its local extractError() and re-maps the code to a user-facing sentence in getUserMessage() rather than exposing anything upstream. The proxy and backups routes instead return RFC 9457-shaped bodies. The shared getErrorMessage() in src/utils/errors.ts is built for the first dialect only: it extracts a code member and maps it through AUTH_ERROR_MESSAGES, so a problem-shaped body with no code collapses to the generic 'An unexpected error occurred. Please try again.'",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/admin/settings%2Bapi.ts",
@@ -310,7 +310,11 @@
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts",
-          "version": "repo-file-v1:sha256:e916cf8133f798940ac72c884de407da84e9ce6c345e16608ce7818fa6b03a90"
+          "version": "repo-file-v1:sha256:85229ec8746fd8c6d83536f4f252b2ef92a1e7713bef74f4a5b63f8f1bd000c4"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/app/bff-api/auth/verify-email%2Bapi.ts",
+          "version": "repo-file-v1:sha256:96c3c136f30904c309bc87c9b6541b036a186d54f3961cc68992ed27af387e59"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/mc-api-error.ts",
@@ -321,10 +325,32 @@
           "version": "repo-file-v1:sha256:0c00e4eabe5c257a50244654a6b0bcb29547fc659a0a38c536bd66ef8f91ae8d"
         }
       ]
+    },
+    {
+      "id": "claim_f3c7b3fa367a40f38902ca95ac445eb1",
+      "statement": "The 401-instead-of-400 answer for an unparseable credential is a dependency behaviour that changed in axum-keycloak-auth 0.8.4: 0.8.3 returned 400 with the parse error in the body, and 0.8.4 replaced it with the generic 401 invalid_token response as a security fix. mc-service stays on that line — the manifest asks for 0.8 and spec 091's FR-003 forbids pinning back — and spec 091 records that the old 400 assertion in movie_metadata_rejects_a_malformed_token was the only thing that broke (every other auth assertion already expected 401 or 403) with no production code change. Because api/middleware/logging.rs emits an auth_failure audit event on any 401, malformed tokens are now recorded where the old 400 was not.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Cargo.toml",
+          "version": "repo-file-v1:sha256:57e5af427dd1026993ce957bd14ab75260eb088adc3529c3482a5058527aafa7"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/middleware/logging.rs",
+          "version": "repo-file-v1:sha256:52f610c828a519a2484564e3c6d1c3137eaf85813d99f9704bed838eeb6772fe"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/movies/movie_metadata_test.rs",
+          "version": "repo-file-v1:sha256:3f2fbe7bc8077d31e1cf22cc312b26c399da1e33b8e5e6d4ce8b0729a600a0e0"
+        },
+        {
+          "resource": "repo://specs/091-keycloak-auth-084-test/spec.md",
+          "version": "repo-file-v1:sha256:f9920486c62014e33dd742c3a754d24b0f6fbc15ae4aa5ca2ee54e16de7ca4d7"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T00:30:54.344Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }

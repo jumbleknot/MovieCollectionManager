@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6f969d40fce4a01be141a2fef5a5fd082246f304f817e08c319121caad7fea79",
+  "pageVersion": "sha256:9c767228e21723ceb52d92645683a8dcc0e50a2815c5d9a75496d0b8e0747349",
   "claims": [
     {
       "id": "claim_fb99a132195d426bb1f78d4948851875",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -54,7 +54,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -90,7 +90,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -108,7 +108,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup-staleness.sh",
@@ -234,7 +234,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -248,7 +248,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
@@ -340,7 +340,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/backup/backup.sh",
@@ -524,7 +524,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://specs/084-silent-failure-visibility/spec.md",
@@ -558,8 +558,12 @@
     },
     {
       "id": "claim_2077a9ac032040c48125f992aae1e989",
-      "statement": "The registry excluded from the snapshot does not grow without bound: since spec 084 US5 a weekly registry-retention sweep (scripts/registry-retention.mjs, configured by infrastructure-as-code/forgejo/registry-retention.yaml and run by .forgejo/workflows/registry-retention.yml on Sundays 06:00 UTC) deletes old package versions while protecting every digest pinned in an infrastructure-as-code/docker/*/.env.deploy on main and the five promotions before it, so the exclusion remains safe for rollback.",
+      "statement": "The registry excluded from the snapshot does not grow without bound: since spec 084 US5, scripts/registry-retention.mjs — configured by infrastructure-as-code/forgejo/registry-retention.yaml and run weekly by .forgejo/workflows/registry-retention.yml on Sundays 06:00 UTC — decides per package which versions to keep, protecting every digest pinned in an infrastructure-as-code/docker/*/.env.deploy at the newest promotion and the five before it (read from git history, so the workflow checks out with fetch-depth: 0) and keeping every mcm-app-android version under keepAll. The schedule itself never deletes: --apply is passed only by a workflow_dispatch whose apply input is true, and the script refuses it while the config says mode: report, so two independent keys must agree before a version is removed — which is what keeps the registry exclusion safe for a rollback to an older digest.",
       "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml",
+          "version": "repo-file-v1:sha256:d6447d21b60359f3e4df5f211ee3b18aaa7019bf25a977c28d4711cdfeaf12c5"
+        },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L394-L445",
           "version": "repo-lines-v1:sha256:86d29325885e456d7eae5050456598f61f0c7ee3797204f1b515eaa423c91032:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZjA5YjU2MTA3OTc5OWI4MDVhODYxMWE2NTM4NWNhNmJkNGQ4MDU1MWY3Y2Y5NjIyZDQzYTVlNGU2MDU4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NDFhOWU5Y2FkNjhjOTdhMTZjNTZmYWEwMDAzZDQ5NGM1M2JiYzNlNTVmMzU5OTI1ODYyMGM1MDA3YmQyOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNDcyMTkwN2QxYWU3YmVlMzBkNTZhMWE4ZTg5NWU3YTcyZTU0YzI1YmNkM2Y2OWRjMmY0Yjc0ODgyOWM3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4OTYyZjljMTMwZmU3OTQxMDg5NTZkZTYwOTAwZWUwZWQ0NmViMzBkYmY3MGNkNGI5NWYyZDMzNzJiOWJjOTgifQ"
@@ -577,6 +581,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-02T10:14:55.121Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }

@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
-description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the two agent-test tiers that decide what blocks a merge, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate (with its per-suite skip-escalation flags) that now blocks a merge.
+description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 sources:
@@ -17,6 +17,8 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-ea93d0d472b9e8fe578853c3
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/agent-stack-gate.ts
   - id: openwiki-source-394dcdb206cc3e89e1eea8e7
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/auth-files.ts
   - id: openwiki-source-17bc9e79c547a2f76e554696
@@ -49,38 +51,56 @@ sources:
     resource: repo://scripts/check-toolchain-consistency.mjs
   - id: openwiki-source-4a5107e668fbfa127e4c2d48
     resource: repo://scripts/e2e-contention-tally.sh
-generated: { by: "openwiki/0.5.2", at: "2026-09-27T16:58:28.669Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-10-16T20:39:10.335Z
+    at: 2026-11-06T07:34:17.095Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
 
 The same app + BFF code runs in three modes that differ only in which server fronts the BFF and the
-cookie/TLS posture: **local dev** (Metro's `@expo/server`, HTTP, non-Secure cookies — the default for
-iterative work), **dev container** (`mcm-bff-service-nonsecure`, HTTP, non-Secure — the standard
-final local E2E run), and **prod container** (`mcm-bff-service-secure` + TLS proxy, HTTPS, Secure
-cookies — reserved for a future CI/CD job, not a routine local step). See
+cookie/TLS posture: **local dev** (Metro's `expo-server` dev server, HTTP, non-Secure cookies — the
+default for iterative work), **dev container** (`mcm-bff-service-nonsecure`, HTTP, non-Secure — the
+standard final local E2E run), and **prod container** (`mcm-bff-service-secure` + TLS proxy, HTTPS,
+Secure cookies — reserved for a future CI/CD job, not a routine local step). See
 [Testing tiers](../invariants/testing-tiers.md) for how this E2E tier fits alongside unit,
 integration, and golden tests, and how CI enforces the integration tier ahead of the E2E legs.
 
 | Mode | BFF served by | Port | Cookies | When to use |
 |---|---|---|---|---|
-| **Local dev** *(default)* | Metro (`@expo/server` dev) | `:8081` HTTP | non-Secure | iterative development + unit/integration/iterative E2E |
+| **Local dev** *(default)* | Metro (`expo-server` dev) | `:8081` HTTP | non-Secure | iterative development + unit/integration/iterative E2E |
 | **Dev container** | Docker `mcm-bff-service-nonsecure` (`NODE_ENV=development`) | `:8082` HTTP | non-Secure | **local final E2E** (after dev is green); deterministic ~54 s baseline |
 | **Prod container** | Docker `mcm-bff-service-secure` + `mcm-bff-tls-proxy` (`NODE_ENV=production`) | `:8443` **HTTPS** | **Secure** | future CI/CD only — not a routine local step |
 
+```mermaid
+flowchart TD
+  A["Which BFF mode does this run need?"] --> B{"Still iterating on code?"}
+  B -- yes --> C["Local dev — Metro on 8081, HTTP, non-Secure"]
+  B -- no --> D{"Validating the final local run?"}
+  D -- yes --> E["Dev container — mcm-bff-service-nonsecure on 8082, HTTP"]
+  D -- no --> F["Prod container — mcm-bff-service-secure + TLS proxy on 8443, HTTPS — future CI/CD only"]
+  E --> G{"Green, and ~54 s like the baseline?"}
+  G -- yes --> H["Final local E2E proven"]
+  G -- no --> I["Real regression — do not reach for flaky"]
+```
+
+Mode selection, and the one branch where the outcome is a verdict rather than a mode.
+
 The `X-BFF-Source` header is asserted in `global-setup.ts` to fail-fast on a Metro false-green when
-the dev-container mode is expected. Full container-mode commands, the complete flakiness-diagnosis
-protocol, and the integration-tier CI enforcement detail: `docs/runbooks/e2e-testing.md`.
+the dev-container mode is expected — it is a no-op for the default Metro target, so it can only ever
+fail a run that claimed to be containerized. Full container-mode commands live in
+[Final local E2E runs against the BFF container](../../docs/runbooks/e2e-testing.md#final-local-e2e-runs-against-the-bff-container-feature-007);
+the complete flakiness-diagnosis protocol and the integration-tier CI enforcement detail are in the
+same runbook. Of the three modes, the **dev-container** one is the deterministic triage baseline — the
+reason is in the Gotchas below.
 
 ## Integration tier CI gate (feature 041, extended by 048/059/073)
 
 `app-ci`'s `app-e2e` job runs `test:integration` for **six** projects — agent (`movie-assistant`),
 the three MCP servers (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`, added by feature 048/059),
-`mc-service`, and `mcm-app` — before the web/APK/emulator legs, so a failure costs a few minutes
-instead of burning 25+ min of emulator time. Every step sets `MCM_REQUIRE_LIVE_STACK=1`, which
+`mc-service`, and `mcm-app` — before the web/APK/emulator legs, so a failure costs minutes instead of
+burning the emulator half of the job. Every step sets `MCM_REQUIRE_LIVE_STACK=1`, which
 escalates a SKIP to a FAILURE: in CI a down dependency is a broken harness, not a pass.
 `web-api-mcp` reaches live TMDB using the job's own `TMDB_API_KEY` (no per-user key is involved),
 and `mc-service`'s Rust suite runs inside a `rust:1-bookworm` container via
@@ -107,6 +127,10 @@ What this changes for you:
   credentials are minted per run and exported via `$GITHUB_ENV`; `BACKUP_TICK_SECRET` is read back
   from the generated `.env.docker` rather than minted again, because a second random value would
   404 against the BFF holding the first.
+- **The same convention covers the agent specs.** `E2E_REQUIRE_AGENT_STACK=1` is forwarded into the
+  Playwright container and the shared gate (`frontend/mcm-app/tests/e2e/web/setup/agent-stack-gate.ts`)
+  fails with bring-up instructions instead of letting a missing stack skip. Three flags, one idea:
+  where the dependency is *supposed* to be up, its absence is a failure.
 - **Agent/MCP images rebuild every run** (`scripts/agent-stack.mjs` builds by default; `--no-build`
   is refused under CI), so `agents/**` and `mcp-servers/**` changes are genuinely under test.
 
@@ -220,9 +244,12 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 
 - **Diagnose flaky-vs-broken with the dev-container run, not Metro.** Metro has JIT/long-session
   variance that produces convincing "environment" red herrings; the dev-container run is
-  deterministic (~54s for the current suite). If that run is slower or fails, treat it as a real
-  regression — do not reach for "flaky" first. A real historical case: a strict-validation 400 was
-  repeatedly misattributed to machine/Metro degradation because the handler didn't log 4xx errors.
+  deterministic (~54 s for the suite as measured, 93 tests). If that run is slower or fails, treat it
+  as a real regression — do not reach for "flaky" first. A real historical case: a strict-validation
+  400 was repeatedly misattributed to machine/Metro degradation because the handler didn't log 4xx
+  errors. The full protocol (compare against a known-green ref on the same machine, check whether the
+  error is even surfaced) is in
+  [the flakiness-diagnosis section](../../docs/runbooks/e2e-testing.md#diagnosing-e2e-flakiness--rule-out-a-real-regression-before-blaming-the-environment-feature-009-lesson).
 - **A client→BFF response can be silently lost through the exported server's pipe stack**, most often
   over the emulator's tunnel. This is usually benign for login (the session lands anyway) but can
   make a server-authorized action look client-denied for other flows — diagnose by comparing the
@@ -232,18 +259,25 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 - **Agent E2E flows must never assert on a specific TMDB-ranked title.** Live TMDB popularity rankings
   drift, so a hardcoded title can silently leave the candidate list entirely — assert by list
   *position*, never by name.
-- **A CI agent-flow failure ships full per-service container logs and health-check JSON as the
-  `agent-e2e-container-logs` artifact before teardown** — the containers are gone by the time you'd
+- **A CI agent-flow failure ships full per-service container logs plus `docker inspect` health JSON as
+  the `agent-e2e-container-logs` artifact before teardown** — the containers are gone by the time you'd
   try to `docker logs` them post-hoc, so that artifact (not a live re-run) is the required first
-  diagnostic step.
+  diagnostic step. The capture covers the data-tier containers (Mongo/Postgres/Redis, including the two
+  backup destinations) as well as the `/run`-path services, records each container's
+  `.State.Health`, adds a `docker ps -a` table, and is copied to a stable runner path that survives
+  teardown and workspace reuse — so a bring-up `unhealthy` failure is diagnosable out-of-band, not just
+  agent-flow failures. An **empty dock panel** at failure is the dropped-`/run`-response signature, not
+  a slow model: confirm from the artifact whether the gateway returned `200` with a completed event
+  stream. And for an "is this image broken" question, reproduce with `docker run` locally first — a
+  rootless-runner quirk can make an image unhealthy in CI yet healthy on Docker Desktop.
 - **The prod-container (HTTPS) mode is not a routine local step** — it's kept only as a proven
   reference path for a future CI/CD job; don't reach for it in day-to-day validation.
 - **`agent-e2e.mjs` does NOT work inside the dev container.** It shells out to `nx e2e`, which
   launches Playwright on the host — chromium cannot be installed inside the dev container (CDN and apt
   mirrors are outside the egress allowlist), so `globalSetup` dies on
   `browserType.launch: Executable doesn't exist`. Run agent specs through the Playwright image instead
-  (full recipe in `docs/runbooks/devcontainer.md`). `agent-stack.mjs` itself works fine inside the
-  container and is still the correct bring-up path.
+  (full recipe in [devcontainer.md](../../docs/runbooks/devcontainer.md) §3 "Web + agent E2E").
+  `agent-stack.mjs` itself works fine inside the container and is still the correct bring-up path.
 - **`agent-stack.mjs` needs a reachable `KEYCLOAK_SERVICE_CLIENT_SECRET` — from the env *or* from
   the generated env file.** It fetches the gateway's confidential client secret live from Keycloak
   admin through `kc_admin.admin_token()`; `kc_admin.cfg()` reads the process env first and then
@@ -407,6 +441,6 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 - **BFF integration test harness key facts: `testEnvironment: node`, `maxWorkers: 1` (serial — parallel `flushdb` would corrupt data), ROPC client `mcm-bff-test` requires `ensureRopcAudienceMapper()` in `beforeAll` or ROPC tokens are rejected as invalid audience; `route-coverage-map.ts` fails if any `+api.ts` route lacks a test or justified exclusion.**
 
 For mobile-specific tunneling and APK-rebuild decisions, see
-[Android emulator & APK builds](./android-emulator.md). Full container-mode
-commands, the complete flakiness-diagnosis protocol, and the integration-tier CI enforcement detail:
-`docs/runbooks/e2e-testing.md`.
+[Android emulator & APK builds](./android-emulator.md). Full container-mode commands, the complete
+flakiness-diagnosis protocol, and the integration-tier CI enforcement detail:
+[docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).

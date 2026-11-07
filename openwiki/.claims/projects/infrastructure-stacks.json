@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:beb7b1060f3abd43452acee849866f2dacdcf89bbf1a5d9ac39810284f7a3e6d",
+  "pageVersion": "sha256:fb8436bf0f520729124ca7d6bd3aacb437dae5b3c90963038d55b54d4f02a4e0",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -36,7 +36,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml",
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://.forgejo/workflows/cd-deploy.yml",
-          "version": "repo-file-v1:sha256:31f6026116fbef9126e7b8135ea03ddccec3359bf315ee4966b63b88f222a687"
+          "version": "repo-file-v1:sha256:fc127100bb4663bbb60d3a444f2419615a6998f1f9ac0e71a14ebf175a0aac92"
         },
         {
           "resource": "repo://infrastructure-as-code/komodo/stacks.toml",
@@ -304,11 +304,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         }
       ]
     },
@@ -318,11 +318,11 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         },
         {
           "resource": "repo://infrastructure-as-code/opa/policies/agent_ui_action.rego",
@@ -336,7 +336,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/dev-ollama.compose.yaml",
-          "version": "repo-file-v1:sha256:4996665a9dd7b95a6c908db339ab25f97e036912caffe9a1ed0f2df78ad4fcb0"
+          "version": "repo-file-v1:sha256:14388f767385433d91ba2645ce37ebca587b3cf2284483edbde200b806f04130"
         }
       ]
     },
@@ -614,7 +614,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         }
       ]
     },
@@ -696,7 +696,7 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -724,11 +724,11 @@
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.yaml",
-          "version": "repo-file-v1:sha256:22090b112cdf9e3a93b059dac37e6f9ba9522748d35edd19c9a4a2469bc6efba"
+          "version": "repo-file-v1:sha256:7c3131db27732c5b81764b4469262bb862cebbbd398a65cd7e7cd6e0ea8f4ad1"
         }
       ]
     },
@@ -806,11 +806,15 @@
     },
     {
       "id": "claim_62c8fce3b6dc4c059d24f7ac3f25d51f",
-      "statement": "prod-mcm-bff's production exposure is a proxy contract rather than a published port: the compose declares no ports and instead joins the external edge-network so cloudflared reaches mcm-bff-service:3000 by name, with TRUSTED_PROXY: \"true\" set inline in the compose environment (a non-secret literal, not a Komodo Variable). Since spec 083 T010 that flag also drives express's trust proxy in frontend/mcm-app/server.js, because the Expo server adapter builds every request URL from req.protocol and the raw Host header; without it the backup-consent and account-deletion re-authentication routes derived an http:// callback origin and Keycloak refused the unregistered redirect_uri, while the flag unset keeps a directly exposed BFF from being talked into https by a client-supplied X-Forwarded-Proto.",
+      "statement": "prod-mcm-bff's production exposure is a proxy contract rather than a published port: the compose declares no ports and instead joins the external edge-network so cloudflared reaches mcm-bff-service:3000 by name, with TRUSTED_PROXY: \"true\" set inline in the compose environment (a non-secret literal, not a Komodo Variable). Spec 083 T010 gave that flag a job at the express layer — `app.set('trust proxy', 1)` when it is true — because the backup-consent and account-deletion re-authentication routes derive a callback from `new URL(req.url).origin`, and without it they sent Keycloak an http:// redirect_uri the client does not register (Invalid parameter: redirect_uri, measured 2026-10-25); the flag unset keeps a directly exposed BFF from being talked into https by a client-supplied X-Forwarded-Proto, and only the scheme can move because `req.get('host')` reads the raw Host header. Since feature 087 that setting is necessary but not sufficient: the expo-server adapter builds each request as `new URL(req.url, proto://host)` with proto taken from `socket.encrypted` and ignores `req.protocol` entirely, so `server.js` also rewrites `req.url` to an absolute `${req.protocol}://${req.get('host')}${req.url}` in the catch-all before handing the request to the handler.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/server.js#L35-L46",
-          "version": "repo-lines-v1:sha256:b3280503013cd583a0c2947fd3f7fd2dfc64ff59a45e8ce9fb23a29e5413edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OTE5NWE3MDU2ZGQ3ZTBhZTUzYWE0YTA5ZjY0ODc3MmNhMzVjMGI3ZmE2ZGU0OGRiOTcxOTdiMjg2YjhlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
+          "resource": "repo://frontend/mcm-app/server.js#L130-L138",
+          "version": "repo-lines-v1:sha256:e4ca4281fc89edd0c23709ee8df948dd694431e02ccd286e1bba3783702deb63:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyMTJlZTQ4ODVhYjdjZmFmMmZlYmU5ZjQ2MGY3YWZmNTllM2U4YzZjYzk1ZmU4NGIzOWVkNWRhMmFjZTZhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Q4MGZiYjUwMTY0ZTQ4ZmQ1ZmM1NTZiMzczZTdlOTNlNGQwMTBhNTA1NmU2M2RhYTQzNzU5YThhNDMwNTZjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGI3NDAyNTliYTk3N2Q4NDdmMGUwNzMwYjNkMWMyZDExOWYzNWQwZTZmNWQ2ZDkwNGJjYTQyMWMxYjZkODJkNSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L35-L48",
+          "version": "repo-lines-v1:sha256:29efd72a8e41b93c4ecafae83f2f4781201a08e133e27714db2dc8bdd91b5a13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjOTQ1ZmQ0Yzk0MzE1YTI0OTE1ZTFlYTkzMDZlNzcyNDU5MzlhMmE4Njc0MjY3MmQ5Y2Y5OGM0MWU4ZTkzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L182-L193",
@@ -822,7 +826,11 @@
         },
         {
           "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L158-L182",
-          "version": "repo-lines-v1:sha256:60b1297909d80d163c76768ddc455addcd9895240adf03da14a96fce2b5b4610:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY3NDY1YzBlODQwYjBhMmNkYWExNDI0YWUzMTBmYzgzMmM1YzRjYjY3ZjNkZWExYzI0YmNjMDg2MDBjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGMwMmJkYTA0ZWE4YTFmMzg0NTU3OWYzZjJlOTVhNWY4ZjNiMGMwMmI0ZGZmYzU1YzYxZGIwZTYwYzY1ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyOWMwYjBjYjQ1MzMyYTlmZDg3NGZlOTkwY2IzMTRkOTM4ZGRlODQxODRlNjg4OWVmZDViZWJhMjg2NDY2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:60b1297909d80d163c76768ddc455addcd9895240adf03da14a96fce2b5b4610:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY3NDY1YzBlODQwYjBhMmNkYWExNDI0YWUzMTBmYzgzMmM1YzRjYjY3ZjNkZWExYzI0YmNjMDg2MDBjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGMwMmJkYTA0ZWE4YTFmMzg0NTU3OWYzZjJlOTVhNWY4ZjNiMGMwMmI0ZGZmYzU1YzYxZGIwZTYwYzY1ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyOWMwYjBjYjQ1MzMyYTlmZDg3NGZlOTkwY2IzMTRkOTM4ZGRlODQxODRlNjg4OWVmZDViZWJhMjg2NDY2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNjRhMzllZjQ4MTcxN2VlZWE1YWMyMGJkN2I3Y2UwNGUzM2QwM2UwZWQ0MzRjMWU1MDg5ODY3NmY2ZjY3YjQifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/research.md#L28-L43",
+          "version": "repo-lines-v1:sha256:486c05cd28524d7cdecd32fdb0df74eaf7683170d113f1204a1bf332592423a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWYxNTVkMGQ5MjRiODIxNDE4MDJiMTg3NzI1MDliM2JiNWM3NmU2NzNhOTg2NmE1Njc1YjNmMGQzMjI0ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyN2Y3NDE5OTQ0ZTllNzAyYjdlN2UzNzZkMzkzMjdlM2RhMDVjOGY4NjQxODcwYWQwOTkwMTNmNWZlZGQ3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2NTM1YmY1MDM3MzAyODZmNTExNmM5ZDc4ZWYwNzVlMGE4NTNkYWE3M2UxODJiZjIxNjhkYWZiMzk4NzZjODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYWQ0YWU5Y2E4NWI5MzExNzUyZWYxNzJkNjExYmI4ODE2YTUxMzFkNzgyZmJmZmZhN2Y5MjY2ZDM0NThkOTIifQ"
         }
       ]
     },
@@ -1053,10 +1061,112 @@
           "version": "repo-lines-v1:sha256:ce84fbd064d8504218c295ca5838862624df4118924f3b06478226ff7c651389:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZkNzgxMzg4ZDQ3MTNiY2M5ZDY3ODNjZWZmOTE3ZDBjYzlkNDU1NzZkMTM3MGE0NTIxY2E4NDY1NDQ4NWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJkZTkxMGFjOTM5ZDk2ZGE5NDZkOWNmOGMxNWFlZDg0ZTYzNGNlZjM2Yzg2YzlhYzI5ODU1MjZjZmM4ZmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdjZTQ0NjFhNGZlYTQ0ZjczMWM4ZmZiOTk0NTNmMTRhZTQwNjNmMjVkMmUwYTgzZTdkOGQyZmMwZTM3ZTc4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M4ZDg3NWViY2Q5ZGZjZTM2ZGFhZjU2NGUyM2UyOTQ3MDdlNTA5ZWJlZjA1NjAwZWY5NmNhZjhjMWQ4NzE3OCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_e97213db327648c6a798120d85d72a7a",
+      "statement": "The registry's protected set is computed from the tracked .env.deploy files in git history: scripts/registry-retention.mjs reads every infrastructure-as-code/docker/*/.env.deploy at the newest promotion commit and the five before it (the deployed set plus the rollback targets) and keeps a version whose digest appears there as keep:protected ahead of every age/count rule, so a .env.deploy edited by hand pins an image no rollback can reach and a digest in no .env.deploy becomes deletable once past keepNewest/keepDays; the job therefore checks out with fetch-depth: 0 and the script refuses a shallow clone rather than reporting a smaller protected set.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/registry-retention.yml#L36-L39",
+          "version": "repo-lines-v1:sha256:9217937c7b4beb0ee3f666ae38904918ac7562b3964bbdc58f06826b03c593d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzZjVkZmJjNTFlZWI5ZjcyYTE5YmRmOTk2NDhmYzQyZmIxNmY0M2MxYTc2OWRmYzQ5NjI1OGE4Mzk1NjMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwOTc1YzdlMjBlYmE4ODU3ZWZkMzFlNjJiNjY1Zjc4N2U1MTY0MTk1MWE2NjA3ODlmYmE5MzNhNjM0NzIxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjkzOTI1NmY4MDU2MTVhN2MxY2Q4YTg0NzAyMDVmYThiYWM5NGI3Y2ViNDFiMTgyMmE0N2ViY2QwZDI4NTQ1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3YzViOWIyZTU1MDU0YWFiY2E3OTMyYjcyMTVjOTQ2ZjVkYzg0NGMzODBhMzUxNjJlZjhjMWYwYjkxOWNmNSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml",
+          "version": "repo-file-v1:sha256:b2d650d49cccb3adfde853761f7e561458809d76d63425aec7222a3e5582e1ae"
+        },
+        {
+          "resource": "repo://scripts/registry-retention.mjs#L119-L150",
+          "version": "repo-lines-v1:sha256:a2690de661c2eb5377e5c6a215b80404eac9e2acdbdad9f7d6a8499ec2e3b0d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NThlMDY5MjM2MzRmNGU3MWRiMWI1YjJiMGYzMTE5ZDhlMDIxYzM3ZmY5Mjg5MjIwMDQ3YWJiYzIwZmZmMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNDA4YzQ0MDcwNDdhYjkxMWZkY2M1MjhkNGYxNzJlZmU1NjkzMDcwNjFiNTE2NjBjNzBhYWI2NTQxOTRkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMzVkZGI3YmJhOGU4ZjFmZWE4ZTY0ZWI1MTc5NGQ4MmU5ZTI0MmExNmE4MDU0YTVlNWI2M2U0NTQwMjZmMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1dff437b18a54c2e86d88bf96c33767e",
+      "statement": "The public-scheme behaviour of the BFF is pinned through the real adapter rather than a stand-in: frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts boots the actual server.js twice (with TRUSTED_PROXY=true, as production runs it, and with it unset) against a minimal fixture dist/server — tests/unit/fixtures/real-adapter-build, holding one API route returning `Response.json({ url: request.url })` — and asserts the four rows of the hosting contract, so removing the absolute-URL rewrite turns the https rows red and X-Forwarded-Host cannot move the origin. Before feature 087 the same trap was \"pinned\" by a stub that echoed the origin it computed itself, which stayed green while production refused the callback.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L136",
+          "version": "repo-lines-v1:sha256:557d16b14261ba0e1240d0c0b8b42a9b7e9bdd20fba2c82e4584a689a4dfa17b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json",
+          "version": "repo-file-v1:sha256:59b97fe572378804d6616b03eca8829ff3267b57db16fb42c417280a8d531abb"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/hosting.md#L3-L18",
+          "version": "repo-lines-v1:sha256:1651a53e7d55e7e3d39566e14486854379ce7952869e5a129d09fceb6b3972d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNDZmYTQ5YmMyMWM1ZTk3YjM0YzA3MWMwMWUwZWI3MDgzNTllMTZlZTFlMmVhMzZjYTFjYzU1MzBkNzFjMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjOGNhYWEwZDNiN2FmYzcxNjQwZjdjNDZjNmU4ZjNkYzE4MzJiOTQ5YjNkNzlhZDViZDE1MWE3MDBhZThiOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZWUyYTRhZDVlZmViOWJjNjQ0YTU1ZjNmNzU0ZDRkZTVmYWM1ZDVjZTViOTQ0N2YxYTY0ZmZhYWEzNzgzNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZWRjN2NiMWQ3NDNhNWUyNGQ1YjZkZDA5OWE1MDJkNjU5NTA0YjViMDJkNzA1MWQ4ZGNhNDQ0NjRiNjU4OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd0bb955dc514221881c4409c1ec1eee",
+      "statement": "CI and dev never hit the proxy-scheme problem because there the client reaches the BFF over origins the realm already registers: the dev-config container publishes 127.0.0.1:8082 over plain HTTP, whose http://localhost:8082 callback URIs and web origin are added to the grumpyrobot realm idempotently by infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs, while the bff-secure profile publishes 127.0.0.1:8443 through the Caddy mcm-bff-tls-proxy sidecar, which the same script registers as https://localhost:8443. That is why the trap is pinned by a unit suite that boots server.js instead of by the web E2E run.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/Caddyfile#L1-L33",
+          "version": "repo-lines-v1:sha256:821f13120fa519801d8960a3dec7f9db7381932f1879a6ecd07aa2bfa2aaf02e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ODVhNDQyODIzYmZjZTRlM2Y1YmIyYTA0ODM4MGIyYzEzZDliOGUzNzI2MzgwZDA0OTFhZmVkNTQ5MTg2ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYjRjMDY2NmM3ZDAzYjA3Mzk5OWM3OWIzYzM4ZDEwOGQ4M2IwMzJmNmI3ZDJkYmQ4ZDNmYWE3ZWQ4MGY2MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L49-L55",
+          "version": "repo-lines-v1:sha256:c7eb79397316cfcb79351fd164b624de4e300dbdadf118eaf8607d7c151163e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRhYzMzNDY2NTA4NGU5YWEyYjc0N2NjYjhhYmY0OWY0ODZiNGMzMDliNzJhNGQwZDMxZGUyYWIxM2Y2MmEwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJhYjAzMWM5ZDc1NzI5MWU0YzliODNiMjE1NTY0YjY3ZGUxZTA1ZWY2YjI3YjJlOTY2Nzk4NThkZTU2MzQ0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgwNGM0ZmNlYjcxZjg1YTczYWUxNjk1ODdhNzY4NmQxNTM5YWUyMGYzZjQ3MzMwNGY0ZjUxOGUzYmZjYTNhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY1ZTZlZjEzM2ZlYzhkMzNjMzgyMWQ2ZTlhODZlZmFmZTJjOTg4ZTNmZjkwYjRjMTliNTg4YjNjMTNhOWNmZiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L86-L92",
+          "version": "repo-lines-v1:sha256:a8e06fc1149713781bc71d1152ccb13e0f922d6a0424a6bd319cb850c4a95e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRmZGJlNjhiMzE2NzI4NDdjYzY3NjZkNjFhNWJiZmFmZjhlN2M1Njc2YmY2NTM2NGI1YjFmZmMzZTY2OWNjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U0ZGVjMWExZGFhMmIwZTQwYzRmYWRlOTE5MWFlNWJmMmRiNWY4OGFhN2I1NjczODRkZmI2YTBiMjU1NWFmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjBhNWYzZTQxZDAzZDg2ZDk5MDZlYzJhMjI3ZGE5N2FmZWZkMzdiYzRhYjVmYzc3M2MyZGRiYTc5MDU5NjM1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RjZTVjYWU5NTJjOGQ3NDY3YzhjMGY0NzEzNzg2OGNkMzFiNmI3YWU3OTFlNTdiNDdhMmQ1NzM3YWJmYzAzNyJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs#L28-L35",
+          "version": "repo-lines-v1:sha256:1ecd449e14895d1edb672621de87261f34cc944009592e312bb1c87716bce5c0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM2YzU5NDA3ZjQxMWY5NzA0ZWI2NTFjNmVlMTFmZThjN2MxNDdhYmU5YjNlOGQ4MTMxOTI1ZjczNWZhNmMwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThkY2JjYWM2MTFhODVlZmZkZjEwOWYyNWQ1M2FiYWFlYjA0NDRlMWQ4MGI3ZjZhOGEzNmRmZDI1NTdjMDYyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNkZTJlNjJmNWZkZjliMmQxMjY1MTBlNDU0NmEwNjFiNDczOTM1ODI5M2U2YzAxMjZkODdhMDkwMGM1Y2U4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI3Yjc4NzNjNzE1MTI1ODU2YWViYWFhNGE5NmY3NGFhM2E2NWY5Njg2OTE3MTE2NWM4NTEyMDc5MWEzMzdjYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_28b7741aa38e45d88606b4b0edfc07f6",
+      "statement": "scripts/__tests__/bff-healthcheck-pages.guard.test.mjs (feature 087) is a compose-reading guard rather than a script guard: it parses infrastructure-as-code/docker/bff/compose.yaml and compose.prod.yaml, finds every service running the BFF image, and requires its healthcheck.test to request both a /bff-api/ path and a non-API page path — joined by `&&` whenever more than one path is probed, since `wget api; wget page || exit 1` mentions both paths and still reports healthy when the API fails. It exists because during the SDK 58 spike every page answered 404 while the container reported healthy: an API route and a page come from different parts of the same export, so one can fail while the other answers. The guard fails when it finds no BFF service at all, so it cannot pass by reading the wrong file, and it asserts the three services that exist today (mcm-bff-service, mcm-bff-service-secure, mcm-bff-service-nonsecure).",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.prod.yaml#L105-L110",
+          "version": "repo-lines-v1:sha256:6c73790f9910641195f851f532c16431d8506a6ece8d5189713b3c7836269bc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxZGI0ZTg3NWViOWE2YWYxNDU1NjMwNTg2MTk2Zjc0MjIyMzEyOGIzNjI1ODAwOTg0OWE2OGY4MDJjY2Y5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVmMDNjNzViZTNhZGMxOWI5MGZlMzg0OGVhZGEwM2Q4MmY4N2Q4OTk5YThkNTg0MjJhYTM1MWRlZTUzNjAwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU3MzE4NjUyNjkxNzU4ZmQ2YjEzMjliYmUzZTdmNmI4ODZiYzg5NTMzZWY5OWM2OWM3OGY1ODE5NTI2N2MzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQxNTFiN2E5ODhkNWNkYmI2NzRlNjRjOWRlOTkxMzFmMDU1NzkxZmZjMjNiY2M5M2IyZjM2ZjRlNmIwMDY0NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/bff/compose.yaml#L36-L37",
+          "version": "repo-lines-v1:sha256:182a5444eacdb70d653d20343c48de5ebae5652bac1117b81068300fadcecbe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcxZGI0ZTg3NWViOWE2YWYxNDU1NjMwNTg2MTk2Zjc0MjIyMzEyOGIzNjI1ODAwOTg0OWE2OGY4MDJjY2Y5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWEzNDRhZDA4ZGM2NGY3ZDI2YTRlMWJlZDhmMmQ5NjkyZmM2ZTE3ZjNjODcxNDQzZTNiOWIzNGJlN2E3MmQ1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk3OTQ0YWFmOTBhYWIyOWEyZTI1MmRhNDgzODIzYTA2MmRiODMxOTcwNDVhMGFiYWE0OGNhZGFhMmU3ZTAzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkzMjFjNjBhNDFlYmM4YWRhOWI0YzJhMjA3NjU3MWI0ZTdmMWQ0ZDZhODBjNTNkZDQzNDU0ZTI0ODQ0NjE0NSJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs#L1-L112",
+          "version": "repo-lines-v1:sha256:7611e3ec5d5b2243c812feae929603fe6324aa7776fa40b83f6606fc7643d020:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MDFlZmY2NGM1ZjMwZWVlZDY4YzEwNmI3MGZjMTQ4YWQ3NTBhMTYwYWM1NjNmYzAwNGI4ODJmN2MwYWI2MjcwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/hosting.md#L35-L47",
+          "version": "repo-lines-v1:sha256:bbcacce618c8f81c7085f2eae832262fa9eea025f7ef6c925ccfa6778ef29d1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5N2YyNWNjMjg0MzZjMzhmYTdjMzk1ZjIyODQ5NDIwYjg5ZmNkZmU1M2U2YzJmMWExZmJjM2YzNjU3ZjQzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZmVlZThmM2YyNzI3MzhlN2E5YTA2MjJiYzczODNhNDgyYjgwNDViZjAzOTNjNWU5ZTY1ZDFhMzE4NDY2Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1NWIyM2NiZTQ1NDYxODdkNTA2NTg1NWQyYzM0YmNiMGQ5NTU4M2IzNjgyYzliNTMyZDM2MjA0YTdjNTZiOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYjYwNzUzN2E2NGRmYThhNTg1ZTQxYWY4YzZiNzAxZTMzYzc4N2NiNWVjYzRiNjgyODZlN2UyODJmN2Y5MmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eacde27fbc8a4a12a27960285812c077",
+      "statement": "The prod one-shot init/seed containers stay alive after their idempotent work, and that costs a dependency mechanism the dev observability file does not pay: a container that never exits can never satisfy `service_completed_successfully`, so langfuse-rustfs-init `touch`es a `/tmp/ready` marker after the bucket PUT and its healthcheck is `test -f /tmp/ready`, which is what lets langfuse-worker depend on `service_healthy` instead; unleash-seed and agent-audit-init carry a trivial always-pass `true` healthcheck precisely because nothing depends on them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/prod-control-tower.md#L723-L730",
+          "version": "repo-lines-v1:sha256:f75a4730da1efc1a78da9a1f4366193e8c20946d397f6d383f4e6aad8bfbf73f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGM1MDg4MmM5NTA1MjAxMTYzMDI4MjgwNzM4MjcwMjFmNGRkODZjMWNmMDA2N2M5MjI1ZTQwOTQzNmRkOGFlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE3ZTY1YzgxZDI2NDdiZmU0OWZkZjFlNTc4NGJkYWQzYTAyMTljNTExOTdjNjdmMjM5YjhkY2ViODUzNjVkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODg4ZTU5YmM1YjUyMmFiNzIwYjQwODNlOWQxMmIxMzFmN2E3N2U0ODg0MWZhMWQ0MmZmNWY1NzFkMjA0OGMwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQzNzRkYWFlOTNjNTE3ODIwZGFlYmM5MWNiODQ4NTcwODI0Zjk0YzY5NWEzMTBlNTE4YWJmZGEzNzZkZGM3NiJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L211-L246",
+          "version": "repo-lines-v1:sha256:219ca97909e054ab9f713506fa022ad9224e42620154bdd9ffeb4557ceff3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L348-L374",
+          "version": "repo-lines-v1:sha256:ce0e4257634723c93dcd17c1a7aa00308d1f7521ddf28e76c072b22c17e1310d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NzRhMmVmMjVmNmRmMmJhMzUxMDAwODIwNDBjMGY5Y2Y1YTM4MWQ3NmY3NDYyMzM3ZDhkMzFiNzViODlmYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjg2YzhmYjI3NjJlY2U3MjhkOTZmYzEwN2E1YmU5N2YzYjNmYWQxYjdhOGNiNmZlM2I0MDA3ZTA2YTI0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjNjMWQyOTFkNTY2ZjNjZjc5ZjYzODQwMDJmN2RmZWJmNmU2ZTM5OTBhM2Y5ZTFhZGJmNGMyOThiN2ExODMifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml#L74-L109",
+          "version": "repo-lines-v1:sha256:d3b3bbee353aff612e3993bc705a19fd49321b667a974cfaad4e0a310dcead71:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkOWY2MmJkZTE4MzYwNmNmOGUzOTM2YmY1MmEyYjhkYWMzZWI5OWEzYTIwZTdhYjBmOTAyN2VjYjgxMmFkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZWRkODUzMTM2ZTliOTZiYmY4OTIwMjVjMzc3NzJhMDQxZWE2NGFlNGY3M2ViYjE2YTEwMzU1OTIxM2UzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NGMxMzU4ZGFhMDE1YjMwMjg4NjQ2NjliOGZiNzJjZjNlNGI5NzYxYzI4YTA5OWUwYWY2MTlhMDFkMWY4ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZjVjZmZkNzJiOWJkZjNjMTJlYThjY2U1ZDBhZjg0MTE5MWMwMzRjZDUzZDFiMWZlODJkMDhiNzE5OTE1ZjcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }

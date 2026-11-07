@@ -102,7 +102,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # CI self-serve diagnostics
@@ -117,9 +117,13 @@ forge host from the `origin` remote **at runtime**, so no host literal exists to
 **Workflows cannot use `actions/upload-artifact` v4 or later on this forge either.** It refuses any
 server other than github.com *before* it uploads anything (`GHESNotSupportedError`), measured four
 times and most recently on both runner labels on 2026-10-16 (spec 081 research T004), so the action
-stays on **v3** under a Renovate ceiling (item #912). A Forgejo release note claiming support does not
-lift it; re-run the two-label probe and read the step outcome. That is one more reason the digest goes
-to a channel the API can read rather than to an artifact.
+stays on **v3** under a Renovate ceiling (item #912). The probe's shape is what makes the hold
+credible rather than superstitious: on both labels `upload-artifact@v7` failed while `@v3` — the
+control, same job, same payload — succeeded, and `checkout@v7`/`setup-node@v7` ran and verified in
+those same jobs, so this is not a node24 runtime problem. The forge serves no job log, so the error
+text came from running the same v7 dist against the forge's server URL. A Forgejo release note
+claiming support does not lift it; re-run the two-label probe and read the step outcome. That is one
+more reason the digest goes to a channel the API can read rather than to an artifact.
 
 Two facts decide almost every reading:
 
@@ -1032,9 +1036,12 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   `<sha>`, whose `manifest.json` *is* the digest `.env.deploy` pins (an OCI image **index**), and the
   `sha256:` children that index references (the platform manifest, which owns the layers, plus an
   attestation). An unchanged image **reuses** the previous push's platform manifest, so a child can be
-  older than the newest tag that needs it — "delete what is old" would delete the layers of the
-  running image. A child is therefore never judged by age alone, and if any kept index cannot be read,
-  no child of that package is deleted at all.
+  older than the newest tag that needs it — measured 2026-10-31 on `mc-service`, where the 07:48
+  deployed index pointed at a platform manifest created at 03:14 by an earlier push. "Delete what is
+  old" would therefore delete the layers of the running image. A child is never judged by age alone:
+  it is kept while a **kept** index points at it, whatever its age; if any kept index cannot be read,
+  no child of that package is deleted at all; and a child younger than `keepDays` is kept too, since
+  it may be a push still in progress.
 - **A protected digest missing from the registry exits 5 and deletes nothing.** That is a real alarm —
   a deployed or rollback image is gone, or the pin is wrong — and the preflight runs before any delete.
 - **Indexes are deleted before their children**, so no index surviving a partial run points at a child
@@ -1059,7 +1066,9 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   `evidenceWindowDays: 45` is the value a `ci-failures` `keepDays` below which is refused outright.
 
 The sweep uses its own `write:package`-only credential (`REGISTRY_CLEANUP_TOKEN`), separate from the CI
-push token so rotating either cannot break the other. The full procedure, the review criteria for a
+push token (`actions-ci-push`) so rotating either cannot break the other; a report can also run with the
+read-only `MCM_FORGE_TOKEN`. `MCM_FORGE_URL` has **no default**, so a missing URL or token is a usage
+error (exit 2) rather than a guess at a host. The full procedure, the review criteria for a
 report and the report itself are the
 [retention section of the server-setup runbook](../../docs/runbooks/Server-Setup-Runbook.md#retention--what-the-registry-keeps-spec-084-us5);
 the CLI contract (including exit 2 on a `--apply` against `mode: report`) is in

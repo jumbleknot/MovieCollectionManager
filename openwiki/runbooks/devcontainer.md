@@ -43,10 +43,10 @@ sources:
     resource: repo://scripts/gen-egress-policy.mjs
   - id: openwiki-source-238c6bb3246fc134ab159b1e
     resource: repo://scripts/wiki-provider.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-10-18T17:22:52.674Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-07T15:45:38.591Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -306,7 +306,7 @@ and reads committed files.
   nested containers reach it through the bridge gateway; the agent gateway already targets
   `host.docker.internal:11434` (its compose default plus an `extra_hosts: host-gateway` mapping)
   and reaches it with no gateway change, image rebuild, or firewall change. The image is pinned by
-  tag **and digest** — `ollama/ollama:0.40.11@sha256:dea72d1e…`, bumped deliberately — in
+  tag **and digest** — `ollama/ollama:0.40.14@sha256:ebaef4f4…`, bumped deliberately — in
   `infrastructure-as-code/docker/dev-ollama.compose.yaml`, which also declares `restart:
   unless-stopped` and an `ollama list` healthcheck; the script pulls `qwen2.5` once into the
   `dev-ollama-models` named volume (backgrounded — a first-run ~4.7 GB download must never block

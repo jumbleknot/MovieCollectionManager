@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a5bd8b9a78efcb2ba05516f0f15c23c544c9549cc73a8cd4d7c19a9026b565f6",
+  "pageVersion": "sha256:f0a9e1d19cae7497e5b5099014aeefe33c3e0962f81ff491b984fba9d6167532",
   "claims": [
     {
       "id": "claim_9226997034364eb9b148a34270defeae",
@@ -131,7 +131,7 @@
       "statement": "The periphery root fix is host state: `PERIPHERY_ROOT_DIRECTORY` must point at a path on persistent disk and periphery must be recreated, and the server-setup runbook Phase 9 now bootstraps that value so a host rebuild cannot reintroduce `/etc/komodo`.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L921-L927",
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L924-L930",
           "version": "repo-lines-v1:sha256:e97a152aa2dee73d2e4909e4687ba19a29338ecb19a68bd98b176e6a4c0314c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkNWI4NmFjYjg4OWU1Mjg0NzBlZjkyNzNlMjI5NzI4ODkxOWQzMTZmYmY4MjIyNTQyYmNkYjMyZTAxNDVjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1Mjk3NmNhODBmYzg2YzJhY2E5NjVjNDFkNTAwYTk4YTQwMGIyY2EwOTNlOGE5OTRkNWI5MWEwNzRlODM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTViOWY3NzhkMzQwMTM4YWExNzYyYmNlMmQ5OGU3ZmMxNmQyYTE2YjIyZDFiZDkwNTViZTY2MTRmZDYyODVmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZmE0OWRlY2VhZDQwZGVhNzNhZDRhNDA5MTBhMGY0NDE5ZDc2MmE0ZTY5YWQ2M2NhMzJmNjQxYmU4NGU4MyJ9"
         },
         {
@@ -387,7 +387,7 @@
       "statement": "References to a retired object store or a finished one-shot container may only survive as a runbook history block between `<!-- history:begin -->` and `<!-- history:end -->`, a mechanism honoured only under `docs/runbooks/**`; a live instruction naming a retired store elsewhere fails the tree-wide no-retired-store guard.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L118-L120",
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L100-L102",
           "version": "repo-lines-v1:sha256:7641336425a9f04768462f8e053ebcfd417fa9d2ce1cf7848ffaa4c9b2b591b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmNGQ0OTQzNmMwM2ZkOTA1NDc3N2QzNTVmNWVhNzczNTJkYTNjMTIwY2I2ZDg1MDZjODBkMWY5NzRkNTU4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE3NDY3ZmVlYmY1NWM2YTkzODJlZmE2NjlkYzEwYWYxNTU1ZTcwYTc5YTFlNjljZjc3N2M1M2ZiMGNlZThiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThhOTE3NTk3MmZlMTVlMmE5NjQxYWIxMzFmNTcxZTZjN2NhYmNhMDY4Mzc2MmViYTVmMjM1M2U0ODNjM2Q1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzcwODM3MTBjY2E0YzdiMGQ2ZmFhZjRiYmVhZDY1NDRlZjgyNDJkZGNjZjg5MTc3MzZiNzg5ZDhlOTJkNDQ5ZiJ9"
         },
         {
@@ -395,7 +395,7 @@
           "version": "repo-lines-v1:sha256:dff6bf1075751416d26837efd5478600cb336dc6bcd7c8efb8920b078fa477db:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJiYjBhMDJmMDc1MmQ1NDFlOGNhYmM5MmUzMjIyZmE3OTMxMmZmM2UxYjBjZTNmNDdjMGY1NGViYmMyNWQ2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFmZDU4ZDU5ZGM4NmM0NTI4YWJhNmFjOWFhMGU5MGMyZGY2YzEwOWViZGU3MDFjMWVmZjRiYzlkOTFjZmNiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWEzNjhlMDc4MjA2NWQwOThkZmNmMjFmZDY2NjhkODk0YzM2MGM1MGFmNWRkNmIzM2Q3NGE1Y2IzODU4N2ZiMiJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L250-L258",
+          "resource": "repo://scripts/__tests__/no-minio-references.guard.test.mjs#L233-L241",
           "version": "repo-lines-v1:sha256:cc404da751e934b8c2dca3271950bbb37899dc4573558fdc341b5f6712b2d9c4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdhNWQyZjdiOTk1YjIzNDI1YmQ1MjZjNDZjNjk0M2I5Y2RjM2UyZTkyNmU2NmMyYmUxMjJjNjhiYTRiNTA3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg5NDBkN2M2N2RiOTMyZTc0Zjk1NmQzZmE1ZDFlZmYxNWI0NGRlNTYyMWRkY2Q5NDMwZjc5Yzc1M2U3ZWY4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjExZDFhOTJjNzFiMmY4M2NlOTFjYzNhMzA1MTkyYjYwMTRkYWIzYWZmNTMwMjhmYTczYWMzNmY4M2YzMWEyNyJ9"
         }
       ]
@@ -406,7 +406,7 @@
       "evidence": [
         {
           "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml",
-          "version": "repo-file-v1:sha256:94a4facf391945176e028b28ee36c998d563cc66dda0e606a0fe576bc6f05c87"
+          "version": "repo-file-v1:sha256:f7c9e2b7c79f4aed443c9bc4384a2db8cd6842adbce9ded8a0cf48cbb3349c5b"
         },
         {
           "resource": "repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml",
@@ -445,10 +445,50 @@
           "version": "repo-lines-v1:sha256:219ca97909e054ab9f713506fa022ad9224e42620154bdd9ffeb4557ceff3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNjhiNTk3YzFkYjY5NjczNjZlMGM3Y2RhMDg0YzNiODlhMGI1MWQxNTk2YTJlMThjODY0OTIyMDc5Y2I2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGE3MzgwMjQxZDM3YjMxMzMwOTU1M2MxOTUxZmRjYTI4Y2I5MzZhYzRjNTYxM2ZiZWFhOWYwNjQ3N2FmOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2E1ZDA1NTFhOTYxOGEyZjc5NTJiMzAzZjU0ZTljYTQ2NTI5ZDVhNjI5MzVmNjY5YzcyYjgyZjQ4ZjM2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiYWVhYjVmMDAyOWE2NzI2YmU4NmU1NWFkMDFkZTkxMzU5NjBiNmE3NDQwOTU5NWNkYjAxZmE0OTQ3MzhiZjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c3629dd7e0754b7c84e35e6baf4bd9f0",
+      "statement": "The prod object-store one-shot's stay-alive shape is enforced by `scripts/__tests__/object-store-service.guard.test.mjs`, which per tracked compose file asserts the prod variant (a `/tmp/ready` marker touched after the bucket PUT, `exec sleep infinity`, a healthcheck on that marker, and every dependant waiting with `service_healthy`) and asserts the opposite shape for the dev file (no `sleep infinity`, no `restart:` key at all, and dependants waiting on `service_completed_successfully`) — so a prod compose cannot drift back to a plain one-shot without a red test.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L13-L16",
+          "version": "repo-lines-v1:sha256:4eec1349be985987a0a23cc85f167c7605363c2a819af60fe2a8fa57b25aeb69:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA3MGNhYmRkMGIzNTI3MTYyOGM2ZGEyNDkxNzczYjA1ZjEyOTJhM2EwNDcyYjU1YTUzYWMzZTBiODgwNGQ1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE5YTJiNDgxNTMwOTUwOGFjMTU1ZTdjNjFjZWRhZWRmZGQ5NjgxYTU3NDM1OTVmNWI2NjkxZGEzNmU1MzhlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2JhMGVjOGU4ZGQyNDJjYzBlNDhhNzJkODdkOTk1NDJlMzRhMzg3YTY0MTNiYzM1YjQwYWIwYmU1OWJmYzIyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk5YTEyNzAwNTM2NWNjMjYzMDgzNWM1NTcwNzM4NjI3ZDdiYmMyZjU0YmU2OTNlMjRkM2M4NDVkZDYzMzkzMiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L130-L146",
+          "version": "repo-lines-v1:sha256:09eea964ed2cb5e30aaf3c78aad375f70e9270219976eb1309dc0d20316c7958:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YjFiMzVlZDg3Mjc1YjMzNzBkMDg1NzM0NmM1MjVlN2VmZGUyMGJlODhiZGViMjU2ODg3YWNiMTEzNjE2MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNmY5MWE3NDk0OWMzZmU5OWZlYjVhYmZlZjY0NGY1NDk5NzY2OWE4MTkzNzg1MjM1MDBlMWFhOGI0OWJjODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNzY0MzA5NzVkNDY3ZTY4Njg0ZTU5MjNlNDJjYmI4ZmI3OGFjMjY4NGZlZmMwMWFmMDIzZTZiZDgxMjZlNzgifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/object-store-service.guard.test.mjs#L50-L54",
+          "version": "repo-lines-v1:sha256:ce6368da147cdd98c1c25af0fc5760efc2ca43723a521ea65606453e06b02391:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1ZjE2ZmE4MWE2ZWYxZTEzZDY0YjIzMTk5OWYzOWY2YWVlNTQ4Zjg3MjYyYzA1MjZiMWJiZDQxMTdhYTE5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYzMGI1MWE1NDI2ODczNzNlMjVkZjE0NTJjNjgzMGI1ZGRhYWVhZGM5ZTdkYjkxZjQ5NGQ3MjllNDgzMTIzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjMwNjc4YjBlZWFkYWQxMzE1ZmE0NDQ4ZmExOGYyNGFkNWM0M2JjMzY3ZjU4MTI3ODc0MWRiMDk1ZGE1MDI3OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_615851a41e8440ef9f44b205f23ffe92",
+      "statement": "Because an exited one-shot makes Komodo flag the whole stack unhealthy, the prod `mc-service` stack deliberately has no `rs-init` one-shot sibling: `mc-service-store-mongo` runs a credential-less ping healthcheck instead, and fresh-volume replica-set initiation is an authenticated bootstrap step run by the operator rather than a healthcheck side effect. The dev `mc-service/compose.yaml` still carries `mc-service-store-mongo-rs-init` with `restart: \"no\"` and a `service_completed_successfully` dependency, and that is the only `restart: \"no\"` service in a tracked compose file today.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L17-L18",
+          "version": "repo-lines-v1:sha256:c821ce24a23ba73bb21fb25d93cdb671d2b1d3654107c5428c9e77f9dba2e061:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThiNjlmYWIxZTczMDM3NGRkODY0OTQ5YTEyMzg3MjYzNTBhYWQ3YjQ4Mjk5YTJkNzJiY2U3YzZjZTE2NTdiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNkMmJiN2M2NjE5NzRmNTZkYWJmYTgwZjk4ZTE3MjMyZDQxOTlmMzI2NGU3ZDI3YWRjOWM3Mzk4YmQ3M2M5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQzM2E2ZWEyMGNlZjVkZmRkNDBjMjk2ZjI1NmUyODhmODA5MGY4MzZkNTVmNDM5Yzk5NGNkNmNiZWE2ZjM5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODYyM2I3YjA4Mzg2YzMwYmI1OTMyODY4YTE3MWNmMTAwYWExYjIzNThhZDMwY2IxMGU4ZjBlMWZjNDIzYzczYSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml#L74-L84",
+          "version": "repo-lines-v1:sha256:a28da43e82bfaef2c10e7f518c0cfd0c6cca1a2dfcc8de9ed984a0a0a7dc7d95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MWRiNGU4NzVlYjlhNmFmMTQ1NTYzMDU4NjE5NmY3NDIyMjMxMjhiMzYyNTgwMDk4NDlhNjhmODAyY2NmOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNjY5OWZmZjFmMDQ5YzJkNzQ4MGViZmE0ODFhOGYzMmMyN2M1NDk1ZDZkMGMxNTZiZDQ2ZTY3NmQxZjhlODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWQ5MzIxYTNhZTQyZmY0MGRlOWNlYTlmOWM4NWIyY2FhMjY0ZWY3YTA3MWIwZjc0ZTQzOTEwNzVhMjNhODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxNGY2MmRiM2UyYTY1Yjc1ZTNhNDc5OGY4YTYyYWYyZGU3YmY5NjA2YTNhYTE3YjY2OTdkZmM2MDYwZTdmOGIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L118-L127",
+          "version": "repo-lines-v1:sha256:b965f397cf8a5b5ef2754e681d9832d81cdf9e644d964f297baf45058fe1df7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWEzZGExMjQ1YjYxYWE5YzQzNWM5OTkxZjA1Y2JhOGU4ZTg1ODc5ZjFlOTFhZjJjOTI1NGU0ZGNhMjUxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZTYxNmRkNDBkZGIyNjg1NjM5OGY2Yzk1NThiODIyNjJkMjhjMzk0YzkwNTQwMGU2OWQ5OTMxODYzOGVlZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWVhYmNkNzQ0ZWM4NTQxMzliNDgxZjA5ZjRhMjI4Yzg2MmM1Yjc2MGEwMjIzMzgxNmQ5NTdhNGYxOTQ4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZjgyZGE1N2I5NzBhMGQ2YjA1MmI1NDQ3ZDkwODljMGIwMjc3MmNlMWYyN2FlYTU0MTJlYjZiYTU5ZTI1MzQifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/mc-service/compose.yaml#L171-L175",
+          "version": "repo-lines-v1:sha256:62e9235718fcd55cc16be33a482582a7a253ae60f9cf251c63673acdc69d52f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZkZDU1ZWYyYWUzY2E2NzRhNGMzYTU2ZGFiMzRmODkwOGQ3NDA0MzIzZGI1NGVhZGRjNGU0Y2YxODllOGZjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGU0YTc5MTAwYTZiM2ZjYWE5MGUwZWQ4ZjRjZjg1YjdmNTkxNjZhZmUxYzZjZTcwODBhNWFiMjBiMjE1NDhhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc3MDEyNDhiOWNmNzA3NzI4ODRjYmMwNjRhNGEwNjQ4YjdiYTYxMzZiZGU3ZWJlNmNmZDFkZDI5YjZmZGRlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDA2MjExNzk3ZDQwMTE2M2ViNzMyYmZiMzBjNTQ4MTQxMTM4NmQ5ZDBjNTk0OGRkOTkxZmFjZTAwODg4OWY2OSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-01T20:52:31.113Z"
+    "at": "2026-11-07T15:45:38.591Z"
   }
 }

@@ -7,6 +7,14 @@ tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups,
 sources:
   - id: openwiki-source-95a7ed7500d24b0881fc3468
     resource: repo://docs/runbooks/backups.md
+  - id: openwiki-source-3428fee3ac79873bee5650fc
+    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
@@ -121,6 +129,8 @@ sources:
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/opa-rego-parity.test.ts
   - id: openwiki-source-a5bf09947adc24a8d59ab587
     resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
   - id: openwiki-source-a864e7e3b109550c7018e359
     resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
   - id: openwiki-source-e69fe30016fa84209ae5e815
@@ -131,6 +141,12 @@ sources:
     resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
   - id: openwiki-source-19609c73bc9a3a34e47ab18d
     resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
+  - id: openwiki-source-250f22b469fdcf4c2326980d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
+  - id: openwiki-source-31ef72c79f00ba748f6ce16b
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
+  - id: openwiki-source-885237f04e1aa048fda26663
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
   - id: openwiki-source-bfd1dcd66339cb51fd41729c
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
   - id: openwiki-source-11fb40898d5d9eecbab09373
@@ -157,12 +173,16 @@ sources:
     resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-f6b7a61bf48156b2722b6a7f
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
-  - id: openwiki-source-2fd97bbde36fd9eab32aa7ba
-    resource: repo://specs/032-security-header-hardening/HANDOFF.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
+  - id: openwiki-source-2500897f79f457d05a1f0bd2
+    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
+  - id: openwiki-source-4afc03401961c543ccdef7be
+    resource: repo://scripts/prune-bff-runtime-modules.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-06T10:07:39.873Z
 ---
 
 
@@ -172,7 +192,8 @@ The BFF is server-side code that lives *inside* the same Expo Router codebase as
 [Expo/React Native app](./expo-app.md)) but runs only on the server: business
 logic in `frontend/mcm-app/src/bff-server/`, HTTP surface as Expo Router `+api.ts` handlers under
 `frontend/mcm-app/src/app/bff-api/`. In production/Docker it is served by `frontend/mcm-app/server.js`
-(an Express adapter around `@expo/server`). This split exists so the client never holds a raw
+(an Express adapter around `expo-server` — feature 087 replaced the old `@expo/server` package with
+this one). This split exists so the client never holds a raw
 credential — see [Auth chain](../invariants/auth-chain.md), which the BFF is the primary
 enforcement point for.
 
@@ -718,10 +739,11 @@ is not available without weakening it.
 ## `server.js`: the CommonJS boundary, the express layer, and the scheduling tick
 
 `frontend/mcm-app/server.js` is the shipped entrypoint (the image's command is `node server.js`) and
-it runs *outside* the Metro bundle. It is CommonJS: it `require`s `@expo/server/adapter/express`,
-hands the built `dist/server` to `createRequestHandler`, serves `dist/client` statically, and stamps
-the boot-time security headers described below. It **cannot** `require('./src/bff-server/…')`: those
-modules exist only inside the bundle, compiled and `@/`-aliased by Metro.
+it runs *outside* the Metro bundle. It is CommonJS: it `require`s `expo-server/adapter/express`
+(feature 087 moved the process off the older `@expo/server` package), hands the built `dist/server`
+to `createRequestHandler`, serves `dist/client` statically, and stamps the boot-time security headers
+described below. It **cannot** `require('./src/bff-server/…')`: those modules exist only inside the
+bundle, compiled and `@/`-aliased by Metro.
 
 That boundary is why the BFF's only background-work mechanism is a loopback HTTP call. Feature 073
 needed runs with no user present, and before it the BFF had no background work at all
@@ -746,7 +768,7 @@ open — but the reason it exists is this constraint.
   race the port it calls.
 - **Do not remove the `__ExpoImportMetaRegistry` seeding** at the top of `server.js`. Metro rewrites
   `import.meta.url` in bundled dependencies to `globalThis.__ExpoImportMetaRegistry.url`; the Metro
-  *dev* server populates that registry but the exported `@expo/server` runtime does **not**, so a
+  *dev* server populates that registry but the exported `expo-server` runtime does **not**, so a
   bundled dependency calling `createRequire(import.meta.url)` crashes at request time with
   `TypeError: Cannot read properties of undefined (reading 'url')` and the request hangs. The seeding
   must run before `createRequestHandler` loads the bundle. It looks like dead defensive code, and
@@ -758,7 +780,7 @@ open — but the reason it exists is this constraint.
 Everything above is the *hosting* contract; the request pipeline itself is a few express statements,
 and three of them are compatibility decisions rather than style (feature 081's express 4 → 5 bump:
 path-to-regexp v8, serve-static 2). `tests/unit/bff-server-adapter.test.ts` boots the real `server.js`
-in a child process — with only `@expo/server/adapter/express` replaced by a `node -r` preload that
+in a child process — with only `expo-server/adapter/express` replaced by a `node -r` preload that
 echoes what express delivered to the handler — and pins all of them. Each trap's full rationale is on
 [Expo Router server export and agent-transport traps](../gotchas/expo-router-and-transport-traps.md);
 what matters here is that these lines are load-bearing rather than stylistic:
@@ -779,14 +801,18 @@ what matters here is that these lines are load-bearing rather than stylistic:
   instance. Assets are served with the production cache headers (`public, max-age=31536000, immutable`
   under `NODE_ENV=production`).
 - **`app.set('trust proxy', 1)` is applied only when `TRUSTED_PROXY === 'true'`, and it is what makes
-  the origin-derived callbacks work behind the TLS terminator.** The adapter builds every request URL
-  as `${req.protocol}://${req.get('host')}${req.url}`, so without it `req.protocol` read `http` behind
-  the production edge and the backup-consent and account-deletion routes sent Keycloak an unregistered
-  `http://` redirect_uri (`Invalid parameter: redirect_uri`, measured 2026-10-25, item 843). `1` trusts
-  exactly the immediate hop. Only the **scheme** moves: the adapter reads the raw `Host` header, which
-  `trust proxy` does not touch, so `X-Forwarded-Host` cannot move the origin. Unset must stay unset — a
-  directly exposed BFF must not be talked into `https` by a client-supplied header. Both halves are
-  pinned by `tests/unit/bff-server-trust-proxy.test.ts`, which boots the real `server.js` twice.
+  the origin-derived callbacks work behind the TLS terminator.** The adapter builds each request URL
+  from the *socket* (`socket.encrypted`) and the raw `Host` header — it ignores `req.protocol`
+  entirely — so without the fix `req.protocol` read `http` behind the production edge and the
+  backup-consent and account-deletion routes sent Keycloak an unregistered `http://` redirect_uri
+  (`Invalid parameter: redirect_uri`, measured 2026-10-25, item 843). Two halves make the fix: `1`
+  trusts exactly the immediate hop, and the catch-all hands the adapter an *absolute* `req.url` built
+  from `req.protocol`, which is the only hook that lets the trusted-proxy scheme reach it. Only the
+  **scheme** moves: the adapter reads the raw `Host` header, which `trust proxy` does not touch, so
+  `X-Forwarded-Host` cannot move the origin. Unset must stay unset — a directly exposed BFF must not
+  be talked into `https` by a client-supplied header. Both halves are pinned by
+  `tests/unit/bff-server-trust-proxy.test.ts`, which boots the real `server.js` twice through the
+  **real** adapter rather than a stub.
 
 That last bullet is the same env var the rate limiter reads as `env.trustProxy`, but the two consumers
 are independent: `server.js` sets the express setting, while `rate-limiter.ts` decides from the parsed
@@ -855,11 +881,32 @@ per request.
   bootstrap script (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) is hashed into `script-src`; if Expo
   ever changes it, the browser prints the new expected hash in the CSP violation and the constant is
   swapped.
-- **One accepted residual is documented, not silenced.** A third-party library runs a
-  `new Function("")` eval-availability probe wrapped in try/catch; under this `script-src` the probe
-  is blocked, the library degrades gracefully, and the browser logs one benign `eval` violation.
-  `'unsafe-eval'` is deliberately not added — permitting real eval app-wide would defeat the
-  hardening.
+- **No `eval` violation is expected, and a new one is a finding rather than a known line** (feature
+  089, replacing the residual T006 accepted). The old residual was one benign `eval` line from a
+  third-party `new Function("")` capability probe; feature 087's browser walk then measured **two
+  blocked probes per page**, because the assistant chunk held two probing zod copies — `zod@4.6.7`
+  (pulled in by the app's own code and `@copilotkit/react-core`) and `zod@3.25.76`'s `zod/v4` build
+  (pulled in by `@ag-ui/core` alone, which `@ag-ui/client` and `@ag-ui/proto` tied it to by declaring
+  `zod ^3.25.76`). Only 4.6.7 skips its probe when zod's `jitless` setting is on; 3.25.76 has no such
+  check. Rather than raise the allowance, the cause was removed in two halves: the `@ag-ui/client>zod`
+  and `@ag-ui/proto>zod` overrides in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) put
+  `@ag-ui/client` on the app's own zod 4 range — a value deliberately *outside `@ag-ui/client`'s
+  declared range*, so recheck it on an AG-UI upgrade and keep it equal to the app's own zod range so
+  the two stay one copy — and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before
+  any schema is built, which works only because `src/components/agent/assistant-panel.tsx` imports it
+  **first**: that panel is the deferred assistant chunk's only root, so import order runs it ahead of
+  every package in the chunk. The setting is web-only (the native module is empty — there is no CSP
+  there to report a probe, and `jitless` has not been measured under Hermes). Measured 2026-11-06 on
+  the web bundle: the assistant chunk fell from 2,850,492 B to 2,536,265 B and now holds one
+  `v4/core/util` (`zod@4.6.7`); `zod@3.25.76`'s v3 code stays for `@copilotkit/shared`, and
+  `@copilotkit/runtime` runs only in the BFF so it legitimately keeps its own zod 3 copy of
+  `@ag-ui/core` — which is why the lock file cannot prove the chunk and the source map can.
+  `script-src` itself did not change (FR-004): `'unsafe-eval'` and `'unsafe-inline'` stay
+  deliberately absent, because permitting real eval app-wide would defeat the hardening. The
+  arrangement is pinned by
+  [`scripts/__tests__/single-zod-engine.guard.test.mjs`](../../scripts/__tests__/single-zod-engine.guard.test.mjs)
+  and the web/native halves by
+  [`src/utils/unit-tests/zod-jitless.test.ts`](../../frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts).
 - `X-Powered-By` is disabled (server-technology disclosure), and the `X-BFF-Source` marker stamped on
   every response — static asset, SSR HTML, `/bff-api/*` route and express's own 400 alike, with the
   value taken from the `BFF_SOURCE` env var (`unknown` when unset) — is what lets the web E2E
@@ -867,8 +914,9 @@ per request.
   silent false-green. `global-setup.ts` asserts the marker against `E2E_BFF_TARGET` and fails the run
   before seeding if it is missing or wrong, so a Metro server squatting on the port cannot be mistaken
   for the shipped image. The same `app.use` layer is why the headers reach all three response classes
-  at all: `@expo/server` ignores `+middleware.ts` at runtime, so this is the only global injection
-  point in the process.
+  at all: the router runtime only executes a `src/app/+middleware.ts` when the build enabled the
+  alpha `unstable_useServerMiddleware` plugin flag, and this app ships neither that file nor that
+  flag — so the express layer is the only global injection point in the process.
 
 The client-side view of the same layer, and the header contract's tests, are on the
 [Expo/React Native app](./expo-app.md) page.
@@ -924,13 +972,14 @@ The client-side view of the same layer, and the header contract's tests, are on 
 - **`TRUSTED_PROXY` defaults to `false`, and one flag has two independent consequences.** For the rate
   limiter it is the difference between per-IP limiting and none: below a trusted reverse proxy, IP-based
   limiting is silently skipped (with a warning) rather than trusting a spoofable client-supplied header.
-  For `server.js` it gates `app.set('trust proxy', 1)`, without which `req.protocol` reads `http` behind
-  the TLS terminator and the routes that derive a Keycloak `redirect_uri` from `new URL(req.url).origin`
-  send an unregistered `http://` value — which Keycloak refuses, so the flow fails at the identity
-  provider rather than in this code. Any non-loopback deployment must set `TRUSTED_PROXY=true`
-  explicitly. With it set, the rate limiter derives the client IP from the right-most
-  `X-Forwarded-For` hop — left entries are client-forgeable — while the express setting trusts exactly
-  the immediate hop and never takes the host from `X-Forwarded-Host`.
+  For `server.js` it gates `app.set('trust proxy', 1)`, which is only half the fix — the adapter takes
+  its scheme from the socket and ignores `req.protocol`, so the catch-all must also hand it an absolute
+  `req.url`. Without both, the routes that derive a Keycloak `redirect_uri` from
+  `new URL(req.url).origin` send an unregistered `http://` value — which Keycloak refuses, so the flow
+  fails at the identity provider rather than in this code. Any non-loopback deployment must set
+  `TRUSTED_PROXY=true` explicitly. With it set, the rate limiter derives the client IP from the
+  right-most `X-Forwarded-For` hop — left entries are client-forgeable — while the express setting
+  trusts exactly the immediate hop and never takes the host from `X-Forwarded-Host`.
 - **Cookies, not tokens, cross the wire to the client.** The BFF sets exactly one `HttpOnly`,
   `SameSite=Strict` cookie — the opaque `mcm_session_id` — and client code never sees a raw JWT. The
   client Axios instance sends no `Authorization` header at all and relies on `withCredentials: true`.
@@ -939,7 +988,7 @@ The client-side view of the same layer, and the header contract's tests, are on 
   `pnpm deploy --prod` materializes ~1600 packages because they are genuine `dependencies` of
   `mcm-app`, but they are dependencies of the web bundle, which Metro already compiled into `dist/`
   at build time. `scripts/prune-bff-runtime-modules.mjs` walks the pnpm symlink graph from two
-  static roots (`express`, `@expo/server`) plus one dynamic root (`openai`, reachable only by a
+  static roots (`express`, `expo-server`) plus one dynamic root (`openai`, reachable only by a
   string in the bundle) and deletes everything outside that closure, shrinking
   the image from 1.73 GB to 335 MB (measured 2026-09-07). The reason the closure is trustworthy is
   that it was *traced*: a preload inside the running container recorded every module resolution and

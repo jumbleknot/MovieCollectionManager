@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — currently v2.7.0, ratified 2026-03-08 and last amended 2026-10-20 — the core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
+description: The repository's ratified, versioned constitution — currently v2.7.0, ratified 2026-03-08 and last amended 2026-10-20, with a v2.8.0 amendment (framework baseline plus the BFF output line) planned in feature 087 — the core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
 resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
 sources:
@@ -17,20 +17,30 @@ sources:
     resource: repo://backend/mc-service/Cargo.toml
   - id: openwiki-source-541e2287bdfb42c605c78f3f
     resource: repo://docs/MCM-Architecture.md
+  - id: openwiki-source-27d785edc3cec2c27da82832
+    resource: repo://docs/proposals/MCM-Expo-SDK-58-Approach.md
   - id: openwiki-source-a679e2e5a49381a72df446c5
     resource: repo://docs/runbooks/prod-data-tier-auth.md
   - id: openwiki-source-baa6cf05f830f1fa193ef74c
     resource: repo://docs/templates/feature-test-tasks-template.md
+  - id: openwiki-source-30d3dc827bae5c1cb657fa31
+    resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
+  - id: openwiki-source-f7e16ba323424b9790bca8b9
+    resource: repo://packages/design-system/package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-e1b32ed173a0f6b508f94a03
+    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4708763005c35901b04f5740
@@ -45,10 +55,16 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/spec.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+  - id: openwiki-source-ce98b17d342993a61a79a926
+    resource: repo://specs/087-expo-sdk-58/plan.md
+  - id: openwiki-source-cbc86a7a3a87453e949a2389
+    resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-93b6202dca9e48a643d50488
+    resource: repo://specs/087-expo-sdk-58/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-06T06:42:06.997Z
 ---
 
 # The governing constitution
@@ -87,8 +103,9 @@ flowchart TD
 
 How a constitution amendment moves from proposal to ratified version.
 
-The two most recent amendments are the purest examples of the MINOR kind. **v2.6.0** advanced the
-frontend stack baseline from Expo SDK 56 to Expo SDK 57 (with React Native 0.86 and React 19.2).
+The two most recent *ratified* amendments are the purest examples of the MINOR kind. **v2.6.0**
+advanced the frontend stack baseline from Expo SDK 56 to Expo SDK 57 (with React Native 0.86 and
+React 19.2).
 **v2.7.0** advanced the document-database baseline to
 `mongodb/mongodb-community-server:9.0-ubi9` (MongoDB 9.0 on Red Hat UBI 9) — and had to record
 that the image the document had named until then, `8.2.6-ubuntu2204-slim`, was stale: `8.0.8-ubi9`
@@ -97,6 +114,18 @@ the document names is amended in the change that moves it, with human approval, 
 afterwards. Feature 081 writes that requirement down as **FR-015** — where the constitution names a
 version the feature changes (the platform SDK and native runtime, the document-database image), the
 amendment must land in the same pull request as the change it authorises, with human approval.
+
+The next amendment in flight shows that the line an upgrade breaks is not always the version-named
+one. Feature 087 (Expo SDK 58) carries **FR-024**: the constitution must be amended to **v2.8.0** in
+the same pull request as the version move, with human approval, advancing the framework baseline
+(SDK 57 → 58, React Native 0.86 → 0.88, React 19.2 → 19.3) *and* rewriting the
+**Backend-for-Frontend** line. That line's current text — `app.json` web output set to server,
+`"output": "server"` — would, read literally on SDK 58, mean per-request rendering instead of the
+prerendered pages plus API routes the feature requires; the proposal calls it out as the amendment
+line that is easy to miss. The amendment is still an open task (`T048` of
+[`specs/087-expo-sdk-58/tasks.md`](../../specs/087-expo-sdk-58/tasks.md)), so as of this writing the
+file still reads v2.7.0 and [`frontend/mcm-app/app.json`](../../frontend/mcm-app/app.json) still says
+`"output": "server"` — treat v2.8.0 as planned, not current.
 
 The document-database line also shows the difference between a *tag* and a *digest*. The constitution
 names the tag (`9.0-ubi9`); every compose reference pins that same tag by digest, currently
@@ -138,9 +167,12 @@ Beyond principles, the document carries the monorepo **directory tree** and the 
 diagrams** — the C4 container diagrams for the multi-frontend/multi-service layout and the additive
 AI-agents layer, plus the three auth-flow sequence diagrams (login, backend resource access, agent
 auth). Those diagrams are the canonical picture of BFF token custody and of the RFC 8693 agent token
-exchange, which makes the constitution a design reference as well as a rulebook. The document is a
-derived summary target, not a copy: read the source for the diagrams, the principle text and the
-version history.
+exchange, which makes the constitution a design reference as well as a rulebook. The tree carries
+approved deviations as well as rules — `openwiki/` is listed there as the generator-owned,
+OKF-formatted knowledge wiki, deliberately kept outside the human-owned `docs/` so that "everything
+under `openwiki/` may be regenerated by a tool, everything under `docs/` is human-owned" stays
+enforceable. The document is a derived summary target, not a copy: read the source for the diagrams,
+the principle text and the version history.
 
 ## Gotchas
 
@@ -186,7 +218,14 @@ version history.
   stack section names Tamagui and `@mcm/design-system` as the UI/styling engine but pins no version
   for it, so a Tamagui major is not a constitutional change; the version-named lines — the Expo SDK
   and native runtime, the database and runtime images, the toolchain — are. Read the line before
-  assuming an amendment is required, and before assuming it is not.
+  assuming an amendment is required, and before assuming it is not. "No version named" does not mean
+  "no version discipline" either: feature 081 pinned Tamagui to one exact version across both
+  workspace manifests and added
+  [`scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`](../../scripts/__tests__/tamagui-version-lockstep.guard.test.mjs),
+  which fails on a range, on the two manifests disagreeing, on a second resolved `@tamagui/core` or
+  `@tamagui/web`, on a leftover v2 Babel plugin reference, and on a Renovate rule that would let the
+  bot propose only half of the set — the constraint the constitution declines to state is still
+  enforced, just somewhere else.
 - **An unversioned line can still carry a behavioural claim, and that claim can be false without the
   line being version-stale.** The same "UI / Design System" line says Tamagui is "wired runtime-only
   by default (the Tamagui babel/metro compiler plugins are optional optimisations)" — which was
@@ -212,6 +251,15 @@ version history.
   same-version rebuild can still change what the gate sees, since the `3d40c6fa…` UBI 9.8 rebuild
   shipped a fixed `ca-certificates` and discharged the `CVE-2026-114406` allowlist entry. Read the
   compose file, not just the constitution line, when you need to know the exact bytes that run.
+- **A line can break for a reason that is neither a version nor a library.** The
+  **Backend-for-Frontend** line describes a *mechanism* — `app.json` web output set to server,
+  `"output": "server"` — and that mechanism changes meaning on Expo SDK 58, where the literal text
+  would mean per-request rendering rather than prerendered pages plus API routes. Feature 087's
+  **FR-024** therefore amends both the framework baseline and this line in the same pull request as
+  the SDK move (target **v2.8.0**). Until that PR merges, the file still reads v2.7.0 and
+  [`frontend/mcm-app/app.json`](../../frontend/mcm-app/app.json) still says `"output": "server"`. An
+  upgrade plan must sweep the whole stack section, not just the lines whose text contains a version
+  number.
 - **A named library can be aspirational — the amendment history is not a description of the running
   system.** The Backend Services stack section requires `medi-rs` to route commands, queries and
   events from the API layer to the application-layer handler, but `backend/mc-service` ships no
