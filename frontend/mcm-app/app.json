@@ -47,7 +47,15 @@
       ],
       "./plugins/with-dev-cleartext",
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": false
+          }
+        }
+      ]
     ]
   }
 }
