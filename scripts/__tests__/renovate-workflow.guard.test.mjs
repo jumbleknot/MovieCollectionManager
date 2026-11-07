@@ -960,12 +960,11 @@ test('the copilotkit gate leaves the PATCH track routine, so a security patch is
 });
 
 // ---------------------------------------------------------------------------------------------
-// test-renderer is HELD below 1.3 until React is on 19.3 — feature 081 US5c (PR #798), item #254.
-// test-renderer 1.3.x pulls react-reconciler 0.34, which peers on react ^19.3; the workspace runs
-// 19.2.3, pinned to the Expo SDK. The hold is a REGEX (a semver-partial `<1.3` is the java-jdk trap),
-// and it lives in its OWN group: one held member gates every other member of a shared group.
+// test-renderer WAS HELD below 1.3 until React reached 19.3 — feature 081 US5c (PR #798), item #254.
+// Feature 087 (SDK 58) brought React 19.3, so the hold is LIFTED (research R12) and these assert it is
+// gone: 1.3+ now arrives in the routine groups like any other npm dependency. The guard is updated at
+// its cause, not deleted: a ceiling or a private group reappearing here would hold test-renderer again.
 
-const TEST_RENDERER_HELD_CEILING = '/^1\\.[0-2]\\./';
 const testRendererDep = (updateType) => ({
   manager: 'npm',
   packageFile: 'frontend/mcm-app/package.json',
@@ -974,33 +973,16 @@ const testRendererDep = (updateType) => ({
   updateType,
 });
 
-test('(081) test-renderer is held below 1.3 on every track, in a group of its own', () => {
+test('(087) test-renderer is no longer held: no ceiling, and the routine group on every track', () => {
   for (const updateType of ['patch', 'minor', 'major']) {
     assert.equal(
       resolvedAllowedVersions(testRendererDep(updateType)),
-      TEST_RENDERER_HELD_CEILING,
-      `test-renderer ${updateType} is not held — 1.3.x needs react-reconciler 0.34 (react ^19.3); we run 19.2.3.`,
+      null,
+      `test-renderer ${updateType} still carries a ceiling. React is on 19.3 since feature 087, so the hold is lifted.`,
     );
-    const group = resolvedGroupName(testRendererDep(updateType));
-    const routine = resolvedGroupName(copilotkitDep('@ai-sdk/openai', updateType));
-    assert.equal(group, 'test-renderer (held: react 19.3)', `test-renderer ${updateType} resolves to ${JSON.stringify(group)}`);
-    assert.notEqual(group, routine, `test-renderer ${updateType} shares the routine group — the hold would gate it`);
+    const expected = updateType === 'major' ? 'js majors (review individually)' : 'js patch/minor';
+    assert.equal(resolvedGroupName(testRendererDep(updateType)), expected, `test-renderer ${updateType} left the routine group`);
   }
-});
-
-test('(081) the test-renderer ceiling ADMITS 1.2.x and nothing from 1.3 on', () => {
-  const ceiling = resolvedAllowedVersions(testRendererDep('minor'));
-  for (const version of ['1.2.0', '1.2.7']) {
-    assert.ok(allowedVersionsPermits(ceiling, version), `the test-renderer hold '${ceiling}' blocks ${version}`);
-  }
-  for (const version of ['1.3.0', '1.3.2', '1.10.0', '2.0.0']) {
-    assert.ok(!allowedVersionsPermits(ceiling, version), `the test-renderer hold '${ceiling}' ADMITS ${version}`);
-  }
-});
-
-test('(081) a sibling of test-renderer is not caught by its hold (control)', () => {
-  const sibling = { ...testRendererDep('minor'), depName: 'react-test-renderer' };
-  assert.notEqual(resolvedAllowedVersions(sibling), TEST_RENDERER_HELD_CEILING);
 });
 
 test('the copilotkit rule does NOT swallow unrelated npm packages', () => {
@@ -3524,18 +3506,11 @@ test('(081 US5a) the override-major disable does NOT leak onto majors in package
 // the re-check text its description must carry (FR-016) plus the measured fact that keeps it held.
 const TOOLCHAIN_HOLDS = [
   {
-    hold: 'jest 30',
-    deps: ['jest', 'babel-jest', '@types/jest'],
-    files: ['frontend/mcm-app/package.json', 'packages/design-system/package.json'],
-    recheck: "re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK",
-    measured: 'jest-expo 57.0.6',
-  },
-  {
     hold: 'babel 8',
     deps: ['@babel/core', '@babel/runtime'],
     files: ['frontend/mcm-app/package.json'],
     recheck: "re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK",
-    measured: 'babel-preset-expo 57.0.16',
+    measured: 'babel-preset-expo 58.0.24',
   },
   {
     hold: 'typescript 7',
@@ -3610,7 +3585,19 @@ for (const { hold, deps, files, recheck, measured } of TOOLCHAIN_HOLDS) {
   });
 }
 
-test('(081 US5a) the four toolchain holds are FOUR groups — one tick releases one blocker, not all', () => {
+test('(087) the jest 30 hold is LIFTED: jest, babel-jest and @types/jest majors ride js majors, ungated', () => {
+  // jest-expo 58 (SDK 58, feature 087) depends on the jest 30 family, so the hold's own LIFT condition
+  // is met (research R12). A held-jest group or an approval gate reappearing here would hold it again.
+  for (const depName of ['jest', 'babel-jest', '@types/jest']) {
+    for (const packageFile of ['frontend/mcm-app/package.json', 'packages/design-system/package.json']) {
+      const dep = npmDep(depName, packageFile, 'major');
+      assert.equal(resolvedGroupName(dep), JS_MAJORS, `${depName} major in ${packageFile} left '${JS_MAJORS}'`);
+      assert.notEqual(resolvedRuleValue(dep, 'dependencyDashboardApproval'), true, `${depName} major in ${packageFile} is still gated`);
+    }
+  }
+});
+
+test('(081 US5a) the toolchain holds are separate groups — one tick releases one blocker, not all', () => {
   const groups = TOOLCHAIN_HOLDS.map(({ deps, files }) => resolvedGroupName(npmDep(deps[0], files[0], 'major')));
   assert.equal(new Set(groups).size, TOOLCHAIN_HOLDS.length, `the holds share groups: ${groups.join(' | ')}`);
 });
