@@ -23,10 +23,18 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "server"
+      "output": "static"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "apiRoutes": true,
+          "asyncRoutes": {
+            "web": false
+          }
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       [
