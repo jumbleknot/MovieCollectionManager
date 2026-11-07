@@ -85,6 +85,25 @@ docker compose down
 - For more information on Keycloak health checks, please see <https://www.keycloak.org/observability/health>
 - To track progress of Keycloak being able to accept docker secrets via _FILE, please see <https://github.com/keycloak/keycloak/issues/43958>
 
+## Keycloak 26.8.2 needs `kc-admin-api` on `mcm-bff-service` (feature 090)
+
+From 26.8.2, an Admin API token without the `kc-admin-api` scope gets 401, logged as `Expected audience
+not available in the token`. The migration creates the scope and gives it to `admin-cli` and
+`security-admin-console`, but not to our clients. So every BFF admin call fails after an upgrade: user
+lookup, registration, verification email, forced logout and the last-administrator check.
+
+- **A fresh realm** gets it from the realm files. They must define the scope as well as assign it,
+  because import ignores a reference to a scope the file does not define.
+- **An existing realm**, including production and a local stack with an existing volume, needs the
+  script. Run it **before** moving to 26.8.2 and there is no outage. It also repairs a realm already
+  upgraded.
+
+```bash
+# Reports what is missing and changes nothing. Then run again with --apply.
+KC_URL=<admin URL> KC_ADMIN_PASSWORD=<bootstrap admin password> \
+  node infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
+```
+
 ## ⚠️ Realm JSON takes NO comments — not even a `_comment` key
 
 Keycloak's import deserializes these files into `RealmRepresentation` with unknown fields **rejected**.
