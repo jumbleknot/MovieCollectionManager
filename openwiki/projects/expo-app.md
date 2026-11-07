@@ -1,12 +1,14 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the cold-load web bundle budget with its four-assertion gate, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the BFF image's pruned runtime closure with the bare-specifier build gate that keeps it honest, the five feature-087 failure modes that each look healthy but now have their own gate (a second copy of the styling library, a split bundle over budget, an unlisted inline script, a browser CSP violation, a release APK that does not launch), the cold-load web bundle budget's four assertions, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-bff475d8fa855e3592cfedc2
@@ -15,6 +17,8 @@ sources:
     resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6
     resource: repo://frontend/mcm-app/eslint.config.js
   - id: openwiki-source-23ebb6a3dfd75d37b2feaef1
@@ -163,6 +167,8 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
+    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
   - id: openwiki-source-f6c12ce9ca055174ab7f392c
     resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-96730ea8c345aed64b62a187
@@ -173,14 +179,20 @@ sources:
     resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
+    resource: repo://scripts/android-launch-smoke.sh
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
     resource: repo://scripts/check-no-server-imports.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
+  - id: openwiki-source-11ba1741c25b3030e34f4dd8
+    resource: repo://scripts/publish-android-launch.mjs
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-f189c162dcfb48c90c5f23be
+    resource: repo://specs/087-expo-sdk-58/contracts/android.md
   - id: openwiki-source-16870c3ee3399a868ae59956
     resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389
@@ -191,10 +203,10 @@ sources:
     resource: repo://specs/089-single-zod-jitless/spec.md
   - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
     resource: repo://specs/089-single-zod-jitless/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T23:36:11.840Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+    at: 2026-11-07T23:36:11.840Z
 ---
 
 # Expo/React Native universal app
@@ -416,6 +428,82 @@ sequenceDiagram
     BFF-->>Hook: granted: true, grantedAt
 ```
 The standing-backup-consent grant is a client-initiated, identity-provider-mediated round trip: the client only ever requests a URL and later polls status, never records the grant itself.
+
+## Failures that look healthy, and what catches each
+
+The SDK 58 spike produced failures that every existing check reported as fine, so feature 087 gave
+each one its own keyless gate — and, deliberately, landed those gates **on SDK 57 first**, so they
+were proven against the app as it is rather than first exercised by the upgrade. Every one of these
+gates carries a selftest that proves it can fail as well as pass.
+
+| Failure | Gate | Its message names |
+|---|---|---|
+| Two copies of the styling library, which is a blank page | `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, counting distinct `snapshots:` keys in the lock | Both keys, and `pnpm dedupe` |
+| A split bundle that fits chunk by chunk but not as a whole | `pnpm nx bundle-budget mcm-app`, measuring every script the worst page loads | The page, bytes, overage and each script |
+| An inline script the CSP will block | The same gate, reading `INLINE_SCRIPT_HASHES` from `web-security-headers.js`, which the CSP is also built from | The page and the `'sha256-…'` value. That value is not permission to add it |
+| A page the browser refuses or crashes on | `tests/e2e/web/page-security-policy-walk.spec.ts`, in the `lifecycle` project | Each violation's directive, blocked URI and source |
+| A release APK that does not launch | `scripts/android-launch-smoke.sh` in `app-e2e`, reported as the commit status `app-ci / android-launch` | Which of launch, login screen and device log failed |
+
+Four of those five are described where their mechanism lives: the two-copies/one-instance half of the
+Tamagui guard and the blank-page failure it prevents are in the Tamagui gotcha below and on the
+[design system page](./design-system.md); the cold-load total, the inline-script allowlist and the
+`--require-maps` invocation are in the `check-web-bundle-budget.mjs` gotcha; and the browser walk's
+injected violation binding, its four page-start paths and its zero-violation requirement are in the
+security-header gotcha.
+
+**The fifth one is new here, because it is the only gate whose result is published as a commit
+status.** `scripts/android-launch-smoke.sh` runs inside `app-e2e`'s agent emulator step as the first
+line after `adb install` and immediately before the agent flows, and it reports three separate facts
+rather than one pass/fail: whether `adb shell am start -W` on the app's release activity reported
+`Status: ok`, whether the `login-screen` resource id appeared in a `uiautomator dump` within a bounded
+wait, and how many fatal log lines belong to **this app's** process — matched on `FATAL EXCEPTION`,
+`ClassNotFoundException` and `NoSuchMethodException`, with attribution by PID taken from the log
+itself (a crashed process has no PID left to ask for). That attribution is what keeps a Chrome crash
+on the same device from reading as this app failing to launch, and the classifier carries a
+`--selftest` that needs no device, run cheaply in guardrails by
+`scripts/__tests__/android-launch-smoke.test.mjs`, because a grep that matches nothing looks
+identical to a clean launch. Without the check the first sign of a release APK that builds but
+crashes would be every Maestro flow failing at once with a message about a missing element, which
+reads as a broken flow rather than a broken binary.
+
+The result reaches a readable channel through a file, not a step output: the emulator action's
+`script:` block cannot export step outputs and this forge exposes no job log or artifact API, so the
+check writes `$HOME/android-launch-$GITHUB_RUN_ID.json` on failure as well as on success — the run id
+in the filename means a persistent runner cannot serve a stale result. A separate `always()` step then
+runs `scripts/publish-android-launch.mjs` and posts the commit status **`app-ci / android-launch`**,
+carrying the emulator step's own gate so a PR that skips the emulator publishes nothing. An absent
+result file under an open gate means the emulator never reached the check and is published as
+`launch=not-run` — a different fact from "the checks failed", and the reason the file is written on
+both outcomes; a `cancelled` job publishes nothing at all. Only known values ever reach the
+description, never a log excerpt. The status is deliberately **not** a required context: the check's
+own exit code is what blocks, so the publisher exits 0 whenever its arguments are valid and a
+bookkeeping POST can never mask the real result. The AVD, the flow order and the per-step ceilings
+belong to the [Android emulator runbook](../runbooks/android-emulator.md).
+
+## What ships in the BFF image (and what fails the build)
+
+The image carries the exported web bundle plus **only the dependency closure `node server.js` can
+reach** — `express`, `expo-server`, `openai` and what those pull in. Everything else
+`pnpm deploy --prod` materializes is a dependency of the *web bundle*, which Metro has already
+compiled into `dist/`, so it is deleted at image-build time by
+`scripts/prune-bff-runtime-modules.mjs`. The closure is walked from a small hand-held root set rather
+than described by a delete-list, because a hand-maintained list rots the moment a dependency moves
+and its failure mode is a route that 500s lazily in production instead of a build that fails; an
+absent *required* root throws rather than silently pruning everything. Deleting also requires
+`--apply` — the script's default is a dry run, an inversion that makes a near-miss flag spelling fail
+safe on a script whose failure mode is an irreversible recursive delete inside an image build.
+
+That script also runs as a **gate** in the builder stage (`--check-bundle dist/server`). Expo Router's
+server output can name a package with a bare string rather than an import — `@copilotkit/runtime`
+reaches its provider adapters through `createRequire(globalThis.__ExpoImportMetaRegistry.url)` — and
+a closure walk cannot see a string. So the build re-derives every such specifier from the freshly
+exported bundle and **fails** if one appears that the script does not account for. If a dependency
+bump turns the build red with *"the exported server bundle reaches for … bare specifier(s)"*, that is
+this gate: decide whether the specifier resolves from `/app/runtime` (add it to `DYNAMIC_ROOTS`) or
+already does not (record it as `unresolvable` in `KNOWN_DYNAMIC_SPECIFIERS`). Do not delete the check
+— its whole purpose is to stop a pruned package from becoming a 500 on one route in production. The
+measured image figures, the traced evidence the closure rests on and the two decision lists belong to
+[BFF](./bff.md); what this page records is the app-side build contract that produces them.
 
 ## Gotchas
 

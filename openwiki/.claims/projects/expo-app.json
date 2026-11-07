@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b2568bb987c781f460f661b470ce2ed1e7fcf138d5a7b79559daf832449c51e4",
+  "pageVersion": "sha256:9d20c0cc4855c09d20e6651521b77580c2a60cd9140469f301ef983389e61426",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -1203,10 +1203,132 @@
           "version": "repo-lines-v1:sha256:d6d2ddca71bb655f4d35c739380e0081fb9464d3c0b51a7f21e8d9317a1ec52d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZTBlY2UxYWE5MGVhNTMwYjE5YjM5ZmY4Yjg5ODQ0OGE2NGUzMTQ3Njg4NDkzYWYzZjJlZTEzN2YxMzg4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTIwNGM0NjcwN2NjYmZiMWNlMTg1ZGU2NjQ0YzFiZmE4ODNlYzIyYTgyNTJlYzA5YjcwNmVhMDU4NjYzM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODQ2NDAzNzIwYzU1NjRkNzdkZWQxOTBiNTljMTc5YmM4NDJiOGIzMDQwNmU2YTlkZmI1NWRjYjY3YWRhNzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_77bb1d1211dc4bc29e66bff528a8d847",
+      "statement": "Feature 087 gave each of the five failure modes that looked healthy to every existing check during the SDK 58 spike its own keyless gate — a second copy of the styling library's core (tamagui-version-lockstep.guard.test.mjs, counting distinct lock snapshots keys), a split bundle that fits chunk by chunk but not as a whole (the bundle-budget target measuring every script the worst page loads), an inline script outside the shared allowlist (the same gate reading INLINE_SCRIPT_HASHES), a browser security-policy violation or uncaught page error (page-security-policy-walk.spec.ts in the lifecycle project), and a release APK that does not launch (android-launch-smoke.sh, reported as the app-ci / android-launch commit status) — and landed those gates on SDK 57 first, each with a selftest proving it can fail as well as pass (FR-010).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L108-L118",
+          "version": "repo-lines-v1:sha256:87573114b6e0bd455b83939e3ac1d01660223e1042d3d902b6b2accbed9a0a5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYjg2MTg2NWRlYjQxMDJiNTY0NWY1NGE2MzcxYjY2YWQyZjI0OGU5N2MxYTI4MzQ5YWIxNzg1OThiYzljODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYmEyODBhNDI2ZDE4NDg0MGZhZWUyZjNjZDIxZTJmZDJhZjA4ZDIyNDNjY2RiODg0ZmI4NmQ4MzQxZjg0N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTk1MTVkNDcyNTJlMWJmYzlhMDI0OTgxODk4Y2Y3ZTkwNGUzMDEwYjc5NDY4NTI4ZTMxZmJhNWE4MzhmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiOWU1MmI3ZmZhZGZmODk0Y2VkOTM5MmNmZTY0NmM4YWFiOTE1Y2Y0ZDk1MDdkMjM5ZGE4ZDMzZTQxZTg0M2UifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/web-gates.md#L13-L29",
+          "version": "repo-lines-v1:sha256:9c141b2ace76df15913dd1ecc100aacd435b3959a1cb2f9e8cfb706a33cb0c53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2ZkOGRjNjBlY2U0ZGEwNGU2OGVhYTdjMjQxODcyOWQ4NTBhMTc3ZWMyYzRkYjdmYWExNTBmMDkzNzQ1YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzOGE1Y2I3MTFiNzk4Njk3YjAwMWRjN2M1ZTQzNjg3YWUyNDI0Nzg4OTFhZmQ1NjM5NzNlOTJiZTM1ZDAzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTNmNTI1MjdmNWQwMjJiZWMyYWNjMTQwN2Y5ZmViODJhYjU2MmQwYTM5YzYyZWY4NDYwODM0OTJmN2QxNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMzNjNTg3ZGMzYWIwZjYyYTk5ZmMwNGUwMmRjOWU4MzMxZTIwZWEzNDY4MzJmYjQ4YjhmZDFlYzljMWYzMjAifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/spec.md#L197-L204",
+          "version": "repo-lines-v1:sha256:468fe900d9646719be3a1f9f77f282ac8c6a2de846916db8cdf48d85fc0eae1f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhhYzAwNTVhMGYzNmEwYmJmMjdhNGZhZmQwMjlkMTVjYTUxMTM4OWU3Yjc3OTIxODFiODU0ZDc2YmIwMjMzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg1YmYxYWNjZDJmNDhjNjNjOTBkNmVkYjMyYjEwMGJiNmVkMzIzN2JmZjBiNzVmNjU4ZDdjYzI5NWEwMDJjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWFkZmQ0NjRiYTA2NTkyYWM4ZTY2NzZjYjA3NGViMDEzMDljMGFmMjJlYzg0NTkxM2I2NzVjZGM2ODdkOTk4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWMwYzE1ODM2N2Y5NjI2ZjA5MGY3NjA5OTgxYTlhOTVmN2Q5ODlmNzNkNDZjZGE4MjRhOWMwOWIwNGU0MTQ3NSJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/spec.md#L79-L106",
+          "version": "repo-lines-v1:sha256:1e7516a1ab402e959804f3eafa6b4b23cd0a356fb57bd90b8e9961445ac3d66a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMDAzYTM5MWMyMDQxNzQxZWU3MWFlN2I4YTMxODBmYTI0OThiNmMxZGM1MGQ3MzE2NGY0OTAxODc5NjVkZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NzdjYzQ2OGZiNWM3YzRhNjIwMGRjN2UxZDRlMjRjYzY3NWJjMmE5ZjE5MjcyYWFkNzgwOTIxMTE4MWQwM2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cc858ab277645d7aa4db8eda9db4074",
+      "statement": "scripts/android-launch-smoke.sh reports three separate facts about a CI-built release APK rather than one pass/fail: whether `adb shell am start -W` on the app's release activity returned `Status: ok` (with TotalTime echoed), whether the `login-screen` resource id appeared in a `uiautomator dump` within a bounded wait (ANDROID_LAUNCH_LOGIN_BOUND_SECONDS, default 120 s — which distinguishes launching into a working app from launching into a splash that never resolves), and how many fatal log lines belong to THIS app's process, matched on FATAL EXCEPTION, ClassNotFoundException and NoSuchMethodException with attribution by PID taken from the log itself (Start proc … :<app-id>/ or a Process: <app-id>, PID: … line) because a crashed process has no PID left to ask for — so a Chrome crash on the same device is not reported as this app failing to launch. The classifier is a separate function with a device-free `--selftest`, run cheaply in guardrails by scripts/__tests__/android-launch-smoke.test.mjs, because a grep that matches nothing looks identical to a clean launch; matched lines are printed through the CI redaction module and withheld entirely if redaction cannot run, and the app is force-stopped when the check finishes so the flows that follow start cold.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/android-launch-smoke.test.mjs#L1-L24",
+          "version": "repo-lines-v1:sha256:26c3d01cf4325a1361eadf713b60a7d15a40aa9e1dc1378354ec2854dc9ea32c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhYjhlYTNlNTNmNDY5ODM3MDMxNGM3Mjg4MTJmNjU1MDk3YzFlMjgxNzdkMjM5OWU4YTkwOWQ2MDlhOTE0ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/android-launch-smoke.sh#L116-L161",
+          "version": "repo-lines-v1:sha256:89d219c8a02fc15bd03db7bff7c89a912ff50f5ffdfc9dc4ba10f18c412ad07d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyMDkyZGUyNjVlM2RhMTIwM2Y2Zjk3ZWQ1YjY1MGE3MmZiMzI4YTBjNTIxZWYyOWI5MmNkYzkzOTAyNjdlMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwM2EyYTFiNTc1NWRlYTNjMGIzMDEyNzlkOTRjYmM5MTZjYzg2MDc2M2MwY2QyZjllNDhkOGE2NTg4NzA3ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjOTMxNzAwNzA4MzUzN2IzOTI0NmE4MmRlNTBlOGE3ZDllNmQyZmI3MDdlY2JkN2Q5ODIzYWY2YTczZDY3ODgifQ"
+        },
+        {
+          "resource": "repo://scripts/android-launch-smoke.sh#L32-L53",
+          "version": "repo-lines-v1:sha256:d98e8caa92c3b8f58aa780fd0e1d2e5f2e1cc382bf38dc22d5e1103c327c41e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZDU3MDQyNTkxNDljNDdlZjA5N2UwZjliZTdhMWQ4ZWYxZjU1NTZlYzI2ZTEzNjMwYTJiZWE4NmMzMGY3OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmZjZlODg5Y2E2MWZiMmE3M2VlMmIwOGEwMzg3NjZiNDcxZGUyMzNiMDgzZmMxZjQ2ZGY4ZWZlZDQ4OWE4ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlYTdjZDMzZDM3Y2JjYTk3NTU3MjgwNzY0ODIyNDQ5YTM5YTBlYjQzOWE5M2ExODA5YzdkZDBjMmYzYjg4NGUifQ"
+        },
+        {
+          "resource": "repo://scripts/android-launch-smoke.sh#L68-L108",
+          "version": "repo-lines-v1:sha256:d42957ca6dd97ed47ec3771fd9769c6adcd406f0ad45abd228c5c34493c7bd2b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2Nzc2YTY0Y2QwMzliM2FlOTE5YTI2YTMyMWQ0ZjRkNzU4MGVmZmQxZmNmZDg2ODJkZjE5NzIxMzMwN2RhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlN2U5MThmOTIxNjdmY2E2YzZhNDY4OTU2NDUzMDg1YjQwZWFhOWM1MzQyZDQ2OGNkNjEzNjRlNTY1M2ZiOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNmRlN2MzZGJkYmU0YjMyYWVmNWUzNmU1YjYzOTllMTljYzdjNzNjMzU5MzU3OWI2ZDcwODlhM2I5MWU0ODQifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/android.md#L3-L22",
+          "version": "repo-lines-v1:sha256:b1f1e38763cd2a58d74e22e67d31a07b81c7af03cc5d2d6049d783f3d00a30d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MjFmOWQzMzU3NTMzOTk5ZDFmZmExYTI5MDFmMzU1ZTRmNDVjZDhkMDlhYjNjM2RkOWJiM2YyZjNlNDJlMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNmY2M2ZhMGFkYWNlNDc1MGY3ZTFlNWEyZTNiZWFlM2ZhMTI1MzZiYzE1N2QxYTZiZDEzYTEzMzdkYzc3OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMWIzNjE4NDc0NGY4M2JhODdhNGExMWI5ZTZlNGFiNjkzNzEwMGU3ZjliMWFhYzYwNGJmMzJhYWFjM2VlMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODMxNTAwODA5ZjQ0Y2FjNTg0NTY1NTU5ZmNkNzY0NTU3MjI0YzkwZTc2NWYwYmM1YTViNmY2Nzc5NDUxZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_41d291e066cb4405b11f8ea7600f70a2",
+      "statement": "The Android launch check's result reaches a readable channel through a run-id-named file rather than a step output, because the emulator action's `script:` block cannot export step outputs and this forge exposes no job log or artifact API: scripts/android-launch-smoke.sh writes $HOME/android-launch-$GITHUB_RUN_ID.json on failure as well as on success, and a separate always() step running scripts/publish-android-launch.mjs reads and deletes it and posts the commit status `app-ci / android-launch`, carrying the emulator step's own gate so a PR that skips the emulator publishes nothing. An absent result file under an open gate is published as launch=not-run — a different fact from \"the checks failed\" — a `cancelled` job publishes nothing at all because a superseded run is not a failed launch, and only known values ever reach the description (launch=<ok|failed|not-run> login-screen=<visible|absent> fatal=<count>), never a log excerpt. The status is deliberately NOT a required context: the check's own exit code blocks, so the publisher exits 0 whenever its arguments are valid and a bookkeeping POST can never mask the real result.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1336-L1347",
+          "version": "repo-lines-v1:sha256:297e5e52c0cdbb0424ff3765c03fa5cd7856e26a3a8be98109c36a6b5a1abd24:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlZTk3ZmYzZjgzOTRlOTVjZmVjOTE4MDcwNmZlNGRkN2M1MGZiMzhiMDJmZjM5M2MwNWEwMjAyZWQ5ZTMyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MTQ1MzA2ZjdhYmU3N2IzZTlhZjNlZGM1NGZjNjZmNzNjMWZkYmM5NmNiNmNhYjU1N2E0YTQwYTYzNGQ2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ODE0OWJjNDNjMDBiMGI5MzQ5NGVhY2E3MzFhNjNjZDgyMTczODM2MzcwNmQ4OTMwNjg3MjdlNmUzMDRkMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkM2MwNzU3NDNmZWU1YmJlN2ZjZTgyZTBkMDJiYjBlY2JkMmQyZmE3ODJkMjY4NWE5OGZhYThhMTY0YjJjZTgifQ"
+        },
+        {
+          "resource": "repo://scripts/publish-android-launch.mjs#L1-L23",
+          "version": "repo-lines-v1:sha256:713c3bc2bae64587f34f4df7957f8dfdab6177ecadd323ed196ad310eee7d2a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZWE0YTJiZjcwNTFiNzViODY2MmZkMjMxMDhmODlmYzVmM2ZiNTg5ODZhMGI0YjFmNzMzMjRlNTExOGQxYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwN2JjZjI5ZWMzNDM4YThlMjkzYzZkMjQzZWFmZTcyYjUzMGYwMjIxMGU1OWUyM2U2MGMxMzQ3NDYyYzFjYTMifQ"
+        },
+        {
+          "resource": "repo://scripts/publish-android-launch.mjs#L37-L79",
+          "version": "repo-lines-v1:sha256:e0d348cee7de4529ad9e5d531ff406ef66caa2456044edc7a32152453c6d1ca9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZmY4MmY1NGJjYjE1MmEzMDRmOWI5NWMwY2NiN2JhOWIyYTI0OGRlOTEwZjQ1Y2JiYjc1NTViN2JhN2Y3MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMTg1ZDZjNDM5NTliNTM0ZmY3NjczMzg0MjgyZWFhNTQ2NzdkOGE1MjMyMzg5MDliZWZiN2NkNDY3YjdiYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwOTJhYjNlMGQyY2M5NmVjZTljNjNmNDUxOTUxZGM2ZGQ5NWZkZGY2Y2IzMDQzYmVkYzEwODcwMTA1NjQ1MTgifQ"
+        },
+        {
+          "resource": "repo://scripts/publish-android-launch.mjs#L81-L110",
+          "version": "repo-lines-v1:sha256:30e4903c796dae8c734c94b26981d4bd736c41bf3dae3d644fc4b65377ca250a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4YTJiZjliNmM1ZDc1OGQ3MDVmMmQwNTUyNTA2MmJjZDM1YzMxOTI3MjVlZWQ1YmY5YzFlYWQ2NDRhOTJjNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNDYxNjgxNzhiYzEwNzAxMzY4NjEwOTBlOTc1ZjBkMzU5ZDdmYzdiMTMxNzQ4NGNlNzVhYzM1ZGU1MTAyMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3OGJiZTU0MzNmZmY3ZTE5YzY3ZDMyNDc0ZWYwYzBhNzQzMjQ1YmFlNDQ0YzY1ZDczMDBlNTc2NTIxN2U3MDkifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/android.md#L24-L29",
+          "version": "repo-lines-v1:sha256:fb818d40ee77caba128d5b4b718a46abc05e35c5ade12b5c5b1507c821831d99:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDk3NWI1NzY3OWI5ZmUyYTY2YzUwYjdkYmNkNTkxODQ0ZDNlNDMyNTViMzNiNDY3ODJlMzdkYTA5YTI3YWVjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU5M2JjY2FmNjZkMjRmMGUwY2M3N2VkNjdkOGNiN2FhNWU1NzgxYzE2N2E3ZmI1Nzc4ODg4ZjYxZjY2M2RmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFmZDA2NGFiNTc3YzE5N2VlNTI1MDkwM2QzNTI0OWQwMDE5MjIxMmJmNDVhN2Q2YjEzMzU2M2U3NWE2MDUyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY1YTIzMDM5MDdlNmVlYWUxNTAxZWU5NDUzOTIwNjc3ODI1NTgxODc2MzBkNWE5ZDNlNjc1MGVhODhlNjE4NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a270746921e748619e3bd17e4c7cc04d",
+      "statement": "The shipped BFF image carries the exported web bundle plus only the dependency closure `node server.js` can reach — `express`, `expo-server`, `openai` and what those pull in — because everything else `pnpm deploy --prod` materializes is a dependency of the web bundle Metro has already compiled into `dist/`; scripts/prune-bff-runtime-modules.mjs computes that closure by walking the pnpm symlink graph from a small hand-held root set rather than from a hand-maintained delete-list (which rots when a dependency moves and whose failure mode is a route that 500s lazily in production rather than a build that fails), throws when a REQUIRED root is absent instead of silently pruning everything, and requires an explicit `--apply` because its default is a dry run — an inversion that makes a near-miss flag spelling fail safe on a script whose failure mode is an irreversible recursive delete inside an image build.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/Dockerfile#L107-L121",
+          "version": "repo-lines-v1:sha256:bed2102eb8771e15ee70439653fb4d058e0137312c56a580fb07e0f6abb51a4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZjdjNjhiYjkyMWQ0N2QxMmY5ZjI2MWFkNWUyZGFjMTM4MzU2OTA5MzkxNDJlM2MyY2MwMTI0Y2NhYzU5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDBhNWRhNDQ0YWFiMGVlMzdhNjlhMzQ5NTc1ZDY5ODAyODcxODUzZjVjOThlZDBkYjY3NjBiMDY3ZTA2MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5OWZkYzllM2I0YWY4YTYwOTIyNjlhNDdkYzZiNzVjOTA5NmJkNjFjZWYzMjIwYTRlOTEyNmQ1YWUyZmMxODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwNTNlMTA3MGUyYTU1NTI3YmNlNGNlYzIyMzkwMGQ2YWM1N2I0MzMwZGQ0M2FhYTc2ZWU1Mjg5MTc2NTdkODcifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L1-L29",
+          "version": "repo-lines-v1:sha256:50eb7178fe9b7f0db2e6e7cd6e9cad7a08d12cf425abd62184f10ad79c1ba978:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MWM4NDBlMDQxYTEwYjIzMzE2ZWE0N2Q5MjljMzI0OWQyYTJiN2I0NjZjODE1Y2U1ZTRlMTljYjZiNTRiNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyY2YwZDM3NGM1YmU0Y2QzOTgxNDhmY2ViNTZhM2YyYjAxNWI4NDE1MTFhOWJjZDAxYWU1ZmYyYWZhYjgyZWIifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L136-L187",
+          "version": "repo-lines-v1:sha256:5a571f8c5c5b5d9fc21fd958b5d1b420db1e97955a9195a1263f144b86f8f1b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5Y2Y2ODQxMmMzNDZkYzQ2ODhmNmM3ZTU3ZmRkMjcyYzc2MzlmOTU4ZjIwNDA4MzYyOTNiODAxOTU4YjE0YTQifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L395-L446",
+          "version": "repo-lines-v1:sha256:5dccdce852e9575d6f8b64a32fdcb6b50716da3cba3356b0fc040ff41e040a29:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMmQ2YWVkOTQwMjIwMWFkMTEzZmFlZmY0NTMzODhhMDdkMWE4MGU3MzI1NWEzYTE1NmJjNDcyMjEzMWIxNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYmE5MDI5NzkyNWNiYzEzMTQ4MmE3OTBlMGVjMmU0NmEyMDUwOTgzYTkwZjExYzg5OGQwMjIzNjU0N2M5ZTEifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L48-L66",
+          "version": "repo-lines-v1:sha256:454e9d50d8f67898f024e10e71ac62baf76dde043bfda22a8025f173265e74fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTE1OGZhZDhkMjU5NjNiNGRmNmM4OTQwMmE1NzEzMjdmNzI4OWIyZWE1YzhmZTdiNWViMTBiZmQwMDJlYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYzY5NzgwNDVjODk2NGM5MzEwN2Y4MDZkZWYwMjFiYmE4NDk3N2Y0ZjdhZjliNjQwM2M1NzI5NzI4MmZlYjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYTg2N2ZmMzMwNDgzNjRhNjdmZjA2YzBhMzhjYzJjYjlmZTNmYmRmMmQ3NjIzMjA1YTA5ZmFiZTBlZTUxOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjkyZmU0Yjg4ZjJlZmQ1ZDg1YTNkYWNiM2RiOTIyMDJkZjRmMjAzNTY5MDRhNWU4MmM0M2UyMTQ5YWRhMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7524d58262aa4f87b164691365b6f317",
+      "statement": "scripts/prune-bff-runtime-modules.mjs also runs as a build gate in the builder stage (`--check-bundle dist/server`) because Expo Router's server output can name a package with a bare string rather than an import — `@copilotkit/runtime` reaches its provider adapters through `createRequire(globalThis.__ExpoImportMetaRegistry.url)` — and a closure walk cannot see a string: checkBundle() re-derives every bare specifier from the freshly exported bundle and fails the build with \"the exported server bundle reaches for … bare specifier(s)\" when one appears that KNOWN_DYNAMIC_SPECIFIERS does not account for, naming each specifier and its file. The remedy is to decide whether the specifier resolves from /app/runtime (add it to DYNAMIC_ROOTS so the prune keeps it) or already does not resolve (record it as 'unresolvable'), never to delete the check — its purpose is to turn a future production 500 on one route into a red build.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/Dockerfile#L54-L67",
+          "version": "repo-lines-v1:sha256:4da8067df0735ad06d4d7f926c0d7b401bd5731e100f03499eab5e5a1bb0e5d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNDNiZTRjMWZiZDBmNGI4YzdjZmY1YzE0ZDQ3MzNjZjUwMTc5MTFiOWZiZDdmOTNmNDZkZmI1NzNlMjg4Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTQzNTJkMjM1ZWMxYjc1MmQzMTgwOWFjMjdmYWM4MTc4ZGFkOTkwNjg4NzY0MjAyMzFhNDNiZjI4YTg2NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2MyYTllYWMxMzY1MTU3ZGM4NDQwMjA2ZDNjNzRjZDdhZWEzYWViZGU1NjhlYWU4M2I0YjYxZDA4MGJmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMjUwMTYyYTI3MzExYWQ4YmU1OGIwYTEwNWIzZDdjYzY3MDI1NWE3ODYzZWQ0ZDNkODI2YWJhOWZhODZhMjEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L128-L136",
+          "version": "repo-lines-v1:sha256:32bf11413b212a8c6a50071659d9cdc3f869e7b8d859badc4cf576b4841b0f70:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTkxOWY3ODQ0ZmJhNjRhNzU2NDM0NGM4ODRjMzdlMGZkNWU2NTQ5NmQ2ZTdmOGE0ZTk0MzJiMTJiOWE1ZGZiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDEyODkzNTVmNmVjZmM0YTdiOTM0MWZkYjI4MjE5OGI4OWZjNzJlNTJmOTY5ZDEwMzJhOTBmNTMxMDdhMThhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E5MDcxNDJlNDIzMTIxOGNlY2NiMGMzZmNiZjg2ODlmNmU3MDE2MjE2YmNlNTY1MjkyZjEwOThmMTQ2MzEzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjczYzU4ODE3NDQ4ZjVjNGQ5ZmRkNzNjYmIyYWQxNWEzNzIzNzA1NjkzZTc5MjkyNzhiZTRhMzAzMzU5OTg2OSJ9"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L287-L316",
+          "version": "repo-lines-v1:sha256:067902bbf43714c178be4b3edfd362f620d9db07030d83a10e14827dcbb277e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNzliNjgwNTIwZWQ1MjZkY2M0YzhhYTM3MzUyNzU5MGUyODE5NWU0MGZiZTYxMDdlMWU1YjQ5NWE0NTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMGQ3YTBmNGNkNWViMjU4YWI5N2Q5ZjlkMmZjMWI2NTFlYzgyZjcyOWJjYzBkNWQ4MGY4NTgxODBlYWI5NDUifQ"
+        },
+        {
+          "resource": "repo://scripts/prune-bff-runtime-modules.mjs#L68-L89",
+          "version": "repo-lines-v1:sha256:f8464b2f56d7ddca2d6815987a0aa7331377c18479477290c0375c386798a65c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NjJhNDNhZDA4NDI3ZTFjMjY2YTRkYWE4ZjMwNzRiNzYzMDFlMjNjNjI2NTU3ZjMwN2I1M2UzNTg5NjFlNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMTZiYTRhNDI4NWM3NTdlMmMxMzQ1Y2UyZTg3ZGZjYjk1MjRmOGNiOTE5Y2M3MDE4MDJjODA2OGZmNmUxYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZWM3MTYwNDQwN2I4NjgyNzRhMjExYmNkMjA4YjBhNjYyOWMwNWJhNDQ5OGI0ODg5OTljYTRiNjc0YTZiNjYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T19:02:58.048Z"
+    "at": "2026-11-07T23:36:11.840Z"
   }
 }
