@@ -970,8 +970,12 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "https://mcm.${BASE_DOMAIN}/*",
-        "mcm-app://native-auth-callback"
+        "https://mcm.${BASE_DOMAIN}/auth-callback",
+        "https://mcm.${BASE_DOMAIN}/login?verified=true",
+        "mcm-app://native-auth-callback",
+        "https://mcm.${BASE_DOMAIN}/bff-api/backups/consent",
+        "https://mcm.${BASE_DOMAIN}/bff-api/account/delete",
+        "mcm-app://account-delete-callback"
       ],
       "webOrigins": [
         "https://mcm.${BASE_DOMAIN}"
@@ -1218,6 +1222,23 @@
         "organization",
         "microprofile-jwt"
       ]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-mcm-bff-service",
+      "enabled": true,
+      "serviceAccountClientId": "mcm-bff-service",
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "view-clients",
+          "manage-users"
+        ]
+      }
     }
   ],
   "clientScopes": [

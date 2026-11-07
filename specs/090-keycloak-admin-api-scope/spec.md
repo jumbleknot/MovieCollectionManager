@@ -36,4 +36,5 @@ and the last-administrator check, none of which CI's fresh-import stack would re
 ## Out of scope
 
 - Other clients. Only `mcm-bff-service` calls the Admin API with a service account here.
-- Running the script on production, which is the operator's step, before PR #950 merges.
+- Running the script on production. It cannot sign in as an admin with two-factor, so the operator assigns
+  the scope in the console straight after the upgrade instead (T006).

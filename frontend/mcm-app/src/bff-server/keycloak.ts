@@ -361,20 +361,26 @@ export async function assignMcUserRole(userId: string): Promise<void> {
     `${env.keycloakAdminApiBase}/clients?clientId=${env.keycloakClientId}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
+  if (!clientsRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to look up the client', 502);
+  }
   const clients = (await clientsRes.json()) as { id: string }[];
   const clientInternalId = clients[0]?.id;
 
   if (!clientInternalId) {
-    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Client not found in Keycloak', 500);
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Client not found', 502);
   }
 
   const rolesRes = await keycloakFetch(
     `${env.keycloakAdminApiBase}/clients/${clientInternalId}/roles/mc-user`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
+  if (!rolesRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to read the mc-user role', 502);
+  }
   const role = await rolesRes.json() as { id: string; name: string };
 
-  await keycloakFetch(
+  const assignRes = await keycloakFetch(
     `${env.keycloakAdminApiBase}/users/${userId}/role-mappings/clients/${clientInternalId}`,
     {
       method: 'POST',
@@ -385,6 +391,9 @@ export async function assignMcUserRole(userId: string): Promise<void> {
       body: JSON.stringify([role]),
     },
   );
+  if (!assignRes.ok) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to assign the mc-user role', 502);
+  }
 }
 
 /**
