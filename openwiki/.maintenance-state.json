@@ -1,39 +1,38 @@
 {
   "coveredCommit": "fe91db2f86a564860537624b54aa89a72905f21b",
   "coveredAt": "2026-11-07T16:27:47.720Z",
-  "lastOutcome": "completed",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "projects",
+      "pages": [
+        "bff.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: frontend/mcm-app/README.md"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "e2e-testing.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/e2e-testing.md"
+    }
+  ],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 936,
-    "headCommit": "e0f7ba834622e6116de9d4ee47d36d70fbccc9ff",
-    "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
+    "number": 957,
+    "headCommit": "ef97b9a7319ade90284d95369ef7ad4b4865a8ef",
+    "markerBefore": "fe91db2f86a564860537624b54aa89a72905f21b",
     "slices": [
-      {
-        "area": "runbooks",
-        "pages": [
-          "devcontainer-sandbox.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "devcontainer-sandbox-lifecycle.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md; source changed: docs/runbooks/infra-image-scanning.md; source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/devcontainer-sandbox.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "projects",
         "pages": [
-          "bff.md",
           "expo-app.md"
         ],
         "kind": "refresh",
@@ -42,114 +41,51 @@
         "reason": "source changed: frontend/mcm-app/README.md"
       },
       {
-        "area": "runbooks",
-        "pages": [
-          "devcontainer-sandbox-lifecycle.md",
-          "e2e-testing.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer-sandbox-lifecycle.md; source changed: docs/runbooks/e2e-testing.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer-sandbox-lifecycle.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "bff.md",
-          "expo-app.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: frontend/mcm-app/README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "keycloak.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "server-setup.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
-      },
-      {
         "area": "gotchas",
         "pages": [
-          "keycloak-service-account.md"
+          "playwright-testid-mapping.md"
         ],
         "kind": "refresh",
         "drift": true,
         "subjects": {},
         "areaExists": true,
-        "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "renovate.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "keycloak.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "server-setup.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "drift: frontend/mcm-app/playwright.config.ts changed after the page's stamp"
       }
     ],
-    "updatedAt": "2026-11-07T16:27:48.361Z"
+    "updatedAt": "2026-11-07T19:54:38.039Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 6,
-    "elapsedSeconds": 2534,
+    "pagesWritten": 7,
+    "elapsedSeconds": 3104,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/e2e-testing.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-07T19:54:37.668Z",
+      "failuresAtLow": 0
+    },
+    "projects/bff.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-07T19:54:37.668Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 549,
+    "calls": 1025,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 2103276,
-    "cached": 57438872,
+    "uncached": 3805279,
+    "cached": 102427050,
     "cacheWrite": 0,
-    "output": 1103625,
-    "reasoning": 987700,
-    "ms": 5602672,
-    "estCostUsd": 2.3,
+    "output": 1826699,
+    "reasoning": 1600985,
+    "ms": 9011994,
+    "estCostUsd": 3.9482,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -159,12 +95,14 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/keycloak.md",
-        "runbooks/server-setup.md"
+        "projects/bff.md",
+        "projects/expo-app.md",
+        "runbooks/e2e-testing.md",
+        "gotchas/playwright-testid-mapping.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 2.3,
+      "deadlineStop": true,
+      "estCostUsd": 3.9482,
       "rateLimited": null
     }
   ],
