@@ -12,6 +12,26 @@ def _norm(value: Any, rule: str) -> Any:
     return value
 
 
+_SUFFIX = " collection"
+
+
+def _same_collection(expected: Any, actual: Any) -> bool:
+    """Case-insensitive, and `X collection` (actual) equals `X` (expected) — spec 093.
+
+    One way only, mirroring the organizer's `_resolve_target`: it drops a trailing "collection"
+    from the model's name, never adds one, so an expected `Movie Collection` is not met by `Movie`.
+    """
+    exp, act = _norm(expected, "ci"), _norm(actual, "ci")
+    if exp == act:
+        return True
+    return (
+        isinstance(act, str)
+        and isinstance(exp, str)
+        and act.endswith(_SUFFIX)
+        and act.removesuffix(_SUFFIX).strip() == exp
+    )
+
+
 def compare_decision(
     kind: str,
     expected: Any,
@@ -70,13 +90,19 @@ def compare_decision(
         # echoing / tag order / casing); it is pinned by the deterministic unit tests instead.
         if not isinstance(actual, dict):
             return False, f"plan expected an object, got {actual!r}"
-        if _norm(expected.get("collection"), "ci") != _norm(actual.get("collection"), "ci"):
+        if not _same_collection(expected.get("collection"), actual.get("collection")):
             return False, (
                 f"collection expected {expected.get('collection')!r}, "
                 f"got {actual.get('collection')!r}"
             )
         exp_ops = _op_set(expected.get("operations"))
-        act_ops = _op_set(actual.get("operations"))
+        # A move destination gets the same one-way suffix rule: an actual `to` of `X collection`
+        # is read as `X` only when `X` is a destination the expectation names (spec 093).
+        exp_dests = {dest for (_, _, dest) in exp_ops if dest}
+        act_ops = {
+            (op, title, next((d for d in exp_dests if _same_collection(d, dest)), dest))
+            for (op, title, dest) in _op_set(actual.get("operations"))
+        }
         if exp_ops != act_ops:
             return False, f"operations expected {sorted(exp_ops)}, got {sorted(act_ops)}"
         return True, ""

@@ -1260,15 +1260,23 @@ def _resolve_target(name: str, collections: list[dict[str, Any]]) -> tuple[Colle
     """
     lowered = name.casefold().strip()
     if lowered and lowered not in _GENERIC_TARGETS:
-        for collection in collections:
-            if str(collection.get("name", "")).casefold() == lowered:
-                return (
-                    CollectionRef(
-                        collection_id=str(collection["collectionId"]),
-                        name=str(collection["name"]),
-                    ),
-                    False,
-                )
+        # Spec 093: the model sometimes keeps the user's own word — "my Sci-Fi collection" comes
+        # back as `Sci-Fi collection`. An exact name wins first (a real "Movie Collection" stays
+        # itself); only when nothing matches is ONE trailing "collection" dropped and tried again.
+        candidates = [lowered]
+        bare = lowered.removesuffix(" collection").strip()
+        if bare != lowered and bare and bare not in _GENERIC_TARGETS:
+            candidates.append(bare)
+        for candidate in candidates:
+            for collection in collections:
+                if str(collection.get("name", "")).casefold() == candidate:
+                    return (
+                        CollectionRef(
+                            collection_id=str(collection["collectionId"]),
+                            name=str(collection["name"]),
+                        ),
+                        False,
+                    )
         # A specific new name the user chose → create-if-missing (HITL-gated, FR-005a).
         return CollectionRef(name=name, create_if_missing=True), False
 
