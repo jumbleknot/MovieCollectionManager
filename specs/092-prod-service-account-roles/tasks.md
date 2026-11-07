@@ -11,9 +11,9 @@
 - [X] **T004** Check each step in `assignMcUserRole`, and log server-side failures in the register route
   (FR-004, FR-005). **Verify GREEN**: the same tests pass.
 - [X] **T005** Prove SC-001 and SC-002 against real Keycloak images, with `prod-realm.json` rendered.
-- [ ] **T006** Operator: add the four missing addresses in the console. **Verify** (SC-003): production's
+- [X] **T006** Operator: add the four missing addresses in the console. **Verify** (SC-003): production's
   Keycloak accepts `/bff-api/account/delete`. **Quote** the result.
-- [ ] **T007** Open the PR and get green CI. **Quote** the run numbers.
+- [X] **T007** Open the PR and get green CI. **Quote** the run numbers.
 
 ## Evidence
 
@@ -26,5 +26,5 @@
 | T005, SC-001 | Rendered `prod-realm.json`, fresh import on 26.8.1 and 26.8.2. Roles `manage-users, view-users, view-clients, query-clients, query-groups, query-users`. Create user 201, client lookup 200, role read 200, assign `mc-user` 204, count `mc-admin` 200, write to a client 403 | Local |
 | T005, SC-002 | On both versions: all six listed addresses 200, `/not-listed` 400 | Local |
 | T006, before | Production, 2026-11-07: `/auth-callback` 200. `/bff-api/account/delete`, `mcm-app://account-delete-callback`, `/login?verified=true`: 400 `Invalid parameter: redirect_uri` | Read-only request to production's Keycloak |
-| T006, after | | |
-| T007 | | |
+| T006, after | Production, 2026-11-07, after the operator added the four addresses: `/bff-api/account/delete`, `mcm-app://account-delete-callback`, `/login?verified=true`, `/bff-api/backups/consent`, `/auth-callback`, `mcm-app://native-auth-callback` all 200. `/not-listed` 400 | Read-only request to production's Keycloak |
+| T007 | All 12 required contexts green at `3d657a96`. Merged as `9d3dd0b6`, deployed by run 7037 | app-ci 7000, guardrails 7001, infra-image-scan 7002, 7003 |

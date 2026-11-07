@@ -173,3 +173,85 @@ test('(d) every tamagui / @tamagui/* update resolves to ONE `tamagui` group on e
   assert.equal(control('patch'), 'js patch/minor');
   assert.equal(control('major'), 'js majors (review individually)');
 });
+
+// Feature 087 (FR-006): ONE INSTANCE, not only one version. Test (b) above stops at `(`, so two peer
+// contexts of the SAME version count as one. pnpm gives each snapshot key its own directory, so that is
+// two copies of the library at runtime, and that was the SDK 58 spike's blank page: two style registries,
+// and the second never sees the theme. The lock is authoritative, so this needs no install.
+const SINGLE_INSTANCE = ['@tamagui/core', '@tamagui/web'];
+
+/** Distinct `snapshots:` keys per package, peer suffix included. */
+function tamaguiInstances(lockText) {
+  // pnpm's lock is a MULTI-DOCUMENT file: the package manager's own env document comes first, with its
+  // own `packages:` and `snapshots:`. So a section ends at the next top-level key, not at the end of file.
+  let inSnapshots = false;
+  const snapshotLines = lockText.split('\n').filter((line) => {
+    if (/^\S/.test(line)) inSnapshots = line.startsWith('snapshots:');
+    return inSnapshots;
+  });
+  const snapshots = snapshotLines.join('\n');
+  const keys = [...snapshots.matchAll(/^ {2}'?(@tamagui\/[^@'\s]+@[^':\s]+(?:\([^']*\))?)'?:/gm)].map((m) => m[1]);
+  return Object.fromEntries(
+    SINGLE_INSTANCE.map((name) => [name, [...new Set(keys.filter((k) => k.startsWith(`${name}@`)))]]),
+  );
+}
+
+/** What is wrong with those keys. Zero fails too, so a parser that stops matching cannot pass. */
+function instanceProblems(instances) {
+  const problems = [];
+  for (const name of SINGLE_INSTANCE) {
+    const keys = instances[name] ?? [];
+    if (keys.length === 1) continue;
+    problems.push(
+      keys.length === 0
+        ? `${name}: no snapshot key found in pnpm-lock.yaml, so this guard is not reading the lock`
+        : `${name}: ${keys.length} instances, which is two copies of the library at runtime and a blank page:\n` +
+            `${keys.map((k) => `    ${k}`).join('\n')}\n  Run \`pnpm dedupe\`, then re-run this guard.`,
+    );
+  }
+  return problems;
+}
+
+const syntheticLock = (webKeys) =>
+  [
+    'packages:',
+    "  '@tamagui/web@3.0.18':",
+    '    resolution: {integrity: sha512-x}',
+    'snapshots:',
+    "  '@tamagui/core@3.0.18(aaa)':",
+    '    dependencies: {}',
+    ...webKeys.flatMap((k) => [`  '${k}':`, '    dependencies: {}']),
+    '  zod@4.0.0: {}',
+  ].join('\n');
+
+test('one instance: two peer contexts of one version give two keys, and the guard fails naming both', () => {
+  const instances = tamaguiInstances(
+    syntheticLock(['@tamagui/web@3.0.18(aaa)', '@tamagui/web@3.0.18(bbb)']),
+  );
+  assert.deepEqual(instances['@tamagui/web'], ['@tamagui/web@3.0.18(aaa)', '@tamagui/web@3.0.18(bbb)']);
+  const problems = instanceProblems(instances).join('\n');
+  assert.match(problems, /@tamagui\/web@3\.0\.18\(aaa\)/);
+  assert.match(problems, /@tamagui\/web@3\.0\.18\(bbb\)/);
+  assert.match(problems, /pnpm dedupe/);
+});
+
+test('one instance: zero keys fails, so a parser that stops matching cannot pass', () => {
+  const problems = instanceProblems(tamaguiInstances('packages:\nsnapshots:\n  zod@4.0.0: {}\n'));
+  assert.equal(problems.length, SINGLE_INSTANCE.length, problems.join('\n'));
+});
+
+test('one instance: the packages section is not counted, only snapshots', () => {
+  const instances = tamaguiInstances(syntheticLock(['@tamagui/web@3.0.18(aaa)']));
+  assert.deepEqual(instances['@tamagui/web'], ['@tamagui/web@3.0.18(aaa)']);
+  assert.deepEqual(instanceProblems(instances), []);
+});
+
+test('one instance: a multi-document lock counts only its snapshots sections', () => {
+  const lock = `---\npackages:\nsnapshots:\n  zod@4.0.0: {}\n---\n${syntheticLock(['@tamagui/web@3.0.18(aaa)'])}`;
+  assert.deepEqual(tamaguiInstances(lock)['@tamagui/web'], ['@tamagui/web@3.0.18(aaa)']);
+});
+
+test("one instance: the repo's lock holds exactly one @tamagui/core and one @tamagui/web", () => {
+  const problems = instanceProblems(tamaguiInstances(read('pnpm-lock.yaml')));
+  assert.deepEqual(problems, [], problems.join('\n'));
+});

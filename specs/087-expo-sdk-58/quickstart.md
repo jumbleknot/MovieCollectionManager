@@ -47,7 +47,7 @@ in PR A.
 | Add an unlisted inline script to one exported HTML file | Gate prints the page and its hash |
 | Pad a second referenced script past the budget | Gate names the page and each script |
 
-Then, in CI with the label `mobile-e2e`:
+Then, in CI on PR B, which needs no label because it changes `frontend/`:
 
 | Scenario | Expected |
 |---|---|

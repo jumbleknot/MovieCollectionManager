@@ -174,6 +174,7 @@ jobs:
               # ran no mobile flow at all. `mobile` must stay a strict subset of `app` for it to mean
               # anything; the guard test now enforces that rather than a comment claiming it.
               - 'scripts/ci-mobile-agent-flows.sh'
+              - 'scripts/android-launch-smoke.sh'
               - 'scripts/maestro-run.sh'
               - 'scripts/ci-mobile-full-flows.sh'
               - 'scripts/ci-mobile-lib.sh'
@@ -210,6 +211,7 @@ jobs:
               - 'packages/**'
               - '.forgejo/workflows/app-ci.yml'
               - 'scripts/ci-mobile-agent-flows.sh'
+              - 'scripts/android-launch-smoke.sh'
               - 'scripts/maestro-run.sh'
               - 'scripts/ci-mobile-full-flows.sh'
               - 'scripts/ci-mobile-lib.sh'
@@ -1328,7 +1330,21 @@ jobs:
             adb reverse tcp:8082 tcp:8082
             adb reverse tcp:8099 tcp:8099
             adb install -r "$APK_PATH"
+            bash scripts/ci-log-step.sh android-launch-smoke bash scripts/android-launch-smoke.sh
             bash scripts/ci-log-step.sh maestro-agent-flows bash scripts/ci-mobile-agent-flows.sh
+
+      # Feature 087 (US4 scenario 7): the launch check's result as a commit status, because a pass has no
+      # other channel on this forge. Same gate as the emulator step, so a PR that skips the emulator posts
+      # nothing. If the gate is true and the check's file is absent, the emulator never reached the check,
+      # and the status says launch=not-run. `always()`: a failed launch is exactly when this matters.
+      # `continue-on-error`, and the script exits 0, so a failed post cannot mask the result.
+      - name: Publish the Android launch result
+        if: ${{ always() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full')) }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MEASURED_JOB_STATUS: ${{ job.status }}
+        run: bash scripts/ci-log-step.sh android-launch-publish node scripts/publish-android-launch.mjs
 
       # ── OPT-IN full mobile suite: the non-agent flows (MOBILE_SUITE=full only) ──────────────────
       # A SEPARATE emulator, on a phone-sized AVD, for a measured reason. The agent step above boots

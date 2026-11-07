@@ -20,8 +20,9 @@ const DEFAULT_KEYCLOAK_ORIGIN = 'http://localhost:8099';
  * sha256 of Expo Router's one inline bootstrap script — `globalThis.__EXPO_ROUTER_HYDRATE__=true;`
  * — served verbatim in the SSR HTML shell (dev AND prod; constant content, so the hash is stable
  * across builds). Allow-listing it by hash keeps `script-src` free of `'unsafe-inline'` (T006, the
- * strong option). If Expo ever changes that inline script the browser will print the new expected
- * hash in the CSP violation message — swap it here.
+ * strong option). If Expo ever changes that inline script, `scripts/check-web-bundle-budget.mjs` fails
+ * the build and prints the new hash. Adding it here is a reviewed change: the message gives the value,
+ * not permission to add it.
  *
  * NOTE (feature 089, replacing the residual accepted in T006): zod runs a `new Function("")`
  * eval-availability probe, which this `script-src` blocks and the browser reports as a violation.
@@ -30,6 +31,12 @@ const DEFAULT_KEYCLOAK_ORIGIN = 'http://localhost:8099';
  * eval app-wide would defeat the hardening. A new `eval` violation is a finding, not a known line.
  */
 const EXPO_HYDRATE_SCRIPT_HASH = "'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='";
+
+/**
+ * Feature 087: the inline scripts a page may contain. The single source for both the CSP below and
+ * the build gate, read through `createRequire`, so the two cannot disagree.
+ */
+const INLINE_SCRIPT_HASHES = Object.freeze([EXPO_HYDRATE_SCRIPT_HASH]);
 
 /** The three always-on static baseline headers (identical on every non-API + API response). */
 const STATIC_SECURITY_HEADERS = Object.freeze({
@@ -74,7 +81,7 @@ function resolveKeycloakOrigin(keycloakOrigin) {
 function buildWebContentSecurityPolicy(keycloakOrigin) {
   return [
     "default-src 'self'",
-    `script-src 'self' ${EXPO_HYDRATE_SCRIPT_HASH}`,
+    ["script-src 'self'", ...INLINE_SCRIPT_HASHES].join(' '),
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
@@ -118,6 +125,7 @@ function isApiPath(pathname) {
 
 module.exports = {
   DEFAULT_KEYCLOAK_ORIGIN,
+  INLINE_SCRIPT_HASHES,
   STATIC_SECURITY_HEADERS,
   buildWebSecurityHeaders,
   buildWebContentSecurityPolicy,

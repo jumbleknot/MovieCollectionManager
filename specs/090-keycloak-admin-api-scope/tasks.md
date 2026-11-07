@@ -9,11 +9,11 @@
 - [X] **T003** Prove SC-001 and SC-002 against real Keycloak images, using the script itself.
 - [X] **T004** Document it in the Keycloak README and `docs/runbooks/renovate.md` (FR-005).
 - [X] **T005** Open the PR and get green CI. **Quote** the run numbers.
-- [ ] **T006** Operator: straight after #950 upgrades production, assign `kc-admin-api` to `mcm-bff-service`
+- [X] **T006** Operator: straight after #950 upgrades production, assign `kc-admin-api` to `mcm-bff-service`
   in the console. The script cannot do this: production's admin uses two-factor. The operator chose this on
   2026-11-07, accepting that BFF admin calls answer 401 until the assignment is done. **Verify**: the BFF's
   client lookup answers 200 on 26.8.2.
-- [ ] **T007** Rebase PR #950 on this change and get it green (SC-003). Merge it only when the operator is
+- [X] **T007** Rebase PR #950 on this change and get it green (SC-003). Merge it only when the operator is
   ready at the console, because merging starts the upgrade.
 
 ## Evidence
@@ -26,5 +26,5 @@
 | T003, SC-002 | 26.8.1 realm: dry run `to do: create-scope, assign-scope`, nothing changed. `--apply`: `done`. Again: `nothing, already in place`. 200 before the upgrade, 200 after it, one scope | Local |
 | T003, repair | Realm upgraded with no script: 401. `--apply`, `to do: assign-scope`: 200 | Local |
 | T005 | All 12 required contexts green at `f5d5bbd6`, after `main` took #953. Merged as `d01a2715` | app-ci 6984, guardrails 6985, infra-image-scan 6986 |
-| T006 | | |
-| T007 | | |
+| T006 | Production, 2026-11-07, after #950 deployed. The operator confirmed 26.8.2 in the console and assigned `kc-admin-api` to `mcm-bff-service` as a default scope. Read-only check from the BFF container: Keycloak reachable 200, service-account token 200 carrying `kc-admin-api`, client lookup 200, user count 200 | Production, `fe91db2f` |
+| T007 | Rebased by Renovate onto `main` with this change. All 12 required contexts green at `5337b429` on Keycloak 26.8.2, browser tests included. Merged as `fe91db2f` at the operator's word, 2026-11-07 14:45 UTC | app-ci 7012, guardrails 7013, infra-image-scan 7014 |

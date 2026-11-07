@@ -8,9 +8,12 @@
 // runtime and splitting the React Native polyfill loader by platform. This gate is what stops that
 // being quietly given back.
 //
-// Three assertions, and the third is scoped wider than the other two on purpose:
+// Four assertions, and the third is scoped wider than the first two on purpose:
 //
-//   1. ENTRY SIZE vs budget. The cold-load path's size, the thing users feel.
+//   1. COLD-LOAD TOTAL vs budget. Feature 087: the sum of every script the worst page loads, read from
+//      the exported HTML, because a split bundle can fit chunk by chunk and still be too big to load.
+//      This is the thing users feel. Pages with no HTML, no scripts, or a script missing on disk all
+//      fail, because each could otherwise read as clean.
 //   2. DEFERRED PACKAGES absent from the ENTRY chunk. Size alone is satisfiable by a change that
 //      re-imports the assistant at the root while something else happens to shrink. The byte budget
 //      measures the symptom; this measures the cause, and names the package rather than leaving an
@@ -26,6 +29,12 @@
 // module is genuinely server-only (mongodb, node:* builtins, crypto, @/config/env, luxon,
 // @ag-ui/client). `src/bff-server/` now means server-only without exception, so this gate has no hole.
 //
+//   4. INLINE SCRIPTS on the allowlist. Feature 087: every `<script>` without `src` is hashed as a
+//      browser hashes it, over the raw body, and compared with `INLINE_SCRIPT_HASHES`, the same list the
+//      CSP is built from. A new inline script is a blocked script at runtime, which in the SDK 58 spike
+//      meant pages that never hydrated. HTML is fixed at export, so this is exact offline. A regex is
+//      enough because `</script>` ends raw text in the HTML grammar.
+//
 // Usage:
 //   node scripts/check-web-bundle-budget.mjs                      # default dist + committed budget
 //   node scripts/check-web-bundle-budget.mjs --dist <dir>          # an export's output directory
@@ -36,8 +45,10 @@
 //
 // Exit codes: 0 within budget / selftest passed · 1 over budget, a forbidden module, a missing or
 // ambiguous input, or selftest broken · 2 bad args.
-import { readdirSync, readFileSync, statSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, statSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { basename, join, dirname, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
@@ -45,6 +56,8 @@ import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from '.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_DIST = resolve(HERE, '..', 'frontend', 'mcm-app', 'dist');
 const WEB_JS = join('client', '_expo', 'static', 'js', 'web');
+const SERVER_HTML = 'server';
+const { INLINE_SCRIPT_HASHES } = createRequire(import.meta.url)('../frontend/mcm-app/web-security-headers.js');
 
 /**
  * The committed budget, in bytes.
@@ -89,7 +102,7 @@ export const USAGE = [
   'usage: node scripts/check-web-bundle-budget.mjs [--dist <dir>] [--budget <bytes>] [--json] [--selftest]',
   '',
   '  --dist <dir>       an expo export output directory (default: frontend/mcm-app/dist)',
-  '  --budget <bytes>   max entry-chunk size (default: 2000000)',
+  '  --budget <bytes>   max cold-load total: every script the worst page loads (default: 2000000)',
   '  --require-maps     treat a missing source map as a failure rather than a visible skip',
   '  --json             emit the report as JSON instead of human text',
   '  --selftest         prove the gate fails over budget and passes under it',
@@ -139,8 +152,100 @@ export function matchesIn(sources, needles, { exempt = false } = {}) {
   return [...hits];
 }
 
+/** Every `*.html` under a directory, as paths relative to it. A missing directory gives none. */
+function htmlFilesIn(root) {
+  let entries;
+  try {
+    entries = readdirSync(root, { recursive: true, withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((e) => e.isFile() && e.name.endsWith('.html'))
+    .map((e) => relative(root, join(e.parentPath, e.name)))
+    .sort();
+}
+
+/** One page's external `/_expo/` scripts and inline script bodies. */
+function scriptsIn(html) {
+  const external = [];
+  const inline = [];
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
+    const src = /\bsrc\s*=\s*["']([^"']+)["']/i.exec(m[1])?.[1];
+    if (src === undefined) inline.push(m[2]);
+    else if (src.startsWith('/_expo/')) external.push(src.split(/[?#]/)[0]);
+  }
+  return { external, inline };
+}
+
+/** The value a CSP needs to allow this inline script. */
+const cspHash = (body) => `'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`;
+
+/** The cold-load and inline-script assertions, from the exported HTML. */
+function checkPages(distDir, budget, allowlist, problems) {
+  const serverDir = join(distDir, SERVER_HTML);
+  const clientDir = join(distDir, 'client');
+  const files = htmlFilesIn(serverDir);
+  if (files.length === 0) {
+    problems.push(`no *.html under ${serverDir} — an export without pages must not read as clean`);
+  }
+
+  let worst = { page: null, bytes: 0, scripts: [] };
+  const seen = new Map();
+  const unlisted = [];
+  for (const page of files) {
+    const { external, inline } = scriptsIn(readFileSync(join(serverDir, page), 'utf8'));
+    if (external.length === 0) problems.push(`${page}: loads no /_expo/ script, so its cold load cannot be measured`);
+
+    let bytes = 0;
+    for (const src of external) {
+      const abs = join(clientDir, src);
+      if (existsSync(abs)) bytes += statSync(abs).size;
+      else problems.push(`${page}: references ${src}, which is missing from ${clientDir}`);
+    }
+    if (worst.page === null || bytes > worst.bytes) {
+      worst = { page, bytes, scripts: external.map((src) => basename(src)) };
+    }
+
+    for (const body of inline) {
+      const hash = cspHash(body);
+      seen.set(hash, (seen.get(hash) ?? 0) + 1);
+      if (!allowlist.includes(hash)) unlisted.push({ hash, page });
+    }
+  }
+
+  const overBy = worst.page === null ? null : worst.bytes - budget;
+  if (overBy !== null && overBy > 0) {
+    problems.push(
+      `cold load of ${worst.page}: ${n(worst.bytes)} B / ${n(budget)} B budget — OVER BY ${n(overBy)} B ` +
+        `(${((100 * worst.bytes) / budget).toFixed(1)}%). Scripts: ${worst.scripts.join(', ')}`,
+    );
+  }
+  for (const { hash, page } of unlisted) {
+    problems.push(
+      `${page}: inline script ${hash} is not on the allowlist, so the browser will block it. ` +
+        'INLINE_SCRIPT_HASHES in frontend/mcm-app/web-security-headers.js is a reviewed list: this is the ' +
+        'value it would need, not permission to add it',
+    );
+  }
+
+  return {
+    coldLoad: {
+      worstPage: worst.page,
+      worstBytes: worst.page === null ? null : worst.bytes,
+      scripts: worst.scripts,
+      pages: files.length,
+    },
+    inlineScripts: {
+      seen: [...seen].map(([hash, pages]) => ({ hash, pages })),
+      unlisted,
+    },
+    overBy,
+  };
+}
+
 /** Run every assertion. Returns a report; never throws on a bad tree. */
-export function check(distDir, budget, { requireMaps = false } = {}) {
+export function check(distDir, budget, { requireMaps = false, allowlist = INLINE_SCRIPT_HASHES } = {}) {
   const { dir, chunks, readable } = chunksIn(distDir);
   const problems = [];
   if (!readable) problems.push(`no web bundle directory at ${dir} — did \`expo export --platform web\` run?`);
@@ -158,13 +263,9 @@ export function check(distDir, budget, { requireMaps = false } = {}) {
 
   const entry = entries.length === 1 ? entries[0] : null;
   const entryBytes = entry ? entry.size : null;
-  const overBy = entry ? entry.size - budget : null;
-  if (entry && overBy > 0) {
-    problems.push(
-      `web entry chunk: ${n(entry.size)} B / ${n(budget)} B budget — OVER BY ${n(overBy)} B ` +
-        `(${((100 * entry.size) / budget).toFixed(1)}%)`,
-    );
-  }
+
+  // (1) and (4): the cold-load total and the inline-script allowlist, from the exported HTML
+  const { coldLoad, inlineScripts, overBy } = checkPages(distDir, budget, allowlist, problems);
 
   // (2) deferred packages must not be in the entry chunk
   let deferredCheck = 'skipped';
@@ -210,8 +311,10 @@ export function check(distDir, budget, { requireMaps = false } = {}) {
     dir,
     entryBytes,
     budgetBytes: budget,
+    coldLoad,
+    inlineScripts,
     overBy,
-    spare: entry ? budget - entry.size : null,
+    spare: overBy === null ? null : -overBy,
     chunks: chunks.map((c) => ({ name: c.name, size: c.size, hasMap: Boolean(c.mapSources) })),
     deferredCheck,
     deferredHits,
@@ -228,12 +331,19 @@ function report(r, asJson) {
     console.log(JSON.stringify(r, null, 2));
     return r.ok ? 0 : 1;
   }
-  if (r.entryBytes !== null) {
-    const pct = ((100 * r.entryBytes) / r.budgetBytes).toFixed(1);
-    if (r.ok) {
-      console.log(`web entry chunk: ${n(r.entryBytes)} B / ${n(r.budgetBytes)} B budget (${pct}%, ${n(r.spare)} B spare)`);
-    }
+  if (r.entryBytes !== null) console.log(`web entry chunk: ${n(r.entryBytes)} B`);
+  if (r.coldLoad.worstPage !== null && r.overBy <= 0) {
+    const pct = ((100 * r.coldLoad.worstBytes) / r.budgetBytes).toFixed(1);
+    console.log(
+      `cold load: ${n(r.coldLoad.worstBytes)} B / ${n(r.budgetBytes)} B budget (${pct}%, ${n(r.spare)} B spare), ` +
+        `worst page ${r.coldLoad.worstPage} of ${r.coldLoad.pages}, scripts: ${r.coldLoad.scripts.join(', ')}`,
+    );
   }
+  const inlineTotal = r.inlineScripts.seen.reduce((sum, s) => sum + s.pages, 0);
+  console.log(
+    `inline scripts: ${r.inlineScripts.seen.length} distinct across ${inlineTotal} occurrence(s), ` +
+      `${r.inlineScripts.unlisted.length} not on the allowlist`,
+  );
   if (r.deferredCheck === 'ran') {
     console.log(`deferred-package check: ${DEFERRED_PACKAGES.length - r.deferredHits.length}/${DEFERRED_PACKAGES.length} absent from the entry chunk`);
   } else {
@@ -252,7 +362,7 @@ function report(r, asJson) {
   console.error('');
   console.error('The web cold-load path is what every user waits for before any screen paints.');
   console.error('If this growth is intended, raise DEFAULT_BUDGET_BYTES deliberately and quote the');
-  console.error('measured before/after — see specs/077-web-bundle-diet/contracts/bundle-budget.md.');
+  console.error('measured before/after — see specs/087-expo-sdk-58/contracts/web-gates.md.');
   console.error('FAIL');
   return 1;
 }
@@ -267,8 +377,19 @@ function selftest() {
     writeFileSync(join(dir, name), 'x'.repeat(size));
     if (sources) writeFileSync(join(dir, `${name}.map`), JSON.stringify({ version: 3, sources, mappings: '' }));
   };
+  const tag = (name) => `<script src="/_expo/static/js/web/${name}" defer></script>`;
+  const writePage = (tree, name, html) => {
+    mkdirSync(join(tree, SERVER_HTML), { recursive: true });
+    writeFileSync(join(tree, SERVER_HTML, name), html);
+  };
+  const pageWithEntry = `<html>${tag('entry-aaa.js')}</html>`;
 
   write('entry-aaa.js', 500, clean);
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: a tree with no HTML passed');
+    return 1;
+  }
+  writePage(root, 'index.html', pageWithEntry);
   if (!check(root, 1000).ok) {
     console.error('SELFTEST BROKEN: a clean under-budget tree failed');
     return 1;
@@ -305,10 +426,47 @@ function selftest() {
   }
   write('assistant-panel-bbb.js', 10, ['/app/src/utils/api-client.ts']);
 
+  // Two chunks that fit the budget apart but not together, which an entry-only gate cannot see.
+  write('route-ccc.js', 600, clean);
+  writePage(root, 'split.html', `<html>${tag('entry-aaa.js')}${tag('route-ccc.js')}</html>`);
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: two chunks over budget together passed');
+    return 1;
+  }
+  if (!check(root, 1100).ok) {
+    console.error('SELFTEST BROKEN: two chunks exactly at budget failed');
+    return 1;
+  }
+
+  writePage(root, 'split.html', `<html>${tag('entry-aaa.js')}${tag('gone-ddd.js')}</html>`);
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: a page referencing a missing file passed');
+    return 1;
+  }
+
+  writePage(root, 'split.html', '<html></html>');
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: a page with no scripts passed');
+    return 1;
+  }
+
+  writePage(root, 'split.html', `<html><script>window.x=1</script>${tag('entry-aaa.js')}</html>`);
+  if (check(root, 1000).ok) {
+    console.error('SELFTEST BROKEN: an unlisted inline script passed');
+    return 1;
+  }
+  const hash = cspHash('window.x=1');
+  if (!check(root, 1000, { allowlist: [hash] }).ok) {
+    console.error('SELFTEST BROKEN: an allow-listed inline script failed');
+    return 1;
+  }
+  writePage(root, 'split.html', pageWithEntry);
+
   // A map-less tree: a visible skip by default, a FAILURE under --require-maps.
   const bare = mkdtempSync(join(tmpdir(), 'bundle-budget-selftest-nomap-'));
   mkdirSync(join(bare, WEB_JS), { recursive: true });
   writeFileSync(join(bare, WEB_JS, 'entry-aaa.js'), 'x'.repeat(10));
+  writePage(bare, 'index.html', pageWithEntry);
   if (!check(bare, 1000).ok) {
     console.error('SELFTEST BROKEN: a map-less tree failed without --require-maps');
     return 1;
@@ -318,7 +476,7 @@ function selftest() {
     return 1;
   }
 
-  console.log('selftest ok: under budget passes; over budget, a deferred package in entry, and server code in any chunk all fail; the Utils-Layer transport passes while any bff-server module fails; --require-maps rejects a map-less export');
+  console.log('selftest ok: under budget passes; over budget, a deferred package in entry, and server code in any chunk all fail; the Utils-Layer transport passes while any bff-server module fails; --require-maps rejects a map-less export; no HTML, a page with no scripts, a missing script, two chunks over budget together and an unlisted inline script all fail, while an allow-listed one passes');
   return 0;
 }
 

@@ -26,6 +26,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
+import { watchSecurityPolicy } from './fixtures/security-policy-watch';
 
 const ACTION_TIMEOUT = 150_000;
 const NAV_TIMEOUT = 60_000;
@@ -70,8 +71,12 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     test.setTimeout(360_000);
     const name = `t059-nav-${Date.now()}`;
     const collectionId = await seedCollection(request, name);
+    const watch = await watchSecurityPolicy(page.context(), BASE);
 
     await gotoHome(page);
+    // The walk's user has no assistant, so the assistant chunk is only checked here.
+    watch.assertClean('home, before the assistant loads');
+    await watch.proveCanSee(page);
     await openDock(page);
     await send(page, `take me to my ${name} collection`);
 
@@ -82,6 +87,7 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     await expect(page.locator('[data-testid="collection-screen-add-movie"]')).toBeVisible({
       timeout: NAV_TIMEOUT,
     });
+    watch.assertClean('streamed turn and the navigation it caused');
   });
 
   test('prefill → the assistant opens the add-movie form on the named collection', { tag: '@gate' }, async ({

@@ -51,6 +51,7 @@ const UNAUTHENTICATED = new Set([
   'bff-prod-lifecycle.spec.ts',
   'security-headers.spec.ts',
   'account-deletion.spec.ts',
+  'page-security-policy-walk.spec.ts',
 ]);
 
 const specs = readdirSync(WEB_E2E).filter((f) => f.endsWith('.spec.ts'));

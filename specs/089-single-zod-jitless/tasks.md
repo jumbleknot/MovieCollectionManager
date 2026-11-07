@@ -14,8 +14,8 @@
 - [X] **T005** Build the web bundle and measure the assistant chunk (SC-002).
 - [X] **T006** Run the assistant turn through the BFF with no `eval` allowance (SC-001).
 - [X] **T007** Run the same test on `main` and this branch on a fresh stack, after the first run failed.
-- [ ] **T008** Get a green CI run, including the Android agent flows (SC-003). Quote the run number here.
-- [ ] **T009** On feature 087's PR B branch, remove the walk's `eval` allowance and correct its contract.
+- [X] **T008** Get a green CI run, including the Android agent flows (SC-003). Green on head `a8b5fea2`: app-ci 6881, guardrails 6882, infra-image-scan 6883. Merged as `0f594b47`.
+- [X] **T009** On feature 087's PR B branch, remove the walk's `eval` allowance and correct its contract.
 
 ## Evidence
 

@@ -45,4 +45,4 @@ result and a PR that skips the emulator posts nothing. Its mapping from result t
 
 ## Label
 
-PR B uses `mobile-e2e`. PR C uses `mobile-e2e-full`.
+PR B uses no label: it changes `frontend/`, so the `mobile` path filter runs the Android half. PR C uses `mobile-e2e-full`.

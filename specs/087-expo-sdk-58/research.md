@@ -171,12 +171,12 @@ three checks each run depends on:
 
 **Assistant path**: the walk's user has no assistant, so the assistant chunk would go unchecked. One existing streamed
 test, `navigate → the assistant opens the named collection screen` in `assistant-navigate.spec.ts`, also uses the watch.
-It is `@gate`, and its verdict comes from a tool call the app renders. It has one permitted exception:
-`blockedURI === 'eval'`, directive `script-src`, at most one per document. Anything else fails.
+It is `@gate`, and its verdict comes from a tool call the app renders. It allows no violations.
 
-**Rationale for the exception**: it was accepted in feature 032 and is documented beside the hash. `'unsafe-eval'` is not
-added. A failure there would mean something other than that known line. This goes beyond the spec's walk, so it needs no
-spec change, but the operator should know it is there.
+**Corrected in T027 [M], then by feature 089**: this plan allowed zod's `eval` probe, one per document, as feature 032 did.
+The real path fired two, because the assistant chunk held two zod 4 engines (`zod@3.25.76`'s `v4/` subpath and `zod@4.6.7`),
+each with its own `new Function("")` probe. The operator did not accept tolerating them, so
+[feature 089](../089-single-zod-jitless/spec.md) removed the second engine and set `jitless`. The exception is removed.
 
 **Alternatives**: extending `security-headers.spec.ts` was rejected because it deliberately has no session. Running the
 walk in the main project risks session eviction. Giving the walk's user an assistant would mix a model-dependent path

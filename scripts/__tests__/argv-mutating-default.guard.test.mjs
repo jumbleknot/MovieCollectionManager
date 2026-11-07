@@ -169,6 +169,7 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     'renovate-health.mjs': 'guarded',        // posted a public comment to item #311
     'check-lockfile-refresh.mjs': 'guarded', // posted a public comment — renovate-health's ancestor
     'prune-bff-runtime-modules.mjs': 'guarded', // deleted files; ALSO inverted to --apply
+    'publish-android-launch.mjs': 'guarded', // posts a commit status; written with the rejecting parser (087)
 
     // EXEMPT — already rejects an unknown argument through its own parser, predating this module.
     // Re-homing them onto the shared mechanism is churn with no defect behind it.

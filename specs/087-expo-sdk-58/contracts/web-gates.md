@@ -65,10 +65,8 @@ file, run the walk, then restore the file and recreate the container. Nothing el
 ## Assistant path
 
 The existing `@gate` test `navigate → the assistant opens the named collection screen`
-(`assistant-navigate.spec.ts`) uses the same watch with this one exception:
+(`assistant-navigate.spec.ts`) uses the same watch, and allows nothing.
 
-```text
-effectiveDirective is script-src (or script-src-elem), blockedURI === 'eval', at most 1 per document
-```
-
-Anything else fails. The exception is declared at that call site and is not a default in the fixture.
+**Corrected twice.** This first allowed one `eval` violation per document, following feature 032's note. T027 measured two,
+one from each of the two copies of zod's engine in the assistant chunk. Feature 089 removed the second engine and turned off
+the remaining probe, so the exception and the fixture's support for exceptions are gone.

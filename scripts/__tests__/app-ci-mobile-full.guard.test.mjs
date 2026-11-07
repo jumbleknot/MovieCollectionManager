@@ -212,3 +212,26 @@ test('every non-blocking flow is in the run, says WHY (environmental vs known de
   // The blocking set is everything else: a non-blocking flow must never reach `failed+=`.
   assert.match(s, /if is_non_blocking "\$flow"; then\s+result=FAIL-NONBLOCKING[\s\S]*?else\s+result=FAIL\s[\s\S]*?failed\+=/);
 });
+
+// Feature 087 (US4 scenarios 1, 2, 7). The launch check runs before the agent flows, on every run the
+// emulator runs, and its status step can never disagree with the emulator step about whether it ran.
+test('the Android launch check runs after install and before the flows, and its status shares the emulator gate', () => {
+  const emulator = job.steps.find((s) => s.name === 'Run agent E2E flows on emulator');
+  const lines = emulator.with.script.split('\n').map((l) => l.trim()).filter(Boolean);
+  const at = (needle) => lines.findIndex((l) => l.includes(needle));
+  assert.ok(at('adb install') >= 0, 'no adb install in the emulator step');
+  assert.equal(at('android-launch-smoke.sh'), at('adb install') + 1, 'the launch check must directly follow adb install');
+  assert.equal(at('ci-mobile-agent-flows.sh'), at('android-launch-smoke.sh') + 1, 'the flows must directly follow the launch check');
+  assert.match(lines[at('android-launch-smoke.sh')], /ci-log-step\.sh android-launch-smoke bash /);
+
+  const publish = job.steps.find((s) => s.name === 'Publish the Android launch result');
+  assert.ok(publish, 'no status step for the launch result');
+  assert.equal(publish['continue-on-error'], true, 'a failed post must not fail the job');
+  const gate = String(emulator.if).replace(/^\$\{\{\s*|\s*\}\}$/g, '');
+  assert.equal(publish.if, `\${{ always() && (${gate}) }}`, 'the status step must carry the emulator step\'s exact gate');
+  assert.match(publish.run, /publish-android-launch\.mjs/);
+
+  const filters = parseYaml(workflow.jobs.changes.steps.find((x) => x?.with?.filters).with.filters);
+  assert.ok(filters.app.includes('scripts/android-launch-smoke.sh') && filters.mobile.includes('scripts/android-launch-smoke.sh'),
+    'scripts/android-launch-smoke.sh must be in BOTH the app and mobile filters');
+});
