@@ -1,23 +1,34 @@
 {
-  "coveredCommit": "a6e25d2e8a3a141bd0ed39fce1db78597bec6e23",
-  "coveredAt": "2026-11-06T23:46:15.855Z",
-  "lastOutcome": "failed",
+  "coveredCommit": "afb643f027e8c1daa928a81df488a4cedd46d3d8",
+  "coveredAt": "2026-11-07T06:32:50.531Z",
+  "lastOutcome": "completed",
   "backlog": [
     {
-      "area": "runbooks",
+      "area": "projects",
       "pages": [
-        "renovate.md"
+        "keycloak.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
+      "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "server-setup.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 936,
-    "headCommit": "89ae25031d3d6aac0b89a40ab45cc880765b40ae",
+    "headCommit": "8bc5f9acda4071cc821ca26626db829641244447",
     "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
@@ -106,53 +117,53 @@
         "subjects": {},
         "areaExists": true,
         "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "renovate.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
       }
     ],
-    "updatedAt": "2026-11-07T05:57:08.078Z"
+    "updatedAt": "2026-11-07T06:32:51.186Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 8,
-    "elapsedSeconds": 3104,
-    "stoppedAtBudget": false
+    "pagesWritten": 6,
+    "elapsedSeconds": 2118,
+    "stoppedAtBudget": true
   },
-  "escalations": {
-    "runbooks/renovate.md": {
-      "effort": "low",
-      "reason": "deadline",
-      "since": "2026-11-07T05:57:07.433Z",
-      "failuresAtLow": 0
-    }
-  },
+  "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 682,
+    "calls": 134,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 4014656,
-    "cached": 71795684,
+    "uncached": 1520829,
+    "cached": 15957190,
     "cacheWrite": 0,
-    "output": 1100878,
-    "reasoning": 930238,
-    "ms": 5171133,
-    "estCostUsd": 2.9562,
+    "output": 198586,
+    "reasoning": 152296,
+    "ms": 909286,
+    "estCostUsd": 0.7903,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/keycloak.md",
-        "runbooks/renovate.md",
-        "runbooks/server-setup.md",
-        "gotchas/keycloak-service-account.md"
+        "runbooks/renovate.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 2.9562,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 0.7903,
       "rateLimited": null
     }
   ],
