@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d2eb208b6d4ae128170d90d63d1c54e372d2d25d315a47c7bce3a7bc46fdd4e2",
+  "pageVersion": "sha256:a6db35c7bb541eee2874b999ba8b7fd2033f7a160a86246c41276ebc9dbfd1f4",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -440,7 +440,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
-          "version": "repo-file-v1:sha256:603f7b22dbae2f5e2dacb2c81872a2c24f2f520f430c5f2f04e2ecacfd5ba9ec"
+          "version": "repo-file-v1:sha256:d2d6c9f441b8c98e09a6531689fb340a6ba70d08deee9bf63ab6511faea0d545"
         }
       ]
     },
@@ -895,10 +895,86 @@
           "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
         }
       ]
+    },
+    {
+      "id": "claim_28f7d4cc25654234a824f13ddea4376a",
+      "statement": "The tamagui lockstep guard resolves every tamagui/@tamagui/* update through the shared resolvedGroupName() model in scripts/lib/renovate-package-rules.mjs — the same model renovate-workflow.guard.test.mjs uses — so its \"one group\" assertion is about the group Renovate actually resolves (last matching groupName wins), not merely a rule that names the package.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L136-L175",
+          "version": "repo-lines-v1:sha256:0f8a92258ff413aab987a4b24c447fba8f8cf285b10dd86da288592c62926b56:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2ZGQ0YTVjOTJjNjYzMDkwOWQyYmM4M2M5YTYyZGUwZjJhM2RlZDMwZWJjOGU4ODdhNjk3NTIzMzBjYjk4YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YmVkMDhmZWY1ZGNiMDZlYTFjMDhmODVhYzk4MTYwZGU4YmYzNWY1MzQ2MzE1OWU5Y2ViYjllOGZiZGJiZmMifQ"
+        },
+        {
+          "resource": "repo://scripts/lib/renovate-package-rules.mjs#L85-L93",
+          "version": "repo-lines-v1:sha256:7dfa9daeb469fe9bd9d34757eb4d84db1b8c4d0ecb9868a66692683b4a555060:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQzMDYyOWFiZmE1Y2NhNTkzMWUwZTM5N2ZjNDJlNGY3OWM3ZTJjYThhMGQ0ZjVhM2JjMmZjNGY3MmI0YjY3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGYwZDEzOTkyODhiZjY4NWFlODM5YmQ3OGZiOGE0YzJhZWZlZGIzZTkyZWMyNGQ0NDUyMTcwZTI4MWM4ODU5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a10ee4257e542cfac13bb09e1496c31",
+      "statement": "A tamagui peerDependencies entry, if declared, must be bounded to the installed major (>=N.0.0 <N+1); an open peer range is rejected because it would admit the next major without review.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L69-L81",
+          "version": "repo-lines-v1:sha256:79b511a84b371b551f5e4b99a1bab4032e69480a7c3af230e78d56ef5e9c6197:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkOTA2NGM2ZWMyNTUxY2JlYTk5OTJiYmM0YWRmYzVmYzdhMTljZjEwOGVhMTYxY2EyN2U5YzExNjBjMmNjZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5YTg1YTNmMTMzMWI0Yzg5MDczYTViZDExNDU4YzU2MWI0MjUxZWVkNWIxMGUwOWZjNzY3ODZkYmJhYjAxZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NDBjMjViNmEzMjVhMDg4OGY0YjcwYmFkMmJhODk4NWFjYTUzYWE3MTFkYWViN2Y1MDJhNjI4ODFlOTdhZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f36f4b86f0a94020a5eacfe038cd616a",
+      "statement": "The lock must hold exactly ONE INSTANCE of @tamagui/core and @tamagui/web, not merely one version: pnpm gives each peer-context suffix its own snapshot key (e.g. @tamagui/web@3.0.18(aaa) vs (bbb)), so two peer contexts of the same version are two copies at runtime with two style registries — the blank-page failure — and the remedy is pnpm dedupe.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L114-L114",
+          "version": "repo-lines-v1:sha256:82383c094cddded1424d917021723db4e7432d0c314fdfd9e5065c181dd39938:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIzODNjMDk0Y2RkZGVkMTQyNGQ5MTcwMjE3MjNkYjRlNzQzMmQwYzMxNGZkZmQ5ZTUwNjVjMTgxZGQzOTkzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODIzODNjMDk0Y2RkZGVkMTQyNGQ5MTcwMjE3MjNkYjRlNzQzMmQwYzMxNGZkZmQ5ZTUwNjVjMTgxZGQzOTkzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGUxN2Y2MTdjYTNmZWJkODk2ODZmNTI4YzFjM2M5ZGZhYjlhMWQxOTg1NzYxNzIwNWRkYmQ5NTc3N2MxYmY0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA5MTc3YjAzNzY4M2M4NmI2ZGQxZjFlNWExOTI3OGMyMmZlNzRiMTUyOTRlZWQxZDEyN2I5ZmMxNzM3MWRiZiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L177-L256",
+          "version": "repo-lines-v1:sha256:f9ee06e7ba794d8e6334df0dd2db1731ea8f7e4c413c758373360131b3cc9591:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZGM0OWVkYjI2MDQ2NDBkZmEzNjJiYWY0MmYxNTFlNDM3YjM4Y2RiMjViZTkzNDUyMTMzZjAwYjBjNzEwYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZTFmODk1NDEyYWE4MDM5MzUzNzFjMWIxZTNhNmE1OWFhNWFkN2UwMDAwOWRkNmI1NDQ4NzA2YzY4Zjg2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2NmI4Yzk0OTU1YjkzNWUwZDI1MGI4NGQ0MjQ2MmZiZjVlYzRmN2Y5MmM5YWZlN2YwODljMzI5Zjg3ZTQ3NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82b53aaee1904d8ab03d742033d74946",
+      "statement": "The single-instance check counts only `snapshots:` keys of the multi-document pnpm lock (each document ends at the next top-level key, so the package manager's own env document is not counted), and it fails when ZERO keys match as well as when more than one does, so a parser that stops reading the lock cannot pass silently.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L183-L247",
+          "version": "repo-lines-v1:sha256:54f09403b81254c009c9e27bd85004240bbae0d684858fe59dd385f13b71e4ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMTBhNjY5NjkwODIyZjZiZjY1NzM3YTI4ZWY5MTIyZGZlMTRiNDkyMDlkMjgzZjQwOTAzOGJkNzdlMDRhN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MzdlZjIwMzU0Y2FhNDUzNDYwZmY2MTFjZDM1MmUzZDJmNTU2MjlkNzk4MjE2OGQ0NzYyZTEzOGFhZDQ4ZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwM2VhNjcyZmE0NTlmNTc2ZTJiNTJmMGUxODRhMjU1M2U4MDVkNjQ4YjliMzU2OWJiYWNlOTgwOTEwMzY0ODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_857d92e42f5c44b3aa56fc32f606f33f",
+      "statement": "Both workspace manifests (frontend/mcm-app/package.json and packages/design-system/package.json) currently declare the same exact tamagui set — @tamagui/core, @tamagui/stacks and @tamagui/shorthands at 3.0.18 — which is what makes the exact-version and single-core/web invariants hold.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/package.json#L28-L29",
+          "version": "repo-lines-v1:sha256:15436fbd86956a7240f5096ea91925a40872f6fc21d1240c4cd39caa5684bb71:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg5YWVkNjQyNDFlM2JhMDBiYmNhYTc3YjJhYjg4NzU4Zjg4MWFmM2RhY2NhNzJiNjY5ZWUzMzZjN2RkMmI5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4ZTg5YmQ4OTY2OTg4MzgyZmEwNTA4MjdjNjQ2YjA5MTNjNzBjZTM2MTA5ODY3NzYxMWQ0YjM2MzRkZTYyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRmNzIzNzYyOGZjNzA1OWE4OTk2NTMwMmVlMzNkYjQzZTcxMzdjNTRlODZmN2RiMjc1ODlkMGQ0Yzg4ZDE1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmNGYyYjNhNDYwZWQwNmEwNmYzYmUyOGViY2QxMmRhOWY4ODc5ODAzNzIyYzM5OWJmNzVlN2IzOGM5ODQxMiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/package.json#L20-L26",
+          "version": "repo-lines-v1:sha256:45afb4bf560c4ba9b67baff89f3e611152823ad9338d1f31fbfa221d34fdc91c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjQ2OWQ5ZTA5NzU3MjI0NjY2NzM0YzllZjdiMjU0ZDg4NTM0ZjVkNWJiNzA5ODk2MDgwNWM1NTNkYzMwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJhZjExOTYwYjliZWY1MWE2MGE1NDQ0ZGYyZDcwNmZkZTJkMzY3ZDdhM2FiZmQwMjQxOTY0ODkxMWViYTU4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzRiMDA1OTNmYmVkY2I3ODA3Mjk0MGRiMzY4MjczY2VkMDFhNmM3M2UyM2JmNzg5MTg2M2RlMTEyMWRmZTNjNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_63af50952fd044fb82807b177304aa00",
+      "statement": "The removed v2 Babel compiler plugin @tamagui/babel-plugin must be named by neither manifest nor frontend/mcm-app/babel.config.js — v3 has no 3.x of it and compiles through @tamagui/metro-plugin — so the guard fails on a leftover entry that would keep a v2 compiler running over v3 sources.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/babel.config.js#L6-L6",
+          "version": "repo-lines-v1:sha256:971785b7812ec0e6ffb2e93d1dd1526df9087cfaa5a3086255d93a0feda097a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcxNzg1Yjc4MTJlYzBlNmZmYjJlOTNkMWRkMTUyNmRmOTA4N2NmYWE1YTMwODYyNTVkOTNhMGZlZGEwOTdhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcxNzg1Yjc4MTJlYzBlNmZmYjJlOTNkMWRkMTUyNmRmOTA4N2NmYWE1YTMwODYyNTVkOTNhMGZlZGEwOTdhOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY3MTJiMjljYmZkYTg5YTZkNGU0MjQ2NWRjOTM3NjZkZGFlMWYxNmIxMjBiMTQ5N2Q5MDIyNzk5YmNlZWFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjlkYzAwZTg5Zjc0Y2Q5ZGY0Mzk0OTI4N2NlNzQzYWJkODEyMDhiNDc4ZjNlMjk5M2I4NWQ3MmQ1Yjg4ZjA3ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L122-L134",
+          "version": "repo-lines-v1:sha256:242c6283c992b9b71c405def36947f66e93ea45c21b7ccb053a4bd1cddef95bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZDdmN2JjOWE1MDJhYmQ1OTJjNzZmYmMzZjM4ODYzY2I0N2MyMmI1ZTlmODE0NGY3ODNmZTg1MjJiOWJmNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlNTQxZWFiNzkwNWM1YzUxNmZkYTEyOWUwMmEzNWE5OTI5NTU3M2NmYjM4OGVlMjY5YTNiYmVhYWQyYzgwNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NmRjMjViZmMxMGNhOTk5YzJiNjM3ZjI0OWI1NzAxZjRkZTdiYjJlMzA1NjQzOTk0YTVmMDAxZDgyYTZkOTYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T05:57:36.933Z"
+    "at": "2026-11-07T19:55:04.696Z"
   }
 }

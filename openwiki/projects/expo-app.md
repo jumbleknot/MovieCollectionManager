@@ -9,6 +9,8 @@ sources:
     resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-bff475d8fa855e3592cfedc2
+    resource: repo://.specify/memory/constitution.md
   - id: openwiki-source-30d3dc827bae5c1cb657fa31
     resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
@@ -119,6 +121,10 @@ sources:
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-c723e348f34e858500a3ce16
+    resource: repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts
+  - id: openwiki-source-5f49d32c246932bc307d9d17
+    resource: repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
   - id: openwiki-source-5ee35374d6ab0e61934498cd
@@ -175,8 +181,12 @@ sources:
     resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-16870c3ee3399a868ae59956
+    resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389
     resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-93b6202dca9e48a643d50488
+    resource: repo://specs/087-expo-sdk-58/tasks.md
   - id: openwiki-source-5c651a2e85869320925d0597
     resource: repo://specs/089-single-zod-jitless/spec.md
   - id: openwiki-source-b1bbf22fc6d5be70b62d6d45

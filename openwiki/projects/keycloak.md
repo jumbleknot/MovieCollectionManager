@@ -131,8 +131,14 @@ sources:
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
   - id: openwiki-source-9cf3b6bdb4f757d661e84469
     resource: repo://specs/090-keycloak-admin-api-scope/spec.md
+  - id: openwiki-source-862ff389727016f069a59d93
+    resource: repo://specs/090-keycloak-admin-api-scope/tasks.md
+  - id: openwiki-source-ee756b2622ea0014c565c9dc
+    resource: repo://specs/092-prod-service-account-roles/plan.md
   - id: openwiki-source-210be746e72ce9b5abe32746
     resource: repo://specs/092-prod-service-account-roles/spec.md
+  - id: openwiki-source-7dcc04357ee7099bb248cb4d
+    resource: repo://specs/092-prod-service-account-roles/tasks.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }

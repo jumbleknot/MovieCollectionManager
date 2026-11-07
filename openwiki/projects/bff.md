@@ -177,12 +177,14 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-2500897f79f457d05a1f0bd2
     resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
+  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
+    resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T10:07:39.873Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 
@@ -877,36 +879,44 @@ per request.
   dev default rather than emitting a broken directive: the WHATWG `URL` parser accepts a scheme-less
   host and yields the opaque origin string `null`, which would otherwise ship
   `connect-src 'self' null`.
-- **The one inline script is allow-listed by hash, not by `'unsafe-inline'`.** Expo Router's
-  bootstrap script (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) is hashed into `script-src`; if Expo
-  ever changes it, the browser prints the new expected hash in the CSP violation and the constant is
-  swapped.
-- **No `eval` violation is expected, and a new one is a finding rather than a known line** (feature
-  089, replacing the residual T006 accepted). The old residual was one benign `eval` line from a
-  third-party `new Function("")` capability probe; feature 087's browser walk then measured **two
-  blocked probes per page**, because the assistant chunk held two probing zod copies — `zod@4.6.7`
-  (pulled in by the app's own code and `@copilotkit/react-core`) and `zod@3.25.76`'s `zod/v4` build
-  (pulled in by `@ag-ui/core` alone, which `@ag-ui/client` and `@ag-ui/proto` tied it to by declaring
-  `zod ^3.25.76`). Only 4.6.7 skips its probe when zod's `jitless` setting is on; 3.25.76 has no such
-  check. Rather than raise the allowance, the cause was removed in two halves: the `@ag-ui/client>zod`
-  and `@ag-ui/proto>zod` overrides in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) put
-  `@ag-ui/client` on the app's own zod 4 range — a value deliberately *outside `@ag-ui/client`'s
-  declared range*, so recheck it on an AG-UI upgrade and keep it equal to the app's own zod range so
-  the two stay one copy — and `src/utils/zod-jitless.web.ts` sets `config({ jitless: true })` before
-  any schema is built, which works only because `src/components/agent/assistant-panel.tsx` imports it
-  **first**: that panel is the deferred assistant chunk's only root, so import order runs it ahead of
-  every package in the chunk. The setting is web-only (the native module is empty — there is no CSP
-  there to report a probe, and `jitless` has not been measured under Hermes). Measured 2026-11-06 on
-  the web bundle: the assistant chunk fell from 2,850,492 B to 2,536,265 B and now holds one
-  `v4/core/util` (`zod@4.6.7`); `zod@3.25.76`'s v3 code stays for `@copilotkit/shared`, and
-  `@copilotkit/runtime` runs only in the BFF so it legitimately keeps its own zod 3 copy of
-  `@ag-ui/core` — which is why the lock file cannot prove the chunk and the source map can.
-  `script-src` itself did not change (FR-004): `'unsafe-eval'` and `'unsafe-inline'` stay
-  deliberately absent, because permitting real eval app-wide would defeat the hardening. The
-  arrangement is pinned by
-  [`scripts/__tests__/single-zod-engine.guard.test.mjs`](../../scripts/__tests__/single-zod-engine.guard.test.mjs)
-  and the web/native halves by
-  [`src/utils/unit-tests/zod-jitless.test.ts`](../../frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts).
+- **The inline-script allowlist is one list, and the CSP and the build gate both read it.** Expo
+  Router's single bootstrap script (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) is hashed into
+  `script-src` by sha256, which is why the policy needs neither `'unsafe-inline'` nor
+  `'unsafe-eval'`. The allowlist is exported from this module as `INLINE_SCRIPT_HASHES`, and
+  [`scripts/check-web-bundle-budget.mjs`](../../scripts/check-web-bundle-budget.mjs) requires that
+  same module through `createRequire` and hashes every inline `<script>` in the exported HTML exactly
+  as a browser would, so the policy and the gate cannot disagree about what is permitted. A new
+  inline script fails the build offline and prints the `'sha256-…'` value it would need — that value
+  is the finding, not permission to add it — and a hash that drifts out of this list is a script the
+  browser blocks at runtime. The list is deliberately one element long; adding a second entry is a
+  reviewed change, not a way to silence the gate.
+- **No `eval` violation is expected, and a new one is a finding rather than a known line.** Feature
+  032 had accepted a blocked `new Function("")` eval-availability probe on this surface as a benign
+  residual; feature 089 removed the probe instead, so the assistant chunk now holds **one** zod 4
+  engine and nothing here probes. The cause was that `@ag-ui/client` and `@ag-ui/proto` declared
+  `zod ^3.25.76`, which tied `@ag-ui/core`'s peer to a second zod 4 engine (3.25.76's `zod/v4`
+  build) — even though `@ag-ui/client` and `@ag-ui/core` import only `zod/v4` and `@ag-ui/proto`
+  imports no zod at all. It is removed in two halves that must stay together: the `@ag-ui/client>zod`
+  and `@ag-ui/proto>zod` overrides in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) put them on
+  the app's own zod 4 range — a value deliberately *outside `@ag-ui/client`'s declared range*, to be
+  rechecked on an AG-UI upgrade and kept equal to the app's own range so the two stay one copy — and
+  [`src/utils/zod-jitless.web.ts`](../../frontend/mcm-app/src/utils/zod-jitless.web.ts) turns the
+  remaining engine's probe off with `config({ jitless: true })` before any schema is built. Import
+  order *is* the mechanism, because zod reads the setting when the first object schema is built:
+  [`src/components/agent/assistant-panel.tsx`](../../frontend/mcm-app/src/components/agent/assistant-panel.tsx)
+  — the deferred assistant chunk's only root — imports it **first**, ahead of every package in the
+  chunk. The setting is web-only: the native module is deliberately empty, because there is no CSP on
+  native to report a probe and `jitless` has not been measured under Hermes. `script-src` itself is
+  unchanged — `'unsafe-eval'` and `'unsafe-inline'` stay deliberately absent, since permitting real
+  eval app-wide would defeat the hardening. The arrangement is pinned by
+  [`scripts/__tests__/single-zod-engine.guard.test.mjs`](../../scripts/__tests__/single-zod-engine.guard.test.mjs),
+  which asserts both that `@ag-ui/client`'s `@ag-ui/core` snapshot carries no zod 3 peer and that the
+  panel's first import is the jitless module, and the web/native halves by
+  [`src/utils/unit-tests/zod-jitless.test.ts`](../../frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts),
+  which counts real `Function` constructions with a control proving the counter can see a probe. The
+  lock file alone cannot prove the chunk, because one zod 3 copy legitimately remains:
+  `@copilotkit/runtime` runs only in the BFF, so its own `@ag-ui/core` on zod 3 never reaches a
+  browser.
 - `X-Powered-By` is disabled (server-technology disclosure), and the `X-BFF-Source` marker stamped on
   every response — static asset, SSR HTML, `/bff-api/*` route and express's own 400 alike, with the
   value taken from the `BFF_SOURCE` env var (`unknown` when unset) — is what lets the web E2E

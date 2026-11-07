@@ -7,6 +7,49 @@ tags: [playwright, react-native-web, e2e, frontend]
 verified:
   - by: openwiki/0.7.1
     at: 2026-11-07T19:02:58.048Z
+sources:
+  - id: openwiki-source-d3d6462458271e37e692275f
+    resource: repo://frontend/mcm-app/playwright.config.ts
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-86d9e16e8c227d41470126a4
+    resource: repo://frontend/mcm-app/scripts/cleanup-e2e-data.ts
+  - id: openwiki-source-961eb1065bf9ca260d0ae2fa
+    resource: repo://frontend/mcm-app/src/components/backups/schedule-editor.tsx
+  - id: openwiki-source-f5894e34ba3a8b76a885d68f
+    resource: repo://frontend/mcm-app/src/components/collection-card.tsx
+  - id: openwiki-source-5d50b9f7c460fe00f48c21b8
+    resource: repo://frontend/mcm-app/src/components/loading-indicator.tsx
+  - id: openwiki-source-75c19a7a987cb93703567f26
+    resource: repo://frontend/mcm-app/src/screens/not-found-screen.tsx
+  - id: openwiki-source-a080f70739805ca715a99c22
+    resource: repo://frontend/mcm-app/tests/e2e/mobile/home-screen.yaml
+  - id: openwiki-source-fb2c95e423345fb3da997889
+    resource: repo://frontend/mcm-app/tests/e2e/web/a11y.spec.ts
+  - id: openwiki-source-060d7e10458fa6c5a0d5f080
+    resource: repo://frontend/mcm-app/tests/e2e/web/admin-settings-access.spec.ts
+  - id: openwiki-source-2d7a83a560ab6dec0daf8651
+    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-c0571122c642aa07c48f46e1
+    resource: repo://frontend/mcm-app/tests/e2e/web/collections.spec.ts
+  - id: openwiki-source-efb6c7e5952b0db8fbdd4ddd
+    resource: repo://frontend/mcm-app/tests/e2e/web/settings.spec.ts
+  - id: openwiki-source-7ca6b85c219d4fdef050a7aa
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-turn.ts
+  - id: openwiki-source-bfd1dcd66339cb51fd41729c
+    resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
+  - id: openwiki-source-6230a2d05eadba772d30d66a
+    resource: repo://packages/design-system/components/controls.test.tsx
+  - id: openwiki-source-22a96f8aae7156deae8932f4
+    resource: repo://packages/design-system/components/inputs/Switch.tsx
+  - id: openwiki-source-a9f8640b2ea19387ecec6be5
+    resource: repo://packages/design-system/components/navigation/NavList.tsx
+  - id: openwiki-source-e3cf144619c81072e7ba6980
+    resource: repo://packages/design-system/components/navigation/Tabs.tsx
+  - id: openwiki-source-8434abab10f66dd9a1e2e3d0
+    resource: repo://packages/design-system/components/surfaces/Banner.tsx
+  - id: openwiki-source-be3bf2fd7e8c3e17d16750a4
+    resource: repo://packages/design-system/components/surfaces/Card.tsx
 ---
 
 # Playwright testID mapping — React Native Web renders testID as data-testid

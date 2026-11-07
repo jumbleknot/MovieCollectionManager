@@ -23,6 +23,8 @@ sources:
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
+    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
   - id: openwiki-source-c138086948681bd36101354f
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-900e4fa48a3671f4d583c11d
@@ -35,8 +37,12 @@ sources:
     resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-0bed00f693d972828ff1210e
+    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
+    resource: repo://scripts/android-launch-smoke.sh
   - id: openwiki-source-2d569134a872251a7d87c36a
     resource: repo://scripts/build-apk-short-path.ps1
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -63,6 +69,8 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
+  - id: openwiki-source-11ba1741c25b3030e34f4dd8
+    resource: repo://scripts/publish-android-launch.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1

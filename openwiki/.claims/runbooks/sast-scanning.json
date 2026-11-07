@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0e38bdd309a55a23e8029a4087d4d0c98d027113d937654dcaa19f8d0547443b",
+  "pageVersion": "sha256:c251f0fb43b3a9393053f5f404ab4036fc7113abb37d624da19767d0efbe14af",
   "claims": [
     {
       "id": "claim_61530fe60c8942d2958670ba868ed311",
@@ -855,7 +855,7 @@
       "statement": "The cap rule was added because six Renovate major-widening proposals for this file were pending on 2026-10-18, and the structural answer chosen was to disable `major` updates for `pnpm-workspace.yaml` in `renovate.json` outright (patch/minor stay enabled and ungated, since a genuine floor raise arrives on that track), with the cap rule as the second line of defence if a widening arrives by another route.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md#L842-L852",
+          "resource": "repo://docs/runbooks/renovate.md#L848-L858",
           "version": "repo-lines-v1:sha256:4f2d3c19d9b9068f97482ffde511698a37a2fbfa753040b51c398fc75a68ab40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDZmOTU5NWM2ZTBkMzQ0NDY4YWZkMjAzMmFlOWJmMWQ1Y2Q0NzgxNmJkNzlmMGJiNWRiODAyNThjM2ExODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjNmMmIzZDQ2MzdmMWEyNjg0ZmM4MTJlZDY3YjdmYzdkMTJlZDIxMWM2MTcwN2VmOGVhYzZhMWY4NjVmNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjE0YzE0OGU5ODYzOWI2OTIzZWE2MzdmZDUyYWQxNGE3MTE5N2ZmN2Y5YzhmM2JiNWJjZmM5NTg0YTM3OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkODJlYThmMmU0ZjhiNDM3NWJhNThhOWJmMzc3ZGU1YmEyNTRlNmM2ZGZlZDQzZjI5N2VkNmQxNDE5YWY3YTcifQ"
         },
         {
@@ -1074,7 +1074,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/web-security-headers.js",
-          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
+          "version": "repo-file-v1:sha256:688b001d2fb6e91a705a809409a5d8480d1246a23dd31cf2270821255ea73b4b"
         },
         {
           "resource": "repo://pnpm-workspace.yaml",
@@ -1089,10 +1089,70 @@
           "version": "repo-lines-v1:sha256:0cce0f0b6862199ee256d5f0c0c4e9f521ed7ee04a8d56ddcb2e8f60bbc8555b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5YzFkMGFhNTk5MjYyMzJiOGQ0ODYyNjM4NjY5YjA1NmIzZDZhZmE5ODMzYTg4OWIzNjZlMjdiMTE2YzlhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGVhNzFjM2ZkY2IyNDE3YWNjMWQxZTkyZDA4OWMxY2YzN2UwNzBmZTYxMDY2OGZmM2FkN2ViNTY3YmQ4Nzk1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc4ODI1ZjgwNTJlMGYyODg3MDNmNGMyMTRiMmIyMTY5ZDUxMjIzMmE3MjdkYTU3OTY4OTIzMWVjMTNkZWQ5MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_4cde5f77471347d2bb6cc2576223ff0e",
+      "statement": "The single-zod-engine fix has a second half beyond the pnpm override: the assistant chunk's first import is `@/utils/zod-jitless`, which on web resolves to `frontend/mcm-app/src/utils/zod-jitless.web.ts` and calls zod's `config({ jitless: true })` before any schema is built, while the native module `frontend/mcm-app/src/utils/zod-jitless.ts` is deliberately an empty module because Hermes' evaluation behaviour was never measured. The ordering is load-bearing: modules evaluate in import order and the panel is the deferred chunk's only root, so this must precede every other import in `frontend/mcm-app/src/components/agent/assistant-panel.tsx`.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L28-L30",
+          "version": "repo-lines-v1:sha256:fd7584f22d6976b925cab83fa829757b52933921d6ecd7aebac39af4ee077d33:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhiZDIxYzFjNGY0ZjNmZDc2MmYzYTlhYjA0MjlmMzY4OTdmNjM5OGVjNjI1MjVjNGMxYjk0NWMyMmZkYjY2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDhlOTQxNDcyZmM2NDI0YWU0N2IwNzlhZGIzYmRjYjMyNGRjNmI0MDU3NmQ3YjcxZDI5MmU1OTZjYmM2ZGY3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q0ODVhYTZjYjcxYjY3OTQwNzRlY2NmOTRmYmJhYWI3Y2U5MTNiY2FkZmYyMDc5Yzk1OTFhMjk4MTM0MGQ1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGMwMmJiZjRkY2VmMDBiYWRiZDZmOGZkM2RjYTJkMzYzY2I1ZDIyYjRlMTFhNzZmNmZlOGZhMmViYjQ4OTY1ZCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.ts",
+          "version": "repo-file-v1:sha256:3ab2be23c7c71159d7a1cb51baf3e3de1d976563f802089689e82b33ba7ea474"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/zod-jitless.web.ts",
+          "version": "repo-file-v1:sha256:2cbda4de7f324dac7bb533326d49aee6c4a5271ccc40b328b0ae86ae18f69b69"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/plan.md",
+          "version": "repo-file-v1:sha256:0dc16694bb116d80aa8b4fe501a4bab885f0a9874e1a97afc857c50bfb161bdd"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e754798b2fb4acfab76e7cda9a1261b",
+      "statement": "`frontend/mcm-app/web-security-headers.js` keeps `'unsafe-eval'` and `'unsafe-inline'` out of `script-src` (the inline Expo hydration script is admitted by sha256 hash instead), and its feature-089 note records that the assistant chunk is expected to carry one zod 4 engine whose probe is turned off by `zod-jitless.web.ts` — so a NEW `eval` violation on the assistant path is a finding rather than a known, accepted line. The note states explicitly that permitting real eval app-wide would defeat the hardening, so adding `'unsafe-eval'` is not the remedy.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L19-L33",
+          "version": "repo-lines-v1:sha256:75efcc93b903d1af15607398555cc12cb6ed15eae263e17a7d39a71b94b89314:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YWJhYTBiZThhMTQ1M2FiYTlkNWM0YzRjYWYyNzFmN2UzZDI4ZmQwNTA4ZGEzY2NmZTViNDE1MjUyNmQwNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYzc2YTBmYmJkY2Y2MGM2NTEwYTU1ZjcwMjFhMmY0M2E3MmIyY2FlZTg1Y2ZhYWFlOGM2MWRjZjE5NDEzZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NmE1YWM2NWQ0MmU0ZmY0NTQ5YzZlOGExNzk4NTc5MDZhNmY4YmE3NmI4ZTQ4ZmM3ODcwYjcxN2RkOTAzOTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L81-L97",
+          "version": "repo-lines-v1:sha256:b04bfef17f13f95128a531076745e6bae8644ee69f3686babbb7eb0ebe33bed8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZjUzMWM3MjczNjM3NTZjNmVjYzY4ZGJmYzY2YTdkZDFhMmI4YzMzM2UzMGUwZGE0Y2VlNWZlMjBmY2ZkMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNzU4ZWRhZmY2NDg3NTkxNmZkZjg2NDRiYjk0ODQ4Nzc4NjIwODE1MThjNTVkYWVjYmRmZGI0YjcxNWY3ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZTE5YTdkOTU3MWM0ODMzNzAzYTIzZmU0NTU0NTczZjQ1ZjVlYWEwNDFlMzU0OWUyYTE0MDFmNWRhNmVmNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb4feac479d14eeda36e072cb35783e8",
+      "statement": "`scripts/__tests__/single-zod-engine.guard.test.mjs` pins both halves of the feature-089 arrangement, because each would otherwise fail silently: it parses the `snapshots:` section of `pnpm-lock.yaml` for the `@ag-ui/core` version each `@ag-ui/client` snapshot depends on and requires every one of them to be a `(zod@4…)` copy (a zod 3 copy of `@ag-ui/core` is tolerated only where `@copilotkit/runtime` keeps it for the BFF), and it asserts that the first `import ` line of `assistant-panel.tsx` is exactly `import '@/utils/zod-jitless';`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/single-zod-engine.guard.test.mjs#L1-L60",
+          "version": "repo-lines-v1:sha256:941046425e99376c50fc8fea4bb3b5613cafe400e8ddf8d5a338d638eb4bcd38:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NzM1YzliMjU0ZDQ4ZDBiZjFiMDRiMjVjNjU1N2ZjZTViM2Q3YmYyN2FiNTFiMTE0MTExNzY3OTI5OWRiM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/089-single-zod-jitless/plan.md",
+          "version": "repo-file-v1:sha256:0dc16694bb116d80aa8b4fe501a4bab885f0a9874e1a97afc857c50bfb161bdd"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6c852bf4bdc4ee99663d2af5072cca3",
+      "statement": "`frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts` verifies the jitless setting by counting real `Function` constructions made while a zod schema is built, with a control case proving the counter can see a probe (a counter that observes nothing would also read as zero). It asserts the probe fires when the setting is absent, does not fire once `zod-jitless.web` has loaded, and still fires for the native module, which deliberately changes nothing.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts#L1-L41",
+          "version": "repo-lines-v1:sha256:144f58a6c3118d697c73eed1d64551ec6894a59ff3d1c7434f8980de7a37097b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T10:07:39.873Z"
+    "at": "2026-11-07T19:55:04.696Z"
   }
 }

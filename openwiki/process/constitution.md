@@ -29,8 +29,14 @@ sources:
     resource: repo://frontend/mcm-app/babel.config.js
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
+  - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
+    resource: repo://frontend/mcm-app/project.json
   - id: openwiki-source-75c613635390ab18cc167ec1
     resource: repo://frontend/mcm-app/README.md
+  - id: openwiki-source-8786d69652acad0c5349ef83
+    resource: repo://frontend/mcm-app/tests/e2e/web/perf.spec.ts
+  - id: openwiki-source-bbf78f164062a1cfdec73a0a
+    resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-03de7146fd7e33f2e3019d9d
     resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
   - id: openwiki-source-4042a47526d6016cff835628
@@ -39,8 +45,12 @@ sources:
     resource: repo://packages/design-system/package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-3444864363efed8e40307b33
+    resource: repo://scripts/__tests__/check-web-bundle-budget.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-a3e2c14b6305b3709de7fcd4
+    resource: repo://scripts/check-no-server-imports.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4708763005c35901b04f5740
@@ -55,6 +65,8 @@ sources:
     resource: repo://specs/081-major-dependency-upgrades/spec.md
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
+  - id: openwiki-source-16870c3ee3399a868ae59956
+    resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
   - id: openwiki-source-ce98b17d342993a61a79a926
     resource: repo://specs/087-expo-sdk-58/plan.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389

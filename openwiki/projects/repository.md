@@ -27,6 +27,8 @@ sources:
     resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
   - id: openwiki-source-81dfe425b1bf98f80dc07cd0
     resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
+  - id: openwiki-source-6e3646982d72c64cb5e2486d
+    resource: repo://.forgejo/workflows/renovate.yml
   - id: openwiki-source-e1a892d57dc92d08a33c6172
     resource: repo://agents/movie-assistant/Dockerfile
   - id: openwiki-source-16a40c342913cfc265574e4d
@@ -81,6 +83,8 @@ sources:
     resource: repo://packages/design-system/package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-cc2828785988d51226a4241e
+    resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
     resource: repo://rust-toolchain.toml
   - id: openwiki-source-96730ea8c345aed64b62a187
@@ -101,10 +105,10 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-f64018476db6cdad83959624
     resource: repo://specs/081-major-dependency-upgrades/spec.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T07:34:17.095Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -570,9 +574,11 @@ documents it — this is a pointer, not a restatement:
 - **A guard that fails because you changed what it protects is updated at the cause, never
   deleted** — a guard removed for being inconvenient is the regression it was written to catch:
   [Testing tiers and what gates a merge](../invariants/testing-tiers.md).
-- **Renovate's silent channels** — the weekly window is Friday (`* 2-4 * * 5`), the nightly cron is
-  *not* it, and a channel whose lockfile toolchain is missing has its `execa` rejection suppressed to a
-  single dashboard line while producing nothing, every run: [Renovate](../runbooks/renovate.md).
+- **Renovate's silent channels** — the weekly window is Friday (`* 2-4 * * 5`, opened by the
+  `0 7 * * 5` UTC window cron), the nightly `0 3 * * *` cron is *not* it and carries only
+  schedule-exempt security work, and a channel whose lockfile toolchain is missing has its `execa`
+  rejection suppressed to a single dashboard line while producing nothing, every run:
+  [Renovate](../runbooks/renovate.md).
 - **A whole CI board going red at once** — suspect the install before the code:
   [CI self-serve diagnostics](../runbooks/ci-diagnostics.md).
 

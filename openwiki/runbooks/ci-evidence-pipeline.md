@@ -37,6 +37,10 @@ sources:
     resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-0bed00f693d972828ff1210e
+    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
+  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
+    resource: repo://scripts/android-launch-smoke.sh
   - id: openwiki-source-bba8fcebaba450eb74159c23
     resource: repo://scripts/check-ci-digest-coverage.mjs
   - id: openwiki-source-27ab715525d8fb5ce461266d
@@ -51,10 +55,10 @@ sources:
     resource: repo://scripts/ci-status.mjs
   - id: openwiki-source-7183777a95d300ed54250302
     resource: repo://scripts/ci-step-ceilings.tsv
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -335,7 +339,7 @@ defect. It stays at 2700 s because an uncalibrated step's legitimate duration is
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling.
 
-The table's commented `ON THE BACKSTOP` block currently lists **eighteen** steps, while the `app-e2e`
+The table's commented `ON THE BACKSTOP` block currently lists **twenty** steps, while the `app-e2e`
 workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
 the inventory.
 
@@ -346,7 +350,7 @@ the `app-image-scan` steps run in their **own job, bounded by that job's own `CI
 900 s** — not by `app-e2e`'s 2700 s. `scripts/__tests__/app-image-scan.test.mjs` fails if any of them is
 neither calibrated nor listed on the backstop, so the family cannot be added silently.
 
-The other **six** are `app-e2e`'s own, all bounded by the 2700 s backstop:
+The other **eight** are `app-e2e`'s own, all bounded by the 2700 s backstop:
 
 - **`app-e2e-build-images`** and **`app-e2e-bring-up-backup-destinations`** — split out of
   `app-e2e-bring-up-keycloak` by feature 073, with no observations yet under their new names. The first
@@ -360,8 +364,15 @@ The other **six** are `app-e2e`'s own, all bounded by the 2700 s backstop:
 - **`maestro-full-flows`** and **`maestro-full-results`** — the opt-in full mobile suite
   (`mobile-e2e-full` label / dispatch `mobile_suite=full`). These run only on opt-in runs, so ~10 samples
   will take a while to accumulate; `maestro-full-flows` is ~24 non-agent flows × 2 attempts.
+- **`android-launch-smoke`** and **`android-launch-publish`** — new in feature 087, no observations yet.
+  Both sit inside `app-e2e`'s own emulator/publish sequence: the smoke step launches the built release APK
+  between `adb install` and the agent flows and reports which of three things failed (launch, login screen,
+  fatal lines), and the publish step posts the result as an `app-ci / android-launch` commit status because
+  a *pass* has no other channel on this forge. The first is a bounded launch plus a bounded wait for the
+  login screen (120 s) and a logcat read; the second is one bounded POST. Being wrapped inside `app-e2e`,
+  both fall under `#338n`, so neither can go unrecorded.
 
-None of the six has the 10 observed samples a calibration needs, so all six are bounded by the 2700 s
+None of the eight has the 10 observed samples a calibration needs, so all eight are bounded by the 2700 s
 backstop — which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode:
 the backstop plus the digest step still have to fit inside it.
 

@@ -7,6 +7,8 @@ tags: [design-system, tamagui, ui, tokens, md3]
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-27d785edc3cec2c27da82832
+    resource: repo://docs/proposals/MCM-Expo-SDK-58-Approach.md
   - id: openwiki-source-e9bcd4372a4632d555b861a6
     resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-75c613635390ab18cc167ec1
@@ -83,6 +85,12 @@ sources:
     resource: repo://specs/017-design-system-consistency/contracts/sanctioned-deviations.md
   - id: openwiki-source-54da196e9c02e7f7f455cfb8
     resource: repo://specs/017-design-system-consistency/contracts/success-token.md
+  - id: openwiki-source-16870c3ee3399a868ae59956
+    resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
+  - id: openwiki-source-acc6f4231f060062a015dbd3
+    resource: repo://specs/087-expo-sdk-58/research.md
+  - id: openwiki-source-cbc86a7a3a87453e949a2389
+    resource: repo://specs/087-expo-sdk-58/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
