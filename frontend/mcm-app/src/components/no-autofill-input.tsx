@@ -43,7 +43,18 @@
 
 import React, { useRef, useLayoutEffect } from 'react';
 import { Platform, TextInput } from 'react-native';
-import type { TextInputProps } from 'react-native';
+import type { TextInputInstance, TextInputProps } from 'react-native';
+
+/**
+ * React Native 0.88's `TextInputInstance` no longer declares `setNativeProps`, because the new
+ * architecture's host instances have none. react-native-web's still does, and it is what sets a DOM
+ * attribute the props cannot reach. So it is checked for at run time rather than assumed.
+ */
+function hasSetNativeProps(
+  node: unknown,
+): node is { setNativeProps: (props: { name: string }) => void } {
+  return typeof (node as { setNativeProps?: unknown } | null)?.setNativeProps === 'function';
+}
 
 /** All standard TextInput props are accepted and forwarded. */
 export type NoAutoFillInputProps = TextInputProps & {
@@ -75,7 +86,7 @@ export function NoAutoFillInput({
   webName,
   ...props
 }: NoAutoFillInputProps): React.JSX.Element {
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   // RNW's TextInput does not forward unknown props (like `name`) to the
   // underlying <input> DOM element via React's prop system. Set it
@@ -83,7 +94,8 @@ export function NoAutoFillInput({
   // cannot match this field.
   useLayoutEffect(() => {
     if (Platform.OS !== 'web' || !webName) return;
-    inputRef.current?.setNativeProps?.({ name: webName });
+    const node = inputRef.current;
+    if (hasSetNativeProps(node)) node.setNativeProps({ name: webName });
   }, [webName]);
 
   // Chrome's built-in PM ignores autocomplete="off" on a password field; only

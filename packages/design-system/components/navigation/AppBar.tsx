@@ -80,6 +80,18 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
       })
     : new Animated.Value(0)
 
+  // The same scroll mapping as `elevationAnim` re-scaled to 0 → 0.16, taken from `scrollY` directly.
+  // Interpolating `elevationAnim` itself stopped type-checking on RN 0.88, whose `Animated.Value` and
+  // `AnimatedInterpolation` `interpolate` signatures no longer unify. The values are identical,
+  // because `elevationAnim` is clamped to 0 → 3 and this is linear over the same 0 → 40 input.
+  const shadowOpacityAnim = scrollY
+    ? scrollY.interpolate({
+        inputRange:  [0, 40],
+        outputRange: [0, 0.16],
+        extrapolate: 'clamp',
+      })
+    : 0
+
   const largeTitleOpacity = scrollY
     ? scrollY.interpolate({
         inputRange:  [0, 40],
@@ -116,7 +128,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
         {
           shadowColor:   theme.shadow?.val,
           shadowOffset:  { width: 0, height: 1 },
-          shadowOpacity: scrollY ? elevationAnim.interpolate({ inputRange: [0, 3], outputRange: [0, 0.16] }) as any : 0,
+          shadowOpacity: shadowOpacityAnim,
           shadowRadius:  4,
           elevation:     scrollY ? elevationAnim as any : 0,
         },
