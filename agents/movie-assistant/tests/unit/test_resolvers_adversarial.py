@@ -427,6 +427,32 @@ def test_resolve_target_my_collection_no_default_needs_clarify() -> None:
     assert needs_clarify
 
 
+@pytest.mark.parametrize("name", ["Sci-Fi collection", "sci-fi Collection", "Sci-Fi COLLECTION "])
+def test_resolve_target_trailing_collection_word_resolves(name: str) -> None:
+    """Spec 093: the live model returned `Sci-Fi collection` for "my Sci-Fi collection"."""
+    ref, needs_clarify = _resolve_target(name, COLLECTIONS)
+    assert not needs_clarify
+    assert ref.collection_id == "c-scifi"
+    assert ref.create_if_missing is False
+
+
+def test_resolve_target_exact_name_ending_in_collection_wins() -> None:
+    """A real collection named `Movie Collection` resolves to itself, not to `Movie`."""
+    collections = [
+        {"collectionId": "c-movie", "name": "Movie", "isDefault": False},
+        {"collectionId": "c-movie-collection", "name": "Movie Collection", "isDefault": True},
+    ]
+    ref, _ = _resolve_target("movie collection", collections)
+    assert ref.collection_id == "c-movie-collection"
+
+
+def test_resolve_target_unknown_name_with_suffix_creates_full_name() -> None:
+    ref, needs_clarify = _resolve_target("Horror collection", COLLECTIONS)
+    assert not needs_clarify
+    assert ref.create_if_missing is True
+    assert ref.name == "Horror collection"
+
+
 # ============================================================================
 # references_current_screen
 # ============================================================================
