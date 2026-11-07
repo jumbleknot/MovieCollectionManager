@@ -247,7 +247,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.38.1@sha256:0df9bc14142000b161344bd24caf6ddd319b7319055aedaf9b0692b125730af7
+    image: grafana/otel-lgtm:0.39.0@sha256:4c8056c9c05fcb3c8fd93800e85334bfd79b4d0271b47a54a121a64af41fe1fe
     container_name: otel-lgtm
     restart: always
     ports:
@@ -276,7 +276,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:1.21.4-debug@sha256:249d68cce8e26346f22318a7b17058fe6be9702bf8e78402a770d913029e943d
+    image: openpolicyagent/opa:1.22.0-debug@sha256:eb43c240521f3cd40049cc65b50028720fb1d87c4b519b9b9d08ef2ee5b4564e
     container_name: opa-service
     restart: always
     command:

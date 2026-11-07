@@ -36,7 +36,8 @@ jest.mock('@/bff-server/cache-service', () => ({
 
 import { POST } from '@/app/bff-api/auth/register+api';
 import { checkRegisterRateLimit } from '@/bff-server/rate-limiter';
-import { createUser } from '@/bff-server/keycloak';
+import { assignMcUserRole, createUser } from '@/bff-server/keycloak';
+import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 function makeRequest(body: unknown): { url: string; headers: Headers; json: () => Promise<unknown> } {
@@ -111,6 +112,55 @@ describe('POST /bff-api/auth/register', () => {
     }) as Parameters<typeof POST>[0]);
 
     expect(res.status).toBe(429);
+  });
+
+  // Feature 092. This route used to log nothing when it failed, so a production registration that
+  // created the account and then could not give it a role left no trace.
+  describe('failure logging', () => {
+    const validBody = {
+      username: 'testuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      password: 'SecurePass1!extra',
+    };
+    let errorLog: jest.SpyInstance;
+
+    beforeEach(() => {
+      errorLog = jest.spyOn(logger, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      errorLog.mockRestore();
+    });
+
+    it('logs a server-side failure, without the request body', async () => {
+      (assignMcUserRole as jest.Mock).mockRejectedValueOnce(
+        new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to look up the client', 502),
+      );
+
+      const res = await POST(makeRequest(validBody) as Parameters<typeof POST>[0]);
+
+      expect(res.status).toBe(502);
+      expect(errorLog).toHaveBeenCalledTimes(1);
+      const [, context] = errorLog.mock.calls[0];
+      expect(context).toMatchObject({ action: 'register_failed', ip: '127.0.0.1' });
+      const logged = JSON.stringify(errorLog.mock.calls[0], (_k, v) => (v instanceof Error ? v.message : v));
+      expect(logged).toContain('Failed to look up the client');
+      expect(logged).not.toContain(validBody.password);
+      expect(logged).not.toContain(validBody.email);
+    });
+
+    it('does not log a refusal the caller caused', async () => {
+      (createUser as jest.Mock).mockRejectedValueOnce(
+        new AuthError(AuthErrorCode.DUPLICATE_EMAIL, 'Email exists', 409),
+      );
+
+      const res = await POST(makeRequest(validBody) as Parameters<typeof POST>[0]);
+
+      expect(res.status).toBe(409);
+      expect(errorLog).not.toHaveBeenCalled();
+    });
   });
 
   it('returns 409 when user already exists', async () => {

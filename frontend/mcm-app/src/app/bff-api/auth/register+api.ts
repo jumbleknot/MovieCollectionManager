@@ -126,6 +126,9 @@ async function _post(request: Request): Promise<Response> {
   } catch (err) {
     // Adapt handleBffError to return Response
     const { code, message, status } = extractError(err);
+    if (status >= 500) {
+      logger.error('registration failed', { action: 'register_failed', ip, code, error: err });
+    }
     return Response.json({ error: message, code }, { status, headers: securityHeaders() });
   }
 }
