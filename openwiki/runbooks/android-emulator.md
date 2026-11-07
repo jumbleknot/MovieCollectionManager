@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the launch check that must pass before any flow runs and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -23,6 +23,8 @@ sources:
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
+    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
   - id: openwiki-source-c138086948681bd36101354f
     resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
   - id: openwiki-source-900e4fa48a3671f4d583c11d
@@ -35,8 +37,12 @@ sources:
     resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
   - id: openwiki-source-c84c5149aa3c4f5090fd8fae
     resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
+  - id: openwiki-source-0bed00f693d972828ff1210e
+    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
     resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
+  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
+    resource: repo://scripts/android-launch-smoke.sh
   - id: openwiki-source-2d569134a872251a7d87c36a
     resource: repo://scripts/build-apk-short-path.ps1
   - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
@@ -63,10 +69,12 @@ sources:
     resource: repo://scripts/maestro-run.sh
   - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
     resource: repo://scripts/mobile-flows.mjs
+  - id: openwiki-source-11ba1741c25b3030e34f4dd8
+    resource: repo://scripts/publish-android-launch.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T17:50:21.605Z
+    at: 2026-11-07T19:02:58.048Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -111,11 +119,77 @@ the gotcha below.) The emulator steps run on an API-34 `google_apis_playstore` `
 Play Store image is load-bearing, not cosmetic:
 it ships Chrome, whose Custom Tabs service hands Keycloak's `mcm-app://` redirect back to the OS. The
 AOSP image has only a WebView shell, which drops that redirect and leaves login unable to complete.
-Both emulator steps `adb reverse` 8082 and 8099, install the same `$APK_PATH`, then hand off to their
-script; the agent half runs gating → enable-anthropic → the agent flows → disable, followed last and
-specially by the non-agent `admin-settings-access` flow.
+Both emulator steps `adb reverse` 8082 and 8099 and install the same `$APK_PATH`; the agent half then
+runs the launch check, then gating → enable-anthropic → the agent flows → disable, followed last and
+specially by the non-agent `admin-settings-access` flow. The full-suite step runs the non-agent batch.
 
-Four details of the mobile half are load-bearing when editing it:
+### The launch check runs before any flow
+
+An SDK move can produce a release APK that **builds but crashes at launch**, and without a check the
+first sign is every Maestro flow failing at once with a message about a missing element — which reads
+as a broken flow, not a broken binary. `scripts/android-launch-smoke.sh` closes that gap and runs in
+the agent emulator step, wrapped by `ci-log-step.sh` as `android-launch-smoke`, as the **first line
+after `adb install` and immediately before `ci-mobile-agent-flows.sh`** (the guard test asserts that
+exact adjacency, so the check cannot drift after the flows it is meant to protect). It costs seconds
+because the job has already built the APK and booted the emulator.
+
+It reports three separate facts rather than one pass/fail:
+
+- **`launch`** — `adb shell am start -W` on `com.grumpyrobot.mcmapp/.MainActivity` reports
+  `Status: ok`, with `TotalTime` echoed.
+- **`loginScreen`** — the `login-screen` resource id appears in a `uiautomator dump` within a bounded
+  wait (`ANDROID_LAUNCH_LOGIN_BOUND_SECONDS`, default 120 s), which is what distinguishes "launched
+  into a working app" from "launched into a splash that never resolves".
+- **`fatal`** — the count of fatal log lines **belonging to this app's process**, matched on
+  `FATAL EXCEPTION`, `ClassNotFoundException` and `NoSuchMethodException`. Attribution is by PID,
+  taken from the log itself (`Start proc … :<app-id>/` or a `Process: <app-id>, PID: …` line), because
+  a crashed process has no PID left to ask for. A Chrome crash on the same device is therefore *not*
+  reported as this app failing to launch — the classifier has its own selftest
+  (`--selftest`, no device needed) covering exactly that distinction, run cheaply in guardrails via
+  `scripts/__tests__/android-launch-smoke.test.mjs`, because a grep that matches nothing looks
+  identical to a clean launch. Matched lines are printed through the same redaction module the CI
+  digests use, and withheld entirely if redaction cannot run.
+
+The check force-stops the app when it is done, so the flows that follow start cold. It writes its
+result to `$HOME/android-launch-$GITHUB_RUN_ID.json` **on failure as well as on success** — the
+emulator action's `script:` cannot export step outputs, and the run id in the filename means the
+persistent runner cannot serve a stale result.
+
+```mermaid
+sequenceDiagram
+    participant Job as app-e2e job on the kvm host
+    participant Action as android-emulator-runner
+    participant Check as android-launch-smoke.sh
+    participant Publish as publish-android-launch.mjs
+    Job->>Action: boot the API-34 google_apis_playstore AVD
+    Action->>Action: adb reverse 8082 and 8099, adb install APK_PATH
+    Action->>Check: bash ci-log-step.sh android-launch-smoke
+    Check->>Check: am start -W, wait for login-screen, classify logcat by PID
+    Check->>Check: write HOME/android-launch-RUN_ID.json on pass or fail
+    Action->>Action: run ci-mobile-agent-flows.sh
+    Job->>Publish: unconditional always step, carrying the emulator step's own gate
+    Publish->>Publish: read and delete the result file
+    Publish-->>Job: commit status app-ci / android-launch
+```
+
+Where the launch check sits in the agent emulator step, and how its result reaches a readable channel.
+
+That file is then read by a separate `always()` step, `Publish the Android launch result` (wrapped by
+`ci-log-step.sh` as `android-launch-publish`), which runs
+`scripts/publish-android-launch.mjs` and posts the commit status **`app-ci / android-launch`**. This
+exists because a *pass* has no other channel here: failure digests publish only on failure and this
+forge exposes no job log or artifact API, so "it launched" would otherwise only be readable by a human
+opening a log page. The status step carries the emulator step's exact gate, so a PR that skips the
+emulator publishes nothing; if the gate is open and the result file is absent, the emulator never
+reached the check and the status says `launch=not-run` as a failure — a different fact from "the
+checks failed", and the reason the file is written on both outcomes. Only known values ever reach the
+description (`launch=<ok|failed|not-run> login-screen=<visible|absent> fatal=<count>`), never a log
+excerpt. A `cancelled` job publishes nothing at all, because a superseded run is not a failed launch.
+The status is deliberately **not** a required context: the check's own exit code is what blocks, so
+the publisher exits 0 whenever its arguments are valid and a bookkeeping POST can never mask the real
+result.
+
+Several details of the mobile half are load-bearing when editing it:
 
 - **The AVD is deliberately oversized for Chrome.** The action is given 4 GB guest RAM, a 576 MB heap
   and 3 cores because the OAuth Custom Tab renderer crashed mid-load on the default AVD RAM (logcat:
@@ -140,7 +214,8 @@ Four details of the mobile half are load-bearing when editing it:
   `pull_request` only when the diff touches the job's `mobile` filter (`frontend/**`, `agents/**`,
   `mcp-servers/**`, `backend/**`, `packages/**`, the workflow itself, or the Maestro/selection scripts
   `scripts/ci-mobile-agent-flows.sh`, `scripts/ci-mobile-full-flows.sh`, `scripts/ci-mobile-lib.sh`,
-  `scripts/ci-maestro-debug.sh`, `scripts/mobile-flows.mjs` and `scripts/maestro-run.sh`) or the PR
+  `scripts/ci-maestro-debug.sh`, `scripts/mobile-flows.mjs`, `scripts/maestro-run.sh` and
+  `scripts/android-launch-smoke.sh`) or the PR
   carries the `mobile-e2e` **or** `mobile-e2e-full` label. Otherwise the PR still gets the web E2E and
   integration tiers from the same
   job and skips the ~35-minute emulator half. That filter must stay a strict subset of the job's `app`
@@ -287,7 +362,8 @@ its own warning which of the two sources the value came from. Every `app-e2e` st
 recorded as a commented backstop row in the table, so a guard can tell *seen, not calibrated* from
 *nobody decided* (`#338n` in `scripts/__tests__/ci-log-step.test.mjs`); today that set is
 `app-e2e-build-images` (the cache-dependent image build split out of `app-e2e-bring-up-keycloak`),
-`app-e2e-bring-up-backup-destinations`, `app-e2e-tag-scan-images`, the two failure-path captures
+`app-e2e-bring-up-backup-destinations`, `app-e2e-tag-scan-images`, the launch check's two steps
+(`android-launch-smoke` and `android-launch-publish`, feature 087), the two failure-path captures
 (`app-e2e-collect-maestro-debug`, and `app-e2e-collect-container-logs` at n=2), and the two opt-in
 full-suite steps `maestro-full-flows` and `maestro-full-results`. That backstop is exactly why full mode
 raises the job ceiling: backstop plus digest still have to fit.

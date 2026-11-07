@@ -5,8 +5,8 @@ description: React Native Web renders the RN testID prop as a data-testid DOM at
 resource: frontend/mcm-app/playwright.config.ts
 tags: [playwright, react-native-web, e2e, frontend]
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
+  - by: openwiki/0.7.1
+    at: 2026-11-07T19:02:58.048Z
 sources:
   - id: openwiki-source-d3d6462458271e37e692275f
     resource: repo://frontend/mcm-app/playwright.config.ts
@@ -14,6 +14,10 @@ sources:
     resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-86d9e16e8c227d41470126a4
     resource: repo://frontend/mcm-app/scripts/cleanup-e2e-data.ts
+  - id: openwiki-source-961eb1065bf9ca260d0ae2fa
+    resource: repo://frontend/mcm-app/src/components/backups/schedule-editor.tsx
+  - id: openwiki-source-f5894e34ba3a8b76a885d68f
+    resource: repo://frontend/mcm-app/src/components/collection-card.tsx
   - id: openwiki-source-5d50b9f7c460fe00f48c21b8
     resource: repo://frontend/mcm-app/src/components/loading-indicator.tsx
   - id: openwiki-source-75c19a7a987cb93703567f26
@@ -22,17 +26,30 @@ sources:
     resource: repo://frontend/mcm-app/tests/e2e/mobile/home-screen.yaml
   - id: openwiki-source-fb2c95e423345fb3da997889
     resource: repo://frontend/mcm-app/tests/e2e/web/a11y.spec.ts
+  - id: openwiki-source-060d7e10458fa6c5a0d5f080
+    resource: repo://frontend/mcm-app/tests/e2e/web/admin-settings-access.spec.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-c0571122c642aa07c48f46e1
+    resource: repo://frontend/mcm-app/tests/e2e/web/collections.spec.ts
+  - id: openwiki-source-efb6c7e5952b0db8fbdd4ddd
+    resource: repo://frontend/mcm-app/tests/e2e/web/settings.spec.ts
   - id: openwiki-source-7ca6b85c219d4fdef050a7aa
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-turn.ts
   - id: openwiki-source-bfd1dcd66339cb51fd41729c
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/global-setup.ts
+  - id: openwiki-source-6230a2d05eadba772d30d66a
+    resource: repo://packages/design-system/components/controls.test.tsx
+  - id: openwiki-source-22a96f8aae7156deae8932f4
+    resource: repo://packages/design-system/components/inputs/Switch.tsx
   - id: openwiki-source-a9f8640b2ea19387ecec6be5
     resource: repo://packages/design-system/components/navigation/NavList.tsx
   - id: openwiki-source-e3cf144619c81072e7ba6980
     resource: repo://packages/design-system/components/navigation/Tabs.tsx
-generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
+  - id: openwiki-source-8434abab10f66dd9a1e2e3d0
+    resource: repo://packages/design-system/components/surfaces/Banner.tsx
+  - id: openwiki-source-be3bf2fd7e8c3e17d16750a4
+    resource: repo://packages/design-system/components/surfaces/Card.tsx
 ---
 
 # Playwright testID mapping — React Native Web renders testID as data-testid
@@ -48,6 +65,18 @@ As of this refresh the config still carries both halves at `frontend/mcm-app/pla
 — the comment on the line above and `testIdAttribute: 'data-testid'` in the `use` block — so no
 part of the original claim has moved or changed.
 
+```mermaid
+flowchart TD
+  A["testID authored on a plain RN host node"] --> W["Web: data-testid attribute"]
+  A --> N["Native: id attribute"]
+  W --> P["Playwright web specs, via getByTestId"]
+  W --> J["Jest and RNTL unit tests"]
+  N --> M["Maestro YAML flows, via id"]
+  P --> C["Resolved because playwright.config.ts sets testIdAttribute"]
+```
+
+One authored `testID` prop, three consumers — the same source string reaches all of them.
+
 ## Gotcha
 
 - **Every `data-testid` selector in `tests/e2e/web/**` depends on this config line matching React
@@ -57,14 +86,39 @@ part of the original claim has moved or changed.
   `getByTestId()` breaks at once, across the entire web E2E suite — not just one spec.
 - Author components with `testID`, never a raw `data-testid` prop directly, so the same source works
   for both the Playwright web suite and Maestro's native mobile suite.
-- **The rewrite only happens on a React Native host node.** A `testID` placed on a Tamagui
-  component (a Tamagui `View`, `Card`, `Tabs` internals) is *not* forwarded to `data-testid` on
-  React Native Web, so that selector is silently unreachable from Playwright — no error, just a
-  locator that never matches. This is why every stable external-contract selector lives on a plain
-  RN `View` / `Pressable` host node, with the visual treatment staying on the Tamagui component
-  nested inside it (`packages/design-system/components/navigation/Tabs.tsx` and `NavList.tsx`
-  document the trap; `src/screens/not-found-screen.tsx` shows the same discipline applied
-  directly to a screen node).
+- **A `testID` that never reaches the DOM fails silently.** A `[data-testid="..."]` locator matching
+  zero elements does not error — the click *times out*, which reads as a broken screen rather than a
+  bad selector. The design system's `Switch` was exactly this: it destructured `...rest` and never
+  spread it, so a passed `testID` reached nothing, and it was worked around twice before the cause was
+  found. It now spreads the remaining view props onto the `Pressable` — the element that actually
+  receives the press — and `controls.test.tsx` guards both halves: the id lands on the press target,
+  and the role and accessible name that `getByRole` locators depend on survive the spread.
+
+## The host-node rule, and what it does *not* mean
+
+The repository's rule is that a stable external-contract selector sits on a **plain React Native host
+node** — a `View` or `Pressable` from `react-native` — with the visual treatment staying on the
+Tamagui component nested inside it. `packages/design-system/components/navigation/Tabs.tsx` and
+`NavList.tsx` document the rule for a per-tab and per-row `testID`, and
+`frontend/mcm-app/src/screens/not-found-screen.tsx` applies it directly to a screen node.
+
+The rule is right, and the reason usually given for it is narrower than the truth in this tree.
+Tamagui 3 does map `testID` to `data-testid` on its web path, and this tree relies on that: the
+design system's `Card` and `Banner` take a `testID` on a Tamagui node, and web specs target them
+through `[data-testid="..."]` — `backup-schedule-editor` and `backup-error-banner` in
+`tests/e2e/web/backups.spec.ts`, and app-level `YStack` selectors such as `collection-card` in
+`tests/e2e/web/collections.spec.ts`. So the trap is **per-component prop plumbing, not a blanket
+Tamagui limitation**: a component that drops or re-destructures the prop (the `Switch` case above)
+makes the attribute vanish, and one that passes it through does not. The host-node placement is what
+removes that variable — it is the placement that is always safe, not the only placement that ever
+works. Do not "prove" a Tamagui `testID` works by reading a jest test: `jest-expo` renders React
+Native, not React Native Web, so a `testID` on a Tamagui component passes the unit tier and can still
+emit nothing on web.
+
+`tests/e2e/web/settings.spec.ts` carries the discriminating check for that, and says so itself: its
+"sub-navigation is locatable" case is "the ONE check that tells a React Native host node from a
+Tamagui component". If it fails while the design-system jest suite is green, the `testID` landed on
+the Tamagui component and the fix is incomplete — not the test.
 
 The rewrite is also why one authored prop serves three consumers: the RN host node maps `testID` →
 `data-testid` on web and → `id` on native, so the Jest/RNTL unit tests, the Playwright web specs and

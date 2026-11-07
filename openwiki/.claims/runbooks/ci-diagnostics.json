@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:36f8062b1407f367865d9d155be89e8c4c168f0f0c339171187a2b0561cb55fa",
+  "pageVersion": "sha256:d3b91ccc37c869a14379ae9032e5bd51244c8fd178ecfbd9dd85de35407db3b1",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -35,11 +35,11 @@
       "statement": "app-ci's app-e2e job is gated behind a dorny paths-filter `changes` job scoped to paths that affect app runtime behaviour (a `app:` filter of frontend/**, agents/**, mcp-servers/**, backend/**, packages/**, infrastructure-as-code/docker/**, app-ci.yml itself, the zap scripts, the pnpm lockfile/workspace manifests, and a short list of NAMED scripts rather than `scripts/**`), so a PR touching only docs/, openwiki/, or a script the filter does not name renders app-e2e `skipped -> satisfied` and the board goes green without the E2E suite ever executing, making the suite's true failure rate invisible from an all-green streak.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L139-L181",
-          "version": "repo-lines-v1:sha256:debf862b407259e5b56d1afc19badcbe3e87f5b25f1af2db6248430e68967570:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWJmYjQ1MzhlNjIwZDE4Yzc3NjZlNjJhZjY5MGNiMDM0NjdkY2NjNWVmNTE2OGQ4ODhhMGJmYTAyZDI5MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YzVhMTIwNTYwYmVkYWI2OGQxOGJlMDA2MzhiZTFlOGM3ZmRkMDc5ZjY1ODY3MzI0NmNmYTA0NGE5NTlkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMGE4NGQ2YjkyMTJkOWQ3MWIzYWY1ZmEwOTk3Mzc0NmUyY2E3YzA0MmVjYTE5Y2IyNTAyMzA0YTY5NWY5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzYTJkMjE2ZDQ4ZjFkZWUxNTMxNzczZGU3ODA1MWUyZWYxMTk4NzJkNTRkNzk5M2U2ZTYyNmUxYTIyNWE5NGMifQ"
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L139-L182",
+          "version": "repo-lines-v1:sha256:f36ae589da006eca90e597ab5036cf8fb2585bf6b2a72df088a67168c66981dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWJmYjQ1MzhlNjIwZDE4Yzc3NjZlNjJhZjY5MGNiMDM0NjdkY2NjNWVmNTE2OGQ4ODhhMGJmYTAyZDI5MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YzVhMTIwNTYwYmVkYWI2OGQxOGJlMDA2MzhiZTFlOGM3ZmRkMDc5ZjY1ODY3MzI0NmNmYTA0NGE5NTlkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMGE4NGQ2YjkyMTJkOWQ3MWIzYWY1ZmEwOTk3Mzc0NmUyY2E3YzA0MmVjYTE5Y2IyNTAyMzA0YTY5NWY5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzYTJkMjE2ZDQ4ZjFkZWUxNTMxNzczZGU3ODA1MWUyZWYxMTk4NzJkNTRkNzk5M2U2ZTYyNmUxYTIyNWE5NGMifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L367-L371",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L369-L373",
           "version": "repo-lines-v1:sha256:e60c7d830f3fef76fefea22ce545600c4c9811de0d922e7b44b76560f1b026a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcyODQwMGNjZDUzZWMyNmViNjVkOGY5NTEzODgxNzM3YWI1MzQyOTcyMGUzMzRiY2JjNjA2OTM1OTA0ZDk1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNiYjNhNjgyOTQ5ZGNlMzQzYzllNjUxMmYxMjRmNWVjZTY5NGYxNzU5MjdmZjM0N2M4YzE3NWY4MGJlZDIwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ0MTVjZTkyNzI4MWQwNTgwMDczNTZlNTJlOGQ5NjA4ZThhNjhiOGM3NzA4ZTYyY2UzYjg3YzI1YjM1MzkwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBlMmRlMWE1NWJiNDljMzNlMmQyOTE2ZDZjYzYyODFjZDQ4YzEzZTBlZWZiZmEyYTM5MDgyMGU3MWZhNjNjOCJ9"
         },
         {
@@ -301,7 +301,7 @@
       "statement": "cd-dispatch / trigger-cd is not a CI result: it is published by scripts/cd-dispatch-gate.mjs and is the only place a declined deploy is visible (before item #230 a run that declined to dispatch and a run that deployed looked identical from outside, and a merged commit went undeployed for a day — measured 2026-08-22 on PR #217). A superseded tip or 'nothing deployable changed since the last deploy' is published as success (a correct non-deploy), while a guardrails failure, an unfinished guardrails run or no guardrails at all is published as failure and also reds the job, so this status must be read before concluding a deploy was lost.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1960-L1979",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1976-L1995",
           "version": "repo-lines-v1:sha256:f84cd7f10063117d8738a044c0ab98ca201d8e7473ad9acfe898ef940535474d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MjFmYWQ4MjliNDkyZjZiYTkxMTJkYzU4ZDg5NTZmMmRhMDI1MGQ5ODg3NjNlNGJmMWU4ZGM2ZDdiNDJhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGFkNjRhNzc2N2YyNmFjNDRhMjcxNzgwN2E4NjAzYzQ5ZmQxZTAwMDE1MWZhYzgzYjk1OWE4MDBlYjAzNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -403,7 +403,7 @@
       "statement": "The deploy gate decides on the EFFECTIVE TIP of main, not on the commit that triggered it: cd-dispatch-gate.mjs computes the newest commit that will actually run a workflow (skipping commits carrying a `[skip ci]`-family marker, because cd-deploy's own promotion commit is pushed with one and would otherwise make the commit that legitimately owns the deploy look superseded), reports `superseded` as a non-fatal success when an older commit hands off, and only dispatches when guardrails are green on the tip. The dispatch sends `{\"ref\":\"main\"}` rather than the verified sha, so dispatching from a superseded commit would deploy a tree whose CI was never checked; the tip question is therefore answered BEFORE guardrails are read, because a superseded commit's guardrails legitimately report `failure`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1981-L2000",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1997-L2016",
           "version": "repo-lines-v1:sha256:8fa5c97d9e1b631029bea02345f40f0a2701f23a35c09499df1424cae964752b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMDlhNGQyZGJiZDgzNDJiODJkMmJmNzUxMjAwY2E2YjkzNjllZDk4ZGM1YTc3YTQ3NDUwMWYyY2EzN2UzNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YzIxMzFkOTFkNTAwNzFmOWZkYWQ4ODhjYmQyMDEzMmZkODM5ZTU5N2UyM2U2ZjcxODU1MGE2MDk3NTVkNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZDVjNDMzYjcwOWEyNjZiOWE3MWExMDNjYTViNDQwNTIzYWVkNTY2NTEyNWE3ZTQ5MjNhNWM0ZjNkYzkxMDQifQ"
         },
         {
@@ -435,7 +435,7 @@
       "statement": "The deploy gate's decision is a pure function (`decide()`), tested against the item #230 incident's own payloads in scripts/__tests__/cd-dispatch-gate.test.mjs, and its workflow wiring is separately pinned by scripts/__tests__/app-ci-trigger-cd.guard.test.mjs — which asserts the checkout (fetch-depth: 0, so `git diff <last promotion commit>..HEAD` can resolve its base) precedes the gate step and that the dispatch step is conditional on the gate's `dispatch` output, because a pure function nothing calls is decoration and a shallow clone would silently disable the redundant-deploy skip on every run.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1955-L1979",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1971-L1995",
           "version": "repo-lines-v1:sha256:448e25cf69f282ef2c4447202a33193272b9c063bc675eafbf4b05b361cbb6ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MjMyZTA0OWE3YjM0MmYxYmFiZGFmZTg4NGJmNDczNjAyNzlmNmU5ZTUzNjAxMDYxNjliODk5MDE2MDA0ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4OWM0MzE3MTM0ZjIyNmJmMDk4MThiOGI3MGU1ODBhODY4ODQ5MzBlMGQ1OGExNTgwZDg2NDczZjdjMDMxNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZGY1NThjOGM2MzEyZjhkYmUyNWViMjgzMjVlY2ZlNTRkZDE4ZmJjMmYxM2FjYWYyZTNlNDVmM2NmNmEzOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZTYzNzM0NTVkODQwNTI3NjNiYjU5YzEyY2IwMDEyY2Q0YmJiNzIzMDM3OWU4OTZhOTVjMzVhYjQ4YzE4NDQifQ"
         },
         {
@@ -489,11 +489,11 @@
       "statement": "On a green app-e2e the job judges its own counts rather than relying on someone reading the bundle: app-ci runs `node scripts/e2e-failure-set.mjs gate <web-e2e.log>` (and a separate non-blocking model-tier gate) which fails on `skipped > 0`, `did not run > 0` or a log with no summary at all — never re-failing on `failed > 0` — and runs `scripts/e2e-contention-tally.sh --gate`, which fails on `refresh_429 > 0` or `session_evicted > 0` but deliberately stays silent when the source is `unavailable`, since that implies bring-up already failed. Neither gate may carry `continue-on-error`: with it restored the step still runs and still prints its failure, so the log looks identical while the job passes regardless. The `flaky` count and the identities of the flaky tests reach no artifact on the green path except through this step's log, which is what the counts bundle publishes.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1150-L1165",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1152-L1167",
           "version": "repo-lines-v1:sha256:669db90a16e88e27428d1b9099f8ae33b8cb84f1ea84b90a7e6905311d8e6404:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjVjMzJlNDQ2MDI2NzJlMmEyYzYxZmQwMTUzMTcxMzc4Y2EwY2IyNDkxNjNiYjhlY2IyYTljODY4ZGQxMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYWM4NjZlYzAwNjFhNTQ0NmFhZjBhNTNmYzQxYjdjZDM0ZWQ1ZjM4NTc4MWRjZTJlOGE4M2NjNDFlOTljZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0ZGM1OTI4YzViOTY2Y2UwMGM4OGQzMjdmMWRlNjNmYWZmNDA4MWE2YTE0YzhkODVmYmRjOGFjZjE0MTM0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZTEwZDUyYjJlOGEwMWFmZThhNWRhNzVhMWQ4YTA4M2Q1OGY1YWY1ZGM1ZThjNzMzMGU5N2RkYzU1YjJmZGUifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1194-L1196",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1196-L1198",
           "version": "repo-lines-v1:sha256:a22e0e16bf3dd4e722b271a5228c5ff20522a36a6fb3f0654d7c705ad46c52a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdhMWU3ZWEzOTI2MjcyMDc4MWY4NTlkOWZhMmE4MzRjZTI4ZGFlMzY1MmY4NmU3YjFhNmFlYWQ2ZWFmMmRjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiNGFiMWIzYmU0NTUwZGY1MjY5ZGJjMzU1YTE1NThiMzIxOGMxY2U5MDRhNWM0OGI3MTE4YTFkYzY3ZjZkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGFkZDBjZDFmYzk4NjQ3ZjllZWVlNTk1NzFlZDQyMWMzM2RlYjI1ZDRiMDczMjMxNGYwODg1NjBlZjM1OTViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmNjNjA0NDg1MjkwNzUyOTVlYTM0OTJkM2MzNWMzM2NiNTNjMjFkYmE5OGFkMGRlYzU2YTM4MjYyOThmNjZkMSJ9"
         },
         {
@@ -681,7 +681,7 @@
       "statement": "`app-ci / app-image-scan` is a REQUIRED app-ci job that needs [changes, app-e2e], runs with `always()` (so a skipped app-e2e cannot cascade-skip it and a required context always posts) on the `kvm` runner against app-e2e's own rootless daemon socket, passes early in seconds when `changes.outputs.app` is not `true` (`no app path changed — images identical to main's`), fails closed when the `changes` job itself did not succeed (an unknown app diff must not read as nothing to scan), and verifies all six `app-scan/<name>:run-<run id>` tags exist before scanning any of them — so it never passes on images it could not find.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1789-L1877",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1805-L1893",
           "version": "repo-lines-v1:sha256:5a7bf98175e7e36fba296ae9ef70f88b2ffe28309637da922506d826bb44ac7c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjhjNWViYTQ2Yjg0N2M5YWY1ZjM5ZGFkOTI4NjljM2Q3ODJkOTBjNzhjNTFlNGJkMmI1NzQzNmMxMDNmZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllZDA4MmUwNGFlNTg5MjA1OTEyZmFmYzUxZTlmMTE4YTRjZDJmM2RiOTVkMDA1NjVhZTNlNTQ2YTA3MjIyMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3Njc2M2JmMmQ0NDM1NzcyYzkwOWM4NDEwNTA0ZWRjZTk2ZTM5MGM2OTJmYmEwMmI1MWIzNzUzNTM2NGYzZmUifQ"
         },
         {
@@ -695,11 +695,11 @@
       "statement": "`app-e2e` tags each of the six app images `app-scan/<name>:run-<run id>` unconditionally and immediately after they are built (before the E2E steps, so a later failing step still leaves the scan its images), and `app-image-scan` removes those run tags at the end with `always()` while leaving the `:latest` images in place; the per-RUN tag is what stops a later run rebuilding `:latest` on the persistent daemon from changing what is scanned.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1900-L1910",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1916-L1926",
           "version": "repo-lines-v1:sha256:7ee92af9b3df2ed369d6b7d040e311b3e1e26842a332994771ebec1ded7c390c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZjZlNDM1OTA2NGE3MjFmMjFlMGRiZDA5NTczZjM4ZmZmZmE2MWRjOWM0NjE3N2EyMTExZjZmZjMzZDg1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhODg5YzEzY2YzZGI3N2RkYjk1Mjc3NmUyNWQ0ZDcxNjQxMDMzYzIyN2ZiNWZhODAwYmY2MzQ5MGQ5NWE5NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMDQ5ZWYzOTZlNjA4NjBmMTI4ODFjMGZmNjI4NzA5YzZlMjdiNmI0Yjg1NjYzZThiMGNlOTNlYzY0ZDczY2IifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L812-L832",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L814-L834",
           "version": "repo-lines-v1:sha256:314c3f4ff8c63b2664c7176e9ee0383e5970fb16f49e7ce4a83e58d68c3709eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
         },
         {
@@ -713,7 +713,7 @@
       "statement": "`trigger-cd` gained `app-image-scan` as a `needs:` dependency and requires its result to be exactly `success`, so a red scan on `main` blocks the CD dispatch as well as the merge; because the scan job is itself `always()` and posts `success` when there was legitimately nothing to scan, only a skipped or failed scan is prevented from reaching a deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1925-L1940",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1941-L1956",
           "version": "repo-lines-v1:sha256:d09cea38d4ee53153ba85ee408041ca2e6857bf3b48ab577d00d8b6893431cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjlkNTYxZWZiNmY1NjdhZDA0NjNmOWU5YjkxYmI3NjgxMzA4MjE2YzI1ZTBkMzdmYmM5NDFhMDYxMzVmODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZTViZTRkZDM2Yzc2NTRjZTZlMzVjNzI1NzQzOTMwNjQ2MGY5ZGU0M2JhODlhM2MyMDY5MWMwZjJkMGJhMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YTA2ZTEyN2YwMDVhYjQ0MzU4ZWY5ZjgxNWJiMzM2ZmM4MTYwYjU4MWYwYjE3NzI5ZDczNGViYzUxNTJhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTM5NjM1MjcwNmM1ZDhkMDc3Y2I4ZmU0ZjNiZWU0OWQ2YzkwNWI3MTA0MmM1NjUzMTcwYTgzYWE5Nzg5ZWQifQ"
         },
         {
@@ -749,7 +749,7 @@
       "statement": "The PR-time scan and the deploy run ONE pipeline: both callers invoke `scripts/cd/scan-app-image.sh` and neither runs `trivy image`, `infra-image-scan.mjs` or `check-infra-image-findings.mjs` itself, so a PR and the deploy that follows it share one set of flags and one allowlist (`security/infra-images/allowlist.yaml`); the Trivy version is pinned separately in each workflow that installs it (app-ci.yml, cd-deploy.yml, infra-image-scan.yml) and `renovate-workflow.guard.test.mjs` fails if those pins disagree or are not both pinned and agreeing, resolving each workflow's one `${TRIVY_VERSION}` indirection before comparing so a hard-coded tag beside a different assignment cannot pass, while a drift guard in `scripts/__tests__/app-image-scan.test.mjs` fails if either caller starts scanning on its own or if the PR's image list and `scan-push.sh`'s image map disagree.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1844-L1858",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1860-L1874",
           "version": "repo-lines-v1:sha256:23cc58897fdde94efb15f1ec7d3ea14c3d63a18d598ea373871d4c9eea5a2d58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTVhNjUzMDBiNzM5OWZmYmNhZGYyOTkyZmUxODI0NmQ1ZmUxMDEzZWU1Y2E5MTdiMTI5ZDhmYjc1YmI1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYzZjZjk4MGE5MDNmMjdhODAxOTRhMDM3OWY5MjRlZmQwNTcxOTMxNjMxZWRhNjdkYjk5YjRhMmU0ZGZjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNjYwYzhmZWQ0YTBkNDNiNjY0Y2IxOTg3Y2EzYzNjNWQ3YjY5NmFhYjE2MTQwZDdhMmQ1NjA5ODcyNWQ4M2YifQ"
         },
         {
@@ -841,7 +841,7 @@
       "statement": "Every `app-image-scan` step is on the `CI_STEP_TIMEOUT_SECONDS` backstop today — listed by name in `scripts/ci-step-ceilings.tsv`'s `ON THE BACKSTOP` block with no observations yet — and the job bounds them with its own `CI_STEP_TIMEOUT_SECONDS: '900'` below its 30-minute job ceiling, so a hung scan fails its step and the failure digest still runs.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1802-L1808",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1818-L1824",
           "version": "repo-lines-v1:sha256:340a5837b7c31eb0137d277bb73ec1a947fa0c023c3680d2349ce3ff4fb286f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFmNGZmNWZkZmY4MDA4MjU0YTg5ZTdjMzk1ZjFhNDU2OTAwYjA3ZTQ3ZDAxNjkzMjE0NTVhMzViZDk2MzA1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZDdiZDljZWMxZDY5NzJkMTBjYzRkMWMwOGQ1M2YwNzNlMWYwNzc0MjEyOWIzMDhiNTA2MjI3NTRmN2NjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzVhOGIwZjRmMDI3NzE2YzZkMzk0ZjZkZjQ2ZTllYTdmNTI5MjgxYWY0YzQ0MjljODVmMTVjYzkyZWJhZDcyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjE2MzFhZDExYzhiODI2ZjQ5ZGZjYzM0N2I3ZGYzYzg5OWZjYjBjY2EzNDMxZjE5ZGQyMWU4NzY0YzIyYzBhOSJ9"
         },
         {
@@ -1137,11 +1137,11 @@
       "statement": "The `app-scan/<name>:run-<run id>` tags must be HELD by a container between `app-e2e` and `app-image-scan`, because on this single runner another run's `app-e2e`, `dast` or `build-deploy` can take the daemon in between and each begins with `docker image prune -af`, which deletes a bare tag (measured on PR #909, where `missing scan tag(s)` failed twice on images nobody had scanned after its own `app-e2e` had passed). `app-e2e` therefore holds each tag with a stopped container named `app-scan-hold-<run id>-<image>` and labelled `mcm.app-scan-hold`, which `image prune -a` never removes; `app-image-scan` removes its holds before its tags under `always()` (an `image rm` of a held tag only untags it), the hold is `rm -f`'d before being created because a re-run attempt keeps the same run id, and every one of the three image-prune sites first runs `docker container prune -f --filter label=mcm.app-scan-hold --filter until=24h` so a cancelled run's images are released after at most a day while a run still waiting for its scan keeps them. `docker ps -a --filter label=mcm.app-scan-hold` lists the holds, and holds from runs finished more than a day ago mean a prune site lost its sweep; `scripts/__tests__/app-image-scan.test.mjs` pins the sweep's label and age filters, their ordering before the image prune at all three sites, the site count, and that the hold is removed before the tag.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1900-L1910",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1916-L1926",
           "version": "repo-lines-v1:sha256:7ee92af9b3df2ed369d6b7d040e311b3e1e26842a332994771ebec1ded7c390c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZjZlNDM1OTA2NGE3MjFmMjFlMGRiZDA5NTczZjM4ZmZmZmE2MWRjOWM0NjE3N2EyMTExZjZmZjMzZDg1YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhODg5YzEzY2YzZGI3N2RkYjk1Mjc3NmUyNWQ0ZDcxNjQxMDMzYzIyN2ZiNWZhODAwYmY2MzQ5MGQ5NWE5NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMDQ5ZWYzOTZlNjA4NjBmMTI4ODFjMGZmNjI4NzA5YzZlMjdiNmI0Yjg1NjYzZThiMGNlOTNlYzY0ZDczY2IifQ"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L812-L832",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L814-L834",
           "version": "repo-lines-v1:sha256:314c3f4ff8c63b2664c7176e9ee0383e5970fb16f49e7ce4a83e58d68c3709eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2YmZmMjVlZGEyN2UzODA1M2Y3ZjhiYmVlZWVkYjk2OWM4ZmNiZjZhY2ZkMmYyMDVkZGEwNTk0ZjVhN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzBhNzVjMzMzYzFhNTE0YjA2YTljZjJkMWU5Y2JkYWJhNjliYjU0MDM4MDJmNGZkZGRjN2IzMTdjYjlhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTY0NDI2ZWI1NjRiOWEyNWYxMzMzODQ3YWRkZGM3ZjFjMGViNGM4MTVkNWM0NTA1Mzk4YmRlY2VkMzVkMDgifQ"
         },
         {
@@ -1177,7 +1177,7 @@
       "statement": "All three Trivy-installing workflows (`app-ci.yml`, `cd-deploy.yml`, `infra-image-scan.yml`) install through ONE repo script, `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`, which downloads that release's tarball and its checksums file from GitHub with `--retry-all-errors`, requires exactly one checksum entry for the asset, verifies the sha256, and then asserts the installed binary reports the pinned version — so a passing install step means *this* version is on PATH rather than that a version line was printed, and every failure names its cause on stderr instead of exiting silently. It replaced Trivy's `contrib/install.sh`, which on a failed download logged the HTTP status at DEBUG level and then exited with no message (measured on PR #929, runs 6696 and 6702, 2026-11-04) and which was fetched code piped into `sh`; `renovate-workflow.guard.test.mjs` fails if any of the three workflows pipes that vendor script or `get.trivy.dev` again, and `scripts/__tests__/ci-install-trivy.test.mjs` runs the installer offline against `file://` fixtures to pin the loud-failure and wrong-version behaviours.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1848-L1858",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1864-L1874",
           "version": "repo-lines-v1:sha256:a138c5773b0a1be4366104a3c6a3df1b38d9278196c134fb79ed12788d02c9bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYmUzMjc3ZWM2YTNhY2VmMzdlZWRjZTRhOTM5MDY4MjFlMmEwYTA5MzZkYTNjOTc1ZTA1N2JkOWJiNWU3MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5OGM1Y2JmMTNlOGEwNjgwMjZjNTNmMGZkZThmZDllZjkyOTAwOWViZTZkMDg1MWI2NTA1NjJkYzgyZmNjNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNjYwYzhmZWQ0YTBkNDNiNjY0Y2IxOTg3Y2EzYzNjNWQ3YjY5NmFhYjE2MTQwZDdhMmQ1NjA5ODcyNWQ4M2YifQ"
         },
         {
@@ -1229,10 +1229,28 @@
           "version": "repo-lines-v1:sha256:1777c556c5002d0ccdfe3a5d56acb098dd5cf951174e24ba949986b007302d11:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYmYwMWIyMWM4NGE5ZGYyZjY0OTYxNmI2ZGFmNDdiYzRhZjQ4Mzg4Mzk0YjlmYTQwYWMyMzliMDVjY2M1ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyODVkOWE2NWRhY2JlOGMwNmViZGM5MjNjZDAwZmE1N2Q2ZTNiZTJlOGExNDRmNTU5MDY0M2JiODEzMTFmMTAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_29bcbfc01b774baf983b6ef7c9eee91e",
+      "statement": "scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs pins the app-ci change-detection wiring statically (because this forge exposes no jobs/steps endpoint and a green tick cannot show which filter matched): a lockfile or workspace-manifest change must select the `app` filter that gates app-e2e and must not select the `mobile` emulator filter, `mobile` must remain a strict subset of `app` (an entry present only in `mobile` is inert, since `mobile` gates only steps inside app-e2e and app-e2e itself requires `app == 'true'`), the pull-request filter and the merge-side `DEPLOYABLE_PATHS` in scripts/cd-dispatch-gate.mjs must agree about dependency files, and app-e2e must still gate on `needs.changes.outputs.app` with a declared `needs: changes`.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L139-L182",
+          "version": "repo-lines-v1:sha256:f36ae589da006eca90e597ab5036cf8fb2585bf6b2a72df088a67168c66981dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWJmYjQ1MzhlNjIwZDE4Yzc3NjZlNjJhZjY5MGNiMDM0NjdkY2NjNWVmNTE2OGQ4ODhhMGJmYTAyZDI5MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YzVhMTIwNTYwYmVkYWI2OGQxOGJlMDA2MzhiZTFlOGM3ZmRkMDc5ZjY1ODY3MzI0NmNmYTA0NGE5NTlkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMGE4NGQ2YjkyMTJkOWQ3MWIzYWY1ZmEwOTk3Mzc0NmUyY2E3YzA0MmVjYTE5Y2IyNTAyMzA0YTY5NWY5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzYTJkMjE2ZDQ4ZjFkZWUxNTMxNzczZGU3ODA1MWUyZWYxMTk4NzJkNTRkNzk5M2U2ZTYyNmUxYTIyNWE5NGMifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs#L64-L175",
+          "version": "repo-lines-v1:sha256:8fa7f38d2cd195fd2d8acbfd60ac265fa450e4da1cd1b722d84b04e07e544fe5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlZTZlZWE2YjM0NmZkODFmMzY3NWU0MDI3MDU1ZmI1Yzk5MWRhMzVjMmI1MDcxNzRhZGM5N2VkODhjMTEyMTJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMzhiMjgyNzY5ZjM3NzgwNGEzOTRjNjJlYjgzODZmMzk5OGEyNmRiZjZiYTk3NDgxY2NhOTM1ZjBiZTg4MTVjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://scripts/cd-dispatch-gate.mjs#L72-L102",
+          "version": "repo-lines-v1:sha256:f5c67b57fe511b5cb322b62bbd5196ca4bcfcc00551603830de926c3bd0ec700:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNDE3Y2RhZTE0ZDQ0ZmI0YmM3NzQ4ZTVlMDAxNmY4MjdlNGNmODVhNGIxNzg2NjU0MDI0NjE4ODQ0MWI1NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjOTdkYzEwNTg5NjliN2UwNDg2YzIwNWJhZTA5MjJmOWEzNjQyYWY3NWQzOTI1NjBhNTNhYTc5NWViZTI1ZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNTEwNjc1ZWZhYWNjMWZmZjk4N2Q4YTZlN2RlOWJkMTFkMmM4MDRiNzg1Zjg3M2FjNGUyZDU1NDNiZmFmYzQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T05:05:27.957Z"
+    "at": "2026-11-07T19:55:04.696Z"
   }
 }

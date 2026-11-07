@@ -25,12 +25,20 @@ sources:
     resource: repo://backend/mc-service/Dockerfile
   - id: openwiki-source-045a0d186e0b60056b359b2e
     resource: repo://docs/runbooks/renovate.md
+  - id: openwiki-source-82e76cb56a030095b60d27cd
+    resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
+  - id: openwiki-source-75c613635390ab18cc167ec1
+    resource: repo://frontend/mcm-app/README.md
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
     resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
   - id: openwiki-source-3b86829117dd0577834407fc
     resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
+  - id: openwiki-source-f7e16ba323424b9790bca8b9
+    resource: repo://packages/design-system/package.json
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
   - id: openwiki-source-b7793decf9d7c9ba48e57e0f
@@ -49,16 +57,18 @@ sources:
     resource: repo://scripts/check-override-consistency.mjs
   - id: openwiki-source-238cf8b88f30f267614313be
     resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-e1a7063386de1c5b8a2e79a9
+    resource: repo://scripts/lib/renovate-package-rules.mjs
   - id: openwiki-source-aa94e9cc08dccbe003436cfb
     resource: repo://scripts/reap-merged-branches.mjs
   - id: openwiki-source-3b90cb16e95306cae75aac45
     resource: repo://scripts/renovate-health.mjs
   - id: openwiki-source-bd64475e04b69688a7d80d8d
     resource: repo://scripts/sast-scan.mjs
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:57:36.933Z
-generated: { by: "openwiki/0.7.1", at: "2026-11-07T05:57:36.933Z" }
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # Renovate dependency bot
@@ -469,11 +479,23 @@ neither ceiling leaks onto `actions/checkout`, `setup-node`, `astral-sh/setup-uv
 `node-version` datasource.
 
 **Tamagui is the lockstep-pin case the broad npm rules would otherwise split.** Every `tamagui` /
-`@tamagui/*` specifier in both workspace manifests is an exact version and both manifests agree, with
-one `tamagui` group on all three tracks and `rangeStrategy: pin`. Measured 2026-10-16: an open
+`@tamagui/*` specifier in both workspace manifests (`frontend/mcm-app/package.json` and
+`packages/design-system/package.json`) is an exact version and both manifests agree, with one `tamagui`
+group on all three tracks and `rangeStrategy: pin`. Measured 2026-10-16: an open
 `@tamagui/font-inter >=2.0.0` range let a lock regeneration pull `@tamagui/core@3.0.13` into the lock
 beside 2.7.7 with no PR and no review — which is why the rule carries no `matchUpdateTypes` and must be
-ordered after `js patch/minor` and `js majors`.
+ordered after `js patch/minor` and `js majors`. The guard resolves each update through the **same**
+`resolvedGroupName()` model `renovate-workflow.guard.test.mjs` uses
+(`scripts/lib/renovate-package-rules.mjs`), so "one group" means the group Renovate actually resolves,
+not a rule that merely names the package.
+
+The guard has since grown two invariants beyond the pin itself. A declared tamagui
+`peerDependencies` range must be bounded to the installed major (`>=3.0.0 <4`) — an open peer range
+admits the next major without review. And the lock must hold exactly **one instance**, not merely one
+version: pnpm gives each peer-context suffix (`@tamagui/web@3.0.18(aaa)`) its own snapshot directory,
+so two peer contexts of the *same* version are two style registries at runtime — the blank page the
+Tamagui guide warns about. That check counts `snapshots:` keys only, so `pnpm dedupe` is the fix; it
+fails on zero matches too, so a parser that stops reading the lock cannot pass silently.
 
 ## Silent failure modes
 

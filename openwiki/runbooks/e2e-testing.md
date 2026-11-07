@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
-description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state and Playwright-image-pin traps that make a green run prove less than it looks.
+description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, the security-policy walk that only the browser can see, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state, instrument and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 sources:
@@ -11,12 +11,20 @@ sources:
     resource: repo://agents/movie-assistant/tests/integration/kc_admin.py
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
+  - id: openwiki-source-e9bcd4372a4632d555b861a6
+    resource: repo://frontend/mcm-app/package.json
   - id: openwiki-source-d3d6462458271e37e692275f
     resource: repo://frontend/mcm-app/playwright.config.ts
   - id: openwiki-source-8f96001caf98cb41c4d64a48
     resource: repo://frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-c723e348f34e858500a3ce16
+    resource: repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts
+  - id: openwiki-source-c899021757e59c8af3292503
+    resource: repo://frontend/mcm-app/tests/e2e/web/fixtures/worker-session.ts
+  - id: openwiki-source-5f49d32c246932bc307d9d17
+    resource: repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts
   - id: openwiki-source-ea93d0d472b9e8fe578853c3
     resource: repo://frontend/mcm-app/tests/e2e/web/setup/agent-stack-gate.ts
   - id: openwiki-source-394dcdb206cc3e89e1eea8e7
@@ -31,6 +39,10 @@ sources:
     resource: repo://frontend/mcm-app/tests/integration/helpers/backup-targets.ts
   - id: openwiki-source-77b77a1d89a52ebe7205f42b
     resource: repo://frontend/mcm-app/tests/integration/setup/preflight.global.js
+  - id: openwiki-source-7e77c12d3d1dc45fe564321c
+    resource: repo://frontend/mcm-app/tsconfig.json
+  - id: openwiki-source-bbf78f164062a1cfdec73a0a
+    resource: repo://frontend/mcm-app/web-security-headers.js
   - id: openwiki-source-3574b605c1922bedacc8f2fa
     resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
   - id: openwiki-source-4af9b1718a0206bbe016cb00
@@ -43,18 +55,26 @@ sources:
     resource: repo://scripts/__tests__/app-e2e-env.guard.test.mjs
   - id: openwiki-source-62cfc58b07f27cacdc35aabe
     resource: repo://scripts/__tests__/e2e-collection-ownership.guard.test.mjs
+  - id: openwiki-source-b2ca74a715a45afd3a6741ef
+    resource: repo://scripts/__tests__/e2e-worker-session.test.mjs
   - id: openwiki-source-dd77016bffd7cb9b5f844735
     resource: repo://scripts/agent-e2e.mjs
   - id: openwiki-source-7efe877535a6dbac41dcc29c
     resource: repo://scripts/agent-stack.mjs
   - id: openwiki-source-238cf8b88f30f267614313be
     resource: repo://scripts/check-toolchain-consistency.mjs
+  - id: openwiki-source-478a776ff0b75f2af5dc3190
+    resource: repo://scripts/ci-failure-digest.mjs
   - id: openwiki-source-4a5107e668fbfa127e4c2d48
     resource: repo://scripts/e2e-contention-tally.sh
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
+  - id: openwiki-source-48dc88a52302b6581d98158e
+    resource: repo://scripts/e2e-failure-set.mjs
+  - id: openwiki-source-34be56e75c5c74a47e577f27
+    resource: repo://scripts/e2e-turn-tally.sh
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T07:34:17.095Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -206,6 +226,29 @@ per-file invocation as the contract and the recorded rationale as history. Set
 `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run to convert a missing stack into a hard failure
 instead of a skip.
 
+## The security-policy walk — the gate only the browser can see (feature 087)
+
+`frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts` signs in, hard-reloads, deep-links
+to a collection and navigates in-app, failing on any CSP violation or uncaught page error. A script
+the CSP blocks produces **no failed request**, so nothing else in the suite sees it — the page simply
+stops hydrating while every locator-based assertion stays green. Three properties make its result mean
+something:
+
+- **It needs a container.** Metro sends neither a CSP nor `X-BFF-Source`, so under Metro the walk
+  skips visibly, and with `CI` set it fails instead — a walk that tested nothing must not read as a
+  pass. `fixtures/security-policy-watch.ts` additionally proves on every run that it *can* see a
+  violation (`proveCanSee`) before its clean result is trusted; `assertClean` allows nothing.
+- **It runs in the `lifecycle` project**, because a real sign-in in the main project could evict
+  another worker's session and the walk's user has no assistant. `lifecycle` depends on `chromium`,
+  so a file filter still runs the whole suite — run it alone with
+  `--project=lifecycle --no-deps` in the Playwright image.
+- **The negative control is deliberate**: empty `INLINE_SCRIPT_HASHES` in the container's
+  `web-security-headers.js`, restart it, and the walk must fail on the first page load
+  (`script-src-elem blocked inline`); then recreate the container. Feature 089 removed the one known
+  violation (zod's `eval` probe), so any violation on a watched path is now a finding.
+
+The assistant path is checked by one test in `assistant-navigate.spec.ts` with the same watch.
+
 ## Two tiers: what blocks a merge (feature 056)
 
 Agent tests carry `@gate` or `@model-decision`. The rule — and what the gate stops proving — is in
@@ -234,6 +277,12 @@ The mobile half (APK build + Maestro emulator flows) runs **after** the web E2E,
 suite aborts the job before it. Red runs take ~15–19 min (web E2E only); green runs take ~30–35 min
 (web + APK + emulator). Fixing the suite roughly doubles the wall clock — do not read job duration
 as a performance signal without checking the outcome.
+
+The mobile half is also **path-gated**: it runs on a push to `main`, on a PR that touches
+`frontend/**` / `agents/**` / `mcp-servers/**` / `backend/**` (the `mobile` filter, a strict subset
+of `app`), or on a PR labelled `mobile-e2e`. A PR that changes none of those still gets the web E2E
+and the whole integration tier and simply does not pay for the emulator. The accepted trade-off is
+that a mobile regression caused by a non-mobile change is caught at merge rather than at PR time.
 
 For mobile-specific tunneling and APK-rebuild decisions, see
 [Android emulator & APK builds](./android-emulator.md).
@@ -341,12 +390,14 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   **DIAGNOSTIC — `failed=0 flaky=0 passed=0` means check the image pin FIRST.** A drifted tag does
   not present as a test failure — it presents as the *absence* of results, and the e2e result gate's
   `no Playwright summary found` is the only signal. Run the gate above before opening a single
-  container log. Current pin: **v1.63.0-noble**.
+  container log, and read the current tag out of `app-ci.yml` rather than from any document (the
+  pin moves with Renovate; the workflow is the copy CI runs).
 - **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
   CLI process, so cancelling the command leaves Playwright still running — consuming the same stack
   (and the same canonical test user for worker 0) as any subsequent run. Measured 2026-08-09: an
   abandoned full-suite run was still at test 24/174 fifteen minutes after being "stopped". Always
-  confirm and kill: `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.63.0-noble`.
+  confirm and kill with the tag `app-ci.yml` currently pins:
+  `docker ps --filter ancestor=mcr.microsoft.com/playwright:<tag>` then `docker kill <id>`.
 - **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
   "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
   test that knows only one symptom misses the same defect on a different provider.
@@ -381,14 +432,45 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   the 32-of-66 rejected-refresh contention. Other shared user state to account for: per-user agent
   config, the default collection (FR-009 redirect), and the `MUTATION` fixture emptied by
   `movies.spec.ts`.
-- **"Green" told you nothing until the result gate existed.** Playwright exits 0 with tests
-  skipped, the forge API exposes no job logs, and the digest publishes only on failure — so on a
-  green run the counts were unreadable. Feature 040 validated green with 33 specs skipped. `app-ci`
-  now runs `node scripts/e2e-failure-set.mjs gate` after the web E2E: fails on `skipped > 0`,
-  `did not run > 0`, or a log with no summary. **`flaky` is still NOT observable on a green run**
-  — do not claim "no flakes" from a green tick. **`N did not run` is not a skip**: the `lifecycle`
-  project (`bff-prod-lifecycle` + `admin-registration`, 3 tests) never runs while the main project
-  has any failure — they reported "3 did not run" for months without anyone noticing.
+- **Import `./fixtures/worker-session`, not `@playwright/test`, in any spec that uses the
+  authenticated session — and NEVER in a spec that must be unauthenticated.** The fixture replaces
+  the `storageState` option's implementation with the file belonging to the worker's
+  `parallelIndex`, which is what gives each worker its own refresh bucket (measured on run 1605:
+  eight workers sharing one `sessionId` against a 2-per-30 s bucket rejected **32 of the run's 66**
+  token refreshes, surfacing as `gotoHome: home screen did not render` on specs with nothing wrong
+  with them). Because it *replaces* the option, importing it into `auth.spec.ts`,
+  `security-headers.spec.ts` or `bff-prod-lifecycle.spec.ts` would override their
+  `test.use({ storageState: { cookies: [], origins: [] } })` and silently hand them a signed-in
+  session — turning a deliberately-unauthenticated test into one that proves nothing.
+  `scripts/__tests__/e2e-worker-session.test.mjs` asserts the split in both directions.
+- **"Green" told you nothing until the result gate existed — and `flaky` still needs the counts
+  bundle.** Playwright exits 0 with tests skipped, the forge API exposes no job logs, and the digest
+  publishes only on failure — so on a green run the counts were unreadable. Feature 040 validated
+  green with 33 specs skipped. `app-ci` now runs `node scripts/e2e-failure-set.mjs gate` after the web
+  E2E: fails on `skipped > 0`, `did not run > 0`, or a log with no summary. Since 054 a green
+  `app-e2e` publishes a **counts-only bundle** carrying the `[e2e-gate]` counts (gate tier and model
+  tier), the contention tally, the turn-tally verdict and the setup lines — so on a green run `flaky`
+  is readable *from the bundle*, with item #568's identities naming each test that needed its retry;
+  from a green tick alone, still do not claim "no flakes". **`N did not run` is not a skip**: the
+  `lifecycle` project (`bff-prod-lifecycle`, `admin-registration` and — since feature 087 — the
+  security-policy walk) has `dependencies: ['chromium']`, so it never runs while the main project has
+  any failure. It reported `3 did not run` in every measured run for months without anyone noticing,
+  and those tests only executed for the first time on 2026-08-10; the count has since grown with the
+  project. The gate deliberately does not re-fail on `failed > 0`; the web-E2E step above already did,
+  and a second failure would obscure which step found it.
+- **A collapsed run is a different diagnosis from failing tests, and the turn tally names it.**
+  Roughly one `app-e2e` run in seven collapses: every agent/dock spec fails at once, `flaky=0`, and
+  the gateway receives about a quarter of its usual traffic while answering everything it does get
+  with `200` — the client stops *sending* turns (item #173). From the outside that is
+  indistinguishable from "some tests failed", so `scripts/e2e-turn-tally.sh` counts
+  `POST /agent/movie-assistant` in the gateway log and normalises against **tests executed** rather
+  than a raw count, which goes silently wrong the moment a spec is added. `verdict=collapsed` means
+  the failures say the client never sent the turn; `verdict=healthy` means a failure here is about
+  the tests. Two things it gets right rather than convenient: **zero posts is a different finding
+  from *few* posts**, so a zero count tells you to check gateway liveness first (an `Up` container
+  can be dead); and on a `pull_request` only the gate tier runs, so the full-suite floor would label
+  a green run collapsed — the tally **abstains** with a reason instead of guessing a floor. It
+  LABELS and never gates: a collapsed run already fails on its own test failures.
 - **A local run is only evidence if you check the instrument.** Three measured failure modes: (1)
   a stale realm can still hand out 300 s access tokens — feature 052 raised `accessTokenLifespan` to
   5400 s for `ci-realm` only, and feature 054 (item #168) extended the same 5400 s to `dev-realm`
@@ -402,6 +484,25 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   (3) A local subset pass is not evidence about a change to a shared hook — a fix that passed
   6/6 unit tests and 5/5 E2E produced 28 and 26 failures in the full CI suite because it exercised
   three spec files in isolation while the regression only appears under full concurrency.
+- **Nothing statically checks `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
+  `frontend/mcm-app/tsconfig.json` excludes `tests/e2e` (and `tests/load`, `tests/web-e2e`), and the
+  `lint` target runs `eslint src` only. Verified by planting a type error in a spec and watching
+  `tsc --noEmit` pass with the file absent from `--listFiles`. **Running the spec is the only
+  verification these files have** — do not offer a green typecheck as evidence that one is sound.
+- **An assertion whose expected state already holds is not a wait.** The sharpest instrument trap,
+  because the test still *reads* as if it waits. `backups.spec.ts`'s retention loop had two such
+  waits and therefore none: the success banner reads `Backed up N movies` after *every* run, so
+  `toContainText` matched the *previous* run's banner the instant the next was clicked; and the
+  version count was polled against a ceiling already reached, so the poll returned on its first tick.
+  Both vacuous, the final assertions raced the run — the test failed reporting "nothing was pruned"
+  when nothing had yet needed pruning, and the retention code was never implicated. **Wait on
+  something that CHANGES, and poll a COMPOUND fact when no single one changes**: capture the key set
+  before the click, then poll `{ fresh, total }` as one object, because `fresh` alone is satisfied
+  before the prune and `total` alone is already true before the click — only the pair pins "this run
+  finished **and** retention ran". Keep any same-text UI assertion, but put it **after** the real
+  wait so it cannot be mistaken for one. Two mutations make such a fix evidence rather than a hope:
+  an implementation that prunes the **newest** must still fail, and the wait must **time out** if the
+  run never fires.
 - **A RED `app-e2e` is fast because it gives up early.** The mobile half (APK build + Maestro)
   runs after the web E2E; a failing web suite aborts the job before it. Measured: red runs take
   15–19 min (web E2E only), green runs take 30–35 min (web + APK + emulator). Fixing the suite

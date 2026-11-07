@@ -4,7 +4,7 @@ title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
 tags: [security, sast, sca, ci, runbook]
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 sources:
   - id: openwiki-source-0efadc7633f45e85ee45a617
     resource: repo://.devcontainer/egress-allowlist.json
@@ -26,6 +26,12 @@ sources:
     resource: repo://docs/runbooks/sast-scanning.md
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
+  - id: openwiki-source-fd968ab79d3d5126e91933cf
+    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
+  - id: openwiki-source-250f22b469fdcf4c2326980d
+    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
+  - id: openwiki-source-31ef72c79f00ba748f6ce16b
+    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
   - id: openwiki-source-885237f04e1aa048fda26663
     resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
   - id: openwiki-source-bbf78f164062a1cfdec73a0a
@@ -48,6 +54,8 @@ sources:
     resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
   - id: openwiki-source-b24a848c671edad8616a78b0
     resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
+  - id: openwiki-source-2500897f79f457d05a1f0bd2
+    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-52c33ce59ba156d00cf24a1d
     resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
   - id: openwiki-source-60011cd55e5b787da8893ea3
@@ -80,9 +88,11 @@ sources:
     resource: repo://specs/080-minio-to-rustfs/plan.md
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-2d2c0b2144040a5afd40c348
+    resource: repo://specs/089-single-zod-jitless/plan.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T10:07:39.873Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # SAST & SCA static scanning
@@ -431,7 +441,18 @@ that job), not by flipping the whole tier.
   entries are **not security floors**. They are the map's one non-advisory use: they force
   `@ag-ui/client` and `@ag-ui/proto`, which declare `zod ^3.25.76` outside the app's own `^4.4.3`
   range, onto the app's copy, so the assistant chunk carries one zod 4 engine instead of a second one
-  whose `new Function("")` availability probe the strict `script-src` blocks and reports. The file
+  whose `new Function("")` availability probe the strict `script-src` blocks and reports. The override
+  is only half of that fix, though: the app's own zod 4 engine runs the same probe, so the assistant
+  chunk's **first** import is `@/utils/zod-jitless` — on web `src/utils/zod-jitless.web.ts` sets zod's
+  `jitless` config before any schema is built, and the native module is deliberately empty because
+  Hermes' evaluation behaviour was never measured — while `web-security-headers.js` keeps
+  `'unsafe-eval'` out of `script-src` and records that a new `eval` violation on this path is a
+  **finding, not a known line**. `scripts/__tests__/single-zod-engine.guard.test.mjs` pins both halves
+  (that every `@ag-ui/client` lockfile snapshot resolves a `(zod@4…)` copy of `@ag-ui/core`, and that
+  the panel's first import line is `import '@/utils/zod-jitless';`), because the app works either way
+  and only the browser logs the extra violation; `src/utils/unit-tests/zod-jitless.test.ts` counts real
+  `Function` constructions with a control run proving the counter can see a probe, so a zero from the
+  jitless path is not a blind counter reading as success. The file
   records its own recheck rule for them: recheck at each AG-UI upgrade, and keep the value equal to
   the app's own zod range so they stay one copy. Two consequences are worth carrying. The gate skips a
   plain pin *before* it reads the value, so a caret like `^4.4.3` passes there where the same caret on

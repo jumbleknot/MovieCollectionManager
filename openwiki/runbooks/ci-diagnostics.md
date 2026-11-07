@@ -99,10 +99,10 @@ sources:
     resource: repo://security/infra-images/allowlist.yaml
   - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
     resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # CI self-serve diagnostics
@@ -389,7 +389,11 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   US3) precisely so that changing the shared scanner re-runs the job that calls it, and
   `scripts/ci-install-trivy.sh` — the installer the scan step runs — is listed beside it for the same
   reason. A filter-gated-out PR makes the scan pass in seconds with `no app path changed`, which is a
-  legitimate pass rather than a scan that found nothing.
+  legitimate pass rather than a scan that found nothing. `scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs`
+  pins the wiring the skip rests on, because this forge exposes no jobs/steps endpoint and a green tick
+  cannot show which filter matched: a lockfile or workspace-manifest change must select `app`, must **not**
+  select `mobile`, `mobile` must stay a strict subset of `app` (an entry in `mobile` alone can never fire —
+  `app-e2e` itself requires `app == 'true'`), and `app-e2e` must still gate on `needs.changes.outputs.app`.
 - **A ⏳ is not a future pass, and the filter — not the spinner — says whether a job will run.**
   `waiting` can still resolve to `skipped` (path-gated) or `superseded` (cancelled by a newer push);
   both are non-runs that a green board then presents as satisfied. Item 568 hit this twice in one

@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the cold-load web bundle budget with its four-assertion gate, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
@@ -9,6 +9,8 @@ sources:
     resource: repo://.devcontainer/sandbox/devcontainer.json
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-bff475d8fa855e3592cfedc2
+    resource: repo://.specify/memory/constitution.md
   - id: openwiki-source-30d3dc827bae5c1cb657fa31
     resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
@@ -119,6 +121,10 @@ sources:
     resource: repo://frontend/mcm-app/tamagui.config.ts
   - id: openwiki-source-2d7a83a560ab6dec0daf8651
     resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
+  - id: openwiki-source-c723e348f34e858500a3ce16
+    resource: repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts
+  - id: openwiki-source-5f49d32c246932bc307d9d17
+    resource: repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts
   - id: openwiki-source-b5b17657abfab732746dd707
     resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
   - id: openwiki-source-5ee35374d6ab0e61934498cd
@@ -175,8 +181,12 @@ sources:
     resource: repo://scripts/prune-bff-runtime-modules.mjs
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-16870c3ee3399a868ae59956
+    resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389
     resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-93b6202dca9e48a643d50488
+    resource: repo://specs/087-expo-sdk-58/tasks.md
   - id: openwiki-source-5c651a2e85869320925d0597
     resource: repo://specs/089-single-zod-jitless/spec.md
   - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
@@ -184,7 +194,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T10:07:39.873Z
+    at: 2026-11-07T19:02:58.048Z
 ---
 
 # Expo/React Native universal app
@@ -431,9 +441,12 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, which also fails if
   `@tamagui/babel-plugin` is named by either manifest or by `babel.config.js` again (a leftover v2
   compiler over v3 sources), and which keeps every Tamagui update in one Renovate `tamagui` group so a
-  partial lock refresh cannot split the set — but it counts *versions*: its lock regex stops the
-  version capture at `(`, so two peer contexts of the **same** version still count as one copy, which
-  is exactly the two-style-registries/blank-page shape and not something this guard can see.
+  partial lock refresh cannot split the set. Its version tests stop the captured version at `(`, so
+  two peer contexts of the **same** version count as one copy — which is why the guard also counts
+  distinct `snapshots:` keys per package, peer suffix included, for `@tamagui/core` and
+  `@tamagui/web`: that is the two-style-registries/blank-page shape, and the one-instance half of
+  the guard is what sees it (the [design system page](./design-system.md) carries the failure and
+  its fix).
   `packages/design-system/jest/tamagui-cjs-resolver.js`
   exists because Tamagui 3 maps two subpaths' `react-native` export condition to ESM-only `.mjs` files
   Jest cannot load (56 suites failed to run on the 3.0.13 bump) — Metro handles `.mjs` fine, so the app
@@ -538,11 +551,24 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   audit confirmed every remaining module under `src/bff-server/` is genuinely server-only — and the
   mechanism is kept rather than deleted because its tests document the rule. A marker must be
   paired with an entry in `SERVER_ONLY_EXEMPT` in `scripts/check-web-bundle-budget.mjs`, or one of
-  the two gates has an unexplained hole. That second gate is the other half of the story and
-  asserts three things: the web entry chunk stays inside a committed byte budget, the deferred
-  assistant packages are absent from the *entry* chunk, and server-only code is absent from
+  the two gates has an unexplained hole. That second gate is the other half of the story: it runs as
+  `pnpm nx bundle-budget mcm-app` and asserts four things. The committed budget is
+  `2_000_000` bytes and, since feature 087, it caps the **cold-load total** — the sum of every
+  `/_expo/` script the worst exported page loads, read from the exported HTML — rather than the
+  `entry-*` chunk alone, because a split bundle can fit chunk by chunk and still be too big to
+  load. On the SDK 57 baseline that total measured 1,892,065 B of the 2,000,000 B ceiling (94.6%,
+  107,935 B spare) on the worst of 17 exported pages, so the headroom is roughly one ordinary
+  feature — and the [constitution](../process/constitution.md)'s exception clause still reads as an
+  entry-chunk maximum, with its byte figures historical. The other three assertions: the deferred
+  assistant packages must be absent from the *entry* chunk; server-only code must be absent from
   *every* client chunk (not just the entry one — a gate reading only the entry chunk would report
-  clean while `src/bff-server/**` shipped inside a deferred chunk). "Deferred" has one precise
+  clean while `src/bff-server/**` shipped inside a deferred chunk); and every inline `<script>` in
+  the exported HTML must be on the `INLINE_SCRIPT_HASHES` allowlist the CSP is also built from, so a
+  new inline script fails the build offline with the `'sha256-…'` value it would need rather than
+  becoming a script the browser blocks (see the security-header gotcha below for that shared list).
+  The target runs the gate with `--require-maps`, so an export that stopped emitting source maps
+  fails loudly instead of quietly narrowing the gate to the byte budget alone — the module-level
+  assertions cannot run without maps. "Deferred" has one precise
   meaning here: the assistant runtime is a ~2.4 MB chunk reached only through the single dynamic
   import in `src/utils/assistant-runtime-loader.ts`, whose root is
   `src/components/agent/assistant-panel.tsx` — the only module from which the packages the gate
@@ -558,7 +584,12 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   TS. It builds a strict, *enforcing* (never report-only) `Content-Security-Policy` for the
   browser-rendered surface whose `script-src` allow-lists Expo Router's single inline hydration
   bootstrap script **by sha256 hash**, so the policy needs neither `'unsafe-inline'` nor
-  `'unsafe-eval'`, plus three always-on static baseline headers stamped on every response. The
+  `'unsafe-eval'`, plus three always-on static baseline headers stamped on every response. That
+  allow-list is exported as `INLINE_SCRIPT_HASHES`, and it is the *only* list of permitted inline
+  scripts: `scripts/check-web-bundle-budget.mjs` reads it through `createRequire` and hashes every
+  inline `<script>` in the exported HTML the same way the browser would, so the policy and the gate
+  cannot disagree about what is permitted — a new inline script fails the build offline and prints
+  the `'sha256-…'` value it would need, which is the value, not permission to add it. The
   browser-facing Keycloak origin that `connect-src` needs (expo-auth-session fetches OIDC
   discovery) is read from env at boot and reduced to a bare `http(s)` origin, falling back to a
   localhost default on anything malformed — a scheme-less or non-web-scheme value does not throw in
@@ -603,7 +634,19 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `tests/e2e/web/security-headers.spec.ts` asserts the three response classes this process serves —
   SSR HTML, a static asset, and a JSON API response — and that `X-Powered-By` is absent from all
   three; it opts out of the shared authenticated `storageState` because all three are public.
-  The same file also decides the *origin* the two identity-provider round trips above are built on,
+  The *runtime* half of the same arrangement is `tests/e2e/web/page-security-policy-walk.spec.ts`,
+  which is where the removed `eval` allowance actually lived: it records CSP violations and uncaught
+  page errors across the browser context through an injected binding (a list on `window` would be
+  lost at every reload), proves it can see a violation before trusting a clean list, then covers each
+  way a page can start — a fresh sign-in, a hard reload, a deep link and in-app navigation — and
+  requires zero violations and zero page errors at every step, allowing nothing. It also asserts that
+  an unknown page answers 404 and that a page is not served `immutable`.
+  It mints its own throwaway identity and runs in the `lifecycle` project, because a real sign-in in
+  the main project could evict another worker's session. Its user has no assistant configured, so
+  the assistant chunk is not exercised there; `assistant-navigate.spec.ts` covers that path with the
+  same watch, and it too now allows no violation. The negative control is to empty
+  `INLINE_SCRIPT_HASHES`, recreate the container from that file and watch the walk fail.
+  That same `server.js` also decides the *origin* the two identity-provider round trips above are built on,
   and doing so takes **two** changes rather than one. `expo-server`'s express adapter derives every
   request URL from the socket's scheme and the raw `Host` header and ignores `req.protocol`
   entirely, so behind the TLS terminator it would compute an `http://` origin — and the

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:af878f74ad5739b6a4b20e4098bf151b601bde01d2a0352f5b1843024a703874",
+  "pageVersion": "sha256:b2568bb987c781f460f661b470ce2ed1e7fcf138d5a7b79559daf832449c51e4",
   "claims": [
     {
       "id": "claim_f8f00460dc84485e9d772fc7224921cd",
@@ -257,22 +257,34 @@
           "version": "repo-lines-v1:sha256:5f6ada7b4c4038b668395318a80fc46f786576a5888f26c6b0f536a10c7af3dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYmIwZTZkYWVhODc5ZDliNGJmODFlY2UxMjExMmU0NzE0OTBjN2ZkN2E4ODkwNDEyNTQxN2I0M2NlMWY3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NTM1ZGVjZDE1ZWVlYzJlZjgxZTVlZWRmODc3ZmJlNjM3NmQwOWJkZTdjYTMyMzQ2MWM1ZjMyNTZkM2ZkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYThiMWZiZjZhZmY1OTI4MzU3NTY5MjllMjRhMTI0YTFhNzA1ODk3MDNjZDg4N2E0YTc2NjBhMWMxZDI0MWQifQ"
         },
         {
-          "resource": "repo://scripts/check-web-bundle-budget.mjs#L73-L86",
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L86-L99",
           "version": "repo-lines-v1:sha256:ae53b7497fc0d6a3ca1103fa08cb577312148ed7a001ee330b9f30443cdcf596:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhODlhOGJkZGE1MjEyMWQ2NzkzMDhkZGRhMzFiN2Y2YTZjNDMxODAwMGFkNmRhZmJiYTdkZWZjZjZlNzRhYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YmMwZDJkYjQzZDMwMDdiNWU0YjVjMzYxNTIxZWJjMGJjYmM5NWY3YjMxNTZkNmE0MjRhNDljYjI4ZWJkNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNjI1ODg2MGRkOTVmYjFlYzY3MjliOTMzZTUzZDJlMGUwMDhkYmZiNjM4NmJmOTk4MGRjMzQ5MmJlYzRjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMTVjMzlkODk0MWQxODI0ZTIzNzg2OGI4NTVhMGNkZjBhOTE3NTc4NmZmYzk5YjUzZGZhMDdhZmY5MjI3NTAifQ"
         }
       ]
     },
     {
       "id": "claim_b615f8092e7c42bdb436de820844a90e",
-      "statement": "`scripts/check-web-bundle-budget.mjs` asserts three separate things: the web entry chunk stays inside a committed byte budget, the deferred assistant packages are absent from the entry chunk, and server-only code (`src/bff-server/`, `luxon`) is absent from EVERY client chunk rather than only the entry chunk, since a gate reading just the entry chunk would report clean while server code shipped inside a deferred chunk.",
+      "statement": "`scripts/check-web-bundle-budget.mjs`, run as the `bundle-budget` Nx target, asserts four things: the committed 2,000,000-byte budget — which since feature 087 caps the COLD-LOAD TOTAL, the sum of every `/_expo/` script the worst exported page loads, read from the exported HTML, rather than the `entry-*` chunk alone; the deferred assistant packages absent from the entry chunk; server-only code (`src/bff-server/`, `luxon`) absent from EVERY client chunk rather than only the entry chunk, since a gate reading just the entry chunk would report clean while server code shipped inside a deferred chunk; and every inline `<script>` in the exported HTML present on the `INLINE_SCRIPT_HASHES` allowlist. On the SDK 57 baseline the cold-load total measured 1,892,065 B of the 2,000,000 B ceiling (94.6%, 107,935 B spare) on the worst of 17 exported pages.",
       "evidence": [
         {
-          "resource": "repo://scripts/check-web-bundle-budget.mjs#L11-L27",
-          "version": "repo-lines-v1:sha256:71610c30a47660e14f4e7c88c34b121a858cd467c8bd0584ff6582466ea565a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YmRjZWVkNDA4ZGEwMzdjNzBiYmQzNTBjZTRlMWM0YmRmNTZkMTI2MmJkMTcyMWYxZjI3NzI2NTJiNTVjZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmODNjNDEwMzFmYmVhMmJiYzA5NDkwMDE5MDlkNzZjNzBmNjlmNGQzYzhkNjYxMDQyYzVhNjNlNGZkNWY0MGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ODMzZWVkMDAxMzIyZjYwMzBjNThiZWE0OTQwNTBmZjQ1OGNkMDQ4MDUyY2QwNjUxODcyNDRhMDlmMDgzZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZGI0OGVhZTZkYzdkNTZmMTkzNWZkYWNkYzE2ZjdiMTc2M2NkOGJjOWJhZmVjNThmMzk5NDE1Y2IwNjliZTcifQ"
+          "resource": "repo://frontend/mcm-app/project.json#L137-L151",
+          "version": "repo-lines-v1:sha256:3953c522ea679b1e3b3bc8e3d510caa7dac82a577c8c9aa8a733b6638b93f878:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjJjYjU5ZTAyNzVmNTI0MGFhNGMzMmI4NzdmMjVkNDUxYzRkNTc1YzQzZjRkMWI2ZWMwNWM1ZmEzMWIxNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlMzIyZTAzNjNjZjNiOGNhYTllZjdhYjg3MzYwNDNkNmUzOTYzOGE2MjRhMjRiZTg2ODNkYmQyMWQwMGE0NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3OWY3MmYyZWZiMDFlYzMwM2I4NmIwMTczMTc4YmFlNDhjYzcyNDc0NWU0NmI5ZWNlYTZhZTNmNjRmZTk4NzMifQ"
         },
         {
-          "resource": "repo://scripts/check-web-bundle-budget.mjs#L169-L207",
-          "version": "repo-lines-v1:sha256:3386b2d9c1d9c84d77f2fbc0ca9629f2d27660db297071b5a0b13af3f3d4fcea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDA5NmQ2YzBkMTc4YjBjY2IxOTdiM2QzMGE4NWRmNjQ2NmU1YjFjOGVkZGJmZGI0NmNjYWQyYjQ1MjA3MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZDY4MmU4ZDFhMWRlYmRlODFkMTM5ZWRmNDlhMWM2ZGUyMTNlNzgyNmYyZDI4Y2Y4NjJkOTQxMDRmMzM2MTQifQ"
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L11-L36",
+          "version": "repo-lines-v1:sha256:bc467ca76ff44e33d53f21eb0ef162307debb95c44bb1ad11d775f54b82ad454:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNGZmNmYxZTZiOTI0NTBlY2NiZmEwZDc0YWM5NDI1MDhiZjQ1YjM5N2VjY2M0YTBhODBmNmNmMTQzMTE3NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyYWJmMTkxMDcyYTU2NDViMDhlMTZhMzNjNzczYWVkZTMwY2RhYzBlMTE2OGYzMWQyODQ5YTA4NzA2MzI4NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ODMzZWVkMDAxMzIyZjYwMzBjNThiZWE0OTQwNTBmZjQ1OGNkMDQ4MDUyY2QwNjUxODcyNDRhMDlmMDgzZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZGI0OGVhZTZkYzdkNTZmMTkzNWZkYWNkYzE2ZjdiMTc2M2NkOGJjOWJhZmVjNThmMzk5NDE1Y2IwNjliZTcifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L267-L291",
+          "version": "repo-lines-v1:sha256:9d400f3b73609ddd1725a3a42f4180a9717269b9f5046622a9e7072aeeff517e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMDBjOTdhNmU2ZWYwYWYwOGMwMDBmNWM4M2EzMDA2YjZiYTU4ZGYyZGQzMDZhM2NkNjQ2NTkwMjYyOTQ4ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1OTcxYmE4ZTVkY2Y5NjkyZDc4ZTNkODFjNzQxNGIwZjM5OGU4YWJjZjIyZTg5ZDExODY5OWFmNTc1MGM5NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNzQzYjgyZGE0ZjBiODVlZDYyMWQ1ZWJhODYzYTJiYjUwOWMyN2I4MjU1MWRjNWNmZjRmMWQwNDAyMmNiZDkifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L62-L99",
+          "version": "repo-lines-v1:sha256:36c8c204c9a322fdc26320f00935aa76fc2c1df5926c55dfcfc5b6128d4b53ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YmMwZDJkYjQzZDMwMDdiNWU0YjVjMzYxNTIxZWJjMGJjYmM5NWY3YjMxNTZkNmE0MjRhNDljYjI4ZWJkNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTIwNGM0NjcwN2NjYmZiMWNlMTg1ZGU2NjQ0YzFiZmE4ODNlYzIyYTgyNTJlYzA5YjcwNmVhMDU4NjYzM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMTVjMzlkODk0MWQxODI0ZTIzNzg2OGI4NTVhMGNkZjBhOTE3NTc4NmZmYzk5YjUzZGZhMDdhZmY5MjI3NTAifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md#L292-L292",
+          "version": "repo-lines-v1:sha256:7cadc4f826ad32809bccfe9d815e1a8acb6c10db010e4e1517c7a9e8bf23b20c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZGM0ZjgyNmFkMzI4MDliY2NmZTlkODE1ZTFhOGFjYjZjMTBkYjAxMGU0ZTE1MTdjN2E5ZThiZjIzYjIwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZGM0ZjgyNmFkMzI4MDliY2NmZTlkODE1ZTFhOGFjYjZjMTBkYjAxMGU0ZTE1MTdjN2E5ZThiZjIzYjIwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDY5ZWFjMDlhNmViZjM4MTZmYjM4NjI0NjU3OTYyZjQwZjY5NWFkY2JiNjAwNjEyNWQ3NWIwNGZkYjAyMmFkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ4OGIzMjYxNDJjMDkwYjE3ZTZkMjcwNzAwMTQ1MDU1NmZiNTVkMDE0OTBiNjczYzQ2NGY3OWEyYmQxOGJlNCJ9"
         }
       ]
     },
@@ -286,10 +298,10 @@
         },
         {
           "resource": "repo://frontend/mcm-app/web-security-headers.js",
-          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
+          "version": "repo-file-v1:sha256:688b001d2fb6e91a705a809409a5d8480d1246a23dd31cf2270821255ea73b4b"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L19-L42",
+          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L41-L64",
           "version": "repo-lines-v1:sha256:4e2522e5af2d54a85d412e66babeca25ea9247e7e3fe32c577e58fdf447c8de7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjcwZWJlZDRlYmM4YTlmZjM0ZTM3NWE3MDhjOGFhOThmNTRmOTg4ZGQ3NWZkNDQ5OTVjYWQ0M2FmN2Q2ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5Y2VhZDJjZTkzNTIwZmRkZWRjNWMwYWY3NTgwZWFmOTBhNzMyZGYxZjMwN2M5YjNlNWQyNjBiMTI0ZGZiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzODUzM2RlYjBjNDZlZDgxOTAwYWUyYTYzNmU5OWEwOTdjNTBlM2ZkMjJiNDE2NGQ3YzE0NDVjZTczNDUzNzcifQ"
         }
       ]
@@ -303,7 +315,7 @@
           "version": "repo-lines-v1:sha256:bf96f3fc54a97360e888a08cf39768d945805b0adcedb755a3c0f1777b27159c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMDYyYmY2OTc5ODk0NmVmZTQ4NGRjZDAwMjk3MTdhZjc5NzdhNWE3NTY3M2Y3YzYxMTQwOTZjM2VkNjFhZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNDQ1YjgwYjdlMGE0NTI3YTk1YTdiNDk2Zjg2M2Y3MDA0MWJiZmMxMmE3ZTZlNmE4YzFmZDZkMDBlN2RlMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5YTViZGI1Y2Q4OWY0NGZmNDAwMDljYzFhOTUyMTAxY2IxZjJjZTcwZTUyZmY3MzNmNjQ0MDM1MzY3NGZiMDIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L41-L63",
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L48-L70",
           "version": "repo-lines-v1:sha256:4452394fc05c486579863a4af325bbc42569fd2af7209b4ec11ba80321968840:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDUxOGMzMGZkYWVkYzVhMjM1MTA1MzE3Nzk1MmU5MzkzMDg1ODA4YjNhYTM5YjViOTA1YjAxOWM1MjAzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMGQ0YWQ2NDdlMjljN2Y0MDk3ZDZiYjEyMzYxNmM2NGVjNzQzMDNmZjc0MzVlYzA1NmFkMmY4MTNmZGM1MmUifQ"
         }
       ]
@@ -321,7 +333,7 @@
           "version": "repo-lines-v1:sha256:43aeb56ab6de84268012e3cc020aac4bf3bc8ed3c4c25fd1a881b01313f50d26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1M2ZjNmY0Y2YyZDQxMDc2Y2MwODljYmY2ODcwZjlmYTcyZmQwNjdhNGZlZjBlNWQwMWE1MzdlY2VkZGFhMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhZDAxMDE3N2FmYTBkZjQ4OGI2ZmRhYWJlYjMwMmNhZTQ0N2M4YjNhYzg5ZjAzODRlYmUyZDAwMGRlYmY3ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.js#L107-L117",
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L114-L124",
           "version": "repo-lines-v1:sha256:0546fe80a19402d0ddcdadeb9a1c16b4e14930730f56ad054d80572d65a935e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NTYwNDNiZmIzZTU3NjgwOWNhYTIyMmM5ZDA5MDI0NWUyZGZhZmUzNDcyYTRhZDBhOWQ5ZjU2NTAyNDMzODQifQ"
         }
       ]
@@ -332,10 +344,10 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/web-security-headers.js",
-          "version": "repo-file-v1:sha256:cf5618b92ee356704f45ccf266b610c6d5e4163c7b6c0ad6913f76f0155f5da2"
+          "version": "repo-file-v1:sha256:688b001d2fb6e91a705a809409a5d8480d1246a23dd31cf2270821255ea73b4b"
         },
         {
-          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L35-L42",
+          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L57-L64",
           "version": "repo-lines-v1:sha256:80406d053133663968e2de43340f3d9470859dcdd3f2f49dc6bf744c3cf42d94:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU3NThiYWQ4MDZmMTA0NGUxODI1N2YzMTAxZmExODQ4Zjc0MTIyMGQwZTJkNzczMDk1MmRjZDEyZmUyMWE0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQxMGE1NDNkZTc4ZDFiNThhYzM4MzNmYWZlODQyNTE0MzdkZmJiMzhlYzlhZTlhNWU3ODlmZGZiYzM5ZmZiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM4NTMzZGViMGM0NmVkODE5MDBhZTJhNjM2ZTk5YTA5N2M1MGUzZmQyMmI0MTY0ZDdjMTQ0NWNlNzM0NTM3NyJ9"
         },
         {
@@ -479,7 +491,7 @@
       "statement": "Web E2E runs against the containerized BFF rather than the Metro dev server so the suite exercises production-mode `expo export` output, and a stale image silently tests old code and reports green; the original justification — that Metro's dev web bundler OOMs building the app plus Tamagui locally — is a plugin-era measurement, since feature 081 re-measured the dev web bundle serving without OOM both with and without the Tamagui plugin, while the container rule itself remains in force.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L126-L140",
+          "resource": "repo://frontend/mcm-app/README.md#L138-L152",
           "version": "repo-lines-v1:sha256:69a139b8d8a6a96041dbd39b7e03169c102539b6de3911f74f2d752be9622944:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMTQ5ZGZkM2ZlYTdmYjg4ZGNhOTJhODM4ZjFiNzdkNzI1M2FkMGRiMmI3MWU4ODhmOGEzOWI3OTNiZjU4NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMzIyOWExOWZmNDVjNjgyNGY0ZTU4MjM5M2E5OTM5YTNiOWM5NjNkMjkyYmU2ZGJlN2Q3YTVkNzU4ZWUxNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwM2NlZmNlYWFkZDMzZjdjOWFiNjNjM2E0NzdhMWRmZGU4ZDkzYzFmMTQzOTRkNDYzNTU1ZGQxZGVjZDZmZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyNzI5MGQ2YjFhZmZmYjk3MjRkOTEyMzk3ZTVlYzEzNTY4YTRkNjZkYmZjNDZmOTRlM2I2MDEzYmFiZjc2NzIifQ"
         },
         {
@@ -493,7 +505,7 @@
       "statement": "Where prose and the manifests disagree about the Tamagui arrangement, the manifests, `babel.config.js` and `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` are the authority: the design system page and `frontend/mcm-app/README.md`'s design-system section have both been rewritten for the v3/runtime-only arrangement, and the one remaining plugin-era statement is the README's web-E2E note that \"Metro's dev web bundler OOMs building the app + Tamagui locally\".",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L126-L131",
+          "resource": "repo://frontend/mcm-app/README.md#L138-L143",
           "version": "repo-lines-v1:sha256:273b68da07635f3ea12645a6ed21a02edebb8b2bf6c815d4d00ae9f71e821ecd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTExNDlkZmQzZmVhN2ZiODhkY2E5MmE4MzhmMWI3N2Q3MjUzYWQwZGIyYjcxZTg4OGY4YTM5Yjc5M2JmNTg1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRkYjZiMjNjOTNlN2ExODMwMmQ2NDg5MDkxZTIxODc4N2E0OGZiOGJjNGI1NGIwODRkYTRkZDI4NTVjNGI0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAzY2VmY2VhYWRkMzNmN2M5YWI2M2MzYTQ3N2ExZGZkZThkOTNjMWYxNDM5NGQ0NjM1NTVkZDFkZWNkNmZlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTk2ZDBjMzJkNjRlNWZkMjg2NWI4NDI5MTk3NWI4Nzg3ZmRiYzY4ZWYyNThjNzliYTE2NGUxM2QzM2M1NWRmZSJ9"
         },
         {
@@ -996,11 +1008,15 @@
     },
     {
       "id": "claim_5c84d57138044e31a960678dbbba55a9",
-      "statement": "`scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` counts VERSIONS, not copies: its pnpm-lock key regex stops the captured version at `(`, so two peer contexts of the SAME Tamagui version still register as one copy — which is exactly the two-style-registries/blank-page failure shape, and therefore a shape this guard cannot see.",
+      "statement": "`scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`'s version tests count VERSIONS, not copies: the pnpm-lock key regex stops the captured version at `(`, so two peer contexts of the SAME Tamagui version register as one copy. Because that is exactly the two-style-registries/blank-page failure shape, feature 087 added a one-instance check to the same guard that counts distinct `snapshots:` keys per package (peer suffix included) for `@tamagui/core` and `@tamagui/web`, failing on more than one — naming both keys and `pnpm dedupe` — and also failing on zero keys so a parser that stops matching cannot pass; only `snapshots:` is read, because pnpm's lock is a multi-document file whose first document carries its own `packages:`/`snapshots:`.",
       "evidence": [
         {
-          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L83-L104",
-          "version": "repo-lines-v1:sha256:6fba80486fcfce34900145f7f300066b3a203bed2a455bb677727df3eeb105d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MzczNTQxNmM0NWUzZGM0NjA3MThhZTZhNjdjZTAxNzliYTQ1M2YxYzU5MDE0Yzg2MjdkZDU2ZGY0YjM2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMTZkN2VhOTdmZjE5ZWRhY2M0MDJjZDgzMDk1OTBiNGEzOWI4MGMwZTVkZjM0MWYwNDkyNWMwMmEzNTYxMWMifQ"
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L177-L256",
+          "version": "repo-lines-v1:sha256:f9ee06e7ba794d8e6334df0dd2db1731ea8f7e4c413c758373360131b3cc9591:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZGM0OWVkYjI2MDQ2NDBkZmEzNjJiYWY0MmYxNTFlNDM3YjM4Y2RiMjViZTkzNDUyMTMzZjAwYjBjNzEwYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZTFmODk1NDEyYWE4MDM5MzUzNzFjMWIxZTNhNmE1OWFhNWFkN2UwMDAwOWRkNmI1NDQ4NzA2YzY4Zjg2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2NmI4Yzk0OTU1YjkzNWUwZDI1MGI4NGQ0MjQ2MmZiZjVlYzRmN2Y5MmM5YWZlN2YwODljMzI5Zjg3ZTQ3NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L83-L120",
+          "version": "repo-lines-v1:sha256:b769ddc847db6ecd81e3083d0e8ea49363c94acf93dcf22e974438e95ee57e0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MzczNTQxNmM0NWUzZGM0NjA3MThhZTZhNjdjZTAxNzliYTQ1M2YxYzU5MDE0Yzg2MjdkZDU2ZGY0YjM2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MzFlNGQwZTA0ZTQ5NzU4OTAxMzQ4MDRkZTNiYTZkNWFlZjdjMTEzOWQ4MDY3Yjc1MmFhZWM5OWIzY2MwZTYifQ"
         }
       ]
     },
@@ -1091,18 +1107,106 @@
           "version": "repo-lines-v1:sha256:624c08b3890c0751cfe507f29b4af20949428f003d3af8ff68fef5e7a7dc3143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NTI2NDhmMDU1YWRjNTYzMGI2NDk1NGM2NTdlOGUzNjM0Y2M1MDkxNzY2ODgyN2NiZTNjZDlhMWU5MzkyMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5N2MyYmI3NmEwNTUyNTM1NmIwOTk3MGEyMWZiZGY5MTQwNjBiOTNlOWZiNDBiZmQxZmRkNjgxMGE2ZTVjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMWU3NGExZTJhNjljNDZiN2M4NjM1NDZlNTAxNzNiZjE2OTU4MDJhODA1NzdmNjkwNmY0MDdhMDY2MmM4YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MDJiOWYwMzhmZjQyNDAyOTNjYjAwZmY5ODdmMjFmMTM3YTcxZTljZjI0NGQ5ZjY1YTRjZjU1NGEyNzQ2NDUifQ"
         },
         {
-          "resource": "repo://scripts/check-web-bundle-budget.mjs#L169-L178",
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L270-L279",
           "version": "repo-lines-v1:sha256:6863f98363f0926716403bead0461a2fd3b1f036d8c026af822f51ff2db35361:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDA5NmQ2YzBkMTc4YjBjY2IxOTdiM2QzMGE4NWRmNjQ2NmU1YjFjOGVkZGJmZGI0NmNjYWQyYjQ1MjA3MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZmZkNzZmYjQ0OWFkM2ZhOTBkMzc5MTRhNDEyZjMxODFhY2M2MmUwMTJlNzA5ZmNlMWY4ZDFmZTIyZWUwNGEifQ"
         },
         {
-          "resource": "repo://scripts/check-web-bundle-budget.mjs#L61-L74",
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L74-L87",
           "version": "repo-lines-v1:sha256:b8eee8ceb22795d017f0bf15566c3aec666f8e785d17a7ff38d5697f5ea7702a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGY4MDlhMTc3YzNmYTMwODc3ZWY5YzY0M2E3MWJlNTFjY2RkZjU1MjJhODdjNzBlYTMwMDFkMzY0ZjgyMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMzE5MTQwODZhZTY5NzA3ZjhkNzg5MDUyNDBkYjQ5ZjU3ZTJkNjRhNWE5NzdhYjgzODdjYzQ4MzRiNzQ5MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkOTg2ZDhiYjI1ODI3Y2NkNjM5OGRlMDkyODhiODgwMTg4YjU4YWFjYmQzOWRhODFhYzYxNTgwOTAzZmQwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYThjYTViNjEzNzM4OWMwOWMyYmFiZmI0Nzk4NDkxNzYyMmY0N2Y2OWIyMzhjNTZiYTc1ODMyY2MwOGUyYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c64ad8d7c1b42caa55986d5a7642ca6",
+      "statement": "The `bundle-budget` Nx target invokes the gate with `--require-maps`, so an export that stopped emitting source maps fails loudly instead of silently narrowing the gate to the byte budget alone: the deferred-package assertion needs the entry chunk's map and the server-module assertion needs every chunk's map, and without them the gate reports a visible SKIP while still exiting 0.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L137-L151",
+          "version": "repo-lines-v1:sha256:3953c522ea679b1e3b3bc8e3d510caa7dac82a577c8c9aa8a733b6638b93f878:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjJjYjU5ZTAyNzVmNTI0MGFhNGMzMmI4NzdmMjVkNDUxYzRkNTc1YzQzZjRkMWI2ZWMwNWM1ZmEzMWIxNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlMzIyZTAzNjNjZjNiOGNhYTllZjdhYjg3MzYwNDNkNmUzOTYzOGE2MjRhMjRiZTg2ODNkYmQyMWQwMGE0NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3OWY3MmYyZWZiMDFlYzMwM2I4NmIwMTczMTc4YmFlNDhjYzcyNDc0NWU0NmI5ZWNlYTZhZTNmNjRmZTk4NzMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L293-L308",
+          "version": "repo-lines-v1:sha256:59d4bcbfd446006dd3fbda25aa4c93cf90bfd73f9e52c622284e70b3ff7be876:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMzRjODA3NzZiZTQwMTZiNjFkZGM0Yjg1NzM0ZjMzODdkMTcwNWU3ZmRhMzhhN2UyNDRkY2E1MjFmY2VkYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZDY4MmU4ZDFhMWRlYmRlODFkMTM5ZWRmNDlhMWM2ZGUyMTNlNzgyNmYyZDI4Y2Y4NjJkOTQxMDRmMzM2MTQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L347-L356",
+          "version": "repo-lines-v1:sha256:3d979c10d226c04e81813127c9d646730d6f3d3f4d9f40e8183d12e706fa3e4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NTAxYTEzODdkNzk0NzcyYzIwMjZjOTBkMjgxYmY3MjI1NTAyYzI4NzkyOTdhNTQxY2FkODc5OWNmZGY3NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjMDI1Y2QyNjA2ZmJhYjdmNzhhZjQ0MTkxYmI1ZmE4NDA5Mzk5MDkzNzI1NTE1ZmVkZWM3MjY4NzEwNDUwZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZGFiZmQ2MTgzMWRiMTJlMzliYTA0ZjY4Yjk0YWZkMjQ4ODBiY2VkZmE5M2Y2ZWM4YWVjYjE3NzYyMzcwZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f064a0d5860741b28a1721fd4d1ec0d4",
+      "statement": "The list of permitted inline scripts is a single shared source: `frontend/mcm-app/web-security-headers.js` exports `INLINE_SCRIPT_HASHES`, the CSP is built from it, and `scripts/check-web-bundle-budget.mjs` reads that same list through `createRequire` and hashes each inline `<script>` in the exported HTML exactly as a browser would. The two therefore cannot disagree, and a new inline script fails the build offline with the `'sha256-…'` value it would need — the message gives the value, not permission to add it — rather than becoming a script the browser blocks at runtime.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L33-L39",
+          "version": "repo-lines-v1:sha256:a55d2cc98c731e686bb0a1fc7799b01ed61c192cd878327c9d8948ae87ededf3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRhYmFhMGJlOGExNDUzYWJhOWQ1YzRjNGNhZjI3MWY3ZTNkMjhmZDA1MDhkYTNjY2ZlNWI0MTUyNTI2ZDA3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFkMmNkYjJiN2NmMmI4ZDAyYjU3NDI2ZGU5ZWM2OTczNjQ4MzRiZDQzYTkwMjY4MzYzNmY3MjU0NjZkNjgxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjkzNmM4NWNhMjA4ZTRlOGY4YWQwODkzZjE3OTc3MzhjYWIzMjBjNzMxMmRlMmVkZWEzZDVkYTBjM2M4ODdlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVmMzIzN2QzZDQ0MjlhZGE5ZGRmNzVjNTQ2MTM3Y2E5Y2RmNjFhNThmYWM5NTY1YjhmNTdjOWVmNTNmN2M4MCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L81-L97",
+          "version": "repo-lines-v1:sha256:b04bfef17f13f95128a531076745e6bae8644ee69f3686babbb7eb0ebe33bed8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZjUzMWM3MjczNjM3NTZjNmVjYzY4ZGJmYzY2YTdkZDFhMmI4YzMzM2UzMGUwZGE0Y2VlNWZlMjBmY2ZkMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNzU4ZWRhZmY2NDg3NTkxNmZkZjg2NDRiYjk0ODQ4Nzc4NjIwODE1MThjNTVkYWVjYmRmZGI0YjcxNWY3ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZTE5YTdkOTU3MWM0ODMzNzAzYTIzZmU0NTU0NTczZjQ1ZjVlYWEwNDFlMzU0OWUyYTE0MDFmNWRhNmVmNzgifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.test.js#L20-L39",
+          "version": "repo-lines-v1:sha256:d8bb2a4baa49fcd18949774a73771b37c9fc41438ece1575c85313e0c05a6bdc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OGVhNTVhY2QzNzZiYzE4ZDAzOTc4YjIxMWUwMjJjODQ1NzUwOTMzM2Y3ODIwYzkwMjcyYTI5ZTM5MDRmNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5Y2VhZDJjZTkzNTIwZmRkZWRjNWMwYWY3NTgwZWFmOTBhNzMyZGYxZjMwN2M5YjNlNWQyNjBiMTI0ZGZiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNTU0ZDE1ZTRiNDRhMDViMDk3NmM2ODM1NTM2YTc5ZDhmMTFmNDRmOTZjNjBjZDg2NzU4MDM1YzdiMjcyNGIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L181-L230",
+          "version": "repo-lines-v1:sha256:affd09272f1073622a2875c6257dbe0806f69746fdb16ad71b65521f81d74e83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NTJmYzc1N2U4MGZkNTlhMmFjODgwN2M5MjU0MDU1ODA1YjMyMTZhYzM2NGFmNmZkN2ViYzI1OTRlYjcxZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiMjY1MjY4Njk3ODIyZjY4MzllNThiNDViNGVkNDRhOTlhNzBlNWQ0OTJkZjk3ODUwMWI5MzU0YzNkNTAwMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzliYzYwNTczN2Q2YmJhNDAyZGRhNGY2ZmU2YTUxMjcwOWEyMDY1YmY4OTcxMWRkNjBkOTM4NDEwMGYxZmIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L56-L60",
+          "version": "repo-lines-v1:sha256:b9f86522dfc8b476438df087b4d476f387dc060cbf7002ee891be509d47874fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI2MmI0MjYzNTliOWFlMWVmMzNhODNiN2YwNjExYmMzY2FjMWMxNmVjMTQ1Y2Q4NjFiYjA5MDgzYjAzZGRkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQwMTU3ZGFhMzM5MGU1ODE2OGJjMzJlMTRkZDkzNGM2ZmQyZmI4MTE0MTQ3MWFmNmNlZGViYTlkYTVmMWI5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY0YzY2OWE1MDkwNzkwYzNhOTYyOTEzMmZhMzg5NGFiOTNlNmEwZGM4YmM1NTkyYWJlZTVlMzVjNDRkMWQ5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NlODRiY2E0YTVjNTZmMWNjY2U4MGU3ZTBjOGJkYzRmYzA4NDAxOTM5OGRlMTFiYzQ1NDFiOWM4NGNiOTNiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f3e59e8843742559a919c25e6f4f0a6",
+      "statement": "`tests/e2e/web/page-security-policy-walk.spec.ts` is the runtime half of the CSP arrangement and the place feature 089's removed `eval` allowance lived: it records CSP violations and uncaught page errors across the browser context through an injected binding (a list on `window` would be lost at every reload), proves it can see a violation before a clean result is trusted, then covers each way a page can start — a fresh sign-in, a hard reload, a deep link and in-app navigation — requiring zero violations and zero page errors at every step, and separately asserts that an unknown page answers 404 and that a page is not served `immutable`. It mints its own throwaway identity and runs in the `lifecycle` project because a real sign-in in the main project could evict another worker's session; its user has no assistant configured, so `assistant-navigate.spec.ts` covers the assistant path with the same watch and also allows no violation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/playwright.config.ts#L97-L125",
+          "version": "repo-lines-v1:sha256:32d556034c6f37590e732e80489815831eca5768a09859ee538062a6fb0f333e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhODE1MmM0YTRiMzFkZjE2YTJlYzc1YWM2YTIxOThiNDZlZjMzMWU1Y2M1ZjUwYWZiMjViYjQxODJiODMyYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhMDYxZTc4ZmI4ODdjOTBkMTU3MGI5MTA0ZjU0NjE3ZDUwNzFhZmRjZjhjZGZhODYyYTQ1ODRmY2JiZjRlOTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzODEwZTAxYjI4YmUwZjMzYWU5NTFlYWZjNzAxMzNjYWM5NzliZDI1ZjNlMDZiMjNjNjg4MzViZGFiNzVkNmIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts#L1-L33",
+          "version": "repo-lines-v1:sha256:b6d46b981d20aa7d372653711e430f3736d9aba714dad69b3f5fa0db947297d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiOTAwOWRhNTlhZmEzZjMwYzU4NDcxMmU1MjQxMmI5NjU3ODY3NWM4ZjVmYTNiNjYzNTE4ZDM0MzQzNzNkMjkifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts#L76-L98",
+          "version": "repo-lines-v1:sha256:d022a43529359385d98ffc63c8877ff7acd03485fa6a29e7c050e6eb8cf4f124:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZGI2ZjhhN2RkMmE2MmU1MWVlYzdjMmMxOWNjYTkzNDhkZDlkNDVjZWNhZTFmZTRlYmEwYmNiYzJhYTQwNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NjczZmRlNGMwOWY5OTlmZjMyNmRjNmM4YWYxNmYwYzYyMzg5MjEzNGVhNGM4NDE5YzM1NDI3N2JjYzMyYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts#L1-L45",
+          "version": "repo-lines-v1:sha256:3ef0c35f5fd1c1719f8fc40c9997a93426f557e5e325def3fde3f589f9df9f66:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMTA3MzNhMGYyY2Y1NTViZmYyNjcwZjY3NWE5ZDY5ZTlkZmNlMTEwMzk5ZTcxYmZmYWE0MGQwOTAzNmJmODUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts#L70-L108",
+          "version": "repo-lines-v1:sha256:e09d9820dcde1904a645ad87cd5e897f246981f5f3ba479e3033ef5447ffe4e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYzFhYWRjN2RmNDk4YzZiZWQxYjE1NTNmYjc4MWFkNDk0MjcyYmIxY2EyOTFmZmZjYTViNzQ5NzZhZDk1NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViZDA3MDJlMzAyMmU4YWE5MTMwNjg1MGM5MmRkMjk5YmJmMWU1ZWM3MmQ4MzVhYmU1ZTQ4MzNhMzQzNzQ4MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/web-gates.md#L41-L72",
+          "version": "repo-lines-v1:sha256:bf12839e0adba93ddd4bd10228d914216e60db19afceeb57c0716ad8693e65ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYmNhYzA4YTFlNTgwODQ2NmMwZTk4OWZmMzZkYTIwOWUzMWE1YzM5NWViNDVlMmYxZjNkZmY2N2I0M2YzYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MGEzOTc3Mzg1ODhhNDEwMmRmNzU4ZTgwYTZlZTkwMWNjNmQyZTFiY2I5ZGMyY2QyN2Y0ZTlhNDE4YjQ3MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1NjlmN2U4Y2ZjODYzM2U1MjVhYzkyZTBiYzQ3MTU4YjczYzY1MDZiZDYyYjViZmZlNmE5OTg1NThhODA2NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9d0c604c34445368a8134d176bd1b0d",
+      "statement": "The governing constitution's accepted-exception clause still describes the web bound as a committed maximum on the web entry chunk (2,000,000 bytes) and cites the 1,762,630-byte entry chunk measured when the exception was recorded, while the gate has enforced a cold-load total since feature 087 and the SDK 57 baseline cold-load figure is 1,892,065 B — so the gate is stricter than the clause that authorises it, and the clause's byte figures are historical rather than current.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md#L296-L300",
+          "version": "repo-lines-v1:sha256:c85ee81b67477442b76658350da479c56f13321645a0cb9acbe8999a33826a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExZTIwMzZjZDkzNTI1ZTY3MTI0YmQ0ZmNlOTc3MTEzOWRjNTUyZjE2N2E5YTQxYjBhMjg5ZjJjMTZiNmE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNlODkxZjdlMmFhYzc0NjBiOTk0NGJiNGRmYWMxYzE0NGVjM2Q5ZTRhZDhlMTg1ZmMxNzQxNzNiMDcxYjljYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L62-L72",
+          "version": "repo-lines-v1:sha256:d6d2ddca71bb655f4d35c739380e0081fb9464d3c0b51a7f21e8d9317a1ec52d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZTBlY2UxYWE5MGVhNTMwYjE5YjM5ZmY4Yjg5ODQ0OGE2NGUzMTQ3Njg4NDkzYWYzZjJlZTEzN2YxMzg4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTIwNGM0NjcwN2NjYmZiMWNlMTg1ZGU2NjQ0YzFiZmE4ODNlYzIyYTgyNTJlYzA5YjcwNmVhMDU4NjYzM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODQ2NDAzNzIwYzU1NjRkNzdkZWQxOTBiNTljMTc5YmM4NDJiOGIzMDQwNmU2YTlkZmI1NWRjYjY3YWRhNzUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T10:07:39.873Z"
+    "at": "2026-11-07T19:02:58.048Z"
   }
 }

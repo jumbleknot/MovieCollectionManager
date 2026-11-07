@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6ff23a7febd5fd8676887c5c3875f2e5028936e988afb78bca05663e9dc20261",
+  "pageVersion": "sha256:98307318c740bf1d3704fc9e7c79f6904366d2108a006664f1e4a1aa30335d68",
   "claims": [
     {
       "id": "claim_e69aeab503c649da9532abfe8dfa10dd",
@@ -55,7 +55,7 @@
       "statement": "The realm exists in three committed variants that import through three separate paths into the same Postgres volume: `dev-realm.json` via the `compose.dev.yaml` overlay on `pnpm nx up-auth infrastructure-as-code`, `ci-realm.json` via the `compose.ci.yaml` overlay in app-ci's Keycloak bring-up step, and `prod-realm.json` via `compose.prod.yaml` under Komodo. Only the dev and CI overlays add `--import-realm`, leaving the shared `keycloak/compose.yaml` base and therefore the CI path unchanged. (The namespace of committed filenames is separate from the import namespace: every variant is mounted at the target path `grumpyrobot-realm.json`.)",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L698-L704",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L700-L706",
           "version": "repo-lines-v1:sha256:5348b5884664a80eca4827d66333f5ab51d301fca3bc4cf6fb226ccc87423942:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E3ZmVkMzIyOWExYjY3MDVjOTk1ZWFkZWVlNzQ0OWM2MzBjODQ3NGQ3OTQzNzQ4OTU2ZmQwMGQzOTE3ZTgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZmNiZDAwMWZmNDEzNDI3NWU2NjFmZjg1NmEzN2RhNjM4MWU2ZmUxNDgxZjNmZTE0MzQ4Mzc1YWZiYzNjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBiNjY0MDc0OWZkMmJkODdiNDg4MGFkMjk3OWQ5OTA4ODgxYzVmOWExMzNhYmI4MGRjMTczYTY5M2U1MDhlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNkY2EzYzc4MDdlY2M5ZWVhN2YzYTk4NTZkMWEzYTQzOWM2NTlhY2E5ZjNjNmU4ZTJmNmNmZDQ2ZGY4NWFiNSJ9"
         },
         {
@@ -99,7 +99,7 @@
       "statement": "Realm import is idempotent and non-destructive because Keycloak's directory import IGNORE_EXISTING semantics skip a realm that already exists: an established `keycloak-store-postgres-data` volume is untouched on every `up-auth`, and a fresh or wiped volume gets the `grumpyrobot` realm, its app clients, and `e2e-test-user` re-seeded on the next `up-auth`. The same property means an edit to a realm JSON file changes nothing for a stack that is already running until the realm is re-imported.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L604-L609",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L606-L611",
           "version": "repo-lines-v1:sha256:92c85ff2cb64b192ad59fc55b13c12783c3895c5a7be3cc151fc4e91572269d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFkN2ZmYjdjMjA5MjUzZTJjMzdjMDgzMTgyNWI3ZmU5YjFlYmQwY2M5ZDMxYWFjNDM3NWFkZjM4YmYzYTMxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3YTE2ZmQ2MjcwNGRhMGY2YWI4ZTBkNjQwODVkNzA3ZWZmZWYwNjljN2E1MTJkZTA0NGY1ZTU3ZjM1ZTZiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZiNjE0YmU3NDVhYzg4YTdlMDNkZmNkMTNkYWNmMDI0MzY5ODZhMzEzMzg2MjZkZDczZjk1NTM1OTI0NDY5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFmNjk0MTMyMzc3N2FjNWRlMWI1ODIzMDA4OTAxZGQyZDg4MTA4OGEzMzdlYmQ2YWNjNTU3ZWZhNWYwZmIyZCJ9"
         },
         {
@@ -117,7 +117,7 @@
       "statement": "The three realm variants deliberately differ in `accessTokenLifespan`: `ci-realm.json` and `dev-realm.json` both carry 5400 s while `prod-realm.json` carries 300 s. CI's 90-minute value exists because Playwright reloads a frozen `storageState` snapshot in a fresh `BrowserContext` per test, so a 300 s token expires five minutes into a run and forces every later test through a refresh path measured at a 1.9 s median against the BFF's 2-per-30 s per-session limit (35 of 115 attempts rejected); 5400 s outlives the 75-minute `app-e2e` job timeout. Dev was raised to match (feature 054) after two 44-minute local runs recorded 62 `refresh_rate_limited` and collapsed into `gotoHome: home screen did not render`; the refresh path's local coverage was traded away and is now covered instead by `tests/integration/rate-limiter.integration.test.ts`. Production's 300 s is unchanged, so no security control is relaxed.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/e2e-testing.md#L580-L589",
+          "resource": "repo://docs/runbooks/e2e-testing.md#L596-L605",
           "version": "repo-lines-v1:sha256:ba30b88071d94ecb123ce38cbec7e246d8a7123a0b0414ff0745d1686b089131:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZjk1MTcxOGRkMjUyNzVmMWRiNWMyYWRiZWQyYjFiZWYxMTE1MjViZDBmZWViYmQxMzI4OTliNjVmYzM4NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YjllOGQwZjM5MzA5YzllMWM0OWE2NDg3N2JiMDdiM2Y1ZGM5MDc4YjA5M2Y2NzQ1OTk3MmU2ZGE2ZGI0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OGMwYTdmMWU0NzZiOGZjOGYwMTY1ZTlkY2Q0MTA2ZDk3ZDk2NmM5MDVkODI1Y2JjNjFmM2E2Yzg3YjcyODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZDA3ZGRmZThjYmVhMjlkNWNkM2I1MWY1OTAwNDdiYjM5Mzg4NzQzMTMyMzFiMjY2YjkzZjU5ZDM0OTI0ZWMifQ"
         },
         {
@@ -133,7 +133,7 @@
           "version": "repo-lines-v1:sha256:e740cd95be971afdabb241f1f3e3ecb89424bf976ff68bce68ecb5af38ed0f75:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MGNkOTViZTk3MWFmZGFiYjI0MWYxZjNlM2VjYjg5NDI0YmY5NzZmZjY4YmNlNjhlY2I1YWYzOGVkMGY3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MGNkOTViZTk3MWFmZGFiYjI0MWYxZjNlM2VjYjg5NDI0YmY5NzZmZjY4YmNlNjhlY2I1YWYzOGVkMGY3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzk4Njc5YjAxOGEzNzVjNjFiMmQ4ZTAwNDRkNmIzYmQ1NGYyMTU2NGIzMWI3OTQzMjc3NjAyYTkzYzEyYTkxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTA3NzRmMzVmODkxNDFiZThhZjgxNDcyMDYzOWYzNWFlODA5MzVhNjBiM2M2NzNhNTQzM2U1ODc1MWNkOGY2NyJ9"
         },
         {
-          "resource": "repo://scripts/__tests__/e2e-worker-session.test.mjs#L112-L128",
+          "resource": "repo://scripts/__tests__/e2e-worker-session.test.mjs#L113-L129",
           "version": "repo-lines-v1:sha256:5fff0129e13beb238cab31b5ed825e8454df3cbb5d8349eaaf50e46495b4e203:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNDk3OTc4YTU5ODM0NTY1MmY3MDk2OTZiMTExZWUwYzRlNzgzNTIxY2VhZDMyYjljZjZmMDIyZWMyZTk4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkZDVkNGE0YzY4ZTBkYzg2MjU5NjA0MTM0YTBmYWUwMmZhMTZhNDViYTkzMzcwYzUwMmM4YmZlMTlmZmI5OTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhYTA2YjdhODFiZTViOWI1OGQxYzlhZGQ0ZTJkYzY3YjBmMDk2YjIxYmMyMjRlMmZkYzg0ZWYzYTEyMzkyNmQifQ"
         },
         {
@@ -187,7 +187,7 @@
       "statement": "Removing a client from a realm export requires removing every reference to it, not just the client object: a dropped client that still appears in `roles.client[<id>]` or `scopeMappings` makes `--import-realm` abort in production mode with `App doesn't exist in role definitions: <id>` and crash-loop `keycloak-service`. The ROPC client `mcm-bff-test` illustrates the asymmetry — it exists in the dev and CI realms but not in `prod-realm.json` — and it is no longer unused in the throwaway sense: the agent integration suite and the DAST job log in through it, so its secret is minted at bring-up, pinned into the realm import, and re-exported to the later steps, which therefore must not read it from `stacks/auth.env`.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L692-L697",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L694-L699",
           "version": "repo-lines-v1:sha256:dd4d2ac12b08112b1ec41a27e2d66d8fb33438fd2c1283520a799082ef2d4d4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0MTY2YjQxNGVhOTU2YjBiMmQxMzFiZTBjZjc5MThkNGEwZWVlZTRmZTE4OGJkNzk0ODVjOGRhYzNmZTkzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk3NzY2ZGU1NTE2NTY5ZjI3OGVlZmZlZjU3MGFkZjIzNDcxOGRiNDM5NzY1MGJlNzQ1ODQwMDUzMjU0Mjc1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU0OTVhOWI2MzE1Y2I1ZDVhM2YxNTAwODYxNDcwOTkwNzJmNzE3ZDJmODFkNGJjNWNhN2VlNDQzNTYxZjUzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWMwMmI3ZTNhMDM3MTYxMDJmYzU5MDYzYjI5Yzc1N2Y3Mzg4NjBjMDE1OWZhYzJlZDZmNGRlZjNjOTBjOTVkOCJ9"
         },
         {
@@ -405,7 +405,7 @@
       "statement": "The CI runner is a PERSISTENT host, so `app-ci` force-removes the app containers and the stateful data volumes — `keycloak-store-postgres-data` among them — before provisioning each run: Keycloak's `--import-realm` uses IGNORE_EXISTING, so a realm left in place would never pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks E2E idempotency. Image build caches are deliberately preserved so the rebuild stays fast. Without that reset step a committed realm edit would silently not reach CI.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L604-L626",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L606-L628",
           "version": "repo-lines-v1:sha256:435c16dfe808910fb20a9416755666b33f1843d4fe47a4d1154d62a45ce34f85:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZDdmZmI3YzIwOTI1M2UyYzM3YzA4MzE4MjViN2ZlOWIxZWJkMGNjOWQzMWFhYzQzNzVhZGYzOGJmM2EzMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YjYxNGJlNzQ1YWM4OGE3ZTAzZGZjZDEzZGFjZjAyNDM2OTg2YTMxMzM4NjI2ZGQ3M2Y5NTUzNTkyNDQ2OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYmYyNmM1ZjFkOWZmZGVmM2U1YmVmYzMyNDFlN2I2OTI3ZGI0YmM2M2JjODFkMmRkMGVlNmFhMmZlMmUwMGEifQ"
         }
       ]
@@ -934,7 +934,7 @@
         },
         {
           "resource": "repo://specs/090-keycloak-admin-api-scope/spec.md",
-          "version": "repo-file-v1:sha256:aedd49a43b31a7f388c0099b1f8bfc3aec484b7c294d454c8b93c289ebffec8c"
+          "version": "repo-file-v1:sha256:a3db01fd4bcaf9f47e207d8d3ed9894c729eb2b8ee3a1d6444d5075a8b0ce20b"
         }
       ]
     },
@@ -982,7 +982,7 @@
         },
         {
           "resource": "repo://specs/092-prod-service-account-roles/spec.md",
-          "version": "repo-file-v1:sha256:88e646daf486d035806b9551257a8af2b9ad9a87e77a3173870d5063c28a9f9a"
+          "version": "repo-file-v1:sha256:c5c933e05852674eed7727a16a9cc949965acc40adc7fa25e057497bbb9bc9e5"
         }
       ]
     },
@@ -1008,7 +1008,7 @@
         },
         {
           "resource": "repo://specs/092-prod-service-account-roles/spec.md",
-          "version": "repo-file-v1:sha256:88e646daf486d035806b9551257a8af2b9ad9a87e77a3173870d5063c28a9f9a"
+          "version": "repo-file-v1:sha256:c5c933e05852674eed7727a16a9cc949965acc40adc7fa25e057497bbb9bc9e5"
         }
       ]
     },
@@ -1026,11 +1026,11 @@
         },
         {
           "resource": "repo://specs/090-keycloak-admin-api-scope/spec.md",
-          "version": "repo-file-v1:sha256:aedd49a43b31a7f388c0099b1f8bfc3aec484b7c294d454c8b93c289ebffec8c"
+          "version": "repo-file-v1:sha256:a3db01fd4bcaf9f47e207d8d3ed9894c729eb2b8ee3a1d6444d5075a8b0ce20b"
         },
         {
           "resource": "repo://specs/092-prod-service-account-roles/spec.md",
-          "version": "repo-file-v1:sha256:88e646daf486d035806b9551257a8af2b9ad9a87e77a3173870d5063c28a9f9a"
+          "version": "repo-file-v1:sha256:c5c933e05852674eed7727a16a9cc949965acc40adc7fa25e057497bbb9bc9e5"
         }
       ]
     },
@@ -1096,13 +1096,53 @@
         },
         {
           "resource": "repo://specs/092-prod-service-account-roles/spec.md",
-          "version": "repo-file-v1:sha256:88e646daf486d035806b9551257a8af2b9ad9a87e77a3173870d5063c28a9f9a"
+          "version": "repo-file-v1:sha256:c5c933e05852674eed7727a16a9cc949965acc40adc7fa25e057497bbb9bc9e5"
+        }
+      ]
+    },
+    {
+      "id": "claim_d8f46e373474425684c63e19444dae13",
+      "statement": "Both of production's realm gaps were corrected by hand on 2026-11-07, and the distinction between the running realm and a rebuilt one is the point of the committed file: the operator assigned `kc-admin-api` to `mcm-bff-service` in the console after the 26.8.2 upgrade (confirmed by a read-only check from the BFF container — service-account token carrying `kc-admin-api`, client lookup 200, user count 200) and added the four missing `movie-collection-manager` redirect addresses (after which all six answered 200 and an unlisted address still answered 400). Because import is `IGNORE_EXISTING`, the file edit changed nothing on the running realm and the console is what made production correct; the file is what makes the next fresh production realm correct on first boot, and it is the only thing a guard can check — so \"production is correct\" and \"a fresh production realm would be correct\" are separate statements and only the second is CI-provable.",
+      "evidence": [
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/README.md",
+          "version": "repo-file-v1:sha256:5f23d75c6261e78c628fdb990c8348a0dd3fbac4377cddd77d53a0ddeb2f5a6a"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L942-L951",
+          "version": "repo-lines-v1:sha256:6003280419af21fca94f1fdaefffe5b6635d576f0d5e907e9f67fe8956864607:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MGZhMTI4NzU4MWU4ZWE0YWVkYmFhZjIyOGJkYzhkZWZhYjM1NGM1OTNkODZiMDBkMDJkNWNmMTljMzZlMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NDE5MTE5Nzk5YTUwNDVmOWY5OTkxY2YxZjkxMGE0OGZjYmNlNDU4MmRlMDE3NmM4MzJhNjRhYmM3ZmYzNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZjU3OGIyMjg3ZWE2NjNhYmE2OGEwYmMzMjAxZWFmNWNjMGQ1Mjg5MzFkZWQ3MDFkY2M1YjAxMGI4NzQ1YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0OGE4MzE0ZjY3OGI1OGViNzUxZGIxMmQ5ZjQ3MGNlMTFmM2Y1MDM1OGY5MDdjYzhhN2U2MThhZDU0ZjU3NDEifQ"
+        },
+        {
+          "resource": "repo://specs/090-keycloak-admin-api-scope/tasks.md#L29-L29",
+          "version": "repo-lines-v1:sha256:453b54613324208c6328d9f5d6310b52bf0c4185cc0c9ced069f1a890d53d0af:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUzYjU0NjEzMzI0MjA4YzYzMjhkOWY1ZDYzMTBiNTJiZjBjNDE4NWNjMGM5Y2VkMDY5ZjFhODkwZDUzZDBhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUzYjU0NjEzMzI0MjA4YzYzMjhkOWY1ZDYzMTBiNTJiZjBjNDE4NWNjMGM5Y2VkMDY5ZjFhODkwZDUzZDBhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTljNDYzOTZhNDljMGQ1NzI3MTYwZTBjZDQ1NGUwNTQyMmIwY2JmYjc0Yzc3N2QwYzZhZjA4MmUzYTkwMjlhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTgwZjlhZjZhOTYxZjZiM2UwYmJkZDIzOGFkOGUzOWExMzMyMTFjODYwNDVjZDFlYTg0MWYwNGE4NTE5MzZkNSJ9"
+        },
+        {
+          "resource": "repo://specs/092-prod-service-account-roles/tasks.md#L28-L29",
+          "version": "repo-lines-v1:sha256:25eac53d7aa93e9dad0d2b62d00d41d24e5ca67155477d789a9f5f780270fec5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJkYTkzYWY5MDdlOGE5ZGNmNmVhMDU2MDZiZGIyZTFhNjNmYzA3ZDdlMDFlZGRmMTYwNzE2OTc1NDhmZDk4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjVkMGI4ZDAzMDZlN2YxYmRkMWUxMDU0ZTdmNjllNzNhNGY3OWM2YmUwM2QwOTYyNGVjOWRlY2UyZjI4N2EyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmQ2NjVkNGNlYzY4MTVjOGIyOWYxZmYxZDEyZTIyYmIxOGU2N2QyZTE0MGFkNmQ5Yjk3YjFlODI5OTQ5ZWZmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzFjZGVjMjU1YWFjMDE2Njk0OWIxNDYxNDJlNGY5YmQ0N2MzN2Y4YzdhOGUxMmRmY2ZmMzhlZDk3NDc2YzkzNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_64c5e43180b5459f9814e31edb770ccd",
+      "statement": "Withholding `manage-clients` in production bounds only what the BFF's service credential can do to *clients* (it cannot add a redirect URI), not what it can do to *users*: `view-clients` is enough to read the `mc-admin` client role and `manage-users` permits the assignment, so the service account can make any account an administrator in every realm variant. Treating `KEYCLOAK_SERVICE_CLIENT_SECRET` as anything less than an admin credential is therefore wrong, and the role set was measured on throwaway realms while choosing production's three roles and recorded as a known limit of the grant.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/bff-server/keycloak.ts#L356-L400",
+          "version": "repo-lines-v1:sha256:a06c3b7e73851c919bd540394e8f2bc7d4058e18be68be2db8d8c72dd69c67ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YjhlZTAzMzAyMGIwY2QyZjY2MjcyMjhjZTNiNWYzNTdiMjFhOGI3MmRiZjA5ZjQ0N2FiNDZjN2I4ZGQzOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZWZlMGE0YzYzNjRmZWY4YWI5YmZlMzgwOWM5NmJmYjEzNTQ1YTZmNmUxMDFiZGE5YzgwMGJiZmQ0ZWRiY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2N2VlYzNjNWU0ZGE4YjQzMjJkZmU2YWQwYTFjNjE5ZjY2NzBlM2VhYzZkMDcxNjE3ZDMxMjAwMmNjYTJkMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MDE2Yzk1MTNhMzk5MmFjM2JhMzk5MTg2ZTVkMDMxNzExMjU3ZjUwNzViNTVkYjk2YzRmNjZkYTQ4OGJiYjUifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L1227-L1243",
+          "version": "repo-lines-v1:sha256:a08149844ad53f1e4502bc9bf54d8f10674a1932c0abde3d9a670ed8833a60e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZWU5YTM2MTNjY2YwYWZhNmNhNWFjNjZkN2I1Yjc2ZjY2Y2Q3NzViYTgxNDUxNWQ0YWMzZGM0MzFkMjM2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0MmNlMWQ2N2RkNzliNTQ2ZTRlNWNjMDdhMDkxY2YxOWIzOWNhZjBlODBlMzk5MzA1YjU5ZDhlYTM0MjYyYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwOGI1Y2Q2NmZkMWEyYjFhOTdiOGU3MDU4YmYyYmJkNWYzYTVmZmYzYjQwZDBmNTYxM2M5YzIxZmY1ZDU2MDUifQ"
+        },
+        {
+          "resource": "repo://specs/092-prod-service-account-roles/plan.md#L22-L26",
+          "version": "repo-lines-v1:sha256:4d7b2291540ec5669a1153a335b7580174c31d8b1f86d9ff7424e6d1855ad2ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA2MmE2YzM4Zjg0MGM3ODk3MDY3MzcxMzZhN2FkNDRhNDBiMDEyMGUzYjBkMTk2Yjc5ZWQ4YmU4MDFjZjFhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQwNTk0MTUwY2Q3OTY3MWJkZDQwZWJmOWEwOGIyMjYxNTU2MGViMzdjY2E0MTQ3YmRjNWJiYjFjMjYwNmM4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGM2MTQ1ZDU3YTAyZDVmZDQxZWI5ZmZmY2NlODViMThmY2NiNzVmMDcwZWE1N2Q5MjgyOTNhM2Q3YWQ3NDI0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y2NDI3ZGEwOWY4NGJjMjEzNDNiYWM4NTJiMTZkZDE1ZTNkMGJlM2I5NTU5NWE0NzNjY2Y4NTNmNGQ4YWYyNCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T15:45:38.591Z"
+    "at": "2026-11-07T19:02:58.048Z"
   }
 }

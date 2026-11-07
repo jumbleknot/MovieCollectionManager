@@ -77,10 +77,10 @@ sources:
     resource: repo://security/infra-images/severity-map.yaml
   - id: openwiki-source-2e26935bed37e1316dc175a0
     resource: repo://specs/081-major-dependency-upgrades/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-04T17:50:21.605Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-05T00:41:49.325Z
+    at: 2026-11-07T19:55:04.696Z
 ---
 
 # Infra-image CVE scanning
@@ -159,7 +159,7 @@ neither can gate anything.
 |---|---|
 | `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact, and how the shared per-image script below drives both callers). |
 | `node scripts/check-infra-image-findings.mjs` | the gate: exit 1 on any `blocking` finding not suppressed by a live allowlist entry; `--check-expiring` is the report-only hygiene tier; `--selftest` proves fail/suppress/expiry without Trivy. |
-| `bash scripts/cd/scan-app-image.sh <local-tag>` | the SHARED per-image scan-and-verdict block (spec 084 US3): runs the scan then the gate on one local image and returns two exit codes — `0` clean, `10` scanner error (nothing was assessed), `11` blocking finding, `2` usage. Both consumers call it rather than reimplementing the pipeline: `scripts/cd/scan-push.sh` before each `docker push`, and app-ci's `app-image-scan` job on the six images `app-e2e` built. |
+| `bash scripts/cd/scan-app-image.sh <local-tag>` | the SHARED per-image scan-and-verdict block (spec 084 US3): runs the scan then the gate on one local image and returns two exit codes — `0` clean, `10` scanner error (nothing was assessed), `11` blocking finding, `2` usage. Both push-time consumers call it rather than reimplementing the pipeline: `scripts/cd/scan-push.sh` before each `docker push`, and app-ci's `app-image-scan` job on the six images `app-e2e` built. It is the per-*image* contract, not the only caller of the two commands: `infra-image-scan.yml` runs `infra-image-scan.mjs` and then `check-infra-image-findings.mjs` itself, once per full sweep of the enumerated tree. |
 | `bash scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>` | the ONE Trivy installer all three scanning workflows call, so the PR gates and the deploy scan cannot drift on the scanner. It downloads the pinned release tarball and checksums from GitHub, verifies the sha256, and refuses to finish unless the installed binary reports the pinned version — so a green install step means *this* version is on PATH, not that a version line was printed. |
 | `pnpm nx infra-scan infrastructure-as-code` | the Nx target wrapping the orchestrator, alongside the `sast`/`dast` targets. |
 | `security/infra-images/severity-map.yaml` | Trivy severity → normalized scale. An unmapped native value is a hard error in the orchestrator (no silent default); `UNKNOWN` maps conservatively to `Low` so it can never block. |
@@ -233,11 +233,13 @@ findings readable.
   normalized report. The two meanings are split across two commands rather than one integer, and
   `scripts/cd/scan-app-image.sh` is where they are wired together as a single per-image contract: it
   maps a failed scan to exit `10` and a failed gate to exit `11`, and each caller turns those into its
-  own operator message. `cd-deploy`'s per-image loop calls the shared script **before** `docker push`,
-  and app-ci's `app-image-scan` job calls the same script on the six images `app-e2e` built — one
-  pipeline, so one Trivy pin, one set of flags and one allowlist for both the PR and the deploy. It is
-  also why accepted findings on the deploy path live in `security/infra-images/allowlist.yaml` rather
-  than in a `.trivyignore` nobody reviews. Pinned by
+  own operator message. That contract covers the *built* images; the full sweep of pulled images runs
+  the same two commands directly from `infra-image-scan.yml`, so the split is a property of the two
+  scripts, not of the shared wrapper. `cd-deploy`'s per-image loop calls the shared script **before**
+  `docker push`, and app-ci's `app-image-scan` job calls the same script on the six images `app-e2e`
+  built — one pipeline, so one Trivy pin, one set of flags and one allowlist for both the PR and the
+  deploy. It is also why accepted findings on the deploy path live in
+  `security/infra-images/allowlist.yaml` rather than in a `.trivyignore` nobody reviews. Pinned by
   `scripts/__tests__/cd-scan-push-gate.guard.test.mjs` (the gate runs before `docker push` and inside
   the per-image loop, the bare `trivy image --exit-code` form stays gone, and an unexpected exit code
   fails closed) and by `scripts/__tests__/app-image-scan.test.mjs`, whose drift guard fails if either
