@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:416e756103881d31f04c51c2d9577f53de61b3c212a09919db667661bfff9567",
+  "pageVersion": "sha256:bcaae6959db52df545c813fd0afea8bdf567e5eff9de7320428017b324fc1fda",
   "claims": [
     {
       "id": "claim_9d87e017f8af4c879f1aa289d1aff5e1",
@@ -115,7 +115,7 @@
       "statement": "This forge build (15.0.3+gitea-1.22.0) exposes no Actions-artifact API — `GET /api/v1/repos/.../actions/artifacts` is a missing route (404), not an empty result — so an `upload-artifact` APK is retrievable only by a human through the run page and only until it expires. `cd-deploy`'s `prod-apk` job therefore publishes every release APK to the generic package registry as package `mcm-app-android`, version `<expo.version>-<sha7>`, alongside a `.apk.sha256` sidecar in `sha256sum -c` format, using the existing `write:package` CI push token (no new token, no widened scope); retrieval uses a `read:package` token against `/api/packages` (not `/api/v1`).",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L510-L526",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L523-L539",
           "version": "repo-lines-v1:sha256:e5659d28375ed002f1363b6a10d6ad8c2e19804cbbdb4759c5385f6b9e5052ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1Yzg4ZTM0M2U1ZDA2YmE4YjI0NDQwNjcwNTMyYjczMzllNjE4ZGVjNTgxNGJhNmNiODY4Mzk1MzI1NzhmYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2NiMjY2MzU3ZTJlYTZkNDA5NmY1ZjIyZjgwZTdhODE2MTMzN2U5MWM2YTE1MmI3NjA3YzJhYjY3NjQxYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
@@ -163,7 +163,7 @@
       "statement": "`prod-apk` is deliberately non-blocking: no job `needs:` it, the publish step is `continue-on-error`, and `publish-apk.mjs` always exits 0 while printing `::error::` on every failure path, so a registry hiccup is visible in the job log without turning a deploy red. A re-upload of an already-published version is a 409 treated as \"already published\" rather than a failure, because the bytes are the same build of the same source.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L516-L526",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L529-L539",
           "version": "repo-lines-v1:sha256:698ad5fdf5eba5d0260f14a7a0a50301f5fcd6c49f519827124b2e46ee483aa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYTQ1YWMzNmVmYWMyYmRjMGE2NGNlNDcyMTNhYWY2OTQ0ZWIwNDkwNWZhYTc2YTZiMTU0YTAwMTFhNzcyMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4N2YwZDQxZGEzZjM4MTJhYWNiYzQ3YzllZmRjZGEyN2Q2NzdhOGEwYzU5MjcyZTMyZTA1ZTIxOGQzYTQxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMDE1NGI1MDE3MGJkNDJhMzQzYjkwNmFlMzNjNWY0YzYzZTdhYThjMzcyNGY1ODYzZDNjMjkyMDMyZWRjOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODY1ZjAxYmFiNzZmM2Q5MjAwNmM4NGM5YTk5OGRmNmM0NmJkZTRiMTc0ZmIyODU4ZGZhYWRiZmIzOGUzMjkifQ"
         },
         {
@@ -185,7 +185,7 @@
       "statement": "The forge's `ubuntu-latest` runner label maps to `docker://node:22-bookworm`, a plain Node image running as root — not a GitHub-hosted Ubuntu runner — so GitHub-hosted-runner recipes do not transfer. In particular `sudo` is not installed and is unnecessary (the kvm runner executes as the unprivileged `ci` user, which also has no sudo), and a copied `sudo …` line dies on its first word; with a customary `|| true` the step goes green having done nothing, which is exactly what `cd-deploy`'s `prod-apk` disk step did on every run it ever made.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L339-L364",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L336-L361",
           "version": "repo-lines-v1:sha256:79506bce1bd04f3623e7d8c41afc5f4ca479313dc8976992f193ea82ba7950e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZDUxYzkxZjMwNWE0MmJhZTVlNzBjNGQwN2Y3OWM2NmIxZTBjMWNlZjUyNzU4Mjc5MzRkYjIzYWMzNDE3MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZDA5YjZlYjQ2MDlmZTVmOGQ0ZmQ5YjFiYmFhMmM3YWFkYTQ4N2UzZjFjMTU4ZDJjODU0NzI3NjdkYTc3MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MGI1NTVlZWRlMGIwNDA0NzE3OWY1ZWE3OTk1YjMwM2VmNDY0NDIzMTAyMzliOWZiZWQ1NmYwMTIzMmI0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZDUwNjA4YTZiOTMyOTBkMWE4NjAzOWVkNjIzZDAzNTYyNDY5OGJkMWYwYTgzNjVmMzUyZTQ0OGY3NzA1NjEifQ"
         },
         {
@@ -203,7 +203,7 @@
       "statement": "Dropping `sudo` from the disk step is worse than leaving the no-op: measured 2026-09-15 with `docker run --rm node:22-bookworm`, `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`, `/usr/share/swift` and `/usr/local/share/powershell` do not exist, and the one sizeable removable directory, `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm`, which `pnpm/action-setup` resolves pnpm through two steps later — so a working `rm -rf` would break the job to reclaim 19 MB, and would not even reclaim that, since deleting files in an image's lower layers writes whiteouts to the container layer and host usage goes UP. Freeing real host disk from a job means pruning the rootless daemon (`docker image prune -af`, no privileges needed), which `app-e2e`, `dast` and `build-deploy` do; `prod-apk` has no Docker CLI and nothing to prune.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L348-L360",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L345-L357",
           "version": "repo-lines-v1:sha256:55f1c1f1391ac7d1c76f1aa93df79b130f988869485cdb54afe8071c12b9d823:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNmYwZWNmNjRhZGJlODMzM2M1MjFkNDExNTdlNmM2MDM2Mzg4NDk5MTUwOTRmODg3ZjU1YjI2ZTBkNTgwM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDc4NDUwOWNmMDFiMWNjYzUzYTBmZmU4YmE3MmU4MTQxZGY2MWJjZTM2NWMxZDZmZDE0ZWQ2ZWIzNWU5MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ODc2MmQxZjVjZTkyOGQ4NWMzNzU2YzdjZTc4OTlhYWI4YmFhYTJmNGEzZmE0OThiZTAyYjU5Y2M5NGM0ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMDkwMGU5YjAxNGY3NTJlNWFhMGU5NjMzMzVkZmNkNGI2YTI3ZGZkYWQ4ZjgxMTI0MDBmMGU4ODBhZjRhNGMifQ"
         },
         {
@@ -221,7 +221,7 @@
       "statement": "`scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the disk-step fix in both directions: it fails any workflow step anywhere in `.forgejo/workflows` that invokes `sudo` in command position, and it fails the `prod-apk` disk step if it deletes `/usr/local/lib/node_modules`, attempts any `rm`, or carries a `|| true` — requiring instead that the step state in its output that no reclamation is attempted and that its name not promise one. It further asserts the commit-status recorder exists, posts under its own context, is `always()` + `continue-on-error`, is off pull requests, reports `<unset>` rather than a wrong value, and matches none of `main`'s required status globs so it cannot gate a merge.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L434-L452",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L431-L449",
           "version": "repo-lines-v1:sha256:c5b36f83a9c9300ebcba3d1a90eece7b0dca3bf08fd80df3ff415ae6aa15c7a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZDVlOWM2NWQ4MmJlNzQ5MDc4ZTIxNWMyMjhmMzhhZDUyMTI0NzJlNTBkYTVkNTMwMjE5ZmE4Y2IzOTQ2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNjZiODlmZjJmOTYyYjlhOWNmNzQ4YTM1MDc4OWY2NWM0MjhiOTE2MDMzMmMwZTRiMzQ5MDJjZmEwY2FjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZmNhNzViM2E0NDgxYTI3YTZmZWMzODk4MjRjMzYyNWNhNGNjNzEwYTdhYTE4NGJkN2E0NTE5YzhlODI4MDcifQ"
         },
         {
@@ -379,7 +379,7 @@
       "statement": "The emulator job reaches `/dev/kvm` by executing directly on the ci host through a host-type Forgejo runner label defined as `kvm:host` (`runs-on: kvm` uses the label *name*), not by passing the device into a job container — that was the setup only until commit `235f2f4c`. What must therefore hold is host state: KVM enabled on the host, the `ci` user in the `kvm` group, and the runner still advertising the label. On this host `/dev/kvm` is mode 666 (`crw-rw-rw- root kvm`, measured 2026-10-12); 660 via a udev rule is the tighter option, and the group membership is what keeps the job working if it is applied. A host job must also provision its own Docker CLI and prove it reaches the `ci` rootless daemon at the job's `DOCKER_HOST` with no fallback socket, and a missing `/dev/kvm` fails the job loudly rather than skipping the mobile suite.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L527-L541",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L528-L542",
           "version": "repo-lines-v1:sha256:93ad570bc15eafa6f9765fa44486b5aa8e6582d905e16ed0566848f2f9d362f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NmFjZmY2MTE1OTZiOTJmODVjZTM0YTRlOGRlMWUxZTYyNTM5MjM0YzkxMDdmYTk3NzFhYjlmOGZlNTRkNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZTA0ODU3YTQ4OTZlNWVmYjBiOWI4NDJhNTQ2NjQxYTVjMGQ1M2QyMWJiYjYxODBhZGUzZGRhYjRlOWQ2Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NDE3YjExMTYzYWQxNWRhMzNlYjgzNDdiN2I3MTA2YWFjOWQwNjI2ZGVkNTNjNmZjMmRhOGFiYThlZTYxZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMzQ4MTgwMjY1ZjgyMmFmYzk3ZmY2MzJhY2ExYWFmZmFlNzczMDNkZmQxODFlMDU1ZmZlZmMxNDkyMjQwZTYifQ"
         },
         {
@@ -477,11 +477,11 @@
           "version": "repo-lines-v1:sha256:2f6693d068dd20cb286102118a38c142c710b9f2f3bb51e3339000d75f0fbb03:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE4Njg3NDU4ODk3ODU0NzE0YWFjN2RkNTAzM2M2ZjU2NmE5YTc0OTVmMTIwNGNiOWY3OTBhMTFiYzFkNmY3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU4YzgwZWIwOTZjMmMzNDFiNTJiZmRhNjVlMDcxNDBhMmVlMTllMDlmZDcyOGFjNTlhNmYzNDJmMmQ0NWE1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE0ZGU0Nzk1ZmVkMjJiZGMxNzQ1OTYyYzVhNDA2NjNkNTM3ZjIwZWNhYzFiNjAyNTRlMDA0ZmVmYjE0YWMwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RkZGY0ZjkxNjVhODE4ZDAwZmNiMjA1ZTMyNGVjM2I5NzZlYWZjNGZiOTc1ZDViNWI2MmI1Njk1MWU5NzBiNyJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L797-L810",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L842-L855",
           "version": "repo-lines-v1:sha256:3dfe1bbcdf4929091b5c2b327cb2f9dcc6fc41a7c62edd73643a92cf40e55ab4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2MjczNjJlNjc5ZDQxMjE3MGVmY2JkMDk3ZDc5NjJjNTI3YzY0NmZlZmIwZDQwMDRiMGZkN2I5YjAxMThmYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OGRjOGUxNmFlMDJlODI0ZTQwODc5NmM0ZGYxYTJiZDJiNGNjODc0NzdlYWE2MTFiZDA2YTY4YTRkYzY5NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWY5NjNkODdjNTU3ODZkMzkzNmE0ZWUyZjM0Nzg1OTRhMTcxODRhNjM1ZTUxNzFjZmVlM2Q0MmM4YWI3M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNmM0MDE5NjYxZTczODZkMzNkMmEyMzRhM2VhOGU0OWMwYTRkMDcxYTc2NWFhZDA4M2VhZDZmMjU5YTdmYzUifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L898",
           "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
@@ -503,7 +503,7 @@
           "version": "repo-lines-v1:sha256:74662e33040579bafe4a504bad501a4c767e541f1ae379bdc472bc1ea0fbb817:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE2YzVlYzkzOTgwOWQwM2UxZGE0MWE0YmZmMGU2ZWU2OGM1YWQwOTcxMDRjNDZmNWE3NjFlZGU5YTI0ZjUwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI4MzYzYmRmMWU3NGQxNThlODk0NDcxM2ZhOGI4ZGQ4OWU5YTYyMGUxYWFiZDYzNzg2Y2Y2NmZlMTc5ODI3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmE2MmQzYzAzN2ZiNDNlMTkyOWJhYjMwNDk4YTM4ZGFmNjFjNGYxOGI5OGY1ZjcyOTQwOTNlMDA5NjRiMDQ2ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc0OWNhYTMwOGZiNzI4ZTM0YWEwNzJjYThhMmQ4MDM0MGM3ODQ0ZjcyODU0YjFmOGU0MGRiMWU1NmFmOWQ2NyJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L898",
           "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
@@ -595,7 +595,7 @@
           "version": "repo-lines-v1:sha256:51cf7879e23b639a1e4846a7f74ab001cc205547b39360b49f1ffb6c18b90f5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNhMDYxYzkyMzgyY2UwMTk1OGM3YmYxZjg2MDUwODhiZDI2ZjYxN2Y4YTZiNjZlNzY1ZjJiZGUzNTAyMjM1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYzYWMxMGRmMjNiMGM1MmI0NTQ2MDk1Y2E4ODcwMmU2ZWI5NTJmMGNhMTY0ZmZhNWI4OTc4NDA4ZGI0YTMxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2QxNTAxZmI0ZDUzY2ZhZjgwMjUyNDhhMWIwMmU4M2FmOTU1NDkyMTQ5N2E4ODdiMzBmOWYyZjQ5ZTkzYjE5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNiMzNjMmU1MGVmNGI0MjljMzU1MzQyYmNjYWZjYTkxZmY3N2ExZjNkYTNhZjllZjllYTlmNDI0MWU3YTQwYiJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L843-L857",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L900-L914",
           "version": "repo-lines-v1:sha256:743b588dbb6bf3d503b51a543129821d8209c692c2c28cbd1d4905cae90e2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZjdiOTM4YmFiMWEzYTY1OGM5ZWJmZmQ5MWUxZDA4MTZlNmQwNWQ2OGI0MWFkYTJhMjU5YzZiM2MzY2RmN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzk0ZmNhZGNiODA4NWU5YzIyOGY0OTk0MjljNGQ4YThkZGI5OTI5ZGZiMmM3OWUwZmQyY2IyZThmYjkxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
@@ -643,7 +643,7 @@
           "version": "repo-lines-v1:sha256:ece58e38e434a5ce6cd2861ff5416ef969ad6e50ee966c2c704f6c8e38fb009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NjMxYjNjZDA2MjM5NjIyYWNmZDA2YzkyMzExMTJiZTg1NTQxNWEzYzg4ZTQ3NTc1ZWViYjBjMGM0ODkyZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMmI1YjJiN2JmYzE0N2YzZTU1Njk3ODQ0NDllM2RjNjQ4MzZjNmUzZmM3YjUzMGM2ODJmNzJkNDgyZTk4ZDUifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L852-L857",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L909-L914",
           "version": "repo-lines-v1:sha256:ba43541161a8f33a5d848aa5caff2233283f03244b45672a0553570de25190d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JjYzFhZDM0MzUyYjgwMjAwYTFjODMyMGY3YThmMDAxZmEzODgyMGM2NzUyZjRkODIyZDI4OTJkZDZlMzRhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdjMmU2MTQyMzVjNTMxMzY3OTJiZGZkZmUwM2ZkNjE4OWQ5MTEzMmU2ZDUzMTAwNDNiMTMzYmFiMzUwNjI1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDkwNDQ1M2IzODFlNDBkOWYxODBjM2M0Zjg0ZGE3MGYzZjBiMmI2MTcxYTc0ZmI5ZmQ3NjhmYTc3NTcyODU2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         }
       ]
@@ -1045,15 +1045,15 @@
       "statement": "`/dev/kvm` is a requirement of the emulator job alone, not of the `kvm` runner label: five jobs share the label today — `app-e2e`, `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and `build-publish` in `devcontainer-image` — and only `app-e2e` needs the device. The others are on the label because they build or scan Docker images and need the Docker CLI plus the `ci` user's rootless daemon, which a `node:22-bookworm` job container cannot provide at all. The runbook's Phase 7 note still enumerates a shorter set (emulator, DAST, image build), so the tracked workflows have grown past it.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1533-L1536",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1534-L1537",
           "version": "repo-lines-v1:sha256:5a2d10a9e01ad84fe1329c4e462d727f2231831be4826ade89cb48b64ebc51be:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAyZmM2Njc1YjM0Y2Y2ZWE4YTE5OGQxOTgwYjhjNmM3ZWYyOWYyNWQ3ZTY3ODE4ZjZlZjk4MDMyYWQxZGY3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk1NTM4ZWUzNzBkNzZjZmFmZjBmYzI2ZmE3MWNhYmUyYWNhNDQ5YTA1OTMxNmZjYmZmMzllYmYyZmNkODUwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzYjE4NjdhMjBlYWZmYjM2YjRkZmI4MDkxZDA5ODEzYWRhZGNlY2VkYjZmNTNhOTViZTJkMGIzZWZhZGJiOCJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1800-L1804",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1801-L1805",
           "version": "repo-lines-v1:sha256:702ed9eabca1222be68d9a9dd9d16c8e5cf7c2c92f7e35758a349f0e53f46217:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAyZmM2Njc1YjM0Y2Y2ZWE4YTE5OGQxOTgwYjhjNmM3ZWYyOWYyNWQ3ZTY3ODE4ZjZlZjk4MDMyYWQxZGY3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODkwMDg1ZGVjNmI5YTQxZGRhODJmNWQxMjFhNmE3ZWM5NTcxZThhZTEwOTIyMjNhNTAwYTA4ZmVkOGYxODJlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA4MzUzY2M0MmE4ODYyNDJiNGRmZTYyZWU5YjdhZTQ1YTljZjY5NmU0MmY2YWVlYjk3NDcyNjMwMjliOGJiOCJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L376-L376",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L377-L377",
           "version": "repo-lines-v1:sha256:d86f9d8e36168f8164148f923bda58b4636afca3a96eaa35a2350240900b7672:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg2ZjlkOGUzNjE2OGY4MTY0MTQ4ZjkyM2JkYTU4YjQ2MzZhZmNhM2E5NmVhYTM1YTIzNTAyNDA5MDBiNzY3MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAwMDNlOTM3NDc1Y2Y2ZTMwOTE4Y2M4NjE3MzdiMWYyYjk5OWE3NTZiNTM1MTU1YjYyM2QxMTQxNjEwMzYxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRhNTE4N2MzYmFiMmIzMGQxMDZlYzk3NzYyOTNiMTIxZmIzOTQzMDZkOWVjMTlmMzA5MjE3OGI5YjllZTE4OCJ9"
         },
         {
@@ -1075,7 +1075,7 @@
       "statement": "One host job's own error text still describes the pre-`235f2f4c` job-container setup: `cd-deploy`'s Docker guard tells the operator to \"mount `/run/user/1001/docker.sock` into the kvm job (runner config.yaml container.options)\", which is advice for a job container that no longer exists, while `app-ci`'s equivalent was corrected (2026-10-04) to name the host execution and the `DOCKER_HOST` socket. The host runs the corrected reality — the jobs execute on the host and reach the socket through `DOCKER_HOST` — so the message is stale wording rather than a setup step.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L490-L508",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L491-L509",
           "version": "repo-lines-v1:sha256:98e12117c8ed7e8087833a4ba4a1cad0a38001c3e4eddec00ce87389670cefcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZTBhZWE4YTU2ZWJhMWJkYTExZTA1ODQ3NTc5ZjRlZDc0ZjlhOWIwMjFiYjk5Nzc5YWI3ZTUyZDE4OTYzNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTU5NzljZTczMDIwMzNlNmIyZmQ3ZDg4ZjUzN2EzYjhlMDkxZWEzMDVjODExZmZhMTI3NGJmNTc2NGVhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNjMxYWQxMWM4YjgyNmY0OWRmY2MzNDdiN2RmM2M4OTlmY2IwY2NhMzQzMWYxOWRkMjFlODc2NGMyMmMwYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MTExYjIzY2Q3NTg2NWI0MmM1ODA5NGYzZjMzN2YzNDQyYmMwNmVmZjZjNWY5NjExMjNkNmZlYWQ1MTBlZWQifQ"
         },
         {
@@ -1101,7 +1101,7 @@
           "version": "repo-lines-v1:sha256:ece58e38e434a5ce6cd2861ff5416ef969ad6e50ee966c2c704f6c8e38fb009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NjMxYjNjZDA2MjM5NjIyYWNmZDA2YzkyMzExMTJiZTg1NTQxNWEzYzg4ZTQ3NTc1ZWViYjBjMGM0ODkyZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMmI1YjJiN2JmYzE0N2YzZTU1Njk3ODQ0NDllM2RjNjQ4MzZjNmUzZmM3YjUzMGM2ODJmNzJkNDgyZTk4ZDUifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L843-L857",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L900-L914",
           "version": "repo-lines-v1:sha256:743b588dbb6bf3d503b51a543129821d8209c692c2c28cbd1d4905cae90e2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZjdiOTM4YmFiMWEzYTY1OGM5ZWJmZmQ5MWUxZDA4MTZlNmQwNWQ2OGI0MWFkYTJhMjU5YzZiM2MzY2RmN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzk0ZmNhZGNiODA4NWU5YzIyOGY0OTk0MjljNGQ4YThkZGI5OTI5ZGZiMmM3OWUwZmQyY2IyZThmYjkxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
@@ -1115,7 +1115,7 @@
           "version": "repo-lines-v1:sha256:dd956fd99f5b4a3d748b2fde471b2ce708357425a001def350ba8c78648fc87e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUyMTEyMjU4YzUyOTBmOWRjMDY5NmUzM2QzYzZjMDM2MDljNjliOWI4NjU2NzRiODhhZWViNTMyOWMwNmUwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0M2ZiODlkZDcxMzkxNzA2YmI2NTUzMzcxMzlhZTY2YWMxMGZhY2M0MjYyYmNkMjQ4YzIyOWNmMGUyNWQwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcwM2M1ZTZmNzZiYzk5OTlmNWZlMmUyNDEyM2EwZjdlMTRlYWRjMTcyYjE4Y2EwN2Y1MzJjM2Y3ZGYyOTAwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTMyOWRjNWI2M2NlMzhhOWRlZjk5MWM4YWI1YTNkNGVhNzBjOTkzNWQ5MWE0ODQ2NGNmYzU1OTJmMTQ5MDU0OCJ9"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L898",
           "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
@@ -1181,10 +1181,30 @@
           "version": "repo-lines-v1:sha256:59bbf6e30cc794957edc77b31e4d1f1d0886612dba19f7053968327888228a9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YmQ3MDE2ZDhiMGVjMzBmNWMxZmE5NWY4ZmE5YTdhMjdmOTliZDhiODcwZDNlMGM3MTg2YWYwNjc2NDhlMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3YjI1OWJkYTIwNDZkNGVkNzZlMGMwYjRiMTUyNjY4MGQ2YmYzYzJhMjAwMmMzYzJmMWU2ZTMzNTM4MGZhNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NWJiNTgxMjBlNmU3MWIzNTljNjg4NDBiN2RlMWZkZWI1MGMxMWI3NDJjNjhkYzhhOGEyNTM1NDc0NGM4MGEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_0e6faec065574456a0251c9c280207f5",
+      "statement": "Phase 12 records two risks as consciously deferred and accepted rather than overlooked: a docker-socket-proxy in front of the daemon Komodo mounts (Komodo is tailnet-only with registration disabled and Periphery needs broad write access anyway, so the rule that survives is never to mount the prod socket into an internet-exposed container), and Vault as the secrets store (secrets are already out-of-git masked Komodo Variables, behind a 2FA tailnet and inside encrypted, restore-verified backups, so Vault's unseal-on-reboot burden is not worth the marginal gain on a single-tenant host). CrowdSec's goal is met at the edge instead of on the host: with direct edge-TLS there is no reverse-proxy access log to parse, so the protection is Cloudflare's managed ruleset, bot fight mode and one per-IP rate-limit rule, plus Keycloak's own realm brute-force detection for credential stuffing on the IdP.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1073-L1087",
+          "version": "repo-lines-v1:sha256:a8fd5b3015649416a81bffa4de5c14223e6010d645b5b3cbbc747f79c408e2b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0OWFjMjk1ZDA4MzMwNmJmMWViY2QyZjU3YTMwNjlkMTI1ODYxZTA1ODQyZGFkYjU5MTRmZDE1NzY3M2E2ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjODMwN2FmOTUyOWQyZTM4MmMxNmE0ZTcyYTE5NjliNGNlMTc1NDIyZGEzMWJjOGEyNDUyZmZmMGI4ZTAzZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2948ef844adc4faf95738a8aecbaa2a7",
+      "statement": "The runbook's phase headings run 0 through 17 and close with a quick-reference appendix: one table of what runs where — each service, the daemon it lives on (host, `ci` or `prod`) and the tailnet URL that reaches it, plus the local-dev equivalent of the prod stacks — and the rule the table ends on, that every production image is pinned to a specific tag or digest with Komodo managing promotion, and that CI's throwaway stack stays on the `ci` daemon so a failed or poisoned build can never reach prod data.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/Server-Setup-Runbook.md#L1364-L1437",
+          "version": "repo-lines-v1:sha256:184c77c323825ab2b59a8e9930b6bd4f7aadcde8900004b5c1f63a679165c318:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOWI0NDAyNTAwODBiMWNjZDAzY2IyNjgwMmQ3ODE5YjhhYTdlMGJlNGQ3ZGYwMzRiZWYwODQ1ZTllNzlmOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZjkwMzBjNzYwNTdjYzAxOGZlNjAyMTM2MTVmNmE5NjBiMTcxMDIyYjE1OGJmNmQ2YWYzOGFiMjFmNDI3ODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T01:23:06.490Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }

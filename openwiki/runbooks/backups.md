@@ -105,7 +105,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T06:42:06.997Z
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -151,12 +151,17 @@ this page distills the load-bearing gotchas an operator needs before touching th
   account and no privileged fallback. The run mints access from a Keycloak **offline token** the
   user granted through an explicit, separate consent round trip. If that grant is revoked or
   missing, the run **fails** — it does not fall back to any other identity.
-- **Consent also needs the realm's `offline_access` role, and its absence does not look like a
-  role problem.** Keycloak grants the role through the realm's `default-roles` composite, so a user
-  created through the Admin API inherits it; a user created by a realm-JSON import gets it only if
-  that import grants the default role. This is how the seeded `e2e-test-user` once ended up unable
-  to consent at all, with the failure surfacing as a **blank page after sign-in** rather than an
-  error — so "the consent screen does nothing" is a realm-role question before it is a BFF one.
+- **Consent also needs the realm's `offline_access` realm role, and its absence does not look like a
+  role problem.** Keycloak hands the role out through the realm's `default-roles-jumbleknot`
+  composite — `offline_access` is one of that composite's realm members — so a user created through
+  the Admin API inherits it, while a user created by a realm-JSON import gets it only if the import
+  assigns the default role. The committed realm files therefore spell it out:
+  `realmRoles: ["default-roles-jumbleknot"]` on the seeded `e2e-test-user` and `e2e-admin-user` in
+  `ci-realm.json` and `dev-realm.json`. Drop that assignment from a seeded user and the failure is
+  invisible — a **blank page after sign-in** with nothing naming the missing role, which is how the
+  seeded `e2e-test-user` once ended up unable to consent at all. So "the consent screen does
+  nothing" is a realm-role question before it is a BFF one, and the fix belongs in the realm, not in
+  the BFF.
 - **The BFF's MongoDB is a standalone `mongod`: no replica set, no multi-document transactions.**
   Exactly-once scheduling therefore rests on a single-document atomic claim (an atomic
   find-and-update against one job document), not a transaction. The companion Redis leader lock is

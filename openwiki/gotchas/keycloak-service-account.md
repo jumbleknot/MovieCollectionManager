@@ -1,7 +1,7 @@
 ---
 type: Gotcha
 title: Service account vs admin credentials — Keycloak Admin API calls
-description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout, email verification, redirect-URI registration) authenticate as a dedicated service account via the client-credentials grant, never the realm admin password — with a per-call admin token, a duplicated minter in email-service.ts, and several failure paths the BFF re-maps, warns about, or swallows outright instead of passing through.
+description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout, email verification, redirect-URI registration) authenticate as a dedicated service account via the client-credentials grant, never the realm admin password — with the realm-side requirements that service account needs, a per-call admin token, a duplicated minter in email-service.ts, and the failure paths the BFF re-maps, warns about, or swallows outright instead of passing through.
 resource: frontend/mcm-app/src/bff-server/keycloak.ts
 tags: [auth, keycloak, bff, security]
 sources:
@@ -44,7 +44,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # Service account vs admin credentials — Keycloak Admin API calls
@@ -71,18 +71,74 @@ sequenceDiagram
   else token minted
     Tok-->>Caller: access_token
     Caller->>Admin: Bearer token on the admin path
-    Admin-->>Caller: 2xx, or 403 without realm-management roles
+    Admin-->>Caller: 2xx, or 401 without the kc-admin-api scope, or 403 without the realm-management roles
   end
 ```
 
-One Admin API call: a freshly minted client-credentials token, and the two failure shapes the BFF
-never passes through unchanged — except on the redirect-URI path, which converts every one of them
-into a warning instead.
+One Admin API call: a freshly minted client-credentials token, and the refusal shapes the BFF never
+passes through unchanged — except on the redirect-URI path, which converts every one of them into a
+warning instead.
+
+A minted token is only half the requirement. Keycloak judges each admin call against *two* realm
+facts the token has to carry — the client scope that gives it the Admin API audience, and the
+service account's own `realm-management` roles — and a failure of either arrives as a status the BFF
+re-maps rather than propagates.
+
+## What the realm must provide
+
+**The client scope (feature 090).** From Keycloak 26.8.2, a token used against the Admin REST API
+must carry the `kc-admin-api` client scope. Without it every BFF admin call is refused with 401,
+logged by Keycloak as `Expected audience not available in the token` — user lookup, registration,
+verification email, forced logout and the last-administrator check all fail together, because they
+all mint the same kind of token. The 26.8.2 migration creates the scope and gives it to `admin-cli`
+and `security-admin-console`, but not to `mcm-bff-service`, so neither an upgrade nor a bare
+reference in a realm file is enough:
+
+- **A fresh realm** gets it from the realm files, which must *define* the scope (with the
+  `oidc-admin-api-audience-mapper` protocol mapper) **as well as** assign it to `mcm-bff-service` as
+  a default client scope. Import ignores a reference to a scope the file does not define, logging
+  `Referenced client scope 'kc-admin-api' doesn't exist. Ignoring`.
+- **An existing realm** — production, or a local stack with an existing Postgres volume, since
+  import is `IGNORE_EXISTING` — needs
+  [`ensure-admin-api-scope.mjs`](../../infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs),
+  which reports what is missing and changes nothing until it is given `--apply`. Run it *before*
+  the upgrade and there is no outage; it also repairs a realm already upgraded. It signs in as a
+  password-only admin, so it cannot be used where the admin has two-factor — production takes the
+  console route instead (add the scope to `mcm-bff-service` as a default client scope).
+  `scripts/__tests__/keycloak-admin-api-scope.guard.test.mjs` pins the definition, the mapper and
+  the assignment in all three realm files, plus the script's argument contract.
+
+**The service-account roles.** The roles are attached to a reconstructed
+`service-account-mcm-bff-service` user, and the set differs deliberately by realm variant:
+
+| Realm file | `realm-management` client roles on `service-account-mcm-bff-service` |
+|---|---|
+| `ci-realm.json`, `dev-realm.json` | `view-users`, `manage-clients`, `manage-users` |
+| `prod-realm.json` | `view-users`, `view-clients`, `manage-users` |
+
+`manage-clients` is **not** granted in production on purpose: it would let the BFF edit any client,
+and production has no need for it because every address `/bff-api/auth/init` registers is listed in
+the realm already — the route finds nothing to add and attempts no write. `query-clients` is not a
+substitute for `view-clients`: the client lookup answers 200 with an empty list, so the BFF sees
+"client not found" rather than a refusal. `scripts/__tests__/keycloak-service-account-roles.guard.test.mjs`
+asserts each file carries `view-users` and `manage-users` plus `view-clients` *or* `manage-clients`,
+that production carries exactly its three, and (a separate concern) that production lists every
+address `init` registers. [The Keycloak project page](../projects/keycloak.md) covers the
+realm-variant and redirect-address detail; the roles themselves are this page's subject.
+
+**Production's realm was configured by hand and drifted.** `prod-realm.json` defined no service
+account at all, so production's roles were set in the console and drifted from what the BFF needs:
+it held `manage-users`, `view-users`, `query-groups` and `query-users`, and its client lookup
+answered 403. Account deletion failed for an administrator, and registration created an account and
+then failed to give it a role. CI could never see any of it, because CI imports its own realm file
+into a fresh volume on every run. Feature 092 recorded the requirement in the realm file and added
+the guard; the operator corrects the running realm by hand, because a realm file applies only when
+a realm is first created.
 
 ## Failure-mode mapping
 
 What each Admin API caller does with what Keycloak answers. Nothing here surfaces as a Keycloak
-status code — `403` in particular is never propagated.
+status code — `401` and `403` in particular are never propagated.
 
 | Caller | Keycloak answers | BFF behaviour |
 |---|---|---|
@@ -95,14 +151,49 @@ status code — `403` in particular is never propagated.
 | `sendVerificationEmail` (both copies) | non-OK | `KEYCLOAK_UNAVAILABLE`, **502** |
 | `getUserById`, `isEmailVerified` | non-OK | `UNAUTHORIZED`, **404** |
 | `getUserIdByEmail` | non-OK | returns `null` — indistinguishable from "no such user" |
-| `assignMcUserRole` | client lookup non-OK | nothing is checked — `KEYCLOAK_UNAVAILABLE`, **500** when the error body still parses (there is no `[0].id`), a generic **500** when it does not |
-| `assignMcUserRole` | role lookup or role-mapping POST non-OK | ignored — neither response is inspected |
+| `assignMcUserRole` | client lookup non-OK | `KEYCLOAK_UNAVAILABLE`, **502** |
+| `assignMcUserRole` | `mc-user` role lookup non-OK | `KEYCLOAK_UNAVAILABLE`, **502** |
+| `assignMcUserRole` | role-mapping POST non-OK | `KEYCLOAK_UNAVAILABLE`, **502** |
 | `logoutUserSessions`, `revokeToken` | any | ignored |
 | `ensureClientRedirectUris` | any | warns `redirect_uri_registration_failed` with a `step` and `status`, and stays unrecorded; the caller still gets `{ok: true}` |
 
-The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` or `error`, so a
-403 from a service account without `manage-clients` lands in the logs as an `update` (or
-`client_lookup`) warning rather than in any BFF response.
+`assignMcUserRole` is the one caller whose whole chain is status-checked. Registration gives a new
+account its access here, so a refusal at any of its three steps has to surface rather than leave an
+account that authenticates and is then refused by the role gate (feature 092, FR-004):
+
+```mermaid
+sequenceDiagram
+  participant Caller as BFF assignMcUserRole
+  participant Tok as Keycloak token endpoint
+  participant Admin as Keycloak Admin REST API
+  Caller->>Tok: client_credentials as mcm-bff-service
+  alt token refused
+    Tok-->>Caller: non-OK
+    Note over Caller: 503 KEYCLOAK_UNAVAILABLE
+  else token minted
+    Tok-->>Caller: admin token
+    Caller->>Admin: GET clients by clientId
+    Admin-->>Caller: 200 list, or 403
+    Caller->>Admin: GET clients id roles mc-user
+    Admin-->>Caller: 200 role, or 403
+    Caller->>Admin: POST users id role-mappings clients id
+    Admin-->>Caller: 204, or 403
+    Note over Caller: any of the three refusals is 502 KEYCLOAK_UNAVAILABLE
+  end
+```
+
+Three checked steps, one refusal shape: every refusal in the role-assignment chain is a 502.
+
+`unit-tests/keycloak-assign-role.test.ts` pins each step — a refused client lookup, a refused role
+read and a refused assignment all raise `KEYCLOAK_UNAVAILABLE` with status 502, and a refused role
+read stops the chain instead of posting the error body as if it were the role. Before feature 092
+the client lookup was not status-checked and the role-mapping POST was never inspected at all, so a
+refusal there reported success for an account with no access.
+
+The `step` on the last table row is one of `client_lookup`, `client_fetch`, `update` or `error`, so
+a 403 from a service account without `manage-clients` lands in the logs as an `update` (or
+`client_lookup`) warning rather than in any BFF response. A **401** — the `kc-admin-api` shape —
+follows the same per-function re-mapping as a 403 and is just as invisible to the caller.
 
 ## Gotchas
 
@@ -128,21 +219,27 @@ The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` 
   `getAdminToken()` maps any non-OK token response to that error code, so an admin-token failure looks
   the same as Keycloak being down. Check the service-account secret first when Admin-API-backed routes
   (registration, forced logout, role assignment) start failing.
-- **A service account whose `realm-management` roles are missing fails differently — not 503.**
-  The committed dev and CI realm files seed `service-account-mcm-bff-service` with `view-users`,
-  `manage-clients` and `manage-users` from the `realm-management` client; without them the client
-  still authenticates (the 503 path above never triggers) and Keycloak rejects each Admin API call
-  with 403 — which the BFF never passes through. Each function re-maps it: `deleteUser`,
-  `countUsersInClientRole` and `sendVerificationEmail` answer 502 `KEYCLOAK_UNAVAILABLE`, `createUser`
-  answers 400 `INVALID_INPUT`, `ensureClientRedirectUris` logs a warning and retries, and
-  `logoutUserSessions` ignores the failure entirely. Do not look for a 403 in BFF responses. A realm
-  export does not carry service-account role mappings, so the export script has to reconstruct them
-  explicitly — a partial import can therefore produce a service account that mints tokens and
-  authorizes nothing.
+- **A service account whose `realm-management` roles are missing fails differently — not 503.** The
+  client still authenticates, so the 503 path above never triggers, and Keycloak rejects each Admin API
+  call with 403 — which the BFF never passes through. Each function re-maps it: `deleteUser`,
+  `countUsersInClientRole`, `sendVerificationEmail` and every step of `assignMcUserRole` answer 502
+  `KEYCLOAK_UNAVAILABLE`, `createUser` answers 400 `INVALID_INPUT`, `ensureClientRedirectUris` logs a
+  warning and retries, and `logoutUserSessions` ignores the failure entirely. Do not look for a 403 in
+  BFF responses. The role set differs by variant — production deliberately holds no `manage-clients`,
+  which is why `/bff-api/auth/init` cannot register an address there — and a realm export does not
+  carry service-account role mappings, so the export script has to reconstruct them explicitly: a
+  partial import can therefore produce a service account that mints tokens and authorizes nothing.
   The reconstruction lives in [`scripts/export-ci-realm.mjs`](../../scripts/export-ci-realm.mjs),
   which writes `service-account-<clientId>` users carrying each service account's realm and client
   roles; [the Keycloak project page](../projects/keycloak.md) covers how the committed realm variants
-  are derived from it.
+  are derived from it and how production's own realm is corrected.
+- **A minted token can still be refused for lacking the `kc-admin-api` scope.** The client-credentials
+  grant succeeds, so no 503 fires; the Admin API then answers 401 with
+  `Expected audience not available in the token` on 26.8.2 and later, and every caller re-maps that
+  401 the same way it re-maps a 403. The realm files now define and assign the scope, but a *running*
+  realm that predates the change does not have it — a local stack with an existing Postgres volume
+  included, since import is `IGNORE_EXISTING`. Check the scope before the roles when an upgraded
+  Keycloak starts refusing every admin call at once.
 - **`ensureClientRedirectUris()` is a second Admin API path, and it never fails the request — it
   warns and stays unrecorded.** Called from the app-mount route `GET /bff-api/auth/init` with the
   complete list of redirect URIs this client needs (see [the BFF project page](../projects/bff.md)),
@@ -196,16 +293,25 @@ The `step` on that last row is one of `client_lookup`, `client_fetch`, `update` 
   failure only appears when an Admin-API-backed route is exercised, as the 503 described above. The
   login client's secret is loaded the same way, for the same reason: both are optional for a public
   client and required for a confidential one.
-- **A swallowed 403 can read as a successful no-op.** `getUserIdByEmail` returns `null` for *any*
-  non-OK Admin response, and `/bff-api/auth/resend-verification` deliberately answers success for an
-  unknown email (it must not be a user-enumeration oracle) — so a service account that lost
-  `view-users` produces "if that email is registered and unverified, a link has been sent" rather
-  than an error. `assignMcUserRole` never inspects the response to its role-mapping POST (and does
-  not check the role-lookup GET either), so a registration can report success while the `mc-user`
-  role assignment failed; the user then authenticates and is refused by the role gate. One path is
-  *not* silent: a 403 on that function's client lookup leaves an unchecked body with no `[0].id`, so
-  it throws `KEYCLOAK_UNAVAILABLE` with status **500** — a third signature, distinct from the 502 and
-  503 above.
+- **One Admin API caller still hides failures outright, and registration is no longer one of them.**
+  `getUserIdByEmail` returns `null` for *any* non-OK Admin response, and
+  `/bff-api/auth/resend-verification` deliberately answers success for an unknown email (it must not
+  be a user-enumeration oracle) — so a service account that lost `view-users` produces "if that email
+  is registered and unverified, a link has been sent" rather than an error. `assignMcUserRole` used to
+  read the same way for its role-mapping POST; since feature 092 (FR-004) it status-checks all three of
+  its calls and throws 502 `KEYCLOAK_UNAVAILABLE` on any refusal, so a registration can no longer
+  answer 201 with the `mc-user` role unassigned and the user then refused by the role gate. What the
+  failure leaves behind is the account `createUser` already created — removing it is explicitly out of
+  scope — so a retry meets the duplicate path rather than repairing the user.
+- **The register route now logs a server-side failure, and stays quiet about refusals the caller
+  caused.** Feature 092 (FR-005) gave `POST /bff-api/auth/register` a
+  `logger.error('registration failed', { action: 'register_failed', ip, code, error })` on the
+  failure path — for statuses 500 and above only, so a failed role assignment is now traceable instead
+  of silent — and it never includes the request body: no password, no email. A refusal the caller
+  caused (a duplicate username or email, a weak password, the disabled self-registration gate, a rate
+  limit) is *not* logged as a server-side failure; the disabled gate has its own audit event. The
+  caller still sees the generic `KEYCLOAK_UNAVAILABLE` message, so the log is the only place the real
+  cause appears.
 - **The admin token is minted per call, never cached.** Each Admin API function in `keycloak.ts`
   calls `getAdminToken()` itself (unlike the discovery document, which is cached), so one user-facing
   operation can make several token requests — registration mints for `createUser`,

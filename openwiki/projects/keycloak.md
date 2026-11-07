@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, the kc-admin-api client scope Keycloak 26.8.2 requires on mcm-bff-service together with the service-account roles and the six redirect addresses production must list by hand, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 sources:
@@ -128,7 +128,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -178,7 +178,10 @@ carries five facts worth reading directly, because none of them is visible in a 
   advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
   discharge it rather than inherit it. The bump is the remediation and the exemption is deleted, so a
   later regression re-blocks instead of matching a stale entry forever. The rule and the Keycloak case
-  are in [Infra-image scanning](../runbooks/infra-image-scanning.md).
+  are in [Infra-image scanning](../runbooks/infra-image-scanning.md). A Keycloak version bump is also
+  not a self-contained image change: from 26.8.2 the Admin API additionally needs the `kc-admin-api`
+  scope on the BFF's service account (below), which no realm edit alone can supply to a realm that
+  already exists.
 - **`depends_on: keycloak-store-postgres: condition: service_healthy`.** Keycloak is not started until
   its own Postgres answers `pg_isready -U keycloak -d keycloak`, so a Keycloak that is up but cannot
   reach its database is a Postgres problem, not a Keycloak one.
@@ -258,12 +261,134 @@ Three details in that picture are load-bearing:
 - **Import is `IGNORE_EXISTING`.** An established volume is untouched, which is what makes the dev
   overlay non-destructive on every `up-auth` — and also what means a realm edit changes nothing until
   the volume is re-imported. Wiping `keycloak-store-postgres-data` re-seeds the realm on the next
-  `up-auth` instead of dropping you into an empty Keycloak.
+  `up-auth` instead of dropping you into an empty Keycloak. This is the property that lets production's
+  realm drift from the committed file indefinitely without CI noticing (see below).
 
-`prod-realm.json` is additionally sanitized before commit: no users, no embedded signing keys (so prod
-mints fresh ones), no dev redirect URIs, no real client secrets, `registrationAllowed: false`,
-`bruteForceProtected: true`, and a real `passwordPolicy`. The dev and CI variants are the permissive
-twins: `bruteForceProtected: false`, and users seeded for the test suites.
+`prod-realm.json` is additionally sanitized before commit: no interactive users and no user credential
+(its only `users` entry is the `service-account-mcm-bff-service` user, which carries role mappings and
+no password), no embedded signing keys (so prod mints fresh ones), no dev redirect URIs, no real client
+secrets, `registrationAllowed: false`, `bruteForceProtected: true`, and a real `passwordPolicy`. The dev
+and CI variants are the permissive twins: `bruteForceProtected: false`, and users seeded for the test
+suites.
+
+## The BFF service account on the Admin API
+
+The BFF reaches Keycloak's Admin REST API as the `mcm-bff-service` service account — a confidential client
+with `serviceAccountsEnabled: true` and `standardFlowEnabled: false`, separate by capability from the
+`movie-collection-manager` login client. Two realm-side requirements of that account became load-bearing
+in production and are now committed alongside it: the `kc-admin-api` client scope (feature 090) and the
+`realm-management` roles the BFF's admin calls need (feature 092). How each call is made, and what the
+BFF does with each refusal, is
+[Service account vs admin credentials](../gotchas/keycloak-service-account.md); what the realm must
+contain is here.
+
+### The `kc-admin-api` scope
+
+From Keycloak **26.8.2** an Admin API token must carry the `kc-admin-api` client scope. The 26.8.2
+migration creates that scope and gives it to `admin-cli` and `security-admin-console`, but not to our
+own clients, so the BFF's service-account token is refused with **401**, logged as
+`Expected audience not available in the token`. That takes out user lookup, registration, verification
+email, forced logout and the last-administrator check — none of which CI's fresh-import stack reveals.
+An upgrade alone does not repair it: a realm moved from 26.8.1 to 26.8.2 gains the scope and the client
+still gets 401.
+
+Two things are needed, and only one of them is the assignment:
+
+- **Each realm file must DEFINE the scope as well as assign it.** All three committed variants carry a
+  `kc-admin-api` `clientScope` whose single protocol mapper is `oidc-admin-api-audience-mapper` (the
+  definition Keycloak 26.8.2 itself generates, so the script and the migration produce the same scope),
+  and list `kc-admin-api` in `mcm-bff-service`'s `defaultClientScopes`. A bare reference does not work:
+  import logs `Referenced client scope 'kc-admin-api' doesn't exist. Ignoring` and the realm comes up
+  without it, which is why the guard asserts the scope's definition and not only the assignment.
+- **A realm that already exists needs the script or the console**, because import is `IGNORE_EXISTING`.
+  `infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs` reports what is missing
+  and changes nothing unless given `--apply`, rejects a mistyped flag as a usage error *before*
+  contacting anything, and is safe to re-run — its exported `planSteps` returns only the steps still
+  missing, so a second run prints `nothing, already in place`. It was proven on **26.8.1**, so a realm
+  can be prepared before the upgrade rather than during it, and it also repairs a realm already upgraded
+  without it.
+
+The script cannot do production's assignment, and that is a credential limitation rather than a policy
+choice: it signs in with `grant_type=password` against the master realm using `KC_ADMIN_PASSWORD`, so it
+cannot sign in as an admin that uses two-factor — and production's bootstrap `admin` no longer exists.
+Production therefore takes the console route: move to 26.8.2, whose migration creates the scope, then
+assign it at **Clients → mcm-bff-service → Client scopes → Add client scope → `kc-admin-api` → Add →
+Default**. BFF admin calls answer 401 until that is done, which is why the version bump is merged only
+when someone is ready at the console.
+
+```mermaid
+flowchart TD
+  bump["Keycloak bump to 26.8.2"] --> mig["migration creates kc-admin-api for admin-cli and security-admin-console only"]
+  mig --> exists{"realm already exists?"}
+  exists -- no --> file["realm file defines the scope and lists it in the default client scopes of mcm-bff-service"]
+  exists -- yes --> twofa{"can ensure-admin-api-scope.mjs sign in as an admin?"}
+  twofa -- yes --> dry["without --apply it reports the missing steps and changes nothing"]
+  dry --> apply["with --apply it creates the scope and assigns it"]
+  twofa -- no --> console["operator assigns the scope in the admin console"]
+  apply --> done["mcm-bff-service carries kc-admin-api as a default scope"]
+  file --> done
+  console --> done
+  done --> api["Admin API calls answer 200"]
+```
+
+The two paths to the same realm state: a fresh realm gets the scope from its realm file, an existing one
+from the script or, when the admin needs two-factor, from the console.
+
+### The service-account roles
+
+Production's realm was configured by hand and had drifted from what the BFF needs — and CI can never see
+the difference, because it imports its own realm file into a fresh volume on every run. Measured on
+production on 2026-11-07: `mcm-bff-service` held `manage-users`, `view-users`, `query-groups` and
+`query-users`, so the client lookup answered **403**; account deletion failed for an administrator, and
+self-registration would create an account and then fail to give it a role. `prod-realm.json` defined no
+service account at all, which is how the hand-made state survived a rebuild unnoticed.
+
+`prod-realm.json` now defines the `service-account-mcm-bff-service` user with exactly three
+`realm-management` client roles: **`view-users`, `view-clients` and `manage-users`**. Two negative
+facts are as load-bearing as the positive ones:
+
+- **`manage-clients` is deliberately NOT granted in production.** It would let the BFF edit any client,
+  which is a broader privilege than the flows need. The CI and dev variants still carry it, because
+  there `/bff-api/auth/init` is expected to register redirect URIs itself and that write needs it.
+- **`query-clients` is not a substitute for `view-clients`.** The lookup answers **200 with an empty
+  list**, which reads as "no such client" rather than as a missing permission — the failure mode that
+  made production's drift invisible rather than loud.
+
+`manage-clients` includes `view-clients` (measured on 26.8.1 and 26.8.2), so CI and dev satisfy the
+requirement with `view-users`, `manage-clients`, `manage-users`, while production needs the narrower
+`view-clients`. A fresh import of the rendered `prod-realm.json` lets the service account create a user
+(201), look up a client (200), read a role (200), assign `mc-user` (204) and count `mc-admin` (200), and
+refuses it a write to a client (403).
+
+### The six redirect addresses production must list itself
+
+Production's `movie-collection-manager` client lists the six addresses `/bff-api/auth/init` registers, in
+place of the earlier `https://mcm.${BASE_DOMAIN}/*` wildcard: the web OAuth callback, the
+`login?verified=true` verification redirect, the native `mcm-app://native-auth-callback`, the
+backup-consent callback, the account-deletion step-up callback, and `mcm-app://account-delete-callback`.
+That route is additive and self-healing in dev and CI — it PUTs the client back with
+`[...existing, ...missing]` — but the write needs `manage-clients`, which production does not grant, so
+there it has to find nothing missing and attempt no write. The list is therefore *closed* in production:
+it is committed state, not something the running app maintains.
+
+An address left out is refused by Keycloak with 400 `Invalid parameter: redirect_uri`, and that is the
+shape the production defect took: on 2026-11-07 `/auth-callback` answered 200 while
+`/bff-api/account/delete`, `mcm-app://account-delete-callback` and `/login?verified=true` all answered
+400, so no account could reach the deletion sign-in. A fresh import of the rendered `prod-realm.json`
+accepts all six listed addresses and refuses an unlisted one, on both 26.8.1 and 26.8.2. The operator
+procedure for putting these into a running production realm is in
+[Server setup](../runbooks/server-setup.md); the why is above.
+
+### Why CI cannot see any of this
+
+CI imports its own realm file into a fresh volume on every run, so a green `app-ci` proves the committed
+realm is coherent — not that production's realm is. `prod-realm.json` applies only when the realm is
+first created, because import is `IGNORE_EXISTING`, so a realm edit reaches production only through the
+console, and the omission surfaces much later as a 401 or a 400 on a flow CI never exercises.
+[Renovate](../runbooks/renovate.md) records the corollary for version bumps: before merging a Keycloak
+bump, start the old version, upgrade its data to the new one, and call the Admin API — because fixing
+the realm file turns CI green while an upgraded realm still answers 401 until the script has run or the
+console assignment has been made.
 
 ## Why the token lifespans differ
 
@@ -431,7 +556,27 @@ require byte equality, because redirect URIs and token lifespans may legitimatel
 Both throwaway realm files (dev and CI) seed `e2e-test-user` (`mc-user`) and `e2e-admin-user` (`mc-user`
 + `mc-admin`), plus reconstructed `service-account-<clientId>` users carrying the service accounts'
 roles — a partial export does not include service-account role mappings, so a naive import would mint
-tokens that authorize nothing. `prod-realm.json` seeds no users at all.
+tokens that authorize nothing. `prod-realm.json` seeds no interactive user; its one `users` entry is the
+`service-account-mcm-bff-service` user that carries that account's `realm-management` roles, and it has
+no credential.
+
+Two further guards cover the production-only realm facts above. Both live in `scripts/__tests__/` and
+are executed by the `guardrails` job's `node --test scripts/__tests__/*.test.mjs` step, next to
+`keycloak-realm-schema.test.mjs` and `check-realm-consistency.mjs`:
+
+- **`keycloak-admin-api-scope.guard.test.mjs`** fails if any of the three realm files loses the
+  `kc-admin-api` scope, changes its mapper set away from exactly `oidc-admin-api-audience-mapper`, or
+  drops the assignment from `mcm-bff-service`'s `defaultClientScopes`. It also pins the script's
+  contract: a mistyped `--apply` variant exits 2 as a usage error *without* contacting anything (proved
+  against an address nothing listens on), `--help` exits 0, a missing `KC_ADMIN_PASSWORD` exits 2, and
+  `planSteps` returns only the steps still missing.
+- **`keycloak-service-account-roles.guard.test.mjs`** fails if any realm file's `mcm-bff-service`
+  service account loses `view-users` or `manage-users`, or loses both `view-clients` and
+  `manage-clients`; asserts that `prod-realm.json` grants exactly `manage-users`, `view-clients` and
+  `view-users` and nothing more; and reads the address list straight out of
+  `frontend/mcm-app/src/app/bff-api/auth/init+api.ts` and asserts production's
+  `movie-collection-manager` redirect URIs equal it as a set — six addresses — so `/bff-api/auth/init`
+  cannot start registering an address production does not list.
 
 On the dev side, `node scripts/gen-dev-secrets.mjs` mints the realm/client secrets into the gitignored
 `stacks/auth.env`, and `node scripts/gen-dev-env.mjs` projects the *same* values into the BFF env
@@ -562,7 +707,9 @@ overlap or the old restart policy fails CI rather than the next reboot.
 the realm database has no admin. The hardened posture is to log in once, create a named admin with 2FA,
 and delete the bootstrap user, after which those values are inert. Keep them configured regardless:
 they are fail-fast `${VAR:?}` references, so removing them breaks every redeploy, and a fresh database
-deploy needs them to create the first admin at all.
+deploy needs them to create the first admin at all. That deletion is also why the `kc-admin-api`
+assignment on production cannot be scripted: `ensure-admin-api-scope.mjs` signs in with a password only,
+and the account it would have used no longer exists.
 
 **Pin the issuer, and let the backchannel resolve per-request.** `KC_HOSTNAME` fixes a stable token
 issuer regardless of the host a request arrives on, while `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` lets
@@ -607,12 +754,29 @@ elsewhere: the BFF's RFC 8693 mint 401s with `invalid_client`, the gateway then 
 subject token, `needs_token` tools short-circuit with "No caller identity", and the failure surfaces
 as an agent that answers from TMDB and cannot resolve the user's collection.
 
-**Client redirect URIs are part of the realm, not the app — and two different mechanisms keep them
-there.** `add-container-redirect-uris.mjs` exists because the containerized BFF (dev `:8082`,
-prod-style TLS `:8443`) needs its callback and `login?verified=true` origins allowlisted on
+**A production realm that answers 401 or 400 on an Admin API call is missing realm state, not broken.**
+The two failure signatures introduced by features 090 and 092 look like unrelated bugs and are both
+realm facts:
+
+- **401 with `Expected audience not available in the token`** on every BFF admin call means the
+  running realm's `mcm-bff-service` lacks the `kc-admin-api` default scope — the Keycloak 26.8.2 case.
+  Fixing the committed realm file does not touch a realm that already exists.
+- **400 `Invalid parameter: redirect_uri`** on a flow's authorize request means that flow's callback is
+  not in `movie-collection-manager`'s redirect URIs. In production nothing will add it for you, because
+  the route that would have needs `manage-clients`, which production deliberately does not grant.
+
+Both are realm-side; neither is visible to CI, which imports its own realm file. Which addresses and
+roles production must list, and why, is in the service-account section above.
+
+**Client redirect URIs are part of the realm, not the app — and three mechanisms keep them there.**
+`add-container-redirect-uris.mjs` exists because the containerized BFF (dev `:8082`, prod-style TLS
+`:8443`) needs its callback and `login?verified=true` origins allowlisted on
 `movie-collection-manager`; without them Keycloak rejects the callback after login. The mobile deep
 link is the same kind of entry — `prod-realm.json` carries the custom-scheme callback alongside the
-public web origin — and its absence breaks on-device login only after the browser redirect.
+public web origin — and its absence breaks on-device login only after the browser redirect. In
+production the list is also *closed* rather than merely populated: the service account has no
+`manage-clients`, so the runtime path below cannot add anything there, and the six addresses are
+committed instead (feature 092).
 
 The runtime twin is `ensureClientRedirectUris` in `frontend/mcm-app/src/bff-server/keycloak.ts`, called
 from `GET /bff-api/auth/init` on app mount with the complete list — web OAuth callback, verified-email
