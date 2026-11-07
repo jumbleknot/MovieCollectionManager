@@ -16,7 +16,10 @@
  *   1. write res/xml/network_security_config.xml
  *   2. point <application android:networkSecurityConfig="@xml/network_security_config">
  */
-const { withAndroidManifest, withDangerousMod, AndroidConfig } = require('@expo/config-plugins');
+// `expo/config-plugins`, not `@expo/config-plugins`: the app does not depend on the latter, and on
+// SDK 58 nothing puts it within reach, so `expo config` (and so prebuild and expo-doctor) failed with
+// `Cannot find module '@expo/config-plugins'` (feature 087). `expo` re-exports it for exactly this.
+const { withAndroidManifest, withDangerousMod, AndroidConfig } = require('expo/config-plugins');
 const fs = require('node:fs');
 const path = require('node:path');
 

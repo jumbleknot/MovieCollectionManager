@@ -288,6 +288,22 @@ jobs:
         # mcm-app is affected and a cache hit otherwise. It is here rather than in guardrails because
         # it needs the built artifact, and nx's affected graph is what keeps it off unrelated pushes.
         run: bash scripts/ci-log-step.sh affected-nx pnpm nx affected --target=lint,test,typecheck,bundle-budget --base=origin/main --head=HEAD --exclude=mc-service
+      # Feature 087 (research R15) — the constitution asks for regular `expo-doctor` audits and no
+      # workflow ran one. NON-BLOCKING by design: some of its checks call Expo's and React Native
+      # Directory's servers, and an outside service must never be able to block a merge. So
+      # `continue-on-error`, and its result is READ, not trusted: a red here means "go and look".
+      # Runs only when mcm-app is affected. `expo-doctor@1` is a major pin, as `renovate@44` is in
+      # renovate.yml. Bounded at 300 s by `timeout` on the command itself: this job sets no step
+      # backstop, and it must not set the variable app-e2e's backstop guards read.
+      - name: expo-doctor (non-blocking audit)
+        continue-on-error: true
+        run: |
+          if pnpm nx show projects --affected --base=origin/main --head=HEAD | grep -qx mcm-app; then
+            cd frontend/mcm-app
+            bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" affected-expo-doctor timeout 300 npx --yes expo-doctor@1
+          else
+            echo "mcm-app is not affected; expo-doctor skipped"
+          fi
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

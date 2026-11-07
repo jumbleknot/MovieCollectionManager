@@ -74,3 +74,5 @@ mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 #   take a while. ~24 non-agent flows x 2 attempts. The 2700s backstop bounds it; the job ceiling
 #   is raised to 110 min in full mode so backstop + digest still fit.
 # maestro-full-results	-	new with the full mobile suite; prints the per-flow results table (a cat).
+# affected-expo-doctor	-	new in feature 087 (R15); runs in the `affected` job, not app-e2e, and NO observations
+#   yet. Non-blocking (continue-on-error). Bounded by `timeout 300` on its own command.
