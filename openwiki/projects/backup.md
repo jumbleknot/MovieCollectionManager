@@ -7,6 +7,8 @@ resource: infrastructure-as-code/backup/README.md
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
+  - id: openwiki-source-ceecf221f842ba07ba6a91b2
+    resource: repo://.forgejo/workflows/registry-retention.yml
   - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
     resource: repo://docs/runbooks/Server-Setup-Runbook.md
   - id: openwiki-source-22fe053486b82dac6259f473

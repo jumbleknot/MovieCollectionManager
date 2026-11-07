@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d26629a77144dcd711af3d28dd65651f85cadd5c50e421ef8e2cc268f23c867b",
+  "pageVersion": "sha256:d2eb208b6d4ae128170d90d63d1c54e372d2d25d315a47c7bce3a7bc46fdd4e2",
   "claims": [
     {
       "id": "claim_6aaba74607e949ecbb35e08b06560661",
@@ -132,7 +132,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -156,7 +156,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -170,7 +170,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -188,7 +188,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -198,7 +198,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -208,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -218,7 +218,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -232,7 +232,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -274,7 +274,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://scripts/backlog.mjs",
@@ -474,7 +474,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -598,7 +598,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -626,7 +626,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -750,7 +750,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://scripts/reap-merged-branches.mjs",
@@ -764,7 +764,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -778,7 +778,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -792,7 +792,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -824,7 +824,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs",
@@ -838,7 +838,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         },
         {
           "resource": "repo://renovate.json",
@@ -856,13 +856,49 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
+        }
+      ]
+    },
+    {
+      "id": "claim_9137b3410cff4271bb4907f530d4d7ea",
+      "statement": "Two further toolchain residuals are accepted rather than fixed: `curl https://sh.rustup.rs | sh` stays an unversioned script piped to `sh` in three workflows and the toolchain image, because what it installs is the rustup bootstrapper while the compiler is chosen by rust-toolchain.toml, and the two pinnable alternatives cost more than they buy (the archive binary hard-codes the architecture and the archive script path cannot be verified from the dev container because static.rust-lang.org is not on its egress allowlist); and backend/mc-service/Dockerfile still builds FROM rust:alpine3.21, a version-less tag whose digest Renovate can churn but whose update can never be classified, recorded in rust-toolchain.toml and in the rust toolchain rule with a guard asserting the toolchain group does not claim it.",
+      "evidence": [
+        {
+          "resource": "repo://backend/mc-service/Dockerfile",
+          "version": "repo-file-v1:sha256:4de4aac95bf3d152dac120015ebbf6c97b44422fe62f7f981476de092486b5f0"
+        },
+        {
+          "resource": "repo://docs/runbooks/renovate.md",
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
+        },
+        {
+          "resource": "repo://renovate.json",
+          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+        },
+        {
+          "resource": "repo://rust-toolchain.toml",
+          "version": "repo-file-v1:sha256:029517e3b1759c7889f6083bfc2f70cdf779b521e2441cfb770c93d2f2c1b771"
+        }
+      ]
+    },
+    {
+      "id": "claim_d400091c1fd143a8a5bde729ef33e1ec",
+      "statement": "Exact-patch pinning of the config validator was tried once and reverted (item #631): both invocations were pinned to renovate@44.131.0 from 2026-10-02 to 2026-10-10 because renovate 44.131.1-44.132.1 depended on a @yarnpkg/core published with a Yarn-only patch: spec that npm cannot install (EUNSUPPORTEDPROTOCOL), and under npx that failure exits 1 printing nothing but the path to npm's log; every release from 44.132.2 on is back on @yarnpkg/core 4.9.1, so the pin returned to the major on 2026-10-10.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml",
+          "version": "repo-file-v1:sha256:98edaebfecd49bd8677036df4df643e2d4812ea5ec333cafda08becb04f3c60f"
+        },
+        {
+          "resource": "repo://.forgejo/workflows/renovate.yml",
+          "version": "repo-file-v1:sha256:90ddb4a4fa64a1390f446c30016fc4e7e388be63b051ffc3242de7875ad1c318"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T17:50:21.605Z"
+    "at": "2026-11-07T05:57:36.933Z"
   }
 }

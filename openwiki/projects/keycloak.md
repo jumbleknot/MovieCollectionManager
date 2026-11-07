@@ -83,6 +83,8 @@ sources:
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
   - id: openwiki-source-6bbbd430d1641897fad87ccd
     resource: repo://infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs
+  - id: openwiki-source-100352d0b8b84569e79b6c28
+    resource: repo://infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
   - id: openwiki-source-4042a47526d6016cff835628
     resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
   - id: openwiki-source-8e2135ee1e81e6877b010809
@@ -99,8 +101,12 @@ sources:
     resource: repo://renovate.json
   - id: openwiki-source-b2ca74a715a45afd3a6741ef
     resource: repo://scripts/__tests__/e2e-worker-session.test.mjs
+  - id: openwiki-source-6f82ff35957c317878203b8f
+    resource: repo://scripts/__tests__/keycloak-admin-api-scope.guard.test.mjs
   - id: openwiki-source-18c29c2650068d3600a02d5a
     resource: repo://scripts/__tests__/keycloak-realm-schema.test.mjs
+  - id: openwiki-source-e1fdca7abfc27f03b9de0dbd
+    resource: repo://scripts/__tests__/keycloak-service-account-roles.guard.test.mjs
   - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
     resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
   - id: openwiki-source-6a31387312db2b158048d4d9
@@ -123,6 +129,10 @@ sources:
     resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
   - id: openwiki-source-511cf70d08e685e1be0170b8
     resource: repo://specs/083-backup-consent-session-isolation/spec.md
+  - id: openwiki-source-9cf3b6bdb4f757d661e84469
+    resource: repo://specs/090-keycloak-admin-api-scope/spec.md
+  - id: openwiki-source-210be746e72ce9b5abe32746
+    resource: repo://specs/092-prod-service-account-roles/spec.md
   - id: openwiki-source-aa8b20a71f803c01384f8201
     resource: repo://verify/verify-fresh-realm-seed.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-24T02:14:36.804Z" }
