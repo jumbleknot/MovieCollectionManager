@@ -4,17 +4,6 @@
   "lastOutcome": "failed",
   "backlog": [
     {
-      "area": "projects",
-      "pages": [
-        "keycloak.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
       "area": "runbooks",
       "pages": [
         "renovate.md"
@@ -22,14 +11,13 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/renovate.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/renovate.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
     }
   ],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 936,
-    "headCommit": "2b7935a496c97e1ab5f2abb1344aeb05d95c8301",
+    "headCommit": "89ae25031d3d6aac0b89a40ab45cc880765b40ae",
     "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
@@ -87,29 +75,67 @@
         "areaExists": true,
         "reason": "source changed: frontend/mcm-app/README.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "keycloak.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md"
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "server-setup.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
+      },
+      {
+        "area": "gotchas",
+        "pages": [
+          "keycloak-service-account.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: frontend/mcm-app/src/bff-server/keycloak.ts changed after the page's stamp"
       }
     ],
-    "updatedAt": "2026-11-06T10:24:45.144Z"
+    "updatedAt": "2026-11-07T05:57:08.078Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 736,
+    "pagesWritten": 8,
+    "elapsedSeconds": 3104,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "runbooks/renovate.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-07T05:57:07.433Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 239,
-    "failedCalls": 42,
+    "calls": 682,
+    "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 953535,
-    "cached": 16086398,
+    "uncached": 4014656,
+    "cached": 71795684,
     "cacheWrite": 0,
-    "output": 198168,
-    "reasoning": 154087,
-    "ms": 1067902,
-    "estCostUsd": 0.6204,
+    "output": 1100878,
+    "reasoning": 930238,
+    "ms": 5171133,
+    "estCostUsd": 2.9562,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -120,11 +146,13 @@
     {
       "pages": [
         "projects/keycloak.md",
-        "runbooks/renovate.md"
+        "runbooks/renovate.md",
+        "runbooks/server-setup.md",
+        "gotchas/keycloak-service-account.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 0.6204,
+      "deadlineStop": true,
+      "estCostUsd": 2.9562,
       "rateLimited": null
     }
   ],
