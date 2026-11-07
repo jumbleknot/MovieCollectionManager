@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d28edacfea2bdf33c180331a8dfeb465856b41225ffd75bcfbbf843d39a561d4",
+  "pageVersion": "sha256:70ddeb6b84e948566623c1b15d0fd81d6d36f822710e477922a40f2f312e59c5",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -92,15 +92,27 @@
     },
     {
       "id": "claim_bf259f1b431f4d8eb13f4a0b03e2db57",
-      "statement": "The bounded web cold-load exception is enforced as a byte ceiling on the mcm-app web entry chunk (2,000,000 bytes against a measured 1,762,630) by `scripts/check-web-bundle-budget.mjs`, which also asserts that deferred packages are absent from the entry chunk and server-only code is absent from every client chunk.",
+      "statement": "The bounded web cold-load exception is enforced by `scripts/check-web-bundle-budget.mjs` through the `bundle-budget` Nx target as a committed 2,000,000-byte ceiling that feature 087 repointed from the `entry-*` chunk to the **cold-load total** — the sum of every script the worst exported page loads, read from the exported HTML — measured at 1,892,065 B on the SDK 57 baseline against the constitution's own exception clause, which still describes an entry-chunk maximum and cites 1,762,630 B. The same gate also asserts that deferred assistant-runtime packages are absent from the entry chunk and that server-only code is absent from every client chunk.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "resource": "repo://.specify/memory/constitution.md#L296-L300",
+          "version": "repo-lines-v1:sha256:c85ee81b67477442b76658350da479c56f13321645a0cb9acbe8999a33826a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExZTIwMzZjZDkzNTI1ZTY3MTI0YmQ0ZmNlOTc3MTEzOWRjNTUyZjE2N2E5YTQxYjBhMjg5ZjJjMTZiNmE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNlODkxZjdlMmFhYzc0NjBiOTk0NGJiNGRmYWMxYzE0NGVjM2Q5ZTRhZDhlMTg1ZmMxNzQxNzNiMDcxYjljYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L137-L151",
+          "version": "repo-lines-v1:sha256:3953c522ea679b1e3b3bc8e3d510caa7dac82a577c8c9aa8a733b6638b93f878:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjJjYjU5ZTAyNzVmNTI0MGFhNGMzMmI4NzdmMjVkNDUxYzRkNTc1YzQzZjRkMWI2ZWMwNWM1ZmEzMWIxNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlMzIyZTAzNjNjZjNiOGNhYTllZjdhYjg3MzYwNDNkNmUzOTYzOGE2MjRhMjRiZTg2ODNkYmQyMWQwMGE0NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3OWY3MmYyZWZiMDFlYzMwM2I4NmIwMTczMTc4YmFlNDhjYzcyNDc0NWU0NmI5ZWNlYTZhZTNmNjRmZTk4NzMifQ"
         },
         {
           "resource": "repo://scripts/check-web-bundle-budget.mjs",
-          "version": "repo-file-v1:sha256:315cd4203595986d02220d7aee834adba9532d74d8410232254c95776bf3e5f8"
+          "version": "repo-file-v1:sha256:c988751458daf795d427bc724340e37de44b3c1a7a3f8bd505eda0518259bb7f"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/web-gates.md#L13-L24",
+          "version": "repo-lines-v1:sha256:932b0521eccdff320423189875e09d3aca8f6c02d4b5f2a8f3f94128ddcdc120:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2ZkOGRjNjBlY2U0ZGEwNGU2OGVhYTdjMjQxODcyOWQ4NTBhMTc3ZWMyYzRkYjdmYWExNTBmMDkzNzQ1YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkODIyZTBiNjczOTYyYjdhMGY1MWI4NzQxZWZmMDY5OTgwZDgzOWUxODc4MzVhZmIxMjNkZGVhMmU1ZDRhNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTNmNTI1MjdmNWQwMjJiZWMyYWNjMTQwN2Y5ZmViODJhYjU2MmQwYTM5YzYyZWY4NDYwODM0OTJmN2QxNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNzEzOGQ5ZDY5MDQyYjYxNWQwY2Q4NmI5ZTEwN2EyMTUwMzY4MmZlYzZmYjFmYTk1OGY1ZThiMGE4N2FlYWMifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md#L292-L292",
+          "version": "repo-lines-v1:sha256:7cadc4f826ad32809bccfe9d815e1a8acb6c10db010e4e1517c7a9e8bf23b20c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZGM0ZjgyNmFkMzI4MDliY2NmZTlkODE1ZTFhOGFjYjZjMTBkYjAxMGU0ZTE1MTdjN2E5ZThiZjIzYjIwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZGM0ZjgyNmFkMzI4MDliY2NmZTlkODE1ZTFhOGFjYjZjMTBkYjAxMGU0ZTE1MTdjN2E5ZThiZjIzYjIwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDY5ZWFjMDlhNmViZjM4MTZmYjM4NjI0NjU3OTYyZjQwZjY5NWFkY2JiNjAwNjEyNWQ3NWIwNGZkYjAyMmFkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ4OGIzMjYxNDJjMDkwYjE3ZTZkMjcwNzAwMTQ1MDU1NmZiNTVkMDE0OTBiNjczYzQ2NGY3OWEyYmQxOGJlNCJ9"
         }
       ]
     },
@@ -222,7 +234,7 @@
         },
         {
           "resource": "repo://frontend/mcm-app/README.md",
-          "version": "repo-file-v1:sha256:337959539971dc097ff49af87fb594c1ee14eea5d082dc3768e8e26ee3e5b41f"
+          "version": "repo-file-v1:sha256:d402904fb60feb951cdde3a6a92159bb3f666a3210e1d4ece9a29597bd78958c"
         },
         {
           "resource": "repo://frontend/mcm-app/babel.config.js",
@@ -371,10 +383,80 @@
           "version": "repo-lines-v1:sha256:f5d1cd5bb9f2960cfa040c76106905c55e69d96ba3863f24c2914b93305c09db:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE1NjIxZWQ4ODk2Y2I5YjNlOWJkODQ0OTQwMjZlYjk3ZGFmMjhmNWExYzA5Y2M1Yzc0ZTdjNWM2MWM4MGQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q0ZDExOTkxZjkzMTdlNDM0OGUxZDhmMjdkMzcyZmU1NDI3NTkzZWI3ZTA3ZjdmNjQ3OWM2ZjI5YzdiZmQ4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYzMDgxYTM1NDk4YjljZWZkYmI4ZTQxMTIzZGRhNGQ4NDZkMzE5YzBiMGQ4NTAyYTFkOTAxNWFmNmY1ZjViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIzODc2MTYyNTYxMDE1M2ExNzE4NzFjZTkyYWY4OTcwZWIyMDQwOTFjOTBlODVmYjhhOGQ3MDg1ZDlmYzUyZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_05f33d03896f493dba9b6c7004d5e113",
+      "statement": "The bundle gate's inline-script assertion and the web content-security-policy cannot disagree: the gate reads `INLINE_SCRIPT_HASHES` from `frontend/mcm-app/web-security-headers.js` through `createRequire`, hashes every inline `<script>` body exactly as the browser would, and fails an unlisted one offline while printing the `'sha256-…'` value the reviewed allowlist would need rather than granting permission to add it. The Nx `bundle-budget` target invokes the gate with `--require-maps` so a missing source map fails loudly instead of silently narrowing the check to the byte budget, and the web cold-load performance E2E keeps its own transferred-JS ceiling (1,950 KB) in step with the same 2,000,000-byte figure.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/project.json#L137-L151",
+          "version": "repo-lines-v1:sha256:3953c522ea679b1e3b3bc8e3d510caa7dac82a577c8c9aa8a733b6638b93f878:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZjJjYjU5ZTAyNzVmNTI0MGFhNGMzMmI4NzdmMjVkNDUxYzRkNTc1YzQzZjRkMWI2ZWMwNWM1ZmEzMWIxNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlMzIyZTAzNjNjZjNiOGNhYTllZjdhYjg3MzYwNDNkNmUzOTYzOGE2MjRhMjRiZTg2ODNkYmQyMWQwMGE0NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3OWY3MmYyZWZiMDFlYzMwM2I4NmIwMTczMTc4YmFlNDhjYzcyNDc0NWU0NmI5ZWNlYTZhZTNmNjRmZTk4NzMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/perf.spec.ts#L75-L86",
+          "version": "repo-lines-v1:sha256:3620b26f2688a580ad602ced51a9fb2496aeddfd25e22cfada363ffa56e94795:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1NTAzZGI1ODc2ZGM4ODIyZjBmZmYxNWEzMWY1N2YzNTYyMDhhYzc3ODE3N2U1MWRiZTZjNWJkNDFiM2M2YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjQ1M2JhNzFhMmQyZjYxZWNmZTMzNDZiZGM4MWE2NzMwNGQ5YjcyNDM1NDVjNzBjYmQwYzg2NjQ1ODFiYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YTIxNThjYjQzMzIzODA1OWQxYmVmMjllYWUzYTcwYzVhZmFiOTJjMjg3MmE1ZTc5NmE3ZDBmMGU0MmE4NGEifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L19-L39",
+          "version": "repo-lines-v1:sha256:6a36920a73edc8e2ef48f741c5afb74b0331a09405bfcb794a4d079fadf6fce5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZDJjZGIyYjdjZjJiOGQwMmI1NzQyNmRlOWVjNjk3MzY0ODM0YmQ0M2E5MDI2ODM2MzZmNzI1NDY2ZDY4MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYzc2YTBmYmJkY2Y2MGM2NTEwYTU1ZjcwMjFhMmY0M2E3MmIyY2FlZTg1Y2ZhYWFlOGM2MWRjZjE5NDEzZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZjMyMzdkM2Q0NDI5YWRhOWRkZjc1YzU0NjEzN2NhOWNkZjYxYTU4ZmFjOTU2NWI4ZjU3YzllZjUzZjdjODAifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L210-L230",
+          "version": "repo-lines-v1:sha256:2ea3d79e72f7777325ed01ad56c2d7bb979b5f253adf601e0ecd6aaf9c08d87a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ODVkNjU4NTA4ZGZkMGZlYmM3NTQ3NTFlYTBhYjM5OGMwOThjNTBkNGIxOThhYWM2MjE4ZDZiYmRhMjQwZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNWRlNjM4ODMwOGNkYzQ5MjZjMDRkYTdlMWQyZjA2ZjhmYTdkZjg4YjExNDQyNWM1YjIwZmI3MjlmZTc3MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzliYzYwNTczN2Q2YmJhNDAyZGRhNGY2ZmU2YTUxMjcwOWEyMDY1YmY4OTcxMWRkNjBkOTM4NDEwMGYxZmIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L293-L308",
+          "version": "repo-lines-v1:sha256:59d4bcbfd446006dd3fbda25aa4c93cf90bfd73f9e52c622284e70b3ff7be876:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMzRjODA3NzZiZTQwMTZiNjFkZGM0Yjg1NzM0ZjMzODdkMTcwNWU3ZmRhMzhhN2UyNDRkY2E1MjFmY2VkYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZDY4MmU4ZDFhMWRlYmRlODFkMTM5ZWRmNDlhMWM2ZGUyMTNlNzgyNmYyZDI4Y2Y4NjJkOTQxMDRmMzM2MTQifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L32-L36",
+          "version": "repo-lines-v1:sha256:c6bb412646f95d1477c9fa62a5015f7f7a8f3e36a7003148f1947d01a5aa8bc2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZlNmM0ZWM2M2Y1ODU5MDVlY2I1YzA3MDk1MzUzMzE4Y2Y3NDc1NWQyZjUxYmNkNDY4MDkyYzdiZjIyZGY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJhYmYxOTEwNzJhNTY0NWIwOGUxNmEzM2M3NzNhZWRlMzBjZGFjMGUxMTY4ZjMxZDI4NDlhMDg3MDYzMjg3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFhOWVlYmI4NTAyYmY5NjVhODFkNmY5NmNlYzBkYmNmZmQ2ODJhYjRhYTZlODc2M2NiZDQ5YWM5YWVkYzc2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTZkYjQ4ZWFlNmRjN2Q1NmYxOTM1ZmRhY2RjMTZmN2IxNzYzY2Q4YmM5YmFmZWM1OGYzOTk0MTVjYjA2OWJlNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_47bf2da56a78403b870a39da5b808850",
+      "statement": "The gate's module lists are its extension points: `DEFERRED_PACKAGES` names the assistant-runtime packages (`zod`, `graphql`, `@copilotkit/`, `@ag-ui/`, `rxjs`, `@bufbuild/protobuf`, `text-encoding`, `web-streams-polyfill`) that the principle's lazy-loading clause requires to stay out of the entry chunk, and `SERVER_ONLY` names `src/bff-server/` and `luxon`. The escape hatch beside them, `SERVER_ONLY_EXEMPT`, is empty by design because item #566 relocated the browser's axios transport to the Utils-Layer, so `src/bff-server/` now means server-only without exception; a future entry there is deliberately two-sided — it must be paired with a `@client-safe: <reason>` marker in the module itself, which `scripts/check-no-server-imports.mjs` reads — and one without the other is an unexplained hole in whichever gate lacks it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-web-bundle-budget.test.mjs#L152-L171",
+          "version": "repo-lines-v1:sha256:f113037028082b9fccbe17d47529ec6736da7be5bf22fc00e23414759e06a15b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NmYzMTYyYTJlOWFhZDA3NjNmOWM4ZWQ0NTZiODdmNGExMzBjYzMxMzA1OGEzMjIxZjUzZjA2YmZjN2EzYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZjMwODBiYTUyODkyYmUzMmJmODg5ZjhjZWQ1MWVhYTBlYWYyZTUzNjYyNDM0OWRlYjNiMmFmYjkyYTc3YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNDY4ZTc3NjY1ZTliYmI2ZDBlYjFlMjlhYjE1Njk1MjcwOGQ3ZjNhZGM3MTcwMWRhMTYyMmM5MTFkOGFhNmMifQ"
+        },
+        {
+          "resource": "repo://scripts/check-no-server-imports.mjs#L22-L33",
+          "version": "repo-lines-v1:sha256:3fa31155897c0631cc3ac9a8fb24f3ab6fddab4879f2f1a67b921812c1abd831:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYmE2N2EzOGU3YTllNTU0YTIyNWY2YTYyYTczZGY5YjhkMTU4YWI3YWQxNmRlMjg2NTNmNDJmNmU5ZGIwMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MDBlYWFkNzY3N2I3ODljNTQxZThlOTc5MzExZjc3ZTYyZTQ5OTBjYmI3ZmVhMjYwYTliZjE4ZWZhZmEwY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZWU1MzE1NTM2NGQ2MGRiNzFmMTdkMmI2OTE0NGM4ZjFmNGVmYzdkMmQ1ZTAyMDc5YTRlYzQyNzYzNTJlZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MjE1Yzk5YTRhMTk2ZmI5Y2QzZDljMWE2NWY1MWYxYjRmNTZkNmUxNmJmMzRhNTdjOGJjMjIwYjZhYmJlZTkifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L26-L30",
+          "version": "repo-lines-v1:sha256:0eb8dce17c94994a6416fd5f1af2dc49c91991185d69e8d140b0a0bb8e7eb702:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVmMDQ4ZGQ4MTI1MGQwZDE0MzJiNGVlMTkwN2RlMDMyYjViYWJiNDM3MWJkNGRkOTE1MzU1ZmVmMDJiOTQ0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY4M2M0MTAzMWZiZWEyYmJjMDk0OTAwMTkwOWQ3NmM3MGY2OWY0ZDNjOGQ2NjEwNDJjNWE2M2U0ZmQ1ZjQwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjdjOGRjYjA2Y2I4YjZmNjY2NTdhNDNjMTg0NjFjZjJhZTQyMzlhNDExZGE1NjI4NDlhNjMyYzZlNGUzYTZiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2E1ODhiMDM4MmYwY2JmOWE3NzFlYTg0Njg4NWQ2ZGQ5ZGZlZGQxMTAzZTRhN2E0Nzk3ZTU2MThkNTBmNmI5MiJ9"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L74-L99",
+          "version": "repo-lines-v1:sha256:a3f31dca02f1464568fa5b1e3889b3579da1a22cf8e063baad8844ee15cffe59:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGY4MDlhMTc3YzNmYTMwODc3ZWY5YzY0M2E3MWJlNTFjY2RkZjU1MjJhODdjNzBlYTMwMDFkMzY0ZjgyMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YmMwZDJkYjQzZDMwMDdiNWU0YjVjMzYxNTIxZWJjMGJjYmM5NWY3YjMxNTZkNmE0MjRhNDljYjI4ZWJkNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkOTg2ZDhiYjI1ODI3Y2NkNjM5OGRlMDkyODhiODgwMTg4YjU4YWFjYmQzOWRhODFhYzYxNTgwOTAzZmQwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMTVjMzlkODk0MWQxODI0ZTIzNzg2OGI4NTVhMGNkZjBhOTE3NTc4NmZmYzk5YjUzZGZhMDdhZmY5MjI3NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_359dc190148540c796873f7c42f90b7a",
+      "statement": "The bundle gate guards itself against reporting clean when it should not: `--selftest` proves the fail and clean paths on synthetic trees, and `scripts/__tests__/check-web-bundle-budget.test.mjs` covers the specific cases where a plausible gate reads clean — no entry chunk at all, two entry chunks, a deferred package back in the entry chunk while the byte budget still passes, server code in the deferred chunk, a missing source map, two chunks that fit apart but not together, and an unlisted inline script.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/check-web-bundle-budget.test.mjs#L1-L18",
+          "version": "repo-lines-v1:sha256:664e0e4da76e59ecddad5301a3812406ba77a04113f12fec94e050b4d2f6bb09:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNjQ5NDNlZGQ1NDNhOWU4N2EzNWU4MTJiYWJjYTgzMDEyMjMxZWI1OTFlYjNlOTAzZThmZmU0MTU5N2M1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGQwN2FkZmNmNjE1NzkyNmNmYzQ5YzlmNjA1YjMzOGNjNTE2MmQwZThkOGNmYzQ5ZjViNTQyYmY0YzdlYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMzY4ZTA3ODIwNjVkMDk4ZGZjZjIxZmQ2NjY4ZDg5NGMzNjBjNTBhZjVkZDZiMzNkNzRhNWNiMzg1ODdmYjIifQ"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs#L370-L481",
+          "version": "repo-lines-v1:sha256:5b6732921da9300d8cf5004cf9b00de80406f3f70256728a1edb1761fd504005:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMjZiMmQyZGY4ZTk1YWU5YzJkNGYyZDM0YTQ2MTY4ODhhODU4MWZjMDliNjg0NjRiOTRmOGQyNTlkNTI2ZjJiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOWM2MmUxYzc0ZGE3NzRkODQ5NWZlMWNmMjE3MDkyNjU2YWMxM2IxZjE4MDYwYTRhNzg2YzdiYzlmODdlZmM1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMWJiZjUzN2UwNjJhZjZhY2JiODQxMGVmZGQyMTEzOTRlMjJjYmI5NGFjNzM0NjZhMjM0YmM1NTQyNmZiYzk3In0"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/web-gates.md#L26-L29",
+          "version": "repo-lines-v1:sha256:1d7b76701c187ba8dc2256aaa33c79efac17bd6de1f5ab32f9694eeca39b9c7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxNDc0OTc3Mjc2ZTlhYzUxYmVlOTE1MTFhMDcxYzNiNmExZmNjN2U4ZWNiMDQyNmY5MDBkZGY3YTRlMGVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM4YTVjYjcxMWI3OTg2OTdiMDAxZGM3YzVlNDM2ODdhZTI0MjQ3ODg5MWFmZDU2Mzk3M2U5MmJlMzVkMDMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg1OGIyZmY5ODBkZDI1YzBiOTNiODU1YTBiMjU0MGZiMmU2MjU4N2E4NzM5ZTVjZTQ2NDJjNGNiZmM2MjlmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQzM2M1ODdkYzNhYjBmNjJhOTlmYzA0ZTAyZGM5ZTgzMzFlMjBlYTM0NjgzMmZiNDhiOGZkMWVjOWMxZjMyMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-07T19:02:58.048Z"
   }
 }

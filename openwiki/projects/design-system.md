@@ -1,7 +1,7 @@
 ---
 type: Service
 title: MCM Cinema design system
-description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring and MD3 state layers, the R1-R7 compliance scan that keeps the app from drifting off it, the Jest preset/resolver and worker-memory bound its suite shares with the app, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
+description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring and MD3 state layers, the exact-version plus single-instance Tamagui lockstep guard, the R1-R7 compliance scan that keeps the app from drifting off it, the Jest preset/resolver and worker-memory bound its suite shares with the app, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
 resource: packages/DESIGN-SYSTEM.md
 tags: [design-system, tamagui, ui, tokens, md3]
 sources:
@@ -86,7 +86,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-04T16:55:00.915Z
+    at: 2026-11-07T19:02:58.048Z
 ---
 
 # MCM Cinema design system
@@ -207,6 +207,17 @@ is a measured decision, not a leftover:
   Tamagui update escapes the single Renovate `tamagui` group — a range lets a partial lock refresh split
   the set and leave two style registries behind. That group rule carries `rangeStrategy: pin` and sits
   *after* the broad `js patch/minor` / `js majors` rules, because the last matching `groupName` wins.
+- **One version is not one instance.** The version tests stop at the `@` of a lock key, so two **peer
+  contexts** of the same version count as one — but pnpm gives each `snapshots:` key its own directory,
+  which is two physical copies of the library at runtime. That was the SDK 58 spike's failure: `expo
+  install` upgraded only the app, this package's devDependencies plus a stale
+  `react-native-safe-area-context@5.7.0` entry gave it a different peer hash, two `@tamagui/web`
+  instances loaded, and every page rendered zero nodes with `Missing theme` while the export and the
+  API routes both still succeeded. So the guard also counts distinct `snapshots:` keys per package
+  (peer suffix included) for `@tamagui/core` and `@tamagui/web`, fails on more than one and names both
+  keys plus `pnpm dedupe`, and **fails on zero keys too** so a parser that stops matching cannot pass.
+  The lock is authoritative, so this needs no install; the check reads only `snapshots:`, because
+  pnpm's lock is a multi-document file whose first document carries its own `packages:`/`snapshots:`.
 - **No Babel or Metro compiler plugin.** Tamagui 3 removed the Babel plugin the app ran from feature
   015, and its intended replacement, `@tamagui/metro-plugin` 3.0.x, was measured and rejected: it
   lowered some web modules to static class names *without emitting their CSS*, while saving no bytes.
@@ -243,8 +254,27 @@ is a measured decision, not a leftover:
   (`fireEvent.press` targets the `Pressable` directly) nor the web tier (mouse events bubble) can see
   it; only Android can.
 
+```mermaid
+flowchart TD
+    A["tamagui-version-lockstep.guard.test.mjs - a node:test file run by the guardrails naming job"] --> B["(a) every tamagui specifier in both manifests is EXACT and the two agree"]
+    A --> C["(a) any tamagui peer range is bounded to the installed major"]
+    A --> D["(b) the lock holds one @tamagui/core and one @tamagui/web version"]
+    A --> E["(b) every @tamagui entry in the lock sits at the manifests' version"]
+    A --> F["(b) exactly one snapshots key per package, peer suffix counted"]
+    A --> G["(c) no @tamagui/babel-plugin in either manifest or babel.config.js"]
+    A --> H["(d) patch, minor and major all resolve to the Renovate tamagui group"]
+    F --> I{"key count is zero, one, or more"}
+    I -- "zero or more" --> J["fail naming the keys and pnpm dedupe"]
+    I -- one --> K["pass"]
+```
+
+The lockstep guard's independent checks: version agreement, single instance, no v2 compiler plugin, and one Renovate group.
+
 Because the pin is a dependency-level constraint shared by two projects, a bump is a cross-repo change:
-the guard, not prose, is the source of truth for what version is allowed.
+the guard, not prose, is the source of truth for what version is allowed. Like the Renovate guards, it
+is a plain `node:test` file picked up by `node --test scripts/__tests__/*.test.mjs` in the `naming` job
+of [`.forgejo/workflows/guardrails.yml`](../../.forgejo/workflows/guardrails.yml), so
+`pnpm nx test design-system` does **not** run it.
 
 ## Framework versions belong to the Expo SDK, not to Renovate
 
@@ -398,9 +428,10 @@ interaction-state guards described above, the controls (`SearchBar`, `Chip`/`Chi
 contract with the app: they assert the observable result (resolved theme values, rendered style, AA
 contrast) rather than the implementation.
 
-Note what the package suite does **not** cover: the Renovate lock guards and the compliance scan live
-elsewhere (see the sections above and the [Renovate runbook](../runbooks/renovate.md)), so a green
-`pnpm nx test design-system` says nothing about either.
+Note what the package suite does **not** cover: the Tamagui lockstep guard, the Renovate lock guards
+and the compliance scan live elsewhere (see the sections above and the
+[Renovate runbook](../runbooks/renovate.md)), so a green `pnpm nx test design-system` says nothing
+about any of them. All three are `node:test` files run from the `naming` job instead.
 
 ## Gotchas
 
@@ -414,6 +445,12 @@ elsewhere (see the sections above and the [Renovate runbook](../runbooks/renovat
 - **Don't add a Tamagui compiler plugin or move off the exact pin incidentally.** The runtime-only
   wiring and the lockstep guard exist because both alternatives were measured and rejected; treat a
   version bump as its own change.
+- **A version bump is not enough — check the instance count.** Adding a dependency that gives this
+  package a different peer context (a stale `react-native-safe-area-context` entry was enough during
+  the SDK 58 spike) keeps one version but produces two `snapshots:` keys, i.e. two copies of the style
+  library at runtime and a blank page with `Missing theme` — with the export and the API still green.
+  Run `pnpm dedupe` and re-run
+  `node --test scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, which counts the keys.
 - **Don't flip the app's default theme or the type scale without revisiting the rationale above** —
   the first is a product decision, the second silently breaks the app's compliance scan.
 - **Never import `Text` from `@tamagui/core`** — use the design system's `Text`, which carries the body

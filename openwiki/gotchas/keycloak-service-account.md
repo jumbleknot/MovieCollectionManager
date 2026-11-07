@@ -1,7 +1,7 @@
 ---
 type: Gotcha
 title: Service account vs admin credentials — Keycloak Admin API calls
-description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout, email verification, redirect-URI registration) authenticate as a dedicated service account via the client-credentials grant, never the realm admin password — with the realm-side requirements that service account needs, a per-call admin token, a duplicated minter in email-service.ts, and the failure paths the BFF re-maps, warns about, or swallows outright instead of passing through.
+description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout, email verification, redirect-URI registration) authenticate as a dedicated service account via the client-credentials grant, never the realm admin password — with the realm-side requirements that service account needs, a per-call admin token, a duplicated minter in email-service.ts, an administrator-equivalent credential because manage-users lets it grant mc-admin, and the failure paths the BFF re-maps, warns about, or swallows outright instead of passing through.
 resource: frontend/mcm-app/src/bff-server/keycloak.ts
 tags: [auth, keycloak, bff, security]
 sources:
@@ -60,7 +60,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-07T19:02:58.048Z
 ---
 
 # Service account vs admin credentials — Keycloak Admin API calls
@@ -173,6 +173,10 @@ status code — `401` and `403` in particular are never propagated.
 | `logoutUserSessions`, `revokeToken` | any | ignored |
 | `ensureClientRedirectUris` | any | warns `redirect_uri_registration_failed` with a `step` and `status`, and stays unrecorded; the caller still gets `{ok: true}` |
 
+The table describes what each *function* does, not what a route ends up answering: `POST
+/bff-api/auth/register` catches `sendVerificationEmail`'s 502 and still returns 201, so that row's
+error code never reaches a caller on that path.
+
 `assignMcUserRole` is the one caller whose whole chain is status-checked. Registration gives a new
 account its access here, so a refusal at any of its three steps has to surface rather than leave an
 account that authenticates and is then refused by the role gate (feature 092, FR-004):
@@ -202,9 +206,12 @@ Three checked steps, one refusal shape: every refusal in the role-assignment cha
 
 `unit-tests/keycloak-assign-role.test.ts` pins each step — a refused client lookup, a refused role
 read and a refused assignment all raise `KEYCLOAK_UNAVAILABLE` with status 502, and a refused role
-read stops the chain instead of posting the error body as if it were the role. Before feature 092
-the client lookup was not status-checked and the role-mapping POST was never inspected at all, so a
-refusal there reported success for an account with no access.
+read stops the chain instead of posting the error body as if it were the role. The test file's own
+header comment records what this replaced: production's client lookup was refused with 403, and the
+role-assignment POST "was never checked at all, so a refusal there would have reported success for an
+account with no access". Feature 092 files that under **No trace**, alongside a register route that
+logged nothing on failure — the half of the production defect that stayed invisible with every CI tier
+green.
 
 The `step` on the last table row is one of `client_lookup`, `client_fetch`, `update` or `error`, so
 a 403 from a service account without `manage-clients` lands in the logs as an `update` (or
@@ -249,6 +256,15 @@ follows the same per-function re-mapping as a 403 and is just as invisible to th
   which writes `service-account-<clientId>` users carrying each service account's realm and client
   roles; [the Keycloak project page](../projects/keycloak.md) covers how the committed realm variants
   are derived from it and how production's own realm is corrected.
+- **The service credential is administrator-equivalent in every realm variant, because `manage-users`
+  lets it grant `mc-admin`.** Reading `mc-admin` needs the client read the account already has
+  (`view-clients` or `manage-clients`) and `manage-users` permits the assignment, so the BFF's service
+  credential can make any account an administrator. Leaking `KEYCLOAK_SERVICE_CLIENT_SECRET` is
+  therefore a path to full platform administrator access, not merely to registration. Feature 092
+  measured this on throwaway realms while choosing production's role set and recorded it as a known
+  limit of the grant; CI and dev behave the same way. Withholding `manage-clients` in production
+  narrows what the credential can do to *clients* — it cannot add a redirect URI — not what it can do
+  to *users*. Treat it as an admin credential when storing, rotating or scoping it.
 - **A minted token can still be refused for lacking the `kc-admin-api` scope.** The client-credentials
   grant succeeds, so no 503 fires; the Admin API then answers 401 with
   `Expected audience not available in the token` on 26.8.2 and later, and every caller re-maps that
@@ -327,7 +343,20 @@ follows the same per-function re-mapping as a 403 and is just as invisible to th
   caused (a duplicate username or email, a weak password, the disabled self-registration gate, a rate
   limit) is *not* logged as a server-side failure; the disabled gate has its own audit event. The
   caller still sees the generic `KEYCLOAK_UNAVAILABLE` message, so the log is the only place the real
-  cause appears.
+  cause appears — with one gap: a service-account `403` on `createUser` becomes `INVALID_INPUT`
+  **400**, below that threshold, so the caller is told "The provided information is invalid" and
+  nothing is logged.
+- **The register route's three Admin API calls are not equally fatal — only the first two can abort
+  it.** `createUser` and `assignMcUserRole` are awaited bare, so their failures abort the request with
+  502 — a registration cannot answer 201 with the `mc-user` role unassigned (feature 092, FR-004).
+  The verification send after them is wrapped and only warned about: a refused
+  `sendVerificationEmail` logs `register_email_failed` and the route still answers **201**, so the
+  account exists and can be signed into with no verification mail sent. (`cacheUserProfile` is
+  wrapped the same way, logging `register_cache_failed`, and is not an Admin API call.) A 502
+  `KEYCLOAK_UNAVAILABLE` from `sendVerificationEmail` is therefore a fact about that function, never
+  about registration: this route cannot surface it. Look for the `register_email_failed` warning when
+  a member registers successfully and reports a missing verification email — and note the resend
+  route does surface the same refusal, because it calls `sendVerificationEmail` unwrapped.
 - **The admin token is minted per call, never cached.** Each Admin API function in `keycloak.ts`
   calls `getAdminToken()` itself (unlike the discovery document, which is cached), so one user-facing
   operation can make several token requests — registration mints for `createUser`,

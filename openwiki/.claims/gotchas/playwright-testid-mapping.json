@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a330d97c37ace97aeb773126a25ea019098cdafe99e6a1b5c95bf711036a2358",
+  "pageVersion": "sha256:2d1853b78db893b3b264f67d2cb9d3dc7335595be0c35bd735fac1fdb3d69c86",
   "claims": [
     {
       "id": "claim_e96fc639f5e74489a249503b34cf7a24",
@@ -35,7 +35,7 @@
       "statement": "Components must be authored with the React Native `testID` prop, never a raw `data-testid` prop, so that the same source serves both the Playwright web suite and the Maestro native mobile flows: the RN host node maps `testID` to `data-testid` on web and to `id` on native, so Jest/RNTL unit tests, Playwright specs and `tests/e2e/mobile/*.yaml` assertions all locate the same element.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L47-L48",
+          "resource": "repo://frontend/mcm-app/README.md#L59-L60",
           "version": "repo-lines-v1:sha256:f40796f81085543ffd8e426fcb48206f64eb314a9ea0958dc7144fab4e3f1673:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjEwZjY0MTUzZjZlZmFiMDA1ZWQ2M2I5MjAyNzVjZDA4MGI4OTU5MzA0M2UxZWM4OTlmN2Y5MWFiZDkwMDQxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ4Njc0OWRmZDRlZmJhODA3NGM2MTg4OTIxMDEyZTM1OGU5ODIyNzRmY2NiZmJkNDE2NzQ3YTk4MzNjY2I5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA0MWJiMDZjZWZhYmZjZDljZmI5NDgzNDA2NWI3N2M1YTZjYzk1Zjk3OGNiNzk3MGUwMDk2ZGI2NWM5NTRlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA3YTM4ZjI3YjU0N2JmNDU2ZDU3MGM5MjE4NmQ2YTI1MDY0ZWU0YzIxZTdkMDc0NDI2NzgxZjE1ZmYxM2JmYyJ9"
         },
         {
@@ -50,11 +50,19 @@
     },
     {
       "id": "claim_b1462ac761a6438d9fc5b3f3eb299c2f",
-      "statement": "The `testID` → `data-testid` rewrite only occurs on a React Native host node; a `testID` placed on a Tamagui component (e.g. a Tamagui `View` inside `Tabs`/`NavList`) is silently dropped on web and never matches a Playwright locator, so stable external-contract selectors must sit on a plain RN `View`/`Pressable` host node with the Tamagui styling nested inside.",
+      "statement": "A stable external-contract selector should be authored on a plain React Native host node (a `View`/`Pressable` from `react-native`) with the Tamagui styling nested inside, because the failure mode of a `testID` that never reaches the DOM is a silent one — a `[data-testid=\"...\"]` locator matching zero elements times out rather than erroring. The reason is per-component prop plumbing rather than a blanket Tamagui limitation: Tamagui 3 does map `testID` to `data-testid` on its web path, so the design system's `Card` and `Banner` (and app-level `YStack` selectors such as `collection-card`) are targeted through `[data-testid=\"...\"]` in the web specs, while a component that drops or re-destructures the prop makes the attribute vanish. The host-node placement is what removes that variable. jest-expo renders React Native rather than React Native Web, so a `testID` on a Tamagui component passes the design-system unit tier and can still emit no `data-testid` on web; tests/e2e/web/settings.spec.ts's \"sub-navigation is locatable\" case is the discriminating check for host node versus Tamagui component.",
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/screens/not-found-screen.tsx#L45-L53",
           "version": "repo-lines-v1:sha256:3c14a11bb30e5e2dc812d9582974a28808ce653f8f87a28a5abd0c75ffca50cc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkxNTc4Mjc3YTI0MDRjNDQxMTIwZjA1ZWY0YzFkMDVlNGFhMmVhNmY0YWZiNGY1ZTM5MjdmYzUxOTllOTE0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNhM2JmNGM3ZGQyNDAxZDcyNmIxZTgxNDM0ZTFlZjczYWU3YWE3MTUyOWQzZjVjNDhhMmMwODQxY2IxYjE2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzJiNGRiNTllYTlmMzNkZjc2MDk0NTIzZTcyYzNhZmI0ZTBmNjY5ZGIzZWNlNmQyNTk4MzgyYjkyMzc5ZWRiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTUxYzQ3MGEwYjA4Y2I4ZTJlZDhhYzQ0MDI5Njc4MTI5ZjRiNGNlMzA1OGE3MDMwNjQ2NTljOGI1NDNhYjE1MSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/settings.spec.ts#L1-L11",
+          "version": "repo-lines-v1:sha256:dda05053bda6be51a0eddf0d14ddf54d085f6781954f1812299319f930d6b080:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmYmQ0MTAwMzU0Y2I4MWU3NDcxM2U0Y2E5ZDRmMmNkZTE5MGQ3MDVhOTdlZjQ3ZmRhMDUzMjQ5NmNkNDhkY2IifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/settings.spec.ts#L39-L47",
+          "version": "repo-lines-v1:sha256:2a4dd165ce4349be9a3c79a9ca8ac36dec1c937576a8e032d83288b8a5de9d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc5NTY2YjRiZWI3ZjE2ZTdmNzUxYzcyNjQ3OTI4M2I4ZmNlYjM4ZjJhYjhlYzRjNGU5MDNkMDQxOGU2MzQzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU2MWZlZDU4Njg1NmQ1ZTgzY2U3N2QxNWJhNDJjZjQxYTdmMGE3OGZlNmYyNDNmODQ2NTcyNTA2NjdhYmI2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJlN2MyNmYyNDc3MDdlYzE3NjMzZDNjNTlmMTFkYTA2ZWI0NWYwYjk0OTk4NTVlYmE1YzJjYzU0YTljZjM4NyJ9"
         },
         {
           "resource": "repo://packages/design-system/components/navigation/NavList.tsx#L18-L22",
@@ -62,7 +70,7 @@
         },
         {
           "resource": "repo://packages/design-system/components/navigation/Tabs.tsx#L33-L43",
-          "version": "repo-lines-v1:sha256:06c7e6d3ea70e6c316f38684742d1936f2ec732a4d9267e939f5ac0be3a241e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwM2M1N2M4N2NkNzE0OTAyODYzNzU3ZjZiNjUwYTc1NmY1OTg0YWZlNjAxZDQzNjQ3NjgwNjI4MTVmNmM5YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhOTcyNzE1YWQ3Mzc0Njg4YTRmNTYyMDhjMDBiODc2OGQ4Zjk3NTA3MmMzZDZjMWMwZjY1YzZiNmM2YzNlNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMWQyNmQ4OTg3M2UyMTliNzUxNWQ3ZTQ5MWM0YTEyYzM2ODk0MWNiM2NlYmIwMDg4MDAyZWM3Yzk3ZTk0YzcifQ"
+          "version": "repo-lines-v1:sha256:44c706e0e66cf0622128d96434499bf861f41d041aebf49d4296eff6c15bff1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0MTZhYmJkM2QxYmM1MjcwMzA2MDhiOTRmNjgwODU4YmQ5OTc3MGIwYmY3MThlNTVkZjUzM2U5NTE2M2IyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNzExMjdmN2Y1ZjE3MTdiOTZlN2U5NzY5MGE3ZDE4MWE1MDcyMzdmY2FkMTg4NDBiYmIwOTM0MDIyYTkyMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZGJhNDE3YWI0NTQyMWViYTQ4Y2NiNWQzYThkM2JiZTM3NTg1NmQzYzQ2MWMzOWZmM2YwNWQ5NWU2NzkxOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhMjRjYTBmYTMyODE0MDUzZjA4Yjc3ZDBmODE0ODVlZmM1N2M4YWVjYTEzNWVlZTRiZjZiNTIyNTMxMDM4MWYifQ"
         }
       ]
     },
@@ -83,10 +91,62 @@
           "version": "repo-lines-v1:sha256:01872765ac16209ccce22a65a7783732d12625900b14c9db1d353ad700f90572:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhZmI0YzcwZWMwN2QzMzcyODZlOTFjOWQ5Y2NjYzZlNzU5ZTQ5MTI4YjNlMDRmOWZjOGRlYTJlMWJmMTRjNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NmM2YzNiYjE3NjI3ZWQ1NTc0MmZmMWZmM2Y3ODFjZjBjNTdiMGJiOWVmYTk0NjU1NjQ0NTQwMWNiMzMwNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NzcxYTUwYzBkYmIxNTQ1OTQ2OTliZTkyMTFhOGUzYmE5MGJjMjRkYzBmOTM3ZTlmODJiYmU3MTA5Zjk2ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwN2Y2MmZlOTg5MWVmNGM2NTljMWIxZDFmNWJlZjc3ODgwMjA2MzRjNzZiOTAwNjBiODlmNmU2YzBkOWQxMDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c5903eeb221b4fdf8a2b54c1570d4269",
+      "statement": "The design system's `Card` and `Banner` place `testID` directly on a Tamagui node and their selectors are still resolved on web, which is why the host-node rule is a safe-placement convention rather than the only placement that works: `Card` spreads its remaining props onto the Tamagui `YStack` root, `Banner` passes `testID` to a Tamagui `View`, and web specs target the resulting `[data-testid]` values (`backup-schedule-editor`, `backup-error-banner`, and the app-level `collection-card` `YStack` selector).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/src/components/backups/schedule-editor.tsx#L143-L157",
+          "version": "repo-lines-v1:sha256:5a378aea5e8d4c4669ba3efcb4bfe44589f710c98b06b96c254ffd1a59f1ac7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNTkyZTA3YjRjZjUzYTgzODZjNTY4MGNmYjdmM2U0ZTc1NDI5NjljODcyNmFjNWVkMzI3NTNmOGNhOTU5NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxMTRkYWM4OWY2ZjIzMjgzOGMxYTAyYzAyZTBkODVmZWJhMGRkZGQ2YTNlNjAzYTczYzliMjBhZWZmNjM2MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwOGExNzYwMmRkNThlODgzZTNhNDdjMjk0MWI0YTRhNjNlMTY5NTVmMjE2NWY2ZDgzMTFiOWJjODVmNjJkMTMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/components/collection-card.tsx#L38-L44",
+          "version": "repo-lines-v1:sha256:44e2c9fea6e0cccc8d6349324a0404b0d933fb9376e7954a073336a8d12700df:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTcyMTZlOGU5YzBhMWE2OGQwNmMyZmJhYTVmZDIxMzk0ODJiOGVmZDBhMTkzMTViOTE1ZTZjY2U4NDlkODlkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNmZWI0YTU0NzYyOGM1Y2QzZTE0ZWFkOThkMWQ2ZjhkMDQ4ZWU2ZTIxZDUwNjFkZGI4OTA1OGU1Y2QxMTFlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2YwZDY2NGNhMTM5YmNmY2UwOTZlOGU4MWI3ZTAwNGIwYWNkZGYxMjgwYTIwMGUyNjc1MjdjNTE3NTM4ODlhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWI5YmY5ZTUwZTcyNDMwYWQzMjA5MjBlOGYyZWFkODU2NTZkZTk0ZWJiZjZjZTQyYzIzM2Q3NTdhYjhhZTc3OSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/collections.spec.ts#L178-L193",
+          "version": "repo-lines-v1:sha256:436b18bfad1d3bbfa48fbed7482aa921856a87102ba14e2135a4c3cf1c618eba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZTcyNDA5MGU2OWM5YmE5ZmRkMDEwMzM0NzdjMjQ1NzA1OTc1Mjg1MjVhN2Y4NjhjYTk2OTJiOTlkOTA5NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0NTkwMjM4NTE2MGRiMzY5YjY1MDRkYTMwYTA2ZWQyZDEzNzM2MWVjYzA1ODg4MTE0ZTI1ZmIxYTZjZTRjODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MTBkYTVjZGQ4MmRiZDJjNjM3MzRmZTQ0NGMwNmY4MDJkZWQxZTk5MTI3YzVjM2RkOWIzZjJhMzkxZGU1YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzYmU3ZGE2ZmE4NjljOWU1NTNkN2M4MThkNDA3NmM3NzJmZTBhNzBjMTUyYzQ3NjY0NDFlYTQ0ZmNlZDIyMGIifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/surfaces/Banner.tsx#L29-L46",
+          "version": "repo-lines-v1:sha256:7a507f69fce22396d27cf6ec992f43f1bbbedcd0de3366448e84a3546478423a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YWViNDgxY2U1NGQ0Y2EwZTdiMzMwZGYzMDY4NjJmNjQ5ZGI5MjBiMjliYmEwMDhlMmM1OGMyZGY4MzMxODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MDZjODEyZWRhMDE3ZWUwMzcwNmNmZjQ0N2NmMjg2YmYzMTlkOGMzYTE4ZTBlNzhlNzI4MmFjNjY3Mzk4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MzI4Y2I0N2RjNDVkMmZhNTk3MjZhODljYWFjNTA4OTZjNTU0MjVkYzAwZDM4ZjBmNzcxMGE4NTRmOTE0OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjY2E1MzdkYTliZGM1YzliNzZlZDcyYmQxZDZjOTM2YjdhMzE2ZDMzNGZjMDI1MjE5NDgwMDdkMmEwMDZkYzUifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/surfaces/Card.tsx#L36-L40",
+          "version": "repo-lines-v1:sha256:e9ba8f66bbda96bf3a9032a676d10cfea0114bcd635cd836355ed6a64addb8d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZmNzZhMGMzNzk1Nzg5ZTU4M2FiNzQxNDMzMTIwNzZiODliYjUxMGVkNjhiNmFiMTkzNTQ5MjViYmQ5MjFmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNmNmJiYjZjZDU1YzNlNjUwODVhNWIxOGRhYTI5MzUwNWRlYjNlZjIxZDUyYTQ4YzdlNzEyMGJiNWYzY2MyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjU2ZTQyYjIzNmI5NmFlNzRhNzA5MTQ2YWQzOTk5Mzg2YzkzYjMwZmNmMWMwZTQ1MGFmNWY0ZmU5YWQxY2NjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ4OTJiYjU0MWI2YjQ5YjBhNWUyZDRjODUwM2I3MDJjYTkxZTk0MDk5NDBhMjQ4MzlmOTFiYWY2MGRjOWEwZiJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/surfaces/Card.tsx#L95-L99",
+          "version": "repo-lines-v1:sha256:cd64efe2e40405c77d4f10d3ee684572b00143139d6ca826b039581a8f0ff8b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM2YmNjOTcyNWM5YjYwZDY0ZjkzMjRmNTZkZjBhMTFjYTgxYTZkNWQyNDcyOGQwOTU5NzU2NDA5ZTExZDQzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQ0YzQ1OWJkNWRjMTRkMzAxYjY5OTcxYjhiNmE3ZjA5ZjJkMDQzMjgxOTc4MmRlN2M3ZTAwY2ZhNmUyOGViOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzM3NGZiZjBiZTY0N2E2YWY1ZGExNDc2MmUzZDU3NTcwMjYzNTkwODAxNTFhMDcwMzY2ODJmMzE5NDJkMTA1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDk4NTAxMGNmYTUxY2I0MzllNTFhOGM3ZDUyMWZlYzM3NDY3NzA4NWNiMjllY2U5YzMzZmEwMmZjYzljMWVjOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f87ac74dc5b84bf79687e1123cef9a00",
+      "statement": "The design system's `Switch` is the standing example of the silent-drop failure and its fix: it used to destructure `...rest` without spreading it, so a passed `testID` reached nothing and a `[data-testid=\"...\"]` click timed out as if the screen were broken; it now spreads the remaining view props onto the `Pressable` that actually receives the press, and `controls.test.tsx` guards both that the id lands on the press target and that `accessibilityRole=\"switch\"` and the accessible name `getByRole` locators depend on survive the spread. `tests/e2e/web/admin-settings-access.spec.ts` asserts the same `testID` end to end on web.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/admin-settings-access.spec.ts#L96-L103",
+          "version": "repo-lines-v1:sha256:24fe59561b407f087ca758497cd98c3a038dde0c9d16ccd1e2e8c42daba87c9f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjNGU5YTRmNTU5MGYzNmRhZGU5NGJjY2NlYTM2NzRhNjEzM2YzNGY4YjE0NzExNDU5YTdhNzJiMjYzNzdhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUyNmNjMDg0NDFhODZmOWYwYjQ0NzQ0OTU1ZmNiNGJmYmM3MWFmZjAyZjI4MmZmZjU3MGNhZGQ0MDIyODE0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY5YTY2NjlkNDhmN2U4MTU0MzhkMGFkOTVmZTk4YzViN2JjNzg5NTk0YWYwMzJlMmE0ZGI1OGQxNTRjYTFiNSJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/controls.test.tsx#L146-L169",
+          "version": "repo-lines-v1:sha256:f822f25b17b73823542415d23e1c9a949c6e1f4cf960845f16d01708848442f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ZjZhMTdhNjUxODg1MDUxODNlOGRiZTQ2ZWYwOWVhNGVmY2EzNjcwOTM1ZjljZTI1ZWEyNmRkZWZkODA3YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjZTZmODhjN2M2MzI4NzU2NjIxZmRlODg1NDM0MmQ4NmJmMTA4OTExNDU0NzBjZDAzZjQ2NDU4NDU2NDE5MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0M2NjZmJkZjJjYmY4ZTMzMzZjYjE3OGM3ZWU2MmJhYjkzNmJlODcwNjQ0NzJlZDdhNGJhMGEyY2NlNzc2ZGYifQ"
+        },
+        {
+          "resource": "repo://packages/design-system/components/inputs/Switch.tsx#L10-L17",
+          "version": "repo-lines-v1:sha256:d144ad18681b51f8a7bf0dbe6bcf6db9267a838db242c11379ebf653723fdde9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNmY2YwZTU2ZmM0OGJmMzY2YjE0MDI1Y2M3MzNlODdhNmY1ZjI5NWQ0MzBhODU3Y2M1Zjg1OWY5MjM2YTcxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ0ZjQwZGRiMTg4NTllOWJhNTM2NmQyOTQ3ZTgxMjUxODEwNDEzOGEzNjZlN2EwYTEwZDIzYTI0NGM0MTFhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIxM2NmMTE4NjAwMzlmMDcxZGRlMGRkZGQ1YzExOTUyNjBlMTEzZTJlYTIzODQ5NGM4YWRlZTJjNDhlZjI1NCJ9"
+        },
+        {
+          "resource": "repo://packages/design-system/components/inputs/Switch.tsx#L98-L110",
+          "version": "repo-lines-v1:sha256:97daad44b7cc62bd0833ea4ea118ece2366684412be028c3815ec57b5655da8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MDZjODEyZWRhMDE3ZWUwMzcwNmNmZjQ0N2NmMjg2YmYzMTlkOGMzYTE4ZTBlNzhlNzI4MmFjNjY3Mzk4MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkMDJjYTUxZmY5YmM3NzAxODg5NzViNTEwOTE1ODk3MWZhYTEzN2NlZTgwZGMyMWRmNDBjMmNkZDE1NTJkNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ZDNkMTY4ZjhhNzNlNzU3MWZiNzk2ZmRiZmQ1MmM0ZjE5YjUxNzQzYWM2MzA2N2MwODA3YTZlZGExZmVlN2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-29T10:29:14.990Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-11-07T19:02:58.048Z"
   }
 }

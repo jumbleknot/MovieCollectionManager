@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:37efde7c0593ff491520154890683ad48b99d9d5d5193678691d1d31e7c0445f",
+  "pageVersion": "sha256:18b2937fa9c4e0b176e0925bb5e71fba2796f3434c38edd1ea13f05893c38509",
   "claims": [
     {
       "id": "claim_165a779429c54154b88d58468022d8bc",
@@ -124,7 +124,7 @@
         },
         {
           "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs",
-          "version": "repo-file-v1:sha256:603f7b22dbae2f5e2dacb2c81872a2c24f2f520f430c5f2f04e2ecacfd5ba9ec"
+          "version": "repo-file-v1:sha256:d2d6c9f441b8c98e09a6531689fb340a6ba70d08deee9bf63ab6511faea0d545"
         }
       ]
     },
@@ -525,10 +525,60 @@
           "version": "repo-lines-v1:sha256:e8356ff4ca95d9704863037087f855be7636757e3094a6948cde2c320041de20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZTBlNGQzNDk5YWRkZjRhMTdlZWRiYWFhZThjZmEyOTEyOTg1Y2EwYzAzYWI5M2UxZDIwYzY1ZmNlNDA5ZTkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a688bc5f555e48e3abe5da868d18ace6",
+      "statement": "The lockstep guard's instance check is a distinct property from its version check: it counts the distinct `snapshots:` keys per package for `@tamagui/core` and `@tamagui/web` (peer suffix included, since pnpm gives each key its own directory), fails on more than one and names both keys plus `pnpm dedupe`, and fails on **zero** keys too so a parser that stops matching cannot pass vacuously. It reads only the `snapshots:` sections, because pnpm's lock is a multi-document file whose first document carries its own `packages:`/`snapshots:`, and it needs no install because the lock is authoritative.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L177-L256",
+          "version": "repo-lines-v1:sha256:f9ee06e7ba794d8e6334df0dd2db1731ea8f7e4c413c758373360131b3cc9591:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZGM0OWVkYjI2MDQ2NDBkZmEzNjJiYWY0MmYxNTFlNDM3YjM4Y2RiMjViZTkzNDUyMTMzZjAwYjBjNzEwYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZTFmODk1NDEyYWE4MDM5MzUzNzFjMWIxZTNhNmE1OWFhNWFkN2UwMDAwOWRkNmI1NDQ4NzA2YzY4Zjg2MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2NmI4Yzk0OTU1YjkzNWUwZDI1MGI4NGQ0MjQ2MmZiZjVlYzRmN2Y5MmM5YWZlN2YwODljMzI5Zjg3ZTQ3NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/contracts/web-gates.md#L31-L39",
+          "version": "repo-lines-v1:sha256:334aa7aa30f8e38e57fa2efcea43f7e216acd948227d3bfc2e97fb88db9839b6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBhMDQ2NWVmYjgzNWViZmU4OTdjZTY3MTFjYzgzYmZhYmU2ODhhYWE0NzE0YzhlNTZjOTExNTBlOTk1NmI4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNmM2QyMGJiZTczMDE4MjhlNjIzOGMxMmZlNzNmM2U4NTZjOGE0ZGUwNGM5ODUxOGQxNTkzMzQ5NTc4NWRlNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA5NDUwMTQ0ZjQ1ZDIyMjA1ZTQ0YjA1NjBhMjFkMzgwYjA2Y2JjZDJkYmI0ZTE5ODc5NTI1MzRhZDRjZmI4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2FkZGNiNTI0MjVhZGNhMDU2MzZlZDk5YjA2ZjdkZWZjODkyZTMyZjQzODBhNzUxNjUzZjQ5YWE3ZGZiYWIzZSJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/research.md#L104-L111",
+          "version": "repo-lines-v1:sha256:4a4a998982fcc8dd3473c81926e2268bd643251bb6c1685266061a0283e26772:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA2Yjc2YWJiMzI1OTUxNGI4M2I2ZWViYTkyN2ZiY2FmZjZiYzAwMWE4ZjQ0MDAyNDMyMTMzODA1OTg3MWUxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk5MGM4YmIzYmIxNzExZTBhNGE4NjgyMjFlNzMyZWE2NzFmMzYxOGI5MTA0YWZkZDliN2Q3ZDIwYTg5MzIwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRlYTQ2ZWQ1MWZjZjMyY2Q5OGM1ZTk4OTY1MGY1ZThmMjVhZDBmNmEzN2RiZmE5OWMxNGI3ZWZhNGNkOGQwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZkMDI5N2MyNDJlYjliN2QyY2Y1MjI0ZDM4NDA2YWYwZjBhM2RkYmRmMDkyMmExMWU1YjhkY2MwOTgwYmIxNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a660816670f443729d02e66d055332db",
+      "statement": "The instance check exists because one version is not one instance: during the Expo SDK 58 spike `expo install` upgraded only the app, while the design system's devDependencies plus a stale `react-native-safe-area-context@5.7.0` lock entry gave this package a different peer hash, so two `@tamagui/web` instances loaded and every page rendered zero nodes with `Missing theme` — while the export and the API routes both still succeeded, and the version-only guard passed. `pnpm dedupe` is the documented remedy.",
+      "evidence": [
+        {
+          "resource": "repo://docs/proposals/MCM-Expo-SDK-58-Approach.md#L60-L66",
+          "version": "repo-lines-v1:sha256:8af7e1be7f4f26205ef7276b27d3d019a1ed94400f50f32918f8aad27ca71788:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVkMGZjMmVlMTFiNGZiMTljMjVjNTcyOTQzNGY4YzM3ZDRjNjBlMGNmNWUyMmY2ZGM4OWMxMWQ1NjA2NTMxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzllODFiZGNjMjQyZTQzNGI4MTM4ZmY2OGQxZDFiN2M4YmVlNmViNzczYTNkYzk1MzZiMmM1ODFlZjJhYWRmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFlOGYzYjQ5MzNmODhjMWY4NTJiOTE5OTdjMmFkNDc5YjIyZTAxY2JjMTc2M2U2OGRhYjNhMjEyYjQzODE3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg5YWNjYzM0NmQ2MzI3ZWE1MWIwNGFhYzA3MzFlYjhmZDUyZWE1YmE2MmY3N2E4MGNiMGMyYjczYzE1MTk3OSJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/README.md#L108-L118",
+          "version": "repo-lines-v1:sha256:87573114b6e0bd455b83939e3ac1d01660223e1042d3d902b6b2accbed9a0a5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYjg2MTg2NWRlYjQxMDJiNTY0NWY1NGE2MzcxYjY2YWQyZjI0OGU5N2MxYTI4MzQ5YWIxNzg1OThiYzljODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYmEyODBhNDI2ZDE4NDg0MGZhZWUyZjNjZDIxZTJmZDJhZjA4ZDIyNDNjY2RiODg0ZmI4NmQ4MzQxZjg0N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTk1MTVkNDcyNTJlMWJmYzlhMDI0OTgxODk4Y2Y3ZTkwNGUzMDEwYjc5NDY4NTI4ZTMxZmJhNWE4MzhmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiOWU1MmI3ZmZhZGZmODk0Y2VkOTM5MmNmZTY0NmM4YWFiOTE1Y2Y0ZDk1MDdkMjM5ZGE4ZDMzZTQxZTg0M2UifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/spec.md#L195-L200",
+          "version": "repo-lines-v1:sha256:9544dd22ebabd4c960187938429d84be2d64c7080f47a7016e697e4e685240cd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdhMTM3MWE3MjVhZTEwNzUyZmYxMDg5ZWNiYWIyM2FhM2I5MzMwMmVkMzc1OTdkYTA3NmNiZjc2OTY3M2JlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcxYmFjZWRjNzYwYjdiYTNlMDhlYWIwNDQ0YTQzMDkwN2U4ZDgwZTRiNWUyMmVhYjNmMTNlMzU4Mjg0ZTg4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWUxMjk5OGM3NDQwNmQ4OTQ2MDQ1N2FiODZjMTM5MGUyMGI4MDY3ZGFjNTBjZTQwYWYzMWI3MDhiZjgwZGQ0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYwYmY0MDY5Yjc4YjU2ZGNmYzY1OWIwYzBlNjE0NDk4MjQwMmIzMzZkMjM0NDFjOTY3MGUzMGMwMjk1M2JiZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc91184a571542d580c254ae6bb51f4a",
+      "statement": "`scripts/__tests__/tamagui-version-lockstep.guard.test.mjs` is a plain `node:test` file executed by the `naming` job's `node --test scripts/__tests__/*.test.mjs` step in `.forgejo/workflows/guardrails.yml`, not by either Jest suite, so `pnpm nx test design-system` passing says nothing about the Tamagui lockstep, the Renovate locks, or the app's compliance scan.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/guardrails.yml#L170-L176",
+          "version": "repo-lines-v1:sha256:ca133cf65df8a111686fd253aba3b59d2a4861fa8273d6e2501a5f9354ba49fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ZDQ0MWFmODA1NDg1NGJlZGUwYzgxOTRmNWZiNDYxNTRjMWVjZTRlZDZmOWRlODRkYTRlNDY4MzMzOTRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNGVhYzlhZmY5NWUyNzc3ZjhmY2U5YmFlZjg4OWRjY2EwMzQ5OGM4ZjE4NWE2ZTY0NTdkNjkwNDVmMGM1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU4NmU2NjdkNmQxOWI1ZDQwNjA4MmY5Mjk4MzJhYTcyMWMwNWZkM2Y5NmNmNDAxZjlhYmYxNDMxYTQ5OGZiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI3MGRkNGFkNjNhZGZjMTI0ZTgxZDMyZDBiYjFiZWM4NzA0NzJlYmQyNzg1ZmZkMWVhODkwYzhhY2UyNWI3MiJ9"
+        },
+        {
+          "resource": "repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs#L22-L32",
+          "version": "repo-lines-v1:sha256:6fd90b21c56dff59de149f6772cd18aab0c715af8b3552500f1b726061ae918b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhOTY1Yjc3NjU2ZjVmMmRlZDc4NTAwNzEyOGU4NWZkM2E0ODlkNTE3NDFiMmIyN2ZjOTczOTFjOTJhMjhkNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4OGZkZjYwNDE2NWRlMWM3MDc0MTU4NzJkNjM5MDNiZTNhNmJmMjUwYTI5NTQyM2VhMTJmYmM4M2IxM2JkODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMDIyN2JiZmQ2NjY5YjM0MDQ1NzMzMmRhMDYyNjJlN2UyNmEwMzY0OWFmZjIwMGZjM2RjNmRkN2ZlNjBkNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4Njg1NThmODA5ODBiN2UwNDg3MGJhOGM1NmU2YzJjY2YwMjg5YzdiY2ZjOTIyNmJlMjk3ZWE2YjFhMDI1NDkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-07T19:02:58.048Z"
   }
 }

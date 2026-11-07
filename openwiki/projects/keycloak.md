@@ -1,7 +1,7 @@
 ---
 type: Service
 title: Keycloak (Identity and Access Management)
-description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, the kc-admin-api client scope Keycloak 26.8.2 requires on mcm-bff-service together with the service-account roles and the six redirect addresses production must list by hand, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
+description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, the kc-admin-api client scope Keycloak 26.8.2 requires on mcm-bff-service together with the service-account roles and the six redirect addresses production must list by hand, the 2026-11-07 console correction of production's running realm versus what the committed file guarantees for a rebuild, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
 tags: [auth, keycloak, iam, docker, realm, jwt]
 sources:
@@ -138,7 +138,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+    at: 2026-11-07T19:02:58.048Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -327,6 +327,12 @@ assign it at **Clients → mcm-bff-service → Client scopes → Add client scop
 Default**. BFF admin calls answer 401 until that is done, which is why the version bump is merged only
 when someone is ready at the console.
 
+That is what happened on **2026-11-07**: 26.8.2 reached production, the operator confirmed it in the
+console and made the assignment, and a read-only check from the BFF container then answered 200 with the
+service-account token carrying `kc-admin-api`, a 200 client lookup and a 200 user count. The 401 window is
+a property of the *upgrade*, not of that deployment, so the console step stays the procedure for any realm
+that already exists; only a realm created fresh from the committed file skips it.
+
 ```mermaid
 flowchart TD
   bump["Keycloak bump to 26.8.2"] --> mig["migration creates kc-admin-api for admin-cli and security-admin-console only"]
@@ -371,6 +377,16 @@ requirement with `view-users`, `manage-clients`, `manage-users`, while productio
 (201), look up a client (200), read a role (200), assign `mc-user` (204) and count `mc-admin` (200), and
 refuses it a write to a client (403).
 
+Recording the set in the realm file did not by itself change production: import applies only at realm
+creation, so the running realm was corrected by hand in the same 2026-11-07 operator pass. The file is
+what a fresh production realm is judged by — and the only thing a guard can check; the running realm is
+the operator's artifact.
+
+One consequence bounds what production's `manage-clients` refusal buys: with `view-clients` the service
+account can still read `mc-admin` and, because `manage-users` permits the assignment, grant it. The BFF's
+service credential is therefore administrator-equivalent for *users* in every realm variant, and
+withholding `manage-clients` only narrows what it can do to *clients* — it cannot add a redirect URI.
+
 ### The six redirect addresses production must list itself
 
 Production's `movie-collection-manager` client lists the six addresses `/bff-api/auth/init` registers, in
@@ -385,7 +401,9 @@ it is committed state, not something the running app maintains.
 An address left out is refused by Keycloak with 400 `Invalid parameter: redirect_uri`, and that is the
 shape the production defect took: on 2026-11-07 `/auth-callback` answered 200 while
 `/bff-api/account/delete`, `mcm-app://account-delete-callback` and `/login?verified=true` all answered
-400, so no account could reach the deletion sign-in. A fresh import of the rendered `prod-realm.json`
+400, so no account could reach the deletion sign-in. The operator then added the four missing addresses in
+the console the same day, after which all six answered 200 and an unlisted address still answered 400 — so
+production's running realm now matches the committed list. A fresh import of the rendered `prod-realm.json`
 accepts all six listed addresses and refuses an unlisted one, on both 26.8.1 and 26.8.2. The operator
 procedure for putting these into a running production realm is in
 [Server setup](../runbooks/server-setup.md); the why is above.
@@ -400,6 +418,13 @@ console, and the omission surfaces much later as a 401 or a 400 on a flow CI nev
 bump, start the old version, upgrade its data to the new one, and call the Admin API — because fixing
 the realm file turns CI green while an upgraded realm still answers 401 until the script has run or the
 console assignment has been made.
+
+Both production gaps were closed by hand on 2026-11-07, and the committed file is what stops a rebuild
+from losing that work: the role set, the six addresses and the scope assignment now exist in
+`prod-realm.json`, so a realm created from it is correct on first boot, while the running realm needed
+the console. The distinction matters for anyone re-reading this after an incident — "production is
+correct" and "a fresh production realm would be correct" are two different statements, and only the
+second one is what CI can ever prove.
 
 ## Why the token lifespans differ
 
@@ -779,7 +804,9 @@ realm facts:
   the route that would have needs `manage-clients`, which production deliberately does not grant.
 
 Both are realm-side; neither is visible to CI, which imports its own realm file. Which addresses and
-roles production must list, and why, is in the service-account section above.
+roles production must list, and why, is in the service-account section above. Production's own instances
+of both were corrected in the console on 2026-11-07, so neither signature is expected today — but the
+diagnosis is unchanged, and a *rebuilt* production realm is covered by the committed file instead.
 
 **Client redirect URIs are part of the realm, not the app — and three mechanisms keep them there.**
 `add-container-redirect-uris.mjs` exists because the containerized BFF (dev `:8082`, prod-style TLS
