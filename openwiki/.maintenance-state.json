@@ -1,34 +1,12 @@
 {
-  "coveredCommit": "afb643f027e8c1daa928a81df488a4cedd46d3d8",
-  "coveredAt": "2026-11-07T06:32:50.531Z",
+  "coveredCommit": "fe91db2f86a564860537624b54aa89a72905f21b",
+  "coveredAt": "2026-11-07T16:27:47.720Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "keycloak.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-    },
-    {
-      "area": "runbooks",
-      "pages": [
-        "server-setup.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 936,
-    "headCommit": "8bc5f9acda4071cc821ca26626db829641244447",
+    "headCommit": "e0f7ba834622e6116de9d4ee47d36d70fbccc9ff",
     "markerBefore": "82c84e018f6ff1a4a321a8a2a72acdce09160a17",
     "slices": [
       {
@@ -127,43 +105,66 @@
         "subjects": {},
         "areaExists": true,
         "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md"
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "keycloak.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: infrastructure-as-code/docker/keycloak/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/keycloak.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "server-setup.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/renovate.md; source changed: docs/runbooks/Server-Setup-Runbook.md; source changed: docs/runbooks/Server-Setup-Runbook.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/server-setup.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-07T06:32:51.186Z"
+    "updatedAt": "2026-11-07T16:27:48.361Z"
   },
   "lastRunBudget": {
     "pagesWritten": 6,
-    "elapsedSeconds": 2118,
-    "stoppedAtBudget": true
+    "elapsedSeconds": 2534,
+    "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 134,
+    "calls": 549,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1520829,
-    "cached": 15957190,
+    "uncached": 2103276,
+    "cached": 57438872,
     "cacheWrite": 0,
-    "output": 198586,
-    "reasoning": 152296,
-    "ms": 909286,
-    "estCostUsd": 0.7903,
+    "output": 1103625,
+    "reasoning": 987700,
+    "ms": 5602672,
+    "estCostUsd": 2.3,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "runbooks/renovate.md"
+        "projects/keycloak.md",
+        "runbooks/server-setup.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 0.7903,
+      "estCostUsd": 2.3,
       "rateLimited": null
     }
   ],
