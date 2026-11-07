@@ -298,12 +298,14 @@ jobs:
       - name: expo-doctor (non-blocking audit)
         continue-on-error: true
         run: |
+          bash scripts/ci-log-step.sh affected-expo-doctor bash -e /dev/stdin <<'CI_LOG_STEP'
           if pnpm nx show projects --affected --base=origin/main --head=HEAD | grep -qx mcm-app; then
             cd frontend/mcm-app
-            bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" affected-expo-doctor timeout 300 npx --yes expo-doctor@1
+            timeout 300 npx --yes expo-doctor@1
           else
             echo "mcm-app is not affected; expo-doctor skipped"
           fi
+          CI_LOG_STEP
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
