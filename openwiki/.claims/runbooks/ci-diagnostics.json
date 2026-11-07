@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8427f4686add672abdd2190a2f7445d147a5759704b0574e843869a39472d5d2",
+  "pageVersion": "sha256:36f8062b1407f367865d9d155be89e8c4c168f0f0c339171187a2b0561cb55fa",
   "claims": [
     {
       "id": "claim_6c612ef238414a1a80f18ea6956fc1c9",
@@ -942,7 +942,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://infrastructure-as-code/forgejo/registry-retention.yaml#L7-L36",
@@ -960,7 +960,7 @@
       "evidence": [
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L199-L208",
@@ -1044,7 +1044,7 @@
         },
         {
           "resource": "repo://docs/runbooks/Server-Setup-Runbook.md",
-          "version": "repo-file-v1:sha256:40b7116fb9986088688e1dc6d800a4d3379876227b8d8edfa3ee04bab36dad8f"
+          "version": "repo-file-v1:sha256:0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa"
         },
         {
           "resource": "repo://scripts/registry-retention.mjs#L367-L376",
@@ -1097,7 +1097,7 @@
       "statement": "The forge's GENERIC package registry has no scheduled sweep — each publisher prunes opportunistically at publish time, which is why registry retention owns only the container images. `scripts/ci-failure-digest.mjs` deletes `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS` (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — invoked by `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by `created_at` plus any version whose name ends in `-keep`, which is never pruned and does not consume one of the 5 slots. That retention is COUNT-based rather than a day window because a quiet month would otherwise delete every installable APK, and a prune failure in either publisher is logged and swallowed rather than allowed to red a deploy.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L523-L523",
+          "resource": "repo://.forgejo/workflows/cd-deploy.yml#L539-L539",
           "version": "repo-lines-v1:sha256:187f0d41da3f3812aacbc47c9efdcda27d677a8a0c59272e32e05e218d3a4165:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3ZjBkNDFkYTNmMzgxMmFhY2JjNDdjOWVmZGNkYTI3ZDY3N2E4YTBjNTkyNzJlMzJlMDVlMjE4ZDNhNDE2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA4YzE0ODYyMDQzMWYxZmU3ZjhkYjg3NWQwM2U3Y2I5ODFmNzgyMGE4MTBkMzUwNDA2MDNkMTIwZGQzMjVhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI4NjVmMDFiYWI3NmYzZDkyMDA2Yzg0YzlhOTk4ZGY2YzQ2YmRlNGIxNzRmYjI4NThkZmFhZGJmYjM4ZTMyOSJ9"
         },
         {
@@ -1128,7 +1128,7 @@
         },
         {
           "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "version": "repo-file-v1:sha256:ca41e05d081d490d34f1a243e6d9d8b985174f90b11d80717a6b28f6586b4bc5"
         }
       ]
     },
@@ -1211,10 +1211,28 @@
           "version": "repo-lines-v1:sha256:0a45409bb137d5c3363d23c48c5985a093bfb2bdfee46f1bd359917148526fcb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYwODkyYjMxMTgwY2IzNmE5OGQwMTkwZTQ1ZjIzZDllYzdlNjNkZGE4ZTRmZGFkZjgwMjg2NzhkZjY3YTk2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJkNzZlNTAyMWE1MjgxZjBiMDY2ZGI0MWY2OGRmNmVkMzE2YTVmZTc0YTBiMDU2MjM1YTIyZjFmMDAyZjg4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzAxODFlMGVlYTY4MGI1ZmY3ODA4NjUwNWI5ZTNlNGZlZjYwYTg3MWMwODE0MGQyZjhlZGViMzU5OTExNTRlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAwODhkODhmZTA1MjY0ZDQ2ODlmMTE0NDFkNWJmODUwOTBjMDNhODI3NWNmYmZmMjNkYTA1YWUwMmZiNzFlYSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_7810346962024875a09332b32b799f25",
+      "statement": "The `actions/upload-artifact` v4+ hold (item #912) rests on a controlled two-label probe, not on an error string alone: on 2026-10-16, on both runner labels the workflows use (`ubuntu-latest` and `kvm`), `upload-artifact@v7` failed while `upload-artifact@v3` — the control, same job, same payload — succeeded, and `checkout@v7`/`setup-node@v7` ran and verified in those same jobs, which rules out a node24 runtime problem as the cause; because the forge serves no job log, the `GHESNotSupportedError` text was read by running the same v7 dist against the forge's server URL. `renovate-workflow.guard.test.mjs` asserts the resolved `<4` ceiling, that the hold's description quotes the measured error and states its LIFT condition, and that the rule stays ordered after the `ci actions` group rule (last matching rule wins), so lifting the ceiling requires re-running the probe rather than citing a release note.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runbooks/renovate.md#L873-L877",
+          "version": "repo-lines-v1:sha256:885f0f345c2a1294ef1638c8b5300fcd72d020ff633887556c2ff6c82ea5f7ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODA2ZDAxNzA2ZGE4M2EwYmE1MWI3ZGFkYTQyYTA4NDBiZWI1NDI0NWVjMjk5Y2ZiMmE5MzE5OTU2MWViZjNhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM0OWY1NDhkZWEwMDI5NjA0MTBmZmU2ZGFlZTUzNjE2NTU3NzNiZThkNTE1MDY5MTcxOWNhNWQxMDM4YjgzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQ0NWE1MTU5NjMxNDYxYTIxNmRmNjZmMzU3ZmUxNzNmMTAxZWM3Yjg3ZGViZWZkYWUyNzBlZjJjYmZhMjY4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmY4MzI3ZGMwODNiYTJkNzA2ZGUzOTlmYTA1OTVlODM4MTg2ODcyMmNlYjc2N2QwYTUwMzU0MTExYzQxNzUyNSJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L648-L668",
+          "version": "repo-lines-v1:sha256:f20c8d8a85b6148a748c3b0b9e5ff69d61f33ee5af35fb54bc43272754b6b762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNDlmMmNkYjhiZmU4M2M1NzcwNDc2YTJkZWE0YjA0NDEzZThkOGEzOGU2MzYxMDM2NmU4MmM4Njg4ZTgxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhY2RlNzhmNThkYThmMzZhZDFkOGZhYWQxZmViZjAyZjFlYjhkNTVhMTVhMTBlNmVhNTdhMGI2MGQ1ZGEzN2EifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3382-L3410",
+          "version": "repo-lines-v1:sha256:1777c556c5002d0ccdfe3a5d56acb098dd5cf951174e24ba949986b007302d11:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYmYwMWIyMWM4NGE5ZGYyZjY0OTYxNmI2ZGFmNDdiYzRhZjQ4Mzg4Mzk0YjlmYTQwYWMyMzliMDVjY2M1ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyODVkOWE2NWRhY2JlOGMwNmViZGM5MjNjZDAwZmE1N2Q2ZTNiZTJlOGExNDRmNTU5MDY0M2JiODEzMTFmMTAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-04T16:55:00.915Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }

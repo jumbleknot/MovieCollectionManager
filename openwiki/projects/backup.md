@@ -4,9 +4,6 @@ title: Prod host backup (restic) and its failure alerting
 description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
 sources:
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
@@ -63,6 +60,9 @@ sources:
   - id: openwiki-source-5159dca913823c87d5dcf112
     resource: repo://specs/084-silent-failure-visibility/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-11-07T05:05:27.957Z
 ---
 
 # Prod host backup (restic) and its failure alerting
@@ -318,8 +318,14 @@ contract, at the level of what each piece achieves:
 - **A restore is a Phase 14 procedure, not a script here.** The registry and repository archives are
   excluded on purpose because they are rebuildable; after a restore, `cd-deploy` must be re-run once
   before a rollback to an older digest is available. The excluded registry does not grow without bound
-  either: since spec 084 US5 a weekly `registry-retention` sweep deletes old versions while protecting
-  every digest pinned in `infrastructure-as-code/docker/*/.env.deploy` on `main`.
+  either: since spec 084 US5 a weekly `registry-retention` sweep (Sundays 06:00 UTC) works out what it
+  would delete and keeps every digest pinned in an `infrastructure-as-code/docker/*/.env.deploy` at the
+  newest promotion **and the five before it**, read from git history rather than from `HEAD` — plus every
+  `mcm-app-android` version under `keepAll`, which is why the `release-apks` dump exists at all.
+  **The schedule itself never deletes.** Deletion needs two independent keys: `mode: apply` in
+  [`registry-retention.yaml`](../../infrastructure-as-code/forgejo/registry-retention.yaml) *and* a
+  `registry-retention` dispatch with `apply: true`. So the exclusion stays safe for a rollback to an
+  older digest.
 - **A dump that passes its format check is still not a proven backup.** The checks prove the file was
   written and is the right shape; only a restore proves the content. That is what the drill below is
   for.

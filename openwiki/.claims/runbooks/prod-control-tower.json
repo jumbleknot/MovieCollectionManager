@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:20a05ec5aff191338c238f090d5a2ac72baec5b651933ac4d75fcbda25007f15",
+  "pageVersion": "sha256:4c10a8acc83a47f49f360b0f069a5eb74b59e30f6a8cf097264d39e21a47c4d9",
   "claims": [
     {
       "id": "claim_b2f83e88e769498a89a014e4005d6a46",
@@ -47,7 +47,7 @@
           "version": "repo-lines-v1:sha256:6a16d6f001b80c5d2b761f616a2a1b8fe760c2add46517f98dc8db7c3c2e279a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2FkZDYwM2IwZGI4NDA5OTY2ZGUxNjhhODY4YTQ2ZGUwMjA1ZDg3YjVhMjdhMWNjY2E4MDEyYWI1ZTBkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMTk0MmUzMTc1MTExZmI3YTZkNmU0MzEzY2U3NjhjNzc1NjZhNmVjMDBkMmQ5ZGY3Yjg1MzRlYzMzOTNiM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYzBjNThjOWNkNTZkYjdhZTE5MDg5YWE4MTYyNzI1ZGY1ZjBhY2QyMjk5MGY5NTE5OTNmZDAyMTdkZmQ1NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzBjNTk2MTkzYzMxYjk2NDI0Y2ExNjlkNzMxZThmMWNmY2MyNzY1MTk1NGRhMDQ2ZmM1MDQxMjI4ZjQyOTMifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L841",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L898",
           "version": "repo-lines-v1:sha256:4998e8f757edf28d222d9b367aeecc7f1534a76969407641dcf97c1ab6af88b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMjg0NWIxNmEwZjdjNWZlZmU2ZjU2NTZjMGQyZTJiZTMwNGI5MzhmMWE1ZjYxNTA1NDI2ZDUwMzdlMGZhZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmQ3MDQzZmZkNjI0MTRkMzQ3OTFhNjA5NmEyMWQ0ZDIwNGY2ZTA3NGU5ZGY2YTU5ODYxNmM4MTg0ZDYxMmYifQ"
         }
       ]
@@ -429,7 +429,7 @@
           "version": "repo-lines-v1:sha256:7a7a9c9079573f503f582d7953f006dd238a09c17d4f692d693c9f74f8ba006e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MDY4MDI4N2E3N2QyZDFhZjRmNjU2MmZjNDhlZGIxMGM0YTUzNGY4YWI4ODgzMjY3MGVhNjY5YjQwNGE3OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZTUzMzBlNDcyMTQ3MDJiMTQ2N2U0MzkyYTRiNTY0ZTkzMThhZDVhNDIwNzAxNTJkNTk1MDUwYmM1NmZlMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MDU2MTA4MTRhMTIxMmZkMmI1NjNmN2JlNTgxYzM0NTdjZjU5M2ZlYjllMWU4Mzc2ZTliYWVmMTkzNTVlMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L843-L857",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L900-L914",
           "version": "repo-lines-v1:sha256:743b588dbb6bf3d503b51a543129821d8209c692c2c28cbd1d4905cae90e2cd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZjdiOTM4YmFiMWEzYTY1OGM5ZWJmZmQ5MWUxZDA4MTZlNmQwNWQ2OGI0MWFkYTJhMjU5YzZiM2MzY2RmN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzk0ZmNhZGNiODA4NWU5YzIyOGY0OTk0MjljNGQ4YThkZGI5OTI5ZGZiMmM3OWUwZmQyY2IyZThmYjkxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
@@ -560,19 +560,23 @@
     },
     {
       "id": "claim_9c4ba3204fc047aaaf78775c0007fee6",
-      "statement": "langfuse-postgres and unleash-postgres share one identical pinned Postgres image, which is why they can only move together, and that is enforced rather than remembered: scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs asserts against both the dev and the prod compose one identical digest for both services, on the 18 line, mounting /var/lib/postgresql and never the pre-18 /var/lib/postgresql/data, on a volume that is not the one holding the 16 data and whose name carries the -v18 marker. The spec-081 change also replaced the observability-only `allowedVersions: \"<17\"` hard hold with the stateful-datastore major approval tick that now governs every database image here.",
+      "statement": "langfuse-postgres and unleash-postgres reference one identical pinned Postgres image, which is why they can only move together, and that is enforced rather than remembered: scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs asserts against both the dev and the prod observability compose one identical digest for both services, on the 18 line, mounting /var/lib/postgresql and never the pre-18 /var/lib/postgresql/data, on a volume that is not the one holding the 16 data and whose name carries the -v18 marker. The spec-081 change also discharged the observability-only `allowedVersions: \"<17\"` hard hold in favour of renovate.json's stateful-datastore major approval tick — and the current reading of that successor is the rule plus renovate-workflow.guard.test.mjs, NOT docs/runbooks/renovate.md, whose \"database MAJOR waits in Pending Approval\" paragraph still describes the observability postgres as held below 17 outright and therefore never reaching the approval list.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/renovate.md",
-          "version": "repo-file-v1:sha256:edbd0869420318b92465f9a4756bc6d678d109986167ac5adc887e65df480396"
+          "resource": "repo://docs/runbooks/renovate.md#L154-L161",
+          "version": "repo-lines-v1:sha256:90d4dc8bb996386f3297fdb2f14378be9fd4637bc51bdd535ab32d02b3ad7844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU2YmM5OGY5NmI2YWFkOGFiNzMyMzM2Y2Q2YjBhYmEwODI3ODJkYjJhYjUwNzM2YzdhZWM3MTI0YTdkMDU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJiYjkyODhkYzdhYzljYWRiNmU2M2VjOGUyNDc5ZDYxMTY1OTJkZDE4NjFiN2RjZGExYzFiMzAyNDNmODkxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQwODcyYjhjNTUwNjc5NWI5ZGMxZjEyYzhhMjdmMmI5NTQ2YzliMThhMzNhNTE0Njk3ZjYwMTA4MWZjOTRjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk1NGQ2YzA1NTUxNmU5ZjFiM2JmZDkzZmY0MzkzOTQ3NjBhYzNjZDExOGZlMTMxZjU5ZDMzZGM0MmZlZmZiZSJ9"
         },
         {
-          "resource": "repo://renovate.json",
-          "version": "repo-file-v1:sha256:8be3186049ddc0e645f0c6990fea80b6f30e71f3ac888469b9a848f69205955a"
+          "resource": "repo://infrastructure-as-code/docker/observability/compose.prod.yaml#L113-L124",
+          "version": "repo-lines-v1:sha256:efd76fa7593e1ac8cd9ab171f36f3f96a8e504e9fc8a62e43c04e82221b543ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOTEzYTY2MjlmODE4MDhiZDg0MWFiNjc3MDZiYzcxZjUyNjYwM2Q2ZmJhZGU2Y2ZhNmM5NGQzNjU3MzQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMGNjYzQwZGI0NTBkODNiZDQyYzc3MzU1MDNlZTBmMmUyMTczMjZiNTZmNDJjZjk0NmI0OTg2Y2JiZWI0ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkOWQzYTg0NWUwNzZlY2FmM2MwZTM5MmRkMTViZTBjNThmNWI2MDVhMmUwOGIxYTAyN2Y5OTBiODBjNWZiNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNzM1YjdmYTM5ZTliMjQ5MDVmZmE5YTZjZjk2NWEyYWM2NGRiNWQxOThkMDNkNjNkM2Q2NGVmY2MyM2IxYjQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs",
-          "version": "repo-file-v1:sha256:8f5bbb072ea59d5897260c8009a876f71ce5d28745f33bbc199b392fa387411b"
+          "resource": "repo://renovate.json#L1155-L1177",
+          "version": "repo-lines-v1:sha256:efb4bf0891e458cdeef964b012bbb9f1985938788a027c62e07e9d4f06076c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4M2UzMmE3ZDVmOGY1MGVlZjQ4NzM1MGVmNmQ0NGNjZDAzZjBjYmRiYzk3MDBjNTM2OWU3NzI5NDM3YzkyOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNzBlYTgxMjgxMjc2NWE0MjJiMmRiMjdlZDQ1MmU5NTNiZTFkYmMzM2M2NTVlMzU2ZDcwY2UzNTlkNGMyZjEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs#L33-L144",
+          "version": "repo-lines-v1:sha256:535b319f528a271aa2ca841b3797184956a88fc47b1197954ccecbfb55c9a3ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMTEyYmZiMWY3NDZiNzNlMmIyOGFkNGFkMjFkZDNkMzA1OTVhM2RlYTNiMmE5MmVmMjlkZGRkOTIxNzI2NjdiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZDQ0NWUyMjFlZWIzZTg2ZmQzYzUyODkxMDVhMjZlMzNiYTVmYzA5ZjM1MzNhYmI5ODZkZGVjYzY0YTM0MGI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -737,7 +741,7 @@
           "version": "repo-lines-v1:sha256:8fc0668dda83119d600c489d2a9d6db47e03951652783c658b061d53a8578c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3221-L3262",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3201-L3242",
           "version": "repo-lines-v1:sha256:b72edeb2111a2d70225090d9669c82247ec493b250d6a42e1485f0af79f88f06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2E5NzQxNTE4OTBmYmI0YmYwYzNhOGI5MWU1NzY4ZGNmN2ZkNDNhYmM3ZGFlZTI4ZTRlZGRiMThmMTcwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -805,7 +809,7 @@
           "version": "repo-lines-v1:sha256:8fc0668dda83119d600c489d2a9d6db47e03951652783c658b061d53a8578c48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDI2ZWJjNjBlNjg0ZWU3OGE4MDM0Y2Y0MzMzYTVjNDkxNTE4YTQ3M2ZjNDA4YzBiNDgzMmY2NjNmODcxMmQifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3228-L3262",
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3208-L3242",
           "version": "repo-lines-v1:sha256:a4aaeeb273fc8b616bba224d9354ed8c1a7d60495691a19fafeae597ed2d97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjA2NTY1ZmI3MTY2Yjg1NjVmMzU4MGMwMTgwZWY3YmNlNTJiZTBlYjI1MGM5NTViY2JjNTBkZDNlODk4ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmE5ZjUyZWEwN2JjYzJkYzIxYjhkYjdhMzgzOTBjOTZkNDUzZTZhODZmZTdlMmFmM2Q3MzcxMTdkY2Q3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
         }
       ]
@@ -819,7 +823,7 @@
           "version": "repo-lines-v1:sha256:ec373b1fb441a53331fd430e7438284ae3346c5beda43bac6a263ebfee49c677:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNmY0YTM1ODEwNDk4OWIzYjIwZDcwMGNlMWY0ZDcxMTRjNTY0M2U1NDEyMzE1NDE3ODg5MGY4MTQwZDZjOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YjdjNWQ1MTQ4OTEyNWEwNWQ3YTE4OGZhZTczZTRhOGM3ZDI5MGNjZWViNWYzMzM5ZmE0ZmVkNWZhNjQwMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxNmEyYjFmYWNmMjVmOTEzODkwMDM5NDA0NGQ4NWE0YTZlZDAzODJkZTZhMjk4ODUwM2VhZTgzNTM3MmIzYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwY2ZiYjZiYTU4ZTMxYTQ1OTcxMTY3OWFmYzllMjc4OTgzM2M2YjE5MjI4MjY3MjRjMjc2MWI2N2YxYzYzNzIifQ"
         },
         {
-          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L830-L857",
+          "resource": "repo://specs/080-minio-to-rustfs/tasks.md#L887-L914",
           "version": "repo-lines-v1:sha256:cffd85db90eb4249dfa4511ebeba353ed70c3ced7073f1c8abd6d96ae1adef40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZmMwMzRkMTA1ZjYxNjkzM2Q0OGViMjg4ZTVhNGRjZDRiYzVmNWVjMzZjZDM5OWI3NWYwYjZhNzdhZjZkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YzJlNjE0MjM1YzUzMTM2NzkyYmRmZGZlMDNmZDYxODlkOTExMzJlNmQ1MzEwMDQzYjEzM2JhYjM1MDYyNTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzlkNWY1ZmVjNjliNDQ5ZTQzNWNkMDlhNGZkMjY2ZGI0MTYyYWRlOTM5MmIyYjAzMGMxYzU3MmM4ZGM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
         }
       ]
@@ -859,10 +863,24 @@
           "version": "repo-lines-v1:sha256:217b49a359e6726cbf642ea390531d059f4d34b8c22d679eca53d02c11cbd172:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZmFjNTdiMjg1YTRjODdhMWEzODUyNzA4YzY4NDUxYjliYmViOTk4YzNmODE0MWM4M2EzZDAxYWViYWQ4YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b0bb2c9e106c4784abfb1ad983b39524",
+      "statement": "renovate.json's stateful-datastore rule is what carries the discharged Postgres hold: it puts `postgres` in one `matchPackageNames` list beside `mongodb/mongodb-community-server`, `redis` and `clickhouse/clickhouse-server`, gated by `dependencyDashboardApproval` on `matchUpdateTypes: [\"major\"]` only, so every database major in the tree waits for an explicit dashboard tick while patches, minors and digest refreshes stay automatic. Its own description records the discharge rather than hiding it — the observability postgres (the shared Langfuse/Unleash pin) was HARD-held below 17 until spec 081 US8b moved both databases to 18 together, and it now rides the tick like every other postgres (keycloak, agent-db) — which is why the ceiling's absence is a successor rather than a hole.",
+      "evidence": [
+        {
+          "resource": "repo://renovate.json#L1155-L1177",
+          "version": "repo-lines-v1:sha256:efb4bf0891e458cdeef964b012bbb9f1985938788a027c62e07e9d4f06076c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZmU5M2ZiMjVjYjRiZGE3YzRlZDg0MzcyYzY4OTdlNDQ3OGFjMzUxZWY1ZTVjYmM3NGMxMTQyYjQ5YzIyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4M2UzMmE3ZDVmOGY1MGVlZjQ4NzM1MGVmNmQ0NGNjZDAzZjBjYmRiYzk3MDBjNTM2OWU3NzI5NDM3YzkyOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlYjdjMTgxOTYxM2E5Zjc3NGI4OTk0ZTQ3MzYwYjFjMzgzNGU1OGJkY2E0MzlhNWY2ZGQ3OWExZDFjMTFiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNzBlYTgxMjgxMjc2NWE0MjJiMmRiMjdlZDQ1MmU5NTNiZTFkYmMzM2M2NTVlMzU2ZDcwY2UzNTlkNGMyZjEifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3208-L3242",
+          "version": "repo-lines-v1:sha256:a4aaeeb273fc8b616bba224d9354ed8c1a7d60495691a19fafeae597ed2d97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjA2NTY1ZmI3MTY2Yjg1NjVmMzU4MGMwMTgwZWY3YmNlNTJiZTBlYjI1MGM5NTViY2JjNTBkZDNlODk4ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNmE5ZjUyZWEwN2JjYzJkYzIxYjhkYjdhMzgzOTBjOTZkNDUzZTZhODZmZTdlMmFmM2Q3MzcxMTdkY2Q3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMmIxYTI4NjZjMGZmNjM2ZGZiZGQ2MjhiODcxY2FjMThjYzM4YWVjYzUwN2MzYzA5YmViODE5ZGJlZjc2YmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T01:23:06.490Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }

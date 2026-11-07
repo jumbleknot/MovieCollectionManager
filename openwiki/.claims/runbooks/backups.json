@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fc80f7a74dfcc81945a46ddb7e9bde3f812091da56de4368e01a315a77fe16df",
+  "pageVersion": "sha256:75f37788b9b6017bf42b06d51c3171c936f234ee5660cb18af8b32ed20e93cd8",
   "claims": [
     {
       "id": "claim_5b86a47d89ae4efd9e3852642427292a",
@@ -452,15 +452,31 @@
     },
     {
       "id": "claim_606e1024889046d89f0a83c8d5a62c22",
-      "statement": "Granting backup consent also requires the realm's offline_access role, which Keycloak reaches through the realm's default-roles composite: a user created through the Admin API inherits it, but a user created by a realm-JSON import gets it only if that import grants the default role, and the failure is invisible — it surfaces as a blank page after sign-in rather than an error, which is how the seeded e2e-test-user once ended up unable to consent.",
+      "statement": "Granting backup consent also requires the realm's offline_access realm role, which Keycloak reaches through the realm's default-roles-jumbleknot composite (offline_access is one of its realm members): a user created through the Admin API inherits it, while a user created by a realm-JSON import gets it only if that import assigns the default role — which is why the committed ci-realm.json and dev-realm.json spell out realmRoles: [\"default-roles-jumbleknot\"] on the seeded e2e-test-user and e2e-admin-user. Dropping that assignment reintroduces an invisible failure: a blank page after sign-in rather than an error, which is how the seeded e2e-test-user once ended up unable to consent, so \"the consent screen does nothing\" is a realm-role question before it is a BFF one.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/backups.md",
-          "version": "repo-file-v1:sha256:abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6"
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-consent-session.integration.test.ts#L60-L62",
+          "version": "repo-lines-v1:sha256:946bd9ae8f70b9e034087efa13845fde6d24d38a7afa69ba715847afc294357b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0Y2Q2NGRkOTBmODllNzAyNWRkYmRiNjhiMTYxMWM4MGJlZTk1ZmU4MDkyYTI1MTZhNWNiMGM3ZGUyZTM4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFmMjY4N2VhZGIwMDgwZDdkODlmYTE2NzBiNGYwMDRiMGJjMzljYzM0OGMyOWUxYjQ2ZWQyMTg0NzA1NTkwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y4NDU3NWRlYjAwYTYyMGE1MDc2Y2VkOGNhYjM2NmFjYjkxODc2ZWZjY2VlMTBiODI0NGFlNzk1MmFjYWZjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE4MWU0NThkM2M2Nzk0ZjQwM2IxOGFlMGQ2YjhkYmYxZDdiN2RmMDZlNmM1Y2FmZDJmMjg5MWMwZThmZWU3OCJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json",
-          "version": "repo-file-v1:sha256:54006ba1df683356ac1a321a914c8bcd78df95ab6b60e79927d728859a5275d6"
+          "resource": "repo://frontend/mcm-app/tests/integration/backup-offline-token.integration.test.ts#L57-L62",
+          "version": "repo-lines-v1:sha256:86a2b6fa7d324c2cde8fd0a3ebe767f1a40a45b611920498f736deaac582456d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0Y2Q2NGRkOTBmODllNzAyNWRkYmRiNjhiMTYxMWM4MGJlZTk1ZmU4MDkyYTI1MTZhNWNiMGM3ZGUyZTM4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBjYzg1YjlmNGEzMTBmYjQ1MTE4NjFkZmI0MmU5NDhkMTk1MTdiMTNjZTA1NTA5ZWI4YzIxYmU5YTliYjZlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdmZWM2OWUzMjQ2MjI2M2ZiZDFiODdiZjQ4YzgwNTI3ZTNlYzZjNGRlZGY3OWVkMzI3ODQ0YWQyMzNhZDQwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3YTNkZWU0MDkxNTcwYTk3MDhkY2U3NjlhNzlkOGYzNTFhOGI0NmU4NTY4NmI1YWI0YzYxZjNlODY2MzE2ZSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json#L47-L78",
+          "version": "repo-lines-v1:sha256:6c0f1380a23fa45d11b355c89f965863237a1645a8d63c62c623e5d0d8750a13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMzY4ZDZhMDY1MDUyOGVmNTczN2U0NzI0OTVmY2M1NDQyZGE4ZTY4NWVmNWY1YTQ2YjUwZTM3OWE5ZmJjYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MWZhMDBhZDA2NjNlZmVmYjY0MmNkYzRmYmNmMjIzYjg5YWU5ZTM0YWQyYWFiMDFiNGI2YWMzYmE4Y2FiZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwM2NmYzkyYWFmNzA0YjlmMjEwYTc0Y2Y4NTRmY2YwNWJkZGNkZGZhZWQxZDRkNWU0ZTQ0NTVkYmI3ZTI1NWIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/ci-realm.json#L484-L531",
+          "version": "repo-lines-v1:sha256:77a88345a507bcbc44cc8c929d50db8938b7fcdcda0263e369afc57a3cb6f903:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZWU5YTM2MTNjY2YwYWZhNmNhNWFjNjZkN2I1Yjc2ZjY2Y2Q3NzViYTgxNDUxNWQ0YWMzZGM0MzFkMjM2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNDkwNTI3ZWNiODI0YmFkYWE4ZDM0ZGY0ODdhMmY4M2FjNjZhMTU2ZGExMWM4ZWU2NWViODQxZWU2YjVkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MTdhNThlYzZhNDk0NGVkNjNhMmUwM2U5ZDlmNjZkNjlkMmJmZjMxYjEyN2Y0MmFiMjMyMzJmZWNjOWEyZDIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/dev-realm.json#L484-L531",
+          "version": "repo-lines-v1:sha256:77a88345a507bcbc44cc8c929d50db8938b7fcdcda0263e369afc57a3cb6f903:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZWU5YTM2MTNjY2YwYWZhNmNhNWFjNjZkN2I1Yjc2ZjY2Y2Q3NzViYTgxNDUxNWQ0YWMzZGM0MzFkMjM2N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNDkwNTI3ZWNiODI0YmFkYWE4ZDM0ZGY0ODdhMmY4M2FjNjZhMTU2ZGExMWM4ZWU2NWViODQxZWU2YjVkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MTdhNThlYzZhNDk0NGVkNjNhMmUwM2U5ZDlmNjZkNjlkMmJmZjMxYjEyN2Y0MmFiMjMyMzJmZWNjOWEyZDIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L48-L79",
+          "version": "repo-lines-v1:sha256:6c0f1380a23fa45d11b355c89f965863237a1645a8d63c62c623e5d0d8750a13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMzY4ZDZhMDY1MDUyOGVmNTczN2U0NzI0OTVmY2M1NDQyZGE4ZTY4NWVmNWY1YTQ2YjUwZTM3OWE5ZmJjYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MWZhMDBhZDA2NjNlZmVmYjY0MmNkYzRmYmNmMjIzYjg5YWU5ZTM0YWQyYWFiMDFiNGI2YWMzYmE4Y2FiZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwM2NmYzkyYWFmNzA0YjlmMjEwYTc0Y2Y4NTRmY2YwNWJkZGNkZGZhZWQxZDRkNWU0ZTQ0NTVkYmI3ZTI1NWIifQ"
         }
       ]
     },
@@ -539,7 +555,7 @@
           "version": "repo-lines-v1:sha256:a1438eacc6381e091d10254013f4e1c5f09bb58ae3c55a8214e8dd6725a94ff5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI3NDYzMzRmZGJkNjUxMzIzOWYxMzI2ZGI4YjYxMjc1N2I1YjMyYzA4MDhiNTA4MWE5OTM3ZjY1MzNiOGRiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY1ODM1MzI1M2VhZDc5YmEyOTI4YmQ4NzUzZDI1ODQyYWI4MDQ5Y2NjMzE1YzkyNmVjZTRlZDZiMTdjNzIzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM1MDc3ZWQ5YjlmNzg1NjFiN2RhZDNmNmM1NGZlZTA3OGRmMTk0NGU4NjA5YjhjZTNjNTI1M2UwZjgzMGY2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg5NzE2YzA4ZDFhZGM1NmZjZWEyNTMyMGM1ODk0YTE2YjEyNGU5MmFmOGM2ZDZiMzk1NzEwNTg0NzcxNGY5NSJ9"
         },
         {
-          "resource": "repo://infrastructure-as-code/docker/keycloak/dev-realm.json#L1134-L1151",
+          "resource": "repo://infrastructure-as-code/docker/keycloak/dev-realm.json#L1135-L1152",
           "version": "repo-lines-v1:sha256:6014da5712347418981ce11829b5a2e1b12d3669f1e938e764d699bd28575df1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjgzZWExZWUzMDA1YzI4MWRkNTU2MzUwNzEwOWYwNDEzYmVhNzI3NDY0NTNmZTlkYTZlZWU3OWU4MTFjNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NDE5MTE5Nzk5YTUwNDVmOWY5OTkxY2YxZjkxMGE0OGZjYmNlNDU4MmRlMDE3NmM4MzJhNjRhYmM3ZmYzNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYTE1NzAyYjcwY2FjMDgzYjM1YWY3YWE4ZGQ2MDFmYWFjZmQ5YTRjODYwYjRkODMyMmMyZGNlOTI3NjY1NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiYWE3Y2ExOGJhNzIwMzAzMTg0YzE3ZDMxOWYwMzZhNzkyMjY1ZjhkMWVmYWZiYWExMTJkNDc5Nzk4NDhhNTMifQ"
         }
       ]
@@ -653,11 +669,11 @@
       "statement": "CopilotKit reports a refused /run through its onError subscription rather than a rejected promise, and for a non-2xx response the error's message IS the response body, so assistantRunFailureNotice parses that JSON for the BFF's code and maps it to member-facing prose (retryable codes to 'The assistant is temporarily unavailable. Please try again.', sign-in codes to 'Your session has expired. Please sign in again.', anything else to a generic message that never echoes the error); useAssistantRunFailureNotice subscribes to CopilotKit, shows the notice for a run-failure code and clears it when the next turn starts, and the dock renders it as an assistant chat bubble with testID assistant-run-failure.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L167-L170",
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L169-L172",
           "version": "repo-lines-v1:sha256:3f39461f283a06bdfbdd8b2d4bfdf62d7469ab3b3fa12e8fc38c1f10a6e8525a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYzMDM5YmYwNjkwZmMxNjkyMjEzOGNjYjc3Y2Y5NGViYjFjNjBiY2FmYWUyMmU2NGIzYTU4YzQ2NzQ1OTRmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAzYTVmZTQ5YTE5ZTE2ZTNiZjA4ZTkxZjJlNmY3ODNmOGNhYTg1NGJiZmM3Y2U2OGQ0NWE2MTkwOGQ3MTE1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODRlN2NlZmI1NzY0NzdkMDBkNjAyZjBjYjYyNWY0N2E4NGY2MTQxYzE1MzBlNTk3Y2E0MGFmY2RjODYwMDlmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWRlYmUwMjRiMGE5NjgxZjkzNmViNmJkOGVmYTA5MjcwZjdjMWNiNTI5YTZjNjlkMzU5NjA3YzA4MWVkNWZjZCJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L226-L230",
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L228-L232",
           "version": "repo-lines-v1:sha256:19696a4ed11e0dc95638dd673187d33a5a770bdd101ae1e69e2a0382225cf101:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTEwMzU4ZjA5MmMyOTlkOTVlNGQwYmM4ZmM1YWNmMmFjMzNhMDRlNTdkZjdhYTU0MTM5YTEwNGFhODY4NDkyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAwOGVhYzc1MDI1OTk4OTBkM2RhZWYyMjc4NTg4YTNlMjBhNWVhYmJhMDdhNmQ1NTYyNDRiM2RiOGQ5ZmVkMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE4NzJiNGFjMWE1MTAzMDI3MjFiOGM5ZmY5YzgyM2YyODA4ODMwMGVjZTFhMzE2NTE3ODRmOTAzY2E1ODg5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc4NjU3ODljYjkxZjk1ZmNlZWQ0NDNlMGYyNTc2NzUzNTE0YTEyZTEwMWJiNmE0YjBhOTAyODI1Mzg0ZTljMiJ9"
         },
         {
@@ -673,6 +689,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-07T05:05:27.957Z"
   }
 }
