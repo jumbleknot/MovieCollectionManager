@@ -226,7 +226,7 @@ services:
 
   # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
   otel-lgtm:
-    image: grafana/otel-lgtm:0.38.1@sha256:0df9bc14142000b161344bd24caf6ddd319b7319055aedaf9b0692b125730af7
+    image: grafana/otel-lgtm:0.39.0@sha256:4c8056c9c05fcb3c8fd93800e85334bfd79b4d0271b47a54a121a64af41fe1fe
     container_name: otel-lgtm
     profiles: [observability]
     restart: unless-stopped
@@ -246,7 +246,7 @@ services:
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
   opa-service:
-    image: openpolicyagent/opa:1.21.4@sha256:12420358d3f22a0cd2424ddc44a16e292ecb42825d3dfbca779986006822a3f6
+    image: openpolicyagent/opa:1.22.0@sha256:895872de1e8dc5b82e04f9410d2d1ada2f72d28fdcdba0e8789d91cfc27ec0d0
     container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
