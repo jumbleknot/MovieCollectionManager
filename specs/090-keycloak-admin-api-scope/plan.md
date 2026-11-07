@@ -18,8 +18,10 @@ Measured on isolated containers with `ci-realm.json` and throwaway secrets, 2026
 | 26.8.2 upgraded, then scope assigned | 200 |
 | 26.8.1, scope created and assigned, then upgraded | 200, one scope, migration unaffected |
 
-The last row means production can be prepared first, with no window where admin calls fail. The scope's
-definition is copied from what 26.8.2 generates, so the realm files and the migration agree.
+The last row means a realm whose admin can sign in with a password can be prepared first, with no window
+where admin calls fail. Production cannot, because its admin uses two-factor, so it takes the row above it:
+upgrade, then assign the scope in the console. The scope's definition is copied from what 26.8.2 generates,
+so the realm files and the migration agree.
 
 ## Rollback
 

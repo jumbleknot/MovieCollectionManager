@@ -104,6 +104,25 @@ KC_URL=<admin URL> KC_ADMIN_PASSWORD=<bootstrap admin password> \
   node infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
 ```
 
+**The script cannot sign in as an admin with two-factor**, because it sends only a password. Production's
+admin uses two-factor and its bootstrap `admin` no longer exists, so production takes the console route
+instead: move to 26.8.2, whose migration creates the scope, then go to **Clients → mcm-bff-service → Client
+scopes → Add client scope → `kc-admin-api` → Add → Default**. BFF admin calls answer 401 until that is done,
+so merge the bump only when someone is ready at the console.
+
+## Production's realm was configured by hand (feature 092)
+
+A realm file applies only when a realm is first created, so a change to `prod-realm.json` does not reach the
+running production realm. Make the same change in the console. CI cannot see a difference, because it imports
+its own realm file. Two differences have already caused failures that only production showed:
+
+- **`mcm-bff-service` needs `view-users`, `view-clients` and `manage-users`.** Without `view-clients`, account
+  deletion by an administrator and self-registration both fail. `query-clients` is not enough: the lookup
+  answers 200 with an empty list.
+- **`movie-collection-manager` must list every address `/bff-api/auth/init` registers.** That route needs
+  `manage-clients`, which production deliberately does not grant, so it cannot add them there. Keycloak
+  refuses anything unlisted with `Invalid parameter: redirect_uri`.
+
 ## ⚠️ Realm JSON takes NO comments — not even a `_comment` key
 
 Keycloak's import deserializes these files into `RealmRepresentation` with unknown fields **rejected**.

@@ -8,9 +8,13 @@
   scope and assignment in all three realm files. **Verify GREEN**: the same test passes.
 - [X] **T003** Prove SC-001 and SC-002 against real Keycloak images, using the script itself.
 - [X] **T004** Document it in the Keycloak README and `docs/runbooks/renovate.md` (FR-005).
-- [ ] **T005** Open the PR and get green CI. **Quote** the run numbers.
-- [ ] **T006** Operator: run the script on production, dry run first, then `--apply`.
-- [ ] **T007** Rebase PR #950 on this change, get it green (SC-003), and merge it after T006.
+- [X] **T005** Open the PR and get green CI. **Quote** the run numbers.
+- [ ] **T006** Operator: straight after #950 upgrades production, assign `kc-admin-api` to `mcm-bff-service`
+  in the console. The script cannot do this: production's admin uses two-factor. The operator chose this on
+  2026-11-07, accepting that BFF admin calls answer 401 until the assignment is done. **Verify**: the BFF's
+  client lookup answers 200 on 26.8.2.
+- [ ] **T007** Rebase PR #950 on this change and get it green (SC-003). Merge it only when the operator is
+  ready at the console, because merging starts the upgrade.
 
 ## Evidence
 
@@ -21,6 +25,6 @@
 | T003, SC-001 | Fresh import of `ci`, `dev` and `prod` (with `BASE_DOMAIN` rendered, as production does) on 26.8.1 and 26.8.2: scope assigned, one `kc-admin-api`. `ci` service account Admin API call: 200 on both. The unchanged prod file, unrendered, also fails to start, so that failure is not this change | Local |
 | T003, SC-002 | 26.8.1 realm: dry run `to do: create-scope, assign-scope`, nothing changed. `--apply`: `done`. Again: `nothing, already in place`. 200 before the upgrade, 200 after it, one scope | Local |
 | T003, repair | Realm upgraded with no script: 401. `--apply`, `to do: assign-scope`: 200 | Local |
-| T005 | | |
+| T005 | All 12 required contexts green at `f5d5bbd6`, after `main` took #953. Merged as `d01a2715` | app-ci 6984, guardrails 6985, infra-image-scan 6986 |
 | T006 | | |
 | T007 | | |
