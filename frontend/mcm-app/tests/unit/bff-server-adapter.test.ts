@@ -1,5 +1,10 @@
 /**
- * @jest-environment node
+ * No `@jest-environment node` here (feature 087, T043). Since Jest 30.4, `resetModules()` reads
+ * every enumerable global, and Expo installs `fetch`, `structuredClone` and others as getters that
+ * `require()` on first read, which Jest refuses outside a test. jest-expo's own environment, itself
+ * a Node environment, skips those getters; plain `jest-environment-node` does not, and every suite
+ * on it failed with `You are trying to require a file outside of the scope of the test code`. This
+ * suite needs only Node built-ins and a child process, so the preset's environment serves it.
  */
 /**
  * Feature 081 US6 (T044) — the express layer of `server.js`, the BFF's production entrypoint.

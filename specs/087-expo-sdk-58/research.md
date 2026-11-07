@@ -280,15 +280,22 @@ and on PR C's export, on the same machine and through real `server.js`. `nx test
 spike's sandbox without a usable report. It depends on Expo's API, so a required step would let an outside service block
 merges. If CI can't reach that API either, record it and ask the operator rather than treating it as a pass.
 
-## Open item: the two Jest 30 failures
+## Resolved: the two Jest 30 failures
 
-Both `server.js` suites fail under Jest 30 with `You are trying to require a file outside of the scope of the test code`,
-thrown through a lazy global getter in `expo`'s runtime, between tests **[M]**. All 1,707 tests pass, but the suites
-themselves report failed. The trigger has not been traced.
+Both `server.js` suites failed under Jest 30 with `You are trying to require a file outside of the scope of the test code`,
+thrown through a lazy global getter in `expo`'s runtime **[M]**.
 
-**Decision**: diagnose in PR C. These suites need nothing from the Expo preset, so the likely fix is to stop the lazy
-getters being reached during their teardown. They are never skipped (FR-016). If moving them to another runner is the
-cleanest fix, they stay in a required tier with their assertions unchanged.
+**Cause [M, PR C T043]**: since Jest 30.4, `Runtime.resetModules()` calls `moduleMocker.clearMocksOnScope(global)`, which
+reads every enumerable global. Expo installs `fetch`, `structuredClone`, `URL` and others as getters that `require()`
+their implementation on first read, and Jest refuses that require outside a test. `jest-expo`'s own environment
+(`src/preset/nativeEnvironment.js`, a `jest-environment-node` subclass) patches `clearMocksOnScope` to skip accessor
+properties. These two suites were the only ones that chose `@jest-environment node`, which bypasses that patch, so they
+were the only ones to fail. An empty test under `@jest-environment node` fails the same way; turning
+`testEnvironmentOptions.globalsCleanup` off does not help, because that is a different mechanism.
+
+**Fix**: the two suites drop the `@jest-environment node` override and run on the preset's environment. They need only
+Node built-ins and a child process. Nothing is skipped and no assertion changed (FR-016). A note in each file says why, so
+the override is not added back.
 
 ## Stage-start measurements
 

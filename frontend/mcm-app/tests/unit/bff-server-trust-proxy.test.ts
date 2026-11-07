@@ -1,5 +1,7 @@
 /**
- * @jest-environment node
+ * No `@jest-environment node` here (feature 087, T043): see the same note in
+ * `bff-server-adapter.test.ts`. Plain `jest-environment-node` fails every suite under Jest 30.4+ with
+ * jest-expo's lazy globals; the preset's environment is Node-based and skips them.
  */
 /**
  * Spec 083 T010 (item #843), feature 087 — the URL a BFF route receives behind the TLS-terminating
