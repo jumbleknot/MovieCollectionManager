@@ -97,7 +97,10 @@ describe('on-demand rate limit (FR-012)', () => {
     expect(refused).toBeInstanceOf(RateLimitError);
     // A 429 with no retry hint tells a user to try again at random, which is how a rate limit
     // becomes a source of load rather than a control on it.
-    expect(refused!.retryAfter ?? (refused as unknown as { retryAfterSeconds?: number }).retryAfterSeconds).toBeGreaterThan(0);
+    expect(
+      refused!.retryAfter ??
+        (refused as unknown as { retryAfterSeconds?: number }).retryAfterSeconds,
+    ).toBeGreaterThan(0);
   });
 
   it('counts per user, so one user cannot exhaust another’s allowance', async () => {

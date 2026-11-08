@@ -24,7 +24,10 @@ import { validateObjectId } from '@/bff-server/resource-id';
 
 // ─── GET /bff-api/collections/:id/movies/filter-options ───────────────────────
 
-export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function GET(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _get(req, collectionId));
 }
 

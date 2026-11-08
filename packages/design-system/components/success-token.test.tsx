@@ -50,17 +50,22 @@ describe('success colour role (contract)', () => {
     }
   });
 
-  it.each(['light', 'dark'] as const)('resolves all success roles via TamaguiProvider (%s)', async (themeName) => {
-    const map = themeName === 'light' ? lightColors : darkColors;
-    const { getByTestId } = await render(
-      <TamaguiProvider config={config} defaultTheme={themeName}>
-        <ThemeProbe />
-      </TamaguiProvider>,
-    );
-    for (const role of ROLES) {
-      expect(getByTestId(`val-${role}`).props.children).toBe((map as Record<string, string>)[role]);
-    }
-  });
+  it.each(['light', 'dark'] as const)(
+    'resolves all success roles via TamaguiProvider (%s)',
+    async (themeName) => {
+      const map = themeName === 'light' ? lightColors : darkColors;
+      const { getByTestId } = await render(
+        <TamaguiProvider config={config} defaultTheme={themeName}>
+          <ThemeProbe />
+        </TamaguiProvider>,
+      );
+      for (const role of ROLES) {
+        expect(getByTestId(`val-${role}`).props.children).toBe(
+          (map as Record<string, string>)[role],
+        );
+      }
+    },
+  );
 
   it.each(['light', 'dark'] as const)('meets WCAG AA in both themes (%s)', (themeName) => {
     const c = themeName === 'light' ? lightColors : darkColors;

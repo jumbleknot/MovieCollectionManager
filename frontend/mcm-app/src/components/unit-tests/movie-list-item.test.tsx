@@ -95,7 +95,11 @@ describe('MovieListItem', () => {
 
   it('renders year cell when year is visible', async () => {
     const { getByTestId } = await render(
-      <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, year: true }} onPress={() => {}} />,
+      <MovieListItem
+        movie={MOCK_MOVIE}
+        visibleColumns={{ ...ALL_HIDDEN, year: true }}
+        onPress={() => {}}
+      />,
     );
     expect(getByTestId('movie-list-item-year')).toBeTruthy();
   });
@@ -109,28 +113,44 @@ describe('MovieListItem', () => {
 
   it('renders contentType cell when contentType is visible', async () => {
     const { getByTestId } = await render(
-      <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, contentType: true }} onPress={() => {}} />,
+      <MovieListItem
+        movie={MOCK_MOVIE}
+        visibleColumns={{ ...ALL_HIDDEN, contentType: true }}
+        onPress={() => {}}
+      />,
     );
     expect(getByTestId('movie-list-item-contentType')).toBeTruthy();
   });
 
   it('renders owned cell when owned is visible', async () => {
     const { getByTestId } = await render(
-      <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, owned: true }} onPress={() => {}} />,
+      <MovieListItem
+        movie={MOCK_MOVIE}
+        visibleColumns={{ ...ALL_HIDDEN, owned: true }}
+        onPress={() => {}}
+      />,
     );
     expect(getByTestId('movie-list-item-owned')).toBeTruthy();
   });
 
   it('renders ripped cell when ripped is visible', async () => {
     const { getByTestId } = await render(
-      <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, ripped: true }} onPress={() => {}} />,
+      <MovieListItem
+        movie={MOCK_MOVIE}
+        visibleColumns={{ ...ALL_HIDDEN, ripped: true }}
+        onPress={() => {}}
+      />,
     );
     expect(getByTestId('movie-list-item-ripped')).toBeTruthy();
   });
 
   it('renders runtime cell when runtime is visible', async () => {
     const { getByTestId } = await render(
-      <MovieListItem movie={MOCK_MOVIE} visibleColumns={{ ...ALL_HIDDEN, runtime: true }} onPress={() => {}} />,
+      <MovieListItem
+        movie={MOCK_MOVIE}
+        visibleColumns={{ ...ALL_HIDDEN, runtime: true }}
+        onPress={() => {}}
+      />,
     );
     expect(getByTestId('movie-list-item-runtime')).toBeTruthy();
   });

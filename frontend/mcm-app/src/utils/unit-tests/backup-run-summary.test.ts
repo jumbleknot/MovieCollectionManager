@@ -47,9 +47,7 @@ describe('how long a run took', () => {
   });
 
   it('reports minutes and seconds for a longer one', () => {
-    expect(
-      formatRunDuration(run({ finishedAt: '2026-06-15T03:01:04.000Z' })),
-    ).toBe('1m 04s');
+    expect(formatRunDuration(run({ finishedAt: '2026-06-15T03:01:04.000Z' }))).toBe('1m 04s');
   });
 
   it('says nothing rather than guessing while a run is still going', () => {
@@ -61,7 +59,9 @@ describe('how long a run took', () => {
   it('says nothing when the timestamps are the wrong way round', () => {
     // Clock adjustments happen. A negative duration is worse than an absent one.
     expect(
-      formatRunDuration(run({ startedAt: '2026-06-15T03:00:12.000Z', finishedAt: '2026-06-15T03:00:00.000Z' })),
+      formatRunDuration(
+        run({ startedAt: '2026-06-15T03:00:12.000Z', finishedAt: '2026-06-15T03:00:00.000Z' }),
+      ),
     ).toBeNull();
   });
 });
@@ -206,7 +206,9 @@ describe('per-collection counts, and nothing else (US6-AC4)', () => {
   });
 
   it('carries no ids — a collection id is not something to render at the user', () => {
-    const line = describeCollectionCounts([{ collectionId: 'c-secret-id', name: 'Sci-Fi', movieCount: 7 }]);
+    const line = describeCollectionCounts([
+      { collectionId: 'c-secret-id', name: 'Sci-Fi', movieCount: 7 },
+    ]);
     expect(line).not.toContain('c-secret-id');
   });
 });

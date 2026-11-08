@@ -22,7 +22,11 @@ function ok(body: unknown, code = 200): Response {
 }
 
 function refused(code: number): Response {
-  return { ok: false, status: code, json: async () => ({ error: 'refused' }) } as unknown as Response;
+  return {
+    ok: false,
+    status: code,
+    json: async () => ({ error: 'refused' }),
+  } as unknown as Response;
 }
 
 const token = () => ok({ access_token: 'admin-token' });

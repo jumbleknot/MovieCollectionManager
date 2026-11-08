@@ -33,7 +33,9 @@ const CREDS_PRESENT = Boolean(
   process.env.KEYCLOAK_SERVICE_CLIENT_SECRET && process.env.E2E_TEST_PASSWORD,
 );
 if (!CREDS_PRESENT && process.env.MCM_REQUIRE_LIVE_STACK === '1') {
-  throw new Error('account-delete-routes requires KEYCLOAK_SERVICE_CLIENT_SECRET and E2E_TEST_PASSWORD');
+  throw new Error(
+    'account-delete-routes requires KEYCLOAK_SERVICE_CLIENT_SECRET and E2E_TEST_PASSWORD',
+  );
 }
 const describeLive = CREDS_PRESENT ? describe : describe.skip;
 

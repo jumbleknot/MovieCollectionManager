@@ -14,7 +14,11 @@ const TEMPORARILY_UNAVAILABLE = 'The assistant is temporarily unavailable. Pleas
 const SIGN_IN_AGAIN = 'Your session has expired. Please sign in again.';
 const GENERIC = "The assistant couldn't respond. Please try again.";
 
-const RETRYABLE_CODES = new Set(['AGENT_IDENTITY_UNAVAILABLE', 'KEYCLOAK_UNAVAILABLE', 'SESSION_RENEWAL_PENDING']);
+const RETRYABLE_CODES = new Set([
+  'AGENT_IDENTITY_UNAVAILABLE',
+  'KEYCLOAK_UNAVAILABLE',
+  'SESSION_RENEWAL_PENDING',
+]);
 const SIGN_IN_CODES = new Set([
   'AGENT_IDENTITY_REJECTED',
   'REFRESH_FAILED',
@@ -26,7 +30,11 @@ const SIGN_IN_CODES = new Set([
 ]);
 
 /** The run-failure codes CopilotKit core emits for a turn that did not complete. */
-const RUN_FAILURE_CODES = new Set(['agent_run_failed', 'agent_run_failed_event', 'agent_run_error_event']);
+const RUN_FAILURE_CODES = new Set([
+  'agent_run_failed',
+  'agent_run_failed_event',
+  'agent_run_error_event',
+]);
 
 function bffCodeOf(error: unknown): string | undefined {
   if (!(error instanceof Error)) return undefined;

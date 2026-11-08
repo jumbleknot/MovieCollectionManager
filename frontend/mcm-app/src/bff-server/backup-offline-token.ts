@@ -79,7 +79,9 @@ const browserAuthorizeEndpoint = () =>
   `${env.keycloakPublicUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/auth`;
 
 function credentials(clientId: string, clientSecret: string): Record<string, string> {
-  return clientSecret ? { client_id: clientId, client_secret: clientSecret } : { client_id: clientId };
+  return clientSecret
+    ? { client_id: clientId, client_secret: clientSecret }
+    : { client_id: clientId };
 }
 
 // THE CONSENT RUNS AS ITS OWN CLIENT, NOT THE LOGIN CLIENT (feature 083, #702).
@@ -120,8 +122,11 @@ function consentClientCredentials(): Record<string, string> {
 export function credentialsFor(refreshToken: string): Record<string, string> {
   let azp: unknown;
   try {
-    azp = (JSON.parse(Buffer.from(refreshToken.split('.')[1], 'base64url').toString()) as { azp?: unknown })
-      .azp;
+    azp = (
+      JSON.parse(Buffer.from(refreshToken.split('.')[1], 'base64url').toString()) as {
+        azp?: unknown;
+      }
+    ).azp;
   } catch {
     throw new OfflineTokenUnusableError();
   }
@@ -213,7 +218,9 @@ export async function storeOfflineToken(userId: string, refreshToken: string): P
     backupEncryptionKey(),
     offlineTokenAad(userId),
   );
-  await (await getAgentConfigCollection()).updateOne(
+  await (
+    await getAgentConfigCollection()
+  ).updateOne(
     { _id: userId },
     {
       $set: {
@@ -326,7 +333,10 @@ export interface RevokeOptions {
  * still find it. Deleting it here would report success while a live, non-expiring token stayed
  * out there with nothing left pointing at it.
  */
-export async function revokeOfflineToken(userId: string, options: RevokeOptions = {}): Promise<void> {
+export async function revokeOfflineToken(
+  userId: string,
+  options: RevokeOptions = {},
+): Promise<void> {
   const refreshToken = await readOfflineToken(userId);
   if (!refreshToken) return; // Nothing granted, nothing to revoke — a no-op, not an error.
 
@@ -344,7 +354,9 @@ export async function revokeOfflineToken(userId: string, options: RevokeOptions 
     );
   }
 
-  await (await getAgentConfigCollection()).updateOne(
+  await (
+    await getAgentConfigCollection()
+  ).updateOne(
     { _id: userId },
     {
       $unset: { offlineRefreshEnc: '', offlineGrantedAt: '' },

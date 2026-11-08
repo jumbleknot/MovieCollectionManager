@@ -50,11 +50,13 @@ jest.mock('@/bff-server/session-manager', () => ({
   getActiveSessionCount: (...args: unknown[]) => mockGetActiveSessionCount(...args),
 }));
 
-
 // The REAL cookie builders (feature 085): what login sets on the client is under test.
 jest.mock('@/bff-server/auth', () => {
   const actual = jest.requireActual('@/bff-server/auth');
-  return { buildAuthCookies: actual.buildAuthCookies, buildClearAuthCookies: actual.buildClearAuthCookies };
+  return {
+    buildAuthCookies: actual.buildAuthCookies,
+    buildClearAuthCookies: actual.buildClearAuthCookies,
+  };
 });
 
 jest.mock('@/config/env', () => ({
@@ -128,7 +130,10 @@ function setupHappyPath() {
   mockExchangeCodeForTokens.mockResolvedValue(VALID_TOKENS);
   mockDecodeJwtPayload.mockReturnValue(VALID_ID_PAYLOAD);
   mockValidateAtHash.mockReturnValue(true);
-  mockValidateJwt.mockResolvedValue({ payload: VALID_ACCESS_PAYLOAD, header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' } });
+  mockValidateJwt.mockResolvedValue({
+    payload: VALID_ACCESS_PAYLOAD,
+    header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' },
+  });
   mockExtractRoles.mockReturnValue(['mc-user']);
   mockGetUserById.mockResolvedValue(VALID_USER);
   mockGetActiveSessionCount.mockResolvedValue(0);
@@ -153,7 +158,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { success: boolean; user: { id: string } };
+    const body = (await res.json()) as { success: boolean; user: { id: string } };
     expect(body.success).toBe(true);
     expect(body.user.id).toBe('user-123');
     expect(res.headers.get('X-Session-Id')).toBe('sess-abc');
@@ -185,7 +190,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(400);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.INVALID_INPUT);
   });
 
@@ -193,7 +198,9 @@ describe('POST /bff-api/auth/login', () => {
 
   it('returns 401 when JWT audience/azp validation fails', async () => {
     setupHappyPath();
-    mockValidateJwt.mockRejectedValue(new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401));
+    mockValidateJwt.mockRejectedValue(
+      new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401),
+    );
 
     const req = makeRequest({
       code: 'auth-code',
@@ -204,7 +211,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(401);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.UNAUTHORIZED);
   });
 
@@ -221,7 +228,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(401);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.TOKEN_INVALID);
   });
 
@@ -240,7 +247,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(403);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.FORBIDDEN);
   });
 
@@ -257,7 +264,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(403);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.ACCOUNT_DISABLED);
   });
 
@@ -265,7 +272,9 @@ describe('POST /bff-api/auth/login', () => {
 
   it('returns a structured error (not 500 UNKNOWN_ERROR) when Redis session creation fails', async () => {
     setupHappyPath();
-    mockCreateSession.mockRejectedValue(new Error('ECONNREFUSED connect ECONNREFUSED 127.0.0.1:6379'));
+    mockCreateSession.mockRejectedValue(
+      new Error('ECONNREFUSED connect ECONNREFUSED 127.0.0.1:6379'),
+    );
 
     const req = makeRequest({
       code: 'auth-code',
@@ -277,7 +286,7 @@ describe('POST /bff-api/auth/login', () => {
 
     // Must NOT be 500 with UNKNOWN_ERROR — infrastructure errors must be handled
     expect(res.status).not.toBe(500);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).not.toBe(AuthErrorCode.UNKNOWN_ERROR);
   });
 
@@ -294,7 +303,7 @@ describe('POST /bff-api/auth/login', () => {
     const res = await POST(req);
 
     expect(res.status).toBe(503);
-    const body = await res.json() as { code: string };
+    const body = (await res.json()) as { code: string };
     expect(body.code).toBe(AuthErrorCode.KEYCLOAK_UNAVAILABLE);
   });
 });

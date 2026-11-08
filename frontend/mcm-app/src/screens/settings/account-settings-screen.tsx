@@ -41,7 +41,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   reauth: 'We could not confirm it was you. Your account has not been deleted.',
   expired: 'That request timed out and your account has not been deleted. Start again below.',
   failed: 'Something went wrong and your account was not deleted. Please try again.',
-  challenge: 'We could not start the deletion, so your account has not been deleted. Please try again.',
+  challenge:
+    'We could not start the deletion, so your account has not been deleted. Please try again.',
 };
 
 export function AccountSettingsScreen(): React.JSX.Element {
@@ -78,7 +79,9 @@ export function AccountSettingsScreen(): React.JSX.Element {
     >
       {error ? (
         <View style={styles.banner}>
-          <Banner testID="account-delete-error" tone="error">{error}</Banner>
+          <Banner testID="account-delete-error" tone="error">
+            {error}
+          </Banner>
         </View>
       ) : null}
 

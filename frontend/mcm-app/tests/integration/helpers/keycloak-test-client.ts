@@ -85,7 +85,11 @@ export async function getTestTokens(username: string, password: string): Promise
     refresh_token: string;
     id_token: string;
   };
-  return { accessToken: data.access_token, refreshToken: data.refresh_token, idToken: data.id_token };
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    idToken: data.id_token,
+  };
 }
 
 // ─── Admin API ───────────────────────────────────────────────────────────────
@@ -166,7 +170,12 @@ export async function getUserById(
     headers: { Authorization: `Bearer ${adminToken}` },
   });
   if (!res.ok) throw new Error(`getUserById failed (${res.status})`);
-  return (await res.json()) as { id: string; username: string; emailVerified: boolean; enabled: boolean };
+  return (await res.json()) as {
+    id: string;
+    username: string;
+    emailVerified: boolean;
+    enabled: boolean;
+  };
 }
 
 /**
@@ -254,10 +263,9 @@ export async function ensureRopcAudienceMapper(): Promise<void> {
   const ropc = ((await clientsRes.json()) as Array<{ id: string }>)[0];
   if (!ropc) throw new Error(`ROPC client ${ROPC_CLIENT_ID} not found`);
 
-  const mappersRes = await fetch(
-    `${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`,
-    { headers: authz },
-  );
+  const mappersRes = await fetch(`${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`, {
+    headers: authz,
+  });
   const mappers = (await mappersRes.json()) as Array<{ config?: Record<string, string> }>;
   const exists = mappers.some((m) => m.config?.['included.client.audience'] === APP_CLIENT_ID);
   if (exists) return;
@@ -300,10 +308,9 @@ export async function ensureRopcAudienceFor(audienceClientId: string): Promise<v
   const ropc = ((await clientsRes.json()) as Array<{ id: string }>)[0];
   if (!ropc) throw new Error(`ROPC client ${ROPC_CLIENT_ID} not found`);
 
-  const mappersRes = await fetch(
-    `${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`,
-    { headers: authz },
-  );
+  const mappersRes = await fetch(`${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`, {
+    headers: authz,
+  });
   const mappers = (await mappersRes.json()) as Array<{ config?: Record<string, string> }>;
   if (mappers.some((m) => m.config?.['included.client.audience'] === audienceClientId)) return;
 
@@ -349,10 +356,9 @@ export async function ensureClientAudienceMapper(
   const client = ((await clientsRes.json()) as Array<{ id: string }>)[0];
   if (!client) return false;
 
-  const mappersRes = await fetch(
-    `${ADMIN_BASE}/clients/${client.id}/protocol-mappers/models`,
-    { headers: authz },
-  );
+  const mappersRes = await fetch(`${ADMIN_BASE}/clients/${client.id}/protocol-mappers/models`, {
+    headers: authz,
+  });
   const mappers = (await mappersRes.json()) as Array<{ config?: Record<string, string> }>;
   if (mappers.some((m) => m.config?.['included.client.audience'] === audienceClientId)) return true;
 
@@ -371,7 +377,9 @@ export async function ensureClientAudienceMapper(
     }),
   });
   if (!res.ok && res.status !== 409) {
-    throw new Error(`ensureClientAudienceMapper(${targetClientId}->${audienceClientId}) failed (${res.status})`);
+    throw new Error(
+      `ensureClientAudienceMapper(${targetClientId}->${audienceClientId}) failed (${res.status})`,
+    );
   }
   return true;
 }
@@ -422,10 +430,13 @@ export async function removeRole(userId: string, roleName: string): Promise<void
   );
   if (!roleRes.ok) throw new Error(`removeRole: role ${roleName} not found (${roleRes.status})`);
   const role = (await roleRes.json()) as { id: string; name: string };
-  const res = await fetch(`${ADMIN_BASE}/users/${userId}/role-mappings/clients/${clientInternalId}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...authz },
-    body: JSON.stringify([role]),
-  });
+  const res = await fetch(
+    `${ADMIN_BASE}/users/${userId}/role-mappings/clients/${clientInternalId}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', ...authz },
+      body: JSON.stringify([role]),
+    },
+  );
   if (!res.ok) throw new Error(`removeRole: removal failed (${res.status})`);
 }

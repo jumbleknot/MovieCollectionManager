@@ -138,7 +138,12 @@ async function driverFor(destinationId: string) {
 beforeAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { env } = require('@/config/env') as { env: { backupAllowedDestinationHosts: string } };
-  const hosts = new Set(env.backupAllowedDestinationHosts.split(',').map((h) => h.trim()).filter(Boolean));
+  const hosts = new Set(
+    env.backupAllowedDestinationHosts
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
+  );
   hosts.add(new URL(S3_ENDPOINT).hostname);
   env.backupAllowedDestinationHosts = [...hosts].join(',');
 
@@ -148,9 +153,17 @@ beforeAll(async () => {
   session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
-  const a = await bff.post('/bff-api/collections', { name: `Runner A ${randomUUID().slice(0, 8)}` }, auth());
+  const a = await bff.post(
+    '/bff-api/collections',
+    { name: `Runner A ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   collectionIdA = a.data.collectionId ?? a.data.id;
-  const b = await bff.post('/bff-api/collections', { name: `Runner B ${randomUUID().slice(0, 8)}` }, auth());
+  const b = await bff.post(
+    '/bff-api/collections',
+    { name: `Runner B ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   collectionIdB = b.data.collectionId ?? b.data.id;
 
   for (const title of ['Runner One', 'Runner Two', 'Runner Three']) {
@@ -172,9 +185,12 @@ afterAll(async () => {
   await closeMongo();
 });
 
-itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
-  assertBackupTargetsPresent();
-});
+itBackupTargets(
+  'has the backup destinations up — otherwise every case below is one failure',
+  () => {
+    assertBackupTargetsPresent();
+  },
+);
 
 describeBackupTargets('a successful run', () => {
   it('writes EXACTLY ONE object, whose digest recomputes', async () => {
@@ -212,10 +228,19 @@ describeBackupTargets('a successful run', () => {
     const artifact = decompressArtifact(await driver.get(run.artifactKey!));
 
     const schemaPath = join(
-      __dirname, '..', '..', '..', '..',
-      'specs', '073-scheduled-backups', 'contracts', 'backup-artifact-v1.schema.json',
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'specs',
+      '073-scheduled-backups',
+      'contracts',
+      'backup-artifact-v1.schema.json',
     );
-    const validate = new Ajv2020({ strict: false }).compile(JSON.parse(readFileSync(schemaPath, 'utf8')));
+    const validate = new Ajv2020({ strict: false }).compile(
+      JSON.parse(readFileSync(schemaPath, 'utf8')),
+    );
     const valid = validate(JSON.parse(JSON.stringify(artifact)));
     expect(validate.errors ?? []).toEqual([]);
     expect(valid).toBe(true);
@@ -394,8 +419,18 @@ describeBackupTargets('a run that fails mid-way', () => {
       const driver = await driverFor(destination.id);
       const prefix = `${PREFIX}/${job._id}/`;
 
-      await runBackup({ userId: user.userId, jwt: token, job: { ...job, keepLast: 9 }, trigger: 'manual' });
-      await runBackup({ userId: user.userId, jwt: token, job: { ...job, keepLast: 9 }, trigger: 'manual' });
+      await runBackup({
+        userId: user.userId,
+        jwt: token,
+        job: { ...job, keepLast: 9 },
+        trigger: 'manual',
+      });
+      await runBackup({
+        userId: user.userId,
+        jwt: token,
+        job: { ...job, keepLast: 9 },
+        trigger: 'manual',
+      });
       const before = (await driver.list(prefix)).map((o) => o.key).sort();
       expect(before).toHaveLength(2);
 

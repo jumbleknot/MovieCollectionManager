@@ -4,13 +4,7 @@
  * Also wires the session timeout callback.
  */
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { clearSession, hasStoredSession } from '@/utils/session-storage';
 import { clearAutoNav } from '@/utils/default-collection-auto-nav';
@@ -94,10 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     router.replace('/(auth)/login');
   }, [router]);
 
-  const logoutWithTimeout = useCallback(async (reason: 'idle' | 'absolute') => {
-    setTimeoutReason(reason);
-    await logout();
-  }, [logout]);
+  const logoutWithTimeout = useCallback(
+    async (reason: 'idle' | 'absolute') => {
+      setTimeoutReason(reason);
+      await logout();
+    },
+    [logout],
+  );
 
   const clearTimeoutReason = useCallback(() => {
     setTimeoutReason(null);
@@ -108,7 +105,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, timeoutReason, refreshAuth, refreshProfile, logout, logoutWithTimeout, clearTimeoutReason, onTimeout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        timeoutReason,
+        refreshAuth,
+        refreshProfile,
+        logout,
+        logoutWithTimeout,
+        clearTimeoutReason,
+        onTimeout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

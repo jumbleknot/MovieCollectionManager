@@ -16,47 +16,47 @@
  *   large:  152dp (collapsed: 64dp)
  */
 
-import React from 'react'
-import { Animated, StatusBar, Platform, type ViewStyle, } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack } from '@tamagui/stacks'
+import React from 'react';
+import { Animated, StatusBar, Platform, type ViewStyle } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack } from '@tamagui/stacks';
 
-export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large'
+export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large';
 
 export interface AppBarProps {
-  variant?:        AppBarVariant
-  title:           string
-  subtitle?:       string
-  leading?:        React.ReactNode  // nav icon (hamburger, back arrow)
-  trailing?:       React.ReactNode  // action icons (max 3 per MD3)
-  scrollY?:        Animated.Value   // for scroll-based collapse
-  transparent?:    boolean          // fully transparent bg (hero screens)
-  containerStyle?: ViewStyle
+  variant?: AppBarVariant;
+  title: string;
+  subtitle?: string;
+  leading?: React.ReactNode; // nav icon (hamburger, back arrow)
+  trailing?: React.ReactNode; // action icons (max 3 per MD3)
+  scrollY?: Animated.Value; // for scroll-based collapse
+  transparent?: boolean; // fully transparent bg (hero screens)
+  containerStyle?: ViewStyle;
 }
 
 const HEIGHTS = {
   centerAligned: 64,
-  small:         64,
-  medium:        112,
-  large:         152,
-} as const
+  small: 64,
+  medium: 112,
+  large: 152,
+} as const;
 
-const COLLAPSED_H = 64
+const COLLAPSED_H = 64;
 
 export const AppBar = React.memo<AppBarProps>(function AppBar({
-  variant       = 'small',
+  variant = 'small',
   title,
   subtitle,
   leading,
   trailing,
   scrollY,
-  transparent   = false,
+  transparent = false,
   containerStyle,
 }) {
-  const theme     = useTheme()
-  const expandedH = HEIGHTS[variant]
-  const isLarge   = variant === 'medium' || variant === 'large'
+  const theme = useTheme();
+  const expandedH = HEIGHTS[variant];
+  const isLarge = variant === 'medium' || variant === 'large';
 
   // ── Scroll-driven animations ─────────────────────────────────────────────
   // As user scrolls down:
@@ -66,19 +66,19 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
 
   const heightAnim = scrollY
     ? scrollY.interpolate({
-        inputRange:  [0, expandedH - COLLAPSED_H],
+        inputRange: [0, expandedH - COLLAPSED_H],
         outputRange: [expandedH, COLLAPSED_H],
         extrapolate: 'clamp',
       })
-    : new Animated.Value(expandedH)
+    : new Animated.Value(expandedH);
 
   const elevationAnim = scrollY
     ? scrollY.interpolate({
-        inputRange:  [0, 40],
+        inputRange: [0, 40],
         outputRange: [0, 3],
         extrapolate: 'clamp',
       })
-    : new Animated.Value(0)
+    : new Animated.Value(0);
 
   // The same scroll mapping as `elevationAnim` re-scaled to 0 → 0.16, taken from `scrollY` directly.
   // Interpolating `elevationAnim` itself stopped type-checking on RN 0.88, whose `Animated.Value` and
@@ -86,61 +86,55 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
   // because `elevationAnim` is clamped to 0 → 3 and this is linear over the same 0 → 40 input.
   const shadowOpacityAnim = scrollY
     ? scrollY.interpolate({
-        inputRange:  [0, 40],
+        inputRange: [0, 40],
         outputRange: [0, 0.16],
         extrapolate: 'clamp',
       })
-    : 0
+    : 0;
 
   const largeTitleOpacity = scrollY
     ? scrollY.interpolate({
-        inputRange:  [0, 40],
+        inputRange: [0, 40],
         outputRange: [1, 0],
         extrapolate: 'clamp',
       })
-    : new Animated.Value(1)
+    : new Animated.Value(1);
 
   const smallTitleOpacity = scrollY
     ? scrollY.interpolate({
-        inputRange:  [20, 60],
+        inputRange: [20, 60],
         outputRange: [0, 1],
         extrapolate: 'clamp',
       })
-    : new Animated.Value(isLarge ? 0 : 1)
+    : new Animated.Value(isLarge ? 0 : 1);
 
-  const bgColor = transparent ? 'transparent' : theme.surface?.val
+  const bgColor = transparent ? 'transparent' : theme.surface?.val;
 
-  const statusBarHeight = Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24
+  const statusBarHeight = Platform.OS === 'ios' ? 44 : (StatusBar.currentHeight ?? 24);
 
   return (
     <Animated.View
       style={[
         {
           backgroundColor: bgColor,
-          paddingTop:      statusBarHeight,
-          height:          isLarge
-            ? Animated.add(heightAnim, statusBarHeight)
-            : expandedH + statusBarHeight,
-          zIndex:          800,
-          width:           '100%',
+          paddingTop: statusBarHeight,
+          height: isLarge ? Animated.add(heightAnim, statusBarHeight) : expandedH + statusBarHeight,
+          zIndex: 800,
+          width: '100%',
         },
         // Shadow driven by scroll
         {
-          shadowColor:   theme.shadow?.val,
-          shadowOffset:  { width: 0, height: 1 },
+          shadowColor: theme.shadow?.val,
+          shadowOffset: { width: 0, height: 1 },
           shadowOpacity: shadowOpacityAnim,
-          shadowRadius:  4,
-          elevation:     scrollY ? elevationAnim as any : 0,
+          shadowRadius: 4,
+          elevation: scrollY ? (elevationAnim as any) : 0,
         },
         containerStyle,
       ]}
     >
       {/* ── Top row — 64dp, always visible ────────────────────────────── */}
-      <XStack
-        height={64}
-        alignItems="center"
-        paddingHorizontal={4}
-      >
+      <XStack height={64} alignItems="center" paddingHorizontal={4}>
         {/* Leading nav icon */}
         {leading ? (
           <View width={48} height={48} alignItems="center" justifyContent="center">
@@ -154,14 +148,14 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
             fades in on scroll for medium/large */}
         <Animated.Text
           style={{
-            flex:          1,
-            fontFamily:    'Outfit, system-ui',
-            fontSize:      22,
-            fontWeight:    '400',
+            flex: 1,
+            fontFamily: 'Outfit, system-ui',
+            fontSize: 22,
+            fontWeight: '400',
             letterSpacing: 0,
-            color:         theme.onSurface?.val,
-            textAlign:     variant === 'centerAligned' ? 'center' : 'left',
-            opacity:       isLarge ? smallTitleOpacity : 1,
+            color: theme.onSurface?.val,
+            textAlign: variant === 'centerAligned' ? 'center' : 'left',
+            opacity: isLarge ? smallTitleOpacity : 1,
             paddingHorizontal: 4,
           }}
           numberOfLines={1}
@@ -180,10 +174,10 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
         <Animated.View
           style={{
             paddingHorizontal: 16,
-            paddingBottom:     28,
-            opacity:           largeTitleOpacity,
-            justifyContent:    'flex-end',
-            flex:              1,
+            paddingBottom: 28,
+            opacity: largeTitleOpacity,
+            justifyContent: 'flex-end',
+            flex: 1,
           }}
         >
           <Text
@@ -210,7 +204,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
         </Animated.View>
       )}
     </Animated.View>
-  )
-})
+  );
+});
 
-AppBar.displayName = 'MCM.AppBar'
+AppBar.displayName = 'MCM.AppBar';

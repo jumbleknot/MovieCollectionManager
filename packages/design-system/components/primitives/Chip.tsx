@@ -13,43 +13,43 @@
  *   flat     — chip uses surfaceVariant bg (default)
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from './Text'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from './Text';
 
-export type ChipType    = 'assist' | 'filter' | 'choice' | 'input' | 'suggestion'
-export type ChipVariant = 'flat' | 'elevated'
+export type ChipType = 'assist' | 'filter' | 'choice' | 'input' | 'suggestion';
+export type ChipVariant = 'flat' | 'elevated';
 
 export interface ChipProps extends Omit<ViewProps, 'onPress'> {
-  type?:         ChipType
-  variant?:      ChipVariant
-  label:         string
-  selected?:     boolean        // filter chips: selected state
+  type?: ChipType;
+  variant?: ChipVariant;
+  label: string;
+  selected?: boolean; // filter chips: selected state
   /**
    * Colour scheme for the selected (filter) state:
    *   'secondary' — MD3 default (secondaryContainer)
    *   'primary'   — bold primary fill; use to match an app that signals "active" with primary
    *                 elsewhere (e.g. the column-visibility toggle). Default 'secondary'.
    */
-  selectedScheme?: 'secondary' | 'primary'
-  leadingIcon?:  React.ReactNode
-  trailingIcon?: React.ReactNode
-  onPress?:      () => void
-  onRemove?:     () => void     // input chips: remove handler
-  disabled?:     boolean
+  selectedScheme?: 'secondary' | 'primary';
+  leadingIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
+  onPress?: () => void;
+  onRemove?: () => void; // input chips: remove handler
+  disabled?: boolean;
   /**
    * A11y role when the chip acts as a selection control inside a group. Default 'button' (MD3
    * chip semantics). Use 'checkbox' for a MULTI-select group (announces a checked/unchecked
    * state) and 'radio' for a single-select group — so screen readers convey the right affordance
    * instead of a generic button (feature 017 code-review finding #3).
    */
-  selectionRole?: 'button' | 'checkbox' | 'radio'
+  selectionRole?: 'button' | 'checkbox' | 'radio';
 }
 
 export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   {
-    type     = 'assist',
-    variant  = 'flat',
+    type = 'assist',
+    variant = 'flat',
     label,
     selected = false,
     selectedScheme = 'secondary',
@@ -63,57 +63,56 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   // 'checkbox' announces a checked/unchecked state (multi-select); 'radio'/'button' use `selected`.
   const a11yState =
-    selectionRole === 'checkbox'
-      ? { disabled, checked: selected }
-      : { disabled, selected }
+    selectionRole === 'checkbox' ? { disabled, checked: selected } : { disabled, selected };
 
   // ── Colour logic ─────────────────────────────────────────────────────────
   // Filter selected uses secondaryContainer; all others use surfaceVariant / surface1
 
-  let bg:         string
-  let fg:         string
-  let border:     string | undefined
-  let stateLayer: string
+  let bg: string;
+  let fg: string;
+  let border: string | undefined;
+  let stateLayer: string;
 
   if ((type === 'filter' || type === 'choice') && selected) {
     if (selectedScheme === 'primary') {
-      bg         = theme.primary?.val
-      fg         = theme.onPrimary?.val
-      stateLayer = theme.onPrimary?.val
+      bg = theme.primary?.val;
+      fg = theme.onPrimary?.val;
+      stateLayer = theme.onPrimary?.val;
     } else {
-      bg         = theme.secondaryContainer?.val
-      fg         = theme.onSecondaryContainer?.val
-      stateLayer = theme.onSecondaryContainer?.val
+      bg = theme.secondaryContainer?.val;
+      fg = theme.onSecondaryContainer?.val;
+      stateLayer = theme.onSecondaryContainer?.val;
     }
-    border     = undefined
+    border = undefined;
   } else if (variant === 'elevated') {
-    bg         = theme.surface1?.val
-    fg         = theme.onSurface?.val
-    stateLayer = theme.onSurface?.val
-    border     = undefined
+    bg = theme.surface1?.val;
+    fg = theme.onSurface?.val;
+    stateLayer = theme.onSurface?.val;
+    border = undefined;
   } else {
-    bg         = 'transparent'
-    fg         = theme.onSurfaceVariant?.val
-    stateLayer = theme.onSurface?.val
-    border     = theme.outline?.val
+    bg = 'transparent';
+    fg = theme.onSurfaceVariant?.val;
+    stateLayer = theme.onSurface?.val;
+    border = theme.outline?.val;
   }
 
-  const showCheckmark = type === 'filter' && selected
+  const showCheckmark = type === 'filter' && selected;
 
   // Shadow for elevated
-  const shadowProps = variant === 'elevated'
-    ? {
-        shadowColor:   theme.shadow?.val,
-        shadowOffset:  { width: 0, height: 1 },
-        shadowOpacity: 0.12,
-        shadowRadius:  2,
-        elevation:     1,
-      }
-    : {}
+  const shadowProps =
+    variant === 'elevated'
+      ? {
+          shadowColor: theme.shadow?.val,
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.12,
+          shadowRadius: 2,
+          elevation: 1,
+        }
+      : {};
 
   return (
     <View
@@ -124,7 +123,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       flexDirection="row"
       alignItems="center"
       height={32}
-      borderRadius={8}              // MD3 small shape
+      borderRadius={8} // MD3 small shape
       borderWidth={border ? 1 : 0}
       borderColor={border}
       backgroundColor={bg}
@@ -146,7 +145,10 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       {/* State layer */}
       <View
         position="absolute"
-        top={0} right={0} bottom={0} left={0}
+        top={0}
+        right={0}
+        bottom={0}
+        left={0}
         backgroundColor={stateLayer}
         opacity="0 hover:0.08 press:0.12"
         pointerEvents="none"
@@ -156,7 +158,9 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       {showCheckmark && (
         <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {/* Inline SVG check using Text; replace with icon library in app */}
-          <Text color={fg} fontSize={14} fontWeight="600" lineHeight="18px">✓</Text>
+          <Text color={fg} fontSize={14} fontWeight="600" lineHeight="18px">
+            ✓
+          </Text>
         </View>
       )}
 
@@ -186,10 +190,15 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
           height={18}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e?.stopPropagation?.(); onRemove() }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onRemove();
+          }}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
-          <Text color={fg} fontSize={14} lineHeight="18px">×</Text>
+          <Text color={fg} fontSize={14} lineHeight="18px">
+            ×
+          </Text>
         </View>
       )}
 
@@ -199,29 +208,24 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
         </View>
       )}
     </View>
-  )
-})
+  );
+});
 
-Chip.displayName = 'MCM.Chip'
+Chip.displayName = 'MCM.Chip';
 
 // ─── Chip Group — horizontal scrolling row ────────────────────────────────────
 
 export interface ChipGroupProps {
-  children:   React.ReactNode
-  gap?:       number
+  children: React.ReactNode;
+  gap?: number;
 }
 
 export function ChipGroup({ children, gap = 8 }: ChipGroupProps) {
   return (
-    <View
-      flexDirection="row"
-      flexWrap="wrap"
-      gap={gap}
-      alignItems="center"
-    >
+    <View flexDirection="row" flexWrap="wrap" gap={gap} alignItems="center">
       {children}
     </View>
-  )
+  );
 }
 
-ChipGroup.displayName = 'MCM.ChipGroup'
+ChipGroup.displayName = 'MCM.ChipGroup';

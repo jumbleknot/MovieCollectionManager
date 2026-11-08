@@ -43,9 +43,15 @@ async function getJwks(): Promise<JwksDocument> {
     // e.g. keycloak-service:8080 in Docker), not the build-inlined keycloakConfig.issuer
     // (which freezes to localhost:8099 at `expo export` time and is unreachable inside a
     // container). Signing keys are realm-global, so the host used to fetch them is irrelevant.
-    res = await fetch(`${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/certs`);
+    res = await fetch(
+      `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/certs`,
+    );
   } catch {
-    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to reach Keycloak JWKS endpoint', 503);
+    throw new AuthError(
+      AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+      'Failed to reach Keycloak JWKS endpoint',
+      503,
+    );
   }
   if (!res.ok) {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to fetch JWKS', 503);
@@ -60,7 +66,7 @@ async function getJwks(): Promise<JwksDocument> {
 
 function base64urlDecode(str: string): Buffer {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
   return Buffer.from(padded, 'base64');
 }
 
@@ -90,7 +96,12 @@ function constructPemFromJwk(jwk: JwkKey): string {
 
   const nDer = encodeInteger(nBuf);
   const eDer = encodeInteger(eBuf);
-  const seq = Buffer.concat([Buffer.from([0x30]), encodeLength(nDer.length + eDer.length), nDer, eDer]);
+  const seq = Buffer.concat([
+    Buffer.from([0x30]),
+    encodeLength(nDer.length + eDer.length),
+    nDer,
+    eDer,
+  ]);
 
   // OID for rsaEncryption (1.2.840.113549.1.1.1) + NULL
   const oid = Buffer.from('300d06092a864886f70d0101010500', 'hex');
@@ -108,7 +119,10 @@ function constructPemFromJwk(jwk: JwkKey): string {
     bitStringDer,
   ]);
 
-  return `-----BEGIN PUBLIC KEY-----\n${spki.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PUBLIC KEY-----`;
+  return `-----BEGIN PUBLIC KEY-----\n${spki
+    .toString('base64')
+    .match(/.{1,64}/g)!
+    .join('\n')}\n-----END PUBLIC KEY-----`;
 }
 
 // ─── at_hash validation ────────────────────────────────────────────────────────
@@ -181,7 +195,8 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
   // Check audience — Keycloak access tokens put the client ID in `azp`, not `aud`
   // (`aud` is typically `["account"]` for access tokens)
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  const isValidAudience = aud.includes(keycloakConfig.clientId) || payload.azp === keycloakConfig.clientId;
+  const isValidAudience =
+    aud.includes(keycloakConfig.clientId) || payload.azp === keycloakConfig.clientId;
   if (!isValidAudience) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401);
   }
@@ -212,10 +227,14 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
   const signingInput = `${headerB64}.${payloadB64}`;
   const signature = base64urlToBuffer(signatureB64);
 
-  const algorithm = header.alg === 'RS256' ? 'RSA-SHA256'
-    : header.alg === 'RS384' ? 'RSA-SHA384'
-    : header.alg === 'RS512' ? 'RSA-SHA512'
-    : header.alg;
+  const algorithm =
+    header.alg === 'RS256'
+      ? 'RSA-SHA256'
+      : header.alg === 'RS384'
+        ? 'RSA-SHA384'
+        : header.alg === 'RS512'
+          ? 'RSA-SHA512'
+          : header.alg;
 
   let isValid: boolean;
   try {

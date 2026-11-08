@@ -9,12 +9,20 @@ beforeEach(() => {
   jest.resetModules();
   process.env = { ...ORIGINAL_ENV };
   // Restore window to whatever the previous test may have changed
-  Object.defineProperty(global, 'window', { value: ORIGINAL_WINDOW, writable: true, configurable: true });
+  Object.defineProperty(global, 'window', {
+    value: ORIGINAL_WINDOW,
+    writable: true,
+    configurable: true,
+  });
 });
 
 afterAll(() => {
   process.env = ORIGINAL_ENV;
-  Object.defineProperty(global, 'window', { value: ORIGINAL_WINDOW, writable: true, configurable: true });
+  Object.defineProperty(global, 'window', {
+    value: ORIGINAL_WINDOW,
+    writable: true,
+    configurable: true,
+  });
 });
 
 function loadKeycloak() {
@@ -150,7 +158,11 @@ describe('keycloakConfig.redirectUri — web platform with window', () => {
 describe('keycloakConfig.redirectUri — web platform without window (SSR)', () => {
   beforeEach(() => {
     jest.doMock('react-native', () => ({ Platform: { OS: 'web' } }));
-    Object.defineProperty(global, 'window', { value: undefined, writable: true, configurable: true });
+    Object.defineProperty(global, 'window', {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
     delete process.env['EXPO_PUBLIC_BFF_BASE_URL'];
   });
 

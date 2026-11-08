@@ -36,11 +36,7 @@ export default function RegisterScreen(): React.JSX.Element {
 
   return (
     <View style={container}>
-      <RegisterForm
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        error={error}
-      />
+      <RegisterForm onSubmit={handleSubmit} isLoading={isLoading} error={error} />
     </View>
   );
 }

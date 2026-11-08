@@ -40,9 +40,15 @@ async function seedCollection(request: APIRequestContext, name: string): Promise
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 /**
@@ -56,12 +62,25 @@ async function openCollectionViaHome(page: Page, name: string): Promise<void> {
   await page.goto(`${BASE}/home`);
   // Resolve the FR-009 default-collection redirect: wait for either home or a collection screen.
   const where = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]);
   if (where === 'collection') {
     await page.goto(`${BASE}/home`); // FR-009 fires once per session; second /home shows the list
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
   }
   // In-app navigate: open the collections list, then the named collection (no full reload).
   if ((await page.locator(`text=${name}`).count()) === 0) {
@@ -69,11 +88,17 @@ async function openCollectionViaHome(page: Page, name: string): Promise<void> {
     await page.waitForTimeout(1500);
   }
   await page.locator(`text=${name}`).first().click();
-  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 });
+  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
 }
 
 async function askAddToThis(page: Page): Promise<void> {
-  await page.fill('[data-testid="assistant-dock-input"]', `add the movie ${MOVIE_TITLE} (2013) to this`);
+  await page.fill(
+    '[data-testid="assistant-dock-input"]',
+    `add the movie ${MOVIE_TITLE} (2013) to this`,
+  );
   await page.click('[data-testid="assistant-dock-send"]');
 }
 
@@ -96,58 +121,66 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('US3-AC1: "add <movie> to this" on a collection screen adds to that collection', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(300_000);
-    const collectionName = `t055-ctx-${Date.now()}`;
-    const collectionId = await seedCollection(request, collectionName);
+  test(
+    'US3-AC1: "add <movie> to this" on a collection screen adds to that collection',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      const collectionName = `t055-ctx-${Date.now()}`;
+      const collectionId = await seedCollection(request, collectionName);
 
-    // View the seeded collection via in-app nav — the screen reports its ui_snapshot
-    // (current_screen=collection, collection_id) on focus, cached for the next turn.
-    await openCollectionViaHome(page, collectionName);
-    await openDock(page);
-    await askAddToThis(page);
-    // 040 US4: ownership is asked once the target resolves — here, the ON-SCREEN collection.
-    // 059 US2: the children's question now opens the chain, ahead of ownership.
-    await answerChildrens(page);
-    await answerOwnership(page);
+      // View the seeded collection via in-app nav — the screen reports its ui_snapshot
+      // (current_screen=collection, collection_id) on focus, cached for the next turn.
+      await openCollectionViaHome(page, collectionName);
+      await openDock(page);
+      await askAddToThis(page);
+      // 040 US4: ownership is asked once the target resolves — here, the ON-SCREEN collection.
+      // 059 US2: the children's question now opens the chain, ahead of ownership.
+      await answerChildrens(page);
+      await answerOwnership(page);
 
-    // The approval card resolves the ON-SCREEN collection (no named target). Nothing written yet.
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    await expect(approval).toContainText(MOVIE_TITLE);
+      // The approval card resolves the ON-SCREEN collection (no named target). Nothing written yet.
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      await expect(approval).toContainText(MOVIE_TITLE);
 
-    await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'Done',
-      { timeout: DONE_TIMEOUT },
-    );
+      await page.click('[data-testid="approval-approve"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        'Done',
+        { timeout: DONE_TIMEOUT },
+      );
 
-    // The movie landed in the on-screen collection — and no literal "this" collection was made.
-    const moviesRes = await request.get(`/bff-api/collections/${collectionId}/movies`);
-    expect(moviesRes.ok()).toBeTruthy();
-    const movies = ((await moviesRes.json()).items ?? []) as { title: string }[];
-    expect(movies.map((m) => m.title)).toContain(MOVIE_TITLE);
+      // The movie landed in the on-screen collection — and no literal "this" collection was made.
+      const moviesRes = await request.get(`/bff-api/collections/${collectionId}/movies`);
+      expect(moviesRes.ok()).toBeTruthy();
+      const movies = ((await moviesRes.json()).items ?? []) as { title: string }[];
+      expect(movies.map((m) => m.title)).toContain(MOVIE_TITLE);
 
-    const names = (await listCollections(request)).map((c) => c.name.toLowerCase());
-    expect(names).not.toContain('this');
-  });
+      const names = (await listCollections(request)).map((c) => c.name.toLowerCase());
+      expect(names).not.toContain('this');
+    },
+  );
 
-  test('US3-AC2: "add <movie> to this" on home asks the user to clarify', { tag: '@model-decision' }, async ({ page }) => {
-    test.setTimeout(300_000);
-    await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
-    await openDock(page);
-    await askAddToThis(page);
+  test(
+    'US3-AC2: "add <movie> to this" on home asks the user to clarify',
+    { tag: '@model-decision' },
+    async ({ page }) => {
+      test.setTimeout(300_000);
+      await page.goto(`${BASE}/home`);
+      await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      });
+      await openDock(page);
+      await askAddToThis(page);
 
-    // No on-screen collection to resolve "this" → the assistant clarifies (never guesses / never
-    // creates one). The approval card must NOT appear.
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      /which collection/i,
-      { timeout: CLARIFY_TIMEOUT },
-    );
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
-  });
+      // No on-screen collection to resolve "this" → the assistant clarifies (never guesses / never
+      // creates one). The approval card must NOT appear.
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        /which collection/i,
+        { timeout: CLARIFY_TIMEOUT },
+      );
+      await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+    },
+  );
 });

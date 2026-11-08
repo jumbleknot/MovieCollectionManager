@@ -20,10 +20,7 @@
 // expose as a complete object.
 
 import { buildArtifact, compressArtifact } from '@/bff-server/backup-artifact';
-import {
-  OfflineTokenUnusableError,
-  mintUserAccessToken,
-} from '@/bff-server/backup-offline-token';
+import { OfflineTokenUnusableError, mintUserAccessToken } from '@/bff-server/backup-offline-token';
 import { getBackupJobsCollection } from '@/bff-server/mongo-client';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
 import { pruneAfterRun } from '@/bff-server/backup-retention';
@@ -69,7 +66,12 @@ const RUN_SLOT_LOCK = (userId: string) => `running:${userId}`;
 // Deliberately generous. This is not a security control — the slot and the size ceiling are.
 // It is here so a stuck retry loop in a client cannot hammer mc-service, and a limit tight
 // enough to annoy a legitimate user would be doing the wrong job.
-const RUN_RATE_LIMIT = { endpoint: 'backup-run', limit: 30, windowSeconds: 3600, retryAfterSeconds: 300 };
+const RUN_RATE_LIMIT = {
+  endpoint: 'backup-run',
+  limit: 30,
+  windowSeconds: 3600,
+  retryAfterSeconds: 300,
+};
 
 /**
  * Take this user's single run slot. False means a run is already in flight — the caller turns
@@ -93,7 +95,11 @@ export async function releaseUserRunSlot(userId: string): Promise<void> {
 
 /** Throws RateLimitError (429, with a retry hint) when this user has started too many runs. */
 export async function checkBackupRunRateLimit(userId: string): Promise<void> {
-  const count = await incrementRateLimit(RUN_RATE_LIMIT.endpoint, userId, RUN_RATE_LIMIT.windowSeconds);
+  const count = await incrementRateLimit(
+    RUN_RATE_LIMIT.endpoint,
+    userId,
+    RUN_RATE_LIMIT.windowSeconds,
+  );
   if (count > RUN_RATE_LIMIT.limit) {
     throw new RateLimitError(RUN_RATE_LIMIT.retryAfterSeconds);
   }
@@ -179,7 +185,9 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
   const run = await runStore.startRun(userId, job._id, trigger);
 
   try {
-    const destinationDoc = await (await getBackupDestinationsCollection()).findOne({
+    const destinationDoc = await (
+      await getBackupDestinationsCollection()
+    ).findOne({
       _id: job.destinationId,
       userId,
     });
@@ -205,11 +213,7 @@ export async function runBackup(request: RunRequest): Promise<BackupRun> {
 
     const body = compressArtifact(artifact);
 
-    const key = artifactKeyFor(
-      (destinationDoc as BackupDestination).basePath,
-      job._id,
-      createdAt,
-    );
+    const key = artifactKeyFor((destinationDoc as BackupDestination).basePath, job._id, createdAt);
     await driver.put(key, body, 'application/gzip');
 
     const collectionCounts: BackupCollectionCount[] = collections.map((c) => ({

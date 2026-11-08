@@ -24,12 +24,19 @@ import { buildAuditDoc, postAuditDoc } from '@/bff-server/audit-sink';
 
 // --- helpers ------------------------------------------------------------------
 
-const OPENSEARCH_URL = (process.env['OPENSEARCH_URL'] ?? 'https://localhost:9200').replace(/\/$/, '');
+const OPENSEARCH_URL = (process.env['OPENSEARCH_URL'] ?? 'https://localhost:9200').replace(
+  /\/$/,
+  '',
+);
 const IS_HTTPS = OPENSEARCH_URL.startsWith('https://');
 
 // Generated per-machine creds (feature 021/022) from stacks/audit.env — no hardcoded secrets.
-const ADMIN_PASS = process.env['OPENSEARCH_ADMIN_PASSWORD'] ?? process.env['OPENSEARCH_INITIAL_ADMIN_PASSWORD'] ?? '';
-const WRITER_PASS = process.env['OPENSEARCH_PASSWORD'] ?? process.env['OPENSEARCH_AUDIT_WRITER_PASSWORD'] ?? '';
+const ADMIN_PASS =
+  process.env['OPENSEARCH_ADMIN_PASSWORD'] ??
+  process.env['OPENSEARCH_INITIAL_ADMIN_PASSWORD'] ??
+  '';
+const WRITER_PASS =
+  process.env['OPENSEARCH_PASSWORD'] ?? process.env['OPENSEARCH_AUDIT_WRITER_PASSWORD'] ?? '';
 
 /** A tiny https/http JSON requester — test-only; rejectUnauthorized:false for self-signed. */
 function httpsRequest(
@@ -47,7 +54,9 @@ function httpsRequest(
       method,
       headers: {
         authorization: authHeader,
-        ...(body ? { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } : {}),
+        ...(body
+          ? { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) }
+          : {}),
       },
       rejectUnauthorized: false,
     };
@@ -57,7 +66,10 @@ function httpsRequest(
       res.on('data', (c: Buffer) => chunks.push(c));
       res.on('end', () => {
         try {
-          resolve({ status: res.statusCode ?? 0, json: JSON.parse(Buffer.concat(chunks).toString()) });
+          resolve({
+            status: res.statusCode ?? 0,
+            json: JSON.parse(Buffer.concat(chunks).toString()),
+          });
         } catch {
           resolve({ status: res.statusCode ?? 0, json: null });
         }
@@ -129,7 +141,11 @@ describe('agent-audit-opensearch — integration (real OpenSearch, --profile aud
     const password = process.env['OPENSEARCH_PASSWORD'];
     const auth = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
     const url = `${OPENSEARCH_URL}/mcm-agent-audit/_doc`;
-    const body = JSON.stringify({ action: 'integration_test', marker, timestamp: new Date().toISOString() });
+    const body = JSON.stringify({
+      action: 'integration_test',
+      marker,
+      timestamp: new Date().toISOString(),
+    });
 
     // postAuditDoc reads env at call-time, not at import-time, so the env vars set above
     // take effect even though the module is loaded at import time.
@@ -187,7 +203,9 @@ describe('agent-audit-opensearch — integration (real OpenSearch, --profile aud
     const { status, json } = await httpsRequest('POST', searchUrl, adminAuth(), searchBody);
 
     expect(status).toBe(200);
-    const hits = (json as { hits?: { hits?: Array<{ _source?: Record<string, unknown> }> } })?.hits?.hits ?? [];
+    const hits =
+      (json as { hits?: { hits?: Array<{ _source?: Record<string, unknown> }> } })?.hits?.hits ??
+      [];
     expect(hits.length).toBeGreaterThanOrEqual(1);
 
     const source = hits[0]?._source ?? {};

@@ -33,7 +33,9 @@ export function isAutoNavDone(): boolean {
   if (_sessionFired) return true;
   if (Platform.OS !== 'web') return false;
   try {
-    return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(AUTO_NAV_STORAGE_KEY) === '1';
+    return (
+      typeof sessionStorage !== 'undefined' && sessionStorage.getItem(AUTO_NAV_STORAGE_KEY) === '1'
+    );
   } catch {
     return false;
   }

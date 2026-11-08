@@ -19,7 +19,11 @@ import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
-import { authorizeUiAction, type UiAction, type UiActionType } from '@/bff-server/ui-action-authorizer';
+import {
+  authorizeUiAction,
+  type UiAction,
+  type UiActionType,
+} from '@/bff-server/ui-action-authorizer';
 import { isOpaConfigured, opaAllowsUiAction } from '@/bff-server/opa-client';
 import { audit } from '@/bff-server/audit-sink';
 
@@ -50,7 +54,9 @@ export async function POST(req: Request): Promise<Response> {
           target: action.target,
           roles: user.roles,
         });
-        result = opa.allowed ? { allowed: true } : { allowed: false, reason: 'denied by OPA policy' };
+        result = opa.allowed
+          ? { allowed: true }
+          : { allowed: false, reason: 'denied by OPA policy' };
       } else {
         // TS fallback authorizer (preserves existing reason strings on deny).
         result = authorizeUiAction(action, user);

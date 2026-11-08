@@ -53,9 +53,7 @@ const NOW = '2026-07-15T03:00:00.000Z';
 jest.setTimeout(90_000);
 
 /** No cookie header, ever. That absence is the assertion in case 4. */
-function tickRequest(
-  opts: { secret?: string | null; now?: string | null } = {},
-): Request {
+function tickRequest(opts: { secret?: string | null; now?: string | null } = {}): Request {
   const url = new URL('http://localhost:8081/bff-api/backups/tick');
   if (opts.now !== null) url.searchParams.set('now', opts.now ?? NOW);
   const headers: Record<string, string> = {};
@@ -114,7 +112,9 @@ describeBackupTargets('the scheduling tick', () => {
       enabled: true,
       schedule: { frequency: 'daily', hour: 3, minute: 0, timeZone: 'UTC' },
     });
-    await (await getBackupJobsCollection()).updateOne(
+    await (
+      await getBackupJobsCollection()
+    ).updateOne(
       { _id: job.id },
       nextRunAt === undefined ? { $unset: { nextRunAt: '' } } : { $set: { nextRunAt } },
     );

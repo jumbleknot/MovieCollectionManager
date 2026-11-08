@@ -9,9 +9,18 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
     getItem: jest.fn((key: string) => Promise.resolve(store[key] ?? null)),
-    setItem: jest.fn((key: string, val: string) => { store[key] = val; return Promise.resolve(); }),
-    removeItem: jest.fn((key: string) => { delete store[key]; return Promise.resolve(); }),
-    clear: jest.fn(() => { Object.keys(store).forEach(k => delete store[k]); return Promise.resolve(); }),
+    setItem: jest.fn((key: string, val: string) => {
+      store[key] = val;
+      return Promise.resolve();
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+      return Promise.resolve();
+    }),
+    clear: jest.fn(() => {
+      Object.keys(store).forEach((k) => delete store[k]);
+      return Promise.resolve();
+    }),
   },
 }));
 
@@ -50,7 +59,9 @@ describe('useColumnVisibility', () => {
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
     expect(result.current.visibleColumns.year).toBe(true);
-    await act(() => { result.current.toggleColumn('year'); });
+    await act(() => {
+      result.current.toggleColumn('year');
+    });
     await waitFor(() => expect(result.current.visibleColumns.year).toBe(false));
 
     const raw = await AsyncStorage.getItem(STORAGE_KEY_A);

@@ -79,9 +79,7 @@ export class AuthError extends Error {
 }
 
 export class RateLimitError extends AuthError {
-  constructor(
-    public readonly retryAfter: number,
-  ) {
+  constructor(public readonly retryAfter: number) {
     super(AuthErrorCode.RATE_LIMIT_EXCEEDED, 'Too many requests. Please try again later.', 429);
     this.name = 'RateLimitError';
   }

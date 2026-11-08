@@ -54,7 +54,9 @@ export function NewMovieScreen(): React.JSX.Element {
   useEffect(() => {
     if (movie?.movieId) {
       router.replace(
-        `/collections/${collectionId}/movies/${movie.movieId}` as Parameters<typeof router.replace>[0],
+        `/collections/${collectionId}/movies/${movie.movieId}` as Parameters<
+          typeof router.replace
+        >[0],
       );
     }
   }, [movie?.movieId, collectionId, router]);
@@ -66,7 +68,10 @@ export function NewMovieScreen(): React.JSX.Element {
   const theme = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background?.val }]} testID="new-movie-screen">
+    <View
+      style={[styles.container, { backgroundColor: theme.background?.val }]}
+      testID="new-movie-screen"
+    >
       <MovieForm
         mode="create"
         initialValues={prefill}

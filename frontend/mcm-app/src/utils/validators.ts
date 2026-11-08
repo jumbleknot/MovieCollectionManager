@@ -10,7 +10,8 @@
  * Validate email address format (RFC 5322 simplified).
  */
 export function isValidEmail(email: string): boolean {
-  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  const re =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
   return re.test(email.trim());
 }
 
@@ -42,7 +43,7 @@ export function usernameError(username: string): string | null {
 // ─── Password ──────────────────────────────────────────────────────────────────
 
 export interface PasswordStrength {
-  score: number;          // 0–4
+  score: number; // 0–4
   label: 'Weak' | 'Fair' | 'Good' | 'Strong';
   checks: {
     minLength: boolean;

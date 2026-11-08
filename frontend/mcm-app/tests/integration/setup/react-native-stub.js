@@ -11,8 +11,7 @@
  */
 const Platform = {
   OS: 'web',
-  select: (specifics) =>
-    specifics && (specifics.web ?? specifics.default ?? undefined),
+  select: (specifics) => specifics && (specifics.web ?? specifics.default ?? undefined),
 };
 
 module.exports = { Platform };

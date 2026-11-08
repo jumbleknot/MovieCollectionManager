@@ -46,9 +46,7 @@ export function CollectionForm({
 }: CollectionFormProps): React.JSX.Element {
   const theme = useTheme();
   const [name, setName] = useState(initialValues?.name ?? '');
-  const [description, setDescription] = useState(
-    initialValues?.description ?? ''
-  );
+  const [description, setDescription] = useState(initialValues?.description ?? '');
   const [nameError, setNameError] = useState<string | null>(null);
 
   const validate = (): boolean => {
@@ -90,7 +88,7 @@ export function CollectionForm({
       <NoAutoFillInput
         style={[inputStyle, nameError ? { borderColor: theme.error?.val } : null]}
         value={name}
-        onChangeText={text => {
+        onChangeText={(text) => {
           setName(text);
           if (nameError) setNameError(null);
         }}
@@ -103,12 +101,17 @@ export function CollectionForm({
         webName="collection-name-entry"
       />
       {nameError && (
-        <Text style={[styles.errorText, { color: theme.error?.val }]} testID="collection-form-name-error">
+        <Text
+          style={[styles.errorText, { color: theme.error?.val }]}
+          testID="collection-form-name-error"
+        >
           {nameError}
         </Text>
       )}
 
-      <Text style={[styles.label, { color: theme.onSurfaceVariant?.val }]}>Description (optional)</Text>
+      <Text style={[styles.label, { color: theme.onSurfaceVariant?.val }]}>
+        Description (optional)
+      </Text>
       <NoAutoFillInput
         style={[inputStyle, styles.textArea]}
         value={description}

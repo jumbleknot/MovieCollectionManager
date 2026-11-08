@@ -13,6 +13,9 @@ interface ProtectedRouteProps {
   requiredRole?: ClientRole | 'mc-user' | 'mc-admin';
 }
 
-export function ProtectedRoute({ children, requiredRole = 'mc-user' }: ProtectedRouteProps): React.JSX.Element {
+export function ProtectedRoute({
+  children,
+  requiredRole = 'mc-user',
+}: ProtectedRouteProps): React.JSX.Element {
   return <AuthGuard requiredRole={requiredRole}>{children}</AuthGuard>;
 }

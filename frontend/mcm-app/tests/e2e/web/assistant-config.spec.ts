@@ -72,15 +72,29 @@ async function fillProviderCredential(page: Page): Promise<void> {
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
-  if (!result) throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
+  if (!result)
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
 }
 
 /**
@@ -92,16 +106,33 @@ async function gotoHome(page: Page): Promise<void> {
  */
 async function gotoAssistantSettings(page: Page): Promise<void> {
   await page.goto(`${BASE}/(app)/settings/assistant`);
-  await page.waitForSelector('[data-testid="settings-assistant-screen"]', { state: 'visible', timeout: 60000 });
-  await page.waitForSelector('[data-testid="assistant-config"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="settings-assistant-screen"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
+  await page.waitForSelector('[data-testid="assistant-config"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   // The form hydrates from the server view; wait out the loading placeholder.
-  await page.waitForSelector('[data-testid="assistant-config-loading"]', { state: 'detached', timeout: 15000 }).catch(() => {});
+  await page
+    .waitForSelector('[data-testid="assistant-config-loading"]', {
+      state: 'detached',
+      timeout: 15000,
+    })
+    .catch(() => {});
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 test.describe('Assistant per-user config (feature 018)', () => {
@@ -115,152 +146,195 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await seedAgentConfig(page.request, { costLimitUsd: null });
   });
 
-  test('off by default: unconfigured user has no dock and a run short-circuits', { tag: '@gate' }, async ({ page }) => {
-    await clearAgentConfig(page.request);
-    await gotoHome(page);
+  test(
+    'off by default: unconfigured user has no dock and a run short-circuits',
+    { tag: '@gate' },
+    async ({ page }) => {
+      await clearAgentConfig(page.request);
+      await gotoHome(page);
 
-    // The dock is gated on a runnable config (T018) → the toggle is not mounted at all.
-    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
+      // The dock is gated on a runnable config (T018) → the toggle is not mounted at all.
+      await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
 
-    // A forced billable run short-circuits BEFORE any gateway/model call or cost accrual.
-    const res = await page.request.post('/bff-api/agent/run', {
-      data: { operationName: 'generateCopilotResponse' },
-    });
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
-  });
-
-  test('configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds', { tag: '@gate' }, async ({ page }) => {
-    await clearAgentConfig(page.request);
-    await gotoAssistantSettings(page);
-
-    // Enable, pick the harness provider, supply its credential + the user's own TMDB key.
-    // After clearAgentConfig the form loads enabled=false deterministically, so one click enables it.
-    await page.click('[data-testid="assistant-config-enabled-toggle"]');
-    await fillProviderCredential(page);
-    await page.fill('[data-testid="assistant-config-tmdb-key-input"]', SEED_TMDB_KEY);
-    await page.click('[data-testid="assistant-config-save"]');
-
-    // Validate-on-save probed the live creds and persisted → success banner.
-    const banner = page.locator('[data-testid="assistant-config-banner"]');
-    await expect(banner).toBeVisible({ timeout: 20000 });
-    await expect(banner).toContainText(/saved/i);
-
-    // FR-031 / SC-012: the dock appears IN-SESSION on save — no reload / re-login. Assert the
-    // toggle becomes visible while STILL on the profile screen (NO page.goto between save and
-    // this check), so it is the shared-state refresh, not a layout remount, that surfaces the
-    // dock. (This assertion fails on the pre-fix per-component-copy bug.)
-    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toBeVisible({ timeout: 15000 });
-
-    // The dock also works after navigation: a real interaction streams a reply on the per-user creds.
-    await gotoHome(page);
-    await openDock(page);
-    const prompt = 'How many movies are in my collection?';
-    await page.fill('[data-testid="assistant-dock-input"]', prompt);
-    await page.click('[data-testid="assistant-dock-send"]');
-
-    const userMsg = page.locator('[data-testid="assistant-msg-user"]').last();
-    await expect(userMsg).toContainText(prompt);
-    const assistantMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
-    await expect(assistantMsg).toBeVisible({ timeout: ASSISTANT_REPLY_TIMEOUT });
-    await expect(assistantMsg).not.toBeEmpty();
-  });
-
-  test('test connection re-probes the saved credentials with no re-entry', { tag: '@gate' }, async ({ page }) => {
-    // Start from the known-good seeded config (provider credential + TMDB on file) — nothing re-entered.
-    await seedAgentConfig(page.request);
-    await gotoAssistantSettings(page);
-
-    await page.click('[data-testid="assistant-test-connection"]');
-
-    const results = page.locator('[data-testid="assistant-config-test-results"]');
-    await expect(results).toBeVisible({ timeout: 20000 });
-    // Per-credential status rows report OK. `testStored` keys each row on the credential it found
-    // on file (`ollama` / `anthropic` / `tmdb`), so the provider row's testID follows the seed.
-    await expect(page.locator(`[data-testid="assistant-config-test-${SEED_PROVIDER}"]`)).toContainText(/ok/i);
-    await expect(page.locator('[data-testid="assistant-config-test-tmdb"]')).toContainText(/ok/i);
-  });
-
-  test('disable → dock disappears + run short-circuits; re-open retains the provider', { tag: '@gate' }, async ({ page }) => {
-    // Start from the seeded runnable config (enabled, provider credential + TMDB on file).
-    await seedAgentConfig(page.request);
-    await gotoAssistantSettings(page);
-
-    // Toggle the assistant off and save. The config is runnable here so the bottom-left dock is
-    // mounted; the form's action row is right-aligned (DS convention) so the dock never intercepts.
-    await page.click('[data-testid="assistant-config-enabled-toggle"]');
-    await page.click('[data-testid="assistant-config-save"]');
-    const banner = page.locator('[data-testid="assistant-config-banner"]');
-    await expect(banner).toBeVisible({ timeout: 20000 });
-    await expect(banner).toContainText(/saved/i);
-
-    // FR-031 / SC-012: disabling takes effect IN-SESSION — the dock disappears with no reload /
-    // re-login. Assert the toggle unmounts while STILL on the profile screen (NO page.goto), so
-    // the shared-state refresh, not a remount, is what hides it. (Fails on the pre-fix bug, where
-    // the stale dock lingered until re-login.)
-    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0, { timeout: 15000 });
-
-    // After navigation it stays gone and a forced run short-circuits (gated on a runnable config).
-    await gotoHome(page);
-    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
-    const res = await page.request.post('/bff-api/agent/run', {
-      data: { operationName: 'generateCopilotResponse' },
-    });
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
-
-    // Re-open profile: the provider selection is retained across the disable. Assert it via the
-    // credential block, which the form renders FROM the stored provider — both provider chips are
-    // always mounted, so a chip locator would have passed whichever provider came back.
-    await gotoAssistantSettings(page);
-    if (SEED_PROVIDER === 'ollama') {
-      await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(SEED_OLLAMA_URL);
-      await expect(page.locator('[data-testid="assistant-config-anthropic-key-input"]')).toHaveCount(0);
-    } else {
-      // The key itself is never returned (FR-018); the "(configured)" label is how the form says
-      // one is on file, so it is the only retained-secret evidence the client can legitimately see.
-      await expect(page.locator('[data-testid="assistant-config-anthropic-key-input"]')).toBeVisible();
-      await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveCount(0);
-      await expect(page.getByTestId('assistant-config')).toContainText('Anthropic API key (configured)');
-    }
-  });
-
-  test('a personal cost limit short-circuits runs once the accrued cost exceeds it', { tag: '@gate' }, async ({ page }) => {
-    // Seed a runnable config with a tiny personal ceiling ($0.01) — at/below the per-turn estimate,
-    // so a billable run trips the ceiling within a couple of turns (US5 override → enforceAgentCostCeiling).
-    await seedAgentConfig(page.request, { costLimitUsd: 0.01 });
-
-    // Drive billable runs directly. The per-turn cost estimate accrues server-side BEFORE the gateway
-    // call, so even a minimal body counts a turn; the pre-flight ceiling check then short-circuits with
-    // a 429 (RateLimitError) once accrued cost reaches the ceiling — no model call, no action.
-    let status = 0;
-    for (let i = 0; i < 5 && status !== 429; i++) {
+      // A forced billable run short-circuits BEFORE any gateway/model call or cost accrual.
       const res = await page.request.post('/bff-api/agent/run', {
         data: { operationName: 'generateCopilotResponse' },
       });
-      status = res.status();
-    }
-    expect(status).toBe(429);
-  });
+      expect(res.status()).toBe(200);
+      expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
+    },
+  );
 
-  test('a bad Anthropic key is rejected per-field and nothing is persisted', { tag: '@gate' }, async ({ page }) => {
-    await clearAgentConfig(page.request);
-    await gotoAssistantSettings(page);
+  test(
+    'configure (provider + TMDB) + save → dock appears → an interaction succeeds on my creds',
+    { tag: '@gate' },
+    async ({ page }) => {
+      await clearAgentConfig(page.request);
+      await gotoAssistantSettings(page);
 
-    await page.click('[data-testid="assistant-config-enabled-toggle"]');
-    await page.click('[data-testid="assistant-config-provider-anthropic"]');
-    await page.fill('[data-testid="assistant-config-anthropic-key-input"]', 'sk-ant-definitely-not-a-real-key');
-    await page.fill('[data-testid="assistant-config-tmdb-key-input"]', SEED_TMDB_KEY);
-    await page.click('[data-testid="assistant-config-save"]');
+      // Enable, pick the harness provider, supply its credential + the user's own TMDB key.
+      // After clearAgentConfig the form loads enabled=false deterministically, so one click enables it.
+      await page.click('[data-testid="assistant-config-enabled-toggle"]');
+      await fillProviderCredential(page);
+      await page.fill('[data-testid="assistant-config-tmdb-key-input"]', SEED_TMDB_KEY);
+      await page.click('[data-testid="assistant-config-save"]');
 
-    // Per-field error surfaced inline; the safe reason never echoes the bad key.
-    const fieldError = page.locator('[data-testid="assistant-config-anthropic-key-error"]');
-    await expect(fieldError).toBeVisible({ timeout: 20000 });
-    await expect(fieldError).not.toContainText('sk-ant-definitely-not-a-real-key');
+      // Validate-on-save probed the live creds and persisted → success banner.
+      const banner = page.locator('[data-testid="assistant-config-banner"]');
+      await expect(banner).toBeVisible({ timeout: 20000 });
+      await expect(banner).toContainText(/saved/i);
 
-    // Nothing persisted — the server view is still unconfigured.
-    const res = await page.request.get('/bff-api/agent/config');
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toMatchObject({ enabled: false });
-  });
+      // FR-031 / SC-012: the dock appears IN-SESSION on save — no reload / re-login. Assert the
+      // toggle becomes visible while STILL on the profile screen (NO page.goto between save and
+      // this check), so it is the shared-state refresh, not a layout remount, that surfaces the
+      // dock. (This assertion fails on the pre-fix per-component-copy bug.)
+      await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toBeVisible({
+        timeout: 15000,
+      });
+
+      // The dock also works after navigation: a real interaction streams a reply on the per-user creds.
+      await gotoHome(page);
+      await openDock(page);
+      const prompt = 'How many movies are in my collection?';
+      await page.fill('[data-testid="assistant-dock-input"]', prompt);
+      await page.click('[data-testid="assistant-dock-send"]');
+
+      const userMsg = page.locator('[data-testid="assistant-msg-user"]').last();
+      await expect(userMsg).toContainText(prompt);
+      const assistantMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
+      await expect(assistantMsg).toBeVisible({ timeout: ASSISTANT_REPLY_TIMEOUT });
+      await expect(assistantMsg).not.toBeEmpty();
+    },
+  );
+
+  test(
+    'test connection re-probes the saved credentials with no re-entry',
+    { tag: '@gate' },
+    async ({ page }) => {
+      // Start from the known-good seeded config (provider credential + TMDB on file) — nothing re-entered.
+      await seedAgentConfig(page.request);
+      await gotoAssistantSettings(page);
+
+      await page.click('[data-testid="assistant-test-connection"]');
+
+      const results = page.locator('[data-testid="assistant-config-test-results"]');
+      await expect(results).toBeVisible({ timeout: 20000 });
+      // Per-credential status rows report OK. `testStored` keys each row on the credential it found
+      // on file (`ollama` / `anthropic` / `tmdb`), so the provider row's testID follows the seed.
+      await expect(
+        page.locator(`[data-testid="assistant-config-test-${SEED_PROVIDER}"]`),
+      ).toContainText(/ok/i);
+      await expect(page.locator('[data-testid="assistant-config-test-tmdb"]')).toContainText(/ok/i);
+    },
+  );
+
+  test(
+    'disable → dock disappears + run short-circuits; re-open retains the provider',
+    { tag: '@gate' },
+    async ({ page }) => {
+      // Start from the seeded runnable config (enabled, provider credential + TMDB on file).
+      await seedAgentConfig(page.request);
+      await gotoAssistantSettings(page);
+
+      // Toggle the assistant off and save. The config is runnable here so the bottom-left dock is
+      // mounted; the form's action row is right-aligned (DS convention) so the dock never intercepts.
+      await page.click('[data-testid="assistant-config-enabled-toggle"]');
+      await page.click('[data-testid="assistant-config-save"]');
+      const banner = page.locator('[data-testid="assistant-config-banner"]');
+      await expect(banner).toBeVisible({ timeout: 20000 });
+      await expect(banner).toContainText(/saved/i);
+
+      // FR-031 / SC-012: disabling takes effect IN-SESSION — the dock disappears with no reload /
+      // re-login. Assert the toggle unmounts while STILL on the profile screen (NO page.goto), so
+      // the shared-state refresh, not a remount, is what hides it. (Fails on the pre-fix bug, where
+      // the stale dock lingered until re-login.)
+      await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0, {
+        timeout: 15000,
+      });
+
+      // After navigation it stays gone and a forced run short-circuits (gated on a runnable config).
+      await gotoHome(page);
+      await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
+      const res = await page.request.post('/bff-api/agent/run', {
+        data: { operationName: 'generateCopilotResponse' },
+      });
+      expect(res.status()).toBe(200);
+      expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
+
+      // Re-open profile: the provider selection is retained across the disable. Assert it via the
+      // credential block, which the form renders FROM the stored provider — both provider chips are
+      // always mounted, so a chip locator would have passed whichever provider came back.
+      await gotoAssistantSettings(page);
+      if (SEED_PROVIDER === 'ollama') {
+        await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(
+          SEED_OLLAMA_URL,
+        );
+        await expect(
+          page.locator('[data-testid="assistant-config-anthropic-key-input"]'),
+        ).toHaveCount(0);
+      } else {
+        // The key itself is never returned (FR-018); the "(configured)" label is how the form says
+        // one is on file, so it is the only retained-secret evidence the client can legitimately see.
+        await expect(
+          page.locator('[data-testid="assistant-config-anthropic-key-input"]'),
+        ).toBeVisible();
+        await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveCount(
+          0,
+        );
+        await expect(page.getByTestId('assistant-config')).toContainText(
+          'Anthropic API key (configured)',
+        );
+      }
+    },
+  );
+
+  test(
+    'a personal cost limit short-circuits runs once the accrued cost exceeds it',
+    { tag: '@gate' },
+    async ({ page }) => {
+      // Seed a runnable config with a tiny personal ceiling ($0.01) — at/below the per-turn estimate,
+      // so a billable run trips the ceiling within a couple of turns (US5 override → enforceAgentCostCeiling).
+      await seedAgentConfig(page.request, { costLimitUsd: 0.01 });
+
+      // Drive billable runs directly. The per-turn cost estimate accrues server-side BEFORE the gateway
+      // call, so even a minimal body counts a turn; the pre-flight ceiling check then short-circuits with
+      // a 429 (RateLimitError) once accrued cost reaches the ceiling — no model call, no action.
+      let status = 0;
+      for (let i = 0; i < 5 && status !== 429; i++) {
+        const res = await page.request.post('/bff-api/agent/run', {
+          data: { operationName: 'generateCopilotResponse' },
+        });
+        status = res.status();
+      }
+      expect(status).toBe(429);
+    },
+  );
+
+  test(
+    'a bad Anthropic key is rejected per-field and nothing is persisted',
+    { tag: '@gate' },
+    async ({ page }) => {
+      await clearAgentConfig(page.request);
+      await gotoAssistantSettings(page);
+
+      await page.click('[data-testid="assistant-config-enabled-toggle"]');
+      await page.click('[data-testid="assistant-config-provider-anthropic"]');
+      await page.fill(
+        '[data-testid="assistant-config-anthropic-key-input"]',
+        'sk-ant-definitely-not-a-real-key',
+      );
+      await page.fill('[data-testid="assistant-config-tmdb-key-input"]', SEED_TMDB_KEY);
+      await page.click('[data-testid="assistant-config-save"]');
+
+      // Per-field error surfaced inline; the safe reason never echoes the bad key.
+      const fieldError = page.locator('[data-testid="assistant-config-anthropic-key-error"]');
+      await expect(fieldError).toBeVisible({ timeout: 20000 });
+      await expect(fieldError).not.toContainText('sk-ant-definitely-not-a-real-key');
+
+      // Nothing persisted — the server view is still unconfigured.
+      const res = await page.request.get('/bff-api/agent/config');
+      expect(res.status()).toBe(200);
+      expect(await res.json()).toMatchObject({ enabled: false });
+    },
+  );
 });

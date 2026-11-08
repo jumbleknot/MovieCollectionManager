@@ -23,13 +23,19 @@ jest.mock('@/bff-server/logger', () => ({
 import { GET } from '@/app/bff-api/auth/registration-status+api';
 
 function req(): Request {
-  return { headers: { entries: () => Object.entries({})[Symbol.iterator]() } } as unknown as Request;
+  return {
+    headers: { entries: () => Object.entries({})[Symbol.iterator]() },
+  } as unknown as Request;
 }
 
 beforeEach(() => jest.clearAllMocks());
 
 it('returns ONLY { allowed:true } when enabled', async () => {
-  mockGetAppSettings.mockResolvedValue({ allowSelfRegistration: true, updatedBy: 'a', updatedAt: 't' });
+  mockGetAppSettings.mockResolvedValue({
+    allowSelfRegistration: true,
+    updatedBy: 'a',
+    updatedAt: 't',
+  });
   const res = await GET(req());
   expect(res.status).toBe(200);
   const body = await res.json();
@@ -38,7 +44,11 @@ it('returns ONLY { allowed:true } when enabled', async () => {
 });
 
 it('reflects a disabled toggle', async () => {
-  mockGetAppSettings.mockResolvedValue({ allowSelfRegistration: false, updatedBy: null, updatedAt: null });
+  mockGetAppSettings.mockResolvedValue({
+    allowSelfRegistration: false,
+    updatedBy: null,
+    updatedAt: null,
+  });
   expect(await (await GET(req())).json()).toEqual({ allowed: false });
 });
 

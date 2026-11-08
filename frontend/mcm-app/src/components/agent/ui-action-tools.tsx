@@ -141,7 +141,10 @@ export function UiActionEffect({
   }, [actionKey]);
 
   return (
-    <Text testID={`assistant-ui-action-${type}`} style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}>
+    <Text
+      testID={`assistant-ui-action-${type}`}
+      style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}
+    >
       {status === 'denied' ? "I can't open that for you." : label}
     </Text>
   );
@@ -195,7 +198,10 @@ export function DownloadExportEffect({
   }, [actionKey]);
 
   return (
-    <Text testID="assistant-ui-action-download" style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}>
+    <Text
+      testID="assistant-ui-action-download"
+      style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}
+    >
       Your export is downloading…
     </Text>
   );

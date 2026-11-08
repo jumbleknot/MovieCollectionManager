@@ -40,7 +40,11 @@ import { assignMcUserRole, createUser } from '@/bff-server/keycloak';
 import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
-function makeRequest(body: unknown): { url: string; headers: Headers; json: () => Promise<unknown> } {
+function makeRequest(body: unknown): {
+  url: string;
+  headers: Headers;
+  json: () => Promise<unknown>;
+} {
   return {
     url: 'http://localhost:8081/bff-api/auth/register',
     headers: new Headers({ 'content-type': 'application/json' }),
@@ -52,13 +56,15 @@ describe('POST /bff-api/auth/register', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('returns 201 for valid registration', async () => {
-    const res = await POST(makeRequest({
-      username: 'testuser',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'SecurePass1!extra',
-    }) as Parameters<typeof POST>[0]);
+    const res = await POST(
+      makeRequest({
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'SecurePass1!extra',
+      }) as Parameters<typeof POST>[0],
+    );
 
     expect(res.status).toBe(201);
     const data = await res.json();
@@ -73,13 +79,15 @@ describe('POST /bff-api/auth/register', () => {
   });
 
   it('returns 400 for invalid email', async () => {
-    const res = await POST(makeRequest({
-      username: 'testuser',
-      email: 'not-valid-email',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'SecurePass1!extra',
-    }) as Parameters<typeof POST>[0]);
+    const res = await POST(
+      makeRequest({
+        username: 'testuser',
+        email: 'not-valid-email',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'SecurePass1!extra',
+      }) as Parameters<typeof POST>[0],
+    );
 
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -87,13 +95,15 @@ describe('POST /bff-api/auth/register', () => {
   });
 
   it('returns 400 for weak password', async () => {
-    const res = await POST(makeRequest({
-      username: 'testuser',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'weak',
-    }) as Parameters<typeof POST>[0]);
+    const res = await POST(
+      makeRequest({
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'weak',
+      }) as Parameters<typeof POST>[0],
+    );
 
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -103,13 +113,15 @@ describe('POST /bff-api/auth/register', () => {
   it('returns 429 when rate limit exceeded', async () => {
     (checkRegisterRateLimit as jest.Mock).mockRejectedValueOnce(new RateLimitError(86400));
 
-    const res = await POST(makeRequest({
-      username: 'testuser',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'SecurePass1!extra',
-    }) as Parameters<typeof POST>[0]);
+    const res = await POST(
+      makeRequest({
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'SecurePass1!extra',
+      }) as Parameters<typeof POST>[0],
+    );
 
     expect(res.status).toBe(429);
   });
@@ -145,7 +157,9 @@ describe('POST /bff-api/auth/register', () => {
       expect(errorLog).toHaveBeenCalledTimes(1);
       const [, context] = errorLog.mock.calls[0];
       expect(context).toMatchObject({ action: 'register_failed', ip: '127.0.0.1' });
-      const logged = JSON.stringify(errorLog.mock.calls[0], (_k, v) => (v instanceof Error ? v.message : v));
+      const logged = JSON.stringify(errorLog.mock.calls[0], (_k, v) =>
+        v instanceof Error ? v.message : v,
+      );
       expect(logged).toContain('Failed to look up the client');
       expect(logged).not.toContain(validBody.password);
       expect(logged).not.toContain(validBody.email);
@@ -168,13 +182,15 @@ describe('POST /bff-api/auth/register', () => {
       new AuthError(AuthErrorCode.DUPLICATE_EMAIL, 'Email exists', 409),
     );
 
-    const res = await POST(makeRequest({
-      username: 'testuser',
-      email: 'existing@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      password: 'SecurePass1!extra',
-    }) as Parameters<typeof POST>[0]);
+    const res = await POST(
+      makeRequest({
+        username: 'testuser',
+        email: 'existing@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'SecurePass1!extra',
+      }) as Parameters<typeof POST>[0],
+    );
 
     expect(res.status).toBe(409);
     const data = await res.json();

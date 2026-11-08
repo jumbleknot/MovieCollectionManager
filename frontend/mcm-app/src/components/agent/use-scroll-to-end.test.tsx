@@ -16,9 +16,12 @@ describe('useScrollToEndOnChange', () => {
 
   it('scrolls to end (deferred) on mount and again when the revision changes', async () => {
     const scroll = jest.fn();
-    const { rerender } = await renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
-      initialProps: { rev: 1 },
-    });
+    const { rerender } = await renderHook(
+      ({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll),
+      {
+        initialProps: { rev: 1 },
+      },
+    );
     await act(() => jest.advanceTimersByTime(200));
     expect(scroll).toHaveBeenCalledTimes(1);
 
@@ -30,9 +33,12 @@ describe('useScrollToEndOnChange', () => {
 
   it('does not re-scroll when the revision is unchanged (a plain re-render)', async () => {
     const scroll = jest.fn();
-    const { rerender } = await renderHook(({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll), {
-      initialProps: { rev: 5 },
-    });
+    const { rerender } = await renderHook(
+      ({ rev }: { rev: number }) => useScrollToEndOnChange(rev, scroll),
+      {
+        initialProps: { rev: 5 },
+      },
+    );
     await act(() => jest.advanceTimersByTime(200));
     await rerender({ rev: 5 });
     await act(() => jest.advanceTimersByTime(200));

@@ -61,7 +61,10 @@ async function loginAndCleanCollections(): Promise<void> {
     await page.goto(`${BASE}/home`);
     await Promise.race([
       page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }),
-      page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }),
+      page.waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      }),
     ]);
 
     const api: APIRequestContext = await request.newContext({

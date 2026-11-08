@@ -47,9 +47,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -67,50 +73,55 @@ test.describe('Assistant navigate / prefill (feature 012, US3 / T059)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('navigate → the assistant opens the named collection screen', { tag: '@gate' }, async ({ page, request }) => {
-    test.setTimeout(360_000);
-    const name = `t059-nav-${Date.now()}`;
-    const collectionId = await seedCollection(request, name);
-    const watch = await watchSecurityPolicy(page.context(), BASE);
+  test(
+    'navigate → the assistant opens the named collection screen',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t059-nav-${Date.now()}`;
+      const collectionId = await seedCollection(request, name);
+      const watch = await watchSecurityPolicy(page.context(), BASE);
 
-    await gotoHome(page);
-    // The walk's user has no assistant, so the assistant chunk is only checked here.
-    watch.assertClean('home, before the assistant loads');
-    await watch.proveCanSee(page);
-    await openDock(page);
-    await send(page, `take me to my ${name} collection`);
+      await gotoHome(page);
+      // The walk's user has no assistant, so the assistant chunk is only checked here.
+      watch.assertClean('home, before the assistant loads');
+      await watch.proveCanSee(page);
+      await openDock(page);
+      await send(page, `take me to my ${name} collection`);
 
-    // The UI-action fired (authorized at the BFF) and expo-router landed on the collection.
-    await page.waitForURL(new RegExp(`/collections/${collectionId}(?:[/?#]|$)`), {
-      timeout: ACTION_TIMEOUT,
-    });
-    await expect(page.locator('[data-testid="collection-screen-add-movie"]')).toBeVisible({
-      timeout: NAV_TIMEOUT,
-    });
-    watch.assertClean('streamed turn and the navigation it caused');
-  });
+      // The UI-action fired (authorized at the BFF) and expo-router landed on the collection.
+      await page.waitForURL(new RegExp(`/collections/${collectionId}(?:[/?#]|$)`), {
+        timeout: ACTION_TIMEOUT,
+      });
+      await expect(page.locator('[data-testid="collection-screen-add-movie"]')).toBeVisible({
+        timeout: NAV_TIMEOUT,
+      });
+      watch.assertClean('streamed turn and the navigation it caused');
+    },
+  );
 
-  test('prefill → the assistant opens the add-movie form on the named collection', { tag: '@gate' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `t059-pre-${Date.now()}`;
-    const collectionId = await seedCollection(request, name);
+  test(
+    'prefill → the assistant opens the add-movie form on the named collection',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t059-pre-${Date.now()}`;
+      const collectionId = await seedCollection(request, name);
 
-    await gotoHome(page);
-    await openDock(page);
-    // NB: "open the add movie form for …" routes to `navigate` on BOTH the runtime model
-    // (qwen2.5) and the gate (Claude). The looser "let me add a movie to …" phrasing classifies
-    // as `add` on qwen2.5 (→ curator), so it is NOT a reliable prefill trigger at runtime.
-    await send(page, `open the add movie form for my ${name} collection`);
+      await gotoHome(page);
+      await openDock(page);
+      // NB: "open the add movie form for …" routes to `navigate` on BOTH the runtime model
+      // (qwen2.5) and the gate (Claude). The looser "let me add a movie to …" phrasing classifies
+      // as `add` on qwen2.5 (→ curator), so it is NOT a reliable prefill trigger at runtime.
+      await send(page, `open the add movie form for my ${name} collection`);
 
-    // prefill_add_movie opens the add-movie form for the resolved collection (HITL — not submitted).
-    await page.waitForURL(new RegExp(`/collections/${collectionId}/add-movie`), {
-      timeout: ACTION_TIMEOUT,
-    });
-    await expect(page.locator('[data-testid="new-movie-screen"]')).toBeVisible({
-      timeout: NAV_TIMEOUT,
-    });
-  });
+      // prefill_add_movie opens the add-movie form for the resolved collection (HITL — not submitted).
+      await page.waitForURL(new RegExp(`/collections/${collectionId}/add-movie`), {
+        timeout: ACTION_TIMEOUT,
+      });
+      await expect(page.locator('[data-testid="new-movie-screen"]')).toBeVisible({
+        timeout: NAV_TIMEOUT,
+      });
+    },
+  );
 });

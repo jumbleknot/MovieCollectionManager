@@ -11,7 +11,11 @@
 
 import { XMLParser } from 'fast-xml-parser';
 
-import { signRequest, sha256Hex, type SigningCredentials } from '@/bff-server/backup-request-signer';
+import {
+  signRequest,
+  sha256Hex,
+  type SigningCredentials,
+} from '@/bff-server/backup-request-signer';
 import type {
   BackupDestinationDriver,
   PinnedTransport,
@@ -68,7 +72,8 @@ export function createS3Driver(
 
   function hostHeader(): string {
     const { hostname, port, protocol } = transport.vetted;
-    const isDefaultPort = (protocol === 'https:' && port === 443) || (protocol === 'http:' && port === 80);
+    const isDefaultPort =
+      (protocol === 'https:' && port === 443) || (protocol === 'http:' && port === 80);
     return isDefaultPort ? hostname : `${hostname}:${port}`;
   }
 
@@ -167,7 +172,11 @@ export function createS3Driver(
       const code = errorCode(res);
       if (res.status === 403) {
         if (code === 'SignatureDoesNotMatch' || code === 'InvalidAccessKeyId') {
-          return { ok: false, failure: 'credentials-rejected', reason: 'Those credentials were rejected' };
+          return {
+            ok: false,
+            failure: 'credentials-rejected',
+            reason: 'Those credentials were rejected',
+          };
         }
         return {
           ok: false,
@@ -183,7 +192,11 @@ export function createS3Driver(
         };
       }
       if (res.status < 200 || res.status >= 300) {
-        return { ok: false, failure: 'unreachable', reason: `That destination answered HTTP ${res.status}` };
+        return {
+          ok: false,
+          failure: 'unreachable',
+          reason: `That destination answered HTTP ${res.status}`,
+        };
       }
 
       // Reading proves the credential and the bucket. It does NOT prove the credential may
@@ -191,7 +204,13 @@ export function createS3Driver(
       // the outcome FR-004 exists to prevent. So write a probe object and remove it.
       const probeKey = `${destination.basePath || 'mcm-backups'}/.mcm-write-probe`;
       try {
-        const write = await send('PUT', objectPath(probeKey), '', Buffer.alloc(0), 'application/octet-stream');
+        const write = await send(
+          'PUT',
+          objectPath(probeKey),
+          '',
+          Buffer.alloc(0),
+          'application/octet-stream',
+        );
         if (write.status === 403) {
           return {
             ok: false,
@@ -200,7 +219,11 @@ export function createS3Driver(
           };
         }
         if (write.status < 200 || write.status >= 300) {
-          return { ok: false, failure: 'no-write-permission', reason: `A test write answered HTTP ${write.status}` };
+          return {
+            ok: false,
+            failure: 'no-write-permission',
+            reason: `A test write answered HTTP ${write.status}`,
+          };
         }
       } catch {
         return { ok: false, failure: 'unreachable', reason: 'Could not reach that address' };

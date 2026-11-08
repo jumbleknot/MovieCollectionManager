@@ -14,9 +14,9 @@ import fs from 'fs';
 import path from 'path';
 
 const CONTROLS = {
-  Card:   path.resolve(__dirname, 'surfaces/Card.tsx'),
+  Card: path.resolve(__dirname, 'surfaces/Card.tsx'),
   Button: path.resolve(__dirname, 'primitives/Button.tsx'),
-  Chip:   path.resolve(__dirname, 'primitives/Chip.tsx'),
+  Chip: path.resolve(__dirname, 'primitives/Chip.tsx'),
 } as const;
 
 /** Blank comment bodies (preserve newlines) so prose like "(not focusStyle)" never matches. */
@@ -30,11 +30,10 @@ function stripComments(src: string): string {
 // (`opacity="hover:0.92 press:0.88"`) or as a typed-value key (`{ default: bg, hover: x }`). A v2
 // object (`hoverStyle` …) must be gone: v3 forwards it as an unknown prop and it never applies.
 // (On 2.7.7 this scan read the v2 objects; rewritten for v3 in T078, as tasks.md planned.)
-const clause = (state: string) =>
-  new RegExp(`(?:^|[\\s"'\`{,])['"]?${state}['"]?\\s*:`, 'm');
+const clause = (state: string) => new RegExp(`(?:^|[\\s"'\`{,])['"]?${state}['"]?\\s*:`, 'm');
 const STATES = {
-  hover:           clause('hover'),
-  press:           clause('press'),
+  hover: clause('hover'),
+  press: clause('press'),
   'focus-visible': clause('focus-visible'),
 } as const;
 const V2_OBJECT = /\b(?:hover|press|focus|focusVisible|disabled|enter|exit)Style\b/;

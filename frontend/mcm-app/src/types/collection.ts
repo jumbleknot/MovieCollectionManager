@@ -15,11 +15,7 @@ export type ContentType = 'Movie' | 'Series' | 'Concert';
 
 // Spec FR-013: owned media and rip quality share the same allowed values.
 // Mirrors mc-service domain::MediaFormat (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray).
-export type MediaFormat =
-  | 'DVD'
-  | 'Blu-Ray'
-  | 'Blu-Ray 3D'
-  | 'UHD Blu-Ray';
+export type MediaFormat = 'DVD' | 'Blu-Ray' | 'Blu-Ray 3D' | 'UHD Blu-Ray';
 
 // Spec FR-013: rip quality uses the same value set as owned media.
 export type RipQuality = MediaFormat;

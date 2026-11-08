@@ -43,7 +43,13 @@ jest.mock('@/bff-server/token-service', () => ({
   extractRoles: jest.fn().mockReturnValue(['mc-user']),
 }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+  logger: {
+    audit: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
 import { POST } from '@/app/bff-api/auth/refresh+api';
@@ -73,8 +79,13 @@ const HELD = {
 };
 
 const grant = (access = 'renewed-access', refresh = 'renewed-refresh') => ({
-  access_token: access, refresh_token: refresh, id_token: 'id', token_type: 'Bearer',
-  expires_in: 300, refresh_expires_in: 1800, scope: 'openid',
+  access_token: access,
+  refresh_token: refresh,
+  id_token: 'id',
+  token_type: 'Bearer',
+  expires_in: 300,
+  refresh_expires_in: 1800,
+  scope: 'openid',
 });
 
 function makeRequest(cookieHeader = 'mcm_session_id=session-abc'): Parameters<typeof POST>[0] {
@@ -87,13 +98,16 @@ function makeRequest(cookieHeader = 'mcm_session_id=session-abc'): Parameters<ty
 
 beforeEach(() => {
   jest.clearAllMocks();
-  (readLiveSessionWithTokens as jest.Mock).mockResolvedValue({ session: SESSION, tokensRaw: sealSessionTokens(SESSION, HELD) });
+  (readLiveSessionWithTokens as jest.Mock).mockResolvedValue({
+    session: SESSION,
+    tokensRaw: sealSessionTokens(SESSION, HELD),
+  });
   (refreshTokens as jest.Mock).mockResolvedValue(grant());
   (validateJwt as jest.Mock).mockResolvedValue({ payload: { sub: 'member-a' } });
 });
 
 describe('POST /bff-api/auth/refresh', () => {
-  it('renews the session\'s OWN server-held tokens and re-sets only the session cookie (FR-021)', async () => {
+  it("renews the session's OWN server-held tokens and re-sets only the session cookie (FR-021)", async () => {
     const res = await POST(makeRequest());
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ success: true });
@@ -127,14 +141,19 @@ describe('POST /bff-api/auth/refresh', () => {
   });
 
   it('returns 401 REFRESH_TOKEN_INVALID for a session holding no tokens (pre-085), and ends it', async () => {
-    (readLiveSessionWithTokens as jest.Mock).mockResolvedValueOnce({ session: SESSION, tokensRaw: null });
+    (readLiveSessionWithTokens as jest.Mock).mockResolvedValueOnce({
+      session: SESSION,
+      tokensRaw: null,
+    });
     const res = await POST(makeRequest());
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe(AuthErrorCode.REFRESH_TOKEN_INVALID);
   });
 
   it('a rejected renewal ends the session: 401 REFRESH_FAILED', async () => {
-    (refreshTokens as jest.Mock).mockRejectedValueOnce(new AuthError(AuthErrorCode.REFRESH_FAILED, 'x', 401));
+    (refreshTokens as jest.Mock).mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.REFRESH_FAILED, 'x', 401),
+    );
     const res = await POST(makeRequest());
     expect(res.status).toBe(401);
     expect((await res.json()).code).toBe(AuthErrorCode.REFRESH_FAILED);
@@ -176,10 +195,13 @@ describe('POST /bff-api/auth/refresh — session ownership (feature 085)', () =>
     expect(revokeToken).toHaveBeenCalledWith('b-refresh', 'refresh_token');
     expect(deleteSession).toHaveBeenCalledWith('session-abc', 'member-a');
 
-    const audits = (logger.audit as jest.Mock).mock.calls.filter(([e]) => e === 'session_refresh_owner_mismatch');
+    const audits = (logger.audit as jest.Mock).mock.calls.filter(
+      ([e]) => e === 'session_refresh_owner_mismatch',
+    );
     expect(audits).toEqual([['session_refresh_owner_mismatch', { userId: 'member-a' }]]);
     const serialized = JSON.stringify(audits);
-    for (const secret of ['session-abc', 'b-access', 'b-refresh', 'member-b']) expect(serialized).not.toContain(secret);
+    for (const secret of ['session-abc', 'b-access', 'b-refresh', 'member-b'])
+      expect(serialized).not.toContain(secret);
   });
 
   it('a same-member refresh succeeds unchanged (US2 AS-2)', async () => {

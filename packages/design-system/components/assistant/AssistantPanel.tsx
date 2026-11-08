@@ -26,36 +26,35 @@
  *   />
  */
 
-import React, { useRef, useState, useCallback } from 'react'
-import {
-  ScrollView, KeyboardAvoidingView, Platform, TextInput, } from 'react-native'
-import type { ScrollViewInstance } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack, YStack } from '@tamagui/stacks'
-import { AssistantAvatar }               from './AssistantAvatar'
-import { ChatBubble }                    from './ChatBubble'
+import React, { useRef, useState, useCallback } from 'react';
+import { ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack, YStack } from '@tamagui/stacks';
+import { AssistantAvatar } from './AssistantAvatar';
+import { ChatBubble } from './ChatBubble';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Message {
-  id:         string
-  sender:     'user' | 'assistant' | 'system'
-  text?:      string
-  timestamp:  Date
-  thinking?:  boolean
-  error?:     boolean
-  children?:  React.ReactNode  // generative UI
+  id: string;
+  sender: 'user' | 'assistant' | 'system';
+  text?: string;
+  timestamp: Date;
+  thinking?: boolean;
+  error?: boolean;
+  children?: React.ReactNode; // generative UI
 }
 
 export interface AssistantPanelProps {
-  messages:        Message[]
-  onSend:          (text: string) => void
-  onClose?:        () => void
-  isThinking?:     boolean   // global thinking state (typing indicator)
-  placeholder?:    string
-  headerSubtitle?: string
-  style?:          object
+  messages: Message[];
+  onSend: (text: string) => void;
+  onClose?: () => void;
+  isThinking?: boolean; // global thinking state (typing indicator)
+  placeholder?: string;
+  headerSubtitle?: string;
+  style?: object;
 }
 
 // ─── Panel Header ─────────────────────────────────────────────────────────────
@@ -65,11 +64,11 @@ function PanelHeader({
   isThinking,
   subtitle,
 }: {
-  onClose?:   () => void
-  isThinking?: boolean
-  subtitle?:  string
+  onClose?: () => void;
+  isThinking?: boolean;
+  subtitle?: string;
 }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <XStack
@@ -87,12 +86,7 @@ function PanelHeader({
 
       {/* Title / subtitle */}
       <YStack flex={1}>
-        <Text
-          fontFamily="heading"
-          fontSize={18}
-          fontWeight="500"
-          color={theme.onSurface?.val}
-        >
+        <Text fontFamily="heading" fontSize={18} fontWeight="500" color={theme.onSurface?.val}>
           Movie Assistant
         </Text>
         {subtitle || isThinking ? (
@@ -122,11 +116,13 @@ function PanelHeader({
           accessibilityLabel="Close assistant"
           accessibilityRole="button"
         >
-          <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">✕</Text>
+          <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">
+            ✕
+          </Text>
         </View>
       )}
     </XStack>
-  )
+  );
 }
 
 // ─── Suggested prompts ────────────────────────────────────────────────────────
@@ -136,10 +132,10 @@ const SUGGESTED_PROMPTS = [
   'Add a movie to my collection',
   'Show my wishlist',
   'Find movies by a director',
-]
+];
 
 function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <YStack padding={16} gap={8} alignItems="center">
       <AssistantAvatar size="xl" />
@@ -166,19 +162,14 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
             cursor="pointer"
             onPress={() => onSelect(prompt)}
           >
-            <Text
-              fontFamily="body"
-              fontSize={14}
-              letterSpacing={0.25}
-              color={theme.onSurface?.val}
-            >
+            <Text fontFamily="body" fontSize={14} letterSpacing={0.25} color={theme.onSurface?.val}>
               {prompt}
             </Text>
           </View>
         ))}
       </YStack>
     </YStack>
-  )
+  );
 }
 
 // ─── Input bar ────────────────────────────────────────────────────────────────
@@ -186,23 +177,23 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
 function InputBar({
   onSend,
   placeholder = 'Ask about your movies…',
-  disabled    = false,
+  disabled = false,
 }: {
-  onSend:       (text: string) => void
-  placeholder?: string
-  disabled?:    boolean
+  onSend: (text: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }) {
-  const theme   = useTheme()
-  const [text, setText] = useState('')
+  const theme = useTheme();
+  const [text, setText] = useState('');
 
   const handleSend = useCallback(() => {
-    const trimmed = text.trim()
-    if (!trimmed || disabled) return
-    onSend(trimmed)
-    setText('')
-  }, [text, disabled, onSend])
+    const trimmed = text.trim();
+    if (!trimmed || disabled) return;
+    onSend(trimmed);
+    setText('');
+  }, [text, disabled, onSend]);
 
-  const canSend = text.trim().length > 0 && !disabled
+  const canSend = text.trim().length > 0 && !disabled;
 
   return (
     <XStack
@@ -235,15 +226,17 @@ function InputBar({
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
           editable={!disabled}
-          style={{
-            fontFamily:    'Inter, system-ui',
-            fontSize:      15,
-            lineHeight:    22,
-            color:         theme.onSurface?.val,
-            padding:       0,
-            margin:        0,
-            outlineStyle:  'none',
-          } as any}
+          style={
+            {
+              fontFamily: 'Inter, system-ui',
+              fontSize: 15,
+              lineHeight: 22,
+              color: theme.onSurface?.val,
+              padding: 0,
+              margin: 0,
+              outlineStyle: 'none',
+            } as any
+          }
         />
       </View>
 
@@ -274,7 +267,7 @@ function InputBar({
         </Text>
       </View>
     </XStack>
-  )
+  );
 }
 
 // ─── Main AssistantPanel ──────────────────────────────────────────────────────
@@ -283,39 +276,29 @@ export const AssistantPanel = React.memo<AssistantPanelProps>(function Assistant
   messages,
   onSend,
   onClose,
-  isThinking    = false,
+  isThinking = false,
   placeholder,
   headerSubtitle,
   style,
 }) {
-  const theme       = useTheme()
-  const scrollRef   = useRef<ScrollViewInstance>(null)
-  const isEmpty     = messages.length === 0 && !isThinking
+  const theme = useTheme();
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const isEmpty = messages.length === 0 && !isThinking;
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <YStack
-        flex={1}
-        backgroundColor={theme.background?.val}
-        style={style}
-      >
+      <YStack flex={1} backgroundColor={theme.background?.val} style={style}>
         {/* Header */}
-        <PanelHeader
-          onClose={onClose}
-          isThinking={isThinking}
-          subtitle={headerSubtitle}
-        />
+        <PanelHeader onClose={onClose} isThinking={isThinking} subtitle={headerSubtitle} />
 
         {/* Message area */}
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: true })
-          }
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingVertical: 8 }}
         >
@@ -338,25 +321,17 @@ export const AssistantPanel = React.memo<AssistantPanelProps>(function Assistant
 
               {/* Typing indicator (shows while agent is processing) */}
               {isThinking && (
-                <ChatBubble
-                  sender="assistant"
-                  thinking={true}
-                  timestamp={new Date()}
-                />
+                <ChatBubble sender="assistant" thinking={true} timestamp={new Date()} />
               )}
             </>
           )}
         </ScrollView>
 
         {/* Input */}
-        <InputBar
-          onSend={onSend}
-          placeholder={placeholder}
-          disabled={isThinking}
-        />
+        <InputBar onSend={onSend} placeholder={placeholder} disabled={isThinking} />
       </YStack>
     </KeyboardAvoidingView>
-  )
-})
+  );
+});
 
-AssistantPanel.displayName = 'MCM.AssistantPanel'
+AssistantPanel.displayName = 'MCM.AssistantPanel';

@@ -59,11 +59,7 @@ describe('useKeycloakAuth', () => {
     const onCode = jest.fn();
     const onCancel = jest.fn();
 
-    mockedUseAuthRequest.mockReturnValue([
-      makeRequest(),
-      { type: 'cancel' },
-      jest.fn(),
-    ]);
+    mockedUseAuthRequest.mockReturnValue([makeRequest(), { type: 'cancel' }, jest.fn()]);
 
     await renderHook(() => useKeycloakAuth({ onCode, onCancel }));
     await act(async () => {});
@@ -109,9 +105,7 @@ describe('useKeycloakAuth', () => {
   it('isLoading is false when request and discovery are ready', async () => {
     mockedUseAuthRequest.mockReturnValueOnce([makeRequest(), null, jest.fn()]);
 
-    const { result } = await renderHook(() =>
-      useKeycloakAuth({ onCode: jest.fn() }),
-    );
+    const { result } = await renderHook(() => useKeycloakAuth({ onCode: jest.fn() }));
 
     expect(result.current.isLoading).toBe(false);
   });

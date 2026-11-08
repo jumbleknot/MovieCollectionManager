@@ -72,9 +72,14 @@ export function sealSessionTokens(session: SessionIdentity, tokens: SessionToken
 /** Throws when the record is malformed or was not sealed for this session and owner. */
 export function openSessionTokens(session: SessionIdentity, raw: string): SessionTokens {
   const record = JSON.parse(raw) as Partial<SealedRecord>;
-  if (record.v !== 1 || typeof record.blob !== 'string') throw new Error('Unrecognised session token record');
+  if (record.v !== 1 || typeof record.blob !== 'string')
+    throw new Error('Unrecognised session token record');
   const { accessToken, refreshToken } = JSON.parse(
-    decryptSecret(record.blob, env.agentConfigEncKey, sessionTokensAad(session.sessionId, session.userId)),
+    decryptSecret(
+      record.blob,
+      env.agentConfigEncKey,
+      sessionTokensAad(session.sessionId, session.userId),
+    ),
   ) as { accessToken: string; refreshToken: string };
   return {
     accessToken,
@@ -153,12 +158,21 @@ async function waitForRenewal(session: Session, stale: SessionTokens): Promise<S
     await new Promise((resolve) => setTimeout(resolve, RENEW_WAIT_POLL_MS));
     const raw = await getSessionTokensRecord(session.sessionId);
     if (!raw) {
-      throw new AuthError(AuthErrorCode.SESSION_NOT_FOUND, 'Your session has ended. Please log in again.', 401);
+      throw new AuthError(
+        AuthErrorCode.SESSION_NOT_FOUND,
+        'Your session has ended. Please log in again.',
+        401,
+      );
     }
     const current = openSessionTokens(session, raw);
     if (current.accessExpiresAt > stale.accessExpiresAt) return current;
   }
-  throw new AuthError(AuthErrorCode.SESSION_RENEWAL_PENDING, 'Your session is being renewed.', 503, {
-    retryAfterSeconds: 1,
-  });
+  throw new AuthError(
+    AuthErrorCode.SESSION_RENEWAL_PENDING,
+    'Your session is being renewed.',
+    503,
+    {
+      retryAfterSeconds: 1,
+    },
+  );
 }

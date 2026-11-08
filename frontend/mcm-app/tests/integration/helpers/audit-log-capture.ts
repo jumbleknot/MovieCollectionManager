@@ -27,7 +27,9 @@ export interface CapturedLogEntry {
  */
 export async function captureLogEntries(fn: () => Promise<void>): Promise<CapturedLogEntry[]> {
   const raw: string[] = [];
-  const collect = (...args: unknown[]) => { raw.push(args.map(String).join(' ')); };
+  const collect = (...args: unknown[]) => {
+    raw.push(args.map(String).join(' '));
+  };
 
   const originalLog = console.log;
   const originalError = console.error;

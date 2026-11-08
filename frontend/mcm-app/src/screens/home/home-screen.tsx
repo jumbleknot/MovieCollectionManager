@@ -105,7 +105,8 @@ export function HomeScreen(): React.JSX.Element {
     // (runs at most once per mount), so it cannot cause the cascading-render loop
     // the rule guards against. Disable the rule for these two intentional calls.
 
-    if (isAutoNavDone()) { // already fired this session — skip redirect
+    if (isAutoNavDone()) {
+      // already fired this session — skip redirect
       hasAutoNavCheckedRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot FR-009 reveal; see comment above
       setIsFr009Checked(true);
@@ -113,7 +114,7 @@ export function HomeScreen(): React.JSX.Element {
     }
     hasAutoNavCheckedRef.current = true;
 
-    const defaultCollection = collections.find(c => c.isDefault);
+    const defaultCollection = collections.find((c) => c.isDefault);
     if (defaultCollection) {
       markAutoNavDone(); // prevent redirect on subsequent /home visits this session
       // replace() so home is not added to the navigation stack.
@@ -175,7 +176,7 @@ export function HomeScreen(): React.JSX.Element {
   };
 
   const handleDeleteRequest = (collectionId: string) => {
-    const collection = collections.find(c => c.collectionId === collectionId) ?? null;
+    const collection = collections.find((c) => c.collectionId === collectionId) ?? null;
     setCollectionToDelete(collection);
   };
 
@@ -191,8 +192,11 @@ export function HomeScreen(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background?.val }]} testID="home-route">
-      {(isLoading || !isFr009Checked) ? (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background?.val }]}
+      testID="home-route"
+    >
+      {isLoading || !isFr009Checked ? (
         /* Loading state — also shown while FR-009 check is pending to ensure
            home-screen-create-button never appears before the auto-nav check runs.
            This prevents a race where mobile login helper (or E2E test) sees the
@@ -203,7 +207,15 @@ export function HomeScreen(): React.JSX.Element {
       ) : (
         <>
           {/* Header */}
-          <View style={[styles.header, { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val }]}>
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: theme.surface1?.val,
+                borderBottomColor: theme.outlineVariant?.val,
+              },
+            ]}
+          >
             <Text style={[styles.title, { color: theme.onSurface?.val }]}>My Collections</Text>
             {/* Shared DS PillButton — same orange CTA as the collection screen's "+ Add movie". */}
             <PillButton
@@ -247,14 +259,17 @@ export function HomeScreen(): React.JSX.Element {
           the keyboard is open (the button "handles" the tap → keyboard persists but button fires).
           This removes the need for explicit keyboard-dismiss steps in E2E tests.
         */}
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoid}
-          behavior="padding"
-        >
+        <KeyboardAvoidingView style={styles.keyboardAvoid} behavior="padding">
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
-          <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background?.val }]} testID="home-screen-create-modal">
+          <SafeAreaView
+            style={[styles.modalContainer, { backgroundColor: theme.background?.val }]}
+            testID="home-screen-create-modal"
+          >
             <Text style={[styles.modalTitle, { color: theme.onSurface?.val }]}>New Collection</Text>
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.modalScroll}
+            >
               <CollectionForm
                 mode="create"
                 onSubmit={handleCreateSubmit}
@@ -274,14 +289,19 @@ export function HomeScreen(): React.JSX.Element {
         presentationStyle="pageSheet"
         onRequestClose={handleEditCancel}
       >
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoid}
-          behavior="padding"
-        >
+        <KeyboardAvoidingView style={styles.keyboardAvoid} behavior="padding">
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
-          <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background?.val }]} testID="home-screen-edit-modal">
-            <Text style={[styles.modalTitle, { color: theme.onSurface?.val }]}>Edit Collection</Text>
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
+          <SafeAreaView
+            style={[styles.modalContainer, { backgroundColor: theme.background?.val }]}
+            testID="home-screen-edit-modal"
+          >
+            <Text style={[styles.modalTitle, { color: theme.onSurface?.val }]}>
+              Edit Collection
+            </Text>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.modalScroll}
+            >
               {editingCollection !== null && (
                 <CollectionForm
                   mode="edit"

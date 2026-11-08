@@ -57,9 +57,7 @@ describe('CollectionCard', () => {
   });
 
   it('renders the row variant', async () => {
-    const { getByText } = await renderDS(
-      <CollectionCard collection={base} variant="row" />,
-    );
+    const { getByText } = await renderDS(<CollectionCard collection={base} variant="row" />);
     expect(getByText('Alpha')).toBeTruthy();
     expect(getByText(/3 movies/)).toBeTruthy();
   });

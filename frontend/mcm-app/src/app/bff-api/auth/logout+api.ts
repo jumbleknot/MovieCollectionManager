@@ -37,7 +37,9 @@ async function _post(req: Request): Promise<Response> {
         userId = live.session.userId;
         let refreshToken: string | undefined;
         try {
-          refreshToken = live.tokensRaw ? openSessionTokens(live.session, live.tokensRaw).refreshToken : undefined;
+          refreshToken = live.tokensRaw
+            ? openSessionTokens(live.session, live.tokensRaw).refreshToken
+            : undefined;
         } catch {
           // An unopenable record still names a live session of this owner; end it regardless.
         }

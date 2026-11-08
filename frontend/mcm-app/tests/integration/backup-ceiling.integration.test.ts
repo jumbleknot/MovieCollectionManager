@@ -129,9 +129,18 @@ async function objectsUnder(destinationId: string, jobId: string) {
 beforeAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { env } = require('@/config/env') as {
-    env: { backupAllowedDestinationHosts: string; backupMaxMovies: number; backupMaxUncompressedBytes: number };
+    env: {
+      backupAllowedDestinationHosts: string;
+      backupMaxMovies: number;
+      backupMaxUncompressedBytes: number;
+    };
   };
-  const hosts = new Set(env.backupAllowedDestinationHosts.split(',').map((h) => h.trim()).filter(Boolean));
+  const hosts = new Set(
+    env.backupAllowedDestinationHosts
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
+  );
   hosts.add(new URL(S3_ENDPOINT).hostname);
   env.backupAllowedDestinationHosts = [...hosts].join(',');
 
@@ -141,10 +150,18 @@ beforeAll(async () => {
   session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
-  const created = await bff.post('/bff-api/collections', { name: `Ceiling ${randomUUID().slice(0, 8)}` }, auth());
+  const created = await bff.post(
+    '/bff-api/collections',
+    { name: `Ceiling ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   collectionId = created.data.collectionId ?? created.data.id;
   for (let i = 0; i < SEEDED_MOVIES; i += 1) {
-    await bff.post(`/bff-api/collections/${collectionId}/movies`, movieBody(`Ceiling ${i}`), auth());
+    await bff.post(
+      `/bff-api/collections/${collectionId}/movies`,
+      movieBody(`Ceiling ${i}`),
+      auth(),
+    );
   }
 }, 300_000);
 
@@ -161,9 +178,14 @@ afterAll(async () => {
 
 // The ceilings are read from `env` at use, so a test can lower them without a process restart.
 // Restored after each case so one case's ceiling cannot silently govern the next.
-function withCeilings<T>(ceilings: { movies?: number; bytes?: number }, body: () => Promise<T>): Promise<T> {
+function withCeilings<T>(
+  ceilings: { movies?: number; bytes?: number },
+  body: () => Promise<T>,
+): Promise<T> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { env } = require('@/config/env') as { env: { backupMaxMovies: number; backupMaxUncompressedBytes: number } };
+  const { env } = require('@/config/env') as {
+    env: { backupMaxMovies: number; backupMaxUncompressedBytes: number };
+  };
   const previous = { movies: env.backupMaxMovies, bytes: env.backupMaxUncompressedBytes };
   if (ceilings.movies !== undefined) env.backupMaxMovies = ceilings.movies;
   if (ceilings.bytes !== undefined) env.backupMaxUncompressedBytes = ceilings.bytes;
@@ -173,9 +195,12 @@ function withCeilings<T>(ceilings: { movies?: number; bytes?: number }, body: ()
   });
 }
 
-itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
-  assertBackupTargetsPresent();
-});
+itBackupTargets(
+  'has the backup destinations up — otherwise every case below is one failure',
+  () => {
+    assertBackupTargetsPresent();
+  },
+);
 
 describeBackupTargets('the count ceiling', () => {
   it('fails the run and writes NOTHING when the movie count exceeds it', async () => {

@@ -128,7 +128,11 @@ export async function exchangeCodeForTokens(
   if (!res.ok) {
     const errData = (await res.json().catch(() => ({}))) as { error?: string };
     if (errData.error === 'invalid_grant') {
-      throw new AuthError(AuthErrorCode.AUTH_CODE_INVALID, 'Invalid or expired authorization code', 400);
+      throw new AuthError(
+        AuthErrorCode.AUTH_CODE_INVALID,
+        'Invalid or expired authorization code',
+        400,
+      );
     }
     throw new AuthError(AuthErrorCode.INVALID_CREDENTIALS, 'Token exchange failed', 400);
   }
@@ -179,9 +183,14 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
 const REFRESH_TIMEOUT_MS = 5000;
 
 const identityProviderUnavailable = () =>
-  new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'The identity provider is temporarily unavailable.', 503, {
-    retryAfterSeconds: 5,
-  });
+  new AuthError(
+    AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+    'The identity provider is temporarily unavailable.',
+    503,
+    {
+      retryAfterSeconds: 5,
+    },
+  );
 
 /**
  * Terminate all Keycloak SSO sessions for a user via the Admin API.
@@ -263,13 +272,10 @@ export async function countUsersInClientRole(roleName: string): Promise<number> 
 
 export async function logoutUserSessions(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
-  await keycloakFetch(
-    `${env.keycloakAdminApiBase}/users/${userId}/logout`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${adminToken}` },
-    },
-  );
+  await keycloakFetch(`${env.keycloakAdminApiBase}/users/${userId}/logout`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
   // Errors are non-fatal — the BFF session and token are already revoked
 }
 
@@ -277,7 +283,10 @@ export async function logoutUserSessions(userId: string): Promise<void> {
  * Revoke a token (access or refresh) at Keycloak.
  * Used during logout.
  */
-export async function revokeToken(token: string, tokenTypeHint: 'access_token' | 'refresh_token'): Promise<void> {
+export async function revokeToken(
+  token: string,
+  tokenTypeHint: 'access_token' | 'refresh_token',
+): Promise<void> {
   const body = new URLSearchParams({
     client_id: env.keycloakClientId,
     token,
@@ -378,7 +387,7 @@ export async function assignMcUserRole(userId: string): Promise<void> {
   if (!rolesRes.ok) {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to read the mc-user role', 502);
   }
-  const role = await rolesRes.json() as { id: string; name: string };
+  const role = (await rolesRes.json()) as { id: string; name: string };
 
   const assignRes = await keycloakFetch(
     `${env.keycloakAdminApiBase}/users/${userId}/role-mappings/clients/${clientInternalId}`,
@@ -392,7 +401,11 @@ export async function assignMcUserRole(userId: string): Promise<void> {
     },
   );
   if (!assignRes.ok) {
-    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to assign the mc-user role', 502);
+    throw new AuthError(
+      AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+      'Failed to assign the mc-user role',
+      502,
+    );
   }
 }
 
@@ -417,7 +430,11 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
   );
 
   if (!res.ok) {
-    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to send verification email', 502);
+    throw new AuthError(
+      AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+      'Failed to send verification email',
+      502,
+    );
   }
 }
 
@@ -452,10 +469,9 @@ export async function getUserIdByEmail(email: string): Promise<string | null> {
 export async function getUserById(userId: string): Promise<KeycloakUser> {
   const adminToken = await getAdminToken();
 
-  const res = await keycloakFetch(
-    `${env.keycloakAdminApiBase}/users/${userId}`,
-    { headers: { Authorization: `Bearer ${adminToken}` } },
-  );
+  const res = await keycloakFetch(`${env.keycloakAdminApiBase}/users/${userId}`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
 
   if (!res.ok) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'User not found', 404);
@@ -507,8 +523,15 @@ export async function ensureClientRedirectUris(
 ): Promise<void> {
   if (redirectUrisEnsured.has(keycloakClientId)) return;
 
-  const unrecorded = (step: 'client_lookup' | 'client_fetch' | 'update' | 'error', status?: number) =>
-    logger.warn('redirect_uri_registration_failed', { action: 'ensure_redirect_uris', step, status });
+  const unrecorded = (
+    step: 'client_lookup' | 'client_fetch' | 'update' | 'error',
+    status?: number,
+  ) =>
+    logger.warn('redirect_uri_registration_failed', {
+      action: 'ensure_redirect_uris',
+      step,
+      status,
+    });
 
   try {
     const adminToken = await getAdminToken();
@@ -525,28 +548,26 @@ export async function ensureClientRedirectUris(
     if (!clientId) return unrecorded('client_lookup', clientsRes.status);
 
     // Fetch the full client representation
-    const clientRes = await keycloakFetch(
-      `${env.keycloakAdminApiBase}/clients/${clientId}`,
-      { headers: { Authorization: `Bearer ${adminToken}` } },
-    );
+    const clientRes = await keycloakFetch(`${env.keycloakAdminApiBase}/clients/${clientId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
     if (!clientRes.ok) return unrecorded('client_fetch', clientRes.status);
 
-    const client = (await clientRes.json()) as Record<string, unknown> & { redirectUris?: string[] };
+    const client = (await clientRes.json()) as Record<string, unknown> & {
+      redirectUris?: string[];
+    };
     const existing = client.redirectUris ?? [];
     const missing = uris.filter((u) => !existing.includes(u));
 
     if (missing.length > 0) {
-      const updateRes = await keycloakFetch(
-        `${env.keycloakAdminApiBase}/clients/${clientId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify({ ...client, redirectUris: [...existing, ...missing] }),
+      const updateRes = await keycloakFetch(`${env.keycloakAdminApiBase}/clients/${clientId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
         },
-      );
+        body: JSON.stringify({ ...client, redirectUris: [...existing, ...missing] }),
+      });
       if (!updateRes.ok) return unrecorded('update', updateRes.status);
     }
 

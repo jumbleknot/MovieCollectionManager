@@ -105,7 +105,9 @@ function canonicalQuery(query: string): string {
     // to normalise spelling — `%2f` and `%2F` must canonicalise the same way.
     pairs.push([uriEncode(decodeURIComponent(rawKey)), uriEncode(decodeURIComponent(rawValue))]);
   }
-  pairs.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
+  pairs.sort((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0,
+  );
   return pairs.map(([k, v]) => `${k}=${v}`).join('&');
 }
 
@@ -158,7 +160,12 @@ export function buildStringToSign(
 }
 
 /** The four-step derivation. Each step's key is the PREVIOUS step's output, never the raw secret. */
-function signingKey(secretAccessKey: string, dateStamp: string, region: string, service: string): Buffer {
+function signingKey(
+  secretAccessKey: string,
+  dateStamp: string,
+  region: string,
+  service: string,
+): Buffer {
   const kDate = hmac(`AWS4${secretAccessKey}`, dateStamp);
   const kRegion = hmac(kDate, region);
   const kService = hmac(kRegion, service);

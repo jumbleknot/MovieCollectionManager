@@ -23,10 +23,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const ROOTS = [
-  path.resolve(__dirname, 'primitives'),
-  path.resolve(__dirname, 'surfaces'),
-];
+const ROOTS = [path.resolve(__dirname, 'primitives'), path.resolve(__dirname, 'surfaces')];
 
 /** The controls that draw a keyboard focus ring — each must keep it. */
 const RINGED = [
@@ -99,6 +96,8 @@ describe('focus-ring convention (Tamagui 3 spelling)', () => {
     expect(BARE_FOCUS.test(`outlineStyle="none focus-visible:solid"`)).toBe(false);
     expect(BARE_FOCUS.test(`outlineStyle={{ 'focus-visible': 'solid' }}`)).toBe(false);
     expect(FOCUS_VISIBLE.test(`outlineStyle="none focus-visible:solid"`)).toBe(true);
-    expect(FOCUS_VISIBLE.test(`outlineStyle={{ default: 'none', 'focus-visible': 'solid' }}`)).toBe(true);
+    expect(FOCUS_VISIBLE.test(`outlineStyle={{ default: 'none', 'focus-visible': 'solid' }}`)).toBe(
+      true,
+    );
   });
 });

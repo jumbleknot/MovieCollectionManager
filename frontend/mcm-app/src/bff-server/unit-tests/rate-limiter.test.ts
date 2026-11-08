@@ -2,7 +2,15 @@
  * Unit tests for rate limiter (T-040)
  */
 
-import { checkLoginRateLimit, checkRegisterRateLimit, checkRegisterIpRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import {
+  checkLoginRateLimit,
+  checkRegisterRateLimit,
+  checkRegisterIpRateLimit,
+  checkRefreshRateLimit,
+  checkResendVerificationRateLimit,
+  checkLogoutRateLimit,
+  extractClientIp,
+} from '@/bff-server/rate-limiter';
 import { RateLimitError } from '@/types/errors';
 
 import { incrementRateLimit } from '@/bff-server/cache-service';
@@ -69,7 +77,9 @@ describe('checkResendVerificationRateLimit', () => {
 
   it('throws RateLimitError when limit exceeded', async () => {
     mockedIncrement.mockResolvedValue(4); // > 3 limit
-    await expect(checkResendVerificationRateLimit('user@example.com')).rejects.toBeInstanceOf(RateLimitError);
+    await expect(checkResendVerificationRateLimit('user@example.com')).rejects.toBeInstanceOf(
+      RateLimitError,
+    );
   });
 });
 
@@ -114,7 +124,9 @@ describe('IP-scoped checks skip when identity is null (no shared lockout bucket)
 describe('extractClientIp', () => {
   it('returns the right-most XFF hop behind a trusted proxy (spoofed left entries ignored)', () => {
     // Client may forge the left entries; the trusted proxy appends the real peer last.
-    expect(extractClientIp({ 'x-forwarded-for': '1.1.1.1, 2.2.2.2, 10.0.0.1' }, true)).toBe('10.0.0.1');
+    expect(extractClientIp({ 'x-forwarded-for': '1.1.1.1, 2.2.2.2, 10.0.0.1' }, true)).toBe(
+      '10.0.0.1',
+    );
   });
 
   it('returns null behind a trusted proxy when XFF is absent', () => {

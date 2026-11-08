@@ -66,9 +66,7 @@ describe('createMcServiceClient', () => {
       createMcServiceClient(TEST_JWT);
 
       const createCall = (axios.create as jest.Mock).mock.calls[0][0];
-      const authHeader =
-        createCall?.headers?.Authorization ??
-        createCall?.headers?.authorization;
+      const authHeader = createCall?.headers?.Authorization ?? createCall?.headers?.authorization;
 
       expect(authHeader).toBe(`Bearer ${TEST_JWT}`);
     });
@@ -80,9 +78,7 @@ describe('createMcServiceClient', () => {
       createMcServiceClient('');
 
       const createCall = (axios.create as jest.Mock).mock.calls[0][0];
-      const authHeader =
-        createCall?.headers?.Authorization ??
-        createCall?.headers?.authorization;
+      const authHeader = createCall?.headers?.Authorization ?? createCall?.headers?.authorization;
 
       expect(authHeader).toBe('Bearer ');
     });

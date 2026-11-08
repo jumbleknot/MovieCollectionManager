@@ -18,76 +18,72 @@
  *     Outfit:           Outfit_400Regular, *     'Outfit-Medium':  Outfit_500Medium, *     'Outfit-SemiBold':Outfit_600SemiBold, *     'Outfit-Bold':    Outfit_700Bold, *     Inter:            Inter_400Regular, *     'Inter-Medium':   Inter_500Medium, *   })
  */
 
-import { createFont } from '@tamagui/core'
-import {
-  fontSizeTokens,
-  lineHeightTokens,
-  letterSpacingTokens,
-} from '../tokens/typography'
+import { createFont } from '@tamagui/core';
+import { fontSizeTokens, lineHeightTokens, letterSpacingTokens } from '../tokens/typography';
 
 // ─── Outfit — Display, Headline, Title ───────────────────────────────────────
 
 export const outfitFont = createFont({
   family: 'Outfit, system-ui, sans-serif',
-  size:           fontSizeTokens,
-  lineHeight:     lineHeightTokens,
+  size: fontSizeTokens,
+  lineHeight: lineHeightTokens,
   weight: {
-    1:    '400',
-    2:    '400',
-    3:    '500',
-    4:    '500',
-    5:    '500',
-    6:    '400',
-    7:    '400',
-    8:    '400',
-    9:    '400',
-    10:   '400',
-    11:   '400',
-    12:   '400',
+    1: '400',
+    2: '400',
+    3: '500',
+    4: '500',
+    5: '500',
+    6: '400',
+    7: '400',
+    8: '400',
+    9: '400',
+    10: '400',
+    11: '400',
+    12: '400',
     true: '400',
   },
-  letterSpacing:  letterSpacingTokens,
+  letterSpacing: letterSpacingTokens,
   face: {
-    400: { normal: 'Outfit',         italic: 'Outfit' },
-    500: { normal: 'Outfit-Medium',  italic: 'Outfit-Medium' },
-    600: { normal: 'Outfit-SemiBold',italic: 'Outfit-SemiBold' },
-    700: { normal: 'Outfit-Bold',    italic: 'Outfit-Bold' },
+    400: { normal: 'Outfit', italic: 'Outfit' },
+    500: { normal: 'Outfit-Medium', italic: 'Outfit-Medium' },
+    600: { normal: 'Outfit-SemiBold', italic: 'Outfit-SemiBold' },
+    700: { normal: 'Outfit-Bold', italic: 'Outfit-Bold' },
   },
-})
+});
 
 // ─── Inter — Body, Label ─────────────────────────────────────────────────────
 
 export const interFont = createFont({
   family: 'Inter, system-ui, sans-serif',
-  size:           fontSizeTokens,
-  lineHeight:     lineHeightTokens,
+  size: fontSizeTokens,
+  lineHeight: lineHeightTokens,
   weight: {
-    1:    '500',
-    2:    '500',
-    3:    '500',
-    4:    '400',
-    5:    '400',
-    6:    '400',
-    7:    '400',
-    8:    '400',
-    9:    '400',
-    10:   '400',
-    11:   '400',
-    12:   '400',
+    1: '500',
+    2: '500',
+    3: '500',
+    4: '400',
+    5: '400',
+    6: '400',
+    7: '400',
+    8: '400',
+    9: '400',
+    10: '400',
+    11: '400',
+    12: '400',
     true: '400',
   },
-  letterSpacing:  letterSpacingTokens,
+  letterSpacing: letterSpacingTokens,
   face: {
-    400: { normal: 'Inter',          italic: 'Inter' },
-    500: { normal: 'Inter-Medium',   italic: 'Inter-Medium' },
+    400: { normal: 'Inter', italic: 'Inter' },
+    500: { normal: 'Inter-Medium', italic: 'Inter-Medium' },
     // 600/700 added (feature 017 D2): MD3 label/title weights declared at 600/700 now render
     // real Inter faces instead of synthesizing bold from the 400/500 masters.
     600: { normal: 'Inter-SemiBold', italic: 'Inter-SemiBold' },
-    700: { normal: 'Inter-Bold',     italic: 'Inter-Bold' },
+    700: { normal: 'Inter-Bold', italic: 'Inter-Bold' },
   },
-})
+});
 
 export const fonts = {
-  heading: outfitFont,  // used for headings (Tamagui built-in key)
-  body:    interFont,   // used for body text (Tamagui built-in key)
-} as const
+  heading: outfitFont, // used for headings (Tamagui built-in key)
+  body: interFont, // used for body text (Tamagui built-in key)
+} as const;

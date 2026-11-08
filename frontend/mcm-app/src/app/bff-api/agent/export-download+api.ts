@@ -41,7 +41,9 @@ export async function GET(req: Request): Promise<Response> {
       }
 
       audit('agent_export_download', {
-        userId: user.id, filename: file.filename, sizeBytes: file.bytes.length,
+        userId: user.id,
+        filename: file.filename,
+        sizeBytes: file.bytes.length,
       });
 
       // Copy into a plain Uint8Array — the BFF runtime's Response BodyInit accepts a typed-array

@@ -52,7 +52,9 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
 
   afterAll(async () => {
     const col = await getAgentConfigCollection();
-    await col.deleteMany({ _id: { $in: [userA?.userId, userB?.userId].filter(Boolean) as string[] } });
+    await col.deleteMany({
+      _id: { $in: [userA?.userId, userB?.userId].filter(Boolean) as string[] },
+    });
     await closeMongo();
     await deleteTestUser(userA?.userId);
     await deleteTestUser(userB?.userId);
@@ -71,9 +73,9 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
 
     const aDoc = await store.getByUserId(userA.userId);
     const bDoc = await store.getByUserId(userB.userId);
-    expect(aDoc?.enabled).toBe(false);            // A cleared
+    expect(aDoc?.enabled).toBe(false); // A cleared
     expect(aDoc?.tmdbKeyEnc).toBeUndefined();
-    expect(bDoc?.enabled).toBe(true);             // B untouched
+    expect(bDoc?.enabled).toBe(true); // B untouched
     expect(bDoc?.tmdbKeyEnc).toBeDefined();
   });
 
@@ -92,7 +94,7 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
 
     const aDoc = await store.getByUserId(userA.userId);
     const bDoc = await store.getByUserId(userB.userId);
-    expect(aDoc?.costLimitUsd).toBe(0.99);            // A written
+    expect(aDoc?.costLimitUsd).toBe(0.99); // A written
     expect(bDoc?.costLimitUsd).toBe(bBefore?.costLimitUsd ?? null); // B untouched
     expect(bDoc?.updatedAt).toBe(bBefore?.updatedAt);
   });

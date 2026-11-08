@@ -25,7 +25,10 @@ import { render } from '@/test-support/render';
 import { useCopilotKit } from '@copilotkit/react-native';
 
 import { AssistantProvider, ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
-import { RENDER_MOVIE_CARD_TOOL, useRenderMovieCardTool } from '@/components/agent/render-movie-card';
+import {
+  RENDER_MOVIE_CARD_TOOL,
+  useRenderMovieCardTool,
+} from '@/components/agent/render-movie-card';
 import {
   RENDER_COLLECTION_SUMMARY_TOOL,
   useRenderCollectionSummaryTool,
@@ -34,7 +37,10 @@ import {
   RENDER_DISAMBIGUATION_TOOL,
   useRenderDisambiguationTool,
 } from '@/components/agent/disambiguation-options';
-import { RENDER_SELECTION_TOOL, useRenderSelectionTool } from '@/components/agent/selection-options';
+import {
+  RENDER_SELECTION_TOOL,
+  useRenderSelectionTool,
+} from '@/components/agent/selection-options';
 import {
   RENDER_MULTI_SELECT_TOOL,
   useRenderMultiSelectTool,

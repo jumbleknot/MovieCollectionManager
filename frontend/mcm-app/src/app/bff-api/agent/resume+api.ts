@@ -23,7 +23,10 @@ import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { parseResumeRequest } from '@/bff-server/agent-resume';
 import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { resumeMovieAssistantRun } from '@/bff-server/agent-gateway-client';
-import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
+import {
+  mintSubjectToken,
+  isSubjectTokenExchangeConfigured,
+} from '@/bff-server/agent-subject-token';
 import { audit } from '@/bff-server/audit-sink';
 
 /**

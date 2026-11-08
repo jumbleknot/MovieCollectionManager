@@ -4,6 +4,8 @@
 // (`${BASE}/...`) follow the same target.
 const T = process.env['E2E_BFF_TARGET'];
 export const E2E_BASE_URL =
-  T === 'dev-container' ? 'http://localhost:8082'
-  : T === 'prod-container' ? 'https://localhost:8443'
-  : 'http://localhost:8081';
+  T === 'dev-container'
+    ? 'http://localhost:8082'
+    : T === 'prod-container'
+      ? 'https://localhost:8443'
+      : 'http://localhost:8081';

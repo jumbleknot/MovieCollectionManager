@@ -11,11 +11,7 @@
  */
 import { randomUUID } from 'node:crypto';
 
-import {
-  createTestUser,
-  deleteTestUser,
-  type TestUser,
-} from './helpers/keycloak-test-client';
+import { createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
 import { acquireOfflineRefreshToken } from './helpers/offline-token-flow';
 import {
   captureLogEntries,

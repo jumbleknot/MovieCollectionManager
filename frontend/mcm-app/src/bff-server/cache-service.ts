@@ -15,7 +15,7 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 
 // ─── TTL constants ─────────────────────────────────────────────────────────────
 
-const PROFILE_TTL_SECONDS = 300;      // 5 minutes
+const PROFILE_TTL_SECONDS = 300; // 5 minutes
 
 /**
  * Session key TTL = remaining absolute lifetime (009 finding #3).
@@ -104,7 +104,11 @@ export async function cacheSession(session: Session): Promise<void> {
   await redis.expire(userSessionsKey(session.userId), ttl);
 }
 
-async function parseSession(redis: RedisLike, sessionId: string, raw: string | null): Promise<Session | null> {
+async function parseSession(
+  redis: RedisLike,
+  sessionId: string,
+  raw: string | null,
+): Promise<Session | null> {
   if (!raw) return null;
   try {
     return JSON.parse(raw) as Session;
@@ -129,14 +133,25 @@ export async function getSessionWithTokens(
   sessionId: string,
 ): Promise<{ session: Session | null; tokensRaw: string | null }> {
   const redis = await getRedis();
-  const [rawSession, tokensRaw] = await redis.mget(sessionKey(sessionId), sessionTokensKey(sessionId));
-  return { session: await parseSession(redis, sessionId, rawSession ?? null), tokensRaw: tokensRaw ?? null };
+  const [rawSession, tokensRaw] = await redis.mget(
+    sessionKey(sessionId),
+    sessionTokensKey(sessionId),
+  );
+  return {
+    session: await parseSession(redis, sessionId, rawSession ?? null),
+    tokensRaw: tokensRaw ?? null,
+  };
 }
 
 /** Store a session's sealed tokens (feature 085). Same TTL as the session record. */
 export async function cacheSessionTokens(session: Session, sealedRecord: string): Promise<void> {
   const redis = await getRedis();
-  await redis.set(sessionTokensKey(session.sessionId), sealedRecord, 'EX', sessionTtlSeconds(session));
+  await redis.set(
+    sessionTokensKey(session.sessionId),
+    sealedRecord,
+    'EX',
+    sessionTtlSeconds(session),
+  );
 }
 
 export async function getSessionTokensRecord(sessionId: string): Promise<string | null> {
@@ -150,7 +165,13 @@ export async function getSessionTokensRecord(sessionId: string): Promise<string 
  */
 export async function touchSessionRecord(session: Session): Promise<void> {
   const redis = await getRedis();
-  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', sessionTtlSeconds(session), 'XX');
+  await redis.set(
+    sessionKey(session.sessionId),
+    JSON.stringify(session),
+    'EX',
+    sessionTtlSeconds(session),
+    'XX',
+  );
 }
 
 export async function deleteSession(sessionId: string, userId: string): Promise<void> {
@@ -378,7 +399,10 @@ const accountDeleteKey = (userId: string) => `account-delete:${userId}`;
  * Overwrites any earlier request rather than refusing — a user who abandons the round trip and
  * starts again must not be locked out for the rest of the window.
  */
-export async function setPendingAccountDeletion(userId: string, payloadJson: string): Promise<void> {
+export async function setPendingAccountDeletion(
+  userId: string,
+  payloadJson: string,
+): Promise<void> {
   const redis = await getRedis();
   await redis.set(accountDeleteKey(userId), payloadJson, 'EX', ACCOUNT_DELETE_TTL_SECONDS);
 }

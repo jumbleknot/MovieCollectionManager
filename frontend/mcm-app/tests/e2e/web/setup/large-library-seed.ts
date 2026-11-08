@@ -92,7 +92,9 @@ async function existingTitles(api: APIRequestContext, collectionId: string): Pro
   let cursor: string | undefined;
   // Bounded so a cursor bug cannot spin forever; 200 pages is 10k movies.
   for (let page = 0; page < 200; page++) {
-    const qs = cursor ? `?limit=${KEYSET_PAGE}&cursor=${encodeURIComponent(cursor)}` : `?limit=${KEYSET_PAGE}`;
+    const qs = cursor
+      ? `?limit=${KEYSET_PAGE}&cursor=${encodeURIComponent(cursor)}`
+      : `?limit=${KEYSET_PAGE}`;
     const res = await api.get(`/bff-api/collections/${collectionId}/movies${qs}`);
     if (!res.ok()) {
       throw new Error(`[large-library] list movies failed: ${res.status()} ${await res.text()}`);

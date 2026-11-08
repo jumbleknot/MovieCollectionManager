@@ -26,7 +26,11 @@ import { checkAccountDeletionRateLimit, extractClientIp } from '@/bff-server/rat
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
-import { deletionCallbackUri, problemResponse, errorStatus } from '@/bff-server/account-route-support';
+import {
+  deletionCallbackUri,
+  problemResponse,
+  errorStatus,
+} from '@/bff-server/account-route-support';
 
 export async function POST(req: Request): Promise<Response> {
   return withRequestContext(() => handle(req));
@@ -83,12 +87,20 @@ async function handle(req: Request): Promise<Response> {
       const { state, authorizationParams } = buildNativeStepUpRequest();
       await setPendingAccountDeletion(
         user.id,
-        JSON.stringify({ state, authTimeFloor, requestedAt: Math.floor(Date.now() / 1000), native: true }),
+        JSON.stringify({
+          state,
+          authTimeFloor,
+          requestedAt: Math.floor(Date.now() / 1000),
+          native: true,
+        }),
       );
       logger.audit('account_deletion_requested', { userId: user.id, ip, platform: 'native' });
       // No authorizationUrl: the device builds its own request, because only it can bind the
       // request to a verifier it holds.
-      return Response.json({ state, authorizationParams }, { status: 200, headers: securityHeaders() });
+      return Response.json(
+        { state, authorizationParams },
+        { status: 200, headers: securityHeaders() },
+      );
     }
 
     const redirectUri = deletionCallbackUri(req);
@@ -113,7 +125,9 @@ async function handle(req: Request): Promise<Response> {
     return Response.json({ authorizationUrl }, { status: 200, headers: securityHeaders() });
   } catch (err) {
     logger.error('account deletion challenge failed', {
-      action: 'account_deletion_challenge_error', ip, error: err,
+      action: 'account_deletion_challenge_error',
+      ip,
+      error: err,
     });
     return problemResponse('Could not start account deletion', errorStatus(err));
   }

@@ -43,7 +43,10 @@ function formatSampleValue(value: unknown): string {
       .map((v) =>
         v && typeof v === 'object'
           ? // externalIds-style objects: show system:uniqueId
-            [((v as Record<string, unknown>).system ?? ''), ((v as Record<string, unknown>).uniqueId ?? '')]
+            [
+              (v as Record<string, unknown>).system ?? '',
+              (v as Record<string, unknown>).uniqueId ?? '',
+            ]
               .filter(Boolean)
               .join(':')
           : String(v),
@@ -227,43 +230,55 @@ export function ImportPreviewCard({
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  // Import confirmation — same attention surface as the per-item approval card.
-  card: {
-    backgroundColor: theme.surface3?.val,
-    borderWidth: 1,
-    borderColor: theme.primary?.val,
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 4,
-    gap: 6,
-  },
-  heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
-  // Bounded so a many-tab import never pushes the pinned Approve/Cancel below the fold.
-  tabList: { maxHeight: 160 },
-  tab: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: theme.surface1?.val,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-    marginBottom: 4,
-  },
-  tabExcluded: { opacity: 0.55 },
-  tabTitle: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
-  tabCounts: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  mappingToggle: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 4 },
-  mapping: {
-    marginTop: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: theme.outlineVariant?.val,
-    gap: 2,
-  },
-  mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  ignored: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val, fontStyle: 'italic' },
-  ignoredHint: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    // Import confirmation — same attention surface as the per-item approval card.
+    card: {
+      backgroundColor: theme.surface3?.val,
+      borderWidth: 1,
+      borderColor: theme.primary?.val,
+      borderRadius: 10,
+      padding: 10,
+      marginVertical: 4,
+      gap: 6,
+    },
+    heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
+    // Bounded so a many-tab import never pushes the pinned Approve/Cancel below the fold.
+    tabList: { maxHeight: 160 },
+    tab: {
+      paddingVertical: 6,
+      paddingHorizontal: 8,
+      borderRadius: 8,
+      backgroundColor: theme.surface1?.val,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant?.val,
+      marginBottom: 4,
+    },
+    tabExcluded: { opacity: 0.55 },
+    tabTitle: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
+    tabCounts: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+    mappingToggle: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: theme.primary?.val,
+      fontWeight: '600',
+      marginTop: 4,
+    },
+    mapping: {
+      marginTop: 4,
+      paddingTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: theme.outlineVariant?.val,
+      gap: 2,
+    },
+    mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+    ignored: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: theme.onSurfaceVariant?.val,
+      fontStyle: 'italic',
+    },
+    ignoredHint: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+    total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
+    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
+  });

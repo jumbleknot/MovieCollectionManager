@@ -66,16 +66,21 @@ export async function withBackupRoute(
       // path, the query or the body, because nothing downstream is given one.
       return await body({ userId: user.id, jwt: accessToken });
     } catch (err) {
-      if (err instanceof BackupDestinationInputError) return problem('Invalid destination', 400, err.message);
-      if (err instanceof BackupJobInputError) return problem('Invalid backup job', 400, err.message);
-      if (err instanceof DestinationUrlNotAllowedError) return problem('Address not allowed', 400, err.reason);
+      if (err instanceof BackupDestinationInputError)
+        return problem('Invalid destination', 400, err.message);
+      if (err instanceof BackupJobInputError)
+        return problem('Invalid backup job', 400, err.message);
+      if (err instanceof DestinationUrlNotAllowedError)
+        return problem('Address not allowed', 400, err.reason);
       return handleMcApiError(err, action);
     }
   });
 }
 
 /** Parse a JSON body, returning a 400 rather than throwing on malformed input. */
-export async function parseJsonBody(req: Request): Promise<{ ok: true; value: unknown } | { ok: false; response: Response }> {
+export async function parseJsonBody(
+  req: Request,
+): Promise<{ ok: true; value: unknown } | { ok: false; response: Response }> {
   try {
     return { ok: true, value: await req.json() };
   } catch {
@@ -165,20 +170,24 @@ export function firstIssue(error: z.ZodError): string {
 
 // ─── Job schemas ───────────────────────────────────────────────────────────────
 
-const iana = z.string().trim().min(1).refine(
-  (zone) => {
-    // Validated against the RUNTIME's zone list rather than a hard-coded set: an unknown zone
-    // accepted here becomes a job that throws on every schedule computation, for ever, and the
-    // error surfaces nowhere near the form that accepted it.
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: zone });
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: 'Unknown time zone' },
-);
+const iana = z
+  .string()
+  .trim()
+  .min(1)
+  .refine(
+    (zone) => {
+      // Validated against the RUNTIME's zone list rather than a hard-coded set: an unknown zone
+      // accepted here becomes a job that throws on every schedule computation, for ever, and the
+      // error surfaces nowhere near the form that accepted it.
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: zone });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Unknown time zone' },
+  );
 
 export const scheduleSchema = z
   .object({

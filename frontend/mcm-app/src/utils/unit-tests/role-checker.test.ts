@@ -7,8 +7,11 @@ import type { UserProfile } from '@/types/auth';
 
 function makeUser(roles: string[]): UserProfile {
   return {
-    id: 'u1', username: 'u', email: 'u@e.com',
-    firstName: 'F', lastName: 'L',
+    id: 'u1',
+    username: 'u',
+    email: 'u@e.com',
+    firstName: 'F',
+    lastName: 'L',
     roles: roles as UserProfile['roles'],
     emailVerified: true,
     accountStatus: 'active',
@@ -61,7 +64,10 @@ describe('role-checker', () => {
 
   describe('getUserRoles', () => {
     it('returns known roles only', () => {
-      expect(getUserRoles(makeUser(['mc-user', 'mc-admin', 'other']))).toEqual(['mc-user', 'mc-admin']);
+      expect(getUserRoles(makeUser(['mc-user', 'mc-admin', 'other']))).toEqual([
+        'mc-user',
+        'mc-admin',
+      ]);
     });
 
     it('returns empty array for null user', () => {

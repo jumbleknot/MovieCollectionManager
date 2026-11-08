@@ -22,7 +22,7 @@ async function renderDialog(overrides: { visible?: boolean; entityName?: string 
       entityName={overrides.entityName ?? 'My Collection'}
       onConfirm={onConfirm}
       onCancel={onCancel}
-    />
+    />,
   );
   return { ...utils, onConfirm, onCancel };
 }

@@ -16,7 +16,10 @@
 
 import { randomUUID } from 'node:crypto';
 
-import { getBackupDestinationsCollection, getBackupJobsCollection } from '@/bff-server/mongo-client';
+import {
+  getBackupDestinationsCollection,
+  getBackupJobsCollection,
+} from '@/bff-server/mongo-client';
 import { assertValidSchedule, computeNextRun } from '@/bff-server/backup-schedule';
 import { logger } from '@/bff-server/logger';
 import type { BackupJob, RunSummary, Schedule } from '@/types/backups';
@@ -68,10 +71,12 @@ function assertKeepLast(keepLast: number | undefined): void {
  */
 async function assertOwnedDestination(userId: string, destinationId: string): Promise<void> {
   const destinations = await getBackupDestinationsCollection();
-  const found = await destinations.findOne({ _id: destinationId, userId }, { projection: { _id: 1 } });
+  const found = await destinations.findOne(
+    { _id: destinationId, userId },
+    { projection: { _id: 1 } },
+  );
   if (!found) throw new BackupJobInputError('That destination does not exist');
 }
-
 
 // ─── The atomic claim (FR-018, FR-020) ────────────────────────────────────────
 //
@@ -166,7 +171,10 @@ export async function releaseClaim(jobId: string, nextRunAt: string | null): Pro
   await jobs.updateOne(
     { _id: jobId },
     nextRunAt === null
-      ? { $set: { claimedAt: null, updatedAt: new Date().toISOString() }, $unset: { nextRunAt: '' } }
+      ? {
+          $set: { claimedAt: null, updatedAt: new Date().toISOString() },
+          $unset: { nextRunAt: '' },
+        }
       : { $set: { claimedAt: null, nextRunAt, updatedAt: new Date().toISOString() } },
   );
 }
@@ -216,7 +224,11 @@ export async function createJob(userId: string, input: JobInput): Promise<JobVie
   // FR-035. A schedule turning on is a change to what this system does while the user is
   // ABSENT, which is why it is its own event rather than folded into a generic "job created".
   if (nextRunAt) {
-    logger.audit('backup_schedule_enabled', { userId, jobId: doc._id, frequency: input.schedule?.frequency });
+    logger.audit('backup_schedule_enabled', {
+      userId,
+      jobId: doc._id,
+      frequency: input.schedule?.frequency,
+    });
   }
   return toView(doc);
 }
@@ -302,7 +314,10 @@ export async function deleteJob(userId: string, jobId: string): Promise<boolean>
  */
 export async function clearSchedules(userId: string): Promise<number> {
   const jobs = await getBackupJobsCollection();
-  const scheduled = await jobs.find({ userId, schedule: { $exists: true } }).project({ _id: 1, enabled: 1 }).toArray();
+  const scheduled = await jobs
+    .find({ userId, schedule: { $exists: true } })
+    .project({ _id: 1, enabled: 1 })
+    .toArray();
   if (scheduled.length === 0) return 0;
   await jobs.updateMany(
     { userId, schedule: { $exists: true } },

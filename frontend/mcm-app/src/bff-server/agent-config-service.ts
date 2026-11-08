@@ -63,8 +63,7 @@ export async function clear(userId: string): Promise<AgentConfigView> {
 // --- Filled in later story phases (US2 / US3) ---
 
 export type SaveResult =
-  | { ok: true; view: AgentConfigView }
-  | { ok: false; status: 400 | 422; errors: ProbeError[] };
+  { ok: true; view: AgentConfigView } | { ok: false; status: 400 | 422; errors: ProbeError[] };
 
 const VALID_PROVIDERS: AgentProvider[] = ['ollama', 'anthropic'];
 
@@ -108,10 +107,16 @@ export async function validateAndSave(
   // typeof-guard the secret fields BEFORE any .trim() — a malformed-type body (e.g.
   // { anthropicKey: 123 }) would otherwise throw on .trim() and surface as a 500 rather than a
   // clean per-field 400 (review Nit #1).
-  if (update.anthropicKey !== undefined && (typeof update.anthropicKey !== 'string' || update.anthropicKey.trim() === '')) {
+  if (
+    update.anthropicKey !== undefined &&
+    (typeof update.anthropicKey !== 'string' || update.anthropicKey.trim() === '')
+  ) {
     shape.push({ field: 'anthropicKey', reason: 'Must be a non-empty string' });
   }
-  if (update.tmdbKey !== undefined && (typeof update.tmdbKey !== 'string' || update.tmdbKey.trim() === '')) {
+  if (
+    update.tmdbKey !== undefined &&
+    (typeof update.tmdbKey !== 'string' || update.tmdbKey.trim() === '')
+  ) {
     shape.push({ field: 'tmdbKey', reason: 'Must be a non-empty string' });
   }
   if (shape.length) return { ok: false, status: 400, errors: shape };
@@ -119,24 +124,32 @@ export async function validateAndSave(
   // Effective config after applying the patch over the stored doc.
   const provider: AgentProvider = update.provider ?? existing?.provider ?? 'ollama';
   const ollamaBaseUrl =
-    update.ollamaBaseUrl !== undefined ? update.ollamaBaseUrl : existing?.ollamaBaseUrl ?? null;
+    update.ollamaBaseUrl !== undefined ? update.ollamaBaseUrl : (existing?.ollamaBaseUrl ?? null);
   // Strict boolean only — a malformed-type `enabled` (e.g. the string "false") must never coerce
   // to a truthy enable; fall back to the stored value (review Nit #1).
-  const enabled = typeof update.enabled === 'boolean' ? update.enabled : existing?.enabled ?? false;
+  const enabled =
+    typeof update.enabled === 'boolean' ? update.enabled : (existing?.enabled ?? false);
   const costLimitUsd =
-    update.costLimitUsd !== undefined ? update.costLimitUsd : existing?.costLimitUsd ?? null;
+    update.costLimitUsd !== undefined ? update.costLimitUsd : (existing?.costLimitUsd ?? null);
   const willHaveAnthropic = update.anthropicKey !== undefined || Boolean(existing?.anthropicKeyEnc);
   const willHaveTmdb = update.tmdbKey !== undefined || Boolean(existing?.tmdbKeyEnc);
 
   // (2) enabling requires the runnability prerequisites to be present (provided or on file).
   if (enabled) {
     const missing: ProbeError[] = [];
-    if (!willHaveTmdb) missing.push({ field: 'tmdbKey', reason: 'A TMDB key is required to enable the assistant' });
+    if (!willHaveTmdb)
+      missing.push({ field: 'tmdbKey', reason: 'A TMDB key is required to enable the assistant' });
     if (provider === 'anthropic' && !willHaveAnthropic) {
-      missing.push({ field: 'anthropicKey', reason: 'An Anthropic key is required for the Anthropic provider' });
+      missing.push({
+        field: 'anthropicKey',
+        reason: 'An Anthropic key is required for the Anthropic provider',
+      });
     }
     if (provider === 'ollama' && !ollamaBaseUrl) {
-      missing.push({ field: 'ollamaBaseUrl', reason: 'An Ollama base URL is required for the Ollama provider' });
+      missing.push({
+        field: 'ollamaBaseUrl',
+        reason: 'An Ollama base URL is required for the Ollama provider',
+      });
     }
     if (missing.length) return { ok: false, status: 400, errors: missing };
   }
@@ -151,7 +164,11 @@ export async function validateAndSave(
   if (provider === 'anthropic' && update.anthropicKey !== undefined) {
     probes.push(probeAnthropic(update.anthropicKey).then((s) => asProbeError('anthropicKey', s)));
   }
-  if (provider === 'ollama' && update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
+  if (
+    provider === 'ollama' &&
+    update.ollamaBaseUrl !== undefined &&
+    update.ollamaBaseUrl !== null
+  ) {
     probes.push(probeOllama(update.ollamaBaseUrl).then((s) => asProbeError('ollamaBaseUrl', s)));
   }
   const probeErrors = (await Promise.all(probes)).filter((e): e is ProbeError => e !== null);
@@ -168,7 +185,11 @@ export async function validateAndSave(
     costLimitUsd,
   };
   if (update.anthropicKey !== undefined) {
-    patch.anthropicKeyEnc = encryptSecret(update.anthropicKey, key, secretAad(userId, 'anthropicKey'));
+    patch.anthropicKeyEnc = encryptSecret(
+      update.anthropicKey,
+      key,
+      secretAad(userId, 'anthropicKey'),
+    );
   }
   if (update.tmdbKey !== undefined) {
     patch.tmdbKeyEnc = encryptSecret(update.tmdbKey, key, secretAad(userId, 'tmdbKey'));
@@ -179,8 +200,7 @@ export async function validateAndSave(
 }
 
 export type TestResult =
-  | { ok: true; results: Record<string, ProbeStatus> }
-  | { ok: false; status: 409 };
+  { ok: true; results: Record<string, ProbeStatus> } | { ok: false; status: 409 };
 
 // Re-probe the already-stored, server-decrypted credentials (US3, FR-013/015). No re-entry:
 // secrets are decrypted transiently here and never returned to the client (FR-018). Each

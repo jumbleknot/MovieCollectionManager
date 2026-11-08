@@ -21,7 +21,11 @@ export function AssistantPanelLoading(): React.JSX.Element {
   const theme = useTheme();
   const styles = makeStyles(theme);
   return (
-    <View testID="assistant-dock-panel-loading" style={styles.panel} accessibilityRole="progressbar">
+    <View
+      testID="assistant-dock-panel-loading"
+      style={styles.panel}
+      accessibilityRole="progressbar"
+    >
       <Text style={styles.text}>Starting the assistant…</Text>
     </View>
   );

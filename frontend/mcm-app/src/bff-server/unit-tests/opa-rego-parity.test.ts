@@ -65,7 +65,7 @@ describe('Rego/TS allowlist parity', () => {
       if (role !== ClientRole.MCUser) {
         throw new Error(
           `NAVIGABLE_TARGETS["${target}"] = "${role}" but Rego uses a flat mc-user check. ` +
-          'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
+            'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
         );
       }
     }
@@ -78,7 +78,7 @@ describe('Rego/TS allowlist parity', () => {
       if (role !== ClientRole.MCUser) {
         throw new Error(
           `PREFILL_TARGETS["${target}"] = "${role}" but Rego uses a flat mc-user check. ` +
-          'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
+            'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
         );
       }
     }

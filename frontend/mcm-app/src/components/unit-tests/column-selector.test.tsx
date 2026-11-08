@@ -39,8 +39,17 @@ const SOME_VISIBLE: ColumnVisibility = {
 };
 
 const TOGGLEABLE_COLUMN_KEYS: ColumnKey[] = [
-  'language', 'owned', 'ripped', 'childrens',
-  'genres', 'rated', 'ownedMedia', 'ripQuality', 'runtime', 'directors', 'actors',
+  'language',
+  'owned',
+  'ripped',
+  'childrens',
+  'genres',
+  'rated',
+  'ownedMedia',
+  'ripQuality',
+  'runtime',
+  'directors',
+  'actors',
 ];
 
 // ─── Tests ─────────────────────────────────────────────────────────────────────

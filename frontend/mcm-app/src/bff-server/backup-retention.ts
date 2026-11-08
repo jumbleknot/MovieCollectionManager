@@ -65,7 +65,10 @@ export async function pruneOldVersions(
   if (!Number.isInteger(keepLast) || keepLast < 1) {
     // A nonsensical retention count must not be read as "keep none". Refusing to act is the
     // only safe interpretation of an input that would otherwise delete everything.
-    return { prunedCount: 0, failureReason: 'The retention count is not a whole number of backups to keep.' };
+    return {
+      prunedCount: 0,
+      failureReason: 'The retention count is not a whole number of backups to keep.',
+    };
   }
 
   const doomed = ours.slice(0, Math.max(0, ours.length - keepLast));

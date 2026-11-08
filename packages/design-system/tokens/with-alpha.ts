@@ -17,7 +17,11 @@ function hexToRgb(hex: string): [number, number, number] | null {
   const match = HEX.exec(hex.trim());
   if (!match) return null;
   let body = match[1];
-  if (body.length === 3) body = body.split('').map((c) => c + c).join('');
+  if (body.length === 3)
+    body = body
+      .split('')
+      .map((c) => c + c)
+      .join('');
   return [
     parseInt(body.slice(0, 2), 16),
     parseInt(body.slice(2, 4), 16),

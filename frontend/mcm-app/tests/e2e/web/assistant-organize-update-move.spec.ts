@@ -22,7 +22,10 @@ import { cleanupOwnedCollections, ownCollection } from './setup/e2e-cleanup';
 const PREVIEW_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
 
-function movieBody(title: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function movieBody(
+  title: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     title,
     year: 1999,
@@ -87,9 +90,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -101,9 +110,12 @@ async function approveAndAwaitDone(page: Page): Promise<void> {
   const approval = page.locator('[data-testid="approval-request"]');
   await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
   await page.click('[data-testid="approval-approve"]');
-  await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText('Done', {
-    timeout: DONE_TIMEOUT,
-  });
+  await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+    'Done',
+    {
+      timeout: DONE_TIMEOUT,
+    },
+  );
 }
 
 test.describe('Assistant organize update + move (feature 012, US2 / T070)', () => {
@@ -116,49 +128,68 @@ test.describe('Assistant organize update + move (feature 012, US2 / T070)', () =
     await cleanupOwnedCollections(request);
   });
 
-  test('in-place update → preview → approve flips the owned flag', { tag: '@model-decision' }, async ({ page, request }) => {
-    test.setTimeout(360_000);
-    const name = `t070-upd-${Date.now()}`;
-    const collectionId = await seedCollection(request, name, [movieBody('Zorgon', { owned: false })]);
+  test(
+    'in-place update → preview → approve flips the owned flag',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t070-upd-${Date.now()}`;
+      const collectionId = await seedCollection(request, name, [
+        movieBody('Zorgon', { owned: false }),
+      ]);
 
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `mark Zorgon as owned in ${name}`);
+      await gotoHome(page);
+      await openDock(page);
+      await send(page, `mark Zorgon as owned in ${name}`);
 
-    // The preview appears behind the approval gate — nothing changed yet (FR-007).
-    await expect(page.locator('[data-testid="approval-request"]')).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    expect((await movies(request, collectionId)).find((m) => m.title === 'Zorgon')?.owned).toBe(false);
+      // The preview appears behind the approval gate — nothing changed yet (FR-007).
+      await expect(page.locator('[data-testid="approval-request"]')).toBeVisible({
+        timeout: PREVIEW_TIMEOUT,
+      });
+      expect((await movies(request, collectionId)).find((m) => m.title === 'Zorgon')?.owned).toBe(
+        false,
+      );
 
-    await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText('Done', {
-      timeout: DONE_TIMEOUT,
-    });
+      await page.click('[data-testid="approval-approve"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        'Done',
+        {
+          timeout: DONE_TIMEOUT,
+        },
+      );
 
-    // Approval applied the full-replacement update — the flag flipped, the title is preserved.
-    const after = await movies(request, collectionId);
-    expect(after.find((m) => m.title === 'Zorgon')?.owned).toBe(true);
-  });
+      // Approval applied the full-replacement update — the flag flipped, the title is preserved.
+      const after = await movies(request, collectionId);
+      expect(after.find((m) => m.title === 'Zorgon')?.owned).toBe(true);
+    },
+  );
 
-  test('cross-collection move → preview → approve relocates the movie', { tag: '@model-decision' }, async ({ page, request }) => {
-    test.setTimeout(360_000);
-    const src = `t070-mv-src-${Date.now()}`;
-    const dst = `t070-mv-dst-${Date.now()}`;
-    const srcId = await seedCollection(request, src, [movieBody('Zorgon'), movieBody('Blarnix')]);
-    const dstId = await seedCollection(request, dst, []);
+  test(
+    'cross-collection move → preview → approve relocates the movie',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const src = `t070-mv-src-${Date.now()}`;
+      const dst = `t070-mv-dst-${Date.now()}`;
+      const srcId = await seedCollection(request, src, [movieBody('Zorgon'), movieBody('Blarnix')]);
+      const dstId = await seedCollection(request, dst, []);
 
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `move Zorgon from ${src} to ${dst}`);
+      await gotoHome(page);
+      await openDock(page);
+      await send(page, `move Zorgon from ${src} to ${dst}`);
 
-    // Nothing moves before approval (FR-007).
-    await expect(page.locator('[data-testid="approval-request"]')).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    expect(await movieTitles(request, srcId)).toEqual(new Set(['Zorgon', 'Blarnix']));
-    expect(await movieTitles(request, dstId)).toEqual(new Set());
+      // Nothing moves before approval (FR-007).
+      await expect(page.locator('[data-testid="approval-request"]')).toBeVisible({
+        timeout: PREVIEW_TIMEOUT,
+      });
+      expect(await movieTitles(request, srcId)).toEqual(new Set(['Zorgon', 'Blarnix']));
+      expect(await movieTitles(request, dstId)).toEqual(new Set());
 
-    await approveAndAwaitDone(page);
+      await approveAndAwaitDone(page);
 
-    // The movie left the source and arrived in the destination (US2-AC2).
-    expect(await movieTitles(request, srcId)).toEqual(new Set(['Blarnix']));
-    expect(await movieTitles(request, dstId)).toEqual(new Set(['Zorgon']));
-  });
+      // The movie left the source and arrived in the destination (US2-AC2).
+      expect(await movieTitles(request, srcId)).toEqual(new Set(['Blarnix']));
+      expect(await movieTitles(request, dstId)).toEqual(new Set(['Zorgon']));
+    },
+  );
 });

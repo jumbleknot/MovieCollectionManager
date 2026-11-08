@@ -28,7 +28,7 @@ const uniqueName = () => `IntColl_${randomUUID().replace(/-/g, '').slice(0, 12)}
 
 function collectionsOf(data: unknown): Array<{ collectionId: string; name: string }> {
   const body = data as { items?: Array<{ collectionId: string; name: string }> };
-  return (body.items ?? (data as Array<{ collectionId: string; name: string }>)) ?? [];
+  return body.items ?? (data as Array<{ collectionId: string; name: string }>) ?? [];
 }
 
 describe('collections proxy — integration (real BFF + mc-service)', () => {

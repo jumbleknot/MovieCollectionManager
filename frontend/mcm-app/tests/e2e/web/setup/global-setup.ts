@@ -14,7 +14,13 @@
  * Requires the full stack running: Keycloak + BFF (Expo :8081) + mc-service + MongoDB + Redis.
  */
 
-import { chromium, request, type APIRequestContext, type FullConfig, type Page } from '@playwright/test';
+import {
+  chromium,
+  request,
+  type APIRequestContext,
+  type FullConfig,
+  type Page,
+} from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -32,11 +38,13 @@ import { requireEnv } from './load-e2e-env';
 // (must mirror playwright.config.ts). The marker assertion below proves the request path.
 const TARGET = process.env['E2E_BFF_TARGET'];
 const BASE =
-  TARGET === 'dev-container' ? 'http://localhost:8082'
-  : TARGET === 'prod-container' ? 'https://localhost:8443'
-  : 'http://localhost:8081';
+  TARGET === 'dev-container'
+    ? 'http://localhost:8082'
+    : TARGET === 'prod-container'
+      ? 'https://localhost:8443'
+      : 'http://localhost:8081';
 const IGNORE_TLS = TARGET === 'prod-container'; // self-signed Caddy endpoint
-const EXPECTED_BFF_SOURCE = TARGET ?? null;     // 'dev-container' | 'prod-container' | null (Metro)
+const EXPECTED_BFF_SOURCE = TARGET ?? null; // 'dev-container' | 'prod-container' | null (Metro)
 const AUTH_DIR = path.join(__dirname, '.auth');
 const AUTH_FILE = path.join(AUTH_DIR, 'user.json');
 // Feature 027 US4: credentials come from .env.e2e.local / job env — never a hardcoded fallback.
@@ -95,7 +103,10 @@ function toCreateMovieBody(m: FixtureMovie): Record<string, unknown> {
  * with a valid BFF session cookie. Mirrors the slow path of the per-spec login()
  * helper that this global setup replaces.
  */
-async function loginViaKeycloak(page: Page, creds: { username: string; password: string } = { username: USER, password: PASS }): Promise<void> {
+async function loginViaKeycloak(
+  page: Page,
+  creds: { username: string; password: string } = { username: USER, password: PASS },
+): Promise<void> {
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 20000 });
 
@@ -118,12 +129,21 @@ async function loginViaKeycloak(page: Page, creds: { username: string; password:
   await page.goto(`${BASE}/home`);
 
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
 
   if (!result) {
-    throw new Error('[global-setup] Login failed: could not verify authenticated state after OIDC flow');
+    throw new Error(
+      '[global-setup] Login failed: could not verify authenticated state after OIDC flow',
+    );
   }
 
   // WHOSE session is this? (054 US4.) The `catch` above swallows a popup that closed before the form
@@ -136,12 +156,12 @@ async function loginViaKeycloak(page: Page, creds: { username: string; password:
   // measurement, and the failure it guards is silent.
   const who = await page.evaluate(async () => {
     const r = await fetch('/bff-api/auth/user', { credentials: 'include' });
-    return r.ok ? ((await r.json()) as { username?: string }).username ?? null : null;
+    return r.ok ? (((await r.json()) as { username?: string }).username ?? null) : null;
   });
   if (who && who.toLowerCase() !== creds.username.toLowerCase()) {
     throw new Error(
-      `[global-setup] identity mismatch: logged in as "${who}" but expected "${creds.username}". `
-      + 'A leaked SSO session would give two workers one identity — refusing to continue.',
+      `[global-setup] identity mismatch: logged in as "${who}" but expected "${creds.username}". ` +
+        'A leaked SSO session would give two workers one identity — refusing to continue.',
     );
   }
 }
@@ -154,7 +174,9 @@ interface CollectionSummary {
 async function listCollections(api: APIRequestContext): Promise<CollectionSummary[]> {
   const res = await api.get('/bff-api/collections');
   if (!res.ok()) {
-    throw new Error(`[global-setup] GET /bff-api/collections failed: ${res.status()} ${await res.text()}`);
+    throw new Error(
+      `[global-setup] GET /bff-api/collections failed: ${res.status()} ${await res.text()}`,
+    );
   }
   const body = await res.json();
   return (body.items ?? body) as CollectionSummary[];
@@ -169,16 +191,23 @@ async function ensureCollection(
   if (found) return found.collectionId;
   const res = await api.post('/bff-api/collections', { data: { name } });
   if (!res.ok()) {
-    throw new Error(`[global-setup] create collection "${name}" failed: ${res.status()} ${await res.text()}`);
+    throw new Error(
+      `[global-setup] create collection "${name}" failed: ${res.status()} ${await res.text()}`,
+    );
   }
   const created = await res.json();
   return created.collectionId;
 }
 
-async function listMovies(api: APIRequestContext, collectionId: string): Promise<{ movieId: string; title: string }[]> {
+async function listMovies(
+  api: APIRequestContext,
+  collectionId: string,
+): Promise<{ movieId: string; title: string }[]> {
   const res = await api.get(`/bff-api/collections/${collectionId}/movies`);
   if (!res.ok()) {
-    throw new Error(`[global-setup] list movies for ${collectionId} failed: ${res.status()} ${await res.text()}`);
+    throw new Error(
+      `[global-setup] list movies for ${collectionId} failed: ${res.status()} ${await res.text()}`,
+    );
   }
   const body = await res.json();
   return (body.items ?? []) as { movieId: string; title: string }[];
@@ -189,9 +218,13 @@ async function ensureBrowseMovies(api: APIRequestContext, browseId: string): Pro
   const present = new Set((await listMovies(api, browseId)).map((m) => m.title));
   for (const m of FIXTURE_MOVIES) {
     if (present.has(m.title)) continue;
-    const res = await api.post(`/bff-api/collections/${browseId}/movies`, { data: toCreateMovieBody(m) });
+    const res = await api.post(`/bff-api/collections/${browseId}/movies`, {
+      data: toCreateMovieBody(m),
+    });
     if (!res.ok()) {
-      throw new Error(`[global-setup] seed movie "${m.title}" failed: ${res.status()} ${await res.text()}`);
+      throw new Error(
+        `[global-setup] seed movie "${m.title}" failed: ${res.status()} ${await res.text()}`,
+      );
     }
   }
 }
@@ -201,7 +234,9 @@ async function resetMutation(api: APIRequestContext, mutationId: string): Promis
   for (const m of await listMovies(api, mutationId)) {
     const res = await api.delete(`/bff-api/collections/${mutationId}/movies/${m.movieId}`);
     if (!res.ok() && res.status() !== 404) {
-      throw new Error(`[global-setup] reset MUTATION: delete movie ${m.movieId} failed: ${res.status()}`);
+      throw new Error(
+        `[global-setup] reset MUTATION: delete movie ${m.movieId} failed: ${res.status()}`,
+      );
     }
   }
 }
@@ -326,8 +361,8 @@ async function mintPerWorkerSessions(
   const reaped = await reapStaleWorkerUsers();
   if (reaped) {
     console.log(
-      `[global-setup] reaped ${reaped} stale per-worker identity/identities left by an interrupted `
-      + 'run (item #183)',
+      `[global-setup] reaped ${reaped} stale per-worker identity/identities left by an interrupted ` +
+        'run (item #183)',
     );
   }
 
@@ -344,10 +379,10 @@ async function mintPerWorkerSessions(
     // worker would share one identity — which is the defect, not a degraded mode of the fix. Say so
     // loudly enough that a green run cannot be mistaken for a run that proved anything.
     console.warn(
-      '[global-setup] ⚠️  KEYCLOAK_SERVICE_CLIENT_SECRET is unset — cannot mint per-worker users, so '
-      + `all ${workerCount} workers share ${USER}. Per-user buckets (agent rate limit, session cost `
-      + 'ceiling, MAX_CONCURRENT_SESSIONS) are contended again and results are NOT comparable with a '
-      + 'per-worker-identity run. See specs/054-app-e2e-reliability-cluster (US4).',
+      '[global-setup] ⚠️  KEYCLOAK_SERVICE_CLIENT_SECRET is unset — cannot mint per-worker users, so ' +
+        `all ${workerCount} workers share ${USER}. Per-user buckets (agent rate limit, session cost ` +
+        'ceiling, MAX_CONCURRENT_SESSIONS) are contended again and results are NOT comparable with a ' +
+        'per-worker-identity run. See specs/054-app-e2e-reliability-cluster (US4).',
     );
     for (let i = 1; i < workerCount; i += 1) {
       const ctx = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
@@ -368,12 +403,20 @@ async function mintPerWorkerSessions(
     const user = await createUserWithRoles(`e2e_w${i}`, ['mc-user']);
     const ctx = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
     try {
-      await loginViaKeycloak(await ctx.newPage(), { username: user.username, password: user.password });
+      await loginViaKeycloak(await ctx.newPage(), {
+        username: user.username,
+        password: user.password,
+      });
       await ctx.storageState({ path: authFileForWorker(i) });
     } finally {
       await ctx.close();
     }
-    identities.push({ index: i, username: user.username, password: user.password, userId: user.userId });
+    identities.push({
+      index: i,
+      username: user.username,
+      password: user.password,
+      userId: user.userId,
+    });
   }
 
   // The manifest is what lets global TEARDOWN delete these again. Without it every run would leave N-1
@@ -382,8 +425,8 @@ async function mintPerWorkerSessions(
   fs.writeFileSync(WORKER_IDENTITY_MANIFEST, JSON.stringify(identities, null, 2));
 
   console.log(
-    `[global-setup] minted ${workerCount} worker identities — ${identities.length - 1} fresh users + the `
-    + 'canonical one for worker 0, so no two workers share a per-USER bucket (054 US4)',
+    `[global-setup] minted ${workerCount} worker identities — ${identities.length - 1} fresh users + the ` +
+      'canonical one for worker 0, so no two workers share a per-USER bucket (054 US4)',
   );
   return identities;
 }
@@ -454,8 +497,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     }
     if (identities.length > 1) {
       console.log(
-        `[global-setup] seeded fixtures for ${identities.length - 1} worker identities in `
-        + `${((Date.now() - seedStart) / 1000).toFixed(1)}s (054 US4 T023)`,
+        `[global-setup] seeded fixtures for ${identities.length - 1} worker identities in ` +
+          `${((Date.now() - seedStart) / 1000).toFixed(1)}s (054 US4 T023)`,
       );
     }
 

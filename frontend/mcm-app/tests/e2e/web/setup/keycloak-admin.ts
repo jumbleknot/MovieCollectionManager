@@ -105,10 +105,9 @@ async function adminToken(): Promise<string> {
 }
 
 async function appClientInternalId(token: string): Promise<string> {
-  const res = await fetch(
-    `${ADMIN_BASE}/clients?clientId=${encodeURIComponent(APP_CLIENT_ID)}`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
+  const res = await fetch(`${ADMIN_BASE}/clients?clientId=${encodeURIComponent(APP_CLIENT_ID)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const id = ((await res.json()) as Array<{ id: string }>)[0]?.id;
   if (!id) throw new Error(`app client ${APP_CLIENT_ID} not found`);
   return id;
@@ -139,7 +138,8 @@ export async function createUserWithRoles(
       credentials: [{ type: 'password', value: E2E_ADMIN_PASSWORD, temporary: false }],
     }),
   });
-  if (!createRes.ok) throw new Error(`createUser failed (${createRes.status}): ${await createRes.text()}`);
+  if (!createRes.ok)
+    throw new Error(`createUser failed (${createRes.status}): ${await createRes.text()}`);
   const userId = (createRes.headers.get('Location') ?? '').split('/').pop() ?? '';
   if (!userId) throw new Error('createUser: no id in Location header');
 
@@ -153,14 +153,11 @@ export async function createUserWithRoles(
     if (!roleRes.ok) throw new Error(`role ${roleName} not found (${roleRes.status})`);
     roles.push((await roleRes.json()) as { id: string; name: string });
   }
-  const assignRes = await fetch(
-    `${ADMIN_BASE}/users/${userId}/role-mappings/clients/${clientId}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(roles),
-    },
-  );
+  const assignRes = await fetch(`${ADMIN_BASE}/users/${userId}/role-mappings/clients/${clientId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(roles),
+  });
   if (!assignRes.ok) throw new Error(`assign ${roleNames.join(',')} failed (${assignRes.status})`);
 
   return { userId, username, password: E2E_ADMIN_PASSWORD };

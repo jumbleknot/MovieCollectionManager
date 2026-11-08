@@ -6,17 +6,33 @@ import { getRequestId } from '@/bff-server/request-context';
 
 const SENSITIVE_KEYS = new Set([
   'password',
-  'token', 'accessToken', 'refreshToken', 'idToken',
-  'id_token', 'access_token', 'refresh_token',
-  'secret', 'clientSecret', 'client_secret',
-  'sessionId', 'session_id',
-  'cookie', 'authorization',
-  'code', 'codeVerifier', 'code_verifier',
-  'email', 'username',
+  'token',
+  'accessToken',
+  'refreshToken',
+  'idToken',
+  'id_token',
+  'access_token',
+  'refresh_token',
+  'secret',
+  'clientSecret',
+  'client_secret',
+  'sessionId',
+  'session_id',
+  'cookie',
+  'authorization',
+  'code',
+  'codeVerifier',
+  'code_verifier',
+  'email',
+  'username',
   // Per-user agent config secrets (feature 018, FR-024 / NFR-Sec-3).
-  'anthropicKey', 'tmdbKey',
-  'anthropicKeyEnc', 'tmdbKeyEnc',
-  'agentConfig', 'AGENT_CONFIG_ENC_KEY', 'agentConfigEncKey',
+  'anthropicKey',
+  'tmdbKey',
+  'anthropicKeyEnc',
+  'tmdbKeyEnc',
+  'agentConfig',
+  'AGENT_CONFIG_ENC_KEY',
+  'agentConfigEncKey',
 ]);
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -66,8 +82,8 @@ function write(level: LogLevel, msg: string, ctx?: LogContext): void {
 
 export const logger = {
   debug: (msg: string, ctx?: LogContext) => write('debug', msg, ctx),
-  info:  (msg: string, ctx?: LogContext) => write('info',  msg, ctx),
-  warn:  (msg: string, ctx?: LogContext) => write('warn',  msg, ctx),
+  info: (msg: string, ctx?: LogContext) => write('info', msg, ctx),
+  warn: (msg: string, ctx?: LogContext) => write('warn', msg, ctx),
   error: (msg: string, ctx?: LogContext) => write('error', msg, ctx),
   // For security-relevant events: login, logout, auth failure, access denied, rate limits.
   // Include who (userId — Keycloak UUID, never email/username) and from where (ip) where available.

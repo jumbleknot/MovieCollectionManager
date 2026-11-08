@@ -55,14 +55,18 @@ function clearMetroCaches() {
   } catch {
     /* best-effort — a missing/locked cache entry must not fail the build */
   }
-  console.log(`[build-apk] cleared Metro caches in ${tmp}: ${cleared.length ? cleared.join(', ') : '(none found)'}`);
+  console.log(
+    `[build-apk] cleared Metro caches in ${tmp}: ${cleared.length ? cleared.join(', ') : '(none found)'}`,
+  );
 }
 
 function run(cmd, args, cwd) {
   console.log(`\n> ${cmd} ${args.join(' ')}   (cwd: ${cwd})`);
   const r = spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: isWin });
   if (r.status !== 0) {
-    console.error(`\n[build-apk] FAILED: ${cmd} ${args.join(' ')} (exit ${r.status ?? 'signal ' + r.signal})`);
+    console.error(
+      `\n[build-apk] FAILED: ${cmd} ${args.join(' ')} (exit ${r.status ?? 'signal ' + r.signal})`,
+    );
     process.exit(r.status ?? 1);
   }
 }
@@ -103,7 +107,10 @@ if (!existsSync(apk)) {
 // version ← app.json; sha ← GITHUB_SHA (CI) else `git rev-parse --short` else 'local'.
 function shortSha() {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
-  const r = spawnSync('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: appRoot, encoding: 'utf8' });
+  const r = spawnSync('git', ['rev-parse', '--short=7', 'HEAD'], {
+    cwd: appRoot,
+    encoding: 'utf8',
+  });
   return r.status === 0 ? r.stdout.trim() : 'local';
 }
 const version = JSON.parse(readFileSync(join(appRoot, 'app.json'), 'utf8')).expo.version;

@@ -58,7 +58,9 @@ it('falls back to the local filename when the response omits one', async () => {
 });
 
 it('sets an error and returns false on a failed upload', async () => {
-  mockedPost.mockRejectedValueOnce({ response: { data: { detail: 'File is empty or too large' } } });
+  mockedPost.mockRejectedValueOnce({
+    response: { data: { detail: 'File is empty or too large' } },
+  });
   const { result } = await renderHook(() => useSpreadsheetImport());
 
   let ok = true;

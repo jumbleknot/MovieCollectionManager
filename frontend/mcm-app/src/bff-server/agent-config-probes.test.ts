@@ -55,7 +55,10 @@ describe('probeTmdb — never leaks the key (review #8)', () => {
   it('uses redirect:manual on the probe fetch (review #3)', async () => {
     mockFetch.mockResolvedValue(res({ ok: true, status: 200 }));
     await probeTmdb('k');
-    expect(mockFetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ redirect: 'manual' }));
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ redirect: 'manual' }),
+    );
   });
 });
 

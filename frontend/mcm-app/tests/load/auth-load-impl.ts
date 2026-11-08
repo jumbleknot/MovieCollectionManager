@@ -27,16 +27,16 @@ const profileDuration = new Trend('profile_duration');
 
 export const options = {
   stages: [
-    { duration: '30s', target: 50 },   // ramp up to 50 users
-    { duration: '2m', target: 200 },   // ramp up to 200 users
-    { duration: '3m', target: 500 },   // peak load: 500 concurrent
-    { duration: '1m', target: 0 },     // ramp down
+    { duration: '30s', target: 50 }, // ramp up to 50 users
+    { duration: '2m', target: 200 }, // ramp up to 200 users
+    { duration: '3m', target: 500 }, // peak load: 500 concurrent
+    { duration: '1m', target: 0 }, // ramp down
   ],
   thresholds: {
-    login_failures: ['rate<0.005'],        // < 0.5% failure rate
-    login_duration: ['p(95)<5000'],        // p95 < 5s
-    profile_duration: ['p(95)<2000'],      // p95 < 2s
-    http_req_failed: ['rate<0.005'],       // overall < 0.5% HTTP failure
+    login_failures: ['rate<0.005'], // < 0.5% failure rate
+    login_duration: ['p(95)<5000'], // p95 < 5s
+    profile_duration: ['p(95)<2000'], // p95 < 2s
+    http_req_failed: ['rate<0.005'], // overall < 0.5% HTTP failure
   },
 };
 
@@ -55,7 +55,7 @@ export default function () {
     {
       headers: { 'Content-Type': 'application/json' },
       tags: { name: 'login' },
-    }
+    },
   );
 
   loginFailRate.add(loginRes.status !== 200);

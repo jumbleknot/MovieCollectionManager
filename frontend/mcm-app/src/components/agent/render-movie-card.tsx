@@ -300,26 +300,50 @@ export function useRenderMovieCardTool(): void {
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  // 047 US5: Add and Cancel sit side by side, wrapping on a narrow card rather than overflowing.
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  card: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 8,
-    backgroundColor: theme.surface2?.val,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-    marginVertical: 4,
-  },
-  poster: { width: 60, height: 90, borderRadius: 6, backgroundColor: theme.surfaceVariant?.val },
-  body: { flex: 1, gap: 4 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  title: { flex: 1, fontFamily: 'Outfit-SemiBold', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
-  year: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
-  genres: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  source: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  link: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 2 },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    // 047 US5: Add and Cancel sit side by side, wrapping on a narrow card rather than overflowing.
+    actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+    card: {
+      flexDirection: 'row',
+      gap: 10,
+      padding: 8,
+      backgroundColor: theme.surface2?.val,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant?.val,
+      marginVertical: 4,
+    },
+    poster: { width: 60, height: 90, borderRadius: 6, backgroundColor: theme.surfaceVariant?.val },
+    body: { flex: 1, gap: 4 },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    title: {
+      flex: 1,
+      fontFamily: 'Outfit-SemiBold',
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.onSurface?.val,
+    },
+    year: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
+    genres: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+    overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+    source: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: theme.onSurfaceVariant?.val,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+    },
+    link: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: theme.primary?.val,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+  });

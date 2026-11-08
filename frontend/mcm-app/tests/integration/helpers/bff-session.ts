@@ -49,7 +49,9 @@ export async function loginSession(username: string, password: string): Promise<
 
   const res = await bff.post('/bff-api/auth/login', { code, codeVerifier, redirectUri });
   if (res.status !== 200) {
-    throw new Error(`loginSession: POST /bff-api/auth/login answered ${res.status} for ${username}`);
+    throw new Error(
+      `loginSession: POST /bff-api/auth/login answered ${res.status} for ${username}`,
+    );
   }
   return {
     cookie: cookieHeaderFrom(res),
@@ -69,13 +71,23 @@ export const asSession = (session: BffSession) => ({ headers: { Cookie: session.
  * the role, so the BFF's role check sees exactly what it would for a member whose role was taken
  * away mid-session (feature 085: there is no bearer shortcut to a role-less token any more).
  */
-export async function loginSessionWithoutAppRole(user: { userId: string; username: string; password: string }): Promise<BffSession> {
+export async function loginSessionWithoutAppRole(user: {
+  userId: string;
+  username: string;
+  password: string;
+}): Promise<BffSession> {
   await assignRole(user.userId, 'mc-user');
   const session = await loginSession(user.username, user.password);
   await removeRole(user.userId, 'mc-user');
-  const renewed = await createBffClient().post('/bff-api/auth/refresh', {}, { headers: { Cookie: session.cookie } });
+  const renewed = await createBffClient().post(
+    '/bff-api/auth/refresh',
+    {},
+    { headers: { Cookie: session.cookie } },
+  );
   if (renewed.status !== 200) {
-    throw new Error(`loginSessionWithoutAppRole: renewal after role removal answered ${renewed.status}`);
+    throw new Error(
+      `loginSessionWithoutAppRole: renewal after role removal answered ${renewed.status}`,
+    );
   }
   return session;
 }
@@ -90,9 +102,14 @@ export async function loginSessionWithoutAppRole(user: { userId: string; usernam
  * the member's REAL Keycloak tokens, in the store the in-process handler reads — the same session a
  * login would have produced, minus the HTTP hop.
  */
-export async function inProcessSessionCookie(user: { username: string; password: string }): Promise<string> {
+export async function inProcessSessionCookie(user: {
+  username: string;
+  password: string;
+}): Promise<string> {
   const grant = await getTestTokens(user.username, user.password);
-  const payload = JSON.parse(Buffer.from(grant.accessToken.split('.')[1]!, 'base64url').toString('utf8')) as {
+  const payload = JSON.parse(
+    Buffer.from(grant.accessToken.split('.')[1]!, 'base64url').toString('utf8'),
+  ) as {
     sub: string;
     exp: number;
   };

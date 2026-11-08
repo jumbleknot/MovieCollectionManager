@@ -37,37 +37,37 @@ const RATE_LIMITS: Record<string, RateLimitRule> = {
   register: {
     endpoint: 'register',
     limit: 10,
-    windowSeconds: 86400,      // 1 day
+    windowSeconds: 86400, // 1 day
     retryAfterSeconds: 86400,
   },
   registerIp: {
     endpoint: 'register-ip',
     limit: 20,
-    windowSeconds: 86400,      // 1 day — per source, regardless of email
+    windowSeconds: 86400, // 1 day — per source, regardless of email
     retryAfterSeconds: 86400,
   },
   login: {
     endpoint: 'login',
     limit: 5,
-    windowSeconds: 60,         // 1 minute
+    windowSeconds: 60, // 1 minute
     retryAfterSeconds: 60,
   },
   logout: {
     endpoint: 'logout',
     limit: 10,
-    windowSeconds: 60,         // 1 minute
+    windowSeconds: 60, // 1 minute
     retryAfterSeconds: 60,
   },
   refresh: {
     endpoint: 'refresh',
     limit: 2,
-    windowSeconds: 30,         // 30 seconds
+    windowSeconds: 30, // 30 seconds
     retryAfterSeconds: 30,
   },
   resendVerification: {
     endpoint: 'resend-verification',
     limit: 3,
-    windowSeconds: 3600,       // 1 hour
+    windowSeconds: 3600, // 1 hour
     retryAfterSeconds: 3600,
   },
   // Feature 076. The DELETION endpoint is self-limiting — it succeeds at most once per account —
@@ -77,7 +77,7 @@ const RATE_LIMITS: Record<string, RateLimitRule> = {
   accountDeletion: {
     endpoint: 'account-deletion',
     limit: 5,
-    windowSeconds: 3600,       // 1 hour
+    windowSeconds: 3600, // 1 hour
     retryAfterSeconds: 3600,
   },
 };

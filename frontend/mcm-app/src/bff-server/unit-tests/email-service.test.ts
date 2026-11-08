@@ -65,7 +65,7 @@ function emptyResponse(status: number): Response {
 function mockAdminTokenThenEmail(emailStatus: number): void {
   mockedFetch
     .mockResolvedValueOnce(jsonResponse({ access_token: 'admin-token-value' })) // getAdminToken
-    .mockResolvedValueOnce(emptyResponse(emailStatus));                          // send-verify-email
+    .mockResolvedValueOnce(emptyResponse(emailStatus)); // send-verify-email
 }
 
 beforeEach(() => {

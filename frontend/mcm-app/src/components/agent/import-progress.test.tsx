@@ -18,8 +18,12 @@ describe('ImportProgress', () => {
   it('renders NOTHING when no run is in flight (FR-014b)', async () => {
     // The gateway clears the counters when the run concludes, so the report — not a stale
     // "2,300 of 2,300" line — is what the member is left looking at.
-    expect((await render(<ImportProgress applied={0} total={0} />)).queryByTestId('import-progress')).toBeNull();
-    expect((await render(<ImportProgress applied={2300} total={0} />)).queryByTestId('import-progress')).toBeNull();
+    expect(
+      (await render(<ImportProgress applied={0} total={0} />)).queryByTestId('import-progress'),
+    ).toBeNull();
+    expect(
+      (await render(<ImportProgress applied={2300} total={0} />)).queryByTestId('import-progress'),
+    ).toBeNull();
   });
 
   it('updates IN PLACE rather than adding a second surface', async () => {
@@ -40,7 +44,9 @@ describe('ImportProgress', () => {
     // Progress arrives over a network as independent snapshots; a late-delivered or malformed
     // one must not produce "2,400 of 2,300" or a backwards bar.
     const over = await render(<ImportProgress applied={9999} total={2300} />);
-    expect(over.getByTestId('import-progress-label')).toHaveTextContent('Importing 2,300 of 2,300…');
+    expect(over.getByTestId('import-progress-label')).toHaveTextContent(
+      'Importing 2,300 of 2,300…',
+    );
 
     const under = await render(<ImportProgress applied={-5} total={2300} />);
     expect(under.getByTestId('import-progress-label')).toHaveTextContent('Importing 0 of 2,300…');

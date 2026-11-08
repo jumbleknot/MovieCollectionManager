@@ -96,9 +96,15 @@ async function seedCollection(
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 // Reach the collection screen via IN-APP navigation from home (never a deep-load — that resets
@@ -106,19 +112,35 @@ async function openDock(page: Page): Promise<void> {
 async function openCollectionViaHome(page: Page, name: string): Promise<void> {
   await page.goto(`${BASE}/home`);
   const where = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]);
   if (where === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
   }
   if ((await page.locator(`text=${name}`).count()) === 0) {
     await page.getByText('My Collections').first().click();
     await page.waitForTimeout(1500);
   }
   await page.locator(`text=${name}`).first().click();
-  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 });
+  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
 }
 
 test.describe('Assistant list refresh after a write (feature 012, T072)', () => {
@@ -131,42 +153,53 @@ test.describe('Assistant list refresh after a write (feature 012, T072)', () => 
     await cleanupOwnedCollections(request);
   });
 
-  test('an assistant write updates the on-screen movie list with no reload', { tag: '@gate' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(300_000);
-    const collectionName = `t072-refresh-${Date.now()}`;
-    const collectionId = await seedCollection(request, collectionName, [REMOVED_TITLE, KEPT_TITLE]);
+  test(
+    'an assistant write updates the on-screen movie list with no reload',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      const collectionName = `t072-refresh-${Date.now()}`;
+      const collectionId = await seedCollection(request, collectionName, [
+        REMOVED_TITLE,
+        KEPT_TITLE,
+      ]);
 
-    await openCollectionViaHome(page, collectionName);
-    // Precondition: BOTH rows are on screen, rendered by the screen's own initial fetch.
-    const removedRow = page.locator('[data-testid="movie-list-item-title"]').filter({ hasText: REMOVED_TITLE });
-    const keptRow = page.locator('[data-testid="movie-list-item-title"]').filter({ hasText: KEPT_TITLE });
-    await expect(removedRow).toBeVisible();
-    await expect(keptRow).toBeVisible();
+      await openCollectionViaHome(page, collectionName);
+      // Precondition: BOTH rows are on screen, rendered by the screen's own initial fetch.
+      const removedRow = page
+        .locator('[data-testid="movie-list-item-title"]')
+        .filter({ hasText: REMOVED_TITLE });
+      const keptRow = page
+        .locator('[data-testid="movie-list-item-title"]')
+        .filter({ hasText: KEPT_TITLE });
+      await expect(removedRow).toBeVisible();
+      await expect(keptRow).toBeVisible();
 
-    await openDock(page);
-    await page.fill('[data-testid="assistant-dock-input"]', `remove ${REMOVED_TITLE} from ${collectionName}`);
-    await page.click('[data-testid="assistant-dock-send"]');
+      await openDock(page);
+      await page.fill(
+        '[data-testid="assistant-dock-input"]',
+        `remove ${REMOVED_TITLE} from ${collectionName}`,
+      );
+      await page.click('[data-testid="assistant-dock-send"]');
 
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    // Nothing removed yet — the write is behind the gate (FR-006/007).
-    await expect(removedRow).toBeVisible();
-    await page.click('[data-testid="approval-approve"]');
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      // Nothing removed yet — the write is behind the gate (FR-006/007).
+      await expect(removedRow).toBeVisible();
+      await page.click('[data-testid="approval-approve"]');
 
-    // THE ASSERTION: the removed row leaves the on-screen MovieList without any page reload /
-    // re-navigation, and the untouched row stays. `movie-list-item-title` exists only in the list
-    // (never the dock preview), and the screen is never re-focused, so the only thing that can
-    // change it is the T072 data-revision bump.
-    await expect(removedRow).toHaveCount(0, { timeout: REFRESH_TIMEOUT });
-    await expect(keptRow).toBeVisible();
+      // THE ASSERTION: the removed row leaves the on-screen MovieList without any page reload /
+      // re-navigation, and the untouched row stays. `movie-list-item-title` exists only in the list
+      // (never the dock preview), and the screen is never re-focused, so the only thing that can
+      // change it is the T072 data-revision bump.
+      await expect(removedRow).toHaveCount(0, { timeout: REFRESH_TIMEOUT });
+      await expect(keptRow).toBeVisible();
 
-    // The list on screen agrees with the server — it re-fetched, it did not just drop a row.
-    const moviesRes = await request.get(`/bff-api/collections/${collectionId}/movies`);
-    expect(moviesRes.ok()).toBeTruthy();
-    const titles = ((await moviesRes.json()).items ?? []).map((m: { title: string }) => m.title);
-    expect(titles).toEqual([KEPT_TITLE]);
-  });
+      // The list on screen agrees with the server — it re-fetched, it did not just drop a row.
+      const moviesRes = await request.get(`/bff-api/collections/${collectionId}/movies`);
+      expect(moviesRes.ok()).toBeTruthy();
+      const titles = ((await moviesRes.json()).items ?? []).map((m: { title: string }) => m.title);
+      expect(titles).toEqual([KEPT_TITLE]);
+    },
+  );
 });

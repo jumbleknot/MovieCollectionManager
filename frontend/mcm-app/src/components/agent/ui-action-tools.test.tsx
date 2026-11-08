@@ -38,8 +38,16 @@ describe('uiActionKey (per-emission dedup key)', () => {
   });
 
   it('gives the SAME message (same nonce) the SAME key (dock re-mount stays deduped)', () => {
-    const first = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, { collectionId: 'c1', movieId: 'm1', nonce: '7' });
-    const remount = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, { collectionId: 'c1', movieId: 'm1', nonce: '7' });
+    const first = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, {
+      collectionId: 'c1',
+      movieId: 'm1',
+      nonce: '7',
+    });
+    const remount = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, {
+      collectionId: 'c1',
+      movieId: 'm1',
+      nonce: '7',
+    });
     expect(first).toBe(remount);
     expect(first).toBe('navmov:c1:m1:7');
   });
@@ -81,7 +89,9 @@ describe('UiActionEffect', () => {
     // The authorize call carries only the structural target — no ids/values/PII.
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect(body).toEqual({ type: 'navigate', target: 'collection' });
-    expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent('Opening that collection…');
+    expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent(
+      'Opening that collection…',
+    );
   });
 
   it('does NOT navigate when the BFF denies (403) and shows a refusal', async () => {
@@ -98,7 +108,9 @@ describe('UiActionEffect', () => {
     );
 
     await waitFor(() =>
-      expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent("I can't open that for you."),
+      expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent(
+        "I can't open that for you.",
+      ),
     );
     expect(perform).not.toHaveBeenCalled();
   });
@@ -119,7 +131,9 @@ describe('UiActionEffect', () => {
 
     // Transient failures are retried; a PERSISTENT one is exhausted then discarded (default-deny).
     await waitFor(() =>
-      expect(getByTestId('assistant-ui-action-prefill')).toHaveTextContent("I can't open that for you."),
+      expect(getByTestId('assistant-ui-action-prefill')).toHaveTextContent(
+        "I can't open that for you.",
+      ),
     );
     expect(fetchMock.mock.calls.length).toBeGreaterThan(1); // retried, not single-shot
     expect(perform).not.toHaveBeenCalled();
@@ -165,7 +179,9 @@ describe('UiActionEffect', () => {
     );
 
     await waitFor(() =>
-      expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent("I can't open that for you."),
+      expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent(
+        "I can't open that for you.",
+      ),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1); // a real deny is final — no retries
     expect(perform).not.toHaveBeenCalled();

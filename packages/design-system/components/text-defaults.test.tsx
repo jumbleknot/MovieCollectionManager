@@ -29,21 +29,26 @@ describe('the design-system Text inside the provider', () => {
   it.each([
     ['dark', darkColors.onBackground],
     ['light', lightColors.onBackground],
-  ] as const)('renders in the body font and the %s theme onBackground colour', async (theme, colour) => {
-    const { getByTestId } = await render(
-      <TamaguiProvider config={config} defaultTheme={theme}>
-        <Text testID="bare">hello</Text>
-      </TamaguiProvider>,
-    );
-    const style = flatStyle(getByTestId('bare'));
-    expect(String(style.fontFamily)).toMatch(/^Inter/);
-    expect(String(style.color).toLowerCase()).toBe(colour.toLowerCase());
-  });
+  ] as const)(
+    'renders in the body font and the %s theme onBackground colour',
+    async (theme, colour) => {
+      const { getByTestId } = await render(
+        <TamaguiProvider config={config} defaultTheme={theme}>
+          <Text testID="bare">hello</Text>
+        </TamaguiProvider>,
+      );
+      const style = flatStyle(getByTestId('bare'));
+      expect(String(style.fontFamily)).toMatch(/^Inter/);
+      expect(String(style.color).toLowerCase()).toBe(colour.toLowerCase());
+    },
+  );
 
   it('keeps an explicitly set colour and font', async () => {
     const { getByTestId } = await render(
       <TamaguiProvider config={config} defaultTheme="dark">
-        <Text testID="set" color="#123456" fontFamily="heading">hello</Text>
+        <Text testID="set" color="#123456" fontFamily="heading">
+          hello
+        </Text>
       </TamaguiProvider>,
     );
     const style = flatStyle(getByTestId('set'));
@@ -52,17 +57,26 @@ describe('the design-system Text inside the provider', () => {
   });
 
   it('no source outside primitives/Text.tsx imports Text from @tamagui/core (it would skip the defaults)', () => {
-    const roots = [path.resolve(__dirname), path.resolve(__dirname, '../../../frontend/mcm-app/src')];
+    const roots = [
+      path.resolve(__dirname),
+      path.resolve(__dirname, '../../../frontend/mcm-app/src'),
+    ];
     const allowed = path.resolve(__dirname, 'primitives/Text.tsx');
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
-        if (e.isDirectory()) { if (e.name !== 'node_modules') walk(full); continue; }
+        if (e.isDirectory()) {
+          if (e.name !== 'node_modules') walk(full);
+          continue;
+        }
         if (!/\.tsx?$/.test(e.name) || full === allowed) continue;
         const src = fs.readFileSync(full, 'utf8');
-        for (const m of src.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'@tamagui\/core'/g)) {
-          if (m[1].split(',').some((n) => /^(type\s+)?Text(\s+as\s+\w+)?$/.test(n.trim()))) offenders.push(path.relative(path.resolve(__dirname, '../../..'), full));
+        for (const m of src.matchAll(
+          /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'@tamagui\/core'/g,
+        )) {
+          if (m[1].split(',').some((n) => /^(type\s+)?Text(\s+as\s+\w+)?$/.test(n.trim())))
+            offenders.push(path.relative(path.resolve(__dirname, '../../..'), full));
         }
       }
     };

@@ -7,11 +7,7 @@ const React = require('react');
 const { View, Text, TouchableOpacity } = require('react-native');
 
 function Picker({ selectedValue, onValueChange, children, testID, accessibilityLabel }) {
-  return React.createElement(
-    View,
-    { testID, accessibilityLabel, onValueChange },
-    children,
-  );
+  return React.createElement(View, { testID, accessibilityLabel, onValueChange }, children);
 }
 
 Picker.Item = function PickerItem({ label, value }) {

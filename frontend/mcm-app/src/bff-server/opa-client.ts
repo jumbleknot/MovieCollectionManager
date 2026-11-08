@@ -29,7 +29,10 @@ export async function opaAllowsUiAction(input: {
       body: JSON.stringify({ input }),
     });
     if (!resp.ok) {
-      logger.error('OPA ui-action decision non-2xx — denying', { action: 'opa_ui_action', status: resp.status });
+      logger.error('OPA ui-action decision non-2xx — denying', {
+        action: 'opa_ui_action',
+        status: resp.status,
+      });
       return { configured: true, allowed: false };
     }
     const body = (await resp.json()) as { result?: unknown };

@@ -18,7 +18,12 @@ import { logger } from '@/bff-server/logger';
 export function requireRole(user: UserProfile, ...roles: ClientRole[]): void {
   const hasRole = roles.some((role) => user.roles.includes(role));
   if (!hasRole) {
-    logger.warn('access_denied', { action: 'access_denied', userId: user.id, required: roles, actual: user.roles });
+    logger.warn('access_denied', {
+      action: 'access_denied',
+      userId: user.id,
+      required: roles,
+      actual: user.roles,
+    });
     throw new ForbiddenError();
   }
 }

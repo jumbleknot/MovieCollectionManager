@@ -53,7 +53,9 @@ const responseErrorFn = mockAxiosInstance.interceptors.response.use.mock.calls[0
 // ─── Typed mock helpers ───────────────────────────────────────────────────────
 
 const mockedSilentRefresh = silentRefresh as jest.MockedFunction<typeof silentRefresh>;
-const mockedIsRefreshInProgress = isRefreshInProgress as jest.MockedFunction<typeof isRefreshInProgress>;
+const mockedIsRefreshInProgress = isRefreshInProgress as jest.MockedFunction<
+  typeof isRefreshInProgress
+>;
 const mockedWaitForRefresh = waitForRefresh as jest.MockedFunction<typeof waitForRefresh>;
 
 function makeConfig(url = '/bff-api/user', retryCount?: number): InternalAxiosRequestConfig {

@@ -16,11 +16,7 @@
  */
 import { createHash, randomBytes } from 'node:crypto';
 
-import {
-  createTestUser,
-  deleteTestUser,
-  type TestUser,
-} from './helpers/keycloak-test-client';
+import { createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
 import { enrolTotp, walkStepUpLogin, totpCode } from './helpers/keycloak-browser-flow';
 
 const REDIRECT_URI = 'http://localhost:8082/bff-api/account/delete';

@@ -11,9 +11,17 @@ jest.mock('@/bff-server/request-context', () => ({
   withRequestContext: jest.fn((fn: () => unknown) => fn()),
 }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn(), audit: jest.fn() },
+  logger: {
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+    audit: jest.fn(),
+  },
 }));
-jest.mock('@/bff-server/security-headers', () => ({ securityHeaders: jest.fn(() => new Headers()) }));
+jest.mock('@/bff-server/security-headers', () => ({
+  securityHeaders: jest.fn(() => new Headers()),
+}));
 jest.mock('@/bff-server/agent-config-service', () => ({
   getNonSecretView: jest.fn(),
   clear: jest.fn(),
@@ -25,13 +33,24 @@ import * as service from '@/bff-server/agent-config-service';
 import { logger } from '@/bff-server/logger';
 import { UnauthorizedError } from '@/types/errors';
 
-const mockUser = { id: 'user-42', username: 'u', roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z' };
+const mockUser = {
+  id: 'user-42',
+  username: 'u',
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
+};
 const noRoleUser = { ...mockUser, roles: [] as string[] };
 
 const DISABLED_VIEW = {
-  enabled: false, provider: 'ollama', ollamaBaseUrl: null,
-  hasAnthropicKey: false, hasTmdbKey: false, costLimitUsd: null,
-  escalationAvailable: false, updatedAt: null,
+  enabled: false,
+  provider: 'ollama',
+  ollamaBaseUrl: null,
+  hasAnthropicKey: false,
+  hasTmdbKey: false,
+  costLimitUsd: null,
+  escalationAvailable: false,
+  updatedAt: null,
 };
 
 function makeReq(): Request {
@@ -83,7 +102,10 @@ describe('DELETE /bff-api/agent/config', () => {
     const res = await DELETE(makeReq());
     expect(res.status).toBe(200);
     expect(service.clear).toHaveBeenCalledWith('user-42');
-    expect(logger.audit).toHaveBeenCalledWith('assistant_config_cleared', expect.objectContaining({ userId: 'user-42' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'assistant_config_cleared',
+      expect.objectContaining({ userId: 'user-42' }),
+    );
   });
 
   it('returns 403 when the user lacks mc-user/mc-admin', async () => {

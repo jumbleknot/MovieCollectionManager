@@ -50,7 +50,7 @@ export function requireEnv(name: string): string {
   if (v === undefined || v === '') {
     throw new Error(
       `Missing required E2E credential ${name}. Set it in frontend/mcm-app/.env.e2e.local ` +
-        `(gitignored) or the job environment — no hardcoded fallback is used (feature 027 US4).`
+        `(gitignored) or the job environment — no hardcoded fallback is used (feature 027 US4).`,
     );
   }
   return v;

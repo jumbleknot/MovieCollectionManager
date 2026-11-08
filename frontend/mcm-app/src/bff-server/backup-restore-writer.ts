@@ -79,7 +79,8 @@ const MAX_NAME_ATTEMPTS = 20;
 function restoredName(originalName: string, timestamp: string, attempt: number): string {
   const suffix = attempt <= 1 ? ` (backup ${timestamp})` : ` (backup ${timestamp} ${attempt})`;
   const room = MAX_COLLECTION_NAME - suffix.length;
-  const base = originalName.length > room ? originalName.slice(0, Math.max(0, room)).trimEnd() : originalName;
+  const base =
+    originalName.length > room ? originalName.slice(0, Math.max(0, room)).trimEnd() : originalName;
   return `${base}${suffix}`;
 }
 
@@ -95,7 +96,9 @@ function stripServerAssigned(movie: unknown): Record<string, unknown> {
 
 /** A safe reason. mc-service returns RFC 9457 Problem Details; only its `title` is surfaced. */
 function failureReason(err: unknown): string {
-  const problem = (err as { response?: { data?: { title?: string; detail?: string }; status?: number } }).response;
+  const problem = (
+    err as { response?: { data?: { title?: string; detail?: string }; status?: number } }
+  ).response;
   if (problem?.data?.title) return problem.data.title;
   if (problem?.status) return `mc-service answered HTTP ${problem.status}`;
   return 'That record could not be restored';
@@ -153,7 +156,10 @@ async function createMovies(
     const results = await Promise.all(
       batch.map(async (movie) => {
         try {
-          await client.post(`/api/v1/collections/${collectionId}/movies`, stripServerAssigned(movie));
+          await client.post(
+            `/api/v1/collections/${collectionId}/movies`,
+            stripServerAssigned(movie),
+          );
           return true;
         } catch (err) {
           failures.push({

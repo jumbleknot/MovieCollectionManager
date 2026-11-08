@@ -32,13 +32,25 @@ import { validateObjectId } from '@/bff-server/resource-id';
 // ─── Filter query params forwarded for the count (no cursor/sort — count is order-free) ──
 
 const COUNT_QUERY_PARAMS = [
-  'search', 'contentType', 'genre', 'childrens', 'rated',
-  'language', 'decade', 'owned', 'ownedMedia', 'ripped', 'ripQuality',
+  'search',
+  'contentType',
+  'genre',
+  'childrens',
+  'rated',
+  'language',
+  'decade',
+  'owned',
+  'ownedMedia',
+  'ripped',
+  'ripQuality',
 ] as const;
 
 // ─── GET /bff-api/collections/:id/movies/count ────────────────────────────────
 
-export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function GET(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _get(req, collectionId));
 }
 
@@ -59,10 +71,9 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
       else if (all.length > 1) queryParams[key] = all;
     }
 
-    const { status, data } = await client.get(
-      `/api/v1/collections/${collectionId}/movies/count`,
-      { params: queryParams },
-    );
+    const { status, data } = await client.get(`/api/v1/collections/${collectionId}/movies/count`, {
+      params: queryParams,
+    });
     return Response.json(data, { status, headers: securityHeaders() });
   } catch (err) {
     return handleMcApiError(err, 'movies_count');

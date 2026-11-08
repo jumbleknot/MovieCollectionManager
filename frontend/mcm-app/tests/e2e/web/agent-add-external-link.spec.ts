@@ -29,13 +29,22 @@ const TMDB_URL_RE = /^https:\/\/www\.themoviedb\.org\/movie\/\d+$/;
 
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
-  await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 /**
@@ -59,8 +68,16 @@ async function answerYesNo(page: Page, asks: string | RegExp, answer: 'Yes' | 'N
     .click();
 }
 
-interface ExternalId { system: string; uniqueId: string; url?: string | null }
-interface StoredMovie { movieId: string; title: string; externalIds: ExternalId[] }
+interface ExternalId {
+  system: string;
+  uniqueId: string;
+  url?: string | null;
+}
+interface StoredMovie {
+  movieId: string;
+  title: string;
+  externalIds: ExternalId[];
+}
 
 /**
  * Find the added movie by TITLE across ALL the user's collections — name-independent, since the
@@ -96,50 +113,57 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('added TMDB movie carries the themoviedb.org external link (US5-AC1/AC2)', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(300_000);
-    const collectionName = `us5-link-${Date.now()}`;
-    ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
+  test(
+    'added TMDB movie carries the themoviedb.org external link (US5-AC1/AC2)',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      const collectionName = `us5-link-${Date.now()}`;
+      ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
 
-    await gotoHome(page);
-    await openDock(page);
-    await page.fill('[data-testid="assistant-dock-input"]', `add the movie ${MOVIE_TITLE} (2013) to my collection ${collectionName}`);
-    await page.click('[data-testid="assistant-dock-send"]');
+      await gotoHome(page);
+      await openDock(page);
+      await page.fill(
+        '[data-testid="assistant-dock-input"]',
+        `add the movie ${MOVIE_TITLE} (2013) to my collection ${collectionName}`,
+      );
+      await page.click('[data-testid="assistant-dock-send"]');
 
-    // 047 US4 (FR-020..FR-024): an assistant-mediated add now asks whether the member owns the
-    // movie BEFORE building the proposal, so the approval card no longer follows the request
-    // directly. Answering "No" ends the chain immediately (no media/ripped/quality follow-ups) and
-    // is the shortest route to the proposal this spec actually cares about — the external-ID link.
-    //
-    // 059 US2 put "Is this a children's movie?" ahead of the ownership question, so the chain is
-    // one answer longer. A turn is ADDED rather than the locator loosened: both questions render
-    // the same Yes/No control, so a walk that just clicked the first "No" it saw would still pass
-    // while proving nothing about which question it answered.
-    await answerYesNo(page, /children/i, 'No'); // 059 US2 — is it a children's movie?
-    await answerYesNo(page, 'Do you own', 'No'); // 040 US4 — do you own it?
+      // 047 US4 (FR-020..FR-024): an assistant-mediated add now asks whether the member owns the
+      // movie BEFORE building the proposal, so the approval card no longer follows the request
+      // directly. Answering "No" ends the chain immediately (no media/ripped/quality follow-ups) and
+      // is the shortest route to the proposal this spec actually cares about — the external-ID link.
+      //
+      // 059 US2 put "Is this a children's movie?" ahead of the ownership question, so the chain is
+      // one answer longer. A turn is ADDED rather than the locator loosened: both questions render
+      // the same Yes/No control, so a walk that just clicked the first "No" it saw would still pass
+      // while proving nothing about which question it answered.
+      await answerYesNo(page, /children/i, 'No'); // 059 US2 — is it a children's movie?
+      await answerYesNo(page, 'Do you own', 'No'); // 040 US4 — do you own it?
 
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText('Done', {
-      timeout: DONE_TIMEOUT,
-    });
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      await page.click('[data-testid="approval-approve"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        'Done',
+        {
+          timeout: DONE_TIMEOUT,
+        },
+      );
 
-    // The stored movie carries the TMDB external-id URL (proposals.to_movie_payload, US5-AC1).
-    const found = await findAddedMovie(request, MOVIE_TITLE);
-    expect(found, 'the added Coherence movie is found in one of the collections').toBeDefined();
-    const tmdb = (found!.movie.externalIds ?? []).find((e) => e.system === 'tmdb');
-    expect(tmdb, 'a tmdb external id is present').toBeDefined();
-    expect(tmdb!.url ?? '').toMatch(TMDB_URL_RE);
+      // The stored movie carries the TMDB external-id URL (proposals.to_movie_payload, US5-AC1).
+      const found = await findAddedMovie(request, MOVIE_TITLE);
+      expect(found, 'the added Coherence movie is found in one of the collections').toBeDefined();
+      const tmdb = (found!.movie.externalIds ?? []).find((e) => e.system === 'tmdb');
+      expect(tmdb, 'a tmdb external id is present').toBeDefined();
+      expect(tmdb!.url ?? '').toMatch(TMDB_URL_RE);
 
-    // The movie-detail screen renders it as a tappable link (US5-AC2). The agent flow is complete,
-    // so deep-loading the detail here is fine (no dock interaction follows).
-    await page.goto(`${BASE}/collections/${found!.collectionId}/movies/${found!.movie.movieId}`);
-    const link = page.locator('[data-testid="movie-detail-ext-id-url-0"]');
-    await expect(link).toBeVisible({ timeout: 60000 });
-    await expect(link).toContainText(TMDB_URL_RE);
-  });
+      // The movie-detail screen renders it as a tappable link (US5-AC2). The agent flow is complete,
+      // so deep-loading the detail here is fine (no dock interaction follows).
+      await page.goto(`${BASE}/collections/${found!.collectionId}/movies/${found!.movie.movieId}`);
+      const link = page.locator('[data-testid="movie-detail-ext-id-url-0"]');
+      await expect(link).toBeVisible({ timeout: 60000 });
+      await expect(link).toContainText(TMDB_URL_RE);
+    },
+  );
 });

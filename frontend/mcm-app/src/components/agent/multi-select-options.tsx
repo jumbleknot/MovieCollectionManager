@@ -97,7 +97,10 @@ export function MultiSelectOptions({ prompt, options, confirmLabel }: MultiSelec
   const summary =
     selectedValues.length === 0
       ? 'Nothing selected'
-      : `Selected: ${options.filter((o) => chosen.has(o.value)).map((o) => o.label).join(', ')}`;
+      : `Selected: ${options
+          .filter((o) => chosen.has(o.value))
+          .map((o) => o.label)
+          .join(', ')}`;
 
   return (
     <View testID="multi-select-options" style={styles.container}>

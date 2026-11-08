@@ -19,8 +19,12 @@ const fs = require('fs');
 const path = require('path');
 
 // The preset's own resolver (react-native's), so every other module resolves exactly as before.
-const presetResolver = require(require.resolve('jest-expo/jest-preset', { paths: [process.cwd(), __dirname] })).resolver;
-const base = presetResolver ? require(presetResolver) : (request, options) => options.defaultResolver(request, options);
+const presetResolver = require(
+  require.resolve('jest-expo/jest-preset', { paths: [process.cwd(), __dirname] }),
+).resolver;
+const base = presetResolver
+  ? require(presetResolver)
+  : (request, options) => options.defaultResolver(request, options);
 
 const ESM_ONLY = /([\\/]@tamagui[\\/][^\\/]+[\\/]dist[\\/])esm([\\/].*)\.mjs$/;
 

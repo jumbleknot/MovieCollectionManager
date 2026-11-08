@@ -10,7 +10,12 @@ import { randomUUID } from 'node:crypto';
 
 import { logger } from '@/bff-server/logger';
 import { getBackupRunsCollection, RUN_HISTORY_TTL_MS } from '@/bff-server/mongo-client';
-import type { BackupCollectionCount, BackupRun, BackupRunStatus, BackupTrigger } from '@/types/backups';
+import type {
+  BackupCollectionCount,
+  BackupRun,
+  BackupRunStatus,
+  BackupTrigger,
+} from '@/types/backups';
 
 export async function startRun(
   userId: string,
@@ -65,5 +70,7 @@ export async function listRuns(userId: string, jobId: string, limit = 50): Promi
 
 export async function getRun(userId: string, runId: string): Promise<BackupRun | null> {
   const collection = await getBackupRunsCollection();
-  return (await getBackupRunsCollection()).findOne({ _id: runId, userId }) ?? (void collection, null);
+  return (
+    (await getBackupRunsCollection()).findOne({ _id: runId, userId }) ?? (void collection, null)
+  );
 }

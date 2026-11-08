@@ -79,9 +79,7 @@ describe('mintSubjectToken', () => {
     const body = new URLSearchParams(String((init as RequestInit).body));
     expect(body.get('grant_type')).toBe('urn:ietf:params:oauth:grant-type:token-exchange');
     expect(body.get('subject_token')).toBe(USER_TOKEN);
-    expect(body.get('subject_token_type')).toBe(
-      'urn:ietf:params:oauth:token-type:access_token',
-    );
+    expect(body.get('subject_token_type')).toBe('urn:ietf:params:oauth:token-type:access_token');
     expect(body.get('audience')).toBe('agent-gateway');
     expect(body.get('client_id')).toBe('agent-subject-token');
     expect(body.get('client_secret')).toBe('shh-secret');
@@ -106,9 +104,7 @@ describe('mintSubjectToken', () => {
   });
 
   it('throws a typed AuthError when the exchange is rejected', async () => {
-    mockedFetch.mockResolvedValueOnce(
-      tokenResponse({ error: 'access_denied' }, 400),
-    );
+    mockedFetch.mockResolvedValueOnce(tokenResponse({ error: 'access_denied' }, 400));
     await expect(mintSubjectToken(USER_TOKEN)).rejects.toBeInstanceOf(AuthError);
   });
 
@@ -157,7 +153,10 @@ describe('mintSubjectToken — refusal classification (feature 085)', () => {
     ['401 invalid_token', tokenResponse({ error: 'invalid_token' }, 401)],
     // MEASURED against Keycloak 26.5 standard token exchange (085 T010): a revoked or malformed
     // subject token is answered 400 invalid_request "Invalid token", not invalid_token.
-    ['400 invalid_request "Invalid token" (Keycloak 26.5)', tokenResponse({ error: 'invalid_request', error_description: 'Invalid token' }, 400)],
+    [
+      '400 invalid_request "Invalid token" (Keycloak 26.5)',
+      tokenResponse({ error: 'invalid_request', error_description: 'Invalid token' }, 400),
+    ],
   ])('%s is an auth refusal: 401 AGENT_IDENTITY_REJECTED', async (_label, res) => {
     mockedFetch.mockResolvedValueOnce(res);
     const err = await refusal();
@@ -169,21 +168,44 @@ describe('mintSubjectToken — refusal classification (feature 085)', () => {
   it.each([
     ['503', () => mockedFetch.mockResolvedValueOnce(tokenResponse({}, 503))],
     ['500', () => mockedFetch.mockResolvedValueOnce(tokenResponse({}, 500))],
-    ['400 invalid_request about configuration, not the credential', () =>
-      mockedFetch.mockResolvedValueOnce(tokenResponse({ error: 'invalid_request', error_description: 'Requested audience not available: agent-gateway' }, 400))],
-    ['403 access_denied (misconfigured exchange client)', () =>
-      mockedFetch.mockResolvedValueOnce(tokenResponse({ error: 'access_denied' }, 403))],
+    [
+      '400 invalid_request about configuration, not the credential',
+      () =>
+        mockedFetch.mockResolvedValueOnce(
+          tokenResponse(
+            {
+              error: 'invalid_request',
+              error_description: 'Requested audience not available: agent-gateway',
+            },
+            400,
+          ),
+        ),
+    ],
+    [
+      '403 access_denied (misconfigured exchange client)',
+      () => mockedFetch.mockResolvedValueOnce(tokenResponse({ error: 'access_denied' }, 403)),
+    ],
     ['a network error', () => mockedFetch.mockRejectedValueOnce(new TypeError('fetch failed'))],
-    ['a timeout', () => mockedFetch.mockRejectedValueOnce(
-      Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' }))],
-  ])('%s is transient: 503 AGENT_IDENTITY_UNAVAILABLE with Retry-After', async (_label, arrange) => {
-    arrange();
-    const err = await refusal();
-    expect(err.outcome).toBe('transient');
-    expect(err.statusCode).toBe(503);
-    expect(err.code).toBe(AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE);
-    expect(err.retryAfterSeconds).toBe(5);
-  });
+    [
+      'a timeout',
+      () =>
+        mockedFetch.mockRejectedValueOnce(
+          Object.assign(new Error('The operation was aborted due to timeout'), {
+            name: 'TimeoutError',
+          }),
+        ),
+    ],
+  ])(
+    '%s is transient: 503 AGENT_IDENTITY_UNAVAILABLE with Retry-After',
+    async (_label, arrange) => {
+      arrange();
+      const err = await refusal();
+      expect(err.outcome).toBe('transient');
+      expect(err.statusCode).toBe(503);
+      expect(err.code).toBe(AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE);
+      expect(err.retryAfterSeconds).toBe(5);
+    },
+  );
 
   it('bounds the exchange with a timeout signal', async () => {
     mockedFetch.mockResolvedValueOnce(tokenResponse({ access_token: 'x', expires_in: 60 }));

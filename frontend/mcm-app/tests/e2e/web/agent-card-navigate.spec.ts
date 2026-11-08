@@ -36,12 +36,27 @@ const UNIQUE_TITLE = 'Quasar Meridian';
 
 function movieBody(title: string, year: number): Record<string, unknown> {
   return {
-    title, year, contentType: 'Movie', language: 'English',
-    owned: true, ripped: false, childrens: false,
-    ownedMedia: [], ripQuality: [], genres: ['Action'], rated: 'PG-13',
-    directors: [], actors: [], tags: [],
-    movieSet: null, originalTitle: null, releaseDate: null,
-    outline: null, plot: null, runtime: null, externalIds: [],
+    title,
+    year,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: false,
+    childrens: false,
+    ownedMedia: [],
+    ripQuality: [],
+    genres: ['Action'],
+    rated: 'PG-13',
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: null,
+    externalIds: [],
   };
 }
 
@@ -63,13 +78,22 @@ async function seedMovie(
 
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
-  await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -84,43 +108,44 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)', { tag: '@gate' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `us3-card-${Date.now()}`;
-    const { collectionId, movieId } = await seedMovie(request, name, UNIQUE_TITLE);
+  test(
+    'tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `us3-card-${Date.now()}`;
+      const { collectionId, movieId } = await seedMovie(request, name, UNIQUE_TITLE);
 
-    await gotoHome(page);
-    await openDock(page);
-    const before = await beginTurn(page);
-    await send(page, `do I have ${UNIQUE_TITLE} in my ${name} collection`);
+      await gotoHome(page);
+      await openDock(page);
+      const before = await beginTurn(page);
+      await send(page, `do I have ${UNIQUE_TITLE} in my ${name} collection`);
 
-    // ── Wait for the TURN, then look at what it produced (064 US3, item #337) ─────────────────
-    //
-    // This used to wait 150 s for `selection-options` directly. Splitting the wait separates two
-    // failures that used to look identical and are not: "no turn arrived" (the client dropped the
-    // send — the defect this feature fixes) from "the turn was routed somewhere else" (a model
-    // decision). The old single wait reported both as "element(s) not found".
-    await awaitTurn(page, before, CARD_TIMEOUT);
+      // ── Wait for the TURN, then look at what it produced (064 US3, item #337) ─────────────────
+      //
+      // This used to wait 150 s for `selection-options` directly. Splitting the wait separates two
+      // failures that used to look identical and are not: "no turn arrived" (the client dropped the
+      // send — the defect this feature fixes) from "the turn was routed somewhere else" (a model
+      // decision). The old single wait reported both as "element(s) not found".
+      await awaitTurn(page, before, CARD_TIMEOUT);
 
-    // The offer itself is NOT a model branch: `_run_owned` (nodes/search.py) emits
-    // `render_selection` on BOTH of its branches — one match and no matches alike — so there is no
-    // resolve-directly path once the turn reaches the search node. What varies is only whether the
-    // supervisor classified this utterance as `search`, which the message below names.
-    const options = await offeredSelection(page);
-    if (!options) throw new Error(branchNotOffered(`a result button for "${UNIQUE_TITLE}"`));
-    // Never auto-navigated (013 "New Scope 1": even a single match is offered, never opened).
-    await expect(page).not.toHaveURL(/\/movies\//);
+      // The offer itself is NOT a model branch: `_run_owned` (nodes/search.py) emits
+      // `render_selection` on BOTH of its branches — one match and no matches alike — so there is no
+      // resolve-directly path once the turn reaches the search node. What varies is only whether the
+      // supervisor classified this utterance as `search`, which the message below names.
+      const options = await offeredSelection(page);
+      if (!options) throw new Error(branchNotOffered(`a result button for "${UNIQUE_TITLE}"`));
+      // Never auto-navigated (013 "New Scope 1": even a single match is offered, never opened).
+      await expect(page).not.toHaveURL(/\/movies\//);
 
-    // Tapping the result button deep-links to the exact movie's detail screen.
-    await options.locator('[data-testid="selection-option-pick-0"]').last().click();
-    await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
-      timeout: NAV_TIMEOUT,
-    });
-    await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText(UNIQUE_TITLE, {
-      timeout: NAV_TIMEOUT,
-    });
-  });
+      // Tapping the result button deep-links to the exact movie's detail screen.
+      await options.locator('[data-testid="selection-option-pick-0"]').last().click();
+      await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
+        timeout: NAV_TIMEOUT,
+      });
+      await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText(UNIQUE_TITLE, {
+        timeout: NAV_TIMEOUT,
+      });
+    },
+  );
 });

@@ -77,10 +77,13 @@ describeLive('consent callback redirect URI', () => {
   // Feature 083 (#702): the consent round trip runs on its own client, so its callback must be
   // registered on THAT client — on the login client only, Keycloak refuses the authorize request.
   const consentClientIt = env.backupConsentClientId !== env.keycloakClientId ? it : it.skip;
-  consentClientIt('registers the consent callback on the dedicated consent client when one is configured', async () => {
-    const uri = `${BASE_URL}/bff-api/backups/consent`;
-    await ensureClientRedirectUris([uri], env.backupConsentClientId);
+  consentClientIt(
+    'registers the consent callback on the dedicated consent client when one is configured',
+    async () => {
+      const uri = `${BASE_URL}/bff-api/backups/consent`;
+      await ensureClientRedirectUris([uri], env.backupConsentClientId);
 
-    expect(await registeredRedirectUris(env.backupConsentClientId)).toContain(uri);
-  });
+      expect(await registeredRedirectUris(env.backupConsentClientId)).toContain(uri);
+    },
+  );
 });

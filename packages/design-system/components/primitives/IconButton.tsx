@@ -13,27 +13,27 @@
  *   <IconButton icon={<MyIcon />} label="Close" variant="standard" />
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
 
-export type IconButtonVariant = 'standard' | 'filled' | 'filledTonal' | 'outlined'
+export type IconButtonVariant = 'standard' | 'filled' | 'filledTonal' | 'outlined';
 
 export interface IconButtonProps extends Omit<ViewProps, 'children'> {
-  icon:       React.ReactNode
-  label:      string           // accessibilityLabel — required for a11y
-  variant?:   IconButtonVariant
-  size?:      number           // container size in dp (default 40)
-  selected?:  boolean          // toggled state (MD3 toggle icon button)
-  disabled?:  boolean
-  onPress?:   () => void
+  icon: React.ReactNode;
+  label: string; // accessibilityLabel — required for a11y
+  variant?: IconButtonVariant;
+  size?: number; // container size in dp (default 40)
+  selected?: boolean; // toggled state (MD3 toggle icon button)
+  disabled?: boolean;
+  onPress?: () => void;
 }
 
 export const IconButton = React.forwardRef<any, IconButtonProps>(function IconButton(
   {
     icon,
     label,
-    variant  = 'standard',
-    size     = 40,
+    variant = 'standard',
+    size = 40,
     selected = false,
     disabled = false,
     onPress,
@@ -41,35 +41,35 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
   },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
 
-  type VS = { bg: string; border?: string; iconColor: string; stateLayer: string }
+  type VS = { bg: string; border?: string; iconColor: string; stateLayer: string };
 
   const variantStyles: Record<IconButtonVariant, VS> = {
     standard: {
-      bg:         'transparent',
-      iconColor:  selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
+      bg: 'transparent',
+      iconColor: selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
       stateLayer: selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
     },
     filled: {
-      bg:         selected ? theme.primary?.val        : theme.surfaceVariant?.val,
-      iconColor:  selected ? theme.onPrimary?.val      : theme.primary?.val,
-      stateLayer: selected ? theme.onPrimary?.val      : theme.primary?.val,
+      bg: selected ? theme.primary?.val : theme.surfaceVariant?.val,
+      iconColor: selected ? theme.onPrimary?.val : theme.primary?.val,
+      stateLayer: selected ? theme.onPrimary?.val : theme.primary?.val,
     },
     filledTonal: {
-      bg:         selected ? theme.secondaryContainer?.val : theme.surfaceVariant?.val,
-      iconColor:  selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
+      bg: selected ? theme.secondaryContainer?.val : theme.surfaceVariant?.val,
+      iconColor: selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
       stateLayer: selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
     },
     outlined: {
-      bg:         selected ? theme.inverseSurface?.val : 'transparent',
-      border:     selected ? undefined : theme.outline?.val,
-      iconColor:  selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
+      bg: selected ? theme.inverseSurface?.val : 'transparent',
+      border: selected ? undefined : theme.outline?.val,
+      iconColor: selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
       stateLayer: selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
     },
-  }
+  };
 
-  const vs = variantStyles[variant]
+  const vs = variantStyles[variant];
 
   return (
     <View
@@ -104,7 +104,10 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       {/* State layer */}
       <View
         position="absolute"
-        top={0} right={0} bottom={0} left={0}
+        top={0}
+        right={0}
+        bottom={0}
+        left={0}
         borderRadius={size / 2}
         backgroundColor={vs.stateLayer}
         opacity="0 hover:0.08 press:0.12"
@@ -112,7 +115,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       />
       {icon}
     </View>
-  )
-})
+  );
+});
 
-IconButton.displayName = 'MCM.IconButton'
+IconButton.displayName = 'MCM.IconButton';

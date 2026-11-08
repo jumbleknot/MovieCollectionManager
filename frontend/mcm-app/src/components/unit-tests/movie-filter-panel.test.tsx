@@ -233,7 +233,13 @@ describe('MovieFilterPanel', () => {
 
   it('owned and ripped chips render even when all filterOptions arrays are empty (TR39)', async () => {
     const emptyOptions: FilterOptionsData = {
-      genres: [], contentTypes: [], rated: [], languages: [], decades: [], ownedMedia: [], ripQuality: [],
+      genres: [],
+      contentTypes: [],
+      rated: [],
+      languages: [],
+      decades: [],
+      ownedMedia: [],
+      ripQuality: [],
     };
     const { getByTestId } = await render(
       <MovieFilterPanel
@@ -259,7 +265,7 @@ describe('MovieFilterPanel', () => {
       />,
     );
     const sections = getAllByTestId(/^filter-section-/);
-    const ids = sections.map(s => s.props.testID);
+    const ids = sections.map((s) => s.props.testID);
     expect(ids).toEqual([
       'filter-section-contentType',
       'filter-section-owned',

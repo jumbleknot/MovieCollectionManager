@@ -4,13 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Banner, Button } from '@mcm/design-system';
 import { PasswordStrengthIndicator } from '@/components/password-strength-indicator';
@@ -38,7 +32,11 @@ interface RegisterFormProps {
   error?: string | null;
 }
 
-export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFormProps): React.JSX.Element {
+export function RegisterForm({
+  onSubmit,
+  isLoading = false,
+  error,
+}: RegisterFormProps): React.JSX.Element {
   const theme = useTheme();
   const styles = makeStyles(theme);
   const [values, setValues] = useState<RegisterFormValues>({
@@ -147,9 +145,7 @@ export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFor
         testID="input-password"
       />
 
-      {values.password.length > 0 && (
-        <PasswordStrengthIndicator password={values.password} />
-      )}
+      {values.password.length > 0 && <PasswordStrengthIndicator password={values.password} />}
 
       <Field
         label="Confirm Password"
@@ -223,57 +219,62 @@ function Field({
         testID={testID}
         accessibilityLabel={label}
       />
-      {error ? <Text style={styles.fieldError} testID={`${testID}-error`}>{error}</Text> : null}
+      {error ? (
+        <Text style={styles.fieldError} testID={`${testID}-error`}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: theme.background?.val,
-  },
-  title: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.onSurface?.val,
-    marginBottom: 24,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.onSurfaceVariant?.val,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: 'Inter',
-    color: theme.onSurface?.val,
-    backgroundColor: theme.surfaceVariant?.val,
-  },
-  inputError: {
-    borderColor: theme.error?.val,
-  },
-  fieldError: {
-    color: theme.error?.val,
-    fontFamily: 'Inter',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  submitWrap: {
-    marginTop: 8,
-    marginBottom: 32,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 24,
+      backgroundColor: theme.background?.val,
+    },
+    title: {
+      fontFamily: 'Outfit-Bold',
+      fontSize: 28,
+      fontWeight: '700',
+      color: theme.onSurface?.val,
+      marginBottom: 24,
+    },
+    field: {
+      marginBottom: 16,
+    },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.onSurfaceVariant?.val,
+      marginBottom: 6,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.outline?.val,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      fontFamily: 'Inter',
+      color: theme.onSurface?.val,
+      backgroundColor: theme.surfaceVariant?.val,
+    },
+    inputError: {
+      borderColor: theme.error?.val,
+    },
+    fieldError: {
+      color: theme.error?.val,
+      fontFamily: 'Inter',
+      fontSize: 12,
+      marginTop: 4,
+    },
+    submitWrap: {
+      marginTop: 8,
+      marginBottom: 32,
+    },
+  });

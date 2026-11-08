@@ -76,8 +76,18 @@ describe('buildAuditDoc', () => {
     };
     const doc = buildAuditDoc('test', redactedInput);
 
-    const redactedKeys = ['token', 'sessionId', 'password', 'secret', 'cookie',
-      'authorization', 'code', 'codeVerifier', 'email', 'username'];
+    const redactedKeys = [
+      'token',
+      'sessionId',
+      'password',
+      'secret',
+      'cookie',
+      'authorization',
+      'code',
+      'codeVerifier',
+      'email',
+      'username',
+    ];
     for (const key of redactedKeys) {
       expect(doc).not.toHaveProperty(key);
     }
@@ -116,7 +126,10 @@ describe('audit — logger.audit always called', () => {
     audit('approval_decision', { userId: 'u1', decision: 'approve' });
 
     expect(logger.audit).toHaveBeenCalledTimes(1);
-    expect(logger.audit).toHaveBeenCalledWith('approval_decision', { userId: 'u1', decision: 'approve' });
+    expect(logger.audit).toHaveBeenCalledWith('approval_decision', {
+      userId: 'u1',
+      decision: 'approve',
+    });
   });
 
   it('passes the ORIGINAL fields to logger.audit (including redacted keys — logger does its own redaction)', () => {

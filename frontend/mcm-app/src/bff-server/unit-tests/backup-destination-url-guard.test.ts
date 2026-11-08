@@ -41,7 +41,10 @@ const neverCalled: jest.MockedFunction<DestinationLookup> = jest.fn(async (_host
   throw new Error('resolver must not be called for an IP literal');
 });
 
-async function rejectionReason(url: string, lookup: DestinationLookup = neverCalled): Promise<string> {
+async function rejectionReason(
+  url: string,
+  lookup: DestinationLookup = neverCalled,
+): Promise<string> {
   try {
     await assertDestinationUrlAllowed(url, { lookup });
     throw new Error(`expected ${url} to be rejected, but it was allowed`);
@@ -181,7 +184,10 @@ describe('group 4 — the allow-list', () => {
   it('does not admit a host that merely RESEMBLES an allow-listed one', async () => {
     mockEnv.backupAllowedDestinationHosts = 'nas.home.arpa';
     expect(
-      await rejectionReason('http://evil-nas.home.arpa.attacker.test/', resolverReturning('10.0.0.9')),
+      await rejectionReason(
+        'http://evil-nas.home.arpa.attacker.test/',
+        resolverReturning('10.0.0.9'),
+      ),
     ).toMatch(/not allowed/i);
   });
 

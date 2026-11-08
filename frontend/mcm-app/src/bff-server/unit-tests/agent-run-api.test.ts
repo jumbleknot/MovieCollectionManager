@@ -80,7 +80,8 @@ jest.mock('@/bff-server/agent-rate-limiter', () => ({
 type GatewayAgentOptions = { uiSnapshot?: unknown; importFile?: unknown };
 const mockCreateMovieAssistantAgent = jest.fn((_options: GatewayAgentOptions) => ({ agent: true }));
 jest.mock('@/bff-server/agent-gateway-client', () => ({
-  createMovieAssistantAgent: (options: GatewayAgentOptions) => mockCreateMovieAssistantAgent(options),
+  createMovieAssistantAgent: (options: GatewayAgentOptions) =>
+    mockCreateMovieAssistantAgent(options),
 }));
 
 jest.mock('@copilotkit/runtime', () => ({

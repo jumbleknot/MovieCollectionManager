@@ -85,15 +85,21 @@ describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {
     await deleteTestUser(noRoleUser?.userId);
   });
 
-  it.each(AGENT_ROUTES)('$method $path returns 401 with no auth', async ({ method, path, body }) => {
-    const res = await call(method, path, body);
-    expect(res.status).toBe(401);
-    expect(res.data.code).toBe('UNAUTHORIZED');
-  });
+  it.each(AGENT_ROUTES)(
+    '$method $path returns 401 with no auth',
+    async ({ method, path, body }) => {
+      const res = await call(method, path, body);
+      expect(res.status).toBe(401);
+      expect(res.data.code).toBe('UNAUTHORIZED');
+    },
+  );
 
-  it.each(AGENT_ROUTES)('$method $path returns 403 for a user lacking mc-user', async ({ method, path, body }) => {
-    const res = await call(method, path, body, { Cookie: noRoleToken });
-    expect(res.status).toBe(403);
-    expect(res.data.code).toBe('FORBIDDEN');
-  });
+  it.each(AGENT_ROUTES)(
+    '$method $path returns 403 for a user lacking mc-user',
+    async ({ method, path, body }) => {
+      const res = await call(method, path, body, { Cookie: noRoleToken });
+      expect(res.status).toBe(403);
+      expect(res.data.code).toBe('FORBIDDEN');
+    },
+  );
 });

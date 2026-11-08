@@ -25,7 +25,11 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 import type { JWTPayload, Session } from '@/types/auth';
 
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
-import { readLiveSessionWithTokens, touchSession, terminateSession } from '@/bff-server/session-manager';
+import {
+  readLiveSessionWithTokens,
+  touchSession,
+  terminateSession,
+} from '@/bff-server/session-manager';
 import { ensureFreshTokens, openSessionTokens } from '@/bff-server/session-tokens';
 import { logger } from '@/bff-server/logger';
 
@@ -43,7 +47,13 @@ jest.mock('@/bff-server/session-tokens', () => ({
   ensureFreshTokens: jest.fn(),
 }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+  logger: {
+    audit: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 jest.mock('@/config/env', () => ({
   env: {
@@ -55,7 +65,9 @@ jest.mock('@/config/env', () => ({
 
 const mockedValidateJwt = validateJwt as jest.MockedFunction<typeof validateJwt>;
 const mockedExtractRoles = extractRoles as jest.MockedFunction<typeof extractRoles>;
-const mockedRead = readLiveSessionWithTokens as jest.MockedFunction<typeof readLiveSessionWithTokens>;
+const mockedRead = readLiveSessionWithTokens as jest.MockedFunction<
+  typeof readLiveSessionWithTokens
+>;
 const mockedOpen = openSessionTokens as jest.MockedFunction<typeof openSessionTokens>;
 const mockedFresh = ensureFreshTokens as jest.MockedFunction<typeof ensureFreshTokens>;
 
@@ -85,11 +97,21 @@ function makePayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   };
 }
 
-const validated = (payload: JWTPayload) => ({ payload, header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' } });
+const validated = (payload: JWTPayload) => ({
+  payload,
+  header: { alg: 'RS256', kid: 'key-1', typ: 'JWT' },
+});
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   const now = Date.now();
-  return { sessionId: 'session-abc', userId: 'user-123', createdAt: now, lastActivityAt: now, expiresAt: now + 86_400_000, ...overrides };
+  return {
+    sessionId: 'session-abc',
+    userId: 'user-123',
+    createdAt: now,
+    lastActivityAt: now,
+    expiresAt: now + 86_400_000,
+    ...overrides,
+  };
 }
 
 const TOKENS = {
@@ -136,7 +158,9 @@ describe('requireAuth — session cookie', () => {
 
   it('slides the idle window on every authenticated request (FR-023)', async () => {
     await requireAuth(withSession);
-    expect(touchSession).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'session-abc' }));
+    expect(touchSession).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'session-abc' }),
+    );
   });
 
   it('uses the renewed tokens when they were due (US6 AS-2)', async () => {
@@ -175,24 +199,31 @@ describe('requireAuth — sessions that are not live', () => {
   });
 
   it('only the retired token cookies: refused and cleared, never migrated (FR-022, US6 AS-6)', async () => {
-    const err = await refusal({ cookie: 'mcm_access_token=old.client.jwt; mcm_refresh_token=old.refresh' });
+    const err = await refusal({
+      cookie: 'mcm_access_token=old.client.jwt; mcm_refresh_token=old.refresh',
+    });
     expect(err.code).toBe(AuthErrorCode.UNAUTHORIZED);
     expect(mockedValidateJwt).not.toHaveBeenCalled();
     const cleared = (err.clearCookies ?? []).map((c) => c.split('=')[0]);
-    expect(cleared).toEqual(expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']));
+    expect(cleared).toEqual(
+      expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']),
+    );
   });
 
   it.each([
     ['absolute', AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT],
     ['idle', AuthErrorCode.SESSION_IDLE_TIMEOUT],
-  ] as const)('a session past its %s limit is refused with that reason, and audited (FR-012, FR-023)', async (reason, code) => {
-    mockedRead.mockResolvedValueOnce({ expired: reason, userId: 'user-123' });
-    const err = await refusal(withSession);
-    expect(err.code).toBe(code);
-    expect(err.clearCookies).toEqual(buildClearAuthCookies());
-    expect(logger.audit).toHaveBeenCalledWith('session_expired', { userId: 'user-123', reason });
-    expect(mockedValidateJwt).not.toHaveBeenCalled();
-  });
+  ] as const)(
+    'a session past its %s limit is refused with that reason, and audited (FR-012, FR-023)',
+    async (reason, code) => {
+      mockedRead.mockResolvedValueOnce({ expired: reason, userId: 'user-123' });
+      const err = await refusal(withSession);
+      expect(err.code).toBe(code);
+      expect(err.clearCookies).toEqual(buildClearAuthCookies());
+      expect(logger.audit).toHaveBeenCalledWith('session_expired', { userId: 'user-123', reason });
+      expect(mockedValidateJwt).not.toHaveBeenCalled();
+    },
+  );
 
   it('an unknown session is SESSION_NOT_FOUND', async () => {
     mockedRead.mockResolvedValueOnce({ expired: 'missing' });
@@ -215,7 +246,7 @@ describe('requireAuth — sessions that are not live', () => {
     expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-123');
   });
 
-  it("a server-held token that belongs to someone else is refused and ends the session (FR-006)", async () => {
+  it('a server-held token that belongs to someone else is refused and ends the session (FR-006)', async () => {
     mockedValidateJwt.mockResolvedValueOnce(validated(makePayload({ sub: 'someone-else' })));
     const err = await refusal(withSession);
     expect(err.code).toBe(AuthErrorCode.SESSION_OWNER_MISMATCH);
@@ -253,7 +284,9 @@ describe('requireAuth — token validation still runs on every request', () => {
     'Missing azp claim',
     'Token not yet valid',
   ])('a server-held token failing validation (%s) is a 401', async (message) => {
-    mockedValidateJwt.mockRejectedValueOnce(new AuthError(AuthErrorCode.UNAUTHORIZED, message, 401));
+    mockedValidateJwt.mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.UNAUTHORIZED, message, 401),
+    );
     const err = await refusal(withSession);
     expect(err.statusCode).toBe(401);
   });
@@ -290,7 +323,9 @@ describe('extractSessionId', () => {
   });
 
   it('handles cookie with multiple pairs including session ID', () => {
-    expect(extractSessionId({ cookie: `a=1; ${SESSION_ID_COOKIE}=sess-multi; b=2` })).toBe('sess-multi');
+    expect(extractSessionId({ cookie: `a=1; ${SESSION_ID_COOKIE}=sess-multi; b=2` })).toBe(
+      'sess-multi',
+    );
   });
 });
 
@@ -341,6 +376,8 @@ describe('buildClearAuthCookies', () => {
     });
     expect(cookies.find((c) => c.startsWith('mcm_session_id='))).toMatch(/Path=\//);
     expect(cookies.find((c) => c.startsWith('mcm_access_token='))).toMatch(/Path=\//);
-    expect(cookies.find((c) => c.startsWith('mcm_refresh_token='))).toMatch(/Path=\/bff-api\/auth\/refresh/);
+    expect(cookies.find((c) => c.startsWith('mcm_refresh_token='))).toMatch(
+      /Path=\/bff-api\/auth\/refresh/,
+    );
   });
 });

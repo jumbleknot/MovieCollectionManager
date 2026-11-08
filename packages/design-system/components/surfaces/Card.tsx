@@ -16,19 +16,19 @@
  *   Card.Actions  — trailing button row (right-aligned)
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { YStack, XStack } from '@tamagui/stacks'
-import { Image, type ImageSourcePropType } from 'react-native'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { YStack, XStack } from '@tamagui/stacks';
+import { Image, type ImageSourcePropType } from 'react-native';
 
-export type CardVariant = 'elevated' | 'filled' | 'outlined'
+export type CardVariant = 'elevated' | 'filled' | 'outlined';
 
 export interface CardProps extends Omit<ViewProps, 'children'> {
-  variant?:  CardVariant
-  onPress?:  () => void
-  disabled?: boolean
-  children:  React.ReactNode
+  variant?: CardVariant;
+  onPress?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
 }
 
 // ─── Root Card ───────────────────────────────────────────────────────────────
@@ -37,33 +37,33 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
   { variant = 'elevated', onPress, disabled = false, children, ...rest },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
 
-  let bg:      string
-  let border:  string | undefined
-  let shadowProps = {}
+  let bg: string;
+  let border: string | undefined;
+  let shadowProps = {};
 
   switch (variant) {
     case 'elevated':
-      bg = theme.surface1?.val
+      bg = theme.surface1?.val;
       shadowProps = {
-        shadowColor:   theme.shadow?.val,
-        shadowOffset:  { width: 0, height: 1 },
+        shadowColor: theme.shadow?.val,
+        shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.12,
-        shadowRadius:  2,
-        elevation:     1,
-      }
-      break
+        shadowRadius: 2,
+        elevation: 1,
+      };
+      break;
     case 'filled':
-      bg     = theme.surfaceVariant?.val
-      break
+      bg = theme.surfaceVariant?.val;
+      break;
     case 'outlined':
-      bg     = theme.surface?.val
-      border = theme.outlineVariant?.val
-      break
+      bg = theme.surface?.val;
+      border = theme.outlineVariant?.val;
+      break;
   }
 
-  const interactive = !!onPress && !disabled
+  const interactive = !!onPress && !disabled;
 
   return (
     <YStack
@@ -74,17 +74,17 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       // Tamagui 3: each state is a clause on the property it modifies (were pressStyle / hoverStyle /
       // focusVisibleStyle). The clauses exist only when the card is interactive, as before; an
       // elevated card also tints to surface2 on hover/press, the other variants keep their fill.
-      backgroundColor={interactive && variant === 'elevated'
-        ? { default: bg, hover: theme.surface2?.val, press: theme.surface2?.val }
-        : bg}
-      borderRadius={12}          // MD3 medium shape
+      backgroundColor={
+        interactive && variant === 'elevated'
+          ? { default: bg, hover: theme.surface2?.val, press: theme.surface2?.val }
+          : bg
+      }
+      borderRadius={12} // MD3 medium shape
       borderWidth={border ? 1 : 0}
       borderColor={border}
       overflow="hidden"
       cursor={interactive ? 'pointer' : 'default'}
-      opacity={interactive
-        ? { default: 1, hover: 0.98, press: 0.94 }
-        : disabled ? 0.38 : 1}
+      opacity={interactive ? { default: 1, hover: 0.98, press: 0.94 } : disabled ? 0.38 : 1}
       onPress={interactive ? onPress : undefined}
       // `focus-visible` (never `focus`) so an interactive card's ring shows for KEYBOARD focus
       // only — a mouse click otherwise leaves a persistent :focus outline (feature 015/017 fix).
@@ -97,22 +97,22 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
     >
       {children}
     </YStack>
-  )
-})
+  );
+});
 
-Card.displayName = 'MCM.Card'
+Card.displayName = 'MCM.Card';
 
 // ─── Card.Header ─────────────────────────────────────────────────────────────
 
 export interface CardHeaderProps {
-  title:        string
-  subtitle?:    string
-  leading?:     React.ReactNode   // avatar, icon, thumbnail
-  trailing?:    React.ReactNode   // overflow menu, action button
+  title: string;
+  subtitle?: string;
+  leading?: React.ReactNode; // avatar, icon, thumbnail
+  trailing?: React.ReactNode; // overflow menu, action button
 }
 
 function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <XStack
       paddingHorizontal={16}
@@ -152,17 +152,17 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
       </YStack>
       {trailing && <View flexShrink={0}>{trailing}</View>}
     </XStack>
-  )
+  );
 }
 
-CardHeader.displayName = 'MCM.Card.Header'
+CardHeader.displayName = 'MCM.Card.Header';
 
 // ─── Card.Media ──────────────────────────────────────────────────────────────
 
 export interface CardMediaProps {
-  source:       ImageSourcePropType
-  height?:      number      // default 194 (MD3 recommendation)
-  alt?:         string
+  source: ImageSourcePropType;
+  height?: number; // default 194 (MD3 recommendation)
+  alt?: string;
 }
 
 function CardMedia({ source, height = 194, alt }: CardMediaProps) {
@@ -175,16 +175,16 @@ function CardMedia({ source, height = 194, alt }: CardMediaProps) {
         accessibilityLabel={alt}
       />
     </View>
-  )
+  );
 }
 
-CardMedia.displayName = 'MCM.Card.Media'
+CardMedia.displayName = 'MCM.Card.Media';
 
 // ─── Card.Content ────────────────────────────────────────────────────────────
 
 export interface CardContentProps {
-  children: React.ReactNode
-  padding?: number
+  children: React.ReactNode;
+  padding?: number;
 }
 
 function CardContent({ children, padding = 16 }: CardContentProps) {
@@ -192,25 +192,25 @@ function CardContent({ children, padding = 16 }: CardContentProps) {
     <YStack padding={padding} gap={8}>
       {children}
     </YStack>
-  )
+  );
 }
 
-CardContent.displayName = 'MCM.Card.Content'
+CardContent.displayName = 'MCM.Card.Content';
 
 // ─── Card.Actions ────────────────────────────────────────────────────────────
 
 export interface CardActionsProps {
-  children:  React.ReactNode
-  alignment?: 'start' | 'end' | 'center' | 'spread'
+  children: React.ReactNode;
+  alignment?: 'start' | 'end' | 'center' | 'spread';
 }
 
 function CardActions({ children, alignment = 'end' }: CardActionsProps) {
   const justifyMap = {
-    start:  'flex-start',
-    end:    'flex-end',
+    start: 'flex-start',
+    end: 'flex-end',
     center: 'center',
     spread: 'space-between',
-  } as const
+  } as const;
 
   return (
     <XStack
@@ -222,17 +222,17 @@ function CardActions({ children, alignment = 'end' }: CardActionsProps) {
     >
       {children}
     </XStack>
-  )
+  );
 }
 
-CardActions.displayName = 'MCM.Card.Actions'
+CardActions.displayName = 'MCM.Card.Actions';
 
 // ─── Attach sub-components ───────────────────────────────────────────────────
 
-;(Card as any).Header  = CardHeader
-;(Card as any).Media   = CardMedia
-;(Card as any).Content = CardContent
-;(Card as any).Actions = CardActions
+(Card as any).Header = CardHeader;
+(Card as any).Media = CardMedia;
+(Card as any).Content = CardContent;
+(Card as any).Actions = CardActions;
 
 // Re-export sub-types for consumers
-export { CardHeader, CardMedia, CardContent, CardActions }
+export { CardHeader, CardMedia, CardContent, CardActions };

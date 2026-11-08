@@ -7,14 +7,7 @@
  *
  * Implements FR-005 / SC-003 and the data-model Theme Preference + Contract 2.
  */
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ThemeName = 'dark' | 'light';

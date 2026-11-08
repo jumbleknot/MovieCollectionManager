@@ -17,7 +17,11 @@ const MOCK_USER = {
 
 async function mockUserAuthenticated(page: Page): Promise<void> {
   await page.route('**/bff-api/auth/user', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) }),
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(MOCK_USER),
+    }),
   );
 }
 
@@ -36,7 +40,11 @@ test.describe('Session idle timeout', () => {
     await page.clock.install();
     await mockUserAuthenticated(page);
     await page.route('**/bff-api/auth/logout', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      }),
     );
 
     await page.goto(`${BASE}/(app)/home`);
@@ -48,7 +56,9 @@ test.describe('Session idle timeout', () => {
     await expect(page.getByTestId('login-screen')).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('btn-login-with-keycloak')).toBeVisible();
     // FR-015: verify the exact inactivity message required by the spec
-    await expect(page.getByText('Your session has expired due to inactivity. Please log in again.')).toBeVisible();
+    await expect(
+      page.getByText('Your session has expired due to inactivity. Please log in again.'),
+    ).toBeVisible();
   });
 
   /**
@@ -59,7 +69,11 @@ test.describe('Session idle timeout', () => {
     await page.clock.install();
     await mockUserAuthenticated(page);
     await page.route('**/bff-api/auth/logout', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      }),
     );
 
     await page.goto(`${BASE}/(app)/home`);

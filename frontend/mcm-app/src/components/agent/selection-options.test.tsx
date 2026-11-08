@@ -37,7 +37,11 @@ describe('SelectionOptions', () => {
   it('renders result + control buttons and posts the canonical value on tap (US7-AC2)', async () => {
     const options = [
       { label: 'Avatar (2009)', value: 'Avatar (2009)', kind: 'movie' as const },
-      { label: 'Avatar: The Way of Water (2022)', value: 'Avatar: The Way of Water (2022)', kind: 'movie' as const },
+      {
+        label: 'Avatar: The Way of Water (2022)',
+        value: 'Avatar: The Way of Water (2022)',
+        kind: 'movie' as const,
+      },
       { label: 'Exit search', value: 'exit search', kind: 'control' as const },
     ];
     const { getByTestId } = await render(<SelectionOptions options={options} />);
@@ -115,8 +119,6 @@ describe('SelectionOptions', () => {
     ];
     const { getByTestId } = await render(<SelectionOptions options={options} />);
     await fireEvent.press(getByTestId('selection-option-control-1'));
-    expect(addMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'search the web' }),
-    );
+    expect(addMessage).toHaveBeenCalledWith(expect.objectContaining({ content: 'search the web' }));
   });
 });

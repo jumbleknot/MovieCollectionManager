@@ -27,7 +27,10 @@ export function LoadingIndicator({
     <View style={styles.container} testID={testID} accessibilityRole="progressbar">
       <ActivityIndicator size={size} color={spinnerColor} testID={`${testID}-spinner`} />
       {message ? (
-        <Text style={[styles.message, { color: theme.onSurfaceVariant?.val }]} testID={`${testID}-message`}>
+        <Text
+          style={[styles.message, { color: theme.onSurfaceVariant?.val }]}
+          testID={`${testID}-message`}
+        >
           {message}
         </Text>
       ) : null}

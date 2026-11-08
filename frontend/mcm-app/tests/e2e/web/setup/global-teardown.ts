@@ -48,7 +48,9 @@ async function deleteWorkerIdentities(): Promise<void> {
   try {
     identities = JSON.parse(readFileSync(WORKER_IDENTITY_MANIFEST, 'utf8')) as typeof identities;
   } catch {
-    console.warn('[global-teardown] worker identity manifest unreadable — leaving realm users in place');
+    console.warn(
+      '[global-teardown] worker identity manifest unreadable — leaving realm users in place',
+    );
     return;
   }
 
@@ -59,11 +61,14 @@ async function deleteWorkerIdentities(): Promise<void> {
       await deleteUser(identity.userId);
       deleted += 1;
     } catch (err) {
-      console.warn(`[global-teardown] could not delete ${identity.username}: ${(err as Error).message}`);
+      console.warn(
+        `[global-teardown] could not delete ${identity.username}: ${(err as Error).message}`,
+      );
     }
   }
   rmSync(WORKER_IDENTITY_MANIFEST, { force: true });
-  if (deleted > 0) console.log(`[global-teardown] deleted ${deleted} per-worker identity/identities (054 US4)`);
+  if (deleted > 0)
+    console.log(`[global-teardown] deleted ${deleted} per-worker identity/identities (054 US4)`);
 }
 
 export default async function globalTeardown(): Promise<void> {
@@ -92,7 +97,7 @@ export default async function globalTeardown(): Promise<void> {
 
   const rateLimited = logs.split(RATE_LIMITED).length - 1;
   if (rateLimited === 0) {
-    console.log('[e2e-contention] refresh_rate_limited=0 — this run\'s result is about the code.');
+    console.log("[e2e-contention] refresh_rate_limited=0 — this run's result is about the code.");
     return;
   }
 

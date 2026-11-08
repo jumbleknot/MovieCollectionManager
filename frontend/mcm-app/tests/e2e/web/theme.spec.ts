@@ -24,16 +24,25 @@ async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
     page
-      .waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 })
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
       .then(() => 'home' as const),
     page
-      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 })
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
       .then(() => 'collection' as const),
   ]).catch(() => null);
 
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
   if (!result) {

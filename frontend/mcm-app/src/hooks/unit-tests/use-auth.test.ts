@@ -42,9 +42,15 @@ describe('useAuth', () => {
 
   it('refreshAuth fetches profile and sets authenticated state', async () => {
     const mockUser = {
-      id: 'user-1', username: 'tuser', email: 'test@example.com',
-      firstName: 'Test', lastName: 'User', emailVerified: true,
-      roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+      id: 'user-1',
+      username: 'tuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      emailVerified: true,
+      roles: ['mc-user'],
+      accountStatus: 'active' as const,
+      createdAt: '2026-01-01T00:00:00.000Z',
     };
     mockedGet.mockResolvedValueOnce({ data: mockUser } as never);
 

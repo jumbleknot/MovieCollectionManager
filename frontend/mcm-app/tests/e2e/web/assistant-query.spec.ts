@@ -92,9 +92,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -116,31 +122,39 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('count → the assistant answers the real number of movies', { tag: '@model-decision' }, async ({ page, request }) => {
-    test.setTimeout(360_000);
-    const name = `t071-q-${Date.now()}`;
-    await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
+  test(
+    'count → the assistant answers the real number of movies',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t071-q-${Date.now()}`;
+      await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
 
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `how many movies are in my ${name} collection`);
+      await gotoHome(page);
+      await openDock(page);
+      await send(page, `how many movies are in my ${name} collection`);
 
-    // Exactly the three seeded movies, read server-side (count endpoint).
-    await expect(lastAssistantMsg(page)).toContainText('3 movie', { timeout: ANSWER_TIMEOUT });
-  });
+      // Exactly the three seeded movies, read server-side (count endpoint).
+      await expect(lastAssistantMsg(page)).toContainText('3 movie', { timeout: ANSWER_TIMEOUT });
+    },
+  );
 
-  test('list → render_collection_summary + the seeded titles', { tag: '@model-decision' }, async ({ page, request }) => {
-    test.setTimeout(360_000);
-    const name = `t071-q-${Date.now()}`;
-    await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
+  test(
+    'list → render_collection_summary + the seeded titles',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t071-q-${Date.now()}`;
+      await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
 
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `what's in my ${name} collection`);
+      await gotoHome(page);
+      await openDock(page);
+      await send(page, `what's in my ${name} collection`);
 
-    await expect(page.locator('[data-testid="render-collection-summary"]').last()).toBeVisible({
-      timeout: ANSWER_TIMEOUT,
-    });
-    await expect(lastAssistantMsg(page)).toContainText('Zorgon');
-  });
+      await expect(page.locator('[data-testid="render-collection-summary"]').last()).toBeVisible({
+        timeout: ANSWER_TIMEOUT,
+      });
+      await expect(lastAssistantMsg(page)).toContainText('Zorgon');
+    },
+  );
 });

@@ -90,7 +90,9 @@ describe('opaAllowsUiAction', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ input: { action_type: 'navigate', target: 'collection', roles: ['mc-user'] } }),
+        body: JSON.stringify({
+          input: { action_type: 'navigate', target: 'collection', roles: ['mc-user'] },
+        }),
       }),
     );
   });

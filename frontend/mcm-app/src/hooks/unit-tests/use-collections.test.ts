@@ -144,7 +144,7 @@ describe('useCollections', () => {
       });
 
       expect(result.current.collections).toContainEqual(
-        expect.objectContaining({ collectionId: 'col-new', name: 'Action' })
+        expect.objectContaining({ collectionId: 'col-new', name: 'Action' }),
       );
     });
 
@@ -200,7 +200,7 @@ describe('useCollections', () => {
         await result.current.updateCollection('col-1', { name: 'Renamed' });
       });
 
-      const updated = result.current.collections.find(c => c.collectionId === 'col-1');
+      const updated = result.current.collections.find((c) => c.collectionId === 'col-1');
       expect(updated?.name).toBe('Renamed');
       // Other collections unchanged
       expect(result.current.collections).toHaveLength(2);
@@ -257,7 +257,7 @@ describe('useCollections', () => {
         await result.current.setDefaultCollection('col-2');
       });
 
-      const newDefault = result.current.collections.find(c => c.collectionId === 'col-2');
+      const newDefault = result.current.collections.find((c) => c.collectionId === 'col-2');
       expect(newDefault?.isDefault).toBe(true);
     });
 
@@ -280,7 +280,7 @@ describe('useCollections', () => {
         await result.current.setDefaultCollection('col-2');
       });
 
-      const oldDefault = result.current.collections.find(c => c.collectionId === 'col-1');
+      const oldDefault = result.current.collections.find((c) => c.collectionId === 'col-1');
       expect(oldDefault?.isDefault).toBe(false);
     });
   });

@@ -17,10 +17,18 @@ export async function ageServerHeldAccessToken(sessionId: string): Promise<{ bef
   try {
     const key = `session-tokens:${sessionId}`;
     const raw = await redis.get(key);
-    if (!raw) throw new Error(`no server-held tokens for session ${sessionId} — is this the dev BFF's store?`);
+    if (!raw)
+      throw new Error(
+        `no server-held tokens for session ${sessionId} — is this the dev BFF's store?`,
+      );
     const record = JSON.parse(raw) as { accessExpiresAt: number };
     const ttl = await redis.ttl(key);
-    await redis.set(key, JSON.stringify({ ...record, accessExpiresAt: 0 }), 'EX', Math.max(ttl, 60));
+    await redis.set(
+      key,
+      JSON.stringify({ ...record, accessExpiresAt: 0 }),
+      'EX',
+      Math.max(ttl, 60),
+    );
     return { before: record.accessExpiresAt };
   } finally {
     redis.disconnect();

@@ -64,7 +64,10 @@ describe('IconButton', () => {
     const { getByTestId } = await renderDS(
       <IconButton icon={icon} label="Add" testID="icon-add" disabled onPress={() => {}} />,
     );
-    expect(getByTestId('icon-add').props.accessibilityState).toEqual({ disabled: true, selected: false });
+    expect(getByTestId('icon-add').props.accessibilityState).toEqual({
+      disabled: true,
+      selected: false,
+    });
   });
 });
 
@@ -134,7 +137,7 @@ describe('Tabs', () => {
     // see it. It is asserted in a real browser, in settings.spec.ts. Same division as the testID.
   });
 
-  it('colours the active label for CONTRAST against the secondary variant\'s filled pill', async () => {
+  it("colours the active label for CONTRAST against the secondary variant's filled pill", async () => {
     // The secondary indicator is a filled `secondaryContainer` pill drawn BEHIND the label, so
     // the active label must be `onSecondaryContainer`. It was `primary` — the same colour the
     // pill itself used to be — which rendered the active tab's text invisible inside it. This
@@ -149,7 +152,9 @@ describe('Tabs', () => {
     const secondaryActive = getSecondary('Profile').props.style;
     const primaryActive = getPrimary('Profile').props.style;
     const colourOf = (style: unknown): unknown =>
-      (Array.isArray(style) ? Object.assign({}, ...style.flat(Infinity).filter(Boolean)) : style as object)?.['color' as never];
+      (Array.isArray(style)
+        ? Object.assign({}, ...style.flat(Infinity).filter(Boolean))
+        : (style as object))?.['color' as never];
 
     // Different roles, so the two variants cannot silently converge on one colour again.
     expect(colourOf(secondaryActive)).toBeTruthy();
@@ -203,7 +208,10 @@ describe('Tabs', () => {
   it('renders tabs without a testID unchanged, so existing callers are unaffected', async () => {
     const { getByText, queryByTestId } = await renderDS(
       <Tabs
-        tabs={[{ key: 'a', label: 'Alpha' }, { key: 'b', label: 'Beta' }]}
+        tabs={[
+          { key: 'a', label: 'Alpha' },
+          { key: 'b', label: 'Beta' },
+        ]}
         activeKey="a"
         onTabChange={() => {}}
       />,
@@ -213,7 +221,6 @@ describe('Tabs', () => {
     expect(queryByTestId('undefined')).toBeNull();
   });
 });
-
 
 /**
  * NavList (feature 062 follow-up). The settings sub-navigation moved off `Tabs` because a
@@ -229,7 +236,9 @@ describe('NavList', () => {
   ];
 
   it('renders a row per item with its label', async () => {
-    const { getByText } = await renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+    const { getByText } = await renderDS(
+      <NavList items={ITEMS} activeKey="index" onSelect={() => {}} />,
+    );
     expect(getByText('Profile')).toBeTruthy();
     expect(getByText('Movie Assistant')).toBeTruthy();
     expect(getByText('Admin')).toBeTruthy();
@@ -238,7 +247,9 @@ describe('NavList', () => {
   it('puts each testID on a host node so automation can locate the row', async () => {
     // A testID on the Tamagui View inside would be dropped on React Native Web and be
     // unreachable from Playwright — the trap Tabs and Card both document.
-    const { getByTestId } = await renderDS(<NavList items={ITEMS} activeKey="index" onSelect={() => {}} />);
+    const { getByTestId } = await renderDS(
+      <NavList items={ITEMS} activeKey="index" onSelect={() => {}} />,
+    );
     for (const item of ITEMS) expect(getByTestId(item.testID!)).toBeTruthy();
   });
 
@@ -263,7 +274,12 @@ describe('NavList', () => {
 
   it('announces itself as a named menu', async () => {
     const { getByLabelText } = await renderDS(
-      <NavList items={ITEMS} activeKey="index" onSelect={() => {}} accessibilityLabel="Settings sections" />,
+      <NavList
+        items={ITEMS}
+        activeKey="index"
+        onSelect={() => {}}
+        accessibilityLabel="Settings sections"
+      />,
     );
     expect(getByLabelText('Settings sections')).toBeTruthy();
   });

@@ -53,7 +53,13 @@ describe('agent-config-store — integration (real Mongo)', () => {
   it('leaves a stored secret intact when a later upsert omits it (FR-014)', async () => {
     const userId = newUser();
     const enc = encryptSecret('keep-me', TEST_KEY);
-    await store.upsert(userId, { enabled: true, provider: 'ollama', ollamaBaseUrl: 'http://x', tmdbKeyEnc: enc, costLimitUsd: null });
+    await store.upsert(userId, {
+      enabled: true,
+      provider: 'ollama',
+      ollamaBaseUrl: 'http://x',
+      tmdbKeyEnc: enc,
+      costLimitUsd: null,
+    });
 
     // Change only a non-secret field; do NOT pass tmdbKeyEnc.
     await store.upsert(userId, { ollamaBaseUrl: 'http://updated' });

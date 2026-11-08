@@ -16,56 +16,44 @@
  *   </View>
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from './Text'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from './Text';
 
-export type BadgeColorScheme = 'error' | 'primary' | 'tertiary'
+export type BadgeColorScheme = 'error' | 'primary' | 'tertiary';
 
 export interface BadgeProps extends Omit<ViewProps, 'children'> {
-  count?:       number | string   // omit for dot badge
-  max?:         number            // truncates count to "max+" (default 99)
-  colorScheme?: BadgeColorScheme
+  count?: number | string; // omit for dot badge
+  max?: number; // truncates count to "max+" (default 99)
+  colorScheme?: BadgeColorScheme;
   // Position offsets from top-right of parent (default: straddles top-right corner)
-  top?:         number
-  right?:       number
+  top?: number;
+  right?: number;
   /**
    * Inline mode: render as a static in-flow status pill (no absolute anchoring, no offsets,
    * no white ring) instead of a notification badge anchored to a parent's top-right corner.
    * Use for non-interactive status labels (e.g. a "Default" tag). Default false.
    */
-  inline?:      boolean
+  inline?: boolean;
 }
 
 export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
-  {
-    count,
-    max         = 99,
-    colorScheme = 'error',
-    top         = -4,
-    right       = -4,
-    inline      = false,
-    ...rest
-  },
+  { count, max = 99, colorScheme = 'error', top = -4, right = -4, inline = false, ...rest },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   const colors: Record<BadgeColorScheme, { bg: string; fg: string }> = {
-    error:   { bg: theme.error?.val,   fg: theme.onError?.val   },
+    error: { bg: theme.error?.val, fg: theme.onError?.val },
     primary: { bg: theme.primary?.val, fg: theme.onPrimary?.val },
-    tertiary:{ bg: theme.tertiary?.val,fg: theme.onTertiary?.val},
-  }
-  const c = colors[colorScheme]
+    tertiary: { bg: theme.tertiary?.val, fg: theme.onTertiary?.val },
+  };
+  const c = colors[colorScheme];
 
-  const isDot   = count === undefined || count === null
-  const label   = isDot ? '' : (
-    typeof count === 'number' && count > max
-      ? `${max}+`
-      : String(count)
-  )
-  const isLong  = label.length > 2
-  const size    = isDot ? 6 : isLong ? 'auto' : 16
+  const isDot = count === undefined || count === null;
+  const label = isDot ? '' : typeof count === 'number' && count > max ? `${max}+` : String(count);
+  const isLong = label.length > 2;
+  const size = isDot ? 6 : isLong ? 'auto' : 16;
 
   return (
     <View
@@ -100,7 +88,7 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
         </Text>
       )}
     </View>
-  )
-})
+  );
+});
 
-Badge.displayName = 'MCM.Badge'
+Badge.displayName = 'MCM.Badge';

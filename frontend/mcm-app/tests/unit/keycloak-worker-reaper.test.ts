@@ -56,10 +56,10 @@ describe('selectReapableWorkerUsers', () => {
   it.each([
     ['e2e-test-user', 'the canonical E2E user — deleting it breaks every suite'],
     ['intreg_a1b2c3', 'a BFF integration-suite user'],
-    ['e2e-admin_9f2a1c0b4d', 'the admin specs\' own throwaway (hyphen prefix, not the worker mint)'],
+    ['e2e-admin_9f2a1c0b4d', "the admin specs' own throwaway (hyphen prefix, not the worker mint)"],
     ['e2e_worker_manual', 'a hand-made name that merely starts with the prefix'],
     ['e2e_w1', 'the prefix with no minted suffix'],
-    ['e2e_w1_ZZZZZZZZZZ', 'a suffix that is not the mint\'s 10 hex characters'],
+    ['e2e_w1_ZZZZZZZZZZ', "a suffix that is not the mint's 10 hex characters"],
     ['prod_e2e_w1_8f62eb384e', 'the minted shape embedded in a longer name'],
   ])('never reaps %s (%s)', (username) => {
     const reapable = selectReapableWorkerUsers(
@@ -85,10 +85,9 @@ describe('selectReapableWorkerUsers', () => {
     // Keycloak always sends createdTimestamp. If a version stopped, an age that cannot be
     // established must not read as "old enough" — that would silently turn the reaper into an
     // unconditional delete of every worker user in the realm, including a live run's.
-    const reapable = selectReapableWorkerUsers(
-      [{ id: '1', username: 'e2e_w1_8f62eb384e' }],
-      { now: NOW },
-    );
+    const reapable = selectReapableWorkerUsers([{ id: '1', username: 'e2e_w1_8f62eb384e' }], {
+      now: NOW,
+    });
     expect(reapable).toEqual([]);
   });
 

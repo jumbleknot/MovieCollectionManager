@@ -38,7 +38,8 @@ const bff = createBffClient();
 const JOBS = '/bff-api/backups/jobs';
 
 // The BFF container reaches the test RustFS by compose service name, not on loopback.
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
+const S3_ENDPOINT =
+  process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
@@ -81,16 +82,36 @@ beforeAll(async () => {
   destinationA = (await seedDestination(userA.userId)).id;
   destinationB = (await seedDestination(userB.userId)).id;
 
-  const created = await bff.post('/bff-api/collections', { name: `Jobs ${randomUUID().slice(0, 8)}` }, authA());
+  const created = await bff.post(
+    '/bff-api/collections',
+    { name: `Jobs ${randomUUID().slice(0, 8)}` },
+    authA(),
+  );
   collectionA = created.data.collectionId ?? created.data.id;
   await bff.post(
     `/bff-api/collections/${collectionA}/movies`,
     {
-      title: 'Jobs Movie', year: 2015, contentType: 'Movie', language: 'English',
-      owned: true, ripped: false, childrens: false, ownedMedia: [], ripQuality: [],
-      genres: ['Action'], rated: 'R', directors: [], actors: [], tags: [],
-      movieSet: null, originalTitle: null, releaseDate: null, outline: null, plot: null,
-      runtime: null, externalIds: [],
+      title: 'Jobs Movie',
+      year: 2015,
+      contentType: 'Movie',
+      language: 'English',
+      owned: true,
+      ripped: false,
+      childrens: false,
+      ownedMedia: [],
+      ripQuality: [],
+      genres: ['Action'],
+      rated: 'R',
+      directors: [],
+      actors: [],
+      tags: [],
+      movieSet: null,
+      originalTitle: null,
+      releaseDate: null,
+      outline: null,
+      plot: null,
+      runtime: null,
+      externalIds: [],
     },
     authA(),
   );
@@ -111,7 +132,13 @@ describeBackupTargets('the positive control — without this, every 404 below is
   it('user A creates and reads their OWN job (201 then 200)', async () => {
     const created = await bff.post(
       JOBS,
-      { destinationId: destinationA, label: 'nightly', collectionIds: [collectionA], keepLast: 7, enabled: true },
+      {
+        destinationId: destinationA,
+        label: 'nightly',
+        collectionIds: [collectionA],
+        keepLast: 7,
+        enabled: true,
+      },
       authA(),
     );
     expect(created.status).toBe(201);
@@ -146,7 +173,13 @@ describeBackupTargets('user B gets 404, never 403 (FR-034)', () => {
     // A's stored credential — so the destination is checked against the CALLER, never the body.
     const res = await bff.post(
       JOBS,
-      { destinationId: destinationA, label: 'borrowed', collectionIds: [], keepLast: 7, enabled: true },
+      {
+        destinationId: destinationA,
+        label: 'borrowed',
+        collectionIds: [],
+        keepLast: 7,
+        enabled: true,
+      },
       authB(),
     );
     expect(res.status).toBe(400);

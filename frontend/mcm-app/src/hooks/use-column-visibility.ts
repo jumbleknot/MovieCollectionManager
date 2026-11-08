@@ -40,7 +40,7 @@ export function useColumnVisibility(userId: string): UseColumnVisibilityResult {
   useEffect(() => {
     let cancelled = false;
     AsyncStorage.getItem(storageKey(userId))
-      .then(raw => {
+      .then((raw) => {
         if (cancelled) return;
         if (raw) {
           try {
@@ -48,7 +48,7 @@ export function useColumnVisibility(userId: string): UseColumnVisibilityResult {
             // year and contentType are always visible regardless of stored value (FR-019b)
             parsed.year = true;
             parsed.contentType = true;
-            setVisibleColumns(prev => ({ ...prev, ...parsed }));
+            setVisibleColumns((prev) => ({ ...prev, ...parsed }));
           } catch {
             // Corrupted storage — fall back to defaults silently
           }
@@ -58,16 +58,21 @@ export function useColumnVisibility(userId: string): UseColumnVisibilityResult {
       .catch(() => {
         if (!cancelled) setIsLoaded(true);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
-  const toggleColumn = useCallback((col: ColumnKey): void => {
-    setVisibleColumns(prev => {
-      const next = { ...prev, [col]: !prev[col] };
-      AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch(() => {});
-      return next;
-    });
-  }, [userId]);
+  const toggleColumn = useCallback(
+    (col: ColumnKey): void => {
+      setVisibleColumns((prev) => {
+        const next = { ...prev, [col]: !prev[col] };
+        AsyncStorage.setItem(storageKey(userId), JSON.stringify(next)).catch(() => {});
+        return next;
+      });
+    },
+    [userId],
+  );
 
   return { visibleColumns, toggleColumn, isLoaded };
 }

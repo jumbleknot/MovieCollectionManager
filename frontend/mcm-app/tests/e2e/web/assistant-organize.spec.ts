@@ -84,9 +84,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -104,32 +110,33 @@ test.describe('Assistant organize flow (feature 012, US2 / T048)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('multi-item remove → batch preview → approve removes exactly the planned movies', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `t048-org-${Date.now()}`;
-    const collectionId = await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
+  test(
+    'multi-item remove → batch preview → approve removes exactly the planned movies',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t048-org-${Date.now()}`;
+      const collectionId = await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
 
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `remove Zorgon and Quaffle from ${name}`);
+      await gotoHome(page);
+      await openDock(page);
+      await send(page, `remove Zorgon and Quaffle from ${name}`);
 
-    // The batch preview appears behind the approval gate — nothing removed yet.
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    expect(await movieTitles(request, collectionId)).toEqual(
-      new Set(['Zorgon', 'Blarnix', 'Quaffle']),
-    );
+      // The batch preview appears behind the approval gate — nothing removed yet.
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+      expect(await movieTitles(request, collectionId)).toEqual(
+        new Set(['Zorgon', 'Blarnix', 'Quaffle']),
+      );
 
-    await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'Done',
-      { timeout: DONE_TIMEOUT },
-    );
+      await page.click('[data-testid="approval-approve"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        'Done',
+        { timeout: DONE_TIMEOUT },
+      );
 
-    // Exactly the two planned movies are gone; the third remains (US2-AC2).
-    expect(await movieTitles(request, collectionId)).toEqual(new Set(['Blarnix']));
-  });
+      // Exactly the two planned movies are gone; the third remains (US2-AC2).
+      expect(await movieTitles(request, collectionId)).toEqual(new Set(['Blarnix']));
+    },
+  );
 });

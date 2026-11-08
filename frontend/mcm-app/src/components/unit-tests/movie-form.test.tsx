@@ -40,19 +40,14 @@ async function renderCreateForm(overrides: Record<string, unknown> = {}) {
   const onCancel = jest.fn();
 
   const utils = await render(
-    <MovieForm
-      mode="create"
-      onSubmit={onSubmit}
-      onCancel={onCancel}
-      {...overrides}
-    />
+    <MovieForm mode="create" onSubmit={onSubmit} onCancel={onCancel} {...overrides} />,
   );
   return { ...utils, onSubmit, onCancel };
 }
 
 async function renderEditForm(
   initialValues: Partial<Movie> = {},
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ) {
   const onSubmit = jest.fn().mockResolvedValue(undefined);
   const onCancel = jest.fn();
@@ -93,7 +88,7 @@ async function renderEditForm(
       onSubmit={onSubmit}
       onCancel={onCancel}
       {...overrides}
-    />
+    />,
   );
   return { ...utils, onSubmit, onCancel };
 }
@@ -338,7 +333,9 @@ describe('MovieForm — create mode', () => {
 
   describe('server error display', () => {
     it('shows server error banner when serverError prop is set', async () => {
-      const { getByTestId } = await renderCreateForm({ serverError: 'Movie already exists in this collection.' });
+      const { getByTestId } = await renderCreateForm({
+        serverError: 'Movie already exists in this collection.',
+      });
       expect(getByTestId('movie-form-server-error')).toBeTruthy();
     });
 
@@ -396,12 +393,16 @@ describe('MovieForm — external ID autofill suppression (TR28)', () => {
 
   it('ext-id-unique placeholder does not contain the word "id" (prevents Chrome identifier heuristic match)', async () => {
     const { getByTestId } = await renderCreateForm();
-    expect(getByTestId('movie-form-ext-id-unique-input').props.placeholder?.toLowerCase()).not.toMatch(/\bid\b/);
+    expect(
+      getByTestId('movie-form-ext-id-unique-input').props.placeholder?.toLowerCase(),
+    ).not.toMatch(/\bid\b/);
   });
 
   it('ext-id-unique accessibilityLabel does not contain "identifier" (prevents Chrome identifier heuristic match)', async () => {
     const { getByTestId } = await renderCreateForm();
-    expect(getByTestId('movie-form-ext-id-unique-input').props.accessibilityLabel?.toLowerCase()).not.toContain('identifier');
+    expect(
+      getByTestId('movie-form-ext-id-unique-input').props.accessibilityLabel?.toLowerCase(),
+    ).not.toContain('identifier');
   });
 });
 
@@ -445,7 +446,10 @@ describe('MovieForm — edit mode', () => {
   });
 
   it('shows server error banner when serverError prop is set in edit mode', async () => {
-    const { getByTestId } = await renderEditForm({}, { serverError: 'Update failed: validation error.' });
+    const { getByTestId } = await renderEditForm(
+      {},
+      { serverError: 'Update failed: validation error.' },
+    );
     expect(getByTestId('movie-form-server-error')).toBeTruthy();
   });
 });

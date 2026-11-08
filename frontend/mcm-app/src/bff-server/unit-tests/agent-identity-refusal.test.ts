@@ -40,7 +40,13 @@ jest.mock('@/bff-server/agent-thread-owner', () => ({
 }));
 jest.mock('@/bff-server/audit-sink', () => ({ audit: jest.fn() }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: jest.fn(), error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+  logger: {
+    audit: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 jest.mock('@/bff-server/cache-service', () => ({
   getAgentUiSnapshot: jest.fn(async () => null),
@@ -54,11 +60,17 @@ jest.mock('@/bff-server/agent-rate-limiter', () => ({
   recordEstimatedTurnCost: jest.fn(async () => undefined),
 }));
 
-const mockCreateMovieAssistantAgent = jest.fn((_options: { subjectToken?: string }) => ({ agent: true }));
-const mockResumeMovieAssistantRun = jest.fn(async (_options: { subjectToken?: string }) => new Response('{}'));
+const mockCreateMovieAssistantAgent = jest.fn((_options: { subjectToken?: string }) => ({
+  agent: true,
+}));
+const mockResumeMovieAssistantRun = jest.fn(
+  async (_options: { subjectToken?: string }) => new Response('{}'),
+);
 jest.mock('@/bff-server/agent-gateway-client', () => ({
-  createMovieAssistantAgent: (options: { subjectToken?: string }) => mockCreateMovieAssistantAgent(options),
-  resumeMovieAssistantRun: (options: { subjectToken?: string }) => mockResumeMovieAssistantRun(options),
+  createMovieAssistantAgent: (options: { subjectToken?: string }) =>
+    mockCreateMovieAssistantAgent(options),
+  resumeMovieAssistantRun: (options: { subjectToken?: string }) =>
+    mockResumeMovieAssistantRun(options),
 }));
 
 jest.mock('@copilotkit/runtime', () => ({
@@ -108,7 +120,11 @@ const ROUTES = [
 beforeEach(() => {
   jest.clearAllMocks();
   mockExchangeConfigured = true;
-  mockRequireAuth.mockResolvedValue({ user: member(), payload: { sub: 'user-uuid' }, accessToken: 'member-access-token' });
+  mockRequireAuth.mockResolvedValue({
+    user: member(),
+    payload: { sub: 'user-uuid' },
+    accessToken: 'member-access-token',
+  });
 });
 
 describe.each(ROUTES)('agent route — %s', (_label, call, gateway) => {

@@ -23,12 +23,27 @@ const uniqueTitle = () => `CntMovie_${randomUUID().replace(/-/g, '').slice(0, 12
 
 function movieBody(title: string, overrides: Record<string, unknown> = {}) {
   return {
-    title, year: 2015, contentType: 'Movie', language: 'English',
-    owned: true, ripped: false, childrens: false,
-    ownedMedia: [], ripQuality: [], genres: ['Action'], rated: 'R',
-    directors: [], actors: [], tags: [],
-    movieSet: null, originalTitle: null, releaseDate: null,
-    outline: null, plot: null, runtime: null, externalIds: [],
+    title,
+    year: 2015,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: false,
+    childrens: false,
+    ownedMedia: [],
+    ripQuality: [],
+    genres: ['Action'],
+    rated: 'R',
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: null,
+    externalIds: [],
     ...overrides,
   };
 }
@@ -44,7 +59,11 @@ describe('movie count proxy — integration (real BFF + mc-service)', () => {
     await assignRole(userA.userId, 'mc-user');
     tokenA = (await loginSession(userA.username, userA.password)).cookie;
 
-    const coll = await bff.post('/bff-api/collections', { name: `IntCntColl_${randomUUID().slice(0, 8)}` }, auth(tokenA));
+    const coll = await bff.post(
+      '/bff-api/collections',
+      { name: `IntCntColl_${randomUUID().slice(0, 8)}` },
+      auth(tokenA),
+    );
     collectionId = coll.data.collectionId;
 
     // Seed 3 movies: 2 contentType=Movie, 1 contentType=Series.
@@ -54,7 +73,8 @@ describe('movie count proxy — integration (real BFF + mc-service)', () => {
   });
 
   afterAll(async () => {
-    if (collectionId) await bff.delete(`/bff-api/collections/${collectionId}`, auth(tokenA)).catch(() => {});
+    if (collectionId)
+      await bff.delete(`/bff-api/collections/${collectionId}`, auth(tokenA)).catch(() => {});
     await deleteTestUser(userA?.userId);
   });
 

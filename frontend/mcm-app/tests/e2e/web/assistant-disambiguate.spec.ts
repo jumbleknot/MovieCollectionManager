@@ -96,19 +96,23 @@ async function seedCollection(
 async function movieTitles(request: APIRequestContext, collectionId: string): Promise<Set<string>> {
   const res = await request.get(`/bff-api/collections/${collectionId}/movies`);
   expect(res.ok()).toBeTruthy();
-  return new Set(
-    ((await res.json()).items ?? []).map((m: { title: string }) => m.title),
-  );
+  return new Set(((await res.json()).items ?? []).map((m: { title: string }) => m.title));
 }
 
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
     page
-      .waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 })
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
       .then(() => 'home' as const),
     page
-      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 })
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
       .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
@@ -151,93 +155,96 @@ test.describe('Assistant disambiguation correctness (feature 012, T082)', () => 
     await cleanupOwnedCollections(request);
   });
 
-  test('look-up disambiguation pick resolves the NON-FIRST (longer-title) option', { tag: '@model-decision' }, async ({
-    page,
-  }) => {
-    /**
-     * Bug-1 regression: picking "Avatar: The Way of Water" must NOT resolve to bare "Avatar"
-     * (2009). The fix in resolve_option sorts options by descending title length before the
-     * substring check, so the longer title matches first.
-     *
-     * This is an enrich-only flow (no collection, no write). The assistant shows the render_movie_card
-     * for the resolved film — we assert the card carries the 2022 title and year.
-     */
-    test.setTimeout(360_000);
+  test(
+    'look-up disambiguation pick resolves the NON-FIRST (longer-title) option',
+    { tag: '@model-decision' },
+    async ({ page }) => {
+      /**
+       * Bug-1 regression: picking "Avatar: The Way of Water" must NOT resolve to bare "Avatar"
+       * (2009). The fix in resolve_option sorts options by descending title length before the
+       * substring check, so the longer title matches first.
+       *
+       * This is an enrich-only flow (no collection, no write). The assistant shows the render_movie_card
+       * for the resolved film — we assert the card carries the 2022 title and year.
+       */
+      test.setTimeout(360_000);
 
-    await gotoHome(page);
-    await openDock(page);
+      await gotoHome(page);
+      await openDock(page);
 
-    // Turn 1: ambiguous title → assistant offers matches (no approval card yet). "tell me about"
-    // stays enrich → curator disambiguation (013 Bug 2 routed "look up X" to the search workflow).
-    await send(page, `tell me about ${AMBIGUOUS_TITLE}`);
-    const lastMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
-    // The assistant should list the options mentioning "Avatar: The Way of Water".
-    await expect(lastMsg).toContainText('Avatar', { timeout: OFFER_TIMEOUT });
-    // No write proposed yet.
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+      // Turn 1: ambiguous title → assistant offers matches (no approval card yet). "tell me about"
+      // stays enrich → curator disambiguation (013 Bug 2 routed "look up X" to the search workflow).
+      await send(page, `tell me about ${AMBIGUOUS_TITLE}`);
+      const lastMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
+      // The assistant should list the options mentioning "Avatar: The Way of Water".
+      await expect(lastMsg).toContainText('Avatar', { timeout: OFFER_TIMEOUT });
+      // No write proposed yet.
+      await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
 
-    // Turn 2: pick the NON-FIRST option by full title → curator resolves it deterministically
-    // (resolve_option step-2: longest-title-first substring match). No model needed for the pick.
-    await send(page, EXPECTED_PICK_TITLE);
+      // Turn 2: pick the NON-FIRST option by full title → curator resolves it deterministically
+      // (resolve_option step-2: longest-title-first substring match). No model needed for the pick.
+      await send(page, EXPECTED_PICK_TITLE);
 
-    // The render_movie_card for the resolved film appears.
-    const card = page.locator('[data-testid="render-movie-card"]').last();
-    await expect(card).toBeVisible({ timeout: CARD_TIMEOUT });
+      // The render_movie_card for the resolved film appears.
+      const card = page.locator('[data-testid="render-movie-card"]').last();
+      await expect(card).toBeVisible({ timeout: CARD_TIMEOUT });
 
-    // KEY assertion (bug-1 regression): the card shows "Avatar: The Way of Water" (2022),
-    // NOT bare "Avatar" (2009).
-    const cardTitle = card.locator('[data-testid="render-movie-card-title"]');
-    await expect(cardTitle).toContainText(EXPECTED_PICK_TITLE);
-    const cardYear = card.locator('[data-testid="render-movie-card-year"]');
-    await expect(cardYear).toContainText(EXPECTED_PICK_YEAR);
+      // KEY assertion (bug-1 regression): the card shows "Avatar: The Way of Water" (2022),
+      // NOT bare "Avatar" (2009).
+      const cardTitle = card.locator('[data-testid="render-movie-card-title"]');
+      await expect(cardTitle).toContainText(EXPECTED_PICK_TITLE);
+      const cardYear = card.locator('[data-testid="render-movie-card-year"]');
+      await expect(cardYear).toContainText(EXPECTED_PICK_YEAR);
 
-    // Enrich-only: no approval card, no write (the assistant does not ask to add to a collection).
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
-  });
+      // Enrich-only: no approval card, no write (the assistant does not ask to add to a collection).
+      await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+    },
+  );
 
-  test('move "Title (Year)" resolves and moves the correct film across collections', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    /**
-     * Bug-2 regression: a year-qualified title in a move command ("Avatar (2009)") must use the
-     * year to disambiguate and arrive at the correct movie. The organizer's title resolution
-     * (resolve_option step-1: year match) must handle the "(YYYY)" suffix form so the user can
-     * unambiguously refer to the 2009 film in a collection that also might contain others.
-     *
-     * Seed a source collection with a seeded "Avatar" (year 2009) and an empty dest.
-     * Send the move command, approve the preview, assert the movie crossed collections.
-     */
-    test.setTimeout(360_000);
-    const ts = Date.now();
-    const srcName = `t082-mv-src-${ts}`;
-    const dstName = `t082-mv-dst-${ts}`;
-    const srcId = await seedCollection(request, srcName, [{ title: 'Avatar', year: 2009 }]);
-    const dstId = await seedCollection(request, dstName, []);
+  test(
+    'move "Title (Year)" resolves and moves the correct film across collections',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      /**
+       * Bug-2 regression: a year-qualified title in a move command ("Avatar (2009)") must use the
+       * year to disambiguate and arrive at the correct movie. The organizer's title resolution
+       * (resolve_option step-1: year match) must handle the "(YYYY)" suffix form so the user can
+       * unambiguously refer to the 2009 film in a collection that also might contain others.
+       *
+       * Seed a source collection with a seeded "Avatar" (year 2009) and an empty dest.
+       * Send the move command, approve the preview, assert the movie crossed collections.
+       */
+      test.setTimeout(360_000);
+      const ts = Date.now();
+      const srcName = `t082-mv-src-${ts}`;
+      const dstName = `t082-mv-dst-${ts}`;
+      const srcId = await seedCollection(request, srcName, [{ title: 'Avatar', year: 2009 }]);
+      const dstId = await seedCollection(request, dstName, []);
 
-    await gotoHome(page);
-    await openDock(page);
+      await gotoHome(page);
+      await openDock(page);
 
-    // Explicitly name both collections so the organizer doesn't have to guess.
-    await send(page, `move Avatar (2009) from ${srcName} to ${dstName}`);
+      // Explicitly name both collections so the organizer doesn't have to guess.
+      await send(page, `move Avatar (2009) from ${srcName} to ${dstName}`);
 
-    // The organizer plans the move and the approval gate shows the preview (FR-007 — nothing moves
-    // before approval).
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    // Pre-approval: movie still in source.
-    expect(await movieTitles(request, srcId)).toEqual(new Set(['Avatar']));
-    expect(await movieTitles(request, dstId)).toEqual(new Set());
+      // The organizer plans the move and the approval gate shows the preview (FR-007 — nothing moves
+      // before approval).
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+      // Pre-approval: movie still in source.
+      expect(await movieTitles(request, srcId)).toEqual(new Set(['Avatar']));
+      expect(await movieTitles(request, dstId)).toEqual(new Set());
 
-    // Approve → add-to-dest then remove-from-source (Operation.move).
-    await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      'Done',
-      { timeout: DONE_TIMEOUT },
-    );
+      // Approve → add-to-dest then remove-from-source (Operation.move).
+      await page.click('[data-testid="approval-approve"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        'Done',
+        { timeout: DONE_TIMEOUT },
+      );
 
-    // Post-approval: movie has crossed collections (US2-AC2).
-    expect(await movieTitles(request, srcId)).toEqual(new Set());
-    expect(await movieTitles(request, dstId)).toEqual(new Set(['Avatar']));
-  });
+      // Post-approval: movie has crossed collections (US2-AC2).
+      expect(await movieTitles(request, srcId)).toEqual(new Set());
+      expect(await movieTitles(request, dstId)).toEqual(new Set(['Avatar']));
+    },
+  );
 });

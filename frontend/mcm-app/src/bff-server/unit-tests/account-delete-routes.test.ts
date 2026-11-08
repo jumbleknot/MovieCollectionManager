@@ -65,7 +65,9 @@ jest.mock('@/bff-server/logger', () => ({
     // Wrapped, not passed directly: jest.mock factories are hoisted above the const, so a
     // direct reference captures the TDZ value and logger.audit is undefined at call time.
     audit: (...a: unknown[]) => mockAudit(...a),
-    error: jest.fn(), warn: jest.fn(), info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
   },
 }));
 
@@ -74,8 +76,13 @@ import { GET as callback } from '@/app/bff-api/account/delete+api';
 
 function user(roles: ClientRole[] = [ClientRole.MCUser]): UserProfile {
   return {
-    id: 'user-1', username: 'u', email: 'u@example.invalid',
-    firstName: 'U', lastName: 'U', roles, emailVerified: true,
+    id: 'user-1',
+    username: 'u',
+    email: 'u@example.invalid',
+    firstName: 'U',
+    lastName: 'U',
+    roles,
+    emailVerified: true,
   } as UserProfile;
 }
 
@@ -95,7 +102,9 @@ beforeEach(() => {
   mockCountAdmins.mockResolvedValue(3);
   mockBuild.mockResolvedValue({
     authorizationUrl: 'http://kc/auth?x=1',
-    state: 'st', codeVerifier: 'vf', redirectUri: `${ORIGIN}/bff-api/account/delete`,
+    state: 'st',
+    codeVerifier: 'vf',
+    redirectUri: `${ORIGIN}/bff-api/account/delete`,
   });
   mockVerify.mockResolvedValue({ ok: true, accessToken: 'at', refreshToken: 'rt' });
   mockRun.mockResolvedValue({ collectionsDeleted: 2 });
@@ -142,24 +151,34 @@ describe('POST /bff-api/account/delete-challenge', () => {
   it('audits the request', async () => {
     await challenge(challengeReq());
 
-    expect(mockAudit).toHaveBeenCalledWith('account_deletion_requested',
-      expect.objectContaining({ userId: 'user-1' }));
+    expect(mockAudit).toHaveBeenCalledWith(
+      'account_deletion_requested',
+      expect.objectContaining({ userId: 'user-1' }),
+    );
   });
 
   it('refuses the last remaining administrator with 409', async () => {
-    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]), payload: {} });
+    mockRequireAuth.mockResolvedValue({
+      user: user([ClientRole.MCUser, ClientRole.MCAdmin]),
+      payload: {},
+    });
     mockCountAdmins.mockResolvedValue(1);
 
     const res = await challenge(challengeReq());
 
     expect(res.status).toBe(409);
     expect(mockSetPending).not.toHaveBeenCalled();
-    expect(mockAudit).toHaveBeenCalledWith('account_deletion_refused_last_admin',
-      expect.objectContaining({ userId: 'user-1' }));
+    expect(mockAudit).toHaveBeenCalledWith(
+      'account_deletion_refused_last_admin',
+      expect.objectContaining({ userId: 'user-1' }),
+    );
   });
 
   it('allows an administrator who is not the last one', async () => {
-    mockRequireAuth.mockResolvedValue({ user: user([ClientRole.MCUser, ClientRole.MCAdmin]), payload: {} });
+    mockRequireAuth.mockResolvedValue({
+      user: user([ClientRole.MCUser, ClientRole.MCAdmin]),
+      payload: {},
+    });
     mockCountAdmins.mockResolvedValue(2);
 
     expect((await challenge(challengeReq())).status).toBe(200);
@@ -211,8 +230,10 @@ describe('GET /bff-api/account/delete', () => {
 
     await callback(callbackReq('code=c&state=st'));
 
-    expect(mockAudit).toHaveBeenCalledWith('account_deletion_reauth_rejected',
-      expect.objectContaining({ userId: 'user-1', reason: 'subject_mismatch' }));
+    expect(mockAudit).toHaveBeenCalledWith(
+      'account_deletion_reauth_rejected',
+      expect.objectContaining({ userId: 'user-1', reason: 'subject_mismatch' }),
+    );
   });
 
   it('redirects with error=expired when no request is pending', async () => {

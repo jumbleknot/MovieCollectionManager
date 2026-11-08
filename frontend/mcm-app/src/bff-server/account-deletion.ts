@@ -185,7 +185,8 @@ export async function runAccountDeletion(
   try {
     await at('tearDownUserBackups', () => steps.tearDownUserBackups(userId));
     const collectionsDeleted = await at('deleteCollections', () =>
-      steps.deleteCollections(userId, accessToken));
+      steps.deleteCollections(userId, accessToken),
+    );
     await at('removeAgentConfig', () => steps.removeAgentConfig(userId));
     await at('clearTransientState', () => steps.clearTransientState(userId));
     await at('terminateSessions', () => steps.terminateSessions(userId));

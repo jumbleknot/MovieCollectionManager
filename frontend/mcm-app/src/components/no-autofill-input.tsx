@@ -76,16 +76,13 @@ export type NoAutoFillInputProps = TextInputProps & {
 // data-* keys are string-typed and need no ts-expect-error since Record<string, string>
 // accepts any string key.  The cast to `any` in the spread is on the call site.
 const WEB_PM_IGNORES: Record<string, string> = {
-  'data-form-type': 'other',    // Dashlane
-  'data-lpignore': 'true',      // LastPass
-  'data-1p-ignore': '',         // 1Password
-  'data-bwignore': 'true',      // Bitwarden
+  'data-form-type': 'other', // Dashlane
+  'data-lpignore': 'true', // LastPass
+  'data-1p-ignore': '', // 1Password
+  'data-bwignore': 'true', // Bitwarden
 };
 
-export function NoAutoFillInput({
-  webName,
-  ...props
-}: NoAutoFillInputProps): React.JSX.Element {
+export function NoAutoFillInput({ webName, ...props }: NoAutoFillInputProps): React.JSX.Element {
   const inputRef = useRef<TextInputInstance>(null);
 
   // RNW's TextInput does not forward unknown props (like `name`) to the

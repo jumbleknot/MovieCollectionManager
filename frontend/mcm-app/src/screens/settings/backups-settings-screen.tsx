@@ -15,7 +15,16 @@
 import React, { useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Banner, Text } from '@mcm/design-system';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  FilledButton,
+  TextButton,
+  Banner,
+  Text,
+} from '@mcm/design-system';
 
 import { DestinationForm } from '@/components/backups/destination-form';
 import { DestinationList } from '@/components/backups/destination-list';
@@ -27,11 +36,18 @@ import { useBackupDestinations, type DestinationDraft } from '@/hooks/use-backup
 import { useBackupJobs, type JobDraft, type JobView } from '@/hooks/use-backup-jobs';
 import { useBackupConsent } from '@/hooks/use-backup-consent';
 import { useCollections } from '@/hooks/use-collections';
-import type { BackupDestinationView, BackupTestResult, BackupVersion, RunSummary, Schedule } from '@/types/backups';
+import type {
+  BackupDestinationView,
+  BackupTestResult,
+  BackupVersion,
+  RunSummary,
+  Schedule,
+} from '@/types/backups';
 
 export function BackupsSettingsScreen(): React.JSX.Element {
   const theme = useTheme();
-  const { destinations, loading, busy, error, create, update, remove, test } = useBackupDestinations();
+  const { destinations, loading, busy, error, create, update, remove, test } =
+    useBackupDestinations();
   const jobs = useBackupJobs();
   const consent = useBackupConsent();
   const { collections } = useCollections();
@@ -94,8 +110,8 @@ export function BackupsSettingsScreen(): React.JSX.Element {
             letterSpacing={0.25}
             color={theme.onSurfaceVariant?.val}
           >
-            Back up your collections to storage you control. MCM writes the backup and keeps no
-            copy of it, so you can read or restore it without depending on this system.
+            Back up your collections to storage you control. MCM writes the backup and keeps no copy
+            of it, so you can read or restore it without depending on this system.
           </Text>
         </CardContent>
       </Card>
@@ -200,7 +216,12 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                   Loading your backups…
                 </Text>
               ) : jobs.jobs.length === 0 ? (
-                <Text fontFamily="body" fontSize={14} lineHeight="20px" color={theme.onSurfaceVariant?.val}>
+                <Text
+                  fontFamily="body"
+                  fontSize={14}
+                  lineHeight="20px"
+                  color={theme.onSurfaceVariant?.val}
+                >
                   No backups set up yet. Add a destination above, then create one here.
                 </Text>
               ) : (
@@ -239,7 +260,9 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                           <TextButton
                             label={openJobId === job.id ? 'Hide versions' : 'Versions'}
                             disabled={jobs.busy}
-                            onPress={() => (openJobId === job.id ? setOpenJobId(null) : openJob(job))}
+                            onPress={() =>
+                              openJobId === job.id ? setOpenJobId(null) : openJob(job)
+                            }
                             testID={`backup-job-versions-${job.id}`}
                           />
                           <TextButton
@@ -282,7 +305,9 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                             }}
                             onRevokeConsent={async () => {
                               if (await consent.revoke()) {
-                                setNotice('Scheduled backups are switched off and the permission has been withdrawn.');
+                                setNotice(
+                                  'Scheduled backups are switched off and the permission has been withdrawn.',
+                                );
                                 await jobs.reload();
                               }
                             }}
@@ -306,7 +331,9 @@ export function BackupsSettingsScreen(): React.JSX.Element {
                                 if (outcome) {
                                   setNotice(
                                     `Restored ${outcome.movieCount} movies into ${outcome.createdCollectionIds.length} new collection(s).` +
-                                      (outcome.partial ? ' Some records could not be restored.' : ''),
+                                      (outcome.partial
+                                        ? ' Some records could not be restored.'
+                                        : ''),
                                   );
                                 }
                               }}

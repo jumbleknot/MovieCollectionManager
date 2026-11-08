@@ -25,7 +25,12 @@ export default function AuthCallback(): React.JSX.Element {
   const theme = useTheme();
   return (
     <View
-      style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background?.val }}
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.background?.val,
+      }}
     >
       <ActivityIndicator size="large" color={theme.primary?.val} />
     </View>

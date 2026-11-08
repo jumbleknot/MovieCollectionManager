@@ -15,7 +15,10 @@
  * authorization URL inside the jar the member signed in with.
  */
 import * as offlineToken from '@/bff-server/backup-offline-token';
-import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
+import {
+  mintSubjectToken,
+  isSubjectTokenExchangeConfigured,
+} from '@/bff-server/agent-subject-token';
 import { closeMongo, getAgentConfigCollection } from '@/bff-server/mongo-client';
 import { createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
 import {
@@ -26,7 +29,9 @@ import {
 } from './helpers/offline-token-flow';
 
 const CREDS_PRESENT = Boolean(
-  process.env.KEYCLOAK_CLIENT_SECRET && process.env.E2E_TEST_PASSWORD && isSubjectTokenExchangeConfigured(),
+  process.env.KEYCLOAK_CLIENT_SECRET &&
+  process.env.E2E_TEST_PASSWORD &&
+  isSubjectTokenExchangeConfigured(),
 );
 if (!CREDS_PRESENT && process.env.MCM_REQUIRE_LIVE_STACK === '1') {
   throw new Error(
@@ -41,7 +46,10 @@ jest.setTimeout(60_000);
 const CONSENT_REDIRECT_URI = 'http://localhost:8082/bff-api/backups/consent';
 
 function claims(jwt: string): Record<string, unknown> {
-  return JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()) as Record<string, unknown>;
+  return JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()) as Record<
+    string,
+    unknown
+  >;
 }
 
 /** The credentials of whichever client a refresh token was issued to — its `azp`. */
@@ -49,7 +57,10 @@ function issuingClient(refreshToken: string): { id: string; secret: string } {
   const id = String(claims(refreshToken).azp);
   const loginId = process.env.KEYCLOAK_CLIENT_ID ?? 'movie-collection-manager';
   const loginSecret = process.env.KEYCLOAK_CLIENT_SECRET ?? '';
-  return { id, secret: id === loginId ? loginSecret : process.env.BACKUP_CONSENT_CLIENT_SECRET || loginSecret };
+  return {
+    id,
+    secret: id === loginId ? loginSecret : process.env.BACKUP_CONSENT_CLIENT_SECRET || loginSecret,
+  };
 }
 
 describeLive('revoking backup consent leaves the sign-in session alive (#702)', () => {
@@ -69,7 +80,12 @@ describeLive('revoking backup consent leaves the sign-in session alive (#702)', 
     // The consent round trip exactly as the BFF drives it, inside the member's own browser jar.
     const consent = await offlineToken.buildConsentRequest(CONSENT_REDIRECT_URI);
     const code = await followAuthorize(session.jar, consent.authorizationUrl);
-    await offlineToken.completeConsent(user.userId, code, consent.codeVerifier, CONSENT_REDIRECT_URI);
+    await offlineToken.completeConsent(
+      user.userId,
+      code,
+      consent.codeVerifier,
+      CONSENT_REDIRECT_URI,
+    );
   });
 
   afterAll(async () => {

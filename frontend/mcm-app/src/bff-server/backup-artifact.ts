@@ -121,7 +121,12 @@ export function decompressArtifact(compressed: Buffer): BackupArtifact {
  * object — gets hashed before anyone asks whether this code understands it.
  */
 export function verifyArtifact(artifact: BackupArtifact): void {
-  if (!artifact || typeof artifact !== 'object' || !artifact.manifest || !Array.isArray(artifact.collections)) {
+  if (
+    !artifact ||
+    typeof artifact !== 'object' ||
+    !artifact.manifest ||
+    !Array.isArray(artifact.collections)
+  ) {
     throw new ArtifactVerificationError('That backup is not readable as a backup file');
   }
   const { manifest, collections } = artifact;

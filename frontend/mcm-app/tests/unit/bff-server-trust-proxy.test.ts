@@ -60,7 +60,8 @@ async function boot(extraEnv: Record<string, string>): Promise<Server> {
   child.stderr?.on('data', (c: Buffer) => (output += c.toString()));
   const deadline = Date.now() + 15_000;
   while (!output.includes('MCM BFF listening')) {
-    if (child.exitCode !== null) throw new Error(`server.js exited with ${child.exitCode}:\n${output}`);
+    if (child.exitCode !== null)
+      throw new Error(`server.js exited with ${child.exitCode}:\n${output}`);
     if (Date.now() > deadline) throw new Error(`server.js did not start within 15 s:\n${output}`);
     await new Promise((r) => setTimeout(r, 50));
   }
@@ -103,13 +104,15 @@ describe('behind the proxy (TRUSTED_PROXY=true, as production runs)', () => {
   afterAll(() => stop(server));
 
   it('takes the public scheme from X-Forwarded-Proto', async () => {
-    await expect(urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' })).resolves.toBe(
-      `https://mcm.example.test${ROUTE}`,
-    );
+    await expect(
+      urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' }),
+    ).resolves.toBe(`https://mcm.example.test${ROUTE}`);
   });
 
   it('keeps http when the proxy says nothing', async () => {
-    await expect(urlSeen(server, { host: 'mcm.example.test' })).resolves.toBe(`http://mcm.example.test${ROUTE}`);
+    await expect(urlSeen(server, { host: 'mcm.example.test' })).resolves.toBe(
+      `http://mcm.example.test${ROUTE}`,
+    );
   });
 
   it('never takes the host from X-Forwarded-Host', async () => {
@@ -131,8 +134,8 @@ describe('without a trusted proxy (TRUSTED_PROXY unset)', () => {
   afterAll(() => stop(server));
 
   it('ignores a client-supplied X-Forwarded-Proto', async () => {
-    await expect(urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' })).resolves.toBe(
-      `http://mcm.example.test${ROUTE}`,
-    );
+    await expect(
+      urlSeen(server, { host: 'mcm.example.test', 'x-forwarded-proto': 'https' }),
+    ).resolves.toBe(`http://mcm.example.test${ROUTE}`);
   });
 });

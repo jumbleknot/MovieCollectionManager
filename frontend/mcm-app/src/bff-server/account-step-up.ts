@@ -121,11 +121,7 @@ export function buildNativeStepUpRequest(): {
  * no message from Keycloak can leak into the audit stream.
  */
 export type StepUpRejectionReason =
-  | 'no_pending'
-  | 'state_mismatch'
-  | 'subject_mismatch'
-  | 'missing_auth_time'
-  | 'stale_auth';
+  'no_pending' | 'state_mismatch' | 'subject_mismatch' | 'missing_auth_time' | 'stale_auth';
 
 export type StepUpVerification =
   | { ok: true; accessToken: string; refreshToken: string }

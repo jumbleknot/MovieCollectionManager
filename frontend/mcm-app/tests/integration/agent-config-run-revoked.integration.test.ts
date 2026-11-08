@@ -59,7 +59,9 @@ const describeOrSkip = configured ? describe : describe.skip;
 const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? 'http://localhost:8123';
 async function isGatewayReachable(url: string): Promise<boolean> {
   try {
-    const res = await fetch(`${url.replace(/\/+$/, '')}/health`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${url.replace(/\/+$/, '')}/health`, {
+      signal: AbortSignal.timeout(3000),
+    });
     return res.ok;
   } catch {
     return false;
@@ -96,8 +98,16 @@ describeOrSkip('revoked credential at run time (real Mongo + live gateway)', () 
       enabled: true,
       provider: 'anthropic',
       ollamaBaseUrl: null,
-      anthropicKeyEnc: encryptSecret(ANTHROPIC_MARKER, env.agentConfigEncKey, secretAad(user.userId, 'anthropicKey')),
-      tmdbKeyEnc: encryptSecret(TMDB_MARKER, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
+      anthropicKeyEnc: encryptSecret(
+        ANTHROPIC_MARKER,
+        env.agentConfigEncKey,
+        secretAad(user.userId, 'anthropicKey'),
+      ),
+      tmdbKeyEnc: encryptSecret(
+        TMDB_MARKER,
+        env.agentConfigEncKey,
+        secretAad(user.userId, 'tmdbKey'),
+      ),
       costLimitUsd: null,
       updatedAt: new Date().toISOString(),
     });
@@ -113,7 +123,9 @@ describeOrSkip('revoked credential at run time (real Mongo + live gateway)', () 
 
   it('fails user-safe and leaks no secret when the stored credential is invalid', async () => {
     if (!gatewayReachable) {
-      console.warn(`SKIP: gateway not reachable at ${GATEWAY_URL} (BFF-fronted in app-e2e, not host-published)`);
+      console.warn(
+        `SKIP: gateway not reachable at ${GATEWAY_URL} (BFF-fronted in app-e2e, not host-published)`,
+      );
       return;
     }
     // resolveForRun returns the decrypted (revoked) creds — runnable per isRunnable (enabled +
@@ -124,9 +136,7 @@ describeOrSkip('revoked credential at run time (real Mongo + live gateway)', () 
 
     const { token: subjectToken } = await mintSubjectToken(userAccessToken);
     const agent = createMovieAssistantAgent({ agentConfig: runConfig!, subjectToken });
-    agent.messages = [
-      { id: 'u1', role: 'user', content: 'How many movies are in my collection?' },
-    ];
+    agent.messages = [{ id: 'u1', role: 'user', content: 'How many movies are in my collection?' }];
 
     // Capture every streamed event so we can scan the entire user-facing surface for a leak.
     const events: unknown[] = [];
@@ -180,8 +190,19 @@ describeOrSkip('revoked credential at run time (real Mongo + live gateway)', () 
     // key-shaped token, stack trace, or upstream URL) — only a safe, generic message.
     const lowered = assistantText.toLowerCase();
     for (const internal of [
-      'anthropic', 'api_key', 'api-key', 'x-api-key', 'sk-ant', '401', 'unauthorized',
-      'traceback', 'exception', 'httpx', 'econnrefused', 'http://', 'https://',
+      'anthropic',
+      'api_key',
+      'api-key',
+      'x-api-key',
+      'sk-ant',
+      '401',
+      'unauthorized',
+      'traceback',
+      'exception',
+      'httpx',
+      'econnrefused',
+      'http://',
+      'https://',
     ]) {
       expect(lowered).not.toContain(internal);
     }

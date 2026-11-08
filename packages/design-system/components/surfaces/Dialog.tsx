@@ -21,22 +21,22 @@
  *   />
  */
 
-import React from 'react'
-import { Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { YStack, XStack } from '@tamagui/stacks'
+import React from 'react';
+import { Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { YStack, XStack } from '@tamagui/stacks';
 
 export interface DialogProps {
-  visible:        boolean
-  title:          string
-  supportingText?: string
-  icon?:          React.ReactNode
-  children?:      React.ReactNode  // custom content below title
-  actions:        React.ReactNode[] | React.ReactNode
-  onDismiss?:     () => void       // called on scrim press
-  dismissible?:   boolean          // allow scrim dismiss (default true)
-  testID?:        string           // forwarded to the dialog container (for E2E selectors)
+  visible: boolean;
+  title: string;
+  supportingText?: string;
+  icon?: React.ReactNode;
+  children?: React.ReactNode; // custom content below title
+  actions: React.ReactNode[] | React.ReactNode;
+  onDismiss?: () => void; // called on scrim press
+  dismissible?: boolean; // allow scrim dismiss (default true)
+  testID?: string; // forwarded to the dialog container (for E2E selectors)
 }
 
 export const Dialog = React.memo<DialogProps>(function Dialog({
@@ -50,7 +50,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
   dismissible = true,
   testID,
 }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   // The scrim is a sibling BEHIND the dialog (lower in the stack); the dialog container carries
   // zIndex so its actions stay clickable on web (feature 017 fix — a wrapping KeyboardAvoidingView
@@ -63,7 +63,10 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         backgroundColor={theme.scrim?.val}
         opacity={0.32}
         position="absolute"
-        top={0} right={0} bottom={0} left={0}
+        top={0}
+        right={0}
+        bottom={0}
+        left={0}
         onPress={dismissible ? onDismiss : undefined}
       />
 
@@ -72,10 +75,10 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         testID={testID}
         zIndex={1}
         backgroundColor={theme.surface3?.val}
-        borderRadius={28}  // MD3 extraLarge
+        borderRadius={28} // MD3 extraLarge
         maxWidth={560}
         width="100%"
-        maxHeight="100%"   // never exceed the (padded) overlay; long content scrolls instead
+        maxHeight="100%" // never exceed the (padded) overlay; long content scrolls instead
         overflow="hidden"
         // MD3 elevation 3
         shadowColor={theme.shadow?.val}
@@ -86,73 +89,69 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         // forwards it on Android at runtime, so this renders exactly as the prop did).
         style={{ elevation: 6 }}
       >
-          {/* Scrollable content region — title/supporting/children scroll; the divider + actions
+        {/* Scrollable content region — title/supporting/children scroll; the divider + actions
               row below stay pinned so the buttons are always reachable even with long content. */}
-          <ScrollView style={{ flexShrink: 1 }} bounces={false}>
-            {/* Icon (optional, centered) */}
-            {icon && (
-              <View alignItems="center" paddingTop={24} paddingBottom={16}>
-                {icon}
-              </View>
-            )}
+        <ScrollView style={{ flexShrink: 1 }} bounces={false}>
+          {/* Icon (optional, centered) */}
+          {icon && (
+            <View alignItems="center" paddingTop={24} paddingBottom={16}>
+              {icon}
+            </View>
+          )}
 
-            {/* Title */}
-            <View
-              paddingHorizontal={24}
-              paddingTop={icon ? 0 : 24}
-              paddingBottom={16}
+          {/* Title */}
+          <View paddingHorizontal={24} paddingTop={icon ? 0 : 24} paddingBottom={16}>
+            <Text
+              fontFamily="heading"
+              fontSize={24}
+              fontWeight="400"
+              lineHeight="32px"
+              color={theme.onSurface?.val}
+              textAlign={icon ? 'center' : 'left'}
             >
+              {title}
+            </Text>
+          </View>
+
+          {/* Supporting text */}
+          {supportingText && (
+            <View paddingHorizontal={24} paddingBottom={16}>
               <Text
-                fontFamily="heading"
-                fontSize={24}
-                fontWeight="400"
-                lineHeight="32px"
-                color={theme.onSurface?.val}
-                textAlign={icon ? 'center' : 'left'}
+                fontFamily="body"
+                fontSize={14}
+                letterSpacing={0.25}
+                lineHeight="20px"
+                color={theme.onSurfaceVariant?.val}
               >
-                {title}
+                {supportingText}
               </Text>
             </View>
+          )}
 
-            {/* Supporting text */}
-            {supportingText && (
-              <View paddingHorizontal={24} paddingBottom={16}>
-                <Text
-                  fontFamily="body"
-                  fontSize={14}
-                  letterSpacing={0.25}
-                  lineHeight="20px"
-                  color={theme.onSurfaceVariant?.val}
-                >
-                  {supportingText}
-                </Text>
-              </View>
-            )}
+          {/* Custom content */}
+          {children && (
+            <View paddingHorizontal={24} paddingBottom={16}>
+              {children}
+            </View>
+          )}
+        </ScrollView>
 
-            {/* Custom content */}
-            {children && (
-              <View paddingHorizontal={24} paddingBottom={16}>
-                {children}
-              </View>
-            )}
-          </ScrollView>
+        {/* Divider */}
+        <View height={1} backgroundColor={theme.outlineVariant?.val} />
 
-          {/* Divider */}
-          <View height={1} backgroundColor={theme.outlineVariant?.val} />
-
-          {/* Actions */}
-          <XStack
-            paddingHorizontal={16}
-            paddingVertical={16}
-            justifyContent="flex-end"
-            gap={8}
-            flexWrap="wrap"
-          >
-            {Array.isArray(actions) ? actions : [actions]}
-          </XStack>
+        {/* Actions */}
+        <XStack
+          paddingHorizontal={16}
+          paddingVertical={16}
+          justifyContent="flex-end"
+          gap={8}
+          flexWrap="wrap"
+        >
+          {Array.isArray(actions) ? actions : [actions]}
+        </XStack>
       </YStack>
     </View>
-  )
+  );
 
   return (
     <Modal
@@ -173,7 +172,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         </KeyboardAvoidingView>
       )}
     </Modal>
-  )
-})
+  );
+});
 
-Dialog.displayName = 'MCM.Dialog'
+Dialog.displayName = 'MCM.Dialog';

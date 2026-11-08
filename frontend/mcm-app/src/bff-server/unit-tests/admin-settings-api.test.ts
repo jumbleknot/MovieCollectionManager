@@ -77,23 +77,37 @@ describe('GET /admin/settings', () => {
     mockRequireAuth.mockRejectedValue(new UnauthorizedError());
     const res = await GET(req());
     expect(res.status).toBe(401);
-    expect(mockAudit).toHaveBeenCalledWith('admin_access_denied', expect.objectContaining({ code: AuthErrorCode.UNAUTHORIZED }));
+    expect(mockAudit).toHaveBeenCalledWith(
+      'admin_access_denied',
+      expect.objectContaining({ code: AuthErrorCode.UNAUTHORIZED }),
+    );
   });
 
   it('403 (audited) when authenticated but not mc-admin', async () => {
     mockRequireAuth.mockResolvedValue({ user: nonAdmin() });
     const res = await GET(req());
     expect(res.status).toBe(403);
-    expect(mockAudit).toHaveBeenCalledWith('admin_access_denied', expect.objectContaining({ code: AuthErrorCode.FORBIDDEN }));
+    expect(mockAudit).toHaveBeenCalledWith(
+      'admin_access_denied',
+      expect.objectContaining({ code: AuthErrorCode.FORBIDDEN }),
+    );
     expect(mockGetAppSettings).not.toHaveBeenCalled();
   });
 
   it('200 returns settings for an admin', async () => {
     mockRequireAuth.mockResolvedValue({ user: admin() });
-    mockGetAppSettings.mockResolvedValue({ allowSelfRegistration: true, updatedBy: null, updatedAt: null });
+    mockGetAppSettings.mockResolvedValue({
+      allowSelfRegistration: true,
+      updatedBy: null,
+      updatedAt: null,
+    });
     const res = await GET(req());
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ allowSelfRegistration: true, updatedBy: null, updatedAt: null });
+    expect(await res.json()).toEqual({
+      allowSelfRegistration: true,
+      updatedBy: null,
+      updatedAt: null,
+    });
   });
 });
 
@@ -114,13 +128,21 @@ describe('PATCH /admin/settings', () => {
 
   it('200 persists and audits the change', async () => {
     mockRequireAuth.mockResolvedValue({ user: admin() });
-    mockSetAllow.mockResolvedValue({ allowSelfRegistration: false, updatedBy: 'admin-uuid', updatedAt: 'ts' });
+    mockSetAllow.mockResolvedValue({
+      allowSelfRegistration: false,
+      updatedBy: 'admin-uuid',
+      updatedAt: 'ts',
+    });
     const res = await PATCH(req({ allowSelfRegistration: false }));
     expect(res.status).toBe(200);
     expect(mockSetAllow).toHaveBeenCalledWith(false, 'admin-uuid');
     expect(mockAudit).toHaveBeenCalledWith(
       'admin_setting_changed',
-      expect.objectContaining({ setting: 'allowSelfRegistration', value: false, userId: 'admin-uuid' }),
+      expect.objectContaining({
+        setting: 'allowSelfRegistration',
+        value: false,
+        userId: 'admin-uuid',
+      }),
     );
   });
 });

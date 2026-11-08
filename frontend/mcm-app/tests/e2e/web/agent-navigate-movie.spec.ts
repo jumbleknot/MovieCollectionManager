@@ -33,12 +33,27 @@ const UNIQUE_TITLE = 'Zephyrine Protocol';
 
 function movieBody(title: string, year: number): Record<string, unknown> {
   return {
-    title, year, contentType: 'Movie', language: 'English',
-    owned: true, ripped: false, childrens: false,
-    ownedMedia: [], ripQuality: [], genres: ['Action'], rated: 'PG-13',
-    directors: [], actors: [], tags: [],
-    movieSet: null, originalTitle: null, releaseDate: null,
-    outline: null, plot: null, runtime: null, externalIds: [],
+    title,
+    year,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: false,
+    childrens: false,
+    ownedMedia: [],
+    ripQuality: [],
+    genres: ['Action'],
+    rated: 'PG-13',
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: null,
+    externalIds: [],
   };
 }
 
@@ -67,9 +82,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -84,35 +105,36 @@ test.describe('Assistant navigate to a movie (013 US6)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('navigate → opens the named movie detail, resolved across collections (US6-AC1)', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const collectionName = `us6-nav-${Date.now()}`;
-    const { collectionId, movieId } = await seedMovie(request, collectionName, UNIQUE_TITLE);
+  test(
+    'navigate → opens the named movie detail, resolved across collections (US6-AC1)',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const collectionName = `us6-nav-${Date.now()}`;
+      const { collectionId, movieId } = await seedMovie(request, collectionName, UNIQUE_TITLE);
 
-    await gotoHome(page);
-    await openDock(page);
-    // 013 US7 (New Scope 1): the unified search SCOPES to the named collection (Bug 1 — it no
-    // longer sums/searches across all). Name the collection so the search resolves there + opens
-    // the movie. (A bare "open X" resolves to the default/current/only collection by design.)
-    await send(page, `open ${UNIQUE_TITLE} in ${collectionName}`);
+      await gotoHome(page);
+      await openDock(page);
+      // 013 US7 (New Scope 1): the unified search SCOPES to the named collection (Bug 1 — it no
+      // longer sums/searches across all). Name the collection so the search resolves there + opens
+      // the movie. (A bare "open X" resolves to the default/current/only collection by design.)
+      await send(page, `open ${UNIQUE_TITLE} in ${collectionName}`);
 
-    // 013 New Scope 1: a resolved owned result is OFFERED as a button, never auto-navigated to —
-    // auto-navigating on a single match was logged as "new bug 2" and deliberately removed. This
-    // spec predates that change and still waited for a URL that, by design, never arrives on its
-    // own. Tap the offer, then assert the navigation.
-    const offer = page.locator('[data-testid="selection-options"]').last();
-    await expect(offer).toBeVisible({ timeout: ACTION_TIMEOUT });
-    await offer.locator('[data-testid="selection-option-pick-0"]').first().click();
+      // 013 New Scope 1: a resolved owned result is OFFERED as a button, never auto-navigated to —
+      // auto-navigating on a single match was logged as "new bug 2" and deliberately removed. This
+      // spec predates that change and still waited for a URL that, by design, never arrives on its
+      // own. Tap the offer, then assert the navigation.
+      const offer = page.locator('[data-testid="selection-options"]').last();
+      await expect(offer).toBeVisible({ timeout: ACTION_TIMEOUT });
+      await offer.locator('[data-testid="selection-option-pick-0"]').first().click();
 
-    // The pick resolved in pure code and router.push landed on the movie detail.
-    await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
-      timeout: ACTION_TIMEOUT,
-    });
-    await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText(UNIQUE_TITLE, {
-      timeout: NAV_TIMEOUT,
-    });
-  });
+      // The pick resolved in pure code and router.push landed on the movie detail.
+      await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
+        timeout: ACTION_TIMEOUT,
+      });
+      await expect(page.locator('[data-testid="movie-detail-title"]')).toContainText(UNIQUE_TITLE, {
+        timeout: NAV_TIMEOUT,
+      });
+    },
+  );
 });

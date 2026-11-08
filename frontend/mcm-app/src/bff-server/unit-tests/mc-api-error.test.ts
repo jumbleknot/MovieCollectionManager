@@ -51,7 +51,10 @@ describe('handleMcApiError', () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.code).toBe(AuthErrorCode.UNAUTHORIZED); // UnauthorizedError default code
-    expect(logger.audit).toHaveBeenCalledWith('auth_failed', expect.objectContaining({ action: 'test_action' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'auth_failed',
+      expect.objectContaining({ action: 'test_action' }),
+    );
     expect(logger.audit).not.toHaveBeenCalledWith('access_denied', expect.anything());
   });
 
@@ -61,7 +64,10 @@ describe('handleMcApiError', () => {
     const err = new ForbiddenError();
     const res = handleMcApiError(err, 'test_action');
     expect(res.status).toBe(403);
-    expect(logger.audit).toHaveBeenCalledWith('access_denied', expect.objectContaining({ action: 'test_action' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'access_denied',
+      expect.objectContaining({ action: 'test_action' }),
+    );
     expect(logger.audit).not.toHaveBeenCalledWith('auth_failed', expect.anything());
   });
 
@@ -81,12 +87,18 @@ describe('handleMcApiError', () => {
 
   it('audit-logs auth_failed when mc-service returns 401', async () => {
     handleMcApiError(makeAxiosError(401, {}), 'movie_list');
-    expect(logger.audit).toHaveBeenCalledWith('auth_failed', expect.objectContaining({ upstream: 'mc-service' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'auth_failed',
+      expect.objectContaining({ upstream: 'mc-service' }),
+    );
   });
 
   it('audit-logs access_denied when mc-service returns 403', async () => {
     handleMcApiError(makeAxiosError(403, {}), 'collection_delete');
-    expect(logger.audit).toHaveBeenCalledWith('access_denied', expect.objectContaining({ upstream: 'mc-service' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'access_denied',
+      expect.objectContaining({ upstream: 'mc-service' }),
+    );
   });
 
   // ─── Unexpected errors ────────────────────────────────────────────────────────
@@ -151,13 +163,19 @@ describe('handleMcApiError — 4xx logging (010 US2)', () => {
 
   it('keeps 401 as an audit event, never a warn (US2-AC2)', () => {
     handleMcApiError(new UnauthorizedError(), 'movie_get');
-    expect(logger.audit).toHaveBeenCalledWith('auth_failed', expect.objectContaining({ action: 'movie_get' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'auth_failed',
+      expect.objectContaining({ action: 'movie_get' }),
+    );
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('keeps 403 as an audit event, never a warn (US2-AC2)', () => {
     handleMcApiError(new ForbiddenError(), 'movie_get');
-    expect(logger.audit).toHaveBeenCalledWith('access_denied', expect.objectContaining({ action: 'movie_get' }));
+    expect(logger.audit).toHaveBeenCalledWith(
+      'access_denied',
+      expect.objectContaining({ action: 'movie_get' }),
+    );
     expect(logger.warn).not.toHaveBeenCalled();
   });
 

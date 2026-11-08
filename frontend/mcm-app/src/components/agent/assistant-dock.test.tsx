@@ -44,7 +44,9 @@ describe('AssistantDock', () => {
   beforeEach(() => {
     mockPrefetch.mockClear();
     loader.resetAssistantRuntimeForTest();
-    load = jest.spyOn(loader, 'loadAssistantRuntime').mockResolvedValue({ default: PanelStub } as never);
+    load = jest
+      .spyOn(loader, 'loadAssistantRuntime')
+      .mockResolvedValue({ default: PanelStub } as never);
   });
 
   afterEach(() => {
@@ -74,7 +76,12 @@ describe('AssistantDock', () => {
 
   it('shows a loading state while the panel chunk is in flight, then the panel', async () => {
     let release: (m: unknown) => void = () => {};
-    load.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
+    load.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
 
     const { getByTestId, queryByTestId } = await render(<AssistantDock />);
     await fireEvent.press(getByTestId('assistant-dock-toggle'));
@@ -103,7 +110,12 @@ describe('AssistantDock', () => {
 
   it('does not fire a second load when pressed repeatedly while in flight', async () => {
     let release: (m: unknown) => void = () => {};
-    load.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
+    load.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
 
     const { getByTestId } = await render(<AssistantDock />);
     const toggle = getByTestId('assistant-dock-toggle');

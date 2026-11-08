@@ -260,7 +260,9 @@ for (const flow of flows) {
 
   if (status !== 0) {
     failures.push(name);
-    console.error(`[maestro-e2e] FAILED: ${name} (after ${MAX_RETRIES} retr${MAX_RETRIES === 1 ? 'y' : 'ies'})`);
+    console.error(
+      `[maestro-e2e] FAILED: ${name} (after ${MAX_RETRIES} retr${MAX_RETRIES === 1 ? 'y' : 'ies'})`,
+    );
   } else {
     console.log(`[maestro-e2e] PASSED: ${name}`);
   }

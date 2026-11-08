@@ -28,7 +28,7 @@ async function _post(req: Request): Promise<Response> {
   try {
     await checkLoginRateLimit(ip);
 
-    const body = await req.json() as {
+    const body = (await req.json()) as {
       code?: string;
       codeVerifier?: string;
       redirectUri?: string;
@@ -36,7 +36,10 @@ async function _post(req: Request): Promise<Response> {
 
     if (!body.code || !body.codeVerifier || !body.redirectUri) {
       return Response.json(
-        { error: 'Missing required fields: code, codeVerifier, redirectUri', code: AuthErrorCode.INVALID_INPUT },
+        {
+          error: 'Missing required fields: code, codeVerifier, redirectUri',
+          code: AuthErrorCode.INVALID_INPUT,
+        },
         { status: 400, headers: securityHeaders() },
       );
     }
@@ -82,7 +85,11 @@ async function _post(req: Request): Promise<Response> {
     const keycloakUser = await getUserById(userId).catch((err: unknown) => {
       if (err instanceof AuthError) throw err;
       logger.error('login: keycloak user lookup failed', { action: 'login_error', ip, error: err });
-      throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to retrieve user account.', 503);
+      throw new AuthError(
+        AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+        'Failed to retrieve user account.',
+        503,
+      );
     });
 
     if (!keycloakUser.enabled) {
@@ -94,7 +101,11 @@ async function _post(req: Request): Promise<Response> {
 
     // Concurrent session enforcement — eviction handled inside createSession
     await getActiveSessionCount(userId).catch((err: unknown) => {
-      logger.warn('login: session count check failed (non-fatal)', { action: 'login', userId, error: err });
+      logger.warn('login: session count check failed (non-fatal)', {
+        action: 'login',
+        userId,
+        error: err,
+      });
     });
 
     const session = await createSession(userId, tokensFromGrant(tokens)).catch((err: unknown) => {
@@ -131,7 +142,11 @@ async function _post(req: Request): Promise<Response> {
     if (err instanceof RateLimitError) {
       logger.audit('login_rate_limited', { ip });
       return Response.json(
-        { error: 'Too many login attempts. Try again later.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
+        {
+          error: 'Too many login attempts. Try again later.',
+          code: AuthErrorCode.RATE_LIMIT_EXCEEDED,
+          retryAfter: err.retryAfter,
+        },
         { status: 429, headers: securityHeaders({ 'Retry-After': String(err.retryAfter) }) },
       );
     }

@@ -99,7 +99,11 @@ describe('POST /bff-api/agent/config/test — re-probe stored credentials (real 
     }
     // Plant a well-formed-but-invalid TMDB ciphertext directly (validate-on-save would reject it).
     await store.upsert(user.userId, {
-      tmdbKeyEnc: encryptSecret('spoiled-tmdb-key-xyz', env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
+      tmdbKeyEnc: encryptSecret(
+        'spoiled-tmdb-key-xyz',
+        env.agentConfigEncKey,
+        secretAad(user.userId, 'tmdbKey'),
+      ),
     });
 
     const res = await bff.post('/bff-api/agent/config/test', undefined, auth());

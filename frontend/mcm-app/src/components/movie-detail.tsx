@@ -233,7 +233,9 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
                 </Text>
                 {eid.url ? (
                   <TouchableOpacity
-                    onPress={() => { openUrl(eid.url!); }}
+                    onPress={() => {
+                      openUrl(eid.url!);
+                    }}
                     testID={`movie-detail-ext-id-url-${idx}`}
                     accessibilityRole="link"
                     accessibilityLabel={`Open ${eid.system} link`}
@@ -273,67 +275,68 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background?.val },
-  content: { padding: 16 },
-  title: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 22,
-    fontWeight: '700',
-    color: theme.onSurface?.val,
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.outlineVariant?.val,
-  },
-  section: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.outlineVariant?.val,
-  },
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurfaceVariant?.val,
-    fontWeight: '600',
-    flex: 1,
-  },
-  value: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurface?.val,
-    flex: 2,
-    textAlign: 'right',
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurfaceVariant?.val,
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  externalIdRow: {
-    marginTop: 4,
-  },
-  linkText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.primary?.val,
-    textDecorationLine: 'underline',
-    marginTop: 2,
-  },
-  // Positive/verified state → the theme-split `success` role (AA both themes; feature 017 SC-004).
-  yes: { color: theme.success?.val },
-  no: { color: theme.onSurfaceVariant?.val },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 32,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.background?.val },
+    content: { padding: 16 },
+    title: {
+      fontFamily: 'Outfit-Bold',
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.onSurface?.val,
+      marginBottom: 16,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.outlineVariant?.val,
+    },
+    section: {
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.outlineVariant?.val,
+    },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurfaceVariant?.val,
+      fontWeight: '600',
+      flex: 1,
+    },
+    value: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurface?.val,
+      flex: 2,
+      textAlign: 'right',
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurfaceVariant?.val,
+      marginTop: 4,
+      lineHeight: 20,
+    },
+    externalIdRow: {
+      marginTop: 4,
+    },
+    linkText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.primary?.val,
+      textDecorationLine: 'underline',
+      marginTop: 2,
+    },
+    // Positive/verified state → the theme-split `success` role (AA both themes; feature 017 SC-004).
+    yes: { color: theme.success?.val },
+    no: { color: theme.onSurfaceVariant?.val },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 12,
+      marginTop: 32,
+    },
+  });

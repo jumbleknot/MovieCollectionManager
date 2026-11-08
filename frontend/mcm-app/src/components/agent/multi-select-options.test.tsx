@@ -12,10 +12,7 @@ import React from 'react';
 import { fireEvent, render } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
-import {
-  MultiSelectOptions,
-  buildMultiSelectReply,
-} from '@/components/agent/multi-select-options';
+import { MultiSelectOptions, buildMultiSelectReply } from '@/components/agent/multi-select-options';
 
 jest.mock('@copilotkit/react-native', () => ({
   useAgent: jest.fn(),
@@ -39,11 +36,7 @@ const FORMATS = [
 
 const renderList = (props: Partial<React.ComponentProps<typeof MultiSelectOptions>> = {}) =>
   render(
-    <MultiSelectOptions
-      prompt="Which formats do you own it on?"
-      options={FORMATS}
-      {...props}
-    />,
+    <MultiSelectOptions prompt="Which formats do you own it on?" options={FORMATS} {...props} />,
   );
 
 beforeEach(() => {
@@ -97,9 +90,7 @@ describe('MultiSelectOptions', () => {
 
     await fireEvent.press(getByTestId('multi-select-confirm'));
 
-    expect(addMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'Selected: none' }),
-    );
+    expect(addMessage).toHaveBeenCalledWith(expect.objectContaining({ content: 'Selected: none' }));
     expect(runAgent).toHaveBeenCalled();
   });
 

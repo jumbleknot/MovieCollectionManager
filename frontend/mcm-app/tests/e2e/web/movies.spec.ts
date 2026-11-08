@@ -72,13 +72,26 @@ async function gotoHome(page: Page): Promise<void> {
   // is set, waiting on home-route could return just before router.replace() strands the test
   // off /home. 60 s budget covers Metro's cold compile.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     // FR-009 fires at most once per session, so a second /home reveals the list + create button.
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
   if (!result) {
@@ -93,7 +106,9 @@ async function collectionIdByName(page: Page, name: string): Promise<string> {
   const items = body.items ?? body;
   const col = items.find((c: { name: string }) => c.name === name);
   if (!col) {
-    throw new Error(`Fixture collection "${name}" not found — run web global setup (pnpm nx e2e mcm-app) to seed it.`);
+    throw new Error(
+      `Fixture collection "${name}" not found — run web global setup (pnpm nx e2e mcm-app) to seed it.`,
+    );
   }
   return col.collectionId;
 }
@@ -106,7 +121,10 @@ async function collectionIdByName(page: Page, name: string): Promise<string> {
  * counts the search/filter assertions (T015/T016) depend on. global setup resets
  * MUTATION to empty each run, keeping these tests isolated.
  */
-async function navigateToCollection(page: Page, name: string = FIXTURE_COLLECTIONS.MUTATION): Promise<void> {
+async function navigateToCollection(
+  page: Page,
+  name: string = FIXTURE_COLLECTIONS.MUTATION,
+): Promise<void> {
   const id = await collectionIdByName(page, name);
   await page.goto(`${BASE}/collections/${id}`);
   await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
@@ -267,7 +285,9 @@ test.describe('Movie add/edit flows', () => {
     await page.click('[data-testid="delete-dialog-confirm-button"]');
   });
 
-  test('collection screen refreshes to show newly added movie after navigating back', async ({ page }) => {
+  test('collection screen refreshes to show newly added movie after navigating back', async ({
+    page,
+  }) => {
     const refreshTitle = `Refresh Test ${Date.now()}`;
     await clickAddMovie(page);
     await fillRequiredMovieFields(page, { title: refreshTitle });
@@ -335,7 +355,9 @@ test.describe('Movie add/edit flows', () => {
 
   // ─── 014 US1: optional language ────────────────────────────────────────────────
 
-  test('add movie without language — saves and shows a neutral placeholder (US1-AC1)', async ({ page }) => {
+  test('add movie without language — saves and shows a neutral placeholder (US1-AC1)', async ({
+    page,
+  }) => {
     const title = `No Language ${Date.now()}`;
     await clickAddMovie(page);
     // Fill title + year only; deliberately leave the language input blank.
@@ -351,12 +373,14 @@ test.describe('Movie add/edit flows', () => {
     // The language-less movie appears in the refreshed collection list (US1-AC4).
     await page.click('[data-testid="movie-detail-back-button"]');
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
-    await expect(
-      page.getByTestId('movie-list-item-row').filter({ hasText: title }),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('movie-list-item-row').filter({ hasText: title })).toBeVisible({
+      timeout: 15000,
+    });
   });
 
-  test('edit a movie to clear its language — persists with no language (US1-AC2)', async ({ page }) => {
+  test('edit a movie to clear its language — persists with no language (US1-AC2)', async ({
+    page,
+  }) => {
     // Add a movie that has a language.
     const title = `Clear Language ${Date.now()}`;
     await clickAddMovie(page);
@@ -414,10 +438,14 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await navigateToCollection(page);
   });
 
-  test('browse — collection screen shows movie list, search bar, and filter panel', async ({ page }) => {
+  test('browse — collection screen shows movie list, search bar, and filter panel', async ({
+    page,
+  }) => {
     await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
     // 013 Enhancement 1: the current collection's name header is shown above the search bar.
-    await expect(page.getByTestId('collection-screen-name')).toHaveText(FIXTURE_COLLECTIONS.MUTATION);
+    await expect(page.getByTestId('collection-screen-name')).toHaveText(
+      FIXTURE_COLLECTIONS.MUTATION,
+    );
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
     await expect(page.getByTestId('movie-filter-panel')).toBeVisible();
     // Either the list or the empty state should be present
@@ -427,7 +455,9 @@ test.describe('Movie browse/search/filter (T137)', () => {
     expect(listOrEmpty).not.toBeNull();
   });
 
-  test('column header row visible above movie list (always shown, even when empty)', async ({ page }) => {
+  test('column header row visible above movie list (always shown, even when empty)', async ({
+    page,
+  }) => {
     await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
 
     // movie-list-header is always rendered regardless of whether the list has items
@@ -484,7 +514,9 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await expect(page.getByTestId('movie-search-clear')).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('search immediately after mount — result not overwritten by initial load (no race)', async ({ page }) => {
+  test('search immediately after mount — result not overwritten by initial load (no race)', async ({
+    page,
+  }) => {
     // This test exercises the generation-counter fix in use-movies.ts.
     // Previously, listMovies() fired on mount and could overwrite search results
     // if the user typed before the initial fetch resolved.
@@ -503,7 +535,9 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await expect(page.getByTestId('movie-list-empty')).toBeVisible({ timeout: 8000 });
 
     // The search input still shows the typed term (wasn't reset)
-    await expect(page.getByTestId('movie-search-input')).toHaveValue('nonexistent-xyz-no-match-99999');
+    await expect(page.getByTestId('movie-search-input')).toHaveValue(
+      'nonexistent-xyz-no-match-99999',
+    );
 
     // Clean up: clear search to restore normal state
     await page.click('[data-testid="movie-search-clear"]');
@@ -584,7 +618,9 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 
-  test('ownedMedia filter chip — clicking chip filters list to movies with that media', async ({ page }) => {
+  test('ownedMedia filter chip — clicking chip filters list to movies with that media', async ({
+    page,
+  }) => {
     // Create a movie with owned=true and a specific media format so the chip appears.
     await navigateToCollection(page);
     await clickAddMovie(page);
@@ -626,7 +662,9 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 
-  test('ripQuality filter chip — clicking chip filters list to movies with that rip quality', async ({ page }) => {
+  test('ripQuality filter chip — clicking chip filters list to movies with that rip quality', async ({
+    page,
+  }) => {
     // Create a movie with ripped=true and a rip quality so the chip appears.
     await navigateToCollection(page);
     await clickAddMovie(page);
@@ -799,12 +837,16 @@ test.describe('Column visibility persistence (FR-019a)', () => {
 
     // Capture initial state (may be on or off if a prior test left AsyncStorage dirty)
     await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
-    const mediaVisibleBefore = await mediaHeader().isVisible().catch(() => false);
+    const mediaVisibleBefore = await mediaHeader()
+      .isVisible()
+      .catch(() => false);
 
     // Toggle the Media column; wait for AsyncStorage write to settle.
     await visible('column-toggle-ownedMedia').click();
     await page.waitForTimeout(300);
-    const mediaVisibleAfterToggle = await mediaHeader().isVisible().catch(() => false);
+    const mediaVisibleAfterToggle = await mediaHeader()
+      .isVisible()
+      .catch(() => false);
     // Verify toggle actually flipped the state
     expect(mediaVisibleAfterToggle).toBe(!mediaVisibleBefore);
 
@@ -823,7 +865,9 @@ test.describe('Column visibility persistence (FR-019a)', () => {
 
     // Column state must match what we toggled to — AsyncStorage persisted it.
     await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
-    const mediaVisibleAfterNav = await mediaHeader().isVisible().catch(() => false);
+    const mediaVisibleAfterNav = await mediaHeader()
+      .isVisible()
+      .catch(() => false);
     expect(mediaVisibleAfterNav).toBe(mediaVisibleAfterToggle);
 
     // Restore original state.
@@ -887,23 +931,61 @@ test.describe('Movie filter exact counts (T015 / FR-010)', () => {
   });
 
   const cases: Array<{ label: string; chip: string; expected: number }> = [
-    { label: 'Type = Movie', chip: 'filter-chip-contentType-Movie', expected: countWhere((m) => m.contentType === 'Movie') },
-    { label: 'Type = Series', chip: 'filter-chip-contentType-Series', expected: countWhere((m) => m.contentType === 'Series') },
-    { label: 'Type = Concert', chip: 'filter-chip-contentType-Concert', expected: countWhere((m) => m.contentType === 'Concert') },
+    {
+      label: 'Type = Movie',
+      chip: 'filter-chip-contentType-Movie',
+      expected: countWhere((m) => m.contentType === 'Movie'),
+    },
+    {
+      label: 'Type = Series',
+      chip: 'filter-chip-contentType-Series',
+      expected: countWhere((m) => m.contentType === 'Series'),
+    },
+    {
+      label: 'Type = Concert',
+      chip: 'filter-chip-contentType-Concert',
+      expected: countWhere((m) => m.contentType === 'Concert'),
+    },
     { label: 'Owned = Yes', chip: 'filter-chip-owned-Yes', expected: countWhere((m) => m.owned) },
-    { label: 'Ripped = Yes', chip: 'filter-chip-ripped-Yes', expected: countWhere((m) => m.ripped) },
-    { label: 'Genre = Action', chip: 'filter-chip-genre-Action', expected: countWhere((m) => m.genres.includes('Action')) },
-    { label: 'Decade = 2010s', chip: `filter-chip-decade-${decadeChipValue('2010s')}`, expected: countWhere((m) => m.decade === '2010s') },
-    { label: 'Decade = 1980s', chip: `filter-chip-decade-${decadeChipValue('1980s')}`, expected: countWhere((m) => m.decade === '1980s') },
-    { label: 'Rated = R', chip: 'filter-chip-rated-R', expected: countWhere((m) => m.rated === 'R') },
-    { label: 'Media = DVD', chip: 'filter-chip-ownedMedia-DVD', expected: countWhere((m) => m.ownedMedia.includes('DVD')) },
+    {
+      label: 'Ripped = Yes',
+      chip: 'filter-chip-ripped-Yes',
+      expected: countWhere((m) => m.ripped),
+    },
+    {
+      label: 'Genre = Action',
+      chip: 'filter-chip-genre-Action',
+      expected: countWhere((m) => m.genres.includes('Action')),
+    },
+    {
+      label: 'Decade = 2010s',
+      chip: `filter-chip-decade-${decadeChipValue('2010s')}`,
+      expected: countWhere((m) => m.decade === '2010s'),
+    },
+    {
+      label: 'Decade = 1980s',
+      chip: `filter-chip-decade-${decadeChipValue('1980s')}`,
+      expected: countWhere((m) => m.decade === '1980s'),
+    },
+    {
+      label: 'Rated = R',
+      chip: 'filter-chip-rated-R',
+      expected: countWhere((m) => m.rated === 'R'),
+    },
+    {
+      label: 'Media = DVD',
+      chip: 'filter-chip-ownedMedia-DVD',
+      expected: countWhere((m) => m.ownedMedia.includes('DVD')),
+    },
   ];
 
   for (const c of cases) {
     test(`filter ${c.label} → exactly ${c.expected} movies`, async ({ page }) => {
       await page.click(`[data-testid="${c.chip}"]`);
       await page.waitForTimeout(700); // filter debounce + list reload
-      await expect(page.getByTestId('movie-list-item-row')).toHaveCount(c.expected, { timeout: 10000 });
+      await expect(page.getByTestId('movie-list-item-row')).toHaveCount(c.expected, {
+        timeout: 10000,
+      });
     });
   }
 });
@@ -937,7 +1019,9 @@ test.describe('Autofill suppression (FR-026a)', () => {
     await gotoHome(page);
   });
 
-  test('collection-name input: autocomplete=off, aria-label has no "name" keyword, placeholder has no "name" keyword', async ({ page }) => {
+  test('collection-name input: autocomplete=off, aria-label has no "name" keyword, placeholder has no "name" keyword', async ({
+    page,
+  }) => {
     await page.waitForSelector('[data-testid="home-screen-create-button"]', { timeout: 15000 });
     await page.click('[data-testid="home-screen-create-button"]');
     await page.waitForSelector('[data-testid="collection-form-name-input"]', { timeout: 5000 });
@@ -952,7 +1036,9 @@ test.describe('Autofill suppression (FR-026a)', () => {
     await page.keyboard.press('Escape');
   });
 
-  test('director entry input: autocomplete=off, placeholder has no "name" keyword', async ({ page }) => {
+  test('director entry input: autocomplete=off, placeholder has no "name" keyword', async ({
+    page,
+  }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-director-input');
@@ -962,7 +1048,9 @@ test.describe('Autofill suppression (FR-026a)', () => {
     expect(placeholder.toLowerCase()).not.toMatch(/\bname\b/);
   });
 
-  test('actor entry input: autocomplete=off, placeholder has no "name" keyword', async ({ page }) => {
+  test('actor entry input: autocomplete=off, placeholder has no "name" keyword', async ({
+    page,
+  }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-actor-input');
@@ -972,7 +1060,9 @@ test.describe('Autofill suppression (FR-026a)', () => {
     expect(placeholder.toLowerCase()).not.toMatch(/\bname\b/);
   });
 
-  test('ext-id-system input: autocomplete=off, aria-label has no "name" keyword', async ({ page }) => {
+  test('ext-id-system input: autocomplete=off, aria-label has no "name" keyword', async ({
+    page,
+  }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-ext-id-system-input');
@@ -983,7 +1073,9 @@ test.describe('Autofill suppression (FR-026a)', () => {
     expect(ariaLabel.toLowerCase()).not.toMatch(/\bname\b/);
   });
 
-  test('ext-id-unique input: autocomplete=off, placeholder has no "id" keyword, aria-label has no "identifier"', async ({ page }) => {
+  test('ext-id-unique input: autocomplete=off, placeholder has no "id" keyword, aria-label has no "identifier"', async ({
+    page,
+  }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-ext-id-unique-input');
@@ -1078,7 +1170,9 @@ test.describe('movie count line (013 US2)', () => {
     expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);
   });
 
-  test('shows filtered/total when filtered, total again when cleared (US2-AC2/AC5)', async ({ page }) => {
+  test('shows filtered/total when filtered, total again when cleared (US2-AC2/AC5)', async ({
+    page,
+  }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
     await page.click('[data-testid="filter-chip-contentType-Movie"]');
     await page.waitForTimeout(700);

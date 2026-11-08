@@ -15,24 +15,24 @@
  * one orange CTA.
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from './Text'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from './Text';
 
 export interface PillButtonProps extends Omit<ViewProps, 'onPress'> {
-  label:               string
+  label: string;
   /** Tamagui's press handler type (RN 0.87 event shape under Tamagui 3) — see Button. */
-  onPress?:            ViewProps['onPress']
-  disabled?:           boolean
-  accessibilityLabel?: string
-  testID?:             string
+  onPress?: ViewProps['onPress'];
+  disabled?: boolean;
+  accessibilityLabel?: string;
+  testID?: string;
 }
 
 export const PillButton = React.forwardRef<any, PillButtonProps>(function PillButton(
   { label, onPress, disabled = false, accessibilityLabel, testID, ...rest },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <View
       ref={ref}
@@ -62,7 +62,10 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       outlineWidth="focus-visible:3px"
       outlineColor="focus-visible:primary"
       outlineOffset="focus-visible:2px"
-      onPress={(e) => { if (disabled) return; onPress?.(e) }}
+      onPress={(e) => {
+        if (disabled) return;
+        onPress?.(e);
+      }}
       {...rest}
     >
       <Text
@@ -75,7 +78,7 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
         {label}
       </Text>
     </View>
-  )
-})
+  );
+});
 
-PillButton.displayName = 'MCM.PillButton'
+PillButton.displayName = 'MCM.PillButton';

@@ -15,10 +15,7 @@
  */
 import { randomUUID } from 'node:crypto';
 
-import {
-  describeBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 
 import * as retention from '@/bff-server/backup-retention';
 import { createBackupDriver } from '@/bff-server/backup-destination-driver';
@@ -123,7 +120,7 @@ describeBackupTargets('backup retention', () => {
       expect(await listJob(JOB)).toEqual([keyFor(JOB, FOUR[3])]);
     });
 
-    it('never considers another job\'s artifacts, or files the user put there (US5-AC5)', async () => {
+    it("never considers another job's artifacts, or files the user put there (US5-AC5)", async () => {
       await seedVersions(JOB, FOUR);
       await seedVersions(OTHER_JOB, FOUR);
       // Something the user keeps at the same destination that this system did not write.

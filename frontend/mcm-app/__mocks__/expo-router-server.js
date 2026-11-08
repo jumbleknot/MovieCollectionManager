@@ -6,7 +6,7 @@
 const ExpoResponse = {
   json(data, init) {
     const status = (init && init.status) != null ? init.status : 200;
-    const headersInit = (init && init.headers) ? init.headers : {};
+    const headersInit = init && init.headers ? init.headers : {};
     const headers = new Headers(headersInit);
     return {
       status,

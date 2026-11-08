@@ -19,17 +19,23 @@ describe('assistantRunFailureNotice', () => {
     },
   );
 
-  it.each(['AGENT_IDENTITY_REJECTED', 'REFRESH_FAILED', 'SESSION_NOT_FOUND', 'SESSION_IDLE_TIMEOUT'])(
-    '%s says the sign-in is no longer valid (AS-1)',
-    (code) => {
-      expect(assistantRunFailureNotice(body(code))).toBe('Your session has expired. Please sign in again.');
-    },
-  );
+  it.each([
+    'AGENT_IDENTITY_REJECTED',
+    'REFRESH_FAILED',
+    'SESSION_NOT_FOUND',
+    'SESSION_IDLE_TIMEOUT',
+  ])('%s says the sign-in is no longer valid (AS-1)', (code) => {
+    expect(assistantRunFailureNotice(body(code))).toBe(
+      'Your session has expired. Please sign in again.',
+    );
+  });
 
   it('anything else is a generic, retryable failure that names no internals', () => {
     expect(assistantRunFailureNotice(new Error('Internal Server Error'))).toBe(
       "The assistant couldn't respond. Please try again.",
     );
-    expect(assistantRunFailureNotice('not an error')).toBe("The assistant couldn't respond. Please try again.");
+    expect(assistantRunFailureNotice('not an error')).toBe(
+      "The assistant couldn't respond. Please try again.",
+    );
   });
 });

@@ -41,13 +41,24 @@ function makeRequest(): Parameters<typeof GET>[0] {
 
 const mockPayload = { sub: 'user-1', exp: 99999999999 };
 const mockUserProfile = {
-  id: 'user-1', username: 'tuser', email: 'test@example.com',
-  firstName: 'Test', lastName: 'User', emailVerified: true,
-  roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+  id: 'user-1',
+  username: 'tuser',
+  email: 'test@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  emailVerified: true,
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 const mockProfile = {
-  id: 'user-1', username: 'tuser', email: 'test@example.com',
-  firstName: 'Test', lastName: 'User', emailVerified: true, enabled: true,
+  id: 'user-1',
+  username: 'tuser',
+  email: 'test@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  emailVerified: true,
+  enabled: true,
   createdTimestamp: 1735689600000,
 };
 

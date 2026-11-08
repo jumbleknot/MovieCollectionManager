@@ -19,10 +19,27 @@ const DOWNLOAD_TIMEOUT = 150_000;
 
 function movieBody(title: string): Record<string, unknown> {
   return {
-    title, year: 1999, contentType: 'Movie', language: 'English', owned: true, ripped: false,
-    childrens: false, ownedMedia: [], ripQuality: [], genres: ['Sci-Fi'], rated: 'R',
-    directors: [], actors: [], tags: [], movieSet: null, originalTitle: null, releaseDate: null,
-    outline: null, plot: null, runtime: null, externalIds: [],
+    title,
+    year: 1999,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: false,
+    childrens: false,
+    ownedMedia: [],
+    ripQuality: [],
+    genres: ['Sci-Fi'],
+    rated: 'R',
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: null,
+    externalIds: [],
   };
 }
 
@@ -53,9 +70,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 test.describe('Assistant export flow (feature 014, US3 / T049)', () => {
@@ -65,18 +88,25 @@ test.describe('Assistant export flow (feature 014, US3 / T049)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ask to export → a multi-tab .xlsx downloads', { tag: '@model-decision' }, async ({ page, request }) => {
-    test.setTimeout(300_000);
-    await seedCollection(request, `t049-exp-${Date.now()}`, ['Zorgon', 'Quaffle']);
+  test(
+    'ask to export → a multi-tab .xlsx downloads',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      await seedCollection(request, `t049-exp-${Date.now()}`, ['Zorgon', 'Quaffle']);
 
-    await gotoHome(page);
-    await openDock(page);
+      await gotoHome(page);
+      await openDock(page);
 
-    const downloadPromise = page.waitForEvent('download', { timeout: DOWNLOAD_TIMEOUT });
-    await page.fill('[data-testid="assistant-dock-input"]', 'export my collections to a spreadsheet');
-    await page.click('[data-testid="assistant-dock-send"]');
+      const downloadPromise = page.waitForEvent('download', { timeout: DOWNLOAD_TIMEOUT });
+      await page.fill(
+        '[data-testid="assistant-dock-input"]',
+        'export my collections to a spreadsheet',
+      );
+      await page.click('[data-testid="assistant-dock-send"]');
 
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/\.xlsx$/);
-  });
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toMatch(/\.xlsx$/);
+    },
+  );
 });

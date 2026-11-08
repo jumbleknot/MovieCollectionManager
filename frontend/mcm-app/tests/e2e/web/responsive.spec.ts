@@ -21,12 +21,25 @@ const VIEWPORTS = [
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
   } else if (!result) {
     throw new Error('gotoHome: home screen did not render');
   }
@@ -42,7 +55,9 @@ async function gotoCollection(page: Page): Promise<void> {
 }
 
 /** True when the document does not scroll horizontally (2px tolerance for sub-pixel layout). */
-async function hasNoHorizontalOverflow(page: Page): Promise<{ ok: boolean; scrollW: number; clientW: number }> {
+async function hasNoHorizontalOverflow(
+  page: Page,
+): Promise<{ ok: boolean; scrollW: number; clientW: number }> {
   return page.evaluate(() => {
     const el = document.documentElement;
     const scrollW = Math.max(el.scrollWidth, document.body.scrollWidth);
@@ -60,7 +75,9 @@ test.describe('responsive — no overflow across viewports', () => {
       expect(r.ok, `scrollWidth ${r.scrollW} > clientWidth ${r.clientW}`).toBe(true);
     });
 
-    test(`collection screen has no horizontal overflow @ ${vp.name} (${vp.width}px)`, async ({ page }) => {
+    test(`collection screen has no horizontal overflow @ ${vp.name} (${vp.width}px)`, async ({
+      page,
+    }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await gotoCollection(page);
       const r = await hasNoHorizontalOverflow(page);
@@ -70,7 +87,9 @@ test.describe('responsive — no overflow across viewports', () => {
 });
 
 test.describe('responsive — assistant dock reflow', () => {
-  test('dock panel stays within the viewport and reflows wide on compact', async ({ page }, testInfo) => {
+  test('dock panel stays within the viewport and reflows wide on compact', async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width: 360, height: 740 });
     await gotoHome(page);
 
@@ -86,10 +105,18 @@ test.describe('responsive — assistant dock reflow', () => {
     expect(box!.x + box!.width).toBeLessThanOrEqual(vw + 2);
 
     const ratio = box!.width / vw;
-    await testInfo.attach('dock-width-ratio', { body: `panel ${Math.round(box!.width)}px / ${vw}px = ${(ratio * 100).toFixed(0)}%`, contentType: 'text/plain' });
+    await testInfo.attach('dock-width-ratio', {
+      body: `panel ${Math.round(box!.width)}px / ${vw}px = ${(ratio * 100).toFixed(0)}%`,
+      contentType: 'text/plain',
+    });
     // eslint-disable-next-line no-console
-    console.log(`[T045] compact dock panel width: ${Math.round(box!.width)}px (${(ratio * 100).toFixed(0)}% of ${vw}px viewport)`);
+    console.log(
+      `[T045] compact dock panel width: ${Math.round(box!.width)}px (${(ratio * 100).toFixed(0)}% of ${vw}px viewport)`,
+    );
     // Reflow contract: on a 360px phone the panel should occupy most of the width.
-    expect(ratio, `dock panel only ${(ratio * 100).toFixed(0)}% of viewport on compact`).toBeGreaterThanOrEqual(0.8);
+    expect(
+      ratio,
+      `dock panel only ${(ratio * 100).toFixed(0)}% of viewport on compact`,
+    ).toBeGreaterThanOrEqual(0.8);
   });
 });

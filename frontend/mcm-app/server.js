@@ -114,7 +114,7 @@ function lastSegmentIsDotfile(pathname) {
 }
 
 app.use((req, res, next) =>
-  (lastSegmentIsDotfile(req.path) ? serveStatic : serveStaticInDotDirs)(req, res, next)
+  (lastSegmentIsDotfile(req.path) ? serveStatic : serveStaticInDotDirs)(req, res, next),
 );
 
 // Expo Router handles all remaining requests:

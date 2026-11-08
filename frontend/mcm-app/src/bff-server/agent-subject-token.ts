@@ -64,7 +64,9 @@ export class AgentIdentityError extends AuthError {
     public readonly providerStatus: number | null,
   ) {
     super(
-      outcome === 'auth' ? AuthErrorCode.AGENT_IDENTITY_REJECTED : AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE,
+      outcome === 'auth'
+        ? AuthErrorCode.AGENT_IDENTITY_REJECTED
+        : AuthErrorCode.AGENT_IDENTITY_UNAVAILABLE,
       outcome === 'auth'
         ? 'Your session has expired. Please log in again.'
         : 'The assistant is temporarily unavailable. Please try again.',
@@ -79,7 +81,11 @@ export class AgentIdentityError extends AuthError {
  * Log the refusal with its class, the provider's status and its OAuth `error` code (a fixed
  * vocabulary such as `invalid_request`) — never a token, the `error_description` or the body (FR-005).
  */
-function refuse(outcome: 'auth' | 'transient', status: number | null, providerError?: string): AgentIdentityError {
+function refuse(
+  outcome: 'auth' | 'transient',
+  status: number | null,
+  providerError?: string,
+): AgentIdentityError {
   const context = { action: 'agent_subject_token_mint', outcome, status, providerError };
   if (outcome === 'auth') logger.warn('agent_identity_refused', context);
   else logger.error('agent_identity_refused', context);
@@ -189,11 +195,16 @@ export async function mintSubjectToken(userAccessToken: string): Promise<Subject
 
   if (!res.ok) {
     const oauthError = await oauthErrorOf(res);
-    throw refuse(rejectsCredential(res.status, oauthError) ? 'auth' : 'transient', res.status, oauthError.error);
+    throw refuse(
+      rejectsCredential(res.status, oauthError) ? 'auth' : 'transient',
+      res.status,
+      oauthError.error,
+    );
   }
 
   const data = (await res.json()) as TokenExchangeResponse;
-  const reported = typeof data.expires_in === 'number' ? data.expires_in : SUBJECT_TOKEN_MAX_TTL_SECONDS;
+  const reported =
+    typeof data.expires_in === 'number' ? data.expires_in : SUBJECT_TOKEN_MAX_TTL_SECONDS;
   return {
     token: data.access_token,
     expiresIn: Math.min(reported, SUBJECT_TOKEN_MAX_TTL_SECONDS),

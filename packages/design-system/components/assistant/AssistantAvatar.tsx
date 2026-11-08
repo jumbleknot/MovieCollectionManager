@@ -18,24 +18,19 @@
  *   app's assets/images/ directory.
  */
 
-import React, { useState, useEffect } from 'react'
-import { Animated } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import Svg, {
-  Circle,
-  Ellipse,
-  Path,
-  Rect,
-} from 'react-native-svg'
+import React, { useState, useEffect } from 'react';
+import { Animated } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 
-export type AssistantAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type AssistantAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface AssistantAvatarProps {
-  size?:      AssistantAvatarSize
-  thinking?:  boolean   // animated pulse while agent is processing
-  mood?:      'grumpy' | 'neutral' | 'pleased'  // future: swap expressions
-  style?:     object
-  onPress?:   () => void
+  size?: AssistantAvatarSize;
+  thinking?: boolean; // animated pulse while agent is processing
+  mood?: 'grumpy' | 'neutral' | 'pleased'; // future: swap expressions
+  style?: object;
+  onPress?: () => void;
 }
 
 const sizeMap: Record<AssistantAvatarSize, number> = {
@@ -44,7 +39,7 @@ const sizeMap: Record<AssistantAvatarSize, number> = {
   md: 40,
   lg: 56,
   xl: 80,
-}
+};
 
 /**
  * SVG Grumpy Robot — faithful recreation of the logo head (without text).
@@ -62,12 +57,7 @@ const sizeMap: Record<AssistantAvatarSize, number> = {
  */
 function GrumpyRobotSVG({ size, color }: { size: number; color: string }) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      accessibilityLabel="Movie Assistant"
-    >
+    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Movie Assistant">
       {/* ── Side bolts (behind head) ──────────────────────────── */}
       {/* Left bolt */}
       <Circle cx="12" cy="50" r="4" fill={color} />
@@ -88,30 +78,15 @@ function GrumpyRobotSVG({ size, color }: { size: number; color: string }) {
 
       {/* ── Antenna ─────────────────────────────────────────────── */}
       {/* Antenna rod (diagonal, top-right) */}
-      <Path
-        d="M54 16 L68 5"
-        stroke="#1A1A1A"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
+      <Path d="M54 16 L68 5" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" />
       {/* Antenna ball */}
       <Circle cx="69" cy="4" r="3" fill="#1A1A1A" />
 
       {/* ── Angry eyebrows ──────────────────────────────────────── */}
       {/* Left brow — angles down toward center (angry) */}
-      <Path
-        d="M27 34 L43 39"
-        stroke="#1A1A1A"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <Path d="M27 34 L43 39" stroke="#1A1A1A" strokeWidth="3" strokeLinecap="round" />
       {/* Right brow — angles down toward center */}
-      <Path
-        d="M57 39 L73 34"
-        stroke="#1A1A1A"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <Path d="M57 39 L73 34" stroke="#1A1A1A" strokeWidth="3" strokeLinecap="round" />
 
       {/* ── Eyes ────────────────────────────────────────────────── */}
       {/* Left eye socket */}
@@ -157,12 +132,9 @@ function GrumpyRobotSVG({ size, color }: { size: number; color: string }) {
       {/* ── Neck & base ─────────────────────────────────────────── */}
       <Rect x="43" y="73" width="14" height="8" rx="2" fill={color} />
       {/* Shoulder / base plate */}
-      <Path
-        d="M25 81 Q20 85 30 86 L70 86 Q80 85 75 81 Z"
-        fill={color}
-      />
+      <Path d="M25 81 Q20 85 30 86 L70 86 Q80 85 75 81 Z" fill={color} />
     </Svg>
-  )
+  );
 }
 
 // ─── Thinking dots animation ──────────────────────────────────────────────────
@@ -172,7 +144,7 @@ function ThinkingIndicator({ color }: { color: string }) {
     useState(() => new Animated.Value(0))[0],
     useState(() => new Animated.Value(0))[0],
     useState(() => new Animated.Value(0))[0],
-  ]
+  ];
 
   useEffect(() => {
     const animations = dots.map((dot, i) =>
@@ -181,14 +153,14 @@ function ThinkingIndicator({ color }: { color: string }) {
           Animated.delay(i * 150),
           Animated.timing(dot, { toValue: 1, duration: 400, useNativeDriver: true }),
           Animated.timing(dot, { toValue: 0, duration: 400, useNativeDriver: true }),
-        ])
-      )
-    )
-    animations.forEach(a => a.start())
-    return () => animations.forEach(a => a.stop())
+        ]),
+      ),
+    );
+    animations.forEach((a) => a.start());
+    return () => animations.forEach((a) => a.stop());
     // dots are stable useState refs; run the loop once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   return (
     <View
@@ -207,31 +179,31 @@ function ThinkingIndicator({ color }: { color: string }) {
         <Animated.View
           key={i}
           style={{
-            width:           4,
-            height:          4,
-            borderRadius:    2,
+            width: 4,
+            height: 4,
+            borderRadius: 2,
             backgroundColor: 'white',
-            opacity:         dot,
+            opacity: dot,
           }}
         />
       ))}
     </View>
-  )
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export const AssistantAvatar = React.memo<AssistantAvatarProps>(function AssistantAvatar({
-  size     = 'md',
+  size = 'md',
   thinking = false,
   onPress,
   style,
 }) {
-  const theme    = useTheme()
-  const px       = sizeMap[size]
+  const theme = useTheme();
+  const px = sizeMap[size];
 
   // The robot's own orange — this is one of the intentional accent uses
-  const robotColor = theme.tertiary?.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
+  const robotColor = theme.tertiary?.val; // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
 
   return (
     <View
@@ -245,7 +217,7 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
       <GrumpyRobotSVG size={px} color={robotColor} />
       {thinking && <ThinkingIndicator color={theme.primary?.val} />}
     </View>
-  )
-})
+  );
+});
 
-AssistantAvatar.displayName = 'MCM.AssistantAvatar'
+AssistantAvatar.displayName = 'MCM.AssistantAvatar';
