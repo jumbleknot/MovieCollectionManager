@@ -225,8 +225,8 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 - [x] T057 Open PR C with the label `mobile-e2e-full` applied **before** the push that should run it, with web and APK rollback steps in the body (FR-025). Confirm every context, with `E2E_REQUIRE_AGENT_STACK=1` in force: web gate tier including the walk, assistant gate tier with a streamed turn (US3 scenario 4), the `expo-doctor` step's result, `pnpm nx test design-system` and `pnpm nx lint design-system`, and zero unexpected skips (SC-004, SC-007, FR-016). Confirm nothing changed for members (FR-015): `security-headers.spec.ts` and `session-timeout.spec.ts` pass unedited, and the only session cookie is still `mcm_session_id`, `HttpOnly`, `SameSite=Strict`. **Quote** counts and run numbers
 - [x] T058 Run the [completion checklist](#completion-checklist) up to merge, then merge with operator approval of T048
 - [x] T059 After merge, confirm `cd-deploy` `prod-apk` succeeded with the raised heap on the real path (FR-019). **Quote** the run
-- [ ] T060 After deploy, **operator**: install the published APK on a device and sign in, as the first run of the production-URL build. Also confirm a web rollback path exists: the previous digest is known and no migration ran (US3 scenario 6, SC-009). **Quote** it
-- [ ] T061 After 7 days, confirm no production rollback and no behaviour-change release note (SC-008)
+- [x] T060 After deploy, **operator**: install the published APK on a device and sign in, as the first run of the production-URL build. Also confirm a web rollback path exists: the previous digest is known and no migration ran (US3 scenario 6, SC-009). **Quote** it
+- [x] T061 After 7 days, confirm no production rollback and no behaviour-change release note (SC-008)
 - [x] T062 Close items only after their criteria are verified: item #792 once T044 is on `main`. Then items #937 (R8) and #938 (async routes) become startable; add a comment to each saying so
 
 ---
@@ -343,8 +343,8 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 | `prod-apk` on the real path (T059) | `cd-deploy` run 7140, on `281008c3` (the first `main` commit after the merge `5c80a050` to deploy): `build-deploy` success, `prod-apk` success. The production APK build sets `org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+ExitOnOutOfMemoryError` (`cd-deploy.yml:518`, from #933), so a heap exhaustion would have failed the step rather than passed. First SDK 58 production APK; digests promoted as `b6232908` | cd-deploy 7140 |
 | Merge (T058) | #959 merged as `5c80a050` on 2026-11-08 with the operator's T048 approval and instruction to merge when green. Completion-checklist items that depend on post-deploy evidence (SC-006's per-flow counts, SC-008, SC-009) stay open below | `5c80a050` |
 | Backlog (T062) | Item #792 closed after re-checking its lift rule on `main`: jest, babel-jest and @types/jest all on 30, `held jest major` rule gone. Items #937 and #938 commented as startable, each naming the option that holds it off | Forgejo items |
-| Production-URL APK signed in (T060) | | |
-| 7-day watch (T061) | | |
+| Production-URL APK signed in (T060) | Operator, 2026-11-08: installed the APK published by cd-deploy 7140 on an Android phone, signed in, and ran the assistant, with no issue. Web rollback path: the previous digests are those promoted in `107fd1bc` (for `2d08645e`, deploy of #958); no file under `backend/` or the data tier changed across PRs A to C, so no migration ran and rolling back is a digest revert | Production, cd-deploy 7140 |
+| 7-day watch (T061) | **Waived by the operator, 2026-11-08**: closed without waiting 7 days. At closing: no production rollback, no behaviour-change release note. SC-008's 7-day half is therefore not proven | Operator, in session |
 
 ### Launch evidence (FR-021)
 
