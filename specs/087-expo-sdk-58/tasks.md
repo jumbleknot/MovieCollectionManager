@@ -152,7 +152,7 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 
 **Purpose**: The bump itself. Nothing in US3 or US4 can start until the workspace installs with one instance and exports.
 
-- [ ] T033 Run the [quiet-lock protocol](../081-major-dependency-upgrades/plan.md) and paste its output into the PR body: no open `renovate/` PR, outside the Friday window, lock on `main` is the last maintenance result
+- [x] T033 Run the [quiet-lock protocol](../081-major-dependency-upgrades/plan.md) and paste its output into the PR body: no open `renovate/` PR, outside the Friday window, lock on `main` is the last maintenance result — in #959's body: taken 2026-11-07, only #958 open, 0 `renovate/` heads, outside the window, last lock commit `2874ad39` (#947)
 - [x] T034 Take M0 to M3 from [research.md](./research.md), including M1 through `specs/087-expo-sdk-58/tools/measure-page-latency.mjs` on `main`. **Quote** the figures; M1 replaces the spec's SC-002 baselines
 - [x] T035 Create PR C's branch from `main`. Run `CI=1 pnpm expo install expo@^58.0.0 --fix` in `frontend/mcm-app`, choosing a version that passes the release-age policy (M2)
 - [x] T036 Align the workspace (FR-011; research R11): `react`, `react-dom` in `frontend/mcm-app/package.json` and `packages/design-system/package.json`, and the `react-dom` override and `@expo/dom-webview` override in `pnpm-workspace.yaml`; `react-native`, `jest`, `jest-expo`, `@types/jest`, `@types/react`, `eslint-config-expo`, `test-renderer` in `packages/design-system/package.json`; `test-renderer` in `frontend/mcm-app/package.json`
@@ -227,6 +227,7 @@ shared work sits in Phase 5, not at the front as the template suggests, because 
 - [x] T059 After merge, confirm `cd-deploy` `prod-apk` succeeded with the raised heap on the real path (FR-019). **Quote** the run
 - [x] T060 After deploy, **operator**: install the published APK on a device and sign in, as the first run of the production-URL build. Also confirm a web rollback path exists: the previous digest is known and no migration ran (US3 scenario 6, SC-009). **Quote** it
 - [x] T061 After 7 days, confirm no production rollback and no behaviour-change release note (SC-008)
+- [x] T063 **Found by the completion checklist, not in the original list.** Running `nx test mcm-app` with coverage, as the checklist requires, failed `zod-jitless.test.ts` (feature 089): `Expected: 0`, `Received: 1`, because istanbul's instrumentation builds `new Function("return this")` in every instrumented module and the counter counted it. Narrow the counter to zod's own probe, `new Function("")`; the control test must still see a probe
 - [x] T062 Close items only after their criteria are verified: item #792 once T044 is on `main`. Then items #937 (R8) and #938 (async routes) become startable; add a comment to each saying so
 
 ---
@@ -343,6 +344,9 @@ Results go here as they arrive, with run numbers. A failed result stays recorded
 | `prod-apk` on the real path (T059) | `cd-deploy` run 7140, on `281008c3` (the first `main` commit after the merge `5c80a050` to deploy): `build-deploy` success, `prod-apk` success. The production APK build sets `org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+ExitOnOutOfMemoryError` (`cd-deploy.yml:518`, from #933), so a heap exhaustion would have failed the step rather than passed. First SDK 58 production APK; digests promoted as `b6232908` | cd-deploy 7140 |
 | Merge (T058) | #959 merged as `5c80a050` on 2026-11-08 with the operator's T048 approval and instruction to merge when green. Completion-checklist items that depend on post-deploy evidence (SC-006's per-flow counts, SC-008, SC-009) stay open below | `5c80a050` |
 | Backlog (T062) | Item #792 closed after re-checking its lift rule on `main`: jest, babel-jest and @types/jest all on 30, `held jest major` rule gone. Items #937 and #938 commented as startable, each naming the option that holds it off | Forgejo items |
+| Coverage-mode test failure (T063) | RED, `jest --coverage`: `zod-jitless › web: zod does not probe once the module has loaded`, `Expected: 0`, `Received: 1`; `Tests: 1 failed, 1740 passed`. Without coverage the same suite passed, `1741 passed`. Cause: istanbul's `new Function(GLOBAL_COVERAGE_SCOPE)` (`istanbul-lib-instrument` 6.0.3, `"return this"`); zod's probe is `new F("")` (`zod/v4/core/util.js`, both copies). Counter narrowed to a single empty-string body. GREEN: `3 passed` with and without coverage, control included. The test arrived with feature 089 and had never run under coverage | Local |
+| Line coverage (checklist) | **65.11%** (3595/5521) against the 70% threshold. **Not an SDK 58 regression**: the SDK 57 checkout (`29f15101`) measures **64.99%** (3552/5465) with the same command. Neither CI nor the local recipe runs coverage, so the threshold has not been enforced | Local, both checkouts |
+| Lint (checklist) | `eslint src`, the lint target's scope: `0 errors, 48 warnings`, at or below 49; prettier clean. The 53 quoted at T038 was counted over a different file set | Local |
 | Production-URL APK signed in (T060) | Operator, 2026-11-08: installed the APK published by cd-deploy 7140 on an Android phone, signed in, and ran the assistant, with no issue. Web rollback path: the previous digests are those promoted in `107fd1bc` (for `2d08645e`, deploy of #958); no file under `backend/` or the data tier changed across PRs A to C, so no migration ran and rolling back is a digest revert | Production, cd-deploy 7140 |
 | 7-day watch (T061) | **Waived by the operator, 2026-11-08**: closed without waiting 7 days. At closing: no production rollback, no behaviour-change release note. SC-008's 7-day half is therefore not proven | Operator, in session |
 
@@ -360,24 +364,24 @@ Maestro per-flow results are inside the green `app-e2e` log and cannot be read h
 Before marking `087-expo-sdk-58` complete, verify all success criteria from [spec.md](./spec.md):
 
 - [ ] **SC-001**: Backup consent completes and account deletion reaches sign-in in production, with zero callback refusals
-- [ ] **SC-002**: Response time and memory within 25% of the re-measured baseline
-- [ ] **SC-003**: First-page download is at most 2,000,000 bytes, counting every script
+- [x] **SC-002**: Response time and memory within 25% of the re-measured baseline — T047
+- [x] **SC-003**: First-page download is at most 2,000,000 bytes, counting every script — T046: 1,926,163 B
 - [ ] **SC-004**: Zero policy violations and zero uncaught page errors across the walk
-- [ ] **SC-005**: Each deliberate defect failed its gate on the first run, 4 of 4
+- [x] **SC-005**: Each deliberate defect failed its gate on the first run, 4 of 4 — T019, T024 twice, T026: 4 of 4
 - [ ] **SC-006**: Android release app launches with zero fatal errors, with 100% of login and assistant flows passing, quoted
 - [ ] **SC-007**: Full web suite and assistant gate tier pass, with zero unexpected skips
 - [ ] **SC-008**: No behaviour-change release note, and no rollback within 7 days
-- [ ] **SC-009**: A bad web release can be rolled back with no data migration
-- [ ] Platform parity table complete, with no ❌ gaps
-- [ ] All test tasks confirmed Verify RED before implementation
-- [ ] `pnpm nx typecheck mcm-app`: 0 errors
+- [x] **SC-009**: A bad web release can be rolled back with no data migration — T060: digest revert, no migration
+- [x] Platform parity table complete, with no ❌ gaps — no ❌
+- [x] All test tasks confirmed Verify RED before implementation — each RED quoted in the evidence tables
+- [x] `pnpm nx typecheck mcm-app`: 0 errors — T042; re-run OK at close
 - [ ] `pnpm nx test mcm-app`: 0 failures, 0 skips, at least 70% line coverage
-- [ ] `pnpm nx test:integration mcm-app`: passes
-- [ ] `pnpm nx lint mcm-app`: no lint errors, and warnings at or below `main`'s 49 (item #939)
-- [ ] `pnpm exec tsc --noEmit -p packages/design-system`, `pnpm nx test design-system`, `pnpm nx lint design-system`: pass
-- [ ] `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`: web E2E passes
-- [ ] `node scripts/agent-stack.mjs`, then `node scripts/agent-e2e.mjs` with `E2E_REQUIRE_AGENT_STACK=1`: agent specs pass
-- [ ] `pnpm nx e2e:mobile mcm-app`: through CI's `mobile-e2e-full` run, since the sandbox has no KVM
-- [ ] `pnpm nx preflight infrastructure-as-code`: passes
-- [ ] `pnpm nx okf-lint infrastructure-as-code` and `pnpm nx okf-governance infrastructure-as-code`: pass after the source docs change
-- [ ] `rtk gain`: compression confirmed (run last)
+- [x] `pnpm nx test:integration mcm-app`: passes — in `app-e2e`, app-ci 7119
+- [x] `pnpm nx lint mcm-app`: no lint errors, and warnings at or below `main`'s 49 (item #939) — 0 errors, 48 warnings
+- [x] `pnpm exec tsc --noEmit -p packages/design-system`, `pnpm nx test design-system`, `pnpm nx lint design-system`: pass — T042
+- [x] `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`: web E2E passes — app-ci 7119
+- [x] `node scripts/agent-stack.mjs`, then `node scripts/agent-e2e.mjs` with `E2E_REQUIRE_AGENT_STACK=1`: agent specs pass — app-ci 7119
+- [x] `pnpm nx e2e:mobile mcm-app`: through CI's `mobile-e2e-full` run, since the sandbox has no KVM — app-ci 7119 with `mobile-e2e-full`
+- [x] `pnpm nx preflight infrastructure-as-code`: passes — 27 of 27 on PR C
+- [x] `pnpm nx okf-lint infrastructure-as-code` and `pnpm nx okf-governance infrastructure-as-code`: pass after the source docs change — both pass at close
+- [x] `rtk gain`: compression confirmed (run last) — 825 commands, confirmed
