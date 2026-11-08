@@ -1,28 +1,85 @@
 {
   "coveredCommit": "e1b65c6a691c33a92cad03dd8f2b06049ec83710",
   "coveredAt": "2026-11-08T06:00:44.131Z",
-  "lastOutcome": "nothing-to-do",
-  "backlog": [],
+  "lastOutcome": "failed",
+  "backlog": [
+    {
+      "area": "architecture",
+      "pages": [
+        "system-overview.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/MCM-Architecture.md"
+    },
+    {
+      "area": "projects",
+      "pages": [
+        "mc-service.md",
+        "mcp-servers.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/MCM-Architecture.md"
+    },
+    {
+      "area": "runbooks",
+      "pages": [
+        "devcontainer.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/devcontainer.md"
+    }
+  ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "elapsedSeconds": 3106,
     "stoppedAtBudget": false
   },
-  "escalations": {},
+  "escalations": {
+    "architecture/system-overview.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-08T14:50:39.679Z",
+      "failuresAtLow": 0
+    },
+    "projects/mc-service.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-08T14:50:39.679Z",
+      "failuresAtLow": 0
+    },
+    "projects/mcp-servers.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-08T14:50:39.679Z",
+      "failuresAtLow": 0
+    },
+    "runbooks/devcontainer.md": {
+      "effort": "low",
+      "reason": "deadline",
+      "since": "2026-11-08T14:50:39.679Z",
+      "failuresAtLow": 0
+    }
+  },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 960,
+    "calls": 479,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 4207133,
-    "cached": 102390698,
+    "uncached": 4360155,
+    "cached": 45980584,
     "cacheWrite": 0,
-    "output": 1675130,
-    "reasoning": 1404696,
-    "ms": 7624815,
-    "estCostUsd": 3.8866,
+    "output": 881412,
+    "reasoning": 510757,
+    "ms": 3684323,
+    "estCostUsd": 2.6416,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -32,14 +89,14 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/bff.md",
-        "projects/expo-app.md",
-        "runbooks/android-emulator.md",
-        "process/constitution.md"
+        "architecture/system-overview.md",
+        "projects/mc-service.md",
+        "projects/mcp-servers.md",
+        "runbooks/devcontainer.md"
       ],
       "effort": null,
       "deadlineStop": true,
-      "estCostUsd": 3.8866,
+      "estCostUsd": 2.6416,
       "rateLimited": null
     }
   ],
