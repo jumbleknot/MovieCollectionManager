@@ -115,6 +115,12 @@ if (-not (Test-Cmd 'sbx')) {
 # JSON is a bare array of { name, status, … } since v0.48.0. Invoke-Native merges stderr into the
 # capture, and v0.48.0+ sends daemon-start progress there, so ErrorRecords are dropped before parsing.
 $ls = Invoke-Native -Exe 'sbx' -Arguments @('ls', '--format', 'json') -Capture
+# A failed `sbx ls` must NOT fall through to parsing: its error is on stderr (dropped below), the
+# remaining stdout is empty, and an empty list then reads as "sandbox does not exist". Seen after a
+# host reboot, where the real cause was "error: not signed in to Docker" (fix: `sbx login`).
+if ($ls.ExitCode -ne 0) {
+  throw "'sbx ls' failed (exit $($ls.ExitCode)): $(($ls.Output | Out-String).Trim())"
+}
 $json = ($ls.Output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join "`n"
 try { $sandboxes = @($json | ConvertFrom-Json) } catch {
   throw "could not parse 'sbx ls --format json' (exit $($ls.ExitCode)): $json"
