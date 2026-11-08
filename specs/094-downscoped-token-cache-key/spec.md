@@ -36,4 +36,4 @@ cache is the one place where an unverified claim decides whose credential is use
 - Verifying the subject token's signature in the gateway. Keycloak does that on the exchange, and every
   other path already reaches it.
 - The other review notes (Ollama redirects, `agent/stop` thread ownership, NAT64), which were assessed
-  below the confidence bar. They are recorded in the 2026-11-08 implementation review.
+  below the confidence bar. They are item #964.

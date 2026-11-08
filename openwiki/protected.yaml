@@ -212,7 +212,9 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:902ea57c09f462b8c60e71447e11a1d833ac0d275b911b22096b3670ad7c8451"
+    # Re-fingerprinted 2026-11-08 (spec 095) — the passage gained the measured RTK rewrite of
+    # `prettier --file-info` (`ignored: true` printed as "All files formatted correctly").
+    fingerprint: "sha256:2d4043a8fbce0d8881d5319cc3c8cd019ae1ea42835cede921a5d63efe748ba4"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"

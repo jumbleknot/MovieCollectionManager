@@ -1,6 +1,6 @@
 # Spec 095: The constitution's formatters are enforced, as it says they are
 
-**Status**: In progress | **Date**: 2026-11-08 | **Input**: implementation review, 2026-11-08 (best-practice
+**Status**: Complete | **Date**: 2026-11-08 | **Input**: implementation review, 2026-11-08 (best-practice
 step). The operator chose to adopt all three formatters in one change ("Do both now").
 
 ## Problem

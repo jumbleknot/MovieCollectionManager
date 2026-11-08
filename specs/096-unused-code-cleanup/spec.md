@@ -31,4 +31,4 @@ as dozens of connection errors instead of one assertion naming the missing input
 ## Out of scope
 
 - Linting `tests/` in CI. `eslint .` reports 18 errors there, mostly `expo/no-dynamic-env-var`, an app-code
-  rule that does not fit test configuration. That is its own decision (backlog).
+  rule that does not fit test configuration. That is its own decision: item #962.
